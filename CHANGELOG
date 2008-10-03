@@ -1,0 +1,165 @@
+03 May 2008 (v0.2.7):
+    * Changed Linux output file to "glestadv" instead of "glest" to help avoid confusion.
+    * Integrated hailstone's patch (after modifying it of course Smile ) to load only the factions in the tech tree that are being used.
+    * Screen saving now auto-creates the "screens" directory if it doesn't exist instead of throwing an exception.
+    * Attempts to build, upgrade or produce that fail due to a lack of resources now tells the user what resources are missing.
+    * Units that are not part of the current subfaction now decay at the rate of 0.5% of their maximum hit points per second. This will enable features in FPM tree as discussed previously in that thread.
+    * Resources can now be marked as non-displayable with <display value="false"> in their .xml file. These resources will not be displayed at the top of the screen.
+    * Updated earthquakes so they are now shaky and look a bit more like real earthquakes
+    * gcc builds now make slightly better use of SIMD instructions (namely, in loop unrolling).
+    * Added a rudimentary README file, which can still use a good deal of improvements.
+    * When hovering over a button for an attack command that has an effect (like the FPM Lich's attacks) the details of the effects are now displayed.
+    * Fixed the longstanding and annoying bug that reset the display when choosing and build location and such. It turns out that this was happening any time a unit anywhere in the game finished morphing.
+    * Fixed problem with blank message box when a game error occurred.
+    * Units doing an auto repair will now break from that and auto-attack any hostiles that it sees.
+    * Auto-flee is now a little bit smarter and will change course if headed off by a hostile.
+    * Auto-attacking units will now return immediately after all hostiles are dead like they did before (I seem to have broken part of that at some point)
+    * Fixed typo in AttackStrength language string 
+
+21 April 2008 (v0.2.6):
+    * Added a "random" trajectory type to ProjectileParticleSystemType (see FPM pristess.xml for an example). This can create a very crude simulation of the behavior of lightning and I would prefer to create an entire subclass devoted to doing it right (using diffusion-limited aggregation and having it actually branch & such), but this will have to do for now.
+    * Added an option to ProjectileParticleSystemType to cause the projectile to track the target (i.e., never miss). The last leg of the graphics still looks a little funny on this when the target is moving, but it works otherwise.
+    * Earthquakes don't screw eachother up anymore and leave the landscape distorted.
+    * Added a "fall down" and "get up" skill types to facilitate earthquakes knocking down units. Both are intrinsic in that if an explicit definition is not specified in the unit's .xml file, an implicit "fall down" and "get up" skill is generated using the dying and moving sequences, respectively. The fall down skill has an agility attribute, which is essentially an rpg-style saving throw modifier vs being knocked down. When a unit is caught in an earthquake, the agility + saving throw is compared against the intensity of the earthquake of the ground beneath the unit.
+    * Fixed problem with some error message (exceptions & such) displaying off screen)
+    * Fixed emanations so that they hit flying units.
+    * Time of day is now recorded in saved games (but no weather yet)
+
+11 April 2008 (v0.2.5):
+    * Fixed problems with building and repairing in odd locations (I promise this time!!)
+    * Added rudenimtary ability for earthquakes in engine (have a look at priestess.xml in FPM mod for an example)
+    * network play still broken
+
+09 April 2008 (v0.2.4):
+    * GAE should now work for multiplayer (including cross-platform) game play. It's possible that you may still need to disable NetworkConsistencyChecks in your glestadv.ini file however, if there are any differences in the tech trees you are playing on.
+    * Added new crash handling, although it's not quite what I would like it to eventually be. For the most part, the GNU/Linux build does what the windows build always did (catches crashes and makes a report), but it also includes a stack trace, so if it crashes (not an "Exception") you can send me the gae-crash.txt file (I'll need the binary too though)
+    * Screwed with the timing in the game a *lot*. In situations where your game is lagging for whatever reason (usually on slower machines), the game will no longer suddenly speed up after a pause. These changes may have unintended side-effects, but thus far it appears to scale fairly well across various performance levels.
+    * Fixed a few 32 bit GNU/Linux compile problems.
+    * Fixed the "operation already in progress" error message that Linux users were getting when joining a network game.
+    * Cleaned up a few long-standing file pointer leaks.
+    * Windows build now uses pre-compiled headers, which speeds it up tremendously. (not yet working in with gcc).
+    * Added a glestadv-server.log and glestadv-client.log which logs server and client network traffic, respectively.
+    * When a client drops from a network game, the server sometimes crashes when trying to auto-save the game. This occurs when it's saving the selection groups (your shift-1,2,3, etc. groups)
+    * The server believes the client disconnected in a non-friendly way when they just decided to quit the game (and the server auto-saves the game, etc.)
+    * Sometimes, the new error handlers crash when cleaning up.
+    * Workers building and repairing sometimes still do the one cell away bug. I've also seen them do an indecisive pacing back and forth too when they can't get to where they want to get.
+    * Sometimes, when restoring a saved network game, the client gets an error about file fragments arriving out of order. I haven't figured this one out yet but I suspect it's a problem in how network data is getting managed and may be getting discarded under some conditions. If I'm correct, it could cause other errors like "unexpected network message" as well.
+    * Network bandwidth is still higher than it should be.
+
+04 April 2008 (v0.2.3a):
+    * Added some #include statements that solves some portability issues.
+    * Fixed a compile error on 32 bit linux machines.
+    * Added a new compile error on win32 (fix will get committed in the next release, just don't try to compile this version on windows Smile )
+    * Fixed problem that occurred when a unit had more than one attack command, but the 1st one was unavailable. This caused the attack hotkey to not work and also if you had that unit selected with other units that could attack, you would not have an attack command available. This is fixed (mostly, it effected the Lich in FPM).
+
+01 April 2008 (v0.2.3):
+    * Dead units will now begin to fade and then sink into the ground before they disappear. I haven't gotten the shadows to fade yet, so they look pretty tacky right now.
+    * Found and fixed ONE of the race conditions that can occur in multiplayer game (still a lot of work to do here). On the bright side, the game will still autosave if the client screws up and crashes.
+    * Fixed a problem with multiplayer autosave that I accidentally introduced in 0.2.2 (fat finger).
+    * Modified the saved games so that explored areas are now perfectly restored (for the server or single player at least)
+    * Clients of a resumed multiplayer game now get their explored areas back. I couldn't save their minimap alphas (since it gets saved on the server), so I had to synthesize it and it's not 100.0% perfect, but it is *very* close to what it was before the the save. When the game is restored, the client's selection groups and camera position/angle are still not saved, so they'll have to reset their selection groups, while the server gets theirs back.
+    * When choosing a build location and hovering over your builder, it doesn't red-out (unless there's something else in the way). This also works when you have multiple builders selected.
+    * When initiating a build with multiple builders, all of them will get out of the way now, but some will complain that they can't build there and will give up.
+    * Fixed problems with jam-based build not spitting out warnings like it should.
+    * Tweaked the save game code to make the explored areas and map resources more compact.
+    * Did some internal housekeeping (moved location calculation functions from UnitUpdater to Map).
+    * Cleaned up a lot of warnings and fixed a problem that Dr. Dixie had compiling on x86_32 GNU/Linux (as it should be called)
+
+23 March 2008 (v0.2):
+    * Cross-platform consistiency checks have been fixed (you don't have to disable NetworkConsistencyChecks checks to play cross-platform anymore).
+    * (internal change) Reworked the Config class so that it's auto-generated by a script "mkconfig.sh" from templates and a config.db file. This way, changes can be made to configuration options in one place and don't have to be double checked in multiple locations.
+    * Reworked the network layer to use htons/htonl/ntohs/ntohl functions to convert data from the native endinaness instead of transmitting data from raw C structs. This should keep network data stable across different operating systems as well as CPUs (i.e., x86, ppc, mips, arm, etc.).
+    * Implemented MaxFPS .ini setting. This allows you to specify the maximum number of video frames to render. This is there for those with faster machines, especially those in warmer climates, who would prefer to burn as little power as possible. My machine will normally render between 100 and 200 frames per second if I let it. Since the human eye can't tell the difference between 60 and 200, I keep mine set at 60 FPS, which is plenty (and my CPU sits at 35%-ish utilization).
+    * You can also tweak the world update FPS with "WorldUpdateFPS", which I wouldn't recommend. However, if you are playing across a very slow network, you can set this to 30 (down from 40) for a slight improvement at the cost of slightly choppy play.
+    * Added a "very-clean" jam build target to clean up every generated file, directory and symlink from mk/linux (including saved games and such).
+    * (internal change) generalized some of the platform-specific header files and moved them from shared_lib/platform/xxx into shared_lib/platform.
+    * When you get disconnected from a network game, the server now automatically saves and tells you. This still needs some work though as it behaves a little funny sometimes.
+    * Merged Jaagup's patch to save your resources and explored area, but it still need some work and isn't working right now (it saves the areas you've explored, it just doesn't retrieve them right Smile ). Will try to get this fixed soon.
+    * Fixed problem with units getting deselected when you click cancel while selecting a type of building to build.
+    * Fixed two problems with saved games that caused them to not load when you had pets or any unit had an effect.
+    * Healing/repairing units are slightly more likely to stick around in a combat situation, but they still need some work.
+
+19 March 2008 (v0.1.9):
+    * Made a few internal changes
+    * Fixed the problem with saved games crashing (the "don't have two values named control" error message).
+    * Fixed a problem where units weren't returning from an auto-attack as soon as they should have and could have possibly caused the problem where they weren't returning at all sometimes.
+    * Fixed the problem where units that were guarding other units were totally crowding them out.
+    * Added ability for multiple units to respond to a build command at once, but you will get "Can't build at that location" messages for all of the other workers when they get there so just deal with it. The implementation its self is also ugly, so don't let Martino find out Smile (it'll have to be cleaned up later)
+    * Made a bunch of the GameCamera constants parameters in the .ini file for geeks like Dr Dixie to play with. But that's the last silly request I'm fulfilling in a while. Also, I'm not supporting what happens when you change them because I gave you plenty of room to shoot yourself in the foot
+
+17 March 2008 (v0.1.8b):
+
+16 March 2008 (v0.1.8a):
+	* Fixed auto-repair bug
+
+16 March 2008 (v0.1.8):
+    * The "No" button wasn't working on dialog boxes. The thing here is that when I was enhancing the load game menu, I needed a dialog box with one button and that wasn't working because the original Glest didn't use that. So in the process of fixing it, I broke it to where it was ignoring you if you clicked on the second button at any time. This is fixed now.
+    * Cancel button now appears when any of your selected units are producing or doing anything other than nothing.
+    * Cancel button no longer appears on idle units & buildings.
+    * Fixed the screwed up scoring chart at the end of saved game, thanks to theotherhiveking for reporting that one.
+    * Fixed the problem with HP jumping. I traced this to the "morph" command.
+    * Fixed problem with repairer units whacking their buddies on the head with their repair hammer (and basically, repairer units repairing from further away than they are supposed to where there's another unit in their way).
+    * Double clicking on a button such as to produce units will now issue two orders instead of one.
+    * You may now use the minimap to select the target for your commands. This works by the same as clicking or right clicking on the display, except that individual units are never selected for the command. Example, if you select the attack command and click a location on the minimap where another unit is located, your attack command will attack to the position of that unit, but will not specifically attack that unit. I hope that makes sense. Smile
+    * You can disable giving orders via the minimap in the .ini by setting EnableMinimapCommands to 0.
+    * I have reworked a lot of the code in the Game and Gui classes, having moved some of the responsibilities from Game to Gui. As with any non-trivial change, this may have unintended consequences. Smile 
+
+15 March 2008 (v0.1.7):
+    * fixed crash problems when there are no saved games.
+    * fixed crash problems when you don't have a savegames directory (this is created automatically now)
+    * fixed crash problems when you delete the last saved game.
+    * made the load saved game window pretty with a nice little summary of the game info
+    * you can now save your game from a network game and resume later -- HOWEVER, this is shaky right now and if your saved game file is too big it doesn't work. Will have to fix this later (was fighting with the damn zlib library and it won Sad )
+    * added a rudimentary file transfer mechanism to the game (I'm using it for multiplayer saved/restored games) for a future "load add-ons" feature. The idea here is to packages tilesets, tech trees, maps, scenarios and eventually campaigns into "add ons" that can be downloaded from within the game.
+    * cussed a lot about the zlib library
+
+13 March 2008 (v0.1.6):
+    * Mouse wheel zooms in and out. When I tested this on my windows machine, it was really jumpy Sad
+    * Middle mouse click (wheel click) and drag changes view angle. This behaves funny right now because it's supposed to rotate in a sphere around the center of your point of view, but it tends to move up and down in ways that it's not supposed to.
+    * Middle mouse click & drag with the control key down scrolls the view around.
+    * Middle mouse click & drag with the control and shift down scrolls the view around very quickly.
+    * You can set how fast the mouse scroll goes in the ini file now (this is when your mouse is at the edge of the screen)
+    * You can also set how high and low your camera can go, but I don't recommend it as of yet. You may notice that with the current settings, when you scroll out you'll see some map tiles that don't render (are black or darker shaded).
+    * If you get your view screwed up, you can hit F twice at any point to restore it (this just switches in and out of "free look" mode).
+
+12 March 2008 (v0.1.5):
+
+
+11 March 2008 (v0.1.4):
+
+
+09 March 2008 (v0.1.3):
+	* Merge with r139 of mainline
+
+09 March 2008 (v0.1.2):
+    * Added ability to turn auto-repair on and off.
+    * Paladin's self-heal now works.
+    * Attack commands can now have more than one attack and allows some rules to govern which one to choose in a given situation.
+    * Auto-repair & auto-attack now handle much better. If the target they were going to repair dies or gets repaired, they will immediately turn around. Same for auto attack: the instant that an auto-attacking unit no longer sees any enemies, they will turn around instead of all taking turns visiting the location they 1st saw the enemy.
+    * Screwed up the Gui causing "ghost buttons" for cancel, meeting point and auto-repair to occur below where these buttons are. It's a rather annoying bug and it gets in the way when you are trying to click on a unit in the area that doesn't show any buttons, but it clicks on the buttons above anyway (will fix it soon)
+    * In addition to having the option to select random starting locations in the map, you can now also select random factions for each player/cpu slot.
+
+08 March 2008 (v0.1.1):
+    * Revamped config system (internal change only).
+    * Added optional random start locations.
+
+08 March 2008 (v0.1):
+	* Fixed problem with repairers not repairing the unit you specified when explicitly issuing a repair command (they were just repairing whatever they found upon their way to the specified unit).
+	* Cleaned up some internal code, mostly mine, that was ugly. There's still some ugly code (of mine) that needs cleaning yet.
+	* Modified the internal command framework to better support auto commands. This has no effect on gameplay yet, but will soon.
+	* Modified attack commands (any command that can attack, like Patrol or Hold Position) to support multiple attack types. This also is not fully implemented and does not yet have any effect on game play.
+	* Fixed a stupid bug that was causing static resources and stores to be double whenever you built a new energy source and such (a bug I introduced earlier).
+
+13 February 2008 (v0.1.3):
+	* Shift-click command queuing (works in Magitech)
+	* Auto-repair (works in Magitech)
+	* Units return after auto-attacking (works in Magitech)
+	* A patrol command
+	* A guard command
+	* Temporary effects
+	* Improved upgrades & levels
+	* Subfactions / faction progressions
+	* A minimal pet/owner implementation
+	* Emanations
+	* Off-screen attack notifications (almost)
+	* And a few extra kb of executable bloat
