@@ -16,91 +16,118 @@
 #include "console.h"
 #include "network_manager.h"
 #include "lang.h"
+#include "keymap.h"
 
 #include "leak_dumper.h"
 
 
 using namespace Shared::Platform;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
-//	class ChatManager
+// class ChatMessage
 // =====================================================
 
-const int ChatManager::maxTextLenght= 64;
-
-ChatManager::ChatManager(){
-	console= NULL;
-	editEnabled= false;
-	teamMode= false;
-	thisTeamIndex= -1;
+ChatMessage::ChatMessage(const string &text, const string &sender, int teamIndex)
+		: text(text)
+		, sender(sender)
+		, teamIndex(teamIndex) {
 }
 
-void ChatManager::init(Console* console, int thisTeamIndex){
-	this->console= console;
-	this->thisTeamIndex= thisTeamIndex;
+// =====================================================
+// class ChatManager
+// =====================================================
+
+ChatManager::ChatManager(const Keymap &keymap) :
+		keymap(keymap),
+		editEnabled(false),
+		teamMode(false),
+		console(NULL),
+		thisTeamIndex(-1),
+		text() {
 }
 
-void ChatManager::keyDown(char key){
+void ChatManager::init(Console* console, int thisTeamIndex) {
+	this->console = console;
+	this->thisTeamIndex = thisTeamIndex;
+}
 
-	Lang &lang= Lang::getInstance();
+/** @return true if the keystroke was used or will be used when keyPressed is called. */
+bool ChatManager::keyDown(const Key &key) {
+	Lang &lang = Lang::getInstance();
+	bool keyUsed = false;
 
-	//toggle team mode
-	if(!editEnabled && key=='H'){
-		if(teamMode){
-			teamMode= false;
-			console->addLine(lang.get("ChatMode") + ": " + lang.get("All"));
+
+	//set chat mode
+	if (!editEnabled) {
+		bool oldTeamMode = teamMode;
+		//all
+		if (keymap.isMapped(key, ucChatAudienceAll)) {
+			teamMode = false;
+		//team
+		} else if (keymap.isMapped(key, ucChatAudienceTeam)) {
+			teamMode = true;
+		//toggle
+		} else if (keymap.isMapped(key, ucChatAudienceToggle)) {
+			teamMode = !teamMode;
 		}
-		else{
-			teamMode= true;
-			console->addLine(lang.get("ChatMode") + ": " + lang.get("Team"));
-		}
-	}
 
-	if(key==vkReturn){
-		if(editEnabled){
-			GameNetworkInterface *gameNetworkInterface= NetworkManager::getInstance().getGameNetworkInterface();
-
-			editEnabled= false;
-			if(!text.empty()){
-				console->addLine(gameNetworkInterface->getHostName() + ": " + text);
-				gameNetworkInterface->sendTextMessage(text, teamMode? thisTeamIndex: -1);
+		if (teamMode != oldTeamMode) {
+			if (teamMode) {
+				console->addLine(lang.get("ChatMode") + ": " + lang.get("All"));
+			} else {
+				console->addLine(lang.get("ChatMode") + ": " + lang.get("Team"));
 			}
-		}
-		else{
-			editEnabled= true;
+		} else if (keymap.isMapped(key, ucEnterChatMode)) {
+			editEnabled = true;
 			text.clear();
+		} else {
+			return false;
 		}
+		return true;
 	}
-	else if(key==vkBack){
-		if(!text.empty()){
-			text.erase(text.end() -1);
+
+	
+	if (key == keyReturn && editEnabled) {
+		editEnabled = false;
+		if (!text.empty()) {
+			Net::GameInterface *gameInterface = NetworkManager::getInstance().getGameInterface();
+			console->addLine(gameInterface->getPlayer().getName() + ": " + text);
+			gameInterface->sendTextMessage(text, teamMode ? thisTeamIndex : -1);
 		}
+	} else if (key == keyBackspace) {
+		if (!text.empty()) {
+			text.erase(text.end() - 1);
+		}
+	} else if (key == keyEscape) {
+		editEnabled = false;
+	} else {
+		return key.getAscii() >= ' ' && key.getAscii() <= 0x79;
 	}
+	return true;
 }
 
-void ChatManager::keyPress(char c){
-	if(editEnabled && text.size()<maxTextLenght){
+void ChatManager::keyPress(char c) {
+	if (editEnabled && text.size() < maxTextLenght) {
 		//space is the first meaningful code
-		if(c>=' '){
-			text+= c;
+		if (c >= ' ') {
+			text += c;
 		}
 	}
 }
 
-void ChatManager::updateNetwork(){
-	GameNetworkInterface *gameNetworkInterface= NetworkManager::getInstance().getGameNetworkInterface();
-	string text;
-	string sender;
+void ChatManager::updateNetwork() {
+	Net::GameInterface *gameInterface = NetworkManager::getInstance().getGameInterface();
+	ChatMessage *msg;
+	while((msg = gameInterface->getNextChatMessage())) {
+		int teamIndex = msg->getTeamIndex();
 
-	if(!gameNetworkInterface->getChatText().empty()){
-		int teamIndex= gameNetworkInterface->getChatTeamIndex();
-
-		if(teamIndex==-1 || teamIndex==thisTeamIndex){
-			console->addLine(gameNetworkInterface->getChatSender()+": "+gameNetworkInterface->getChatText());
+		if (teamIndex == -1 || teamIndex == thisTeamIndex) {
+			console->addLine(msg->getSender() + ": " + msg->getText());
 		}
+		delete msg;
 	}
 }
 
-}}//end namespace
+} // end namespace

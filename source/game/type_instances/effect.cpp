@@ -21,7 +21,7 @@
 
 #include "leak_dumper.h"
 
-namespace Glest { namespace Game {
+namespace Game {
 
 using namespace Shared::Util;
 
@@ -75,7 +75,7 @@ void Effect::save(XmlNode *node) const {
 	node->addChild("actualHpRegen", actualHpRegen);
 }
 /*
-class EffectReference : public NetworkWriteable {
+class EffectReference : public NetSerializable {
 	UnitReference source;
 	int32 typeId;
 	float strength;
@@ -213,19 +213,19 @@ struct EffectSummary {
 	int count;
 };
 
-void Effects::getDesc(string &str) const {
+void Effects::getDesc(stringstream &str) const {
 	map<const EffectType*, EffectSummary> uniqueEffects;
 	map<const EffectType*, EffectSummary>::iterator uei;
 	bool printedFirst = false;
-	Lang &lang= Lang::getInstance();
+	Lang &lang = Lang::getInstance();
 
-	for(const_iterator i = begin(); i != end(); i++) {
+	for (const_iterator i = begin(); i != end(); i++) {
 		const EffectType *type = (*i)->getType();
-		if(type->isDisplay()) {
+		if (type->isDisplay()) {
 			uei = uniqueEffects.find(type);
-			if(uei != uniqueEffects.end()) {
+			if (uei != uniqueEffects.end()) {
 				uniqueEffects[type].count++;
-				if(uniqueEffects[type].maxDuration < (*i)->getDuration()) {
+				if (uniqueEffects[type].maxDuration < (*i)->getDuration()) {
 					uniqueEffects[type].maxDuration = (*i)->getDuration();
 				}
 			} else {
@@ -235,15 +235,16 @@ void Effects::getDesc(string &str) const {
 		}
 	}
 
-	for(uei = uniqueEffects.begin(); uei != uniqueEffects.end(); uei++) {
-		if(printedFirst){
-			str += "\n    ";
+	for (uei = uniqueEffects.begin(); uei != uniqueEffects.end(); uei++) {
+		str << endl;
+		if (printedFirst) {
+			str << "    ";
 		} else {
-			str += "\n" + lang.get("Effects") + ": ";
+			str << lang.get("Effects") << ": ";
 		}
-		str += (*uei).first->getName() + " (" + intToStr((*uei).second.maxDuration) + ")";
-		if((*uei).second.count > 1) {
-			str += " x" + intToStr((*uei).second.count);
+		str << (*uei).first->getName() << " (" << (*uei).second.maxDuration << ")";
+		if ((*uei).second.count > 1) {
+			str << " x" << (*uei).second.count;
 		}
 		printedFirst = true;
 	}
@@ -253,7 +254,7 @@ void Effects::getDesc(string &str) const {
 // ====================================== get ======================================
 
 //who killed Kenny?
-Unit *Effects::getKiller() const{
+Unit *Effects::getKiller() const {
 	for (const_iterator i = begin(); i != end(); i++) {
 		Unit *source = (*i)->getSource();
 		//If more than two other units hit this unit with a DOT and it died,
@@ -274,4 +275,4 @@ void Effects::save(XmlNode *node) const {
 }
 
 
-}}//end namespace
+} // end namespace

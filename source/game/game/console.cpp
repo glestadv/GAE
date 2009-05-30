@@ -23,7 +23,7 @@
 	#define snprintf _snprintf
 #endif
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class Console
@@ -31,8 +31,8 @@ namespace Glest{ namespace Game{
 
 Console::Console(){
 	//config
-	maxLines= Config::getInstance().getConsoleMaxLines();
-	timeout= (float)Config::getInstance().getConsoleTimeout();
+	maxLines= Config::getInstance().getUiConsoleMaxLines();
+	timeout= (float)Config::getInstance().getUiConsoleTimeout();
 
 	timeElapsed= 0.0f;
 }
@@ -58,7 +58,7 @@ void Console::addLine(string line){
 }
 
 void Console::update(){
-	timeElapsed+= 1.f / Config::getInstance().getWorldUpdateFPS();
+	timeElapsed+= 1.f / Config::getInstance().getGsWorldUpdateFps();
 
 	if(!lines.empty()){
 		if(lines.back().second<timeElapsed-timeout){
@@ -72,4 +72,4 @@ bool Console::isEmpty(){
 }
 
 
-}}//end namespace
+} // end namespace

@@ -23,7 +23,7 @@
 using namespace Shared::Graphics;
 using namespace Shared::Sound;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 const int SoundRenderer::ambientFade= 6000;
 const float SoundRenderer::audibleDist= 50.f;
@@ -41,7 +41,7 @@ void SoundRenderer::init(Window *window){
 	FactoryRepository &fr= FactoryRepository::getInstance();
 	Config &config= Config::getInstance();
 
-	si.setFactory(fr.getSoundFactory(config.getFactorySound()));
+	si.setFactory(fr.getSoundFactory(config.getSoundFactory()));
 	soundPlayer= si.newSoundPlayer();
 
 	SoundPlayerParams soundPlayerParams;
@@ -122,4 +122,4 @@ void SoundRenderer::loadConfig(){
 	ambientVolume= config.getSoundVolumeAmbient()/100.f;
 }
 
-}}//end namespace
+} // end namespace

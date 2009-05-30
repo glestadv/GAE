@@ -22,7 +22,7 @@
 
 using namespace Shared::Graphics::Gl;
 
-namespace Shared{ namespace Platform{
+namespace Shared { namespace Platform {
 
 // =====================================================
 //	class PlatformContextGl
@@ -60,21 +60,6 @@ void PlatformContextGl::init(int colorBits, int depthBits, int stencilBits){
 	}
 
 	makeCurrent();
-}
-
-void PlatformContextGl::end(){
-	int makeCurrentError= wglDeleteContext(glch);
-	assert(makeCurrentError);
-}
-
-void PlatformContextGl::makeCurrent(){
-	int makeCurrentError= wglMakeCurrent(dch, glch);
-	assert(makeCurrentError);
-}
-
-void PlatformContextGl::swapBuffers(){
-	int swapErr= SwapBuffers(dch);
-	assert(swapErr);
 }
 
 // ======================================
@@ -151,16 +136,5 @@ void createGlFontOutlines(uint32 &base, const string &type, int width, float dep
 	assert(err);
 }
 
-const char *getPlatformExtensions(const PlatformContextGl *pcgl){
-	typedef const char* (WINAPI * PROCTYPE) (HDC hdc);
-	PROCTYPE proc= reinterpret_cast<PROCTYPE>(getGlProcAddress("wglGetExtensionsStringARB"));
-	return proc==NULL? "": proc(pcgl->getHandle());
-}
-
-PROC getGlProcAddress(const char *procName){
-	PROC proc= wglGetProcAddress(procName);
-	assert(proc!=NULL);
-	return proc;
-}
 
 }}//end namespace

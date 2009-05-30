@@ -28,7 +28,44 @@
 
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
+
+// ======================================================
+// 	class IdNamePair
+// ======================================================
+	
+IdNamePair::IdNamePair(const XmlNode &node)
+		: id(node.getChildIntValue("id"))
+		, name(node.getChildStringValue("name")) {
+}
+
+void IdNamePair::print(ObjectPrinter &op) const {
+	op		.beginClass("IdNamePair")
+			.print("id", id)
+			.print("name", name)
+			.endClass();
+}
+
+void IdNamePair::write(XmlNode &node) const {
+	node.addChild("id", id);
+	node.addChild("name", name);
+}
+
+// =====================================================
+// 	class DisplayableType
+// =====================================================
+
+DisplayableType::DisplayableType(const XmlNode &node, const string &dir) 
+		: IdNamePair(node)
+		, image(Renderer::getInstance().newTexture2D(rsGame)) {
+	image->load(dir + "/" + node.getChild("image")->getRestrictedAttribute("path"));
+}
+
+void DisplayableType::load(const XmlNode *baseNode, const string &dir) {
+	assert(!image);
+	image = Renderer::getInstance().newTexture2D(rsGame);
+	image->load(dir + "/" + baseNode->getChild("image")->getRestrictedAttribute("path"));
+}
 
 // =====================================================
 // 	class RequirableType
@@ -83,7 +120,6 @@ void RequirableType::load(const XmlNode *baseNode, const string &dir, const Tech
 	//subfactions required
 	const XmlNode *subfactionsNode = baseNode->getChild("subfaction-restrictions", 0, false);
 	if(subfactionsNode) {
-		subfactionsReqs = 0;
 		for(int i = 0; i < subfactionsNode->getChildCount(); ++i) {
 			string name = subfactionsNode->getChild("subfaction", i)->getRestrictedAttribute("name");
 			subfactionsReqs |= 1 << ft->getSubfactionIndex(name);
@@ -97,10 +133,13 @@ void RequirableType::load(const XmlNode *baseNode, const string &dir, const Tech
 // 	class ProducibleType
 // =====================================================
 
-ProducibleType::ProducibleType() {
-	cancelImage = NULL;
-	advancesToSubfaction = 0;
-	advancementIsImmediate = false;
+ProducibleType::ProducibleType() :
+		RequirableType(),
+		costs(),
+		cancelImage(NULL),
+		productionTime(0),
+		advancesToSubfaction(0),
+		advancementIsImmediate(false) {
 }
 
 ProducibleType::~ProducibleType() {
@@ -154,4 +193,4 @@ void ProducibleType::load(const XmlNode *baseNode, const string &dir, const Tech
 	}
 }
 
-}}//end namespace
+} // end namespace

@@ -16,33 +16,30 @@
 
 #include "leak_dumper.h"
 
-
-namespace Glest{ namespace Game{
-
+namespace Game {
 
 // =====================================================
-// 	class Metrics
+//  class Metrics
 // =====================================================
 
-Metrics::Metrics(){
-	Config &config= Config::getInstance();
+Metrics::Metrics() {
+	Config &config = Config::getInstance();
 
-	virtualW= 1000;
-	virtualH= 750;
+	virtualW = 1000;
+	virtualH = 750;
 
-	screenW= config.getScreenWidth();
-	screenH= config.getScreenHeight();
+	screenW = config.getDisplayWidth();
+	screenH = config.getDisplayHeight();
 
-	minimapX= 10;
-	minimapY= 600;
-	minimapW= 128;
-	minimapH= 128;
+	minimapX = 10;
+	minimapY = 600;
+	minimapW = 128;
+	minimapH = 128;
 
-	displayX= 800;
-	displayY= 250;
-	displayW= 128;
-	displayH= 480;
-}
+	displayX = 800;
+	displayY = 250;
+	displayW = 128;
+	displayH = 480;
+};
 
-
-}}// end namespace
+} // end namespace

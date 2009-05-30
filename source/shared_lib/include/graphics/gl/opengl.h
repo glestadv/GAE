@@ -24,7 +24,7 @@ using std::string;
 
 namespace Shared{ namespace Graphics{ namespace Gl{
 
-using Util::intToStr;
+using Util::Conversion;
 
 #define WGL_SAMPLE_BUFFERS_ARB	0x2041
 #define WGL_SAMPLES_ARB			0x2042
@@ -53,7 +53,8 @@ void inline _assertGl(const char *file, int line){
 
 	if(error != GL_NO_ERROR){
 		const char *errorString= reinterpret_cast<const char*>(gluErrorString(error));
-		throw runtime_error("OpenGL error: "+string(errorString)+" at file: "+string(file)+", line "+intToStr(line));
+		throw runtime_error("OpenGL error: " + string(errorString) + " at file: "
+				+ string(file) + ", line " + Conversion::toStr(line));
 	}
 
 }

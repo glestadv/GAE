@@ -1,10 +1,13 @@
-//This file is part of Glest Shared Library (www.glest.org)
-//Copyright (C) 2005 Matthias Braun <matze@braunis.de>
-
-//You can redistribute this code and/or modify it under
-//the terms of the GNU General Public License as published by the Free Software
-//Foundation; either version 2 of the License, or (at your option) any later
-//version.
+// ==============================================================
+//	This file is part of Glest Shared Library (www.glest.org)
+//
+//	Copyright (C) 2005 Matthias Braun <matze@braunis.de>
+//
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
+//	License, or (at your option) any later version
+// ==============================================================
 
 #include "pch.h"
 #include "platform_util.h"
@@ -27,6 +30,7 @@
 #include "sdl_private.h"
 #include "window.h"
 #include "noimpl.h"
+#include "platform_exception.h"
 
 #include "leak_dumper.h"
 
@@ -36,39 +40,10 @@ using namespace std;
 namespace Shared{ namespace Platform{
 
 namespace Private {
-
-bool shouldBeFullscreen = false;
-int ScreenWidth;
-int ScreenHeight;
-
+	bool shouldBeFullscreen = false;
+	int ScreenWidth;
+	int ScreenHeight;
 }
-
-// =====================================
-//          PerformanceTimer
-// =====================================
-
-PerformanceTimer::PerformanceTimer(float fps, int maxTimes, int maxBacklog) :
-		lastTicks(SDL_GetTicks()),
-		updateTicks(static_cast<int>(1000.f / fps)),
-		times(0),
-		maxTimes(maxTimes),
-		maxBacklog(maxBacklog) {
-	assert(maxTimes == -1 || maxTimes > 0);
-	assert(maxBacklog >= -1);
-}
-
-
-
-// =====================================
-//         Chrono
-// =====================================
-
-Chrono::Chrono() {
-	freq = 1000;
-	stopped= true;
-	accumCount= 0;
-}
-
 
 // =====================================================
 //	class PlatformExceptionHandler
@@ -76,21 +51,57 @@ Chrono::Chrono() {
 
 PlatformExceptionHandler *PlatformExceptionHandler::singleton = NULL;
 
-PlatformExceptionHandler::~PlatformExceptionHandler(){}
+PlatformExceptionHandler::PlatformExceptionHandler() : installed(false) {
+	memset(&old_sigill, 0, sizeof(old_sigill));
+	memset(&old_sigsegv, 0, sizeof(old_sigsegv));
+	memset(&old_sigabrt, 0, sizeof(old_sigabrt));
+	memset(&old_sigfpe, 0, sizeof(old_sigfpe));
+	memset(&old_sigbus, 0, sizeof(old_sigbus));
+	assert(!singleton);
+	singleton = this;
+}
+
+PlatformExceptionHandler::~PlatformExceptionHandler() {
+	assert(singleton == this);
+	if(installed) {
+		uninstall();
+	}
+	singleton = NULL;
+}
 
 void PlatformExceptionHandler::install() {
-	singleton = this;
+	// FIXME: check return values of sigaction calls and report any errors (throw a nice PosixException)
+	assert(this);
+	assert(singleton == this);
+	assert(!installed);
 	struct sigaction action;
 	memset(&action, 0, sizeof(action));
 	action.sa_handler = NULL;
 	//action.sa_mask
 	action.sa_flags = SA_SIGINFO | SA_NODEFER;
 	action.sa_sigaction = PlatformExceptionHandler::handler;
-	sigaction(SIGILL, &action, NULL);
-	sigaction(SIGSEGV, &action, NULL);
-//	sigaction(SIGABRT, &action, NULL);
-	sigaction(SIGFPE, &action, NULL);
-	sigaction(SIGBUS, &action, NULL);
+#ifndef DEBUG	
+#endif
+	sigaction(SIGILL, &action, &old_sigill);
+	sigaction(SIGSEGV, &action, &old_sigsegv);
+	sigaction(SIGABRT, &action, &old_sigabrt);
+	sigaction(SIGFPE, &action, &old_sigfpe);
+	sigaction(SIGBUS, &action, &old_sigbus);
+	installed = true;
+}
+
+void PlatformExceptionHandler::uninstall() {
+	assert(this);
+	assert(singleton == this);
+	assert(installed);
+#ifndef DEBUG	
+#endif
+	sigaction(SIGILL, &old_sigill, NULL);
+	sigaction(SIGSEGV, &old_sigsegv, NULL);
+	sigaction(SIGABRT, &old_sigabrt, NULL);
+	sigaction(SIGFPE, &old_sigfpe, NULL);
+	sigaction(SIGBUS, &old_sigbus, NULL);
+	installed = false;
 }
 
 void PlatformExceptionHandler::handler(int signo, siginfo_t *info, void *context) {
@@ -255,6 +266,11 @@ void PlatformExceptionHandler::handler(int signo, siginfo_t *info, void *context
 
 			break;
 
+		case SIGABRT:
+			signame = "SIGABRT";
+			sigcode = "";
+			break;
+
 		default:
 			signame = "unexpected sinal";
 			sigcode = "(wtf?)";
@@ -281,28 +297,48 @@ void PlatformExceptionHandler::handler(int signo, siginfo_t *info, void *context
 	exit(1);
 }
 
+// =====================================================
+// class DirectoryListing
+// =====================================================
+
+DirectoryListing::DirectoryListing(const string &path_param)
+		: path(path_param)
+		, exists(false)
+		, i(-1) {
+	bzero(&globbuf, sizeof(globbuf));
+
+	/* Stupid windows is searching for all files without extension when *. is
+	 * specified as wildcard, so we have to make this behave the same
+	 */
+	if(path.compare(path.size() - 2, 2, "*.") == 0) {
+		path = path.substr(0, path.size() - 2);
+		path += "*";
+	}
+
+	if(glob(path.c_str(), 0, 0, &globbuf) < 0) {
+		throw PosixException(
+				("Error searching for files in directory '" + path + "'.  errno may be zero, in this case, please report as a bug.").c_str(),
+				"glob(path.c_str(), 0, 0, &globbuf)",
+				NULL, __FILE__, __LINE__);
+	}
+	exists = true;
+}
+
+DirectoryListing::~DirectoryListing() {
+	if(exists) {
+		globfree(&globbuf);
+	}
+}
+
+const char *DirectoryListing::getNext() {
+	return ++i < globbuf.gl_pathc ? globbuf.gl_pathv[i] : NULL;
+}
+
 
 // =====================================
 //         Misc
 // =====================================
 
-char *initDirIterator(const string &path, DirIterator &di) {
-	string mypath = path;
-	di.i = 0;
-
-	/* Stupid win32 is searching for all files without extension when *. is
-	 * specified as wildcard
-	 */
-	if(mypath.compare(mypath.size() - 2, 2, "*.") == 0) {
-		mypath = mypath.substr(0, mypath.size() - 2);
-		mypath += "*";
-	}
-
-	if(glob(mypath.c_str(), 0, 0, &di.globbuf) < 0) {
-		throw runtime_error("Error searching for files '" + path + "': " + strerror(errno));
-	}
-	return di.globbuf.gl_pathc ? di.globbuf.gl_pathv[di.i] : NULL;
-}
 
 void mkdir(const string &path, bool ignoreDirExists) {
 	if(::mkdir(path.c_str(), S_IRWXU | S_IROTH | S_IXOTH)) {
@@ -348,44 +384,8 @@ bool ask(string message) {
 	return res != 0;
 }
 
-bool isKeyDown(int virtualKey) {
-	char key = static_cast<char> (virtualKey);
-	const Uint8* keystate = SDL_GetKeyState(0);
-
-	// kinda hack and wrong...
-	if(key >= 0) {
-		return keystate[key];
-	}
-	switch(key) {
-		case vkAdd:
-			return keystate[SDLK_PLUS] | keystate[SDLK_KP_PLUS];
-		case vkSubtract:
-			return keystate[SDLK_MINUS] | keystate[SDLK_KP_MINUS];
-		case vkAlt:
-			return keystate[SDLK_LALT] | keystate[SDLK_RALT];
-		case vkControl:
-			return keystate[SDLK_LCTRL] | keystate[SDLK_RCTRL];
-		case vkShift:
-			return keystate[SDLK_LSHIFT] | keystate[SDLK_RSHIFT];
-		case vkEscape:
-			return keystate[SDLK_ESCAPE];
-		case vkUp:
-			return keystate[SDLK_UP];
-		case vkLeft:
-			return keystate[SDLK_LEFT];
-		case vkRight:
-			return keystate[SDLK_RIGHT];
-		case vkDown:
-			return keystate[SDLK_DOWN];
-		case vkReturn:
-			return keystate[SDLK_RETURN] | keystate[SDLK_KP_ENTER];
-		case vkBack:
-			return keystate[SDLK_BACKSPACE];
-		default:
-			std::cerr << "isKeyDown called with unknown key.\n";
-			break;
-	}
-	return false;
+void exceptionMessage(const exception &excp) {
+	std::cerr << "Exception: " << excp.what() << std::endl;
 }
 
 }}//end namespace

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_WATER_EFFECTS_H_
-#define _GLEST_GAME_WATER_EFFECTS_H_
+#ifndef _GAME_WATER_EFFECTS_H_
+#define _GAME_WATER_EFFECTS_H_
 
 #include <vector>
 
@@ -20,7 +20,7 @@ using std::vector;
 
 using Shared::Graphics::Vec2f;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class Map;
 
@@ -70,6 +70,6 @@ public:
 	const WaterSplash *getWaterSplash(int i) const	{return &waterSplashes[i];}
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

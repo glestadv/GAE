@@ -21,7 +21,7 @@ namespace Shared{ namespace Graphics{
 //	class InterpolationData
 // =====================================================
 
-class InterpolationData{
+class InterpolationData {
 private:
 	const Mesh *mesh;
 
@@ -32,8 +32,8 @@ public:
 	InterpolationData(const Mesh *mesh);
 	~InterpolationData();
 
-	const Vec3f *getVertices() const	{return vertices==NULL? mesh->getVertices(): vertices;}
-	const Vec3f *getNormals() const		{return normals==NULL? mesh->getNormals(): normals;}
+	const Vec3f *getVertices() const	{return vertices ? vertices : mesh->getVertices();}
+	const Vec3f *getNormals() const		{return normals ? normals : mesh->getNormals();}
 	
 	void update(float t, bool cycle);
 	void updateVertices(float t, bool cycle);

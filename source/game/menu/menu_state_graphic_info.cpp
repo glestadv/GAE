@@ -20,13 +20,13 @@
 #include "leak_dumper.h"
 
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class MenuStateGraphicInfo
 // =====================================================
 
-MenuStateGraphicInfo::MenuStateGraphicInfo(Program *program, MainMenu *mainMenu):
+MenuStateGraphicInfo::MenuStateGraphicInfo(Program &program, MainMenu *mainMenu):
 	MenuState(program, mainMenu, "info")
 {
 	buttonReturn.init(387, 100, 125);
@@ -49,7 +49,7 @@ void MenuStateGraphicInfo::mouseClick(int x, int y, MouseButton mouseButton){
     }
 }
 
-void MenuStateGraphicInfo::mouseMove(int x, int y, const MouseState *ms){
+void MenuStateGraphicInfo::mouseMove(int x, int y, const MouseState &ms){
 	buttonReturn.mouseMove(x, y);
 }
 
@@ -67,4 +67,4 @@ void MenuStateGraphicInfo::render(){
 	renderer.renderLabel(&labelMoreInfo);
 }
 
-}}//end namespace
+} // end namespace

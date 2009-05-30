@@ -40,17 +40,18 @@ CONFIG_SETTERS="$(egrep -v '^$|^#' $input_file | sort -u | awk '{
 }')" || die
 
 CONFIG_INIT="$(egrep -v '^$|^#' $input_file | sort -u | awk '{
-	print "\t" $1 " = get" toupper(substr($2, 1, 1)) substr($2, 2) \
-		  "(-" toupper(substr($1, 1, 1)) substr($1, 2) \
-		  "-" \
-		  (length($3) > 0 ? ", " $3 : "") \
+	print "\t" $1 " = p->get" toupper(substr($2, 1, 1)) substr($2, 2) \
+		  "(\"" toupper(substr($1, 1, 1)) substr($1, 2) \
+		  "\"" \
+		  ($3 != "-" ? ", " $3 : "") \
 		  (length($4) > 0 ? ", " $4 : "") \
+		  (length($5) > 0 ? ", " $5 : "") \
 		  ");"
 }')" || die
 
 CONFIG_SAVE="$(egrep -v '^$|^#' $input_file | sort -u | awk '{
-	print "\tset" toupper(substr($2, 1, 1)) substr($2, 2) \
-		  "(-" toupper(substr($1, 1, 1)) substr($1, 2) "-, " $1 ");"
+	print "\tp->set" toupper(substr($2, 1, 1)) substr($2, 2) \
+		  "(\"" toupper(substr($1, 1, 1)) substr($1, 2) "\", " $1 ");"
 }')" || die
 
 perl -pe "s/CONFIG_VARIABLES/$CONFIG_VARIABLES/g" $input_h |
@@ -58,6 +59,5 @@ perl -pe "s/CONFIG_GETTERS/$CONFIG_GETTERS/g" |
 perl -pe "s/CONFIG_SETTERS/$CONFIG_SETTERS/g" > $output_h
 
 perl -pe "s/CONFIG_INIT/$CONFIG_INIT/g" $input_cpp |
-perl -pe "s/CONFIG_SAVE/$CONFIG_SAVE/g" |
-perl -pe 's/-/"/g' > $output_cpp
+perl -pe "s/CONFIG_SAVE/$CONFIG_SAVE/g" > $output_cpp
 

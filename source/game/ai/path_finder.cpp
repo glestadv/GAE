@@ -10,6 +10,7 @@
 // ==============================================================
 
 // Does not use pre-compiled header because it's optimized in debug build.
+
 #include "path_finder.h"
 
 #include <algorithm>
@@ -24,12 +25,11 @@
 
 #include "leak_dumper.h"
 
-
 using namespace std;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class PathFinder
@@ -73,7 +73,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos){
 		//route cache
 		Vec2i pos= path->pop();
 		if(map->canMove(unit, unit->getPos(), pos)){
-			unit->setTargetPos(pos);
+			unit->setNextPos(pos);
 			return tsOnTheWay;
 		}
 	}
@@ -90,7 +90,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos){
 	case tsOnTheWay:
 		Vec2i pos= path->pop();
 		if(map->canMove(unit, unit->getPos(), pos)){
-			unit->setTargetPos(pos);
+			unit->setNextPos(pos);
 		}
 		else{
 			unit->setCurrSkill(scStop);
@@ -102,6 +102,12 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos){
 }
 
 // ==================== PRIVATE ====================
+
+inline PathFinder::Node *PathFinder::newNode() {
+	return nodePoolCount < pathFindNodesMax
+			? &nodePool[nodePoolCount++]
+			: NULL;
+}
 
 //route a unit using A* algorithm
 PathFinder::TravelState PathFinder::aStar(Unit *unit, const Vec2i &targetPos){
@@ -229,12 +235,6 @@ PathFinder::TravelState PathFinder::aStar(Unit *unit, const Vec2i &targetPos){
 	return ts;
 }
 
-inline PathFinder::Node *PathFinder::newNode() {
-	return nodePoolCount < pathFindNodesMax
-			? &nodePool[nodePoolCount++]
-			: NULL;
-}
-
 Vec2i PathFinder::computeNearestFreePos(const Unit *unit, const Vec2i &finalPos){
 //Timer t(1000, "PathFinder::computeNearestFreePos");
 	//unit data
@@ -292,7 +292,7 @@ PathFinder::Nodes::iterator PathFinder::minHeuristic(){
 	return minNodeIt;
 }
 
-inline bool PathFinder::openPos(const Vec2i &sucPos){
+bool PathFinder::openPos(const Vec2i &sucPos){
 	for(Nodes::reverse_iterator it= closedNodes.rbegin(); it!=closedNodes.rend(); ++it){
 		if(sucPos==(*it)->pos){
 			return true;
@@ -354,10 +354,10 @@ void World::assertConsistiency() {
 
 	// make sure that every unit is in their cells and mark those as validated.
 	for(Factions::iterator fi = factions.begin(); fi != factions.end(); ++fi) {
-		for(int ui = 0; ui < fi->getUnitCount(); ++ui) {
-			Unit *unit = fi->getUnit(ui);
-
-			if(!(unit->getHp() == 0 && unit->isDead() || unit->getHp() > 0 && unit->isAlive())) {
+		for(int ui = 0; ui < (*fi)->getUnitCount(); ++ui) {
+			Unit *unit = (*fi)->getUnit(ui);
+/*
+			if(!((unit->getHp() == 0 && unit->isDead()) || (unit->getHp() > 0 && unit->isAlive()))) {
 				cerr << "inconsisteint dead/hp state for unit " << unit->getId()
 						<< " (" << unit << ") faction " << fi->getIndex() << endl;
 				cout << "inconsisteint dead/hp state for unit " << unit->getId()
@@ -365,8 +365,8 @@ void World::assertConsistiency() {
 				cout.flush();
 				assert(false);
 			}
-
-			if(unit->getCurrSkill()->getClass() == scDie) {
+*/
+			if(unit->isDead() && unit->getCurrSkill()->getClass() == scDie) {
 				continue;
 			}
 
@@ -381,12 +381,19 @@ void World::assertConsistiency() {
 					assert(map.isInside(currPos));
 
 					if(!ut->hasCellMap() || ut->getCellMapCell(x, y)) {
-						if(map.getCell(currPos)->getUnit(field) != unit) {
+						Unit *unitInCell = map.getCell(currPos)->getUnit(field);
+						if(unitInCell != unit) {
 							cerr << "Unit id " << unit->getId()
-									<< " from faction " << fi->getIndex()
-									<< " not in cells (" << x << ", " << y << ", " << field << ")"
-									<< endl;
-							assert(false);
+									<< " from faction " << (*fi)->getIndex()
+									<< "(type = " << unit->getType()->getName() << ")"
+									<< " not in cells (" << currPos.x << ", " << currPos.y << ", "
+									<< field << ")";
+							if(unitInCell == NULL && !unit->getHp()) {
+								cerr << " but has zero HP and is not executing scDie." << endl;
+							} else {
+								cerr << endl;
+								assert(false);
+							}
 						}
 						validationMap.validate(currPos.x, currPos.y, field);
 					}
@@ -400,8 +407,8 @@ void World::assertConsistiency() {
 		for(int y = 0; y < map.getH(); ++y ) {
 			for(int field = 0; field < fCount; ++field) {
 				if(!validationMap.getCell(x, y, (Field)field)) {
-					if(map.getCell(x, y)->getUnit(field)) {
-						Cell *cell = map.getCell(x, y);
+					Cell *cell = map.getCell(x, y);
+					if(cell->getUnit(field)) {
 						cerr << "Cell not empty at " << x << ", " << y << ", " << field << endl;
 						cerr << "Cell has pointer to unit object at " << cell->getUnit(field) << endl;
 
@@ -415,4 +422,23 @@ void World::assertConsistiency() {
 #else
 void World::assertConsistiency() {}
 #endif
-}} //end namespace
+
+void World::doHackyCleanUp() {
+	int h = map.getH();
+	int w = map.getW();
+	for(int x = 0; x < w; ++x) {
+		for(int y = 0; y < h; ++y) {
+			Cell *cell = map.getCell(x, y);
+			for(Units::const_iterator u = newlydead.begin(); u != newlydead.end(); ++u) {
+				for(int f = 0; f < fCount; ++f) {
+					if(cell->getUnit(f) == *u) {
+						cell->setUnit(f, NULL);
+					}
+				}
+			}
+		}
+	}
+	newlydead.clear();
+}
+
+} // end namespace

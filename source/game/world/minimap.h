@@ -9,8 +9,10 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MINIMAP_H_
-#define _GLEST_GAME_MINIMAP_H_
+#ifndef _GAME_MINIMAP_H_
+#define _GAME_MINIMAP_H_
+
+#include <cassert>
 
 #include "pixmap.h"
 #include "texture.h"
@@ -19,7 +21,7 @@ namespace Shared { namespace Platform {
 	class NetworkDataBuffer;
 }}
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::Vec4f;
 using Shared::Graphics::Vec3f;
@@ -62,9 +64,16 @@ public:
 	const Texture2D *getFowTexture() const	{return fowTex;}
 	const Texture2D *getTexture() const		{return tex;}
 
-	void incFowTextureAlphaSurface(const Vec2i &sPos, float alpha);
 	void resetFowTex();
 	void updateFowTex(float t);
+	// heavy use function
+	void incFowTextureAlphaSurface(const Vec2i &sPos, float alpha) {
+		assert(sPos.x < fowPixmap1->getW() && sPos.y < fowPixmap1->getH());
+	
+		if(fowPixmap1->getPixelf(sPos.x, sPos.y) < alpha) {
+			fowPixmap1->setPixel(sPos.x, sPos.y, alpha);
+		}
+	}
 
 	void read(NetworkDataBuffer &buf);
 	void write(NetworkDataBuffer &buf) const;
@@ -75,6 +84,6 @@ private:
 	static void writeRepition(NetworkDataBuffer &buf, uint8 lastResult, uint32 count, int x, int y);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

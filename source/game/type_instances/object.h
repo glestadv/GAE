@@ -8,13 +8,13 @@
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
-#ifndef _GLEST_GAME_OBJECT_H_
-#define _GLEST_GAME_OBJECT_H_
+#ifndef _GAME_OBJECT_H_
+#define _GAME_OBJECT_H_
 
 #include "model.h"
 #include "vec.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class ObjectType;
 class ResourceType;
@@ -55,6 +55,6 @@ public:
 	void setResource(const ResourceType *resourceType, const Vec2i &pos);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

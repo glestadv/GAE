@@ -16,7 +16,7 @@
 
 #include "leak_dumper.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class EffectTypeFlags
@@ -172,9 +172,10 @@ void EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 		light = lightNode->getAttribute("enabled")->getBoolValue();
 
 		if(light) {
+			lightColor = lightNode->getColor3Value();/*
 			lightColor.x = lightNode->getAttribute("red")->getFloatValue(0.f, 1.f);
 			lightColor.y = lightNode->getAttribute("green")->getFloatValue(0.f, 1.f);
-			lightColor.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);
+			lightColor.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);*/
 		}
 	} else {
 		light = false;
@@ -266,4 +267,4 @@ void Emanation::load(const XmlNode *n, const string &dir, const TechTree *tt, co
 	radius = n->getAttribute("radius")->getIntValue();
 }
 
-}}//end namespace
+} // end namespace

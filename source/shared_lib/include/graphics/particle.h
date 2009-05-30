@@ -21,6 +21,7 @@
 #include "random.h"
 #include "entity.h"
 #include "xml_parser.h"
+#include "math_util.h"
 
 using std::list;
 using Shared::Util::Random;
@@ -62,12 +63,12 @@ public:
 		ptQuad,
 		ptLine
 	};
-
+/*
 	enum ProjectileStart {
 		psSelf,
 		psTarget,
 		psSky
-	};
+	};*/
 
 public:
 	//attributes
@@ -118,7 +119,6 @@ protected:
 
 	Particle::BlendMode blendMode;
 	Particle::PrimitiveType primitiveType;
-	bool smooth;
 	Texture *texture;
 	Model *model;
 	Vec3f offset;
@@ -130,10 +130,13 @@ protected:
 	float sizeNoEnergy;
 	float speed;
 	float gravity;
+	float mass;
+	float density;
 	int emissionRate;
 	int energy;
 	int energyVar;
 	float radius;
+	int drawCount;
 
 //	static ParticleSystemType *fireParticleSystemType;
 //	static ParticleSystemType *rainParticleSystemType;
@@ -148,7 +151,6 @@ public:
 	//get
 	Particle::BlendMode getBlendMode() const			{return blendMode;}
 	Particle::PrimitiveType getPrimitiveType() const	{return primitiveType;}
-	bool isSmooth() const								{return smooth;}
 	Texture *getTexture() const							{return texture;}
 	Model *getModel() const								{return model;}
 	const Vec3f &getOffset() const						{return offset;}
@@ -160,15 +162,17 @@ public:
 	float getSizeNoEnergy() const						{return sizeNoEnergy;}
 	float getSpeed() const								{return speed;}
 	float getGravity() const							{return gravity;}
+	float getMass() const								{return mass;}
+	float getDensity() const							{return density;}
 	int getEmissionRate() const							{return emissionRate;}
 	int getEnergy() const								{return energy;}
 	int getEnergyVar() const							{return energyVar;}
 	float getRadius() const								{return radius;}
+	int getDrawCount() const							{return drawCount;}
 
 	//set
 	void setBlendMode(Particle::BlendMode blendMode)			{this->blendMode = blendMode;}
 	void setPrimitiveType(Particle::PrimitiveType primitiveType){this->primitiveType = primitiveType;}
-	void setSmooth(bool smooth)									{this->smooth = smooth;}
 	void setTexture(Texture *texture)							{this->texture = texture;}
 	void setModel(Model *model)									{this->model = model;}
 	void setOffset(const Vec3f &offset)							{this->offset = offset;}
@@ -180,14 +184,18 @@ public:
 	void setSizeNoEnergy(float sizeNoEnergy)					{this->sizeNoEnergy = sizeNoEnergy;}
 	void setSpeed(float speed)									{this->speed = speed;}
 	void setGravity(float gravity)								{this->gravity = gravity;}
+	void setMass(float mass)									{this->mass = mass;}
 	void setEmissionRate(int emissionRate)						{this->emissionRate = emissionRate;}
 	void setEnergy(int energy)									{this->energy = energy;}
 	void setEnergyVar(int energyVar)							{this->energyVar = energyVar;}
 	void setRadius(float radius)								{this->radius = radius;}
+	void setDrawCount(int drawCount)							{this->drawCount = drawCount;}
 
 //	void load(const XmlNode *particleSystemNode, const string &dir);
 //	virtual ParticleSystem *create() = 0;
-	float getRandEnergy() 				{return energy + random.randRange(-energyVar, energyVar);}
+	int getRandEnergy() 				{return energy + random.randRange(-energyVar, energyVar);}
+	void fudgeGravity()					{gravity = mass * density;}
+	void fudgeMassDensity()				{mass = 1.f; density = gravity;}
 };
 
 // =====================================================
@@ -211,6 +219,7 @@ protected:
 	bool visible;
 	int aliveParticleCount;
 	Vec3f pos;
+	Vec3f windSpeed;
 
 	ParticleObserver *particleObserver;
 
@@ -232,6 +241,7 @@ public:
 	int getAliveParticleCount() const			{return aliveParticleCount;}
 	bool getActive() const						{return active;}
 	bool getVisible() const						{return visible;}
+	const Vec3f &getWindSpeed() const			{return windSpeed;}
 
 	//set
 	void setState(State state)							{this->state = state;}
@@ -239,10 +249,19 @@ public:
 	void setActive(bool active)							{this->active = active;}
 	void setObserver(ParticleObserver *particleObserver){this->particleObserver = particleObserver;}
 	void setVisible(bool visible)						{this->visible = visible;}
+	void setWindSpeed(const Vec3f &windSpeed)			{this->windSpeed = windSpeed;}
+	void setWindSpeed2(float hAngle, float hSpeed, float vSpeed = 0.f) {
+		this->windSpeed.x = sinf(degToRad(hAngle)) * hSpeed;
+		this->windSpeed.y = vSpeed;
+		this->windSpeed.z = cosf(degToRad(hAngle)) * hSpeed;
+	}
 
 	//misc
 	void fade();
-	int isEmpty() const;
+	int isEmpty() const {
+		assert(aliveParticleCount >= 0);
+		return !aliveParticleCount && state != sPause;
+	}
 
 protected:
 	//protected
@@ -260,10 +279,6 @@ protected:
 // =====================================================
 
 class FireParticleSystem: public ParticleSystem {
-private:
-	float radius;
-	Vec3f windSpeed;
-
 public:
 	FireParticleSystem(int particleCount = 2000);
 	FireParticleSystem(const ParticleSystemBase &type, int particleCount = 2000);
@@ -271,10 +286,6 @@ public:
 	//virtual
 	virtual void initParticle(Particle *p, int particleIndex);
 	virtual void updateParticle(Particle *p);
-
-	//set params
-	void setRadius(float radius);
-	void setWind(float windAngle, float windSpeed);
 };
 
 // =====================================================
@@ -282,21 +293,14 @@ public:
 // =====================================================
 
 class RainParticleSystem: public ParticleSystem {
-private:
-	Vec3f windSpeed;
-	float radius;
-
 public:
 	RainParticleSystem(int particleCount = 4000);
 	RainParticleSystem(const ParticleSystemBase &model, int particleCount = 4000);
 
+	//virtual
 	virtual void render(ParticleRenderer *pr, ModelRenderer *mr);
-
 	virtual void initParticle(Particle *p, int particleIndex);
 	virtual bool deathTest(Particle *p);
-
-	void setRadius(float radius);
-	void setWind(float windAngle, float windSpeed);
 };
 
 // =====================================================
@@ -304,35 +308,22 @@ public:
 // =====================================================
 
 class SnowParticleSystem: public ParticleSystem {
-private:
-	Vec3f windSpeed;
-	float radius;
-
 public:
 	SnowParticleSystem(int particleCount = 4000);
 	SnowParticleSystem(const ParticleSystemBase &type, int particleCount = 4000);
 
+	//virtual
 	virtual void initParticle(Particle *p, int particleIndex);
 	virtual bool deathTest(Particle *p);
-
-	void setRadius(float radius);
-	void setWind(float windAngle, float windSpeed);
 };
 
 // ===========================================================================
 //  AttackParticleSystem
-//
-/// Base class for Projectiles and Splashes
 // ===========================================================================
 
+/** Base class for Projectiles and Splashes. */
 class AttackParticleSystem: public ParticleSystem {
 protected:
-//	Model *model;
-//	Primitive primitive;
-//	Vec3f offset;
-//	float sizeNoEnergy;
-//	float gravity;
-
 	Vec3f direction;
 
 public:
@@ -341,16 +332,7 @@ public:
 
 	virtual void render(ParticleRenderer *pr, ModelRenderer *mr);
 
-//	Model *getModel() const			{return model;}
 	Vec3f getDirection() const		{return direction;}
-
-//	void setModel(Model *model)					{this->model= model;}
-//	void setOffset(Vec3f offset)				{this->offset= offset;}
-//	void setSizeNoEnergy(float sizeNoEnergy)	{this->sizeNoEnergy= sizeNoEnergy;}
-//	void setGravity(float gravity)				{this->gravity= gravity;}
-//	void setPrimitive(Primitive primitive)		{this->primitive= primitive;}
-
-//	static Primitive strToPrimitive(const string &str);
 };
 
 // =====================================================
@@ -458,7 +440,13 @@ public:
 	void update();
 	void render(ParticleRenderer *pr, ModelRenderer *mr) const;
 	void manage(ParticleSystem *ps);
-	void end();
+	void end() {
+		while(!particleSystems.empty()) {
+			delete particleSystems.front();
+			particleSystems.pop_front();
+		}
+	}
+
 };
 
 }}//end namespace

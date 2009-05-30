@@ -19,7 +19,7 @@
 
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class SoundContainer
@@ -45,4 +45,4 @@ StaticSound *SoundContainer::getRandSound() const{
 	}
 }
 
-}}//end namespace
+} // end namespace

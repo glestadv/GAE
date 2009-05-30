@@ -24,85 +24,83 @@
 using namespace Shared::Util;
 using namespace Shared::Xml;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
-// 	class ResourceType
+//  class ResourceType
 // =====================================================
 
-void ResourceType::load(const string &dir, int id, Checksum &checksum){
+void ResourceType::load(const string &dir, int id, Checksums &checksums) {
 
 	string path, str;
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer = Renderer::getInstance();
 
 	this->id = id;
 
-	try{
-		Logger::getInstance().add("Resource type: "+ dir, true);
-		name= lastDir(dir);
-		path= dir+"/"+name+".xml";
+	try {
+		Logger::getInstance().add("Resource type: " + dir, true);
+		name = lastDir(dir);
+		path = dir + "/" + name + ".xml";
 
-		checksum.addFile(path, true);
+		checksums.addFile(path, true);
 
 		//tree
 		XmlTree xmlTree;
 		xmlTree.load(path);
-		const XmlNode *resourceNode= xmlTree.getRootNode();
+		const XmlNode *resourceNode = xmlTree.getRootNode();
 
 		//image
-		const XmlNode *imageNode= resourceNode->getChild("image");
-		image= renderer.newTexture2D(rsGame);
-		image->load(dir+"/"+imageNode->getAttribute("path")->getRestrictedValue());
+		const XmlNode *imageNode = resourceNode->getChild("image");
+		image = renderer.newTexture2D(rsGame);
+		image->load(dir + "/" + imageNode->getAttribute("path")->getRestrictedValue());
 
 		//type
-		const XmlNode *typeNode= resourceNode->getChild("type");
-		resourceClass= strToRc(typeNode->getAttribute("value")->getRestrictedValue());
+		const XmlNode *typeNode = resourceNode->getChild("type");
+		resourceClass = strToRc(typeNode->getAttribute("value")->getRestrictedValue());
 
-		switch(resourceClass){
-		case rcTech:{
-			//model
-			const XmlNode *modelNode= typeNode->getChild("model");
-			string path=dir+"/" + modelNode->getAttribute("path")->getRestrictedValue();
-
-			model= renderer.newModel(rsGame);
-			model->load(path);
-
-			//default resources
-			const XmlNode *defaultAmountNode= typeNode->getChild("default-amount");
-			defResPerPatch= defaultAmountNode->getAttribute("value")->getIntValue();
-
-			//resource number
-			const XmlNode *resourceNumberNode= typeNode->getChild("resource-number");
-			resourceNumber= resourceNumberNode->getAttribute("value")->getIntValue();
-
+		switch (resourceClass) {
+		case rcTech: {
+				//model
+				const XmlNode *modelNode = typeNode->getChild("model");
+				string path = dir + "/" + modelNode->getAttribute("path")->getRestrictedValue();
+	
+				model = renderer.newModel(rsGame);
+				model->load(path);
+	
+				//default resources
+				const XmlNode *defaultAmountNode = typeNode->getChild("default-amount");
+				defResPerPatch = defaultAmountNode->getAttribute("value")->getIntValue();
+	
+				//resource number
+				const XmlNode *resourceNumberNode = typeNode->getChild("resource-number");
+				resourceNumber = resourceNumberNode->getAttribute("value")->getIntValue();
+				break;
 			}
-			break;
 
-		case rcTileset:{
-			//resource number
-			const XmlNode *defaultAmountNode= typeNode->getChild("default-amount");
-			defResPerPatch= defaultAmountNode->getAttribute("value")->getIntValue();
-
-			//resource number
-			const XmlNode *tilesetObjectNode= typeNode->getChild("tileset-object");
-			tilesetObject= tilesetObjectNode->getAttribute("value")->getIntValue();
-
+		case rcTileset: {
+				//resource number
+				const XmlNode *defaultAmountNode = typeNode->getChild("default-amount");
+				defResPerPatch = defaultAmountNode->getAttribute("value")->getIntValue();
+	
+				//resource number
+				const XmlNode *tilesetObjectNode = typeNode->getChild("tileset-object");
+				tilesetObject = tilesetObjectNode->getAttribute("value")->getIntValue();
+				break;
 			}
-			break;
 
-		case rcConsumable:{
-			//interval
-			const XmlNode *intervalNode= typeNode->getChild("interval");
-			interval= intervalNode->getAttribute("value")->getIntValue();
+		case rcConsumable: {
+				//interval
+				const XmlNode *intervalNode = typeNode->getChild("interval");
+				interval = intervalNode->getAttribute("value")->getIntValue();
+				break;
 			}
-			break;
+
 		default:
 			break;
 		}
 
 		display = resourceNode->getOptionalBoolValue("display", true);
-	}
-	catch(const exception &e){
+	} catch (const exception &e) {
 		throw runtime_error("Error loading resource type: " + path + "\n" + e.what());
 	}
 }
@@ -110,20 +108,20 @@ void ResourceType::load(const string &dir, int id, Checksum &checksum){
 
 // ==================== misc ====================
 
-ResourceClass ResourceType::strToRc(const string &s){
-	if(s=="tech"){
-        return rcTech;
+ResourceClass ResourceType::strToRc(const string &s) {
+	if (s == "tech") {
+		return rcTech;
 	}
-	if(s=="tileset"){
-        return rcTileset;
+	if (s == "tileset") {
+		return rcTileset;
 	}
-	if(s=="static"){
-        return rcStatic;
+	if (s == "static") {
+		return rcStatic;
 	}
-	if(s=="consumable"){
-        return rcConsumable;
+	if (s == "consumable") {
+		return rcConsumable;
 	}
 	throw runtime_error("Error converting from string ro resourceClass, found: " + s);
 }
 
-}}//end namespace
+} // end namespace

@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MENUSTATEABOUT_H_
-#define _GLEST_GAME_MENUSTATEABOUT_H_
+#ifndef _GAME_MENUSTATEABOUT_H_
+#define _GAME_MENUSTATEABOUT_H_
 
 #include "main_menu.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===============================
 // 	class MenuStateAbout  
@@ -34,13 +34,13 @@ private:
 	GraphicLabel labelTeammateRole[teammateCount];
 
 public:
-	MenuStateAbout(Program *program, MainMenu *mainMenu);
+	MenuStateAbout(Program &program, MainMenu *mainMenu);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
-	void mouseMove(int x, int y, const MouseState *mouseState);
+	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

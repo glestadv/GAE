@@ -22,7 +22,7 @@
 
 #include "leak_dumper.h"
 
-namespace Glest { namespace Game {
+namespace Game {
 
 using namespace Shared::Util;
 
@@ -30,19 +30,28 @@ using namespace Shared::Util;
 // 	class MenuStateStartGameBase
 // =====================================================
 
-MenuStateStartGameBase::MenuStateStartGameBase(Program *program, MainMenu *mainMenu, const string &stateName) :
-		MenuState(program, mainMenu, stateName) {
-	msgBox = NULL;
+MenuStateStartGameBase::MenuStateStartGameBase(Program &program, MainMenu *mainMenu, const string &stateName)
+		: MenuState(program, mainMenu, stateName)
+		, msgBox(NULL)
+		, gs() {
+}
+
+MenuStateStartGameBase::~MenuStateStartGameBase() {
 }
 
 // ============ PROTECTED ===========================
 
+void MenuStateStartGameBase::initGameSettings(GameInterface &gi) {
+	gs = gi.getGameSettings();
+}
 
 void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 
+	// FIXME: This is terrible.  All of this map stuff should be in the shared library.
+	
 	struct MapFileHeader {
 		int32 version;
-		int32 maxPlayers;
+		int32 maxFactions;
 		int32 width;
 		int32 height;
 		int32 altFactor;
@@ -63,7 +72,7 @@ void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 		fread(&header, sizeof(MapFileHeader), 1, f);
 		mapInfo->size.x = header.width;
 		mapInfo->size.y = header.height;
-		mapInfo->players = header.maxPlayers;
+		mapInfo->players = header.maxFactions;
 		mapInfo->desc = lang.get("MaxPlayers") + ": " + intToStr(mapInfo->players) + "\n";
 		mapInfo->desc += lang.get("Size") + ": " + intToStr(mapInfo->size.x) + " x " + intToStr(mapInfo->size.y);
 		fclose(f);
@@ -72,4 +81,31 @@ void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 	}
 }
 
-}}//end namespace
+void MenuStateStartGameBase::updateNetworkSlots() {
+	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
+	//assert(getGameSettings()->isValid());
+
+	//const GameSettings::Factions &factions = getGameSettings()->getFactions();
+	//for(GameSettings::Factions::const_iterator i = factions.begin(); i != factions.end(); ++i) {
+#if 0
+	foreach(const shared_ptr<GameSettings::Faction> &f, getGameSettings()->getFactions()) {
+		int slot = f->getMapSlot();
+		int ct = f->getControlType();
+		RemoteClientInterface *client = serverInterface->findClientForSlot(slot);
+		if(ct == CT_NETWORK) {
+			if (!client) {
+				client = serverInterface->findUnslottedClient();
+				if(client) {
+					serverInterface->assignClientToSlot(client, slot);
+				}
+			}			
+		} else {
+			if (client) {
+				serverInterface->removeClientFromSlot(client);
+			}
+		}
+	}
+#endif
+}
+
+} // end namespace

@@ -17,7 +17,7 @@
 #include "leak_dumper.h"
 
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class ObjectType
@@ -40,4 +40,4 @@ void ObjectType::loadModel(const string &path){
 	models.push_back(model);
 }
 
-}}//end namespace
+} // end namespace

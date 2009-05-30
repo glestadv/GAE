@@ -29,48 +29,67 @@
 
 using namespace Shared::Util;
 
-namespace Glest { namespace Game {
+namespace Game {
 
 // =====================================================
-// 	class Faction
+//  class Faction
 // =====================================================
 Faction::ResourceTypes Faction::neededResources;
 
-void Faction::init(
-	const FactionType *factionType, ControlType control, TechTree *techTree,
-	int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction)
-{
-	this->control= control;
-	this->factionType= factionType;
-	this->startLocationIndex= startLocationIndex;
-	this->id= factionIndex;
-	this->teamIndex= teamIndex;
-	this->thisFaction= thisFaction;
-	this->subfaction= 0;
-	this->lastAttackNotice= 0;
-	this->lastEnemyNotice= 0;
-	lastEventLoc.x = -1.0f;		// -1 x indicates uninitialized, no last event
+Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction)
+		: IdNamePair(gsFaction.getId(), gsFaction.getName())
+		, upgradeManager()
+		, resources()
+		, store()
+		, units()
+		, unitMap()
+		, control(gsFaction.getControlType())
+		, texture(Renderer::getInstance().newTexture2D(rsGame))
+		, factionType(tt.getFactionType(gsFaction.getTypeName()))
+		, teamIndex(gsFaction.getTeam().getId())
+		, startLocationIndex(gsFaction.getMapSlot())
+		, players(gsFaction.getPlayers())
+		, thisFaction(thisFaction)
+		, subfaction(0)
+		, lastAttackNotice(0)
+		, lastEnemyNotice(0)
+		, lastEventLoc(-1.f) {
+	
 
-	resources.resize(techTree->getResourceTypeCount());
-	store.resize(techTree->getResourceTypeCount());
-	for(int i=0; i<techTree->getResourceTypeCount(); ++i){
-		const ResourceType *rt= techTree->getResourceType(i);
+	//const GameSettings::Faction &gsFaction = gs.getFaction(factionIndex);
+
+/*
+    void init(const FactionType *factionType, ControlType control, TechTree *techTree,
+			int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction,
+			bool autoRepairEnabled, bool autoReturnEnabled);
+
+		const GameSettings::Faction &f = gs.getFaction(i);
+		const FactionType *ft = techTree.getFactionType(f.getTypeName());
+		factions[i].init(
+			ft, f.getControlType(), &techTree, i, f.getTeam().getId(),
+			f.getMapSlot(), i == thisFactionIndex);
+*/
+
+	resources.resize(tt.getResourceTypeCount());
+	store.resize(tt.getResourceTypeCount());
+	for (int i = 0; i < tt.getResourceTypeCount(); ++i) {
+		const ResourceType *rt = tt.getResourceType(i);
 		resources[i].init(rt, factionType->getStartingResourceAmount(rt));
 		store[i].init(rt, 0);
 	}
 
-	texture= Renderer::getInstance().newTexture2D(rsGame);
-	texture->load("data/core/faction_textures/faction" + intToStr(id) + ".tga");
+	texture->load("data/core/faction_textures/faction" + Conversion::toStr(id) + ".tga");
 }
 
-void Faction::load(const XmlNode *node, World *world, const FactionType *ft, ControlType control, TechTree *tt) {
+void Faction::load(const XmlNode *node, World *world, const FactionType *ft, ControlType control,
+		TechTree *tt) {
 	XmlNode *n;
 	Map * map = world->getMap();
 
 	this->factionType = ft;
 	this->control = control;
-	this->lastAttackNotice= 0;
-	this->lastEnemyNotice= 0;
+	this->lastAttackNotice = 0;
+	this->lastEnemyNotice = 0;
 
 	id = node->getChildIntValue("id");
 	name = node->getChildStringValue("name");
@@ -87,7 +106,7 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 	n = node->getChild("resources");
 	resources.resize(n->getChildCount());
 	store.resize(n->getChildCount());
-	for(int i = 0; i < n->getChildCount(); ++i) {
+	for (int i = 0; i < n->getChildCount(); ++i) {
 		XmlNode *resourceNode = n->getChild("resource", i);
 		const ResourceType *rt = tt->getResourceType(resourceNode->getChildStringValue("type"));
 		resources[i].init(rt, resourceNode->getChildIntValue("amount"));
@@ -97,14 +116,14 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 	n = node->getChild("units");
 	units.reserve(n->getChildCount());
 	assert(units.empty() && unitMap.empty());
-	for(int i = 0; i < n->getChildCount(); ++i) {
+	for (int i = 0; i < n->getChildCount(); ++i) {
 		new Unit(n->getChild("unit", i), this, map, tt);
-//		addUnit(new Unit(n->getChild("unit", i), world, this, map, tt));
+//  add(new Unit(n->getChild("unit", i), world, this, map, tt));
 	}
 
 	subfaction = node->getChildIntValue("subfaction"); //reset in case unit construction changed it
-	texture= Renderer::getInstance().newTexture2D(rsGame);
-	texture->load("data/core/faction_textures/faction"+intToStr(id)+".tga");
+	texture = Renderer::getInstance().newTexture2D(rsGame);
+	texture->load("data/core/faction_textures/faction" + Conversion::toStr(id) + ".tga");
 	assert(units.size() == unitMap.size());
 }
 
@@ -121,7 +140,7 @@ void Faction::save(XmlNode *node) const {
 	upgradeManager.save(node->addChild("upgrades"));
 
 	n = node->addChild("resources");
-	for(int i = 0; i < resources.size(); ++i) {
+	for (int i = 0; i < resources.size(); ++i) {
 		assert(resources[i].getType() == store[i].getType());
 
 		XmlNode *resourceNode = n->addChild("resource");
@@ -131,7 +150,7 @@ void Faction::save(XmlNode *node) const {
 	}
 
 	n = node->addChild("units");
-	for(Units::const_iterator i = units.begin(); i != units.end(); i++) {
+	for (Units::const_iterator i = units.begin(); i != units.end(); i++) {
 		(*i)->save(n->addChild("unit"));
 	}
 }
@@ -144,13 +163,13 @@ void Faction::writeUpdate(XmlNode *node) const {
 	upgradeManager.save(node->addChild("upgrades"));
 
 	n = node->addChild("resources");
-	for(int i = 0; i < resources.size(); ++i) {
+	for (int i = 0; i < resources.size(); ++i) {
 		assert(resources[i].getType() == store[i].getType());
 
 		XmlNode *resourceNode = n->addChild("resource");
 		resourceNode->addAttribute("type", resources[i].getType()->getName());
-		resourceNode->addAttribute("amount", intToStr(resources[i].getAmount()));
-		resourceNode->addAttribute("store", intToStr(store[i].getAmount()));
+		resourceNode->addAttribute("amount", resources[i].getAmount());
+		resourceNode->addAttribute("store", store[i].getAmount());
 	}
 }
 
@@ -165,7 +184,7 @@ void Faction::update(const XmlNode *node) {
 	n = node->getChild("resources");
 	resources.resize(n->getChildCount());
 	store.resize(n->getChildCount());
-	for(int i = 0; i < n->getChildCount(); ++i) {
+	for (int i = 0; i < n->getChildCount(); ++i) {
 		XmlNode *resourceNode = n->getChild("resource", i);
 		const ResourceType *rt = tt->getResourceType(resourceNode->getAttribute("type")->getValue());
 		resources[i].init(rt, resourceNode->getAttribute("amount")->getIntValue());
@@ -173,15 +192,15 @@ void Faction::update(const XmlNode *node) {
 	}
 }
 
-void Faction::end(){
+void Faction::end() {
 	deleteValues(units.begin(), units.end());
 }
 
 // ================== get ==================
 
-const Resource *Faction::getResource(const ResourceType *rt) const{
-	for(int i=0; i<resources.size(); ++i){
-		if(rt==resources[i].getType()){
+const Resource *Faction::getResource(const ResourceType *rt) const {
+	for (int i = 0; i < resources.size(); ++i) {
+		if (rt == resources[i].getType()) {
 			return &resources[i];
 		}
 	}
@@ -189,9 +208,9 @@ const Resource *Faction::getResource(const ResourceType *rt) const{
 	return NULL;
 }
 
-int Faction::getStoreAmount(const ResourceType *rt) const{
-	for(int i=0; i<store.size(); ++i){
-		if(rt==store[i].getType()){
+int Faction::getStoreAmount(const ResourceType *rt) const {
+	for (int i = 0; i < store.size(); ++i) {
+		if (rt == store[i].getType()) {
 			return store[i].getAmount();
 		}
 	}
@@ -199,25 +218,12 @@ int Faction::getStoreAmount(const ResourceType *rt) const{
 	return 0;
 }
 
-bool Faction::getCpuControl() const{
-	return control==ctCpu || control==ctCpuUltra;
-}
-
-
 // ==================== upgrade manager ====================
 
-void Faction::startUpgrade(const UpgradeType *ut){
-	upgradeManager.startUpgrade(ut, id);
-}
-
-void Faction::cancelUpgrade(const UpgradeType *ut){
-	upgradeManager.cancelUpgrade(ut);
-}
-
-void Faction::finishUpgrade(const UpgradeType *ut){
+void Faction::finishUpgrade(const UpgradeType *ut) {
 	upgradeManager.finishUpgrade(ut);
 
-	for(int i = 0; i < getUnitCount(); ++i) {
+	for (int i = 0; i < getUnitCount(); ++i) {
 		getUnit(i)->applyUpgrade(ut);
 	}
 }
@@ -228,27 +234,27 @@ void Faction::finishUpgrade(const UpgradeType *ut){
 bool Faction::reqsOk(const RequirableType *rt) const {
 
 	//required units
-	for(int i = 0; i < rt->getUnitReqCount(); ++i) {
+	for (int i = 0; i < rt->getUnitReqCount(); ++i) {
 		bool found = false;
 
-		for(int j = 0; j < getUnitCount(); ++j) {
+		for (int j = 0; j < getUnitCount(); ++j) {
 			Unit *unit = getUnit(j);
 			const UnitType *ut = unit->getType();
 
-			if(rt->getUnitReq(i) == ut && unit->isOperative()) {
+			if (rt->getUnitReq(i) == ut && unit->isOperative()) {
 				found = true;
 				break;
 			}
 		}
 
-		if(!found) {
+		if (!found) {
 			return false;
 		}
 	}
 
 	//required upgrades
-	for(int i = 0; i < rt->getUpgradeReqCount(); ++i) {
-		if(!upgradeManager.isUpgraded(rt->getUpgradeReq(i))) {
+	for (int i = 0; i < rt->getUpgradeReqCount(); ++i) {
+		if (!upgradeManager.isUpgraded(rt->getUpgradeReq(i))) {
 			return false;
 		}
 	}
@@ -257,15 +263,19 @@ bool Faction::reqsOk(const RequirableType *rt) const {
 	return rt->isAvailableInSubfaction(subfaction);
 }
 
-bool Faction::reqsOk(const CommandType *ct) const{
+bool Faction::reqsOk(const CommandType *ct) const {
 
-	if(ct->getProduced()!=NULL && !reqsOk(ct->getProduced()) || !isAvailable(ct)){
+	if(ct->getClass() == ccSetMeetingPoint) {
+		return true;
+	}
+
+	if ((ct->getProduced() != NULL && !reqsOk(ct->getProduced())) || !isAvailable(ct)) {
 		return false;
 	}
 
-	if(ct->getClass()==ccUpgrade){
-		const UpgradeCommandType *uct= static_cast<const UpgradeCommandType*>(ct);
-		if(upgradeManager.isUpgradingOrUpgraded(uct->getProducedUpgrade())){
+	if (ct->getClass() == ccUpgrade) {
+		const UpgradeCommandType *uct = static_cast<const UpgradeCommandType*>(ct);
+		if (upgradeManager.isUpgradingOrUpgraded(uct->getProducedUpgrade())) {
 			return false;
 		}
 	}
@@ -275,137 +285,137 @@ bool Faction::reqsOk(const CommandType *ct) const{
 
 //checks if the command should be displayed or not
 bool Faction::isAvailable(const CommandType *ct) const {
-	if(!ct->isAvailableInSubfaction(subfaction)) {
+	if (!ct->isAvailableInSubfaction(subfaction)) {
 		return false;
 	}
 
 	//If this command is producing or building anything, we need to make sure
 	//that producable is also available.
-	switch(ct->getClass()) {
-		case ccBuild:
-			// we can display as long as one of these is available
-			for(int i = 0; i < ((BuildCommandType*)ct)->getBuildingCount(); i++) {
-				if(((BuildCommandType*)ct)->getBuilding(i)->isAvailableInSubfaction(subfaction)) {
-					return true;
-				}
+	switch (ct->getClass()) {
+	case ccBuild:
+		// we can display as long as one of these is available
+		for (int i = 0; i < ((BuildCommandType*)ct)->getBuildingCount(); i++) {
+			if (((BuildCommandType*)ct)->getBuilding(i)->isAvailableInSubfaction(subfaction)) {
+				return true;
 			}
-			return false;
+		}
+		return false;
 
-		case ccProduce:
-			return ((ProduceCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
+	case ccProduce:
+		return ((ProduceCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
 
-		case ccUpgrade:
-			return ((UpgradeCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
+	case ccUpgrade:
+		return ((UpgradeCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
 
-		case ccMorph:
-			return ((MorphCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
+	case ccMorph:
+		return ((MorphCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
 
-		default:
-			return true;
+	default:
+		return true;
 	}
 }
 
 // ================== cost application ==================
 
 //apply costs except static production (start building/production)
-bool Faction::applyCosts(const ProducibleType *p){
+bool Faction::applyCosts(const ProducibleType *p) {
 
-	if(!checkCosts(p)){
+	if (!checkCosts(p)) {
 		return false;
 	}
 
 	//for each unit cost spend it
-    //pass 2, decrease resources, except negative static costs (ie: farms)
-	for(int i=0; i<p->getCostCount(); ++i){
-        const ResourceType *rt= p->getCost(i)->getType();
-		int cost= p->getCost(i)->getAmount();
-		if((cost>0 || rt->getClass()!=rcStatic) && rt->getClass()!=rcConsumable){
-            incResourceAmount(rt, -(cost));
+	//pass 2, decrease resources, except negative static costs (ie: farms)
+	for (int i = 0; i < p->getCostCount(); ++i) {
+		const ResourceType *rt = p->getCost(i)->getType();
+		int cost = p->getCost(i)->getAmount();
+		if ((cost > 0 || rt->getClass() != rcStatic) && rt->getClass() != rcConsumable) {
+			incResourceAmount(rt, -(cost));
 		}
 
-    }
-    return true;
+	}
+	return true;
 }
 
 //apply discount (when a morph ends)
-void Faction::applyDiscount(const ProducibleType *p, int discount){
+void Faction::applyDiscount(const ProducibleType *p, int discount) {
 	//increase resources
-	for(int i=0; i<p->getCostCount(); ++i){
-		const ResourceType *rt= p->getCost(i)->getType();
-        int cost= p->getCost(i)->getAmount();
-		if((cost>0 || rt->getClass()!=rcStatic) && rt->getClass()!=rcConsumable){
-            incResourceAmount(rt, cost*discount/100);
+	for (int i = 0; i < p->getCostCount(); ++i) {
+		const ResourceType *rt = p->getCost(i)->getType();
+		int cost = p->getCost(i)->getAmount();
+		if ((cost > 0 || rt->getClass() != rcStatic) && rt->getClass() != rcConsumable) {
+			incResourceAmount(rt, cost*discount / 100);
 		}
-    }
+	}
 }
 
 //apply static production (for starting units)
-void Faction::applyStaticCosts(const ProducibleType *p){
+void Faction::applyStaticCosts(const ProducibleType *p) {
 
 	//decrease static resources
-    for(int i=0; i<p->getCostCount(); ++i){
-		const ResourceType *rt= p->getCost(i)->getType();
-        if(rt->getClass()==rcStatic){
-            int cost= p->getCost(i)->getAmount();
-			if(cost>0){
+	for (int i = 0; i < p->getCostCount(); ++i) {
+		const ResourceType *rt = p->getCost(i)->getType();
+		if (rt->getClass() == rcStatic) {
+			int cost = p->getCost(i)->getAmount();
+			if (cost > 0) {
 				incResourceAmount(rt, -cost);
 			}
-        }
-    }
+		}
+	}
 }
 
 //apply static production (when a mana source is done)
-void Faction::applyStaticProduction(const ProducibleType *p){
+void Faction::applyStaticProduction(const ProducibleType *p) {
 
 	//decrease static resources
-    for(int i=0; i<p->getCostCount(); ++i){
-		const ResourceType *rt= p->getCost(i)->getType();
-        if(rt->getClass()==rcStatic){
-            int cost= p->getCost(i)->getAmount();
-			if(cost<0){
+	for (int i = 0; i < p->getCostCount(); ++i) {
+		const ResourceType *rt = p->getCost(i)->getType();
+		if (rt->getClass() == rcStatic) {
+			int cost = p->getCost(i)->getAmount();
+			if (cost < 0) {
 				incResourceAmount(rt, -cost);
 			}
-        }
-    }
+		}
+	}
 }
 
 //deapply all costs except static production (usually when a building is cancelled)
-void Faction::deApplyCosts(const ProducibleType *p){
+void Faction::deApplyCosts(const ProducibleType *p) {
 
 	//increase resources
-	for(int i=0; i<p->getCostCount(); ++i){
-		const ResourceType *rt= p->getCost(i)->getType();
-        int cost= p->getCost(i)->getAmount();
-		if((cost>0 || rt->getClass()!=rcStatic) && rt->getClass()!=rcConsumable){
-            incResourceAmount(rt, cost);
+	for (int i = 0; i < p->getCostCount(); ++i) {
+		const ResourceType *rt = p->getCost(i)->getType();
+		int cost = p->getCost(i)->getAmount();
+		if ((cost > 0 || rt->getClass() != rcStatic) && rt->getClass() != rcConsumable) {
+			incResourceAmount(rt, cost);
 		}
 
-    }
+	}
 }
 
 //deapply static costs (usually when a unit dies)
-void Faction::deApplyStaticCosts(const ProducibleType *p){
+void Faction::deApplyStaticCosts(const ProducibleType *p) {
 
-    //decrease resources
-	for(int i=0; i<p->getCostCount(); ++i){
-		const ResourceType *rt= p->getCost(i)->getType();
-		if(rt->getClass()==rcStatic){
-            int cost= p->getCost(i)->getAmount();
-            incResourceAmount(rt, cost);
-        }
-    }
+	//decrease resources
+	for (int i = 0; i < p->getCostCount(); ++i) {
+		const ResourceType *rt = p->getCost(i)->getType();
+		if (rt->getClass() == rcStatic) {
+			int cost = p->getCost(i)->getAmount();
+			incResourceAmount(rt, cost);
+		}
+	}
 }
 
 //apply resource on interval (cosumable resouces)
-void Faction::applyCostsOnInterval(){
+void Faction::applyCostsOnInterval() {
 
 	//increment consumables
-	for(int j=0; j<getUnitCount(); ++j){
-		Unit *unit= getUnit(j);
-		if(unit->isOperative()){
-			for(int k=0; k<unit->getType()->getCostCount(); ++k){
-				const Resource *resource= unit->getType()->getCost(k);
-				if(resource->getType()->getClass()==rcConsumable && resource->getAmount()<0){
+	for (int j = 0; j < getUnitCount(); ++j) {
+		Unit *unit = getUnit(j);
+		if (unit->isOperative()) {
+			for (int k = 0; k < unit->getType()->getCostCount(); ++k) {
+				const Resource *resource = unit->getType()->getCost(k);
+				if (resource->getType()->getClass() == rcConsumable && resource->getAmount() < 0) {
 					incResourceAmount(resource->getType(), -resource->getAmount());
 				}
 			}
@@ -413,22 +423,26 @@ void Faction::applyCostsOnInterval(){
 	}
 
 	//decrement consumables
-	for(int j=0; j<getUnitCount(); ++j){
-		Unit *unit= getUnit(j);
-		if(unit->isOperative()){
-			for(int k=0; k<unit->getType()->getCostCount(); ++k){
-				const Resource *resource= unit->getType()->getCost(k);
-				if(resource->getType()->getClass()==rcConsumable && resource->getAmount()>0){
+	for (int j = 0; j < getUnitCount(); ++j) {
+		Unit *unit = getUnit(j);
+		if (unit->isOperative()) {
+			for (int k = 0; k < unit->getType()->getCostCount(); ++k) {
+				const Resource *resource = unit->getType()->getCost(k);
+				if (resource->getType()->getClass() == rcConsumable && resource->getAmount() > 0) {
 					incResourceAmount(resource->getType(), -resource->getAmount());
 
 					//decrease unit hp
-					if(getResource(resource->getType())->getAmount()<0){
+					//TODO: Implement rules for specifying what happens when you're consumable
+					//      demand exceeds supply & stores.
+					if (getResource(resource->getType())->getAmount() < 0) {
 						resetResourceAmount(resource->getType());
-						//FIXME unreleased pets may occur here
-						unit->decHp(unit->getType()->getMaxHp()/3);
-						StaticSound *sound= unit->getType()->getFirstStOfClass(scDie)->getSound();
-						if(sound!=NULL && thisFaction){
-							SoundRenderer::getInstance().playFx(sound);
+						if(unit->decHp(unit->getType()->getMaxHp() / 3)) {
+							World::getCurrWorld()->doKill(unit, unit);
+						} else {
+							StaticSound *sound = unit->getType()->getFirstStOfClass(scDie)->getSound();
+							if (sound != NULL && thisFaction) {
+								SoundRenderer::getInstance().playFx(sound);
+							}
 						}
 					}
 				}
@@ -442,14 +456,14 @@ bool Faction::checkCosts(const ProducibleType *pt) {
 	neededResources.clear();
 
 	//for each unit cost check if enough resources
-	for(int i = 0; i < pt->getCostCount(); ++i) {
+	for (int i = 0; i < pt->getCostCount(); ++i) {
 		const ResourceType *rt = pt->getCost(i)->getType();
 		int cost = pt->getCost(i)->getAmount();
 
-		if(cost > 0) {
+		if (cost > 0) {
 			int available = getResource(rt)->getAmount();
 
-			if(cost > available) {
+			if (cost > available) {
 				ok = false;
 				neededResources.push_back(rt);
 			}
@@ -461,18 +475,16 @@ bool Faction::checkCosts(const ProducibleType *pt) {
 
 // ================== diplomacy ==================
 
-bool Faction::isAlly(const Faction *faction){
-	return teamIndex == faction->getTeam();
-}
+
 
 // ================== misc ==================
 
-void Faction::incResourceAmount(const ResourceType *rt, int amount){
-	for(int i=0; i<resources.size(); ++i){
-		Resource *r= &resources[i];
-		if(r->getType()==rt){
-			r->setAmount(r->getAmount()+amount);
-			if(r->getType()->getClass()!=rcStatic && r->getAmount()>getStoreAmount(rt)){
+void Faction::incResourceAmount(const ResourceType *rt, int amount) {
+	for (int i = 0; i < resources.size(); ++i) {
+		Resource *r = &resources[i];
+		if (r->getType() == rt) {
+			r->setAmount(r->getAmount() + amount);
+			if (r->getType()->getClass() != rcStatic && r->getAmount() > getStoreAmount(rt)) {
 				r->setAmount(getStoreAmount(rt));
 			}
 			return;
@@ -481,10 +493,10 @@ void Faction::incResourceAmount(const ResourceType *rt, int amount){
 	assert(false);
 }
 
-void Faction::setResourceBalance(const ResourceType *rt, int balance){
-	for(int i=0; i<resources.size(); ++i){
-		Resource *r= &resources[i];
-		if(r->getType()==rt){
+void Faction::setResourceBalance(const ResourceType *rt, int balance) {
+	for (int i = 0; i < resources.size(); ++i) {
+		Resource *r = &resources[i];
+		if (r->getType() == rt) {
 			r->setBalance(balance);
 			return;
 		}
@@ -492,41 +504,41 @@ void Faction::setResourceBalance(const ResourceType *rt, int balance){
 	assert(false);
 }
 
-void Faction::addUnit(Unit *unit){
+void Faction::add(Unit *unit) {
 	units.push_back(unit);
 	unitMap.insert(make_pair(unit->getId(), unit));
 }
 
-void Faction::removeUnit(Unit *unit){
-	for(int i=0; i<units.size(); ++i){
-		if(units[i]==unit){
-			units.erase(units.begin()+i);
+void Faction::remove(Unit *unit) {
+	for (int i = 0; i < units.size(); ++i) {
+		if (units[i] == unit) {
+			units.erase(units.begin() + i);
 			unitMap.erase(unit->getId());
-			assert(units.size()==unitMap.size());
+			assert(units.size() == unitMap.size());
 			return;
 		}
 	}
 	assert(false);
 }
 
-void Faction::addStore(const UnitType *unitType){
-	for(int i=0; i<unitType->getStoredResourceCount(); ++i){
-		const Resource *r= unitType->getStoredResource(i);
-		for(int j=0; j<store.size(); ++j){
-			Resource *storedResource= &store[j];
-			if(storedResource->getType() == r->getType()){
+void Faction::addStore(const UnitType *unitType) {
+	for (int i = 0; i < unitType->getStoredResourceCount(); ++i) {
+		const Resource *r = unitType->getStoredResource(i);
+		for (int j = 0; j < store.size(); ++j) {
+			Resource *storedResource = &store[j];
+			if (storedResource->getType() == r->getType()) {
 				storedResource->setAmount(storedResource->getAmount() + r->getAmount());
 			}
 		}
 	}
 }
 
-void Faction::removeStore(const UnitType *unitType){
-	for(int i=0; i<unitType->getStoredResourceCount(); ++i){
-		const Resource *r= unitType->getStoredResource(i);
-		for(int j=0; j<store.size(); ++j){
-			Resource *storedResource= &store[j];
-			if(storedResource->getType() == r->getType()){
+void Faction::removeStore(const UnitType *unitType) {
+	for (int i = 0; i < unitType->getStoredResourceCount(); ++i) {
+		const Resource *r = unitType->getStoredResource(i);
+		for (int j = 0; j < store.size(); ++j) {
+			Resource *storedResource = &store[j];
+			if (storedResource->getType() == r->getType()) {
 				storedResource->setAmount(storedResource->getAmount() - r->getAmount());
 			}
 		}
@@ -534,19 +546,19 @@ void Faction::removeStore(const UnitType *unitType){
 	limitResourcesToStore();
 }
 
-void Faction::limitResourcesToStore(){
-	for(int i=0; i<resources.size(); ++i){
-		Resource *r= &resources[i];
-		Resource *s= &store[i];
-		if(r->getType()->getClass()!=rcStatic && r->getAmount()>s->getAmount()){
+void Faction::limitResourcesToStore() {
+	for (int i = 0; i < resources.size(); ++i) {
+		Resource *r = &resources[i];
+		Resource *s = &store[i];
+		if (r->getType()->getClass() != rcStatic && r->getAmount() > s->getAmount()) {
 			r->setAmount(s->getAmount());
 		}
 	}
 }
 
-void Faction::resetResourceAmount(const ResourceType *rt){
-	for(int i=0; i<resources.size(); ++i){
-		if(resources[i].getType()==rt){
+void Faction::resetResourceAmount(const ResourceType *rt) {
+	for (int i = 0; i < resources.size(); ++i) {
+		if (resources[i].getType() == rt) {
 			resources[i].setAmount(0);
 			return;
 		}
@@ -559,23 +571,34 @@ void Faction::resetResourceAmount(const ResourceType *rt){
  * recently
  */
 void Faction::attackNotice(const Unit *u) {
-	if(thisFaction && factionType->getAttackNotice()) {
+	if (thisFaction && factionType->getAttackNotice()) {
 		time_t curTime;
 		time(&curTime);
-		if(curTime >= lastAttackNotice + factionType->getAttackNoticeDelay()) {
+
+		if (curTime >= lastAttackNotice + factionType->getAttackNoticeDelay()) {
 			lastAttackNotice = curTime;
 			lastEventLoc = u->getCurrVector();
-			StaticSound *sound= factionType->getAttackNotice()->getRandSound();
-			if(sound){
+			StaticSound *sound = factionType->getAttackNotice()->getRandSound();
+			if (sound) {
 				SoundRenderer::getInstance().playFx(sound);
 			}
 		}
 	}
 }
+
 void Faction::advanceSubfaction(int subfaction) {
 	this->subfaction = subfaction;
 	//FIXME: We should probably play a sound, display a banner-type notice or
 	//something.
 }
 
-}}//end namespace
+void Faction::checkAdvanceSubfaction(const ProducibleType *pt, bool finished) {
+	int advance = pt->getAdvancesToSubfaction();
+	if(advance && subfaction < advance) {
+		bool immediate = pt->isAdvanceImmediately();
+		if((immediate && !finished) || (!immediate && finished)) {
+			advanceSubfaction(advance);
+		}
+	}
+}
+} // end namespace

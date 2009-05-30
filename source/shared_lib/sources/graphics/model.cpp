@@ -37,38 +37,38 @@ using namespace Util;
 
 // ==================== constructor & destructor ====================
 
-Mesh::Mesh(){
-	frameCount= 0;
-	vertexCount= 0;
-	indexCount= 0;
+Mesh::Mesh() {
+	frameCount = 0;
+	vertexCount = 0;
+	indexCount = 0;
 
-	vertices= NULL;
-	normals= NULL;
-	texCoords= NULL;
-	tangents= NULL;
-	indices= NULL;
-	interpolationData= NULL;
+	vertices = NULL;
+	normals = NULL;
+	texCoords = NULL;
+	tangents = NULL;
+	indices = NULL;
+	interpolationData = NULL;
 
-	for(int i=0; i<meshTextureCount; ++i){
-		textures[i]= NULL;
+	for (int i = 0; i < meshTextureCount; ++i) {
+		textures[i] = NULL;
 	}
 
-	twoSided= false;
-	customColor= false;
+	twoSided = false;
+	customColor = false;
 }
 
-Mesh::~Mesh(){
+Mesh::~Mesh() {
 	end();
 }
 
-void Mesh::init(){
-	vertices= new Vec3f[frameCount*vertexCount];
-	normals= new Vec3f[frameCount*vertexCount];
-	texCoords= new Vec2f[vertexCount];
-	indices= new uint32[indexCount];
+void Mesh::init() {
+	vertices = new Vec3f[frameCount * vertexCount];
+	normals = new Vec3f[frameCount * vertexCount];
+	texCoords = new Vec2f[vertexCount];
+	indices = new uint32[indexCount];
 }
 
-void Mesh::end(){
+void Mesh::end() {
 	delete [] vertices;
 	delete [] normals;
 	delete [] texCoords;
@@ -78,17 +78,18 @@ void Mesh::end(){
 	delete interpolationData;
 }
 
+
 // ========================== shadows & interpolation =========================
 
-void Mesh::buildInterpolationData(){
-	interpolationData= new InterpolationData(this);
+void Mesh::buildInterpolationData() {
+	interpolationData = new InterpolationData(this);
 }
 
-void Mesh::updateInterpolationData(float t, bool cycle) const{
+void Mesh::updateInterpolationData(float t, bool cycle) const {
 	interpolationData->update(t, cycle);
 }
 
-void Mesh::updateInterpolationVertices(float t, bool cycle) const{
+void Mesh::updateInterpolationVertices(float t, bool cycle) const {
 	interpolationData->updateVertices(t, cycle);
 }
 
@@ -132,18 +133,27 @@ void Mesh::loadV2(const string &dir, FILE *f, TextureManager *textureManager){
 	}
 
 	//read data
-	fread(vertices, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
-	fread(normals, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	// fread(vertices, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	// fread(normals, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	size_t vfCount = frameCount * vertexCount;
+	for(int i = 0; i < vfCount; ++i) {
+		fread(&vertices[i], 12, 1, f);
+	}
+	for(int i = 0; i < vfCount; ++i) {
+		fread(&normals[i], 12, 1, f);
+	}
+
 	if(textures[mtDiffuse]!=NULL){
 		fread(texCoords, sizeof(Vec2f)*vertexCount, 1, f);
 	}
-	fread(&diffuseColor, sizeof(Vec3f), 1, f);
+//	fread(&diffuseColor, sizeof(Vec3f), 1, f);
+	fread(&diffuseColor, 12, 1, f);
 	fread(&opacity, sizeof(float32), 1, f);
 	fseek(f, sizeof(Vec4f)*(meshHeader.colorFrameCount-1), SEEK_CUR);
 	fread(indices, sizeof(uint32)*indexCount, 1, f);
 }
 
-void Mesh::loadV3(const string &dir, FILE *f, TextureManager *textureManager){
+void Mesh::loadV3(const string &dir, FILE *f, TextureManager *textureManager) {
 	//read header
 	MeshHeaderV3 meshHeader;
 	fread(&meshHeader, sizeof(MeshHeaderV3), 1, f);
@@ -177,14 +187,23 @@ void Mesh::loadV3(const string &dir, FILE *f, TextureManager *textureManager){
 	}
 
 	//read data
-	fread(vertices, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
-	fread(normals, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	// fread(vertices, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	// fread(normals, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	size_t vfCount = frameCount * vertexCount;
+	for(int i = 0; i < vfCount; ++i) {
+		fread(&vertices[i], 12, 1, f);
+	}
+	for(int i = 0; i < vfCount; ++i) {
+		fread(&normals[i], 12, 1, f);
+	}
+
 	if(textures[mtDiffuse]!=NULL){
 		for(int i=0; i<meshHeader.texCoordFrameCount; ++i){
 			fread(texCoords, sizeof(Vec2f)*vertexCount, 1, f);
 		}
 	}
-	fread(&diffuseColor, sizeof(Vec3f), 1, f);
+	// fread(&diffuseColor, sizeof(Vec3f), 1, f);
+	fread(&diffuseColor, 12, 1, f);
 	fread(&opacity, sizeof(float32), 1, f);
 	fseek(f, sizeof(Vec4f)*(meshHeader.colorFrameCount-1), SEEK_CUR);
 	fread(indices, sizeof(uint32)*indexCount, 1, f);
@@ -235,8 +254,16 @@ void Mesh::load(const string &dir, FILE *f, TextureManager *textureManager){
 	}
 
 	//read data
-	fread(vertices, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
-	fread(normals, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	// fread(vertices, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	// fread(normals, sizeof(Vec3f)*frameCount*vertexCount, 1, f);
+	size_t vfCount = frameCount * vertexCount;
+	for(int i = 0; i < vfCount; ++i) {
+		fread(&vertices[i], 12, 1, f);
+	}
+	for(int i = 0; i < vfCount; ++i) {
+		fread(&normals[i], 12, 1, f);
+	}
+
 	if(meshHeader.textures!=0){
 		fread(texCoords, sizeof(Vec2f)*vertexCount, 1, f);
 	}
@@ -245,6 +272,15 @@ void Mesh::load(const string &dir, FILE *f, TextureManager *textureManager){
 	//tangents
 	if(textures[mtNormal]!=NULL){
 		computeTangents();
+	}
+}
+
+void Mesh::resize(float scale) {
+	Vec3f *end = &vertices[frameCount * vertexCount];
+	for(Vec3f *pv = vertices; pv < end; pv++) {
+		pv->x *= scale;
+		pv->y *= scale;
+		pv->z *= scale;
 	}
 }
 
@@ -355,22 +391,22 @@ uint32 Model::getVertexCount() const{
 
 // ==================== io ====================
 
-void Model::load(const string &path){
-	string extension= path.substr(path.find_last_of('.')+1);
-	if(extension=="g3d" || extension=="G3D"){
-		loadG3d(path);
-	}
-	else{
+void Model::load(const string &path, float scale) {
+	string extension = path.substr(path.find_last_of('.') + 1);
+
+	if (extension == "g3d" || extension == "G3D") {
+		loadG3d(path, scale);
+	} else {
 		throw runtime_error("Unknown model format: " + extension);
 	}
 }
 
 void Model::save(const string &path){
-	string extension= path.substr(path.find_last_of('.')+1);
-	if(extension=="g3d" ||extension=="G3D" || extension=="s3d" || extension=="S3D"){
+	string extension = path.substr(path.find_last_of('.') + 1);
+
+	if (extension == "g3d" || extension == "G3D" || extension == "s3d" || extension == "S3D") {
 		saveS3d(path);
-	}
-	else{
+	} else {
 		throw runtime_error("Unknown model format: " + extension);
 	}
 }
@@ -414,70 +450,77 @@ void Model::save(const string &path){
 }*/
 
 //load a model from a g3d file
-void Model::loadG3d(const string &path){
+void Model::loadG3d(const string &path, float scale) {
 
-    try{
-		FILE *f=fopen(path.c_str(),"rb");
-		if (f==NULL){
+	try {
+		FILE *f = fopen(path.c_str(), "rb");
+		if (!f) {
 			throw runtime_error("Error opening 3d model file");
 		}
 
-		string dir= cutLastFile(path);
+		string dir = cutLastFile(path);
 
 		//file header
 		FileHeader fileHeader;
 		fread(&fileHeader, sizeof(FileHeader), 1, f);
-		if(strncmp(reinterpret_cast<char*>(fileHeader.id), "G3D", 3)!=0){
+		if (strncmp(reinterpret_cast<char*>(fileHeader.id), "G3D", 3) != 0) {
 			throw runtime_error("Not a valid S3D model");
 		}
-		fileVersion= fileHeader.version;
+		fileVersion = fileHeader.version;
 
 		//version 4
-		if(fileHeader.version==4){
+		if (fileHeader.version == 4) {
 
 			//model header
 			ModelHeader modelHeader;
 			fread(&modelHeader, sizeof(ModelHeader), 1, f);
-			meshCount= modelHeader.meshCount;
-			if(modelHeader.type!=mtMorphMesh){
+			meshCount = modelHeader.meshCount;
+			if (modelHeader.type != mtMorphMesh) {
 				throw runtime_error("Invalid model type");
 			}
 
 			//load meshes
-			meshes= new Mesh[meshCount];
-			for(uint32 i=0; i<meshCount; ++i){
+			meshes = new Mesh[meshCount];
+			for (uint32 i = 0; i < meshCount; ++i) {
 				meshes[i].load(dir, f, textureManager);
+				if(scale != 1.f) {
+					meshes[i].resize(scale);
+				}
 				meshes[i].buildInterpolationData();
 			}
 		}
 		//version 3
-		else if(fileHeader.version==3){
+		else if (fileHeader.version == 3) {
 
 			fread(&meshCount, sizeof(meshCount), 1, f);
-			meshes= new Mesh[meshCount];
-			for(uint32 i=0; i<meshCount; ++i){
+			meshes = new Mesh[meshCount];
+			for (uint32 i = 0; i < meshCount; ++i) {
 				meshes[i].loadV3(dir, f, textureManager);
+				if(scale != 1.f) {
+					meshes[i].resize(scale);
+				}
 				meshes[i].buildInterpolationData();
 			}
 		}
 		//version 2
-		else if(fileHeader.version==2){
+		else if (fileHeader.version == 2) {
 
 			fread(&meshCount, sizeof(meshCount), 1, f);
-			meshes= new Mesh[meshCount];
-			for(uint32 i=0; i<meshCount; ++i){
+			meshes = new Mesh[meshCount];
+			for (uint32 i = 0; i < meshCount; ++i) {
 				meshes[i].loadV2(dir, f, textureManager);
+				if(scale != 1.f) {
+					meshes[i].resize(scale);
+				}
 				meshes[i].buildInterpolationData();
 			}
-		}
-		else{
-			throw runtime_error("Invalid model version: "+ intToStr(fileHeader.version));
+		} else {
+			throw runtime_error("Invalid model version: " + Conversion::toStr(fileHeader.version));
 		}
 
 		fclose(f);
-    }
-	catch(exception &e){
-		throw runtime_error("Exception caught loading 3d file: " + path +"\n"+ e.what());
+	} catch (exception &e) {
+		throw runtime_error("Exception caught loading 3d file: " + path + "\n" + e.what());
 	}
 }
 

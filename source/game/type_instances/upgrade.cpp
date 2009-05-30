@@ -24,24 +24,21 @@
 using namespace std;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
-// 	class Upgrade
+//  class Upgrade
 // =====================================================
 
-Upgrade::Upgrade(const XmlNode *node, const FactionType *ft) {
-	type = ft->getUpgradeType(node->getChildStringValue("type"));
-	state = (UpgradeState)node->getChildIntValue("state");
-	factionIndex = node->getChildIntValue("factionIndex");
+Upgrade::Upgrade(const XmlNode *node, const FactionType *ft) :
+		state((UpgradeState)node->getChildIntValue("state")),
+		factionIndex(node->getChildIntValue("factionIndex")),
+		type(ft->getUpgradeType(node->getChildStringValue("type"))) {
 }
 
-Upgrade::Upgrade(const UpgradeType *type, int factionIndex){
-	state= usUpgrading;
-	this->factionIndex= factionIndex;
-	this->type= type;
+Upgrade::Upgrade(const UpgradeType *type, int factionIndex) :
+		state(usUpgrading), factionIndex(factionIndex), type(type) {
 }
-
 
 void Upgrade::save(XmlNode *node) const {
 	node->addChild("type", type->getName());
@@ -49,78 +46,55 @@ void Upgrade::save(XmlNode *node) const {
 	node->addChild("factionIndex", factionIndex);
 }
 
-// ============== get ==============
-
-UpgradeState Upgrade::getState() const{
-	return state;
-}
-
-int Upgrade::getFactionIndex() const{
-	return factionIndex;
-}
-
-const UpgradeType * Upgrade::getType() const{
-	return type;
-}
-
-// ============== set ==============
-
-void Upgrade::setState(UpgradeState state){
-     this->state= state;
-}
-
-
 // =====================================================
-// 	class UpgradeManager
+//  class UpgradeManager
 // =====================================================
 
-UpgradeManager::~UpgradeManager(){
+UpgradeManager::~UpgradeManager() {
 	deleteValues(upgrades.begin(), upgrades.end());
 }
 
-void UpgradeManager::startUpgrade(const UpgradeType *upgradeType, int factionIndex){
+void UpgradeManager::startUpgrade(const UpgradeType *upgradeType, int factionIndex) {
 	upgrades.push_back(new Upgrade(upgradeType, factionIndex));
 }
 
-void UpgradeManager::cancelUpgrade(const UpgradeType *upgradeType){
+void UpgradeManager::cancelUpgrade(const UpgradeType *upgradeType) {
 	Upgrades::iterator it;
 
-	for(it=upgrades.begin(); it!=upgrades.end(); it++){
-		if((*it)->getType()==upgradeType){
+	for (it = upgrades.begin(); it != upgrades.end(); it++) {
+		if ((*it)->getType() == upgradeType) {
 			break;
 		}
 	}
 
-	if(it!=upgrades.end()){
+	if (it != upgrades.end()) {
 		upgrades.erase(it);
-	}
-	else{
+	} else {
 		throw runtime_error("Error canceling upgrade, upgrade not found in upgrade manager");
 	}
 }
 
-void UpgradeManager::finishUpgrade(const UpgradeType *upgradeType){
+void UpgradeManager::finishUpgrade(const UpgradeType *upgradeType) {
 	Upgrades::iterator it;
 
-	for(it=upgrades.begin(); it!=upgrades.end(); it++){
-		if((*it)->getType()==upgradeType){
+	for (it = upgrades.begin(); it != upgrades.end(); it++) {
+		if ((*it)->getType() == upgradeType) {
 			break;
 		}
 	}
 
-	if(it!=upgrades.end()){
+	if (it != upgrades.end()) {
 		(*it)->setState(usUpgraded);
-	}
-	else{
+	} else {
 		throw runtime_error("Error finishing upgrade, upgrade not found in upgrade manager");
 	}
 }
 
-bool UpgradeManager::isUpgradingOrUpgraded(const UpgradeType *upgradeType) const{
+bool UpgradeManager::isUpgradingOrUpgraded(const UpgradeType *upgradeType) const {
 	Upgrades::const_iterator it;
 
-	for(it= upgrades.begin(); it!=upgrades.end(); it++){
-		if((*it)->getType()==upgradeType){
+	for (it = upgrades.begin(); it != upgrades.end(); it++) {
+		if ((*it)->getType() == upgradeType) {
 			return true;
 		}
 	}
@@ -128,45 +102,45 @@ bool UpgradeManager::isUpgradingOrUpgraded(const UpgradeType *upgradeType) const
 	return false;
 }
 
-bool UpgradeManager::isUpgraded(const UpgradeType *upgradeType) const{
-	for(Upgrades::const_iterator it= upgrades.begin(); it!=upgrades.end(); it++){
-		if((*it)->getType()==upgradeType && (*it)->getState()==usUpgraded){
+bool UpgradeManager::isUpgraded(const UpgradeType *upgradeType) const {
+	for (Upgrades::const_iterator it = upgrades.begin(); it != upgrades.end(); it++) {
+		if ((*it)->getType() == upgradeType && (*it)->getState() == usUpgraded) {
 			return true;
 		}
 	}
 	return false;
 }
 
-bool UpgradeManager::isUpgrading(const UpgradeType *upgradeType) const{
-	for(Upgrades::const_iterator it= upgrades.begin(); it!=upgrades.end(); it++){
-		if((*it)->getType()==upgradeType && (*it)->getState()==usUpgrading){
+bool UpgradeManager::isUpgrading(const UpgradeType *upgradeType) const {
+	for (Upgrades::const_iterator it = upgrades.begin(); it != upgrades.end(); it++) {
+		if ((*it)->getType() == upgradeType && (*it)->getState() == usUpgrading) {
 			return true;
 		}
 	}
 	return false;
 }
 
-void UpgradeManager::computeTotalUpgrade(const Unit *unit, EnhancementTypeBase *totalUpgrade) const{
+void UpgradeManager::computeTotalUpgrade(const Unit *unit, EnhancementTypeBase *totalUpgrade) const {
 	totalUpgrade->reset();
-	for(Upgrades::const_iterator it= upgrades.begin(); it!=upgrades.end(); it++){
-		if((*it)->getFactionIndex()==unit->getFactionIndex()
-			&& (*it)->getType()->isAffected(unit->getType())
-			&& (*it)->getState()==usUpgraded)
+	for (Upgrades::const_iterator it = upgrades.begin(); it != upgrades.end(); it++) {
+		if ((*it)->getFactionIndex() == unit->getFactionIndex()
+				&& (*it)->getType()->isAffected(unit->getType())
+				&& (*it)->getState() == usUpgraded)
 			totalUpgrade->sum((*it)->getType());
 	}
 }
 
 void UpgradeManager::load(const XmlNode *node, const FactionType *ft) {
 	upgrades.resize(node->getChildCount());
-	for(int i = 0; i < node->getChildCount(); ++i) {
+	for (int i = 0; i < node->getChildCount(); ++i) {
 		upgrades[i] = new Upgrade(node->getChild("upgrade", i), ft);
 	}
 }
 
 void UpgradeManager::save(XmlNode *node) const {
-	for(Upgrades::const_iterator i = upgrades.begin(); i != upgrades.end(); ++i) {
+	for (Upgrades::const_iterator i = upgrades.begin(); i != upgrades.end(); ++i) {
 		(*i)->save(node->addChild("upgrade"));
 	}
 }
 
-}}// end namespace
+}// end namespace

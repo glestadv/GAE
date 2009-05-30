@@ -9,14 +9,14 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_RESOURCETYPE_H_
-#define _GLEST_GAME_RESOURCETYPE_H_
+#ifndef _GAME_RESOURCETYPE_H_
+#define _GAME_RESOURCETYPE_H_
 
 #include "element_type.h"
 #include "model.h"
 #include "checksum.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::Model;
 using Shared::Util::Checksum;
@@ -42,10 +42,13 @@ private:
     int interval;		//used only if class==rcConsumable
 	int defResPerPatch;	//used only if class==rcTileset || class==rcTech
     Model *model;
+	/**
+	 * Rather or not to display this resource at the top of the screen (defaults to true).
+	 */
 	bool display;
 
 public:
-    void load(const string &dir, int id, Checksum &checksum);
+    void load(const string &dir, int id, Checksums &checksums);
 
     //get
 	int getClass() const			{return resourceClass;}
@@ -59,6 +62,6 @@ public:
 	static ResourceClass strToRc(const string &s);
 };
 
-}} //end namespace
+} // end namespace
 
 #endif

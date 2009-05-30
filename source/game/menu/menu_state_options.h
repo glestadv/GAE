@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MENUSTATEOPTIONS_H_
-#define _GLEST_GAME_MENUSTATEOPTIONS_H_
+#ifndef _GAME_MENUSTATEOPTIONS_H_
+#define _GAME_MENUSTATEOPTIONS_H_
 
 #include "main_menu.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===============================
 // 	class MenuStateOptions  
@@ -44,17 +44,21 @@ private:
 	GraphicListBox listBoxVolumeMusic;
 	GraphicListBox listBoxMusicSelect;
 
+private:
+	MenuStateOptions(const MenuStateOptions &);
+	const MenuStateOptions &operator =(const MenuStateOptions &);
+
 public:
-	MenuStateOptions(Program *program, MainMenu *mainMenu);
+	MenuStateOptions(Program &program, MainMenu *mainMenu);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
-	void mouseMove(int x, int y, const MouseState *mouseState);
+	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
 
 private:
 	void saveConfig();
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

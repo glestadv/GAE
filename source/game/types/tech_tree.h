@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_TECHTREE_H_
-#define _GLEST_GAME_TECHTREE_H_
+#ifndef _GAME_TECHTREE_H_
+#define _GAME_TECHTREE_H_
 
 #include <map>
 #include "util.h"
@@ -18,7 +18,7 @@
 #include "faction_type.h"
 #include "damage_multiplier.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class EffectType;
 
@@ -58,7 +58,7 @@ private:
 	DamageMultiplierTable damageMultiplierTable;
 
 public:
-    void load(const string &dir, const vector<string> &factionNames, Checksum &checksum);
+    void load(const string &dir, const vector<string> &factionNames, Checksums &checksums);
     ~TechTree();
 
     // get count
@@ -132,6 +132,6 @@ public:
 	int addEffectType(EffectType *et);
 };
 
-}} //end namespace
+} // end namespace
 
 #endif

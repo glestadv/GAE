@@ -9,18 +9,18 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MENUSTATESCENARIO_H_
-#define _GLEST_GAME_MENUSTATESCENARIO_H_
+#ifndef _GAME_MENUSTATESCENARIO_H_
+#define _GAME_MENUSTATESCENARIO_H_
 
 #include "main_menu.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===============================
 // 	class MenuStateScenario
 // ===============================
 
-class MenuStateScenario: public MenuState{
+class MenuStateScenario: public MenuState {
 private:
     enum Difficulty{
         dVeryEasy,
@@ -41,23 +41,25 @@ private:
 	vector<string> scenarioFiles;
 
     ScenarioInfo scenarioInfo;
+	GraphicMessageBox *msgBox;
 
 public:
-	MenuStateScenario(Program *program, MainMenu *mainMenu);
+	MenuStateScenario(Program &program, MainMenu *mainMenu);
+	~MenuStateScenario();
 
     void mouseClick(int x, int y, MouseButton mouseButton);
-	void mouseMove(int x, int y, const MouseState *mouseState);
+	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
 
 private:
-    void loadScenarioInfo(string file, ScenarioInfo *scenarioInfo);
-    void loadGameSettings(const ScenarioInfo *scenarioInfo, GameSettings *gameSettings);
-	Difficulty computeDifficulty(const ScenarioInfo *scenarioInfo);
+    void loadScenarioInfo(string file, ScenarioInfo &si);
+    void loadGameSettings(const ScenarioInfo &si, GameSettings &gs);
+	Difficulty computeDifficulty(const ScenarioInfo &si);
     ControlType strToControllerType(const string &str);
 
 };
 
 
-}}//end namespace
+} // end namespace
 
 #endif

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_AIINTERFACE_H_
-#define _GLEST_GAME_AIINTERFACE_H_
+#ifndef _GAME_AIINTERFACE_H_
+#define _GAME_AIINTERFACE_H_
 
 #include "world.h"
 #include "commander.h"
@@ -18,9 +18,9 @@
 #include "conversion.h"
 #include "ai.h"
 
-using Shared::Util::intToStr;
+using Shared::Util::Conversion;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class AiInterface
@@ -85,9 +85,9 @@ public:
 	bool isUltra() const {return world->getFaction(factionIndex)->getCpuUltraControl();}
 
 private:
-	string getLogFilename() const	{return "ai"+intToStr(factionIndex)+".log";}
+	string getLogFilename() const	{return "ai" + Conversion::toStr(factionIndex) + ".log";}
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

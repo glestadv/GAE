@@ -29,7 +29,7 @@
 using namespace Shared::Util;
 using namespace Shared::Graphics;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class SkillType
@@ -112,6 +112,50 @@ void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, c
 		removeEnemyEffects = removeEffectsNode->getChildBoolValue("foes");
 	} else {
 		effectsRemoved = 0;
+	}
+
+	startTime= sn->getOptionalFloatValue("start-time");
+
+	//projectile
+	const XmlNode *projectileNode= sn->getChild("projectile", 0, false);
+	if(projectileNode && projectileNode->getAttribute("value")->getBoolValue()) {
+
+		//proj particle
+		const XmlNode *particleNode= projectileNode->getChild("particle", 0, false);
+		if(particleNode && particleNode->getAttribute("value")->getBoolValue()){
+			string path= particleNode->getAttribute("path")->getRestrictedValue();
+			projectileParticleSystemType= new ParticleSystemTypeProjectile();
+			projectileParticleSystemType->load(dir,  dir + "/" + path);
+		}
+
+		//proj sounds
+		const XmlNode *soundNode= projectileNode->getChild("sound", 0, false);
+		if(soundNode && soundNode->getAttribute("enabled")->getBoolValue()) {
+			projSounds.resize(soundNode->getChildCount());
+			for(int i=0; i<soundNode->getChildCount(); ++i){
+				const XmlNode *soundFileNode= soundNode->getChild("sound-file", i);
+				string path= soundFileNode->getAttribute("path")->getRestrictedValue();
+				StaticSound *sound= new StaticSound();
+				sound->load(dir + "/" + path);
+				projSounds[i]= sound;
+			}
+		}
+	}
+
+	//splash damage and/or special effects
+	const XmlNode *splashNode = sn->getChild("splash", 0, false);
+	splash = splashNode && splashNode->getBoolValue();
+	if (splash) {
+		splashDamageAll = splashNode->getOptionalBoolValue("damage-all", true);
+		splashRadius= splashNode->getChild("radius")->getAttribute("value")->getIntValue();
+
+		//splash particle
+		const XmlNode *particleNode= splashNode->getChild("particle", 0, false);
+		if(particleNode && particleNode->getAttribute("value")->getBoolValue()){
+			string path= particleNode->getAttribute("path")->getRestrictedValue();
+			splashParticleSystemType= new ParticleSystemTypeSplash();
+			splashParticleSystemType->load(dir,  dir + "/" + path);
+		}
 	}
 }
 
@@ -253,8 +297,6 @@ TargetBasedSkillType::~TargetBasedSkillType(){
 void TargetBasedSkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft){
 	SkillType::load(sn, dir, tt, ft);
 
-	startTime= sn->getOptionalFloatValue("start-time");
-
 	//fields
 	const XmlNode *attackFieldsNode = sn->getChild("attack-fields", 0, false);
 	const XmlNode *fieldsNode = sn->getChild("fields", 0, false);
@@ -265,49 +307,6 @@ void TargetBasedSkillType::load(const XmlNode *sn, const string &dir, const Tech
 		throw runtime_error("Must specify either <attack-fields> or <fields>.");
 	}
 	fields.load(fieldsNode ? fieldsNode : attackFieldsNode, dir, tt, ft);
-
-	//projectile
-	const XmlNode *projectileNode= sn->getChild("projectile", 0, false);
-	if(projectileNode && projectileNode->getAttribute("value")->getBoolValue()) {
-
-		//proj particle
-		const XmlNode *particleNode= projectileNode->getChild("particle", 0, false);
-		if(particleNode && particleNode->getAttribute("value")->getBoolValue()){
-			string path= particleNode->getAttribute("path")->getRestrictedValue();
-			projectileParticleSystemType= new ParticleSystemTypeProjectile();
-			projectileParticleSystemType->load(dir,  dir + "/" + path);
-		}
-
-		//proj sounds
-		const XmlNode *soundNode= projectileNode->getChild("sound", 0, false);
-		if(soundNode && soundNode->getAttribute("enabled")->getBoolValue()) {
-			projSounds.resize(soundNode->getChildCount());
-			for(int i=0; i<soundNode->getChildCount(); ++i){
-				const XmlNode *soundFileNode= soundNode->getChild("sound-file", i);
-				string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-				StaticSound *sound= new StaticSound();
-				sound->load(dir + "/" + path);
-				projSounds[i]= sound;
-			}
-		}
-	}
-
-	//splash
-	const XmlNode *splashNode= sn->getChild("splash", 0, false);
-	if(splashNode && splashNode->getAttribute("value")->getBoolValue()) {
-		splash = true;
-		splashRadius= splashNode->getChild("radius")->getAttribute("value")->getIntValue();
-
-		//splash particle
-		const XmlNode *particleNode= splashNode->getChild("particle", 0, false);
-		if(particleNode && particleNode->getAttribute("value")->getBoolValue()){
-			string path= particleNode->getAttribute("path")->getRestrictedValue();
-			splashParticleSystemType= new ParticleSystemTypeSplash();
-			splashParticleSystemType->load(dir,  dir + "/" + path);
-		}
-	} else {
-		splash = false;
-	}
 }
 
 void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* rangeDesc) const {
@@ -382,10 +381,10 @@ void AttackSkillType::getDesc(string &str, const Unit *unit) const {
 		float fhigh = unit->getAttackPctStolen(this) + attackPctVar;
 		float flow = unit->getAttackPctStolen(this) - attackPctVar;
 
-		str += floatToStr(flow * 100.0f);
+		str += Conversion::toStr(flow * 100.0f);
 		if(fhigh != flow) {
 			str += "% ... ";
-			str += floatToStr(fhigh * 100.0f);
+			str += Conversion::toStr(fhigh * 100.0f);
 		}
 		str += "%\n";
 	}
@@ -577,4 +576,4 @@ SkillTypeFactory &SkillTypeFactory::getInstance(){
 	return ctf;
 }
 
-}} //end namespace
+} // end namespace

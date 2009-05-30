@@ -33,8 +33,8 @@ public:
 	FontMetrics();
 	~FontMetrics();
 
-	void setWidth(int i, float width)	{widths[i]= width;}
-	void setHeight(float height)		{this->height= height;}
+	void setWidth(int i, float width)	{widths[i] = width;}
+	void setHeight(float height)		{this->height = height;}
 
 	Vec2f getTextDiminsions(const string &str) const;
 	float getHeight() const;
@@ -50,8 +50,8 @@ public:
 
 public:
 	enum Width{
-		wNormal= 400,
-		wBold= 700
+		wNormal = 400,
+		wBold = 700
 	};
 
 protected:
@@ -64,8 +64,8 @@ public:
 	//constructor & destructor
 	Font();
 	virtual ~Font(){};
-	virtual void init()=0;
-	virtual void end()=0;
+	virtual void init() = 0;
+	virtual void end() = 0;
 
 	//get
 	string getType() const					{return type;}

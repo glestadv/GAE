@@ -58,16 +58,6 @@ void PlatformContextGl::init(int colorBits, int depthBits, int stencilBits) {
 	}
 }
 
-void PlatformContextGl::end() {
-}
-
-void PlatformContextGl::makeCurrent() {
-}
-
-void PlatformContextGl::swapBuffers() {
-	SDL_GL_SwapBuffers();
-}
-
 // ======================================
 //	Global Fcs
 // ======================================
@@ -105,21 +95,6 @@ void createGlFontBitmaps(uint32 &base, const string &type, int size, int width,
     // we badly need a solution portable to more than just glx
 	NOIMPL;
 #endif
-}
-
-void createGlFontOutlines(uint32 &base, const string &type, int width,
-						  float depth, int charCount, FontMetrics &metrics) {
-	NOIMPL;
-}
-
-const char *getPlatformExtensions(const PlatformContextGl *pcgl) {
-	return "";
-}
-
-void *getGlProcAddress(const char *procName) {
-	void* proc = SDL_GL_GetProcAddress(procName);
-	assert(proc!=NULL);
-	return proc;
 }
 
 }}//end namespace

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_RENDERER_H_
-#define _GLEST_GAME_RENDERER_H_
+#ifndef _GAME_RENDERER_H_
+#define _GAME_RENDERER_H_
 
 #include "vec.h"
 #include "math_util.h"
@@ -27,7 +27,7 @@
 #include "font_manager.h"
 #include "camera.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::Texture2D;
 using Shared::Graphics::Texture3D;
@@ -96,11 +96,6 @@ public:
 	static const float selectionCircleRadius;
 	static const float magicCircleRadius;
 
-	//perspective values
-	static const float perspFov;
-	static const float perspNearPlane;
-	static const float perspFarPlane;
-
 	//default values
 	static const float ambFactor;
 	static const Vec4f defSpecularColor;
@@ -111,7 +106,7 @@ public:
 
 	//light
 	static const float maxLightDist;
-
+	
 public:
 	enum Shadows{
 		sDisabled,
@@ -164,6 +159,11 @@ private:
 
 	//water
 	float waterAnim;
+	
+	//perspective values
+	float perspFov;
+	float perspNearPlane;
+	float perspFarPlane;
 
 private:
 	Renderer();
@@ -193,13 +193,15 @@ public:
 	void reloadResources();
 
 	//engine interface
-	Model *newModel(ResourceScope rs);
-	Texture2D *newTexture2D(ResourceScope rs);
-	Texture3D *newTexture3D(ResourceScope rs);
-	Font2D *newFont(ResourceScope rs);
-	TextRenderer2D *getTextRenderer() const	{return textRenderer;}
-	void manageParticleSystem(ParticleSystem *particleSystem, ResourceScope rs);
-	void updateParticleManager(ResourceScope rs);
+	Model *newModel(ResourceScope rs)								{return modelManager[rs]->newModel();}
+	Texture2D *newTexture2D(ResourceScope rs)						{return textureManager[rs]->newTexture2D();}
+	Texture3D *newTexture3D(ResourceScope rs)						{return textureManager[rs]->newTexture3D();}
+	Texture2D *loadTexture2D(ResourceScope rs, const XmlNode &node)	{return textureManager[rs]->loadTexture2D(node);}
+	Texture3D *loadTexture3D(ResourceScope rs, const XmlNode &node)	{return textureManager[rs]->loadTexture3D(node);}
+	Font2D *newFont(ResourceScope rs)								{return fontManager[rs]->newFont2D();}
+	void manageParticleSystem(ParticleSystem *ps, ResourceScope rs)	{particleManager[rs]->manage(ps);}
+	void updateParticleManager(ResourceScope rs)					{particleManager[rs]->update();}
+	TextRenderer2D *getTextRenderer() const							{return textRenderer;}
 	void renderParticleManager(ResourceScope rs);
 	void swapBuffers();
 
@@ -218,8 +220,9 @@ public:
 	void renderChatManager(const ChatManager *chatManager);
 	void renderResourceStatus();
 	void renderSelectionQuad();
-	void renderText(const string &text, const Font2D *font, float alpha, int x, int y, bool centered);
-	void renderText(const string &text, const Font2D *font, const Vec3f &color, int x, int y, bool centered);
+	void renderText(const string &text, const Font2D *font, float alpha, int x, int y, bool centered= false);
+	void renderText(const string &text, const Font2D *font, const Vec3f &color, int x, int y, bool centered= false);
+	void renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered= false);	
 
     //components
 	void renderLabel(const GraphicLabel *label);
@@ -259,6 +262,7 @@ public:
 	//misc
 	void loadConfig();
 	void saveScreen(const string &path);
+	Quad2i getVisibleQuad() const		{return visibleQuad;}
 
 	//static
 	static Shadows strToShadows(const string &s);
@@ -276,7 +280,7 @@ private:
 
 	//selection render
 	void renderObjectsFast();
-	void renderUnitsFast();
+	void renderUnitsFast(bool renderingShadows = false);
 
 	//gl requirements
 	void checkGlCaps();
@@ -302,6 +306,6 @@ private:
     static Texture2D::Filter strToTextureFilter(const string &s);
 };
 
-}} //end namespace
+} // end namespace
 
 #endif

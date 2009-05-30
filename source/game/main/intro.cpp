@@ -27,7 +27,7 @@
 
 using namespace Shared::Graphics;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class Text
@@ -58,9 +58,7 @@ const int Intro::appearTime= 2500;
 const int Intro::showTime= 2500;
 const int Intro::disapearTime= 2500;
 
-Intro::Intro(Program *program):
-	ProgramState(program)
-{
+Intro::Intro(Program &program) : ProgramState(program) {
 	CoreData &coreData= CoreData::getInstance();
 	const Metrics &metrics= Metrics::getInstance();
 	int w= metrics.getVirtualW();
@@ -68,7 +66,7 @@ Intro::Intro(Program *program):
 	timer=0;
 
 	texts.push_back(Text(coreData.getLogoTexture(), Vec2i(w/2-128, h/2-64), Vec2i(256, 128), 4000));
-	texts.push_back(Text("Advanced Engine " + gaeVersionString, Vec2i(w / 2 + 80, h / 2 - 32), 4000, coreData.getMenuFontNormal()));
+	texts.push_back(Text("Advanced Engine v" + getGaeVersion().toString(), Vec2i(w / 2 + 80, h / 2 - 32), 4000, coreData.getMenuFontNormal()));
 	texts.push_back(Text("www.glest.org", Vec2i(w/2, h/2), 12000, coreData.getMenuFontVeryBig()));
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 	soundRenderer.playMusic(CoreData::getInstance().getIntroMusic());
@@ -76,8 +74,8 @@ Intro::Intro(Program *program):
 
 void Intro::update(){
 	timer++;
-	if(timer>introTime * Config::getInstance().getWorldUpdateFPS() / 1000){
-		program->setState(new MainMenu(program));
+	if(timer>introTime * Config::getInstance().getGsWorldUpdateFps() / 1000){
+		program.setState(new MainMenu(program));
 	}
 }
 
@@ -90,7 +88,7 @@ void Intro::render(){
 	for(int i=0; i<texts.size(); ++i){
 		Text *text= &texts[i];
 
-		difTime= 1000*timer / Config::getInstance().getWorldUpdateFPS() - text->getTime();
+		difTime= 1000*timer / Config::getInstance().getGsWorldUpdateFps() - text->getTime();
 
 		if(difTime>0 && difTime<appearTime+showTime+disapearTime){
 			float alpha= 1.f;
@@ -118,15 +116,17 @@ void Intro::render(){
 	renderer.swapBuffers();
 }
 
-void Intro::keyDown(char key){
-	mouseUpLeft(0, 0);
+void Intro::keyDown(const Key &key){
+	if(!key.isModifier()) {
+		mouseUpLeft(0, 0);
+	}
 }
 
 void Intro::mouseUpLeft(int x, int y){
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 	soundRenderer.stopMusic(CoreData::getInstance().getIntroMusic());
 	soundRenderer.playMusic(CoreData::getInstance().getMenuMusic());
-	program->setState(new MainMenu(program));
+	program.setState(new MainMenu(program));
 }
 
-}}//end namespace
+} // end namespace

@@ -13,175 +13,203 @@
 #include "pch.h"
 #include "util.h"
 
-#include <ctime>
-#include <cassert>
-#include <list>
-#include <stdexcept>
-
-#include "leak_dumper.h"
 #include "platform_util.h"
-#include "xml_parser.h"
-#include "zlib.h"
-
-#if defined(WIN32) || defined(WIN64)
-#else
-	#include <glob.h>
-#endif
-
 #include "leak_dumper.h"
+#include "xml_parser.h"
 
-using namespace std;
-using namespace Shared::Platform;
-using Shared::Xml::XmlNode;
+using std::stringstream;
+using Shared::Platform::DirectoryListing;
 
-namespace Shared{ namespace Util{
+namespace Shared { namespace Util {
 
 // =====================================================
-//	class SimpleDataBuffer
+//	class EnumNames
 // =====================================================
 
-inline void SimpleDataBuffer::compact() {
-	if(!size()) {
-		start = end = 0;
-	} else {
-		// rewind buffer
-		if(start) {
-			memcpy(buf, &buf[start], size());
-			end -= start;
-			start = 0;
+#ifndef NO_ENUM_NAMES
+EnumNames::EnumNames(const char *valueList, size_t count, bool copyStrings, bool lazy)
+		: valueList(valueList)
+		, names(NULL)
+		, count(count)
+		, copyStrings(copyStrings) {
+	if(!lazy) {
+		init();
+	}
+}
+
+EnumNames::~EnumNames() {
+	if(names) {
+		delete[] names;
+		if(copyStrings) {
+			delete[] valueList;
 		}
 	}
 }
 
-void SimpleDataBuffer::expand(size_t minAdded) {
-	if(room() < minAdded) {
-		size_t newSize = minAdded > (size_t)(bufsize * 0.2f)
-				? minAdded + bufsize
-				: (size_t)(bufsize * 1.2f);
-		resizeBuffer(newSize);
+void EnumNames::init() {
+	size_t curName = 0;
+	bool needStart = true;
+
+	assert(!names);
+	names = new const char *[count];
+	if(copyStrings) {
+		valueList = strcpy(new char[strlen(valueList) + 1], valueList);
 	}
+
+	for(char *p = const_cast<char*>(valueList); *p; ++p) {
+		if(isspace(*p)) { // I don't want to have any leading or trailing whitespace
+			*p = 0;
+		} else if(needStart) {
+			// do some basic sanity checking, even though the compiler should catch any such errors
+			assert(isalpha(*p) || *p == '_');
+			assert(curName < count);
+			names[curName++] = p;
+			needStart = false;
+		} else if(*p == ',') {
+			assert(!needStart);
+			needStart = true;
+			*p = 0;
+		}
+    }
+    assert(curName == count);
+}
+#endif
+
+// =====================================================
+// class Version
+// =====================================================
+
+Version::Version()
+		: _major(0)
+		, _minor(0)
+		, revision(0)
+		, bugFix(0)
+		, wip(false) {
 }
 
-inline void SimpleDataBuffer::resizeBuffer(size_t newSize) {
-	compact();
-	if(!(buf = (char *)realloc(buf, bufsize = newSize))) {
-		throw runtime_error("out of memory");
-	}
-	if(newSize < end) {
-		end = newSize;
-	}
+Version::Version(NetworkDataBuffer &buf) {
+	read(buf);
 }
 
-void SimpleDataBuffer::compressUuencodIntoXml(XmlNode *dest, size_t chunkSize) {
-	size_t uuencodedSize;
-	int zstatus;
-	char *linebuf;
-	int chunks;
-	uLongf compressedSize;
-	char *tmpbuf;
-
-	// allocate temp buffer for compressed data
-	compressedSize = (uLongf)(size() * 1.001f + 12.f);
-	tmpbuf = (char *)malloc(max((size_t)compressedSize, chunkSize + 1));
-
-	if(!tmpbuf) {
-		throw runtime_error("Out of Memory: failed to allocate " + intToStr(compressedSize) + " bytes of data.");
-	}
-
-	// compress data
-	zstatus = ::compress2((Bytef *)tmpbuf, &compressedSize, (const Bytef *)data(), size(), Z_BEST_COMPRESSION);
-	if(zstatus != Z_OK) {
-		free(tmpbuf);
-		throw runtime_error("error in zstream while compressing map data");
-	}
-
-	// shrink temp buffer
-	tmpbuf = (char *)realloc(tmpbuf, max((size_t)compressedSize, chunkSize + 1));
-
-	// write header info to xml node
-	dest->addAttribute("size", (int)size());
-	dest->addAttribute("compressed-size", (int)compressedSize);
-	dest->addAttribute("compressed", true);
-	dest->addAttribute("encoding", "base64");
-
-	// uuencode tmpbuf back into this
-	clear();
-	ensureRoom(compressedSize * 4 / 3 + 5);
-	uuencodedSize = room();
-	Shared::Util::uuencode(buf, &uuencodedSize, tmpbuf, compressedSize);
-	resize(uuencodedSize);
-
-	// shrink temp buffer again, this time we'll use it as a line buffer
-	tmpbuf = (char *)realloc(tmpbuf, chunkSize + 1);
-
-	// finally, break it apart into chunkSize byte chunks and cram it into the xml file
-	chunks = (uuencodedSize + chunkSize - 1) / chunkSize;
-	for(int i = 0; i < chunks; i++) {
-		strncpy(tmpbuf, &((char*)data())[i * chunkSize], chunkSize);
-		tmpbuf[chunkSize] = 0;
-		dest->addChild("data", tmpbuf);		// slightly inefficient, but oh well
-	}
+Version::Version(uint16 _major, uint16 _minor, uint16 revision, char bugFix, bool wip)
+		: _major(_major)
+		, _minor(_minor)
+		, revision(revision)
+		, bugFix(bugFix)
+		, wip(wip) {
 }
 
-void SimpleDataBuffer::uudecodeUncompressFromXml(const XmlNode *src) {
-	string s;
-	char *tmpbuf;
-	size_t expectedSize;
-	uLongf actualSize;
-	size_t compressedSize;
-	size_t decodedSize;
-	size_t encodedSize;
-	char null = 0;
+Version::Version(const XmlNode &node)
+		: _major(node.getChildUIntValue("major"))
+		, _minor(node.getChildUIntValue("minor"))
+		, revision(node.getChildUIntValue("revision"))
+		, bugFix(node.getChildStringValue("bugFix").c_str()[0])
+		, wip(node.getChildBoolValue("wip")) {
+}
 
-	expectedSize = src->getIntAttribute("size");
-	compressedSize = src->getIntAttribute("compressed-size");
-	encodedSize = compressedSize / 3 * 4 + (compressedSize % 3 ? compressedSize % 3 + 1 : 0) + 1;
+void Version::write(XmlNode &node) const {
+	const char bugFixStr[2] = {bugFix, 0};
 
-	// retrieve encoded characters from xml document and store in buf
-	clear();
-	ensureRoom(max(expectedSize, encodedSize + 1));	// reduce buffer expansions
-	for(int i = 0; i < src->getChildCount(); ++i) {
-		s = src->getChild("data", i)->getStringAttribute("value");
-		write(s.c_str(), s.size());
+	node.addChild("major", _major);
+	node.addChild("minor", _minor);
+	node.addChild("revision", revision);
+	node.addChild("bugFix", bugFixStr);
+	node.addChild("wip", wip);
+}
+
+string Version::toString() const {
+	stringstream str;
+	str << _major << "." << _minor << "." << revision;
+	if(bugFix) {
+		assert(bugFix >= 'a' && bugFix <= 'z');
+		str << bugFix;
+	}
+	if(wip) {
+		str << "-wip";
 	}
 
-	// add null terminator
-	write(&null, 1);
+	return str.str();
+}
 
-	if(size() != encodedSize) {
-		throw runtime_error("Error extracting uuencoded data from xml.  Expected "
-				+ intToStr(encodedSize) + " characters of uuencoded data, but only found "
-				+ intToStr(size()));
-	}
+size_t Version::getNetSize() const {
+	return getMaxNetSize();
+}
 
-	assert(strlen(buf) == size() - 1);
+size_t Version::getMaxNetSize() const {
+	return sizeof(_major)
+		 + sizeof(_minor)
+		 + sizeof(revision)
+		 + sizeof(bugFix) + 1;
+}
 
-	// allocate tmpbuf to hold compressed (decoded) data
-	tmpbuf = (char *)malloc(decodedSize = compressedSize);
-	uudecode(tmpbuf, &decodedSize, buf);
-	assert(decodedSize == compressedSize);
+void Version::read(NetworkDataBuffer &buf) {
+	buf.read(_major);
+	buf.read(_minor);
+	buf.read(revision);
+	buf.read(bugFix);
+	buf.read(wip);
+}
 
-	clear();
-	actualSize = room();
-	int zstatus = ::uncompress((Bytef *)buf, &actualSize, (const Bytef *)tmpbuf, decodedSize);
-	free(tmpbuf);
+void Version::write(NetworkDataBuffer &buf) const {
+	buf.write(_major);
+	buf.write(_minor);
+	buf.write(revision);
+	buf.write(bugFix);
+	buf.write(wip);
+}
+// =====================================================
+// class Printable
+// =====================================================
 
-	if(zstatus != Z_OK) {
-		throw runtime_error("error in zstream while decompressing map data in saved game");
-	}
-
-	if(actualSize != expectedSize) {
-		throw runtime_error("Error extracting uuencoded data from xml.  Expected "
-				+ intToStr(expectedSize) + " bytes of uncompressed data, but actual size was "
-				+ intToStr(actualSize));
-	}
-
-	resize(expectedSize);
+string Printable::toString() const {
+	stringstream str;
+	ObjectPrinter op(str);
+	print(op);
+	return str.str();
 }
 
 // =====================================================
-//	Global Functions
+// class ObjectPrinter
 // =====================================================
+
+ObjectPrinter::ObjectPrinter(std::ostream &o, const string &si)
+		: o(o), i(), si(si), indentNext(true) {
+}
+
+ObjectPrinter::~ObjectPrinter() {
+}
+
+ObjectPrinter &ObjectPrinter::beginClass(const char *name) {
+	if(indentNext) {
+		o << i;
+	}
+	indentNext = true;
+	o << name << " {" << std::endl;
+	i += si;
+	return *this;
+}
+
+ObjectPrinter &ObjectPrinter::endClass() {
+	assert(i.size() >= si.size());
+	i.resize(i.size() - si.size());
+	o << i << "}" << std::endl;
+	return *this;
+}
+
+// =====================================================
+// Global Variables & Functions
+// =====================================================
+
+const Version glestSharedLibVersion(0, 2, 7, 0, false);
+const Version gaeSharedLibVersion(0, 2, 12, 0, true);
+
+const Version &getGlestSharedLibVersion() {
+	return glestSharedLibVersion;
+}
+
+const Version &getGaeSharedLibVersion() {
+	return gaeSharedLibVersion;
+}
 
 const char uu_base64[64] = {
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
@@ -209,20 +237,20 @@ void uuencode(char *dest, size_t *destSize, const void *src, size_t n) {
 	lastTriplet = &s[n - remainder - 1];
 
 	for(; s < lastTriplet; s += 3) {
-		*(++p) = uu_base64[s[0] >> 2];
-		*(++p) = uu_base64[s[0] << 4 & 0x30 | s[1] >> 4];
-		*(++p) = uu_base64[s[1] << 2 & 0x3c | s[2] >> 6];
-		*(++p) = uu_base64[s[2] & 0x3f];
+		*(++p) = uu_base64[ s[0] >> 2];
+		*(++p) = uu_base64[(s[0] << 4 & 0x30) | s[1] >> 4];
+		*(++p) = uu_base64[(s[1] << 2 & 0x3c) | s[2] >> 6];
+		*(++p) = uu_base64[ s[2] & 0x3f];
 	}
 
 	if(remainder > 0) {
 		*(++p) = uu_base64[s[0] >> 2];
 
 		if(remainder == 1) {
-			*(++p) = uu_base64[s[0] << 4 & 0x30];
+			*(++p) = uu_base64[ s[0] << 4 & 0x30];
 		} else {
-			*(++p) = uu_base64[s[0] << 4 & 0x30 | s[1] >> 4];
-			*(++p) = uu_base64[s[1] << 2 & 0x3c];
+			*(++p) = uu_base64[(s[0] << 4 & 0x30) | s[1] >> 4];
+			*(++p) = uu_base64[ s[1] << 2 & 0x3c];
 		}
 	}
 	*(++p) = 0;
@@ -296,18 +324,19 @@ void uudecode(void *dest, size_t *destSize, const char *src) {
 //finds all filenames like path and stores them in results
 void findAll(const string &path, vector<string> &results, bool cutExtension){
 	slist<string> l;
-	DirIterator di;
-	char *p = initDirIterator(path, di);
+	DirectoryListing dir(path);
 
-	if(!p) {
+	if(!dir.isExists()) {
 		throw runtime_error("No files found: " + path);
 	}
 
-	do {
+	// FIXME: Is it ok to modify the buffers returned by directory iteration functions?  If so,
+	// remove this comment, otherwise, we should copy it.
+	for(char *p = const_cast<char *>(dir.getNext()); p; p = const_cast<char *>(dir.getNext())) {
 		// exclude current and parent directory as well as any files that start
 		// with a dot, but do not exclude files with a leading relative path
 		// component, although the path component will be stripped later.
-		if(p[0] == '.' && !(p[1] == '/' || p[1] == '.' && p[2] == '/')) {
+		if(p[0] == '.' && !(p[1] == '/' || (p[1] == '.' && p[2] == '/'))) {
 			continue;
 		}
 		char* begin = p;
@@ -329,9 +358,7 @@ void findAll(const string &path, vector<string> &results, bool cutExtension){
 			*dot = 0;
 		}
 		l.push_front(begin);
-	} while((p = getNextFile(di)));
-
-	freeDirIterator(di);
+	};
 
 	l.sort();
 	results.clear();
@@ -418,5 +445,16 @@ string replaceBy(const string &s, char c1, char c2){
 	return rs;
 }
 
+string toLower(const string &s) {
+	size_t size = s.size();
+	string rs;
+	rs.resize(size);
+
+	for(size_t i = 0; i < size; ++i) {
+		rs[i] = tolower(s[i]);
+	}
+
+	return rs;
+}
 
 }}//end namespace

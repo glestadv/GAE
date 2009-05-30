@@ -25,7 +25,7 @@ using std::string;
 using std::map;
 using std::pair;
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
 
 class Model;
 class Mesh;
@@ -36,10 +36,10 @@ class TextureManager;
 // =====================================================
 //	class Mesh
 //
-//	Part of a 3D model
+///	Part of a 3D model (may contain more than one frame)
 // =====================================================
 
-class Mesh{
+class Mesh {
 private:
 	//mesh data
 	Texture2D *textures[meshTextureCount];
@@ -103,7 +103,7 @@ public:
 	bool getCustomTexture() const			{return customColor;}
 
 	//external data
-	const InterpolationData *getInterpolationData() const	{return interpolationData;}
+	const InterpolationData *getInterpolationData() const {return interpolationData;}
 
 	//interpolation
 	void buildInterpolationData();
@@ -115,18 +115,22 @@ public:
 	void loadV3(const string &dir, FILE *f, TextureManager *textureManager);
 	void load(const string &dir, FILE *f, TextureManager *textureManager);
 	void save(const string &dir, FILE *f);
+	
+	//misc
+	void resize(float scale);
 
 private:
 	void computeTangents();
 };
 
 // =====================================================
-//	class Model
+// class Model
 //
-//	3D Model, than can be loaded from a g3d file
+///	3D Model or models (animation sequence), than can
+/// be loaded from a g3d file
 // =====================================================
 
-class Model{
+class Model {
 private:
 	TextureManager *textureManager;
 
@@ -139,19 +143,19 @@ public:
 	//constructor & destructor
 	Model();
 	virtual ~Model();
-	virtual void init()= 0;
-	virtual void end()= 0;
+	virtual void init() = 0;
+	virtual void end() = 0;
 
 	//data
 	void buildShadowVolumeData() const;
 	void updateInterpolationData(float t, bool cycle) const {
-		for(int i=0; i<meshCount; ++i){
+		for (int i = 0; i < meshCount; ++i) {
 			meshes[i].updateInterpolationData(t, cycle);
 		}
 	}
 
-	void updateInterpolationVertices(float t, bool cycle) const{
-		for(int i=0; i<meshCount; ++i){
+	void updateInterpolationVertices(float t, bool cycle) const {
+		for (int i = 0; i < meshCount; ++i) {
 			meshes[i].updateInterpolationVertices(t, cycle);
 		}
 	}
@@ -166,16 +170,16 @@ public:
 	uint32 getVertexCount() const;
 
 	//io
-	void load(const string &path);
+	void load(const string &path, float scale = 1.f);
 	void save(const string &path);
-	void loadG3d(const string &path);
+	void loadG3d(const string &path, float scale = 1.f);
 	void saveS3d(const string &path);
 
-	void setTextureManager(TextureManager *textureManager)	{this->textureManager= textureManager;}
+	void setTextureManager(TextureManager *textureManager) {this->textureManager = textureManager;}
 
 private:
-	void buildInterpolationData() const{
-		for(int i=0; i<meshCount; ++i){
+	void buildInterpolationData() const {
+		for (int i = 0; i < meshCount; ++i) {
 			meshes[i].buildInterpolationData();
 		}
 	}

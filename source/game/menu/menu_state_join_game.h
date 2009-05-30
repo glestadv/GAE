@@ -9,15 +9,15 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MENUSTATEJOINGAME_H_
-#define _GLEST_GAME_MENUSTATEJOINGAME_H_
+#ifndef _GAME_MENUSTATEJOINGAME_H_
+#define _GAME_MENUSTATEJOINGAME_H_
 
 #include "properties.h"
 #include "main_menu.h"
 
 using Shared::Util::Properties;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class NetworkMessageIntro;
 
@@ -25,7 +25,7 @@ class NetworkMessageIntro;
 // 	class MenuStateJoinGame
 // ===============================
 
-class MenuStateJoinGame: public MenuState{
+class MenuStateJoinGame: public MenuState {
 private:
 	static const int newServerIndex;
 	static const string serverFileName;
@@ -38,26 +38,29 @@ private:
 	GraphicLabel labelServerIp;
 	GraphicLabel labelStatus;
 	GraphicLabel labelInfo;
+	GraphicLabel labelGameInfo;
 	GraphicListBox listBoxServerType;
 	GraphicListBox listBoxServers;
+	GraphicMessageBox *msgBox;
 
 	bool connected;
 	int playerIndex;
 	Properties servers;
 
 public:
-	MenuStateJoinGame(Program *program, MainMenu *mainMenu, bool connect= false, Ip serverIp= Ip());
+	MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool connect = false, IpAddress serverIp = IpAddress());
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
-	void mouseMove(int x, int y, const MouseState *mouseState);
+	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
 	void update();
-	void keyDown(char key);
+	void keyDown(const Key &key);
 	void keyPress(char c);
 
 private:
 	void connectToServer();
 };
-}}//end namespace
+
+} // end namespace
 
 #endif

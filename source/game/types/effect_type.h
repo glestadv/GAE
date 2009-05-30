@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_EFFECTTYPE_H
-#define _GLEST_GAME_EFFECTTYPE_H
+#ifndef _GAME_EFFECTTYPE_H
+#define _GAME_EFFECTTYPE_H
 
 #include "sound.h"
 #include "vec.h"
@@ -25,7 +25,7 @@ using Shared::Sound::StaticSound;
 using Shared::Xml::XmlNode;
 using Shared::Graphics::Vec3f;
 
-namespace Glest { namespace Game {
+namespace Game {
 
 class FactionType;
 class TechTree;
@@ -187,7 +187,7 @@ public:
 
 typedef vector<Emanation*> Emanations;
 
-}}//end namespace
+} // end namespace
 
 
 #endif

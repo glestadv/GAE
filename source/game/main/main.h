@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MAIN_H_
-#define _GLEST_GAME_MAIN_H_
+#ifndef _GAME_MAIN_H_
+#define _GAME_MAIN_H_
 
 #include <ctime>
 
@@ -20,9 +20,9 @@
 using Shared::Platform::MouseButton;
 using Shared::Platform::MouseState;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 
-}}//end namespace
+} // end namespace
 
 #endif

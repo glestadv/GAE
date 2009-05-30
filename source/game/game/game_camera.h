@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_GAMECAMERA_H_
-#define _GLEST_GAME_GAMECAMERA_H_
+#ifndef _GAME_GAMECAMERA_H_
+#define _GAME_GAMECAMERA_H_
 
 #include "vec.h"
 #include "math_util.h"
@@ -19,11 +19,10 @@ namespace Shared { namespace Xml {
 	class XmlNode;
 }}
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::Quad2i;
 using Shared::Graphics::Vec3f;
-using Shared::Graphics::Vec3b;
 using Shared::Graphics::Vec2f;
 using Shared::Xml::XmlNode;
 
@@ -129,6 +128,6 @@ private:
 	void moveUp(float dist);
 };
 
-}} //end namespace
+} // end namespace
 
 #endif

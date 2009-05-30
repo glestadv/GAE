@@ -18,7 +18,7 @@
 
 #include "leak_dumper.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class TimeFlow
@@ -33,7 +33,7 @@ void TimeFlow::init(Tileset *tileset){
 	time= dawn+1.5f;
 	lastTime= time;
 	Config &config= Config::getInstance();
-	timeInc= 24.f*(1.f/config.getDayTime())/Config::getInstance().getWorldUpdateFPS();
+	timeInc= 24.f*(1.f/config.getGsDayTime())/Config::getInstance().getGsWorldUpdateFps();
 }
 
 void TimeFlow::update(){
@@ -105,4 +105,4 @@ bool TimeFlow::isAproxTime(float time){
 	return (this->time>=time) && (this->time<time+timeInc);
 }
 
-}}//end namespace
+} // end namespace

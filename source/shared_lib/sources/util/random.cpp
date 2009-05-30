@@ -15,6 +15,7 @@
 
 #include <cassert>
 #include <time.h>
+#include <cstdlib>
 
 #include "leak_dumper.h"
 
@@ -29,9 +30,19 @@ const int Random::a= 1366;
 const int Random::b= 150889;
 
 void Random::init(int seed) {
+	seed = abs(seed);
+#ifdef SEED_RANDOM_WITH_CLOCK
+	assert(sizeof(time_t) == 32);
 	time_t curSeconds = 0;
 	time(&curSeconds);
-	lastNumber= (seed ^ curSeconds ^ clock()) % m;
+	curSeconds = ((curSeconds & 0x000000ff) << 24)
+			| ((curSeconds & 0x0000ff00) << 8)
+			| ((curSeconds & 0x00ff0000) >> 8)
+			| ((curSeconds & 0xff000000) >> 24);
+	lastNumber= abs((int)((seed ^ curSeconds ^ clock()) % m));
+#else
+	lastNumber= seed % m;
+#endif
 }
 
 }}//end namespace

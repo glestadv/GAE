@@ -9,15 +9,16 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_SELECTION_
-#define _GLEST_GAME_SELECTION_
+#ifndef _GAME_SELECTION_
+#define _GAME_SELECTION_
+
+#include <vector>
 
 #include "unit.h"
-#include <vector>
 
 using std::vector;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class Gui;
 
@@ -33,14 +34,14 @@ enum AutoRepairState {
 ///	List of selected units and groups
 // =====================================================
 
-class Selection: public UnitObserver{
+class Selection: public UnitObserver {
 public:
 	typedef vector<Unit*> UnitContainer;
 	typedef UnitContainer::const_iterator UnitIterator;
 
 public:
-	static const int maxGroups= 10;
-	static const int maxUnits= 16;
+	static const int maxGroups = 10;
+	static const int maxUnits = 16;
 
 private:
 	bool empty;
@@ -64,7 +65,7 @@ public:
 	void select(Unit *unit);
 	void select(const UnitContainer &units) {
 		//add units to gui
-		for(UnitIterator it= units.begin(); it!=units.end(); ++it){
+		for(UnitIterator it= units.begin(); it!=units.end(); ++it) {
 			select(*it);
 		}
 	}
@@ -107,6 +108,6 @@ protected:
 	void unSelect(int unitIndex);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

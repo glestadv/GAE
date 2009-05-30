@@ -24,7 +24,7 @@
 using namespace Shared::Graphics;
 using Shared::Xml::XmlNode;
 
-namespace Glest { namespace Game {
+namespace Game {
 
 // =====================================================
 // 	class GameCamera
@@ -48,7 +48,7 @@ GameCamera::GameCamera() : pos(0.f, defaultHeight, 0.f),
 
 	//config
 	speed= 15.f / GameConstants::cameraFps;
-	clampBounds= !Config::getInstance().getPhotoMode();
+	clampBounds= !Config::getInstance().getUiPhotoMode();
 
 	vAng= startingVAng;
     hAng= startingHAng;
@@ -57,14 +57,14 @@ GameCamera::GameCamera() : pos(0.f, defaultHeight, 0.f),
 
 	move= Vec3f(0.f);
 
-	maxRenderDistance = config.getMaxRenderDistance();
+	maxRenderDistance = config.getRenderDistanceMax();
 	maxHeight = config.getCameraMaxDistance();
 	minHeight = config.getCameraMinDistance();
 	maxCameraDist = config.getCameraMaxDistance();
 	minCameraDist = config.getCameraMinDistance();
 	minVAng = -config.getCameraMaxYaw();
 	maxVAng = -config.getCameraMinYaw();
-	fov = config.getCameraFOV();
+	fov = config.getCameraFov();
 }
 
 void GameCamera::init(int limitX, int limitY){
@@ -178,31 +178,31 @@ Quad2i GameCamera::computeVisibleQuad() const{
 	return Quad2i(pi4, pi3, pi2, pi1);
 	*/
 
-	float nearDist= 20.f;
-	float dist= pos.y > 20.f ? pos.y * 1.2f : 20.f;
-	float farDist= 90.f * (pos.y > 20.f ? pos.y / 15.f : 1.f);
-	float fov= 45.f;
-
-	Vec2f v(sinf(degToRad(180-hAng)), cosf(degToRad(180-hAng)));
-	Vec2f v1(sinf(degToRad(180-hAng-fov)), cosf(degToRad(180-hAng-fov)));
-	Vec2f v2(sinf(degToRad(180-hAng+fov)), cosf(degToRad(180-hAng+fov)));
+	float nearDist = 20.f;
+	float dist = pos.y > 20.f ? pos.y * 1.2f : 20.f;
+	float farDist = 90.f * (pos.y > 20.f ? pos.y / 15.f : 1.f);
+	float fov = Config::getInstance().getCameraFov();
+	
+	Vec2f v(sinf(degToRad(180 - hAng)), cosf(degToRad(180 - hAng)));
+	Vec2f v1(sinf(degToRad(180 - hAng - fov)), cosf(degToRad(180 - hAng - fov)));
+	Vec2f v2(sinf(degToRad(180 - hAng + fov)), cosf(degToRad(180 - hAng + fov)));
 	v.normalize();
 	v1.normalize();
 	v2.normalize();
-
-	Vec2f p= Vec2f(pos.x, pos.z)-v*dist;
-	Vec2i p1(static_cast<int>(p.x+v1.x*nearDist), static_cast<int>(p.y+v1.y*nearDist));
-	Vec2i p2(static_cast<int>(p.x+v1.x*farDist), static_cast<int>(p.y+v1.y*farDist));
-	Vec2i p3(static_cast<int>(p.x+v2.x*nearDist), static_cast<int>(p.y+v2.y*nearDist));
-	Vec2i p4(static_cast<int>(p.x+v2.x*farDist), static_cast<int>(p.y+v2.y*farDist));
-
-	if(hAng>=135 && hAng<=225){
+	
+	Vec2f p = Vec2f(pos.x, pos.z) - v * dist;
+	Vec2i p1(static_cast<int>(p.x + v1.x * nearDist), static_cast<int>(p.y + v1.y * nearDist));
+	Vec2i p2(static_cast<int>(p.x + v1.x * farDist), static_cast<int>(p.y + v1.y * farDist));
+	Vec2i p3(static_cast<int>(p.x + v2.x * nearDist), static_cast<int>(p.y + v2.y * nearDist));
+	Vec2i p4(static_cast<int>(p.x + v2.x * farDist), static_cast<int>(p.y + v2.y * farDist));
+	
+	if (hAng >= 135 && hAng <= 225) {
 		return Quad2i(p1, p2, p3, p4);
 	}
-	if(hAng>=45 && hAng<=135){
+	if (hAng >= 45 && hAng <= 135) {
 		return Quad2i(p3, p1, p4, p2);
 	}
-	if(hAng>=225 && hAng<=315) {
+	if (hAng >= 225 && hAng <= 315) {
 		return Quad2i(p2, p4, p1, p3);
 	}
 	return Quad2i(p4, p3, p2, p1);
@@ -327,4 +327,4 @@ void GameCamera::moveUp(float d){
 	destPos.y += d;
 }
 
-}}//end namespace
+} // end namespace

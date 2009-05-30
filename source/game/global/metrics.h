@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_METRICS_H_
-#define _GLEST_GAME_METRICS_H_
+#ifndef _GAME_METRICS_H_
+#define _GAME_METRICS_H_
 
 #include "config.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 //	class Metrics
@@ -78,6 +78,6 @@ public:
 	}
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

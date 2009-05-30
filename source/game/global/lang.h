@@ -9,36 +9,41 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_LANG_H_
-#define _GLEST_GAME_LANG_H_
+#ifndef _GAME_LANG_H_
+#define _GAME_LANG_H_
 
 #include "properties.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Util::Properties;
 
 // =====================================================
-// 	class Lang
+//  class Lang
 //
-//	String table
+/// String table
 // =====================================================
 
-class Lang{
+class Lang {
 private:
 	string name;
 	Properties langStrings;
 
 private:
-	Lang(){};
+	Lang() {}
 
 public:
-	static Lang &getInstance();    
-	void load(string file);
-	string get(const string &s);
-	string getName();
+	static Lang &getInstance() {
+		static Lang lang;
+		return lang;
+	}
+
+	void load(string file)				{langStrings.load(file, true);}
+	string getName() const				{return name;}
+	string get(const string &s) const	{return langStrings.getString(s, "???" + s + "???");}
+	string format(const string &s, ...) const;
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

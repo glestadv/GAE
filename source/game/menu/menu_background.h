@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MENUBACKGROUND_H_
-#define _GLEST_GAME_MENUBACKGROUND_H_
+#ifndef _GAME_MENUBACKGROUND_H_
+#define _GAME_MENUBACKGROUND_H_
 
 #include "particle.h"
 #include "camera.h"
@@ -28,7 +28,7 @@ using Shared::Graphics::Texture2D;
 using Shared::Graphics::Model;
 using Shared::Util::Random;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===========================================================
 // 	class MenuBackground  
@@ -98,7 +98,7 @@ private:
 	Vec2f computeRaindropPos();
 };
 
-}} //end namespace
+} // end namespace
 
 #endif
 

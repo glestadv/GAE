@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_UNITUPDATER_H_
-#define _GLEST_GAME_UNITUPDATER_H_
+#ifndef _GAME_UNITUPDATER_H_
+#define _GAME_UNITUPDATER_H_
 
 #include "gui.h"
 #include "path_finder.h"
@@ -21,7 +21,7 @@
 using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class Unit;
 class Map;
@@ -88,7 +88,7 @@ private:
     void hit(Unit *attacker);
 	void hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked = NULL);
 	void damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance);
-	void startAttackParticleSystem(Unit *unit);
+	void startAttackSystems(Unit *unit, const AttackSkillType* ast);
 
 	//effects
 	void applyEffects(Unit *source, const EffectTypes &effectTypes, const Vec2i &targetPos, Field targetField, int splashRadius);
@@ -171,6 +171,6 @@ public:
 	virtual void update(ParticleSystem *particleSystem);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

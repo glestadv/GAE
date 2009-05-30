@@ -10,12 +10,15 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_CONFIG_H_
-#define _GLEST_GAME_CONFIG_H_
+// This file is auto-generated from config.h.template using ../config.db and the script
+// ../mkconfig.sh.  To modify actual config settings, edit config.db and re-run ../mkconfig.sh.
+
+#ifndef _GAME_CONFIG_H_
+#define _GAME_CONFIG_H_
 
 #include "properties.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Util::Properties;
 
@@ -25,71 +28,101 @@ using Shared::Util::Properties;
 //	Game configuration
 // =====================================================
 
-class Config : protected Properties {
+class Config {
 private:
+	Properties *properties;
 	string fileName;
 
-	int aiLog;
-	bool aiRedir;
-	float cameraFOV;
+	float cameraFov;
 	bool cameraInvertXAxis;
 	bool cameraInvertYAxis;
 	float cameraMaxDistance;
 	float cameraMaxYaw;
 	float cameraMinDistance;
 	float cameraMinYaw;
-	bool catchExceptions;
-	bool checkGlCaps;
-	int colorBits;
-	int consoleMaxLines;
-	int consoleTimeout;
-	float dayTime;
-	bool debugMode;
-	int depthBits;
-	bool enableCommandMinimap;
-	string factoryGraphics;
-	string factorySound;
-	float fastestSpeed;
-	string filter;
-	int filterMaxAnisotropy;
-	bool firstTime;
-	bool focusArrows;
-	bool fogOfWar;
-	bool fogOfWarSmoothing;
-	int fogOfWarSmoothingFrameSkip;
-	string fontConsole;
-	string fontDisplay;
-	string fontMenu;
-	string lang;
-	int maxFPS;
-	int maxLights;
-	float maxRenderDistance;
-	bool multiplayerPauseAllowed;
-	bool networkConsistencyChecks;
-	int networkFPS;
-	bool photoMode;
-	bool randStartLocs;
-	int refreshFrequency;
-	int screenHeight;
-	int screenWidth;
-	float scrollSpeed;
-	string serverIp;
-	float shadowAlpha;
-	int shadowFrameSkip;
-	int shadowTextureSize;
-	string shadows;
-	float slowestSpeed;
+	int displayHeight;
+	int displayRefreshFrequency;
+	int displayWidth;
+	bool displayWindowed;
+	bool gsAutoRepairEnabled;
+	bool gsAutoReturnEnabled;
+	float gsDayTime;
+	bool gsFogOfWarEnabled;
+	bool gsRandStartLocs;
+	float gsSpeedFastest;
+	float gsSpeedSlowest;
+	int gsWorldUpdateFps;
+	int miscAiLog;
+	bool miscAiRedir;
+	bool miscCatchExceptions;
+	bool miscDebugKeys;
+	bool miscDebugMode;
+	bool miscFirstTime;
+	bool miscLowMemory;
+	bool netAutoRepairAllowed;
+	bool netAutoReturnAllowed;
+	bool netChangeSpeedAllowed;
+	int netClientPort;
+	bool netConsistencyChecks;
+	int netFps;
+	int netMinFullUpdateInterval;
+	bool netPauseAllowed;
+	string netPlayerName;
+	string netServerIp;
+	int netServerPort;
+	bool renderCheckGlCaps;
+	int renderColorBits;
+	int renderDepthBits;
+	float renderDistanceMax;
+	float renderDistanceMin;
+	string renderFilter;
+	int renderFilterMaxAnisotropy;
+	bool renderFogOfWarSmoothing;
+	int renderFogOfWarSmoothingFrameSkip;
+	string renderFontConsole;
+	string renderFontDisplay;
+	string renderFontMenu;
+	float renderFov;
+	int renderFpsMax;
+	string renderGraphicsFactory;
+	int renderLightsMax;
+	float renderShadowAlpha;
+	int renderShadowFrameSkip;
+	int renderShadowTextureSize;
+	string renderShadows;
+	int renderStencilBits;
+	bool renderTextures3D;
+	string soundFactory;
 	int soundStaticBuffers;
 	int soundStreamingBuffers;
 	int soundVolumeAmbient;
 	int soundVolumeFx;
 	int soundVolumeMusic;
-	int stencilBits;
-	bool textures3D;
-	bool windowed;
-	int worldUpdateFPS;
+	int uiConsoleMaxLines;
+	int uiConsoleTimeout;
+	bool uiEnableCommandMinimap;
+	bool uiFocusArrows;
+	string uiLang;
+	bool uiPhotoMode;
+	float uiScrollSpeed;
 
 	Config(const char* fileName);
+	
+	static bool isWindows() {
+#if defined(WIN32) || defined(WIN64)
+		return true;
+#else
+		return false;
+#endif
+	}
+
+	const char *getDefaultFontStr() const {
+		if(isWindows()) {
+			return "Verdana";
+		} else {
+			return "-*-*-*-*-*-12-*-*-*-*-*-*-*";
+		}
+	}
 
 public:
 	static Config &getInstance() {
@@ -98,131 +131,155 @@ public:
 	}
 
 	void save(const char *path = "glestadv.ini");
-	string toString()							{return Properties::toString();}
 
-	int getAiLog() const						{return aiLog;}
-	bool getAiRedir() const						{return aiRedir;}
-	float getCameraFOV() const					{return cameraFOV;}
+	float getCameraFov() const					{return cameraFov;}
 	bool getCameraInvertXAxis() const			{return cameraInvertXAxis;}
 	bool getCameraInvertYAxis() const			{return cameraInvertYAxis;}
 	float getCameraMaxDistance() const			{return cameraMaxDistance;}
 	float getCameraMaxYaw() const				{return cameraMaxYaw;}
 	float getCameraMinDistance() const			{return cameraMinDistance;}
 	float getCameraMinYaw() const				{return cameraMinYaw;}
-	bool getCatchExceptions() const				{return catchExceptions;}
-	bool getCheckGlCaps() const					{return checkGlCaps;}
-	int getColorBits() const					{return colorBits;}
-	int getConsoleMaxLines() const				{return consoleMaxLines;}
-	int getConsoleTimeout() const				{return consoleTimeout;}
-	float getDayTime() const					{return dayTime;}
-	bool getDebugMode() const					{return debugMode;}
-	int getDepthBits() const					{return depthBits;}
-	bool getEnableCommandMinimap() const		{return enableCommandMinimap;}
-	string getFactoryGraphics() const			{return factoryGraphics;}
-	string getFactorySound() const				{return factorySound;}
-	float getFastestSpeed() const				{return fastestSpeed;}
-	string getFilter() const					{return filter;}
-	int getFilterMaxAnisotropy() const			{return filterMaxAnisotropy;}
-	bool getFirstTime() const					{return firstTime;}
-	bool getFocusArrows() const					{return focusArrows;}
-	bool getFogOfWar() const					{return fogOfWar;}
-	bool getFogOfWarSmoothing() const			{return fogOfWarSmoothing;}
-	int getFogOfWarSmoothingFrameSkip() const	{return fogOfWarSmoothingFrameSkip;}
-	string getFontConsole() const				{return fontConsole;}
-	string getFontDisplay() const				{return fontDisplay;}
-	string getFontMenu() const					{return fontMenu;}
-	string getLang() const						{return lang;}
-	int getMaxFPS() const						{return maxFPS;}
-	int getMaxLights() const					{return maxLights;}
-	float getMaxRenderDistance() const			{return maxRenderDistance;}
-	bool getMultiplayerPauseAllowed() const		{return multiplayerPauseAllowed;}
-	bool getNetworkConsistencyChecks() const	{return networkConsistencyChecks;}
-	int getNetworkFPS() const					{return networkFPS;}
-	bool getPhotoMode() const					{return photoMode;}
-	bool getRandStartLocs() const				{return randStartLocs;}
-	int getRefreshFrequency() const				{return refreshFrequency;}
-	int getScreenHeight() const					{return screenHeight;}
-	int getScreenWidth() const					{return screenWidth;}
-	float getScrollSpeed() const				{return scrollSpeed;}
-	string getServerIp() const					{return serverIp;}
-	float getShadowAlpha() const				{return shadowAlpha;}
-	int getShadowFrameSkip() const				{return shadowFrameSkip;}
-	int getShadowTextureSize() const			{return shadowTextureSize;}
-	string getShadows() const					{return shadows;}
-	float getSlowestSpeed() const				{return slowestSpeed;}
+	int getDisplayHeight() const				{return displayHeight;}
+	int getDisplayRefreshFrequency() const		{return displayRefreshFrequency;}
+	int getDisplayWidth() const					{return displayWidth;}
+	bool getDisplayWindowed() const				{return displayWindowed;}
+	bool getGsAutoRepairEnabled() const			{return gsAutoRepairEnabled;}
+	bool getGsAutoReturnEnabled() const			{return gsAutoReturnEnabled;}
+	float getGsDayTime() const					{return gsDayTime;}
+	bool getGsFogOfWarEnabled() const			{return gsFogOfWarEnabled;}
+	bool getGsRandStartLocs() const				{return gsRandStartLocs;}
+	float getGsSpeedFastest() const				{return gsSpeedFastest;}
+	float getGsSpeedSlowest() const				{return gsSpeedSlowest;}
+	int getGsWorldUpdateFps() const				{return gsWorldUpdateFps;}
+	int getMiscAiLog() const					{return miscAiLog;}
+	bool getMiscAiRedir() const					{return miscAiRedir;}
+	bool getMiscCatchExceptions() const			{return miscCatchExceptions;}
+	bool getMiscDebugKeys() const				{return miscDebugKeys;}
+	bool getMiscDebugMode() const				{return miscDebugMode;}
+	bool getMiscFirstTime() const				{return miscFirstTime;}
+	bool getMiscLowMemory() const				{return miscLowMemory;}
+	bool getNetAutoRepairAllowed() const		{return netAutoRepairAllowed;}
+	bool getNetAutoReturnAllowed() const		{return netAutoReturnAllowed;}
+	bool getNetChangeSpeedAllowed() const		{return netChangeSpeedAllowed;}
+	int getNetClientPort() const				{return netClientPort;}
+	bool getNetConsistencyChecks() const		{return netConsistencyChecks;}
+	int getNetFps() const						{return netFps;}
+	int getNetMinFullUpdateInterval() const		{return netMinFullUpdateInterval;}
+	bool getNetPauseAllowed() const				{return netPauseAllowed;}
+	string getNetPlayerName() const				{return netPlayerName;}
+	string getNetServerIp() const				{return netServerIp;}
+	int getNetServerPort() const				{return netServerPort;}
+	bool getRenderCheckGlCaps() const			{return renderCheckGlCaps;}
+	int getRenderColorBits() const				{return renderColorBits;}
+	int getRenderDepthBits() const				{return renderDepthBits;}
+	float getRenderDistanceMax() const			{return renderDistanceMax;}
+	float getRenderDistanceMin() const			{return renderDistanceMin;}
+	string getRenderFilter() const				{return renderFilter;}
+	int getRenderFilterMaxAnisotropy() const	{return renderFilterMaxAnisotropy;}
+	bool getRenderFogOfWarSmoothing() const		{return renderFogOfWarSmoothing;}
+	int getRenderFogOfWarSmoothingFrameSkip() const{return renderFogOfWarSmoothingFrameSkip;}
+	string getRenderFontConsole() const			{return renderFontConsole;}
+	string getRenderFontDisplay() const			{return renderFontDisplay;}
+	string getRenderFontMenu() const			{return renderFontMenu;}
+	float getRenderFov() const					{return renderFov;}
+	int getRenderFpsMax() const					{return renderFpsMax;}
+	string getRenderGraphicsFactory() const		{return renderGraphicsFactory;}
+	int getRenderLightsMax() const				{return renderLightsMax;}
+	float getRenderShadowAlpha() const			{return renderShadowAlpha;}
+	int getRenderShadowFrameSkip() const		{return renderShadowFrameSkip;}
+	int getRenderShadowTextureSize() const		{return renderShadowTextureSize;}
+	string getRenderShadows() const				{return renderShadows;}
+	int getRenderStencilBits() const			{return renderStencilBits;}
+	bool getRenderTextures3D() const			{return renderTextures3D;}
+	string getSoundFactory() const				{return soundFactory;}
 	int getSoundStaticBuffers() const			{return soundStaticBuffers;}
 	int getSoundStreamingBuffers() const		{return soundStreamingBuffers;}
 	int getSoundVolumeAmbient() const			{return soundVolumeAmbient;}
 	int getSoundVolumeFx() const				{return soundVolumeFx;}
 	int getSoundVolumeMusic() const				{return soundVolumeMusic;}
-	int getStencilBits() const					{return stencilBits;}
-	bool getTextures3D() const					{return textures3D;}
-	bool getWindowed() const					{return windowed;}
-	int getWorldUpdateFPS() const				{return worldUpdateFPS;}
+	int getUiConsoleMaxLines() const			{return uiConsoleMaxLines;}
+	int getUiConsoleTimeout() const				{return uiConsoleTimeout;}
+	bool getUiEnableCommandMinimap() const		{return uiEnableCommandMinimap;}
+	bool getUiFocusArrows() const				{return uiFocusArrows;}
+	string getUiLang() const					{return uiLang;}
+	bool getUiPhotoMode() const					{return uiPhotoMode;}
+	float getUiScrollSpeed() const				{return uiScrollSpeed;}
 
-	void setAiLog(int val)						{aiLog = val;}
-	void setAiRedir(bool val)					{aiRedir = val;}
-	void setCameraFOV(float val)				{cameraFOV = val;}
+	void setCameraFov(float val)				{cameraFov = val;}
 	void setCameraInvertXAxis(bool val)			{cameraInvertXAxis = val;}
 	void setCameraInvertYAxis(bool val)			{cameraInvertYAxis = val;}
 	void setCameraMaxDistance(float val)		{cameraMaxDistance = val;}
 	void setCameraMaxYaw(float val)				{cameraMaxYaw = val;}
 	void setCameraMinDistance(float val)		{cameraMinDistance = val;}
 	void setCameraMinYaw(float val)				{cameraMinYaw = val;}
-	void setCatchExceptions(bool val)			{catchExceptions = val;}
-	void setCheckGlCaps(bool val)				{checkGlCaps = val;}
-	void setColorBits(int val)					{colorBits = val;}
-	void setConsoleMaxLines(int val)			{consoleMaxLines = val;}
-	void setConsoleTimeout(int val)				{consoleTimeout = val;}
-	void setDayTime(float val)					{dayTime = val;}
-	void setDebugMode(bool val)					{debugMode = val;}
-	void setDepthBits(int val)					{depthBits = val;}
-	void setEnableCommandMinimap(bool val)		{enableCommandMinimap = val;}
-	void setFactoryGraphics(string val)			{factoryGraphics = val;}
-	void setFactorySound(string val)			{factorySound = val;}
-	void setFastestSpeed(float val)				{fastestSpeed = val;}
-	void setFilter(string val)					{filter = val;}
-	void setFilterMaxAnisotropy(int val)		{filterMaxAnisotropy = val;}
-	void setFirstTime(bool val)					{firstTime = val;}
-	void setFocusArrows(bool val)				{focusArrows = val;}
-	void setFogOfWar(bool val)					{fogOfWar = val;}
-	void setFogOfWarSmoothing(bool val)			{fogOfWarSmoothing = val;}
-	void setFogOfWarSmoothingFrameSkip(int val)	{fogOfWarSmoothingFrameSkip = val;}
-	void setFontConsole(string val)				{fontConsole = val;}
-	void setFontDisplay(string val)				{fontDisplay = val;}
-	void setFontMenu(string val)				{fontMenu = val;}
-	void setLang(string val)					{lang = val;}
-	void setMaxFPS(int val)						{maxFPS = val;}
-	void setMaxLights(int val)					{maxLights = val;}
-	void setMaxRenderDistance(float val)		{maxRenderDistance = val;}
-	void setMultiplayerPauseAllowed(bool val)	{multiplayerPauseAllowed = val;}
-	void setNetworkConsistencyChecks(bool val)	{networkConsistencyChecks = val;}
-	void setNetworkFPS(int val)					{networkFPS = val;}
-	void setPhotoMode(bool val)					{photoMode = val;}
-	void setRandStartLocs(bool val)				{randStartLocs = val;}
-	void setRefreshFrequency(int val)			{refreshFrequency = val;}
-	void setScreenHeight(int val)				{screenHeight = val;}
-	void setScreenWidth(int val)				{screenWidth = val;}
-	void setScrollSpeed(float val)				{scrollSpeed = val;}
-	void setServerIp(string val)				{serverIp = val;}
-	void setShadowAlpha(float val)				{shadowAlpha = val;}
-	void setShadowFrameSkip(int val)			{shadowFrameSkip = val;}
-	void setShadowTextureSize(int val)			{shadowTextureSize = val;}
-	void setShadows(string val)					{shadows = val;}
-	void setSlowestSpeed(float val)				{slowestSpeed = val;}
+	void setDisplayHeight(int val)				{displayHeight = val;}
+	void setDisplayRefreshFrequency(int val)	{displayRefreshFrequency = val;}
+	void setDisplayWidth(int val)				{displayWidth = val;}
+	void setDisplayWindowed(bool val)			{displayWindowed = val;}
+	void setGsAutoRepairEnabled(bool val)		{gsAutoRepairEnabled = val;}
+	void setGsAutoReturnEnabled(bool val)		{gsAutoReturnEnabled = val;}
+	void setGsDayTime(float val)				{gsDayTime = val;}
+	void setGsFogOfWarEnabled(bool val)			{gsFogOfWarEnabled = val;}
+	void setGsRandStartLocs(bool val)			{gsRandStartLocs = val;}
+	void setGsSpeedFastest(float val)			{gsSpeedFastest = val;}
+	void setGsSpeedSlowest(float val)			{gsSpeedSlowest = val;}
+	void setGsWorldUpdateFps(int val)			{gsWorldUpdateFps = val;}
+	void setMiscAiLog(int val)					{miscAiLog = val;}
+	void setMiscAiRedir(bool val)				{miscAiRedir = val;}
+	void setMiscCatchExceptions(bool val)		{miscCatchExceptions = val;}
+	void setMiscDebugKeys(bool val)				{miscDebugKeys = val;}
+	void setMiscDebugMode(bool val)				{miscDebugMode = val;}
+	void setMiscFirstTime(bool val)				{miscFirstTime = val;}
+	void setMiscLowMemory(bool val)				{miscLowMemory = val;}
+	void setNetAutoRepairAllowed(bool val)		{netAutoRepairAllowed = val;}
+	void setNetAutoReturnAllowed(bool val)		{netAutoReturnAllowed = val;}
+	void setNetChangeSpeedAllowed(bool val)		{netChangeSpeedAllowed = val;}
+	void setNetClientPort(int val)				{netClientPort = val;}
+	void setNetConsistencyChecks(bool val)		{netConsistencyChecks = val;}
+	void setNetFps(int val)						{netFps = val;}
+	void setNetMinFullUpdateInterval(int val)	{netMinFullUpdateInterval = val;}
+	void setNetPauseAllowed(bool val)			{netPauseAllowed = val;}
+	void setNetPlayerName(string val)			{netPlayerName = val;}
+	void setNetServerIp(string val)				{netServerIp = val;}
+	void setNetServerPort(int val)				{netServerPort = val;}
+	void setRenderCheckGlCaps(bool val)			{renderCheckGlCaps = val;}
+	void setRenderColorBits(int val)			{renderColorBits = val;}
+	void setRenderDepthBits(int val)			{renderDepthBits = val;}
+	void setRenderDistanceMax(float val)		{renderDistanceMax = val;}
+	void setRenderDistanceMin(float val)		{renderDistanceMin = val;}
+	void setRenderFilter(string val)			{renderFilter = val;}
+	void setRenderFilterMaxAnisotropy(int val)	{renderFilterMaxAnisotropy = val;}
+	void setRenderFogOfWarSmoothing(bool val)	{renderFogOfWarSmoothing = val;}
+	void setRenderFogOfWarSmoothingFrameSkip(int val){renderFogOfWarSmoothingFrameSkip = val;}
+	void setRenderFontConsole(string val)		{renderFontConsole = val;}
+	void setRenderFontDisplay(string val)		{renderFontDisplay = val;}
+	void setRenderFontMenu(string val)			{renderFontMenu = val;}
+	void setRenderFov(float val)				{renderFov = val;}
+	void setRenderFpsMax(int val)				{renderFpsMax = val;}
+	void setRenderGraphicsFactory(string val)	{renderGraphicsFactory = val;}
+	void setRenderLightsMax(int val)			{renderLightsMax = val;}
+	void setRenderShadowAlpha(float val)		{renderShadowAlpha = val;}
+	void setRenderShadowFrameSkip(int val)		{renderShadowFrameSkip = val;}
+	void setRenderShadowTextureSize(int val)	{renderShadowTextureSize = val;}
+	void setRenderShadows(string val)			{renderShadows = val;}
+	void setRenderStencilBits(int val)			{renderStencilBits = val;}
+	void setRenderTextures3D(bool val)			{renderTextures3D = val;}
+	void setSoundFactory(string val)			{soundFactory = val;}
 	void setSoundStaticBuffers(int val)			{soundStaticBuffers = val;}
 	void setSoundStreamingBuffers(int val)		{soundStreamingBuffers = val;}
 	void setSoundVolumeAmbient(int val)			{soundVolumeAmbient = val;}
 	void setSoundVolumeFx(int val)				{soundVolumeFx = val;}
 	void setSoundVolumeMusic(int val)			{soundVolumeMusic = val;}
-	void setStencilBits(int val)				{stencilBits = val;}
-	void setTextures3D(bool val)				{textures3D = val;}
-	void setWindowed(bool val)					{windowed = val;}
-	void setWorldUpdateFPS(int val)				{worldUpdateFPS = val;}
-
+	void setUiConsoleMaxLines(int val)			{uiConsoleMaxLines = val;}
+	void setUiConsoleTimeout(int val)			{uiConsoleTimeout = val;}
+	void setUiEnableCommandMinimap(bool val)	{uiEnableCommandMinimap = val;}
+	void setUiFocusArrows(bool val)				{uiFocusArrows = val;}
+	void setUiLang(string val)					{uiLang = val;}
+	void setUiPhotoMode(bool val)				{uiPhotoMode = val;}
+	void setUiScrollSpeed(float val)			{uiScrollSpeed = val;}
 };
 
-}}//end namespace
+} // end namespace
 
 #endif
 

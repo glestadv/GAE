@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_INTRO_H_
-#define _GLEST_GAME_INTRO_H_
+#ifndef _GAME_INTRO_H_
+#define _GAME_INTRO_H_
 
 #include <vector>
 
@@ -27,7 +27,7 @@ using Shared::Graphics::Vec3f;
 using Shared::Graphics::Font2D;
 using Shared::Graphics::Texture2D;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 //	class Text
@@ -60,7 +60,7 @@ public:
 ///	ProgramState representing the intro
 // =====================================================
 
-class Intro: public ProgramState{
+class Intro: public ProgramState {
 private:
 	static const int introTime;
 	static const int appearTime;
@@ -72,13 +72,13 @@ private:
 	int timer;
 
 public:
-	Intro(Program *program);
+	Intro(Program &program);
 	virtual void update();
 	virtual void render();
-	virtual void keyDown(char key);
+	virtual void keyDown(const Key &key);
 	virtual void mouseUpLeft(int x, int y);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

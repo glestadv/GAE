@@ -19,41 +19,44 @@
 
 #include "leak_dumper.h"
 
+//using namespace Shared::Util;
 
-using namespace Shared::Util;
+namespace Game {
 
-namespace Glest{ namespace Game{
+const string glestMailString			= "contact_game@glest.org";
+const string gaeMailString				= "daniel.santos@pobox.com";
+const Version glestVersion				(3, 1, 2, 0, false);
+const Version gaeVersion				(0, 2, 12, 0, true);
+const Version netProtocolVersion		(0, 2, 12, 0, true);
 
-const string mailString= "contact_game@glest.org";
-const string gaeMailString= "daniel.santos@pobox.com";
-const string glestVersionString= "v3.1.2";
-const string gaeVersionString= "v0.2.8-wip";
+const string &getGlestMailString()		{return glestMailString;}
+const string &getGaeMailString()		{return gaeMailString;}
+const Version &getGlestVersion()		{return glestVersion;}
+const Version &getGaeVersion()			{return gaeVersion;}
+const Version &getNetProtocolVersion()	{return netProtocolVersion;}
 
-
-string getNetworkVersionString(){
-	return gaeVersionString;// + " - " + string(__DATE__) + " - " + string(__TIME__);
-}
-
-string getAboutString1(int i){
-	switch(i){
-	case 0: return "Glest Advanced Engine " + gaeVersionString + " based on Glest "
-			+ glestVersionString + " (" + "Shared Library " + sharedLibVersionString + ")";
+string getAboutString1(int i) {
+	switch(i) {
+	case 0: return "Glest Advanced Engine v" + getGaeVersion().toString() + ", based on Glest v"
+			+ getGlestVersion().toString() + " (Shared Library v"
+			+ getGaeSharedLibVersion().toString() + ", based on Glest Shared Library v"
+			+ getGlestSharedLibVersion().toString() + ")";
 	case 1: return "Built: " + string(__DATE__);
-	case 2: return "Copyright 2001-2008 The Glest Team, 2008 Daniel Santos";
+	case 2: return "Copyright 2001-2008 The Glest Team, 2008-2009 Daniel Santos";
 	}
 	return "";
 }
 
-string getAboutString2(int i){
+string getAboutString2(int i) {
 	switch(i){
 	case 0: return "Web: http://glest.codemonger.org, http://www.glest.org";
-	case 1: return "Mail: daniel.santos@pobox.com, " + mailString;
+	case 1: return "Mail: " + gaeMailString + ", " + glestMailString;
 	case 2: return "Irc: irc://irc.freenode.net/glest";
 	}
 	return "";
 }
 
-string getTeammateName(int i){
+string getTeammateName(int i) {
 	switch(i){
 	case 0: return "Martiño Figueroa";
 	case 1: return "José Luis González";
@@ -66,7 +69,7 @@ string getTeammateName(int i){
 	return "";
 }
 
-string getTeammateRole(int i){
+string getTeammateRole(int i) {
 	Lang &l= Lang::getInstance();
 
 	switch(i){
@@ -81,27 +84,26 @@ string getTeammateRole(int i){
 	return "";
 }
 
-string formatString(const string &str){
+string formatString(const string &str) {
 	string outStr = str;
 
-	if(!outStr.empty()){
-		outStr[0]= toupper(outStr[0]);
+	if (!outStr.empty()) {
+		outStr[0] = toupper(outStr[0]);
 	}
 
-	bool afterSeparator= false;
-	for(int i= 0; i<str.size(); ++i){
-		if(outStr[i]=='_'){
-			outStr[i]= ' ';
+	bool afterSeparator = false;
+	for (int i = 0; i < str.size(); ++i) {
+		if (outStr[i] == '_') {
+			outStr[i] = ' ';
+		} else if (afterSeparator) {
+			outStr[i] = toupper(outStr[i]);
+			afterSeparator = false;
 		}
-		else if(afterSeparator){
-			outStr[i]= toupper(outStr[i]);
-			afterSeparator= false;
-		}
-		if(outStr[i]=='\n' || outStr[i]=='(' || outStr[i]==' '){
-			afterSeparator= true;
+		if (outStr[i] == '\n' || outStr[i] == '(' || outStr[i] == ' ') {
+			afterSeparator = true;
 		}
 	}
 	return outStr;
 }
 
-}}//end namespace
+} // end namespace

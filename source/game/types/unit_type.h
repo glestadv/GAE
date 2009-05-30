@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_UNITTYPE_H_
-#define _GLEST_GAME_UNITTYPE_H_
+#ifndef _GAME_UNITTYPE_H_
+#define _GAME_UNITTYPE_H_
 
 #include "element_type.h"
 #include "command_type.h"
@@ -20,10 +20,10 @@
 #include "unit_stats_base.h"
 #include "particle_type.h"
 
-namespace Glest{ namespace Game{
-
 using Shared::Sound::StaticSound;
-using Shared::Util::Checksum;
+using Shared::Util::Checksums;
+
+namespace Game {
 
 class UpgradeType;
 class UnitType;
@@ -35,7 +35,7 @@ class FactionType;
 // 	class Level
 // ===============================
 
-class Level: public EnhancementTypeBase, public NameIdPair {
+class Level: public EnhancementTypeBase, public IdNamePair {
 private:
 	int kills;
 
@@ -107,16 +107,19 @@ private:
 	bool meetingPoint;
 	Texture2D *meetingPointImage;
 
-    //OPTIMIZATION: store first command type and skill type of each class
+    //OPTIMIZATIONS:
+	//store first command type and skill type of each class
 	const CommandType *firstCommandTypeOfClass[ccCount];
     const SkillType *firstSkillTypeOfClass[scCount];
+	float halfSize;
+	float halfHeight;
 
 public:
 	//creation and loading
     UnitType();
     virtual ~UnitType();
 	void preLoad(const string &dir);
-    void load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum);
+    void load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums);
 
 	//get
 	bool getMultiSelect() const							{return multiSelect;}
@@ -131,13 +134,15 @@ public:
 //	const PetRules &getPetRules() const					{return petRules;}
 	const Emanations &getEmanations() const				{return emanations;}
 	bool isMultiBuild() const							{return multiBuild;}
+	float getHalfSize() const							{return halfSize;}
+	float getHalfHeight() const							{return halfHeight;}
 
 	//cellmap
 	bool *cellMap;
 
 	int getStoredResourceCount() const					{return storedResources.size();}
 	const Resource *getStoredResource(int i) const		{return &storedResources[i];}
-	bool getCellMapCell(int x, int y) const				{return cellMap[size*y+x];}
+	bool getCellMapCell(int x, int y) const				{return cellMap[size * y + x];}
 	bool hasMeetingPoint() const						{return meetingPoint;}
 	Texture2D *getMeetingPointImage() const				{return meetingPointImage;}
 	StaticSound *getSelectionSound() const				{return selectionSounds.getRandSound();}
@@ -171,7 +176,7 @@ private:
 };
 
 
-}}//end namespace
+} // end namespace
 
 
 #endif

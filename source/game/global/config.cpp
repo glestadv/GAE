@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001"2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -10,6 +10,9 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
+// This file is auto-generated from config.cpp.template using ../config.db and the script
+// ../mkconfig.sh.  To modify actual config settings, edit config.db and re-run ../mkconfig.sh.
+
 #include "pch.h"
 #include "config.h"
 #include "util.h"
@@ -17,142 +20,170 @@
 #include "leak_dumper.h"
 
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class Config
 // =====================================================
 
-Config::Config(const char* fileName) :
-		Properties(),
-		fileName(fileName) {
-	load(fileName);
+Config::Config(const char* fileName) : fileName(fileName) {
+	Properties *p = new Properties();
+	p->load(fileName, true);	
 
-	aiLog = getInt("AiLog");
-	aiRedir = getBool("AiRedir");
-	cameraFOV = getFloat("CameraFOV", 0.f, 360.f);
-	cameraInvertXAxis = getBool("CameraInvertXAxis");
-	cameraInvertYAxis = getBool("CameraInvertYAxis");
-	cameraMaxDistance = getFloat("CameraMaxDistance", 20.f, 1024.f);
-	cameraMaxYaw = getFloat("CameraMaxYaw", 0.f, 360.f);
-	cameraMinDistance = getFloat("CameraMinDistance", 0.f, 20.f);
-	cameraMinYaw = getFloat("CameraMinYaw", 0.f, 360.f);
-	catchExceptions = getBool("CatchExceptions");
-	checkGlCaps = getBool("CheckGlCaps");
-	colorBits = getInt("ColorBits");
-	consoleMaxLines = getInt("ConsoleMaxLines");
-	consoleTimeout = getInt("ConsoleTimeout");
-	dayTime = getFloat("DayTime");
-	debugMode = getBool("DebugMode");
-	depthBits = getInt("DepthBits");
-	enableCommandMinimap = getBool("EnableCommandMinimap");
-	factoryGraphics = getString("FactoryGraphics");
-	factorySound = getString("FactorySound");
-	fastestSpeed = getFloat("FastestSpeed", 1.0f, 10.0f);
-	filter = getString("Filter");
-	filterMaxAnisotropy = getInt("FilterMaxAnisotropy");
-	firstTime = getBool("FirstTime");
-	focusArrows = getBool("FocusArrows");
-	fogOfWar = getBool("FogOfWar");
-	fogOfWarSmoothing = getBool("FogOfWarSmoothing");
-	fogOfWarSmoothingFrameSkip = getInt("FogOfWarSmoothingFrameSkip");
-	fontConsole = getString("FontConsole");
-	fontDisplay = getString("FontDisplay");
-	fontMenu = getString("FontMenu");
-	lang = getString("Lang");
-	maxFPS = getInt("MaxFPS");
-	maxLights = getInt("MaxLights", 0, 8);
-	maxRenderDistance = getFloat("MaxRenderDistance");
-	multiplayerPauseAllowed = getBool("MultiplayerPauseAllowed");
-	networkConsistencyChecks = getBool("NetworkConsistencyChecks");
-	networkFPS = getInt("NetworkFPS");
-	photoMode = getBool("PhotoMode");
-	randStartLocs = getBool("RandStartLocs");
-	refreshFrequency = getInt("RefreshFrequency");
-	screenHeight = getInt("ScreenHeight");
-	screenWidth = getInt("ScreenWidth");
-	scrollSpeed = getFloat("ScrollSpeed");
-	serverIp = getString("ServerIp");
-	shadowAlpha = getFloat("ShadowAlpha");
-	shadowFrameSkip = getInt("ShadowFrameSkip");
-	shadowTextureSize = getInt("ShadowTextureSize");
-	shadows = getString("Shadows");
-	slowestSpeed = getFloat("SlowestSpeed", 0.01f, 1.0f);
-	soundStaticBuffers = getInt("SoundStaticBuffers");
-	soundStreamingBuffers = getInt("SoundStreamingBuffers");
-	soundVolumeAmbient = getInt("SoundVolumeAmbient");
-	soundVolumeFx = getInt("SoundVolumeFx");
-	soundVolumeMusic = getInt("SoundVolumeMusic");
-	stencilBits = getInt("StencilBits");
-	textures3D = getBool("Textures3D");
-	windowed = getBool("Windowed");
-	worldUpdateFPS = getInt("WorldUpdateFPS");
+	cameraFov = p->getFloat("CameraFov", 45.f, 0.f, 360.f);
+	cameraInvertXAxis = p->getBool("CameraInvertXAxis", true);
+	cameraInvertYAxis = p->getBool("CameraInvertYAxis", true);
+	cameraMaxDistance = p->getFloat("CameraMaxDistance", 35.f, 20.f, 1024.f);
+	cameraMaxYaw = p->getFloat("CameraMaxYaw", 77.50f, 0.f, 360.f);
+	cameraMinDistance = p->getFloat("CameraMinDistance", 8.f, 0.f, 20.f);
+	cameraMinYaw = p->getFloat("CameraMinYaw", 20.f, 0.f, 360.f);
+	displayHeight = p->getInt("DisplayHeight", 768);
+	displayRefreshFrequency = p->getInt("DisplayRefreshFrequency", 75);
+	displayWidth = p->getInt("DisplayWidth", 1024);
+	displayWindowed = p->getBool("DisplayWindowed", true);
+	gsAutoRepairEnabled = p->getBool("GsAutoRepairEnabled", true);
+	gsAutoReturnEnabled = p->getBool("GsAutoReturnEnabled", false);
+	gsDayTime = p->getFloat("GsDayTime", 1000.f);
+	gsFogOfWarEnabled = p->getBool("GsFogOfWarEnabled", true);
+	gsRandStartLocs = p->getBool("GsRandStartLocs", false);
+	gsSpeedFastest = p->getFloat("GsSpeedFastest", 2.f, 1.0f, 10.0f);
+	gsSpeedSlowest = p->getFloat("GsSpeedSlowest", 0.5f, 0.01f, 1.0f);
+	gsWorldUpdateFps = p->getInt("GsWorldUpdateFps", 40);
+	miscAiLog = p->getInt("MiscAiLog", 0);
+	miscAiRedir = p->getBool("MiscAiRedir", false);
+	miscCatchExceptions = p->getBool("MiscCatchExceptions", true);
+	miscDebugKeys = p->getBool("MiscDebugKeys", false);
+	miscDebugMode = p->getBool("MiscDebugMode", false);
+	miscFirstTime = p->getBool("MiscFirstTime", true);
+	miscLowMemory = p->getBool("MiscLowMemory", false);
+	netAutoRepairAllowed = p->getBool("NetAutoRepairAllowed", true);
+	netAutoReturnAllowed = p->getBool("NetAutoReturnAllowed", false);
+	netChangeSpeedAllowed = p->getBool("NetChangeSpeedAllowed", false);
+	netClientPort = p->getInt("NetClientPort", 61358, 0, 65535);
+	netConsistencyChecks = p->getBool("NetConsistencyChecks", false);
+	netFps = p->getInt("NetFps", 4);
+	netMinFullUpdateInterval = p->getInt("NetMinFullUpdateInterval", 60000, 250, 1000000000);
+	netPauseAllowed = p->getBool("NetPauseAllowed", false);
+	netPlayerName = p->getString("NetPlayerName", "Player");
+	netServerIp = p->getString("NetServerIp", "192.168.1.1");
+	netServerPort = p->getInt("NetServerPort", 61357, 0, 65535);
+	renderCheckGlCaps = p->getBool("RenderCheckGlCaps", true);
+	renderColorBits = p->getInt("RenderColorBits", 32);
+	renderDepthBits = p->getInt("RenderDepthBits", isWindows()?32:16);
+	renderDistanceMax = p->getFloat("RenderDistanceMax", 64.f, 1.f, 65536.f);
+	renderDistanceMin = p->getFloat("RenderDistanceMin", 1.f, 0.0f, 65536.f);
+	renderFilter = p->getString("RenderFilter", "Bilinear");
+	renderFilterMaxAnisotropy = p->getInt("RenderFilterMaxAnisotropy", 1);
+	renderFogOfWarSmoothing = p->getBool("RenderFogOfWarSmoothing", 1);
+	renderFogOfWarSmoothingFrameSkip = p->getInt("RenderFogOfWarSmoothingFrameSkip", 3);
+	renderFontConsole = p->getString("RenderFontConsole", getDefaultFontStr());
+	renderFontDisplay = p->getString("RenderFontDisplay", getDefaultFontStr());
+	renderFontMenu = p->getString("RenderFontMenu", getDefaultFontStr());
+	renderFov = p->getFloat("RenderFov", 60.f, 0.01f, 360.f);
+	renderFpsMax = p->getInt("RenderFpsMax", 60, 0, 1000000);
+	renderGraphicsFactory = p->getString("RenderGraphicsFactory", "OpenGL");
+	renderLightsMax = p->getInt("RenderLightsMax", 1, 0, 8);
+	renderShadowAlpha = p->getFloat("RenderShadowAlpha", 0.2f, 0.f, 1.f);
+	renderShadowFrameSkip = p->getInt("RenderShadowFrameSkip", 2);
+	renderShadowTextureSize = p->getInt("RenderShadowTextureSize", 512);
+	renderShadows = p->getString("RenderShadows", "Projected");
+	renderStencilBits = p->getInt("RenderStencilBits", 0);
+	renderTextures3D = p->getBool("RenderTextures3D", 1);
+	soundFactory = p->getString("SoundFactory", isWindows()?"DirectSound8":"OpenAL");
+	soundStaticBuffers = p->getInt("SoundStaticBuffers", 16);
+	soundStreamingBuffers = p->getInt("SoundStreamingBuffers", 5);
+	soundVolumeAmbient = p->getInt("SoundVolumeAmbient", 80);
+	soundVolumeFx = p->getInt("SoundVolumeFx", 80);
+	soundVolumeMusic = p->getInt("SoundVolumeMusic", 90);
+	uiConsoleMaxLines = p->getInt("UiConsoleMaxLines", 10);
+	uiConsoleTimeout = p->getInt("UiConsoleTimeout", 20);
+	uiEnableCommandMinimap = p->getBool("UiEnableCommandMinimap", true);
+	uiFocusArrows = p->getBool("UiFocusArrows", true);
+	uiLang = p->getString("UiLang", "english.lng");
+	uiPhotoMode = p->getBool("UiPhotoMode", false);
+	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
 
+	delete p;
 }
 
 void Config::save(const char *path) {
+	Properties *p = new Properties();
 
-	setInt("AiLog", aiLog);
-	setBool("AiRedir", aiRedir);
-	setFloat("CameraFOV", cameraFOV);
-	setBool("CameraInvertXAxis", cameraInvertXAxis);
-	setBool("CameraInvertYAxis", cameraInvertYAxis);
-	setFloat("CameraMaxDistance", cameraMaxDistance);
-	setFloat("CameraMaxYaw", cameraMaxYaw);
-	setFloat("CameraMinDistance", cameraMinDistance);
-	setFloat("CameraMinYaw", cameraMinYaw);
-	setBool("CatchExceptions", catchExceptions);
-	setBool("CheckGlCaps", checkGlCaps);
-	setInt("ColorBits", colorBits);
-	setInt("ConsoleMaxLines", consoleMaxLines);
-	setInt("ConsoleTimeout", consoleTimeout);
-	setFloat("DayTime", dayTime);
-	setBool("DebugMode", debugMode);
-	setInt("DepthBits", depthBits);
-	setBool("EnableCommandMinimap", enableCommandMinimap);
-	setString("FactoryGraphics", factoryGraphics);
-	setString("FactorySound", factorySound);
-	setFloat("FastestSpeed", fastestSpeed);
-	setString("Filter", filter);
-	setInt("FilterMaxAnisotropy", filterMaxAnisotropy);
-	setBool("FirstTime", firstTime);
-	setBool("FocusArrows", focusArrows);
-	setBool("FogOfWar", fogOfWar);
-	setBool("FogOfWarSmoothing", fogOfWarSmoothing);
-	setInt("FogOfWarSmoothingFrameSkip", fogOfWarSmoothingFrameSkip);
-	setString("FontConsole", fontConsole);
-	setString("FontDisplay", fontDisplay);
-	setString("FontMenu", fontMenu);
-	setString("Lang", lang);
-	setInt("MaxFPS", maxFPS);
-	setInt("MaxLights", maxLights);
-	setFloat("MaxRenderDistance", maxRenderDistance);
-	setBool("MultiplayerPauseAllowed", multiplayerPauseAllowed);
-	setBool("NetworkConsistencyChecks", networkConsistencyChecks);
-	setInt("NetworkFPS", networkFPS);
-	setBool("PhotoMode", photoMode);
-	setBool("RandStartLocs", randStartLocs);
-	setInt("RefreshFrequency", refreshFrequency);
-	setInt("ScreenHeight", screenHeight);
-	setInt("ScreenWidth", screenWidth);
-	setFloat("ScrollSpeed", scrollSpeed);
-	setString("ServerIp", serverIp);
-	setFloat("ShadowAlpha", shadowAlpha);
-	setInt("ShadowFrameSkip", shadowFrameSkip);
-	setInt("ShadowTextureSize", shadowTextureSize);
-	setString("Shadows", shadows);
-	setFloat("SlowestSpeed", slowestSpeed);
-	setInt("SoundStaticBuffers", soundStaticBuffers);
-	setInt("SoundStreamingBuffers", soundStreamingBuffers);
-	setInt("SoundVolumeAmbient", soundVolumeAmbient);
-	setInt("SoundVolumeFx", soundVolumeFx);
-	setInt("SoundVolumeMusic", soundVolumeMusic);
-	setInt("StencilBits", stencilBits);
-	setBool("Textures3D", textures3D);
-	setBool("Windowed", windowed);
-	setInt("WorldUpdateFPS", worldUpdateFPS);
+	p->setFloat("CameraFov", cameraFov);
+	p->setBool("CameraInvertXAxis", cameraInvertXAxis);
+	p->setBool("CameraInvertYAxis", cameraInvertYAxis);
+	p->setFloat("CameraMaxDistance", cameraMaxDistance);
+	p->setFloat("CameraMaxYaw", cameraMaxYaw);
+	p->setFloat("CameraMinDistance", cameraMinDistance);
+	p->setFloat("CameraMinYaw", cameraMinYaw);
+	p->setInt("DisplayHeight", displayHeight);
+	p->setInt("DisplayRefreshFrequency", displayRefreshFrequency);
+	p->setInt("DisplayWidth", displayWidth);
+	p->setBool("DisplayWindowed", displayWindowed);
+	p->setBool("GsAutoRepairEnabled", gsAutoRepairEnabled);
+	p->setBool("GsAutoReturnEnabled", gsAutoReturnEnabled);
+	p->setFloat("GsDayTime", gsDayTime);
+	p->setBool("GsFogOfWarEnabled", gsFogOfWarEnabled);
+	p->setBool("GsRandStartLocs", gsRandStartLocs);
+	p->setFloat("GsSpeedFastest", gsSpeedFastest);
+	p->setFloat("GsSpeedSlowest", gsSpeedSlowest);
+	p->setInt("GsWorldUpdateFps", gsWorldUpdateFps);
+	p->setInt("MiscAiLog", miscAiLog);
+	p->setBool("MiscAiRedir", miscAiRedir);
+	p->setBool("MiscCatchExceptions", miscCatchExceptions);
+	p->setBool("MiscDebugKeys", miscDebugKeys);
+	p->setBool("MiscDebugMode", miscDebugMode);
+	p->setBool("MiscFirstTime", miscFirstTime);
+	p->setBool("MiscLowMemory", miscLowMemory);
+	p->setBool("NetAutoRepairAllowed", netAutoRepairAllowed);
+	p->setBool("NetAutoReturnAllowed", netAutoReturnAllowed);
+	p->setBool("NetChangeSpeedAllowed", netChangeSpeedAllowed);
+	p->setInt("NetClientPort", netClientPort);
+	p->setBool("NetConsistencyChecks", netConsistencyChecks);
+	p->setInt("NetFps", netFps);
+	p->setInt("NetMinFullUpdateInterval", netMinFullUpdateInterval);
+	p->setBool("NetPauseAllowed", netPauseAllowed);
+	p->setString("NetPlayerName", netPlayerName);
+	p->setString("NetServerIp", netServerIp);
+	p->setInt("NetServerPort", netServerPort);
+	p->setBool("RenderCheckGlCaps", renderCheckGlCaps);
+	p->setInt("RenderColorBits", renderColorBits);
+	p->setInt("RenderDepthBits", renderDepthBits);
+	p->setFloat("RenderDistanceMax", renderDistanceMax);
+	p->setFloat("RenderDistanceMin", renderDistanceMin);
+	p->setString("RenderFilter", renderFilter);
+	p->setInt("RenderFilterMaxAnisotropy", renderFilterMaxAnisotropy);
+	p->setBool("RenderFogOfWarSmoothing", renderFogOfWarSmoothing);
+	p->setInt("RenderFogOfWarSmoothingFrameSkip", renderFogOfWarSmoothingFrameSkip);
+	p->setString("RenderFontConsole", renderFontConsole);
+	p->setString("RenderFontDisplay", renderFontDisplay);
+	p->setString("RenderFontMenu", renderFontMenu);
+	p->setFloat("RenderFov", renderFov);
+	p->setInt("RenderFpsMax", renderFpsMax);
+	p->setString("RenderGraphicsFactory", renderGraphicsFactory);
+	p->setInt("RenderLightsMax", renderLightsMax);
+	p->setFloat("RenderShadowAlpha", renderShadowAlpha);
+	p->setInt("RenderShadowFrameSkip", renderShadowFrameSkip);
+	p->setInt("RenderShadowTextureSize", renderShadowTextureSize);
+	p->setString("RenderShadows", renderShadows);
+	p->setInt("RenderStencilBits", renderStencilBits);
+	p->setBool("RenderTextures3D", renderTextures3D);
+	p->setString("SoundFactory", soundFactory);
+	p->setInt("SoundStaticBuffers", soundStaticBuffers);
+	p->setInt("SoundStreamingBuffers", soundStreamingBuffers);
+	p->setInt("SoundVolumeAmbient", soundVolumeAmbient);
+	p->setInt("SoundVolumeFx", soundVolumeFx);
+	p->setInt("SoundVolumeMusic", soundVolumeMusic);
+	p->setInt("UiConsoleMaxLines", uiConsoleMaxLines);
+	p->setInt("UiConsoleTimeout", uiConsoleTimeout);
+	p->setBool("UiEnableCommandMinimap", uiEnableCommandMinimap);
+	p->setBool("UiFocusArrows", uiFocusArrows);
+	p->setString("UiLang", uiLang);
+	p->setBool("UiPhotoMode", uiPhotoMode);
+	p->setFloat("UiScrollSpeed", uiScrollSpeed);
 
-	Properties::save(path);
+	p->save(path);
+	delete p;
 }
 
-}}// end namespace
+} // end namespace

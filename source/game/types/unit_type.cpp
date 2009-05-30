@@ -31,7 +31,7 @@ using namespace Shared::Xml;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===============================
 // 	class Level
@@ -91,7 +91,7 @@ void UnitType::preLoad(const string &dir){
 	name= lastDir(dir);
 }
 
-void UnitType::load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum){
+void UnitType::load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums){
 	this->id = id;
 	string path;
 
@@ -101,7 +101,7 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 		//file load
 		path= dir+"/"+name+".xml";
 
-		checksum.addFile(path, true);
+		checksums.addFile(path, true);
 
 		XmlTree xmlTree;
 		xmlTree.load(path);
@@ -110,6 +110,9 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 		const XmlNode *parametersNode= unitNode->getChild("parameters");
 
 		UnitStatsBase::load(parametersNode, dir, techTree, factionType);
+		
+		halfSize = size / 2.f;
+		halfHeight = height / 2.f;
 
 		//prod time
 		productionTime= parametersNode->getChildIntValue("time");
@@ -168,9 +171,7 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 		}
 
 		//image
-		const XmlNode *imageNode= parametersNode->getChild("image");
-		image= Renderer::getInstance().newTexture2D(rsGame);
-		image->load(dir+"/"+imageNode->getAttribute("path")->getRestrictedValue());
+		DisplayableType::load(parametersNode, dir);
 
 		//image cancel
 		const XmlNode *imageCancelNode= parametersNode->getChild("image-cancel");
@@ -224,15 +225,21 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 		}
 
 		//commands
-		const XmlNode *commandsNode= unitNode->getChild("commands");
+		const XmlNode *commandsNode = unitNode->getChild("commands");
 		commandTypes.resize(commandsNode->getChildCount());
-		for(int i=0; i<commandTypes.size(); ++i){
-			const XmlNode *commandNode= commandsNode->getChild("command", i);
-			const XmlNode *typeNode= commandNode->getChild("type");
-			string classId= typeNode->getAttribute("value")->getRestrictedValue();
-			CommandType *commandType= CommandTypeFactory::getInstance().newInstance(classId);
-			commandType->load(i, commandNode, dir, techTree, factionType, *this);
-			commandTypes[i]= commandType;
+		for (int i = 0; i < commandTypes.size(); ++i) {
+			const XmlNode *commandNode = commandsNode->getChild("command", i);
+			string classId = commandNode->getChildRestrictedValue("type");
+			CommandType *commandType = CommandTypeFactory::getInstance().newInstance(classId);
+			commandType->setUnitTypeAndIndex(this, i);
+			commandType->load(commandNode, dir, techTree, factionType);
+			commandTypes[i] = commandType;
+		}
+
+		// if type has a meeting point, add a SetMeetingPoint command
+		if(meetingPoint) {
+			commandTypes.push_back(new SetMeetingPointCommandType());
+			commandTypes.back()->setUnitTypeAndIndex(this, commandTypes.size() - 1);
 		}
 
 		computeFirstStOfClass();
@@ -297,19 +304,19 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 
 
 const CommandType *UnitType::getCommandType(const string &name) const {
-	for(CommandTypes::const_iterator i = commandTypes.begin(); i != commandTypes.end(); ++i) {
-		if((*i)->getName() == name) {
+	for (CommandTypes::const_iterator i = commandTypes.begin(); i != commandTypes.end(); ++i) {
+		if ((*i)->getName() == name) {
 			return (*i);
 		}
 	}
 	return NULL;
 }
 
-const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *resourceType) const{
-	for(int i=0; i<commandTypes.size(); ++i){
-		if(commandTypes[i]->getClass()== ccHarvest){
-			const HarvestCommandType *hct= static_cast<const HarvestCommandType*>(commandTypes[i]);
-			if(hct->canHarvest(resourceType)){
+const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *resourceType) const {
+	for (int i = 0; i < commandTypes.size(); ++i) {
+		if (commandTypes[i]->getClass() == ccHarvest) {
+			const HarvestCommandType *hct = static_cast<const HarvestCommandType*>(commandTypes[i]);
+			if (hct->canHarvest(resourceType)) {
 				return hct;
 			}
 		}
@@ -317,11 +324,11 @@ const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *r
 	return NULL;
 }
 
-const AttackCommandType *UnitType::getFirstAttackCommand(Field field) const{
-	for(int i=0; i<commandTypes.size(); ++i){
-		if(commandTypes[i]->getClass()== ccAttack){
-			const AttackCommandType *act= static_cast<const AttackCommandType*>(commandTypes[i]);
-			if(act->getAttackSkillTypes()->getField(field)){
+const AttackCommandType *UnitType::getFirstAttackCommand(Field field) const {
+	for (int i = 0; i < commandTypes.size(); ++i) {
+		if (commandTypes[i]->getClass() == ccAttack) {
+			const AttackCommandType *act = static_cast<const AttackCommandType*>(commandTypes[i]);
+			if (act->getAttackSkillTypes()->getField(field)) {
 				return act;
 			}
 		}
@@ -329,11 +336,11 @@ const AttackCommandType *UnitType::getFirstAttackCommand(Field field) const{
 	return NULL;
 }
 
-const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaired) const{
-	for(int i=0; i<commandTypes.size(); ++i){
-		if(commandTypes[i]->getClass()== ccRepair){
-			const RepairCommandType *rct= static_cast<const RepairCommandType*>(commandTypes[i]);
-			if(rct->isRepairableUnitType(repaired)){
+const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaired) const {
+	for (int i = 0; i < commandTypes.size(); ++i) {
+		if (commandTypes[i]->getClass() == ccRepair) {
+			const RepairCommandType *rct = static_cast<const RepairCommandType*>(commandTypes[i]);
+			if (rct->isRepairableUnitType(repaired)) {
 				return rct;
 			}
 		}
@@ -341,70 +348,66 @@ const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaire
 	return NULL;
 }
 
-int UnitType::getStore(const ResourceType *rt) const{
-    for(int i=0; i<storedResources.size(); ++i){
-		if(storedResources[i].getType()==rt){
-            return storedResources[i].getAmount();
+int UnitType::getStore(const ResourceType *rt) const {
+	for (int i = 0; i < storedResources.size(); ++i) {
+		if (storedResources[i].getType() == rt) {
+			return storedResources[i].getAmount();
 		}
-    }
-    return 0;
+	}
+	return 0;
 }
 
-const SkillType *UnitType::getSkillType(const string &skillName, SkillClass skillClass) const{
-	for(int i=0; i<skillTypes.size(); ++i){
-		if(skillTypes[i]->getName()==skillName){
-			if(skillTypes[i]->getClass() == skillClass || skillClass == scCount){
+const SkillType *UnitType::getSkillType(const string &skillName, SkillClass skillClass) const {
+	for (int i = 0; i < skillTypes.size(); ++i) {
+		if (skillTypes[i]->getName() == skillName) {
+			if (skillTypes[i]->getClass() == skillClass || skillClass == scCount) {
 				return skillTypes[i];
-			}
-			else{
-				throw runtime_error("Skill \""+skillName+"\" is not of class \""+SkillType::skillClassToStr(skillClass));
+			} else {
+				throw runtime_error("Skill \"" + skillName + "\" is not of class \""
+						+ SkillType::skillClassToStr(skillClass));
 			}
 		}
 	}
-	throw runtime_error("No skill named \""+skillName+"\"");
+	throw runtime_error("No skill named \"" + skillName + "\"");
 }
 
 
 // ==================== has ====================
 
-bool UnitType::hasSkillClass(SkillClass skillClass) const{
-    return firstSkillTypeOfClass[skillClass]!=NULL;
+bool UnitType::hasSkillClass(SkillClass skillClass) const {
+	return firstSkillTypeOfClass[skillClass] != NULL;
 }
 
-bool UnitType::hasCommandType(const CommandType *commandType) const{
-    assert(commandType!=NULL);
-    for(int i=0; i<commandTypes.size(); ++i){
-        if(commandTypes[i]==commandType){
-            return true;
-        }
-    }
-    return false;
+bool UnitType::hasCommandType(const CommandType *commandType) const {
+	assert(commandType != NULL);
+	for (int i = 0; i < commandTypes.size(); ++i) {
+		if (commandTypes[i] == commandType) {
+			return true;
+		}
+	}
+	return false;
 }
 
-bool UnitType::hasCommandClass(CommandClass commandClass) const{
-	return firstCommandTypeOfClass[commandClass]!=NULL;
+bool UnitType::hasCommandClass(CommandClass commandClass) const {
+	return firstCommandTypeOfClass[commandClass] != NULL;
 }
 
-bool UnitType::hasSkillType(const SkillType *skillType) const{
-    assert(skillType!=NULL);
-    for(int i=0; i<skillTypes.size(); ++i){
-        if(skillTypes[i]==skillType){
-            return true;
-        }
-    }
-    return false;
+bool UnitType::hasSkillType(const SkillType *skillType) const {
+	assert(skillType != NULL);
+	for (int i = 0; i < skillTypes.size(); ++i) {
+		if (skillTypes[i] == skillType) {
+			return true;
+		}
+	}
+	return false;
 }
 
-bool UnitType::isOfClass(UnitClass uc) const{
-	switch(uc){
-	case ucWarrior:
-		return hasSkillClass(scAttack) && !hasSkillClass(scHarvest);
-	case ucWorker:
-		return hasSkillClass(scBuild) || hasSkillClass(scRepair);
-	case ucBuilding:
-		return hasSkillClass(scBeBuilt) && !hasSkillClass(scMove);
-	default:
-		assert(false);
+bool UnitType::isOfClass(UnitClass uc) const {
+	switch (uc) {
+	case ucWarrior:		return hasSkillClass(scAttack) && !hasSkillClass(scHarvest);
+	case ucWorker:		return hasSkillClass(scBuild) || hasSkillClass(scRepair);
+	case ucBuilding:	return hasSkillClass(scBeBuilt) && !hasSkillClass(scMove);
+	default:		assert(false);
 	}
 	return false;
 }
@@ -445,4 +448,4 @@ const CommandType* UnitType::findCommandTypeById(int id) const{
 	return NULL;
 }
 
-}}//end namespace
+} // end namespace

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_PARTICLETYPE_H_
-#define _GLEST_GAME_PARTICLETYPE_H_
+#ifndef _GAME_PARTICLETYPE_H_
+#define _GAME_PARTICLETYPE_H_
 
 #include <string>
 
@@ -22,7 +22,7 @@
 
 using std::string;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::ParticleSystemBase;
 using Shared::Graphics::ParticleSystem;
@@ -105,6 +105,6 @@ public:
 };
 
 
-}}//end namespace
+} // end namespace
 
 #endif

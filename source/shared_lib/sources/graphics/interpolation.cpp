@@ -70,10 +70,11 @@ void InterpolationData::updateVertices(float t, bool cycle) {
 		assert(nextFrame < frameCount);
 
 		//interpolate vertices
-
+		Vec3f::lerpArray(vertices, &meshVertices[prevFrameBase], &meshVertices[nextFrameBase], localT, vertexCount);
+		/*
 		for(uint32 j = 0; j < vertexCount; ++j) {
-			vertices[j] = meshVertices[prevFrameBase+j].lerp(localT, meshVertices[nextFrameBase+j]);
-		}
+			vertices[j] = meshVertices[prevFrameBase + j].lerp(localT, meshVertices[nextFrameBase + j]);
+		}*/
 	}
 }
 

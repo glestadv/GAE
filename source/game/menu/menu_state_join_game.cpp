@@ -28,31 +28,31 @@
 #include "leak_dumper.h"
 
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using namespace Shared::Util;
 
 // ===============================
-// 	class MenuStateJoinGame
+//  class MenuStateJoinGame
 // ===============================
 
-const int MenuStateJoinGame::newServerIndex= 0;
-const string MenuStateJoinGame::serverFileName= "servers.ini";
+const int MenuStateJoinGame::newServerIndex = 0;
+const string MenuStateJoinGame::serverFileName = "servers.ini";
 
-MenuStateJoinGame::MenuStateJoinGame(Program *program, MainMenu *mainMenu, bool connect, Ip serverIp):
-	MenuState(program, mainMenu, "join-game")
-{
-	Lang &lang= Lang::getInstance();
-	Config &config= Config::getInstance();
-	NetworkManager &networkManager= NetworkManager::getInstance();
+MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool connect, IpAddress serverIp)
+		: MenuState(program, mainMenu, "join-game")
+		, msgBox(NULL) {
+	Lang &lang = Lang::getInstance();
+	Config &config = Config::getInstance();
+	NetworkManager &networkManager = NetworkManager::getInstance();
 
-	servers.load(serverFileName);
+	servers.load(serverFileName, true);
 
 	//buttons
-	buttonReturn.init(325, 300, 125);
+	buttonReturn.init(325, 270, 125);
 	buttonReturn.setText(lang.get("Return"));
 
-	buttonConnect.init(475, 300, 125);
+	buttonConnect.init(475, 270, 125);
 	buttonConnect.setText(lang.get("Connect"));
 
 	//server type label
@@ -71,8 +71,9 @@ MenuStateJoinGame::MenuStateJoinGame(Program *program, MainMenu *mainMenu, bool 
 	//server listbox
 	listBoxServers.init(465, 430);
 
-	for(int i= 0; i<servers.getPropertyCount(); ++i){
-		listBoxServers.pushBackItem(servers.getKey(i));
+	const Properties::PropertyMap &pm = servers.getPropertyMap();
+	for (Properties::PropertyMap::const_iterator i = pm.begin(); i != pm.end(); ++i) {
+		listBoxServers.pushBackItem(i->first);
 	}
 
 	//server ip
@@ -84,81 +85,97 @@ MenuStateJoinGame::MenuStateJoinGame(Program *program, MainMenu *mainMenu, bool 
 	labelInfo.init(330, 370);
 	labelInfo.setText("");
 
-	networkManager.init(nrClient);
-	connected= false;
-	playerIndex= -1;
+	networkManager.init(NR_CLIENT);
+	connected = false;
+	playerIndex = -1;
 
 	//server ip
-	if(connect){
-		labelServerIp.setText(serverIp.getString() + "_");
+	if (connect) {
+		labelServerIp.setText(serverIp.toString() + "_");
 		connectToServer();
-	}
-	else {
-		labelServerIp.setText(config.getServerIp() + "_");
+	} else {
+		labelServerIp.setText(config.getNetServerIp() + "_");
 	}
 }
 
-void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton){
+void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
+	const Lang &lang = Lang::getInstance();
 
-	CoreData &coreData= CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
-	NetworkManager &networkManager= NetworkManager::getInstance();
-	ClientInterface* clientInterface= networkManager.getClientInterface();
+	CoreData &coreData = CoreData::getInstance();
+	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	NetworkManager &networkManager = NetworkManager::getInstance();
+	ClientInterface* clientInterface = networkManager.getClientInterface();
 
-	if(!clientInterface->isConnected()){
-		//server type
-		if(listBoxServerType.mouseClick(x, y)){
-			if(!listBoxServers.getText().empty()){
-				labelServerIp.setText(servers.getString(listBoxServers.getText())+"_");
-			}
+	if (msgBox) {
+		if (msgBox->mouseClick(x, y)) {
+			soundRenderer.playFx(coreData.getClickSoundC());
+			delete msgBox;
+			msgBox = NULL;
 		}
+		return;
+	}
+	if (!clientInterface->isConnected()) {
+		//server type
+		if (listBoxServerType.mouseClick(x, y)) {
+			if (!listBoxServers.getText().empty()) {
+				labelServerIp.setText(servers.getString(listBoxServers.getText()) + "_");
+			}
 
 		//server list
-		else if(listBoxServerType.getSelectedItemIndex()!=newServerIndex){
-			if(listBoxServers.mouseClick(x, y)){
-				labelServerIp.setText(servers.getString(listBoxServers.getText())+"_");
+		} else if (listBoxServerType.getSelectedItemIndex() != newServerIndex) {
+			if (listBoxServers.mouseClick(x, y)) {
+				labelServerIp.setText(servers.getString(listBoxServers.getText()) + "_");
 			}
 		}
 	}
 
 	//return
-	if(buttonReturn.mouseClick(x, y)){
+	if (buttonReturn.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundA());
 		mainMenu->setState(new MenuStateRoot(program, mainMenu));
-    }
 
-	//connect
-	else if(buttonConnect.mouseClick(x, y)){
-		ClientInterface* clientInterface= networkManager.getClientInterface();
+	//connect/disconnect
+	} else if (buttonConnect.mouseClick(x, y)) {
+		ClientInterface* clientInterface = networkManager.getClientInterface();
 
 		soundRenderer.playFx(coreData.getClickSoundA());
 		labelInfo.setText("");
 
-		if(clientInterface->isConnected()){
-			clientInterface->reset();
-		}
-		else{
-			connectToServer();
+		if (clientInterface->isConnected()) {
+			clientInterface->disconnectFromServer();
+			buttonConnect.setText(Lang::getInstance().get("Connect"));
+		} else {
+			try {
+				connectToServer();
+			} catch(runtime_error &e) {
+				msgBox = new GraphicMessageBox();
+				msgBox->init(lang.get("ConnectionFailed") + "\n" + e.what(), lang.get("Ok"));
+			}
+			//buttonConnect.setText(Lang::getInstance().get("Disconnect"));
 		}
 	}
 }
 
-void MenuStateJoinGame::mouseMove(int x, int y, const MouseState *ms){
+void MenuStateJoinGame::mouseMove(int x, int y, const MouseState &ms) {
 	buttonReturn.mouseMove(x, y);
 	buttonConnect.mouseMove(x, y);
 	listBoxServerType.mouseMove(x, y);
 
-	//hide-show options depending on the selection
-	if(listBoxServers.getSelectedItemIndex()==newServerIndex){
-		labelServerIp.mouseMove(x, y);
+	if (msgBox != NULL) {
+		msgBox->mouseMove(x, y);
+		return;
 	}
-	else{
+
+	//hide-show options depending on the selection
+	if (listBoxServers.getSelectedItemIndex() == newServerIndex) {
+		labelServerIp.mouseMove(x, y);
+	} else {
 		listBoxServers.mouseMove(x, y);
 	}
 }
 
-void MenuStateJoinGame::render(){
-	Renderer &renderer= Renderer::getInstance();
+void MenuStateJoinGame::render() {
+	Renderer &renderer = Renderer::getInstance();
 
 	renderer.renderButton(&buttonReturn);
 	renderer.renderLabel(&labelServer);
@@ -168,97 +185,117 @@ void MenuStateJoinGame::render(){
 	renderer.renderButton(&buttonConnect);
 	renderer.renderListBox(&listBoxServerType);
 
-	if(listBoxServerType.getSelectedItemIndex()==newServerIndex){
+	if (listBoxServerType.getSelectedItemIndex() == newServerIndex) {
 		renderer.renderLabel(&labelServerIp);
-	}
-	else
-	{
+	} else {
 		renderer.renderListBox(&listBoxServers);
+	}
+
+	if (msgBox != NULL) {
+		renderer.renderMessageBox(msgBox);
 	}
 }
 
-void MenuStateJoinGame::update(){
-	ClientInterface* clientInterface= NetworkManager::getInstance().getClientInterface();
-	Lang &lang= Lang::getInstance();
+void MenuStateJoinGame::update() {
+	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
+	Lang &lang = Lang::getInstance();
 
 	//update status label
-	if(clientInterface->isConnected()){
+	if (clientInterface->isConnected()) {
 		buttonConnect.setText(lang.get("Disconnect"));
-		if(!clientInterface->getServerName().empty()){
-			labelStatus.setText(lang.get("ConnectedToServer") + " " + clientInterface->getServerName());
+		string statusStr;
+		if (clientInterface->getState() < STATE_INITIALIZED) {
+			statusStr = lang.get("WaitingHost");
+			labelInfo.setText("");
+		} else {
+			statusStr = lang.get("Connected") + ": "
+					+ clientInterface->getRemoteServerInterface().getStatusStr();
+
+			const GameSettings &gs = *clientInterface->getGameSettings();
+			stringstream str;
+
+			str << lang.get("Map") << ": " << gs.getMapPath() << endl
+				<< lang.get("Tileset") << ": " << gs.getTilesetPath() << endl
+				<< lang.get("TechTree") << ": " << gs.getTechPath() << endl;
+			foreach(const GameSettings::Factions::value_type &f, gs.getFactions()) {
+				str << lang.get("Player") << " " << (f->getMapSlot() + 1) << " - "
+					<< lang.get("Team") << " " << (f->getTeam().getId() + 1) << " - "
+					<< f->getTypeName() << " - "
+					<< lang.get(enumControlTypeDesc[f->getControlType()]) << endl;
+			}
+			labelInfo.setText(str.str());
 		}
-		else{
-			labelStatus.setText(lang.get("ConnectedToServer"));
+		labelStatus.setText(statusStr);
+
+		string ipString = labelServerIp.getText();
+		ipString.resize(ipString.size() - 1);
+		servers.setString(clientInterface->getDescription(), IpAddress(ipString).toString());
+
+		//launch
+		if (clientInterface->getState() == STATE_LAUNCH_READY) {
+			servers.save(serverFileName);
+			program.setState(new Game(program, clientInterface->getGameSettings(), clientInterface->getSavedGame()));
+			/*
+			if (clientInterface->getSavedGameFileName() == "") {
+				program.setState(new Game(program, clientInterface->getGameSettings()));
+			} else {
+ 				XmlNode *root = XmlIo::getInstance().load(clientInterface->getSavedGameFileName());
+				program.setState(new Game(program, clientInterface->getGameSettings(), root));
+			}*/
 		}
-	}
-	else{
+
+		//game info changed
+		if (clientInterface->isGameSettingsChanged()) {
+			const GameSettings &gs = *clientInterface->getGameSettings();
+
+		}
+	} else {
 		buttonConnect.setText(lang.get("Connect"));
 		labelStatus.setText(lang.get("NotConnected"));
 		labelInfo.setText("");
 	}
-
-	//process network messages
-	if(clientInterface->isConnected()){
-
-		//update lobby
-		clientInterface->updateLobby();
-
-		//intro
-		if(clientInterface->getIntroDone()){
-			labelInfo.setText(lang.get("WaitingHost"));
-			servers.setString(clientInterface->getServerName(), Ip(labelServerIp.getText()).getString());
-		}
-
-		//launch
-		if(clientInterface->getLaunchGame()){
-			servers.save(serverFileName);
-			if(clientInterface->getSavedGameFile() == "") {
-				program->setState(new Game(program, clientInterface->getGameSettings()));
-			} else {
-				XmlNode *root = XmlIo::getInstance().load(clientInterface->getSavedGameFile());
-				program->setState(new Game(program, clientInterface->getGameSettings(), root));
-			}
-		}
-	}
 }
 
-void MenuStateJoinGame::keyDown(char key){
-	ClientInterface* clientInterface= NetworkManager::getInstance().getClientInterface();
+void MenuStateJoinGame::keyDown(const Key &key) {
+	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
 
-	if(!clientInterface->isConnected()){
-		if(key==vkBack){
-			string text= labelServerIp.getText();
+	if (!clientInterface->isConnected()) {
+		if (key == keyBackspace) {
+			string text = labelServerIp.getText();
 
-			if(text.size()>1){
-				text.erase(text.end()-2);
+			if (text.size() > 1) {
+				text.erase(text.end() - 2);
 			}
 
 			labelServerIp.setText(text);
 		}
 	}
+
+	if(key == keyEscape) {
+		mainMenu->setState(new MenuStateRoot(program, mainMenu));
+	}
 }
 
-void MenuStateJoinGame::keyPress(char c){
-	ClientInterface* clientInterface= NetworkManager::getInstance().getClientInterface();
+void MenuStateJoinGame::keyPress(char c) {
+	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
 
-	if(!clientInterface->isConnected()){
-		int maxTextSize= 16;
+	if (!clientInterface->isConnected()) {
+		int maxTextSize = 16;
 
-		if(c>='0' && c<='9'){
+		if (c >= '0' && c <= '9') {
 
-			if(labelServerIp.getText().size()<maxTextSize){
-				string text= labelServerIp.getText();
+			if (labelServerIp.getText().size() < maxTextSize) {
+				string text = labelServerIp.getText();
 
-				text.insert(text.end()-1, c);
+				text.insert(text.end() - 1, c);
 
 				labelServerIp.setText(text);
 			}
-		}
-		else if (c=='.'){
-			if(labelServerIp.getText().size()<maxTextSize){
-				string text= labelServerIp.getText();
+		} else if (c == '.') {
+			if (labelServerIp.getText().size() < maxTextSize) {
+				string text = labelServerIp.getText();
 
-				text.insert(text.end()-1, '.');
+				text.insert(text.end() - 1, '.');
 
 				labelServerIp.setText(text);
 			}
@@ -266,18 +303,21 @@ void MenuStateJoinGame::keyPress(char c){
 	}
 }
 
-void MenuStateJoinGame::connectToServer(){
-	ClientInterface* clientInterface= NetworkManager::getInstance().getClientInterface();
-	Config& config= Config::getInstance();
-	Ip serverIp(labelServerIp.getText());
+void MenuStateJoinGame::connectToServer() {
+	ClientInterface &clientInterface = *NetworkManager::getInstance().getClientInterface();
+	Config& config = Config::getInstance();
+	string ipString = labelServerIp.getText();
+	// remove annoying trailing underscore
+	ipString.resize(ipString.size() - 1);
+	IpAddress serverIp(ipString);
 
-	clientInterface->connect(serverIp, GameConstants::serverPort);
-	labelServerIp.setText(serverIp.getString()+'_');
+	clientInterface.connectToServer(serverIp, config.getNetServerPort());
+	labelServerIp.setText(serverIp.toString() + '_');
 	labelInfo.setText("");
 
 	//save server ip
-	config.setServerIp(serverIp.getString());
+	config.setNetServerIp(serverIp.toString());
 	config.save();
 }
 
-}}//end namespace
+} // end namespace

@@ -35,7 +35,7 @@
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class Cell
@@ -45,9 +45,9 @@ namespace Glest{ namespace Game{
 // ==================== misc ====================
 
 //returns if the cell is free
-bool Cell::isFree(Field field) const {
+/*bool Cell::isFree(Field field) const {
 	return getUnit(field)==NULL || getUnit(field)->isPutrefacting();
-}
+}*/
 
 // =====================================================
 // 	class SurfaceCell
@@ -103,7 +103,7 @@ void SurfaceCell::load(const XmlNode *node, World *world) {
 	}
 }
 */
-
+/** Reads saved data for this cell from a binary source. */
 void SurfaceCell::read(NetworkDataBuffer &buf) {
 	uint8 a;
 	buf.read(a);
@@ -113,7 +113,8 @@ void SurfaceCell::read(NetworkDataBuffer &buf) {
 	explored[3] = a & 0x08;
 
 	if(a & 0x10) {
-		/* We're not using object or resource type right now
+		/* We're not using object or resource type right now, but leave them in comments in case
+		   we do later.
 		if(a & 0x20) {
 			uint8 objectType;
 			buf.read(objectType);
@@ -134,17 +135,17 @@ void SurfaceCell::read(NetworkDataBuffer &buf) {
 		}*/
 
 		// If there is an object, with a resource and that amount differs from the default
-		if((a & 0x70) == 0x70) {
+		if((a & 0x60) == 0x60) {
 			// sanity check, let's have a real exception rather than crash if these don't match.
 			if(!object) {
-				throw runtime_error("Expected SurfaceCell at " + floatToStr(vertex.x) + ", "
-						+ floatToStr(vertex.z) + " to have an object, but it did not.  This "
+				throw runtime_error("Expected SurfaceCell at " + Conversion::toStr(vertex.x) + ", "
+						+ Conversion::toStr(vertex.z) + " to have an object, but it did not.  This "
 						"probably means that you modified the map since this game was saved or if "
 						"this is a network game, that you have a different map than the server.");
 			}
 			if(!object->getResource()) {
-				throw runtime_error("Expected SurfaceCell at " + floatToStr(vertex.x) + ", "
-						+ floatToStr(vertex.z) + " to have a resource, but it did not.  This "
+				throw runtime_error("Expected SurfaceCell at " + Conversion::toStr(vertex.x) + ", "
+						+ Conversion::toStr(vertex.z) + " to have a resource, but it did not.  This "
 						"probably means that you modified the map since this game was saved or if "
 						"this is a network game, that you have a different map than the server.");
 			}
@@ -166,12 +167,14 @@ void SurfaceCell::read(NetworkDataBuffer &buf) {
 }
 
 /**
+ * Saves data for this surface cell. No bit left behind.
  * byte 0:
  *   bits 0-3: explored states for each team (only 4 teams supported)
  *   bit 4: high if there is an object
  *   bit 5: high if object has a resource
  *   bit 6: high if resource amount differs from default (amount coming in next bytes)
  *   bit 7: high if amount is 32 bits, low if amount is 16 bits.
+ * bytes 1-4 (optional, depending upon byte 0, bits 6 and 7):
  */
 void SurfaceCell::write(NetworkDataBuffer &buf) const {
 	uint8 a = (explored[0] ? 0x01 : 0)
@@ -217,7 +220,7 @@ void SurfaceCell::write(NetworkDataBuffer &buf) const {
 
 	// If there is an object, with a resource and that amount differs from the default
 	if((a & 0x70) == 0x70) {
-		// do we need 32 bits or can we use16?
+		// do we need 32 bits or can we use 16?
 		if(a & 0x80) {
 			buf.write(amount32);
 		} else {
@@ -232,9 +235,10 @@ void SurfaceCell::write(NetworkDataBuffer &buf) const {
 // =====================================================
 
 EarthquakeType::EarthquakeType(float maxDps, const AttackType *attackType) :
-		maxDps(maxDps), attackType(attackType) {
+		maxDps(maxDps), attackType(attackType), affectsAllies(true) {
 }
 
+/** Load the EarthquakeType from xml */
 void EarthquakeType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {
 	magnitude = n->getChildFloatValue("magnitude");
 	frequency = n->getChildFloatValue("frequency");
@@ -255,6 +259,7 @@ void EarthquakeType::load(const XmlNode *n, const string &dir, const TechTree *t
 	shiftsPerSecond = n->getChildFloatValue("shifts-per-second");
 	shiftsPerSecondVar = n->getChildFloatValue("shifts-per-second-var");
 	shiftLengthMult = n->getChildVec3fValue("shift-length-multiplier");
+	affectsAllies = n->getOptionalBoolValue("affects-allies", true);
 }
 
 void EarthquakeType::spawn(Map &map, Unit *cause, const Vec2i &epicenter, float strength) const {
@@ -290,6 +295,12 @@ Earthquake::Earthquake(Map &map, Unit *cause, const Vec2i &uepicenter, const Ear
 	cellCount = size.x * size.y;
 }
 
+/**
+ * Calculates the magnitude of the earthquake (expressed as a float from zero to one from min to
+ * max) at a given point in time (also expressed as zero to one, from begining to end). A sine
+ * pattern is used that quickly rises at the start and quickly falls at the end.  Full strength
+ * is reached at T=0.25 and the taper occurs at 3/4 the speed of rise.
+ */
 inline float Earthquake::temporalMagnitude(float temporalProgress) {
 	// early peek, gradual decline
 	float effectiveProgress = temporalProgress < 0.25f
@@ -300,6 +311,7 @@ inline float Earthquake::temporalMagnitude(float temporalProgress) {
 	return sinf(effectiveProgress * pi);
 }
 
+/** Calculates the positive or negative pressure at a given point in time. */
 inline float Earthquake::temporalPressure(float time, float &tm) {
 	if(time < -initialRadius / speed || time > duration) {
 		return 0.f;
@@ -309,6 +321,7 @@ inline float Earthquake::temporalPressure(float time, float &tm) {
 	return sinf(time * frequency * twopi) * tm;
 }
 
+/** Updates the earthquake advancing it slice seconds forward in time. */
 void Earthquake::update(float slice) {
 	progress += slice / duration;
 	float time = progress * duration;
@@ -336,7 +349,7 @@ void Earthquake::update(float slice) {
 			}
 			float timeLag = dist / speed;
 			float decayMultiplier = dist == 0 ? 1.f : sinf(dist / radius * pi);
-			float tm;
+			float tm = 0.f;
 			float pressure = temporalPressure(time - timeLag, tm) * decayMultiplier;
 
 			SurfaceCell *sc = map.getSurfaceCell(pos);
@@ -349,6 +362,13 @@ void Earthquake::update(float slice) {
 	map.computeInterpolatedHeights(uBounds);
 }
 
+/**
+ * Calculate effective values for damage report given a specific surface cell and point in time.
+ * @param effectiveTime the effective time based upon the distance surfacePos is from the epicenter,
+ * the speed of the earthquake and the supplied actual time.
+ * @param effectiveMagnitude the effective magnitude based upon the calculated effective time, lag
+ * (the earthquake disturbance may not have reached this cell yet) and decay.
+ */
 void Earthquake::calculateEffectiveValues(float &effectiveTime, float &effectiveMagnitude, const Vec2i &surfacePos, float time) {
 	float dist = epicenter.dist(surfacePos);
 	float timeLag = dist / speed;
@@ -392,7 +412,7 @@ void Earthquake::getDamageReport(DamageReport &results, float slice) {
 	}
 }
 
-bool Earthquake::isDone() {
+inline bool Earthquake::isDone() {
 	// done when all seismic waves are completed
 	return progress >= 1.f + radius / speed / duration;
 }
@@ -411,39 +431,46 @@ void Earthquake::resetSurface() {
 
 // ===================== PUBLIC ========================
 
-const int Map::cellScale= 2;
-const int Map::mapScale= 2;
+const int Map::cellScale = 2;
+const int Map::mapScale = 2;
 
-Map::Map(){
-	cells= NULL;
-	surfaceCells= NULL;
-	startLocations= NULL;
-	surfaceHeights = NULL;
+Map::Map() :
+		title(),
+		waterLevel(0.f),
+		heightFactor(0.f),
+		w(0),
+		h(0),
+		surfaceW(0),
+		surfaceH(0),
+		maxFactions(0),
+		cells(NULL),
+		surfaceCells(NULL),
+		startLocations(NULL),
+		surfaceHeights(NULL),
+		earthquakes() {
 
 	// If this is expanded, maintain SurfaceCell::read() and write()
 	assert(Tileset::objCount < 256);
 
 	// same as above
-	assert(GameConstants::maxPlayers == 4);
+	assert(GameConstants::maxFactions == 4);
 }
 
-Map::~Map(){
+Map::~Map() {
 	Logger::getInstance().add("Cells", true);
 
-	delete [] cells;
-	delete [] surfaceCells;
-	delete [] startLocations;
-	if(surfaceHeights) {
-		delete[] surfaceHeights;
-	}
+	if (cells)			{delete[] cells;}
+	if (surfaceCells)	{delete[] surfaceCells;}
+	if (startLocations)	{delete[] startLocations;}
+	if (surfaceHeights)	{delete[] surfaceHeights;}
 }
 
-void Map::load(const string &path, TechTree *techTree, Tileset *tileset){
-	FILE *f;
+void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
+	FILE *f = NULL;
 
-	struct MapFileHeader{
+	struct MapFileHeader {
 		int32 version;
-		int32 maxPlayers;
+		int32 maxFactions;
 		int32 width;
 		int32 height;
 		int32 altFactor;
@@ -453,108 +480,109 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset){
 		int8 description[256];
 	};
 
-	try{
-		if(!(f = fopen(path.c_str(), "rb"))) {
+	try {
+		if (!(f = fopen(path.c_str(), "rb"))) {
 			throw runtime_error("Can't open file");
 		}
 
 		//read header
 		MapFileHeader header;
+		
+		// FIXME: Better error handling starting here: report bad map instead of partially loading,
+		// etc.
 		fread(&header, sizeof(MapFileHeader), 1, f);
 
-		if(next2Power(header.width) != header.width){
+		if (next2Power(header.width) != header.width) {
 			throw runtime_error("Map width is not a power of 2");
 		}
 
-		if(next2Power(header.height) != header.height){
+		if (next2Power(header.height) != header.height) {
 			throw runtime_error("Map height is not a power of 2");
 		}
 
-		heightFactor= (float)header.altFactor;
-		waterLevel= static_cast<float>((header.waterLevel-0.01f)/heightFactor);
-		title= header.title;
-		maxPlayers= header.maxPlayers;
-		surfaceW= header.width;
-		surfaceH= header.height;
-		w= surfaceW*cellScale;
-		h= surfaceH*cellScale;
+		heightFactor = (float)header.altFactor;
+		waterLevel = static_cast<float>((header.waterLevel - 0.01f) / heightFactor);
+		title = header.title;
+		maxFactions = header.maxFactions;
+		surfaceW = header.width;
+		surfaceH = header.height;
+		w = surfaceW * cellScale;
+		h = surfaceH * cellScale;
 
 
 		//start locations
-		startLocations= new Vec2i[maxPlayers];
-		for(int i=0; i<maxPlayers; ++i){
+		startLocations = new Vec2i[maxFactions];
+		for (int i = 0; i < maxFactions; ++i) {
 			int x, y;
 			fread(&x, sizeof(int32), 1, f);
 			fread(&y, sizeof(int32), 1, f);
-			startLocations[i]= Vec2i(x, y)*cellScale;
+			startLocations[i] = Vec2i(x, y) * cellScale;
 		}
 
 
 		//cells
-		cells= new Cell[w*h];
-		surfaceCells= new SurfaceCell[surfaceW*surfaceH];
-		surfaceHeights = new float[surfaceW*surfaceH];
+		cells = new Cell[w * h];
+		surfaceCells = new SurfaceCell[surfaceW * surfaceH];
+		surfaceHeights = new float[surfaceW * surfaceH];
 
 		float *surfaceHeight = surfaceHeights;
 
 		//read heightmap
-		for(int j=0; j<surfaceH; ++j){
-			for(int i=0; i<surfaceW; ++i){
+		for (int y = 0; y < surfaceH; ++y) {
+			for (int x = 0; x < surfaceW; ++x) {
 				float32 alt;
 				fread(&alt, sizeof(float32), 1, f);
-				SurfaceCell *sc = getSurfaceCell(i, j);
-				sc->setVertex(Vec3f((float)(i * mapScale), alt / heightFactor, (float)(j * mapScale)));
+				SurfaceCell *sc = getSurfaceCell(x, y);
+				sc->setVertex(Vec3f((float)(x * mapScale), alt / heightFactor, (float)(y * mapScale)));
 			}
 		}
 
 		//read surfaces
-		for(int j=0; j<surfaceH; ++j){
-			for(int i=0; i<surfaceW; ++i){
+		for (int y = 0; y < surfaceH; ++y) {
+			for (int x = 0; x < surfaceW; ++x) {
 				int8 surf;
 				fread(&surf, sizeof(int8), 1, f);
-				getSurfaceCell(i, j)->setSurfaceType(surf-1);
+				getSurfaceCell(x, y)->setSurfaceType(surf - 1);
 			}
 		}
 
 		//read objects and resources
-		for(int j=0; j<h; j+= cellScale){
-			for(int i=0; i<w; i+= cellScale){
+		for (int y = 0; y < h; y += cellScale) {
+			for (int x = 0; x < w; x += cellScale) {
 
 				int8 objNumber;
 				fread(&objNumber, sizeof(int8), 1, f);
-				SurfaceCell *sc= getSurfaceCell(toSurfCoords(Vec2i(i, j)));
-				if(objNumber==0){
+				SurfaceCell *sc = getSurfaceCell(toSurfCoords(Vec2i(x, y)));
+				if (objNumber == 0) {
 					sc->setObject(NULL);
-				}
-				else if(objNumber <= Tileset::objCount){
-					Object *o= new Object(tileset->getObjectType(objNumber-1), sc->getVertex());
+				} else if (objNumber <= Tileset::objCount) {
+					Object *o = new Object(tileset->getObjectType(objNumber - 1), sc->getVertex());
 					sc->setObject(o);
-					for(int k=0; k<techTree->getResourceTypeCount(); ++k){
-						const ResourceType *rt= techTree->getResourceType(k);
-						if(rt->getClass()==rcTileset && rt->getTilesetObject()==objNumber){
-							o->setResource(rt, Vec2i(i, j));
+					for (int i = 0; i < techTree->getResourceTypeCount(); ++i) {
+						const ResourceType *rt = techTree->getResourceType(i);
+						if (rt->getClass() == rcTileset && rt->getTilesetObject() == objNumber) {
+							o->setResource(rt, Vec2i(x, y));
 						}
 					}
-				}
-				else{
-					const ResourceType *rt= techTree->getTechResourceType(objNumber - Tileset::objCount) ;
-					Object *o= new Object(NULL, sc->getVertex());
-					o->setResource(rt, Vec2i(i, j));
+				} else {
+					const ResourceType *rt = techTree->getTechResourceType(objNumber - Tileset::objCount) ;
+					Object *o = new Object(NULL, sc->getVertex());
+					o->setResource(rt, Vec2i(x, y));
 					sc->setObject(o);
 				}
 			}
 		}
 
 		fclose(f);
-	} catch(const exception &e){
-		if(f) {
+	} catch (const exception &e) {
+		if (f) {
 			fclose(f);
 		}
-		throw runtime_error("Error loading map: "+ path+ "\n"+ e.what());
+		throw runtime_error(/*path,*/ "Error loading map: " + path + "\n" + e.what());
 	}
 }
 
-void Map::init(){
+void Map::init() {
 	Logger::getInstance().add("Heightmap computations", true);
 	smoothSurface();
 	computeNormals();
@@ -613,17 +641,19 @@ void Map::write(NetworkDataBuffer &buf) const {
 
 // ==================== is ====================
 
-//returns if there is a resource next to a unit, in "resourcePos" is stored the relative position of the resource
-bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resourcePos) const{
-	for(int i=-1; i<=1; ++i){
-		for(int j=-1; j<=1; ++j){
-			if(isInside(pos.x+i, pos.y+j)){
-				Resource *r= getSurfaceCell(toSurfCoords(Vec2i(pos.x+i, pos.y+j)))->getResource();
-				if(r!=NULL){
-					if(r->getType()==rt){
-						resourcePos= pos + Vec2i(i,j);
-						return true;
-					}
+/**
+ * @returns if there is a resource next to a unit, in "resourcePos" is stored the relative position
+ * of the resource
+ */
+bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resourcePos) const {
+	for (int x = -1; x <= 1; ++x) {
+		for (int y = -1; y <= 1; ++y) {
+			Vec2i cur = Vec2i(x, y) + pos;
+			if (isInside(cur)) {
+				Resource *r = getSurfaceCell(toSurfCoords(cur))->getResource();
+				if (r && r->getType() == rt) {
+					resourcePos = cur;
+					return true;
 				}
 			}
 		}
@@ -633,14 +663,6 @@ bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resour
 
 
 // ==================== free cells ====================
-
-bool Map::isFreeCell(const Vec2i &pos, Field field) const{
-	return
-		isInside(pos) &&
-		getCell(pos)->isFree(field) &&
-		(field==fAir || getSurfaceCell(toSurfCoords(pos))->isFree()) &&
-		(field!=fLand || !getDeepSubmerged(getCell(pos)));
-}
 
 bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) const {
 	if(isInside(pos)) {
@@ -671,7 +693,7 @@ bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Selection::Un
 	return false;
 }
 
-inline bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const{
+inline bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const {
 
 	if (isInside(pos)) {
 		const SurfaceCell *sc = getSurfaceCell(toSurfCoords(pos));
@@ -721,15 +743,15 @@ bool Map::isFreeCellsOrHasUnit(const Vec2i &pos, int size, Field field, const Se
     return true;
 }
 
-bool Map::isAproxFreeCells(const Vec2i &pos, int size, Field field, int teamIndex) const{
-	for(int i=pos.x; i<pos.x+size; ++i){
-		for(int j=pos.y; j<pos.y+size; ++j){
-			if(!isAproxFreeCell(Vec2i(i, j), field, teamIndex)){
-                return false;
+bool Map::isAproxFreeCells(const Vec2i &pos, int size, Field field, int teamIndex) const {
+	for (int i = pos.x; i < pos.x + size; ++i) {
+		for (int j = pos.y; j < pos.y + size; ++j) {
+			if (!isAproxFreeCell(Vec2i(i, j), field, teamIndex)) {
+				return false;
 			}
 		}
 	}
-    return true;
+	return true;
 }
 
 void Map::getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Field field) const {
@@ -743,7 +765,7 @@ void Map::getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Fiel
 			if (isInside(currPos) && (occupant = getCell(currPos)->getUnit(field))) {
 				vector<Unit *>::const_iterator i;
 
-				for (i = results.begin(); i != results.end() && *i != occupant; ++i);
+				for (i = results.begin(); i != results.end() && *i != occupant; ++i) ;
 
 				if (i == results.end()) {
 					results.push_back(occupant);
@@ -783,26 +805,26 @@ Vec2i Map::getNearestPos(const Vec2i &start, const Vec2i &target, int minRange, 
 		int offset = targetSize - 1;
 
 		if (start.x > target.x + offset) {
-			ftarget.x = target.x + offset;
+			ftarget.x = static_cast<float>(target.x + offset);
 		} else if(start.x > target.x) {
-			ftarget.x = start.x;
+			ftarget.x = static_cast<float>(start.x);
 		} else {
-			ftarget.x = target.x;
+			ftarget.x = static_cast<float>(target.x);
 		}
 
 		if (start.y > target.y + offset) {
-			ftarget.y = target.y + offset;
+			ftarget.y = static_cast<float>(target.y + offset);
 		} else if(start.y > target.y) {
-			ftarget.y = start.y;
+			ftarget.y = static_cast<float>(start.y);
 		} else {
-			ftarget.y = target.y;
+			ftarget.y = static_cast<float>(target.y);
 		}
 	} else {
-		ftarget.x = target.x;
-		ftarget.y = target.y;
+		ftarget.x = static_cast<float>(target.x);
+		ftarget.y = static_cast<float>(target.y);
 	}
 
-	Vec2f fstart(start.x, start.y);
+	Vec2f fstart(static_cast<float>(start.x), static_cast<float>(start.y));
 	//Vec2f ftarget(target.x, target.y);
 	float len = fstart.dist(ftarget);
 
@@ -893,7 +915,7 @@ inline void Map::findNearestFree(Vec2i &result, const Vec2i &start, int size, Fi
 Vec2i Map::getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &target, Field field,
 		int targetSize) {
 	int sideSize = targetSize + size;
-	Vec2i result;
+	Vec2i result(0);
 	float minDistance = 100000.f;
 
 	int topY = target.y - size;
@@ -902,9 +924,9 @@ Vec2i Map::getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &targ
 	int rightX = target.x + targetSize;
 
 	for(int i = 0; i < sideSize; ++i) {
-		findNearest(result, start, Vec2i(leftX + i, topY), minDistance);		// above
-		findNearest(result, start, Vec2i(rightX, topY + i), minDistance);		// right
-		findNearest(result, start, Vec2i(rightX - i, bottomY), minDistance);	// below
+		findNearest(result, start, Vec2i(leftX + i, topY), minDistance);	// above
+		findNearest(result, start, Vec2i(rightX, topY + i), minDistance);	// right
+		findNearest(result, start, Vec2i(rightX - i, bottomY), minDistance);// below
 		findNearest(result, start, Vec2i(leftX, bottomY - i), minDistance);	// left
 	}
 
@@ -919,7 +941,7 @@ Vec2i Map::getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &targ
 bool Map::getNearestAdjacentFreePos(Vec2i &result, const Unit *unit, const Vec2i &start, int size,
 		const Vec2i &target, Field field, int targetSize) const {
 	int sideSize = targetSize + size;
-	float noneFound = h + w;
+	float noneFound = static_cast<float>(h + w);
 	float minDistance = noneFound;
 
 	int topY = target.y - size;
@@ -973,38 +995,36 @@ bool Map::canMove(const Unit *unit, const Vec2i &pos1, const Vec2i &pos2) const 
 
 //checks if a unit can move from between 2 cells using only visible cells (for pathfinding)
 bool Map::aproxCanMove(const Unit *unit, const Vec2i &pos1, const Vec2i &pos2) const{
-	int size= unit->getType()->getSize();
-	int teamIndex= unit->getTeam();
-	Field field= unit->getCurrField();
+	int size = unit->getType()->getSize();
+	int teamIndex = unit->getTeam();
+	Field field = unit->getCurrField();
 
 	//single cell units
-	if(size==1){
-		if(!isAproxFreeCell(pos2, field, teamIndex)){
+	if (size == 1) {
+		if (!isAproxFreeCell(pos2, field, teamIndex)) {
 			return false;
 		}
-		if(pos1.x!=pos2.x && pos1.y!=pos2.y){
-			if(!isAproxFreeCell(Vec2i(pos1.x, pos2.y), field, teamIndex)){
+		if (pos1.x != pos2.x && pos1.y != pos2.y) {
+			if (!isAproxFreeCell(Vec2i(pos1.x, pos2.y), field, teamIndex)) {
 				return false;
 			}
-			if(!isAproxFreeCell(Vec2i(pos2.x, pos1.y), field, teamIndex)){
+			if (!isAproxFreeCell(Vec2i(pos2.x, pos1.y), field, teamIndex)) {
 				return false;
 			}
 		}
 		return true;
-	}
 
 	//multi cell units
-	else{
-		for(int i=pos2.x; i<pos2.x+size; ++i){
-			for(int j=pos2.y; j<pos2.y+size; ++j){
-				if(isInside(i, j)){
-					if(getCell(i, j)->getUnit(unit->getCurrField())!=unit){
-						if(!isAproxFreeCell(Vec2i(i, j), field, teamIndex)){
+	} else {
+		for (int i = pos2.x; i < pos2.x + size; ++i) {
+			for (int j = pos2.y; j < pos2.y + size; ++j) {
+				if (isInside(i, j)) {
+					if (getCell(i, j)->getUnit(unit->getCurrField()) != unit) {
+						if (!isAproxFreeCell(Vec2i(i, j), field, teamIndex)) {
 							return false;
 						}
 					}
-				}
-				else{
+				} else {
 					return false;
 				}
 			}
@@ -1056,7 +1076,9 @@ void Map::clearUnitCells(Unit *unit, const Vec2i &pos){
 	}
 }
 
-//eviects current inhabitance of cells
+/**
+ * Evicts current inhabitants of cells and adds them to the supplied vector<Unit *>
+ */
 void Map::evict(Unit *unit, const Vec2i &pos, vector<Unit *> &evicted) {
 
 	assert(unit);
@@ -1079,6 +1101,7 @@ void Map::evict(Unit *unit, const Vec2i &pos, vector<Unit *> &evicted) {
 		}
 	}
 }
+
 
 // ==================== misc ====================
 
@@ -1277,7 +1300,7 @@ void Map::computeCellColors(){
 void Map::assertUnitCells(const Unit * unit) {
 	assert(unit);
 	// make sure alive/dead is sane
-	assert(unit->getHp() == 0 && unit->isDead() || unit->getHp() > 0 && unit->isAlive());
+	assert((unit->getHp() == 0 && unit->isDead()) || (unit->getHp() > 0 && unit->isAlive()));
 
 	const UnitType *ut = unit->getType();
 	int size = ut->getSize();
@@ -1300,34 +1323,28 @@ void Map::assertUnitCells(const Unit * unit) {
 }
 #endif
 
-
 // =====================================================
 // 	class PosCircularIterator
 // =====================================================
 
-PosCircularIterator::PosCircularIterator(const Map *map, const Vec2i &center, int radius){
-	this->map= map;
-	this->radius= radius;
-	this->center= center;
-	pos= center - Vec2i(radius, radius);
-	pos.x-= 1;
+PosCircularIteratorSimple::PosCircularIteratorSimple(const Map &map, const Vec2i &center, int radius) :
+		map(map), center(center), radius(radius), pos(center - Vec2i(radius + 1, radius)) {
 }
-
-
 
 // =====================================================
 // 	class PosQuadIterator
 // =====================================================
 
-PosQuadIterator::PosQuadIterator(const Map *map, const Quad2i &quad, int step){
-	this->map= map;
-	this->quad= quad;
-	this->boundingRect= quad.computeBoundingRect();
-	this->step= step;
-	pos= boundingRect.p[0];
+PosQuadIterator::PosQuadIterator(const Quad2i &quad, int step) :
+		quad(quad),
+		step(step),
+		boundingRect(quad.computeBoundingRect()),
+		pos(boundingRect.p[0]) {
 	--pos.x;
-	pos.x= (pos.x/step)*step;
-	pos.y= (pos.y/step)*step;
+	pos.x = (pos.x / step) * step;
+	pos.y = (pos.y / step) * step;
 }
 
-}}//end namespace
+} // end namespace
+
+

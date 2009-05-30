@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_PATHFINDER_H_
-#define _GLEST_GAME_PATHFINDER_H_
+#ifndef _GAME_PATHFINDER_H_
+#define _GAME_PATHFINDER_H_
 
 #include "vec.h"
 
@@ -21,7 +21,7 @@ using std::vector;
 using std::list;
 using Shared::Graphics::Vec2i;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class Map;
 class Unit;
@@ -46,7 +46,10 @@ public:
 		float heuristic;
 		bool exploredCell;
 	};
-	class Nodes : public list<Node*> {};/*
+	typedef vector<Node*> Nodes;
+
+	/*
+	class Nodes : public list<Node*> {
 		float minDist
 		public:
 		Nodes();
@@ -95,6 +98,6 @@ private:
 	bool openPos(const Vec2i &sucPos);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

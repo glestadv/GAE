@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_UNIT_H_
-#define _GLEST_GAME_UNIT_H_
+#ifndef _GAME_UNIT_H_
+#define _GAME_UNIT_H_
 
 #include <map>
 
@@ -24,8 +24,9 @@
 #include "unit_reference.h"
 #include "math_util.h"
 #include "entity.h"
+#include "timer.h"
 
-namespace Glest { namespace Game {
+namespace Game {
 
 using Shared::Graphics::ParticleSystem;
 using Shared::Graphics::Vec4f;
@@ -34,6 +35,7 @@ using Shared::Graphics::Vec3f;
 using Shared::Graphics::Vec2i;
 using Shared::Graphics::Model;
 using Shared::Graphics::Entity;
+using Shared::Platform::Chrono;
 
 class Map;
 class Faction;
@@ -61,9 +63,14 @@ enum CommandResult {
 };
 
 enum InterestingUnitType {
+	iutIdleBuilder,
 	iutIdleHarvester,
+	iutIdleWorker,
+	iutIdleRepairer,
+	iutIdleRestorer,
 	iutBuiltBuilding,
 	iutProducer,
+	iutIdleProducer,
 	iutDamaged,
 	iutStore
 };
@@ -99,6 +106,7 @@ private:
 	vector<Vec2i> pathQueue;
 
 public:
+	UnitPath() : blockCount(0), pathQueue() {}
 	bool isBlocked()				{return blockCount >= maxBlockCount;}
 	bool isEmpty()					{return pathQueue.empty();}
 
@@ -110,6 +118,9 @@ public:
 		pathQueue.erase(pathQueue.begin());
 		return p;
 	}
+	
+	void read(const XmlNode *node);
+	void write(XmlNode *node) const;
 };
 
 
@@ -158,11 +169,14 @@ private:
 	Field targetField;
 	const Level *level;
 
-	Vec2i pos;
-	Vec2i lastPos;
-	Vec2i targetPos;		//absolute target pos
+	Vec2i pos;				/** Current position */
+	Vec2i lastPos;			/** The last position before current */
+	Vec2i nextPos;			/** Position unit is moving into next. */
+	Vec2i targetPos;		/** Position of the target, or the cell of the target we care about. */
 	Vec3f targetVec;
 	Vec2i meetingPos;
+	bool faceTarget;		/** If true and target is set, we continue to face target. */
+	bool useNearestOccupiedCell;	/** If true, targetPos is set to target->getNearestOccupiedCell() */
 
 	float lastRotation;		//in degrees
 	float targetRotation;
@@ -171,10 +185,9 @@ private:
 	const UnitType *type;
 	const ResourceType *loadType;
 	const SkillType *currSkill;
-// 	const SkillType *lastSkill;
 
 	bool toBeUndertaken;
-	bool alive;
+//	bool alive;
 	bool autoRepairEnabled;
 	bool dirty;
 
@@ -196,6 +209,12 @@ private:
 	Observers observers;
 	Pets pets;
 	UnitReference master;
+	
+	
+	int64 lastCommandUpdate;	// microseconds
+	int64 lastUpdated;			// microseconds
+	int64 lastCommanded;		// milliseconds
+	float nextUpdateFrames;
 
 public:
 	Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master = NULL);
@@ -216,10 +235,11 @@ public:
 	int getHp() const							{return hp;}
 	int getEp() const							{return ep;}
 	int getProductionPercent() const;
-	float getHpRatio() const					{return clamp(static_cast<float>(hp)/getMaxHp(), 0.f, 1.f);}
+	float getHpRatio() const					{return clamp(static_cast<float>(hp) / getMaxHp(), 0.f, 1.f);}
 	float getEpRatio() const					{return !type->getMaxEp() ? 0.0f : clamp(static_cast<float>(ep)/getMaxEp(), 0.f, 1.f);}
 	bool getToBeUndertaken() const				{return toBeUndertaken;}
 	Unit *getTarget()							{return targetRef.getUnit();}
+	Vec2i getNextPos() const					{return nextPos;}
 	Vec2i getTargetPos() const					{return targetPos;}
 	Vec3f getTargetVec() const					{return targetVec;}
 	Field getTargetField() const				{return targetField;}
@@ -248,6 +268,10 @@ public:
 	const Commands &getCommands() const			{return commands;}
 	const RepairCommandType *getRepairCommandType(const Unit *u) const;
 	int getDeadCount() const					{return deadCount;}
+	const int64 &getLastUpdated() const			{return lastUpdated;}
+	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
+	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
+	
 
 	void addPet(Unit *u)						{pets.push_back(u);}
 	void petDied(Unit *u)						{pets.remove(u);}
@@ -291,53 +315,73 @@ public:
 	//pos
 	Vec2i getPos() const				{return pos;}
 	Vec2i getLastPos() const			{return lastPos;}
-	Vec2i getCenteredPos() const		{return Vec2i(pos.x + type->getSize() / 2.f, pos.y + type->getSize() / 2.f);}
-	Vec2f getFloatCenteredPos() const	{return Vec2f(pos.x + type->getSize() / 2.f, pos.y + type->getSize() / 2.f);}
-	Vec2i getCellPos() const;
+	Vec2i getCenteredPos() const		{return Vec2i((int)type->getHalfSize()) + pos;}
+	Vec2f getFloatCenteredPos() const	{return Vec2f(type->getHalfSize()) + Vec2f((float)pos.x, (float)pos.y);}
+	Vec2i getNearestOccupiedCell(const Vec2i &from) const;
+//	Vec2i getCellPos() const;
 
 	//is
-	bool isHighlighted() const			{return highlight>0.f;}
-	bool isDead() const					{return !alive;}
-	bool isAlive() const				{return alive;}
-
-	bool isOperative() const			{return isAlive() && isBuilt();}
-	bool isBeingBuilt() const			{return currSkill->getClass()==scBeBuilt;}
-	bool isBuilt() const				{return !isBeingBuilt();}
-	bool isPutrefacting() const			{return deadCount!=0;}
-	bool isAlly(const Unit *unit) const	{return faction->isAlly(unit->getFaction());}
+	bool isHighlighted() const			{return highlight > 0.f;}
+	bool isDead() const					{return !hp;}
+	bool isAlive() const				{return hp;}
 	bool isDamaged() const				{return hp < getMaxHp();}
+	bool isOperative() const			{return isAlive() && isBuilt();}
+	bool isBeingBuilt() const			{return currSkill->getClass() == scBeBuilt;}
+	bool isBuilt() const				{return !isBeingBuilt();}
+	bool isPutrefacting() const			{return deadCount;}
+	bool isAlly(const Unit *unit) const	{return faction->isAlly(unit->getFaction());}
 	bool isInteresting(InterestingUnitType iut) const;
 	bool isPet(const Unit *u) const;
+	bool isAPet() const					{return master;}
 	bool isAutoRepairEnabled() const	{return autoRepairEnabled;}
 	bool isDirty()						{return dirty;}
+	bool wasRecentlyCommanded() const	{return getLastCommanded() < 750;}
 
 	//set
-	void setCurrField(Field currField)					{this->currField= currField;}
+	void setCurrField(Field currField)					{this->currField = currField;}
 	void setCurrSkill(const SkillType *currSkill);
 	void setCurrSkill(SkillClass sc)					{setCurrSkill(getType()->getFirstStOfClass(sc));}
-	void setLoadCount(int loadCount)					{this->loadCount= loadCount;}
-	void setLoadType(const ResourceType *loadType)		{this->loadType= loadType;}
-	void setProgress2(int progress2)					{this->progress2= progress2;}
+	void setLoadCount(int loadCount)					{this->loadCount = loadCount;}
+	void setLoadType(const ResourceType *loadType)		{this->loadType = loadType;}
+	void setProgress2(int progress2)					{this->progress2 = progress2;}
 	void setPos(const Vec2i &pos);
-	void setTargetPos(const Vec2i &targetPos);
-	void setTarget(const Unit *unit);
-	void setTargetVec(const Vec3f &targetVec)			{this->targetVec= targetVec;}
-	void setMeetingPos(const Vec2i &meetingPos, bool queue);
-	void setAutoRepairEnabled(bool autoRepairEnabled)	{
-		this->autoRepairEnabled = autoRepairEnabled;
+	void setNextPos(const Vec2i &nextPos)				{this->nextPos = nextPos; targetRef = NULL;}
+	void setTargetPos(const Vec2i &targetPos)			{this->targetPos = targetPos; targetRef = NULL;}
+	void setTarget(const Unit *unit, bool faceTarget = true, bool useNearestOccupiedCell = true);
+	void setTargetVec(const Vec3f &targetVec)			{this->targetVec = targetVec;}
+	void setMeetingPos(const Vec2i &meetingPos)			{this->meetingPos = meetingPos;}
+	void setAutoRepairEnabled(bool autoRepairEnabled) {
+		this->autoRepairEnabled = autoRepairEnabled && faction->getPrimaryPlayer().getAutoRepairEnabled();
 		notifyObservers(UnitObserver::eStateChange);
 	}
 	void setDirty(bool dirty)							{this->dirty = dirty;}
+	void setLastUpdated(const int64 &lastUpdated)		{this->lastUpdated = lastUpdated;}
+	void setNextUpdateFrames(float nextUpdateFrames)	{this->nextUpdateFrames = nextUpdateFrames;}
+	void resetLastCommanded()							{lastCommanded = Chrono::getCurMillis();}
+	void resetLastCommandUpdated()						{lastCommandUpdate = Chrono::getCurMicros();}
 
 	//render related
 	const Model *getCurrentModel() const				{return currSkill->getAnimation();}
-	Vec3f getCurrVector() const							{return getCurrVectorFlat() + Vec3f(0.f, type->getHeight()/2.f, 0.f);}
-	Vec3f getCurrVectorFlat() const;
+	Vec3f getCurrVector() const							{return getCurrVectorFlat() + Vec3f(0.f, type->getHalfHeight(), 0.f);}
+	//Vec3f getCurrVectorFlat() const;
+	// this is a heavy use function so it's inlined even though it isn't exactly small
+	Vec3f getCurrVectorFlat() const {
+		Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
+	
+		if (currSkill->getClass() == scMove) {
+			v = Vec3f(static_cast<float>(lastPos.x), computeHeight(lastPos),
+					  static_cast<float>(lastPos.y)).lerp(progress, v);
+		}
+
+		v.x += type->getHalfSize();
+		v.z += type->getHalfSize();
+	
+		return v;
+	}
 
 	//command related
-
 	const CommandType *getFirstAvailableCt(CommandClass commandClass) const;
-	bool anyCommand() const								{return !commands.empty();	}
+	bool anyCommand() const								{return !commands.empty();}
 
 	/** return current command, assert that there is always one command */
 	Command *getCurrCommand() const {
@@ -354,7 +398,7 @@ public:
 	void born();
 	void kill()											{kill(pos, true);}
 	void kill(const Vec2i &lastPos, bool removeFromCells);
-	void undertake()									{faction->removeUnit(this);}
+	void undertake()									{faction->remove(this);}
 	void save(XmlNode *node, bool morphed = false) const;
 
 	//observers
@@ -375,49 +419,23 @@ public:
 	bool decHp(int i);
 	int update2()										{return ++progress2;}
 	bool update();
-	void update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld);
+	void update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld, bool netClient, float nextAdvanceFrames);
 	void updateMinor(const XmlNode *node);
 	void writeMinorUpdate(XmlNode *node) const;
+	void face(const Vec2i &nextPos);
 
 
-	/**
-	 * Update the unit by one tick.
-	 *
-	 * @returns if the unit died during this call, the killer is returned, NULL
-	 *		  otherwise.
-	 */
 	Unit *tick();
 	void applyUpgrade(const UpgradeType *upgradeType);
 	void computeTotalUpgrade();
 	void incKills();
 	bool morph(const MorphCommandType *mct);
-	CommandResult checkCommand(Command *command) const;
-	void applyCommand(Command *command);
+	CommandResult checkCommand(const Command &command) const;
+	void applyCommand(const Command &command);
 
-	/**
-	 * Add/apply the supplied effect to this unit.
-	 *
-	 * @returns true if this effect had an immediate regen/degen that killed the
-	 *		  unit.
-	 */
 	bool add(Effect *e);
-
-	/** Remove the specified effect from this unit, if it is present. */
 	void remove(Effect *e);
-
-	/**
-	 * Notify this unit that the supplied effect has expired. This effect will
-	 * (should) have been one that this unit caused.
-	 */
 	void effectExpired(Effect *effect);
-
-	/**
-	 * Do positive and/or negative Hp and Ep regeneration. This method is
-	 * provided to reduce redundant code in a number of other places, mostly in
-	 * UnitUpdater.
-	 *
-	 * @returns true if the unit dies
-	 */
 	bool doRegen(int hpRegeneration, int epRegeneration);
 
 //	void writeState(UnitState &us);
@@ -425,27 +443,21 @@ public:
 
 private:
 	float computeHeight(const Vec2i &pos) const;
-	void updateTarget();
+	void updateTarget(const Unit *target = NULL);
 	void clearCommands();
-	CommandResult undoCommand(Command *command);
-
-	/**
-	 * Recalculate the unit's stats (contained in base class
-	 * EnhancementTypeBase) to take into account changes in the effects and/or
-	 * totalUpgrade objects.
-	 */
+	CommandResult undoCommand(const Command &command);
 	void recalculateStats();
+	Command *popCommand();
 };
 
 // =====================================================
 // 	class Targets
-//
-/// Class for managing multiple targets by distance.
 // =====================================================
 
+/** Utility class for managing multiple targets by distance. */
 class Targets : public std::map<Unit *, int> {
 public:
-	void record(Unit * target, int dist) {
+	void record(Unit *target, int dist) {
 		iterator i = find(target);
 		if (i == end() || dist < i->second) {
 			(*this)[target] = dist;
@@ -474,6 +486,6 @@ public:
 };
 
 
-}}// end namespace
+} // end namespace
 
 #endif

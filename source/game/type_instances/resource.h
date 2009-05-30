@@ -8,8 +8,8 @@
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
-#ifndef _GLEST_GAME_RESOURCE_H_
-#define _GLEST_GAME_RESOURCE_H_
+#ifndef _GAME_RESOURCE_H_
+#define _GAME_RESOURCE_H_
 
 #include <string>
 
@@ -19,7 +19,7 @@
 using std::string;
 using Shared::Xml::XmlNode;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::Vec2i;
 
@@ -32,7 +32,7 @@ class TechTree;
 /// Amount of a given ResourceType
 // =====================================================
 
-class Resource{
+class Resource {
 private:
     int amount;
     const ResourceType *type;
@@ -57,6 +57,6 @@ public:
 	void save(XmlNode *node) const;
 };
 
-}}// end namespace
+}// end namespace
 
 #endif

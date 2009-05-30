@@ -15,7 +15,7 @@
 
 #include "leak_dumper.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class UnitReference
@@ -29,7 +29,7 @@ UnitReference::UnitReference(const XmlNode *node) {
 	faction = factionId == -1 ? NULL : World::getCurrWorld()->getFaction(factionId);
 }
 
-void UnitReference::operator=(const Unit * unit){
+UnitReference &UnitReference::operator=(const Unit *unit) {
 	if (unit) {
 		id = unit->getId();
 		faction = unit->getFaction();
@@ -37,10 +37,11 @@ void UnitReference::operator=(const Unit * unit){
 		id = -1;
 		faction = NULL;
 	}
+	return *this;
 }
 
-Unit *UnitReference::getUnit() const{
-	if(faction!=NULL){
+Unit *UnitReference::getUnit() const {
+	if(faction) {
 		return faction->findUnit(id);
 	}
 	return NULL;
@@ -73,4 +74,4 @@ void UnitReference::write(NetworkDataBuffer &buf) const {
 	buf.write(factionIndex);
 }
 
-}}//end namespace
+} // end namespace

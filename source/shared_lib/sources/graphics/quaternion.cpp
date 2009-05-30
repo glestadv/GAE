@@ -92,7 +92,7 @@ void Quaternion::setEuler(const EulerAngles &eulerAngles){
 }
 
 float Quaternion::length(){
-	return sqrt(w*w+v.x*v.x+v.y*v.y+v.z*v.z);
+	return sqrtf(static_cast<float>(w * w + v.x * v.x + v.y * v.y + v.z * v.z));
 }
 
 Quaternion Quaternion::conjugate(){

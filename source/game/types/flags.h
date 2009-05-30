@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_FLAGS_H_
-#define _GLEST_GAME_FLAGS_H_
+#ifndef _GAME_FLAGS_H_
+#define _GAME_FLAGS_H_
 
 #include <cassert>
 #include <stdexcept>
@@ -19,7 +19,7 @@
 using std::runtime_error;
 using Shared::Xml::XmlNode;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class TechTree;
 class FactionType;
@@ -191,6 +191,6 @@ protected:
 	}
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

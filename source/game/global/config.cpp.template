@@ -10,6 +10,9 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
+// This file is auto-generated from config.cpp.template using ../config.db and the script
+// ../mkconfig.sh.  To modify actual config settings, edit config.db and re-run ../mkconfig.sh.
+
 #include "pch.h"
 #include "config.h"
 #include "util.h"
@@ -17,26 +20,28 @@
 #include "leak_dumper.h"
 
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class Config
 // =====================================================
 
-Config::Config(const char* fileName) :
-		Properties(),
-		fileName(fileName) {
-	load(fileName);
+Config::Config(const char* fileName) : fileName(fileName) {
+	Properties *p = new Properties();
+	p->load(fileName, true);	
 
 CONFIG_INIT
 
+	delete p;
 }
 
 void Config::save(const char *path) {
+	Properties *p = new Properties();
 
 CONFIG_SAVE
 
-	Properties::save(path);
+	p->save(path);
+	delete p;
 }
 
-}}// end namespace
+} // end namespace

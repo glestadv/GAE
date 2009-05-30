@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MENUSTATEGRAPHICINFO_H_
-#define _GLEST_GAME_MENUSTATEGRAPHICINFO_H_
+#ifndef _GAME_MENUSTATEGRAPHICINFO_H_
+#define _GAME_MENUSTATEGRAPHICINFO_H_
 
 #include "main_menu.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===============================
 // 	class MenuStateGraphicInfo  
@@ -29,13 +29,13 @@ private:
 	string glInfo;
 	string glMoreInfo;
 public:
-	MenuStateGraphicInfo(Program *program, MainMenu *mainMenu);
+	MenuStateGraphicInfo(Program &program, MainMenu *mainMenu);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
-	void mouseMove(int x, int y, const MouseState *mouseState);
+	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

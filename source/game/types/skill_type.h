@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_SKILLTYPE_H_
-#define _GLEST_GAME_SKILLTYPE_H_
+#ifndef _GAME_SKILLTYPE_H_
+#define _GAME_SKILLTYPE_H_
 
 #include "sound.h"
 #include "vec.h"
@@ -30,7 +30,7 @@ using Shared::Xml::XmlNode;
 using Shared::Graphics::Vec3f;
 using Shared::Graphics::Model;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Util::MultiFactory;
 
@@ -42,7 +42,7 @@ class EnhancementTypeBase;
 class Unit;
 class EarthquakeType;
 
-enum SkillClass{
+enum SkillClass {
 	scStop,
 	scMove,
 	scAttack,
@@ -99,6 +99,17 @@ protected:
 	bool removeAllyEffects;
 	bool removeEnemyEffects;
 
+	float startTime;
+
+	bool projectile;
+	ParticleSystemTypeProjectile* projectileParticleSystemType;
+	SoundContainer projSounds;
+
+	bool splash;
+	bool splashDamageAll;
+	int splashRadius;
+	ParticleSystemTypeSplash* splashParticleSystemType;
+
 public:
 	//varios
 	SkillType(SkillClass skillClass, const char* typeName);
@@ -112,7 +123,7 @@ public:
 
 	void descEpCost(string &str, const Unit *unit) const {
 		if(epCost){
-			str+= Lang::getInstance().get("EpCost") + ": " + intToStr(epCost) + "\n";
+			str+= Lang::getInstance().get("EpCost") + ": " + Conversion::toStr(epCost) + "\n";
 		}
 	}
 
@@ -131,6 +142,7 @@ public:
 	float getSoundStartTime() const		{return soundStartTime;}
 	int getMaxRange() const				{return maxRange;}
 	int getMinRange() const				{return minRange;}
+	float getStartTime() const				{return startTime;}
 
 	//other
 	virtual string toString() const		{return Lang::getInstance().get(typeName);}
@@ -144,6 +156,16 @@ public:
 	bool isRemoveAllyEffects() const		{return removeAllyEffects;}
 	bool isRemoveEnemyEffects() const		{return removeEnemyEffects;}
 
+	//get proj
+	bool getProjectile() const									{return projectile;}
+	ParticleSystemTypeProjectile * getProjParticleType() const	{return projectileParticleSystemType;}
+	StaticSound *getProjSound() const							{return projSounds.getRandSound();}
+
+	//get splash
+	bool getSplash() const										{return splash;}
+	bool getSplashDamageAll() const								{return splashDamageAll;}
+	int getSplashRadius() const									{return splashRadius;}
+	ParticleSystemTypeSplash * getSplashParticleType() const	{return splashParticleSystemType;}
 };
 
 // ===============================
@@ -155,7 +177,7 @@ public:
 	StopSkillType() : SkillType(scStop, "Stop"){}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		Lang &lang= Lang::getInstance();
-		str+= lang.get("ReactionSpeed")+": "+ intToStr(speed)+"\n";
+		str+= lang.get("ReactionSpeed")+": "+ Conversion::toStr(speed)+"\n";
 		descEpCost(str, unit);
 	}
 };
@@ -199,15 +221,6 @@ public:
 class TargetBasedSkillType: public SkillType {
 protected:
 	Fields fields;
-	float startTime;
-
-	bool projectile;
-	ParticleSystemTypeProjectile* projectileParticleSystemType;
-	SoundContainer projSounds;
-
-	bool splash;
-	int splashRadius;
-	ParticleSystemTypeSplash* splashParticleSystemType;
 
 public:
 	TargetBasedSkillType(SkillClass skillClass, const char* typeName);
@@ -218,24 +231,13 @@ public:
 
 	Fields getFields() const				{return fields;}
 	bool getField(Field field) const		{return fields.get(field);}
-	float getStartTime() const				{return startTime;}
-
-	//get proj
-	bool getProjectile() const									{return projectile;}
-	ParticleSystemTypeProjectile * getProjParticleType() const	{return projectileParticleSystemType;}
-	StaticSound *getProjSound() const							{return projSounds.getRandSound();}
-
-	//get splash
-	bool getSplash() const										{return splash;}
-	int getSplashRadius() const									{return splashRadius;}
-	ParticleSystemTypeSplash * getSplashParticleType() const	{return splashParticleSystemType;}
 };
 
 // ===============================
 // 	class AttackSkillType
 // ===============================
 
-class AttackSkillType: public TargetBasedSkillType{
+class AttackSkillType: public TargetBasedSkillType {
 private:
 	int attackStrength;
 	int attackVar;
@@ -447,6 +449,6 @@ public:
 	static SkillTypeFactory &getInstance();
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

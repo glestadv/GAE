@@ -9,18 +9,18 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_MENUSTATEROOT_H_
-#define _GLEST_GAME_MENUSTATEROOT_H_
+#ifndef _GAME_MENUSTATEROOT_H_
+#define _GAME_MENUSTATEROOT_H_
 
 #include "main_menu.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===============================
 // 	class MenuStateRoot  
 // ===============================
 
-class MenuStateRoot: public MenuState{
+class MenuStateRoot: public MenuState {
 private:
 	GraphicButton buttonNewGame;
 	GraphicButton buttonJoinGame;
@@ -31,15 +31,19 @@ private:
 	GraphicButton buttonExit;
 	GraphicLabel labelVersion;
 
+private:
+	MenuStateRoot(const MenuStateRoot &);
+	const MenuStateRoot &operator =(const MenuStateRoot &);
+
 public:
-	MenuStateRoot(Program *program, MainMenu *mainMenu);
+	MenuStateRoot(Program &program, MainMenu *mainMenu);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
-	void mouseMove(int x, int y, const MouseState *mouseState);
+	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
 };
 
 
-}}//end namespace
+} // end namespace
 
 #endif

@@ -17,7 +17,7 @@
 
 #include "leak_dumper.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 //	class WaterSplash
@@ -48,12 +48,12 @@ WaterEffects::WaterEffects(){
 }
 
 void WaterEffects::update(){
-	anim+= 0.5f/Config::getInstance().getWorldUpdateFPS();
+	anim+= 0.5f/Config::getInstance().getGsWorldUpdateFps();
 	if(anim>1.f){
 		anim= 0;
 	}
 	for(int i=0; i<waterSplashes.size(); ++i){
-		waterSplashes[i].update(1.f/Config::getInstance().getWorldUpdateFPS());
+		waterSplashes[i].update(1.f/Config::getInstance().getGsWorldUpdateFps());
 	}
 }
 
@@ -67,4 +67,4 @@ void WaterEffects::addWaterSplash(const Vec2f &pos){
 	waterSplashes.push_back(WaterSplash(pos));
 }
 
-}}//end namespace
+} // end namespace

@@ -31,7 +31,7 @@
 
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class AttackSkillTypes & enum AttackSkillPreferenceFlags
@@ -43,7 +43,8 @@ const char* AttackSkillPreferences::names[aspCount] = {
 	"at-max-range",
 	"on-large-units",
 	"on-buildings",
-	"when-damaged"
+	"when-damaged",
+	"no-auto"
 };
 
 void AttackSkillTypes::init() {
@@ -128,23 +129,24 @@ const AttackSkillType *AttackSkillTypes::getPreferredAttack(const Unit *unit,
 // 	class CommandType
 // =====================================================
 
-CommandType::CommandType(CommandClass commandTypeClass, Clicks clicks, const char* typeName, bool queuable) {
-	this->commandTypeClass = commandTypeClass;
-	this->clicks = clicks;
-	this->typeName = typeName;
-	this->queuable = queuable;
-}
+int CommandType::nextId = 0;
 
-//get
-CommandClass CommandType::getClass() const{
-	assert(this!=NULL);
-	return commandTypeClass;
+CommandType::CommandType(const char* name, CommandClass cc, Clicks clicks, bool queuable) :
+		RequirableType(getNextId(), name, NULL),
+		cc(cc),
+		clicks(clicks),
+		queuable(queuable),
+		unitType(NULL),
+		unitTypeIndex(-1) {
 }
 
 void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
-	switch(commandTypeClass) {
+	switch(cc) {
 		case ccStop:
-			unitUpdater->updateStop(unit);
+			if(unit->getLastCommandUpdate() > 250000) {
+				unitUpdater->updateStop(unit);
+				unit->resetLastCommandUpdated();
+			}			
 			break;
 
 		case ccMove:
@@ -156,7 +158,10 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			break;
 
 		case ccAttackStopped:
-			unitUpdater->updateAttackStopped(unit);
+			if(unit->getLastCommandUpdate() > 250000) {
+				unitUpdater->updateAttackStopped(unit);
+				unit->resetLastCommandUpdated();
+			}			
 			break;
 
 		case ccBuild:
@@ -188,7 +193,10 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			break;
 
 		case ccGuard:
-			unitUpdater->updateGuard(unit);
+			if(unit->getCurrSkill()->getClass() != scStop || unit->getLastCommandUpdate() > 250000) {
+				unitUpdater->updateGuard(unit);
+				unit->resetLastCommandUpdated();
+			}
 			break;
 
 		case ccPatrol:
@@ -203,15 +211,31 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 	}
 }
 
-void CommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	this->id= id;
-	name= n->getChild("name")->getAttribute("value")->getRestrictedValue();
+void CommandType::setUnitTypeAndIndex(const UnitType *unitType, int unitTypeIndex) {
+	if(unitType->getId() > UCHAR_MAX) {
+		stringstream str;
+		str <<  "A maximum of " << UCHAR_MAX << " unit types are currently allowed per faction.  "
+				"This limit is only imposed for network data compactness and can be easily changed "
+				"if you *really* need that many different unit types. Do you really?";
+		throw runtime_error(str.str());
+	}
 
-	//image
-	const XmlNode *imageNode= n->getChild("image");
-	image= Renderer::getInstance().newTexture2D(rsGame);
-	image->load(dir+"/"+imageNode->getAttribute("path")->getRestrictedValue());
+	if(unitType->getId() > UCHAR_MAX) {
+		stringstream str;
+		str <<  "A maximum of " << UCHAR_MAX << " commands are currently allowed per unit.  "
+				"This limit is only imposed for network data compactness and can be easily changed "
+				"if you *really* need that many commands. Do you really?";
+		throw runtime_error(str.str());
+	}
 
+	this->unitType = unitType;
+	this->unitTypeIndex = unitTypeIndex;
+}
+
+void CommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {
+	name = n->getChildRestrictedValue("name");
+
+	DisplayableType::load(n, dir);
 	RequirableType::load(n, dir, tt, ft);
 }
 
@@ -219,30 +243,30 @@ void CommandType::load(int id, const XmlNode *n, const string &dir, const TechTr
 // 	class MoveBaseCommandType
 // =====================================================
 
-void MoveBaseCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	CommandType::load(id, n, dir, tt, ft, ut);
+void MoveBaseCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	CommandType::load(n, dir, tt, ft);
 
 	//move
    	string skillName= n->getChild("move-skill")->getAttribute("value")->getRestrictedValue();
-	moveSkillType= static_cast<const MoveSkillType*>(ut.getSkillType(skillName, scMove));
+	moveSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, scMove));
 }
 
 // =====================================================
 // 	class StopBaseCommandType
 // =====================================================
 
-void StopBaseCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	CommandType::load(id, n, dir, tt, ft, ut);
+void StopBaseCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	CommandType::load(n, dir, tt, ft);
 
 	//stop
    	string skillName= n->getChild("stop-skill")->getAttribute("value")->getRestrictedValue();
-	stopSkillType= static_cast<const StopSkillType*>(ut.getSkillType(skillName, scStop));
+	stopSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, scStop));
 }
 // ===============================
 // 	class AttackCommandTypeBase
 // ===============================
 
-void AttackCommandTypeBase::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
+void AttackCommandTypeBase::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType *unitType) {
 	const AttackSkillType *ast;
 	string skillName;
 	const XmlNode *attackSkillNode = n->getChild("attack-skill", 0, false);
@@ -250,7 +274,7 @@ void AttackCommandTypeBase::load(int id, const XmlNode *n, const string &dir, co
 	//single attack skill
 	if(attackSkillNode) {
 	   	skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
-		ast = (const AttackSkillType*)ut.getSkillType(skillName, scAttack);
+		ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, scAttack));
 		attackSkillTypes.push_back(ast, AttackSkillPreferences());
 
 	//multiple attack skills
@@ -266,7 +290,7 @@ void AttackCommandTypeBase::load(int id, const XmlNode *n, const string &dir, co
 			AttackSkillPreferences prefs;
 			attackSkillNode = attackSkillsNode->getChild("attack-skill", i);
 			skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
-			ast = (const AttackSkillType*)ut.getSkillType(skillName, scAttack);
+			ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, scAttack));
 			flagsNode = attackSkillNode->getChild("flags", 0, false);
 			if(flagsNode) {
 				prefs.load(flagsNode, dir, tt, ft);
@@ -293,18 +317,18 @@ const AttackSkillType * AttackCommandTypeBase::getAttackSkillType(Field field) c
 // 	class AttackCommandType
 // =====================================================
 
-void AttackCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	MoveBaseCommandType::load(id, n, dir, tt, ft, ut);
-	AttackCommandTypeBase::load(id, n, dir, tt, ft, ut);
+void AttackCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {
+	MoveBaseCommandType::load(n, dir, tt, ft);
+	AttackCommandTypeBase::load(n, dir, tt, ft, unitType);
 }
 
 // =====================================================
 // 	class AttackStoppedCommandType
 // =====================================================
 
-void AttackStoppedCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	AttackCommandTypeBase::load(id, n, dir, tt, ft, ut);
-	StopBaseCommandType::load(id, n, dir, tt, ft, ut);
+void AttackStoppedCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	StopBaseCommandType::load(n, dir, tt, ft);
+	AttackCommandTypeBase::load(n, dir, tt, ft, unitType);
 }
 
 // =====================================================
@@ -316,12 +340,12 @@ BuildCommandType::~BuildCommandType(){
 	deleteValues(startSounds.getSounds().begin(), startSounds.getSounds().end());
 }
 
-void BuildCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	MoveBaseCommandType::load(id, n, dir, tt, ft, ut);
+void BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//build
    	string skillName= n->getChild("build-skill")->getAttribute("value")->getRestrictedValue();
-	buildSkillType= static_cast<const BuildSkillType*>(ut.getSkillType(skillName, scBuild));
+	buildSkillType= static_cast<const BuildSkillType*>(unitType->getSkillType(skillName, scBuild));
 
 	//buildings built
 	const XmlNode *buildingsNode= n->getChild("buildings");
@@ -362,20 +386,20 @@ void BuildCommandType::load(int id, const XmlNode *n, const string &dir, const T
 // 	class HarvestCommandType
 // =====================================================
 
-void HarvestCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	MoveBaseCommandType::load(id, n, dir, tt, ft, ut);
+void HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//harvest
    	string skillName= n->getChild("harvest-skill")->getAttribute("value")->getRestrictedValue();
-	harvestSkillType= static_cast<const HarvestSkillType*>(ut.getSkillType(skillName, scHarvest));
+	harvestSkillType= static_cast<const HarvestSkillType*>(unitType->getSkillType(skillName, scHarvest));
 
 	//stop loaded
    	skillName= n->getChild("stop-loaded-skill")->getAttribute("value")->getRestrictedValue();
-	stopLoadedSkillType= static_cast<const StopSkillType*>(ut.getSkillType(skillName, scStop));
+	stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, scStop));
 
 	//move loaded
    	skillName= n->getChild("move-loaded-skill")->getAttribute("value")->getRestrictedValue();
-	moveLoadedSkillType= static_cast<const MoveSkillType*>(ut.getSkillType(skillName, scMove));
+	moveLoadedSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, scMove));
 
 	//resources can harvest
 	const XmlNode *resourcesNode= n->getChild("harvested-resources");
@@ -416,12 +440,12 @@ bool HarvestCommandType::canHarvest(const ResourceType *resourceType) const{
 RepairCommandType::~RepairCommandType(){
 }
 
-void RepairCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	MoveBaseCommandType::load(id, n, dir, tt, ft, ut);
+void RepairCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//repair
    	string skillName= n->getChild("repair-skill")->getAttribute("value")->getRestrictedValue();
-	repairSkillType= static_cast<const RepairSkillType*>(ut.getSkillType(skillName, scRepair));
+	repairSkillType= static_cast<const RepairSkillType*>(unitType->getSkillType(skillName, scRepair));
 
 	//repaired units
 	const XmlNode *unitsNode= n->getChild("repaired-units");
@@ -466,12 +490,12 @@ bool RepairCommandType::isRepairableUnitType(const UnitType *unitType) const{
 // =====================================================
 
 //varios
-void ProduceCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	CommandType::load(id, n, dir, tt, ft, ut);
+void ProduceCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	CommandType::load(n, dir, tt, ft);
 
 	//produce
    	string skillName= n->getChild("produce-skill")->getAttribute("value")->getRestrictedValue();
-	produceSkillType= static_cast<const ProduceSkillType*>(ut.getSkillType(skillName, scProduce));
+	produceSkillType= static_cast<const ProduceSkillType*>(unitType->getSkillType(skillName, scProduce));
 
 	string producedUnitName= n->getChild("produced-unit")->getAttribute("name")->getRestrictedValue();
 	producedUnit= ft->getUnitType(producedUnitName);
@@ -494,13 +518,13 @@ const ProducibleType *ProduceCommandType::getProduced() const{
 // 	class UpgradeCommandType
 // =====================================================
 
-void UpgradeCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
+void UpgradeCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
 
-	CommandType::load(id, n, dir, tt, ft, ut);
+	CommandType::load(n, dir, tt, ft);
 
 	//upgrade
    	string skillName= n->getChild("upgrade-skill")->getAttribute("value")->getRestrictedValue();
-	upgradeSkillType= static_cast<const UpgradeSkillType*>(ut.getSkillType(skillName, scUpgrade));
+	upgradeSkillType= static_cast<const UpgradeSkillType*>(unitType->getSkillType(skillName, scUpgrade));
 
 	string producedUpgradeName= n->getChild("produced-upgrade")->getAttribute("name")->getRestrictedValue();
 	producedUpgrade= ft->getUpgradeType(producedUpgradeName);
@@ -519,12 +543,12 @@ const ProducibleType *UpgradeCommandType::getProduced() const{
 // 	class MorphCommandType
 // =====================================================
 
-void MorphCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	CommandType::load(id, n, dir, tt, ft, ut);
+void MorphCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	CommandType::load(n, dir, tt, ft);
 
 	//morph skill
    	string skillName= n->getChild("morph-skill")->getAttribute("value")->getRestrictedValue();
-	morphSkillType= static_cast<const MorphSkillType*>(ut.getSkillType(skillName, scMorph));
+	morphSkillType= static_cast<const MorphSkillType*>(unitType->getSkillType(skillName, scMorph));
 
 	//morph unit
    	string morphUnitName= n->getChild("morph-unit")->getAttribute("name")->getRestrictedValue();
@@ -559,12 +583,12 @@ const ProducibleType *MorphCommandType::getProduced() const{
 // 	class CastSpellCommandType
 // =====================================================
 
-void CastSpellCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	MoveBaseCommandType::load(id, n, dir, tt, ft, ut);
+void CastSpellCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//cast spell
    	string skillName= n->getChild("cast-spell-skill")->getAttribute("value")->getRestrictedValue();
-	castSpellSkillType= static_cast<const CastSpellSkillType*>(ut.getSkillType(skillName, scCastSpell));
+	castSpellSkillType= static_cast<const CastSpellSkillType*>(unitType->getSkillType(skillName, scCastSpell));
 }
 
 void CastSpellCommandType::getDesc(string &str, const Unit *unit) const{
@@ -579,8 +603,8 @@ void CastSpellCommandType::getDesc(string &str, const Unit *unit) const{
 // 	class GuardCommandType
 // =====================================================
 
-void GuardCommandType::load(int id, const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType &ut){
-	AttackCommandType::load(id, n, dir, tt, ft, ut);
+void GuardCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
+	AttackCommandType::load(n, dir, tt, ft);
 
 	//distance
 	maxDistance = n->getChild("max-distance")->getAttribute("value")->getIntValue();
@@ -612,4 +636,4 @@ CommandTypeFactory &CommandTypeFactory::getInstance(){
 	return ctf;
 }
 
-}}//end namespace
+} // end namespace

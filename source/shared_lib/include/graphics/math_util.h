@@ -17,11 +17,10 @@
 #include "vec.h"
 
 #if defined(WIN32) || defined(WIN64)
-	inline float roundf(float f) { return f > 0 ? floorf(f + 0.5f) : ceilf(f - 0.5f); }
-//	#define
+inline float roundf(float f) { return f > 0.f ? floorf(f + 0.5f) : ceilf(f - 0.5f); }
 #endif
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
 
 //const float pi = 3.14159265f;
 const float pi = 3.1415926535897f;
@@ -33,7 +32,7 @@ const float infinity = 1e6f;
 
 
 // =====================================================
-//	class Rect
+// class Rect
 // =====================================================
 
 // 0 +-+
@@ -41,62 +40,62 @@ const float infinity = 1e6f;
 //   +-+ 1
 
 template<typename T>
-class Rect2{
+class Rect2 {
 public:
 	Vec2<T> p[2];
 public:
-	Rect2(){
+	Rect2() {
 	};
 
-	Rect2(const Vec2<T> &p0, const Vec2<T> &p1){
-		this->p[0]= p0;
-		this->p[1]= p1;
+	Rect2(const Vec2<T> &p0, const Vec2<T> &p1) {
+		this->p[0] = p0;
+		this->p[1] = p1;
 	}
 
-	Rect2(T p0x, T p0y, T p1x, T p1y){
-		p[0].x= p0x;
-		p[0].y= p0y;
-		p[1].x= p1x;
-		p[1].y= p1y;
+	Rect2(T p0x, T p0y, T p1x, T p1y) {
+		p[0].x = p0x;
+		p[0].y = p0y;
+		p[1].x = p1x;
+		p[1].y = p1y;
 	}
 
-	Rect2<T> operator*(T scalar){
+	Rect2<T> operator*(T scalar) {
 		return Rect2<T>(
-			p[0]*scalar,
-			p[1]*scalar);
+				   p[0]*scalar,
+				   p[1]*scalar);
 	}
 
-	Rect2<T> operator/(T scalar){
+	Rect2<T> operator/(T scalar) {
 		return Rect2<T>(
-			p[0]/scalar,
-			p[1]/scalar);
+				   p[0] / scalar,
+				   p[1] / scalar);
 	}
 
-	bool operator ==(const Rect2<T> &v) const{
+	bool operator ==(const Rect2<T> &v) const {
 		return p[0] == v.p[0] && p[1] == v.p[1];
 	}
 
-	bool isInside(const Vec2<T> &p) const{
+	bool isInside(const Vec2<T> &p) const {
 		return
-			p.x>=this->p[0].x &&
-			p.y>=this->p[0].y &&
-			p.x<this->p[1].x &&
-			p.y<this->p[1].y;
+			p.x >= this->p[0].x &&
+			p.y >= this->p[0].y &&
+			p.x < this->p[1].x &&
+			p.y < this->p[1].y;
 	}
 
-	void clamp(T minX, T minY,T  maxX, T maxY){
-		for(int i=0; i<2; ++i){
-			if(p[i].x<minX){
-				p[i].x= minX;
+	void clamp(T minX, T minY, T  maxX, T maxY) {
+		for (int i = 0; i < 2; ++i) {
+			if (p[i].x < minX) {
+				p[i].x = minX;
 			}
-			if(p[i].y<minY){
-				p[i].y= minY;
+			if (p[i].y < minY) {
+				p[i].y = minY;
 			}
-			if(p[i].x>maxX){
-				p[i].x= maxX;
+			if (p[i].x > maxX) {
+				p[i].x = maxX;
 			}
-			if(p[i].y>maxY){
-				p[i].y= maxY;
+			if (p[i].y > maxY) {
+				p[i].y = maxY;
 			}
 		}
 	}
@@ -108,7 +107,7 @@ typedef Rect2<float> Rect2f;
 typedef Rect2<double> Rect2d;
 
 // =====================================================
-//	class Quad
+// class Quad
 // =====================================================
 
 // 0 +-+ 2
@@ -116,88 +115,95 @@ typedef Rect2<double> Rect2d;
 // 1 +-+ 3
 
 template<typename T>
-class Quad2{
+class Quad2 {
 public:
 	Vec2<T> p[4];
 public:
-	Quad2(){
+	Quad2() {
 	};
 
-	Quad2(const Vec2<T> &p0, const Vec2<T> &p1, const Vec2<T> &p2, const Vec2<T> &p3){
-		this->p[0]= p0;
-		this->p[1]= p1;
-		this->p[2]= p2;
-		this->p[3]= p3;
+	Quad2(const Vec2<T> &p0, const Vec2<T> &p1, const Vec2<T> &p2, const Vec2<T> &p3) {
+		this->p[0] = p0;
+		this->p[1] = p1;
+		this->p[2] = p2;
+		this->p[3] = p3;
 	}
 
-	explicit Quad2(const Rect2<T> &rect){
-		this->p[0]= rect.p[0];
-		this->p[1]= Vec2<T>(rect.p[0].x, rect.p[1].y);
-		this->p[2]= rect.p[1];
-		this->p[3]= Vec2<T>(rect.p[1].x, rect.p[0].y);
+	explicit Quad2(const Rect2<T> &rect) {
+		this->p[0] = rect.p[0];
+		this->p[1] = Vec2<T>(rect.p[0].x, rect.p[1].y);
+		this->p[2] = rect.p[1];
+		this->p[3] = Vec2<T>(rect.p[1].x, rect.p[0].y);
 	}
 
-	Quad2<T> operator*(T scalar){
+	Quad2<T> operator*(T scalar) {
 		return Quad2<T>(
-			p[0]*scalar,
-			p[1]*scalar,
-			p[2]*scalar,
-			p[3]*scalar);
+				   p[0]*scalar,
+				   p[1]*scalar,
+				   p[2]*scalar,
+				   p[3]*scalar);
 	}
 
-	Quad2<T> operator/(T scalar){
+	Quad2<T> operator/(T scalar) {
 		return Quad2<T>(
-			p[0]/scalar,
-			p[1]/scalar,
-			p[2]/scalar,
-			p[3]/scalar);
+				   p[0] / scalar,
+				   p[1] / scalar,
+				   p[2] / scalar,
+				   p[3] / scalar);
 	}
 
-	bool operator ==(const Quad2<T> &v) const{
-		return	   p[0] == v.p[0]
-				&& p[1] == v.p[1]
-				&& p[2] == v.p[2]
-				&& p[3] == v.p[3];
+	bool operator ==(const Quad2<T> &v) const {
+		return    p[0] == v.p[0]
+				  && p[1] == v.p[1]
+				  && p[2] == v.p[2]
+				  && p[3] == v.p[3];
 	}
 
-	Rect2<T> computeBoundingRect() const{
+	Rect2<T> computeBoundingRect() const {
 		return Rect2i(
-			min(p[0].x, p[1].x),
-			min(p[0].y, p[2].y),
-			max(p[2].x, p[3].x),
-			max(p[1].y, p[3].y));
+				   min(p[0].x, p[1].x),
+				   min(p[0].y, p[2].y),
+				   max(p[2].x, p[3].x),
+				   max(p[1].y, p[3].y));
 	}
 
-	bool isInside(const Vec2<T> &pt) const{
+	bool isInside(const Vec2<T> &pt) const {
 
-		if(!computeBoundingRect().isInside(pt))
+		if (!computeBoundingRect().isInside(pt))
 			return false;
 
 		bool left[4];
 
-		left[0]= (pt.y - p[0].y)*(p[1].x - p[0].x) - (pt.x - p[0].x)*(p[1].y - p[0].y) < 0;
-		left[1]= (pt.y - p[1].y)*(p[3].x - p[1].x) - (pt.x - p[1].x)*(p[3].y - p[1].y) < 0;
-		left[2]= (pt.y - p[3].y)*(p[2].x - p[3].x) - (pt.x - p[3].x)*(p[2].y - p[3].y) < 0;
-		left[3]= (pt.y - p[2].y)*(p[0].x - p[2].x) - (pt.x - p[2].x)*(p[0].y - p[2].y) < 0;
+		left[0] = (pt.y - p[0].y) * (p[1].x - p[0].x) - (pt.x - p[0].x) * (p[1].y - p[0].y) < 0;
+		left[1] = (pt.y - p[1].y) * (p[3].x - p[1].x) - (pt.x - p[1].x) * (p[3].y - p[1].y) < 0;
+		left[2] = (pt.y - p[3].y) * (p[2].x - p[3].x) - (pt.x - p[3].x) * (p[2].y - p[3].y) < 0;
+		left[3] = (pt.y - p[2].y) * (p[0].x - p[2].x) - (pt.x - p[2].x) * (p[0].y - p[2].y) < 0;
 
 		return left[0] && left[1] && left[2] && left[3];
 	}
 
-	void clamp(T minX, T minY, T maxX, T maxY){
-		for(int i=0; i<4; ++i){
-			if(p[i].x<minX){
-				p[i].x= minX;
+	void clamp(T minX, T minY, T maxX, T maxY) {
+		for (int i = 0; i < 4; ++i) {
+			if (p[i].x < minX) {
+				p[i].x = minX;
 			}
-			if(p[i].y<minY){
-				p[i].y= minY;
+			if (p[i].y < minY) {
+				p[i].y = minY;
 			}
-			if(p[i].x>maxX){
-				p[i].x= maxX;
+			if (p[i].x > maxX) {
+				p[i].x = maxX;
 			}
-			if(p[i].y>maxY){
-				p[i].y= maxY;
+			if (p[i].y > maxY) {
+				p[i].y = maxY;
 			}
 		}
+	}
+
+	float area() {
+		Vec2i v0 = p[3] - p[0];
+		Vec2i v1 = p[1] - p[2];
+
+		return 0.5f * ((v0.x * v1.y) - (v0.y * v1.x));
 	}
 };
 
@@ -207,23 +213,34 @@ typedef Quad2<float> Quad2f;
 typedef Quad2<double> Quad2d;
 
 // =====================================================
-//	Misc
+// Misc
 // =====================================================
 
-inline int next2Power(int n){
+inline int next2Power(int n) {
 	int i;
-	for (i=1; i<n; i*=2);
+	for (i = 1; i < n; i *= 2) ;
 	return i;
 }
 
 template<typename T>
-inline T degToRad(T deg){
-	return (deg*2*pi)/360;
+inline T degToRad(T deg) {
+	return (deg*2*pi) / 360;
 }
 
 template<typename T>
-inline T radToDeg(T rad){
-	return (rad*360)/(2*pi);
+inline T radToDeg(T rad) {
+	return (rad * 360) / (2 * pi);
+}
+
+//FIXME: Probably wont return correct sign for positive infinity and wont return nan if nan is input
+inline float signf(float v) {
+ 	if(v == 0.f) {
+		return 0.f;
+	} else {
+		// fuck! Why wont the compiler find signbit!?!?!?!?!
+		//return ::signbit(v) ? -1.f : 1.f;
+		return v < 0.f ? -1.f : 1.f;
+	}
 }
 
 }}//end namespace

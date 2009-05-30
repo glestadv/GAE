@@ -14,7 +14,7 @@
 
 #include "leak_dumper.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class DamageMultiplierTable
@@ -47,4 +47,4 @@ void DamageMultiplierTable::setDamageMultiplier(const AttackType *att, const Arm
 	values[attackTypeCount*art->getId()+att->getId()]= value;
 }
 
-}}//end namespaces
+} // end namespaces

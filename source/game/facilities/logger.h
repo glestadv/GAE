@@ -14,69 +14,114 @@
 
 #include <string>
 #include <deque>
+#include <stdexcept>
 #include <time.h>
-#include <sys/time.h>
+#include <sstream>
+
+#include "timer.h"
+#include "patterns.h"
+#include "util.h"
 
 using std::string;
 using std::deque;
+using std::runtime_error;
+using std::stringstream;
+using Shared::Util::Printable;
+using Shared::Util::ObjectPrinter;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
-//	class Logger
+// class Logger
 //
 /// Interface to write log files
 // =====================================================
 
-class Logger{
+class Logger : Uncopyable {
 private:
 	static const int logLineCount;
 
-private:
 	typedef deque<string> Strings;
+	class FileHandler {
+	private:
+		FILE *f;
+		
+	public:
+		FileHandler(const string &path) : f(fopen(path.c_str(), "at+")) {
+			if(!f) {
+				throw runtime_error("Error opening log file" + path);
+			}
+		}
+		~FileHandler()		{fclose(f);}
+		FILE *getHandle()	{return f;}
+	};
 
 private:
 	string fileName;
 	string sectionName;
 	string state;
 	Strings logLines;
+	stringstream ss;
+	ObjectPrinter op;
 
 private:
-	Logger(const char *fileName) : fileName(fileName) {}
+	Logger(const char *fileName);
 
 public:
-	static Logger &getInstance(){
+	static Logger &getInstance() {
 		static Logger logger("glestadv.log");
 		return logger;
 	}
 
-	static Logger &getServerLog(){
+	static Logger &getServerLog() {
 		static Logger logger("glestadv-server.log");
 		return logger;
 	}
 
-	static Logger &getClientLog(){
+	static Logger &getClientLog() {
 		static Logger logger("glestadv-client.log");
 		return logger;
 	}
 
-	//void setFile(const string &fileName)	{this->fileName= fileName;}
+	//void setFile(const string &fileName) {this->fileName= fileName;}
 	void setState(const string &state);
 
-	void add(const string &str, bool renderScreen= false);
+	void add(const string &str, bool renderScreen = false);
+	void add(const Printable &, bool renderScreen = false);
+	void add(const string &str, const Printable &p, bool renderScreen = false);
+	void printf(const char* pattern, ...);
 	void renderLoadingScreen();
 
 	void clear();
+
+private:
+	
 };
+
+#if defined(WIN32) | defined(WIN64)
+
+class Timer {
+public:
+	Timer(int threshold, const char* msg) {}
+	~Timer() {}
+
+	void print(const char* msg) {}
+
+	struct timeval getDiff() {}
+};
+
+#else
 
 class Timer {
 	struct timeval start;
 	struct timezone tz;
 	unsigned int threshold;
 	const char* msg;
+	FILE *outfile;
 
 public:
-	Timer(int threshold, const char* msg) : threshold(threshold), msg(msg) {
+	Timer(int threshold, const char* msg, FILE *outfile = stderr) :
+			threshold(threshold), msg(msg), outfile(outfile) {
 		tz.tz_minuteswest = 0;
 		tz.tz_dsttime = 0;
 		gettimeofday(&start, &tz);
@@ -85,15 +130,15 @@ public:
 	~Timer() {
 		struct timeval diff = getDiff();
 		unsigned int diffusec = diff.tv_sec * 1000000 + diff.tv_usec;
-		if(diffusec > threshold) {
-			fprintf(stderr, "%s: %d\n", msg, diffusec);
+		if (diffusec > threshold) {
+			fprintf(outfile, "%s: %d\n", msg, diffusec);
 		}
 	}
 
 	void print(const char* msg) {
 		struct timeval diff = getDiff();
 		unsigned int diffusec = diff.tv_sec * 1000000 + diff.tv_usec;
-		fprintf(stderr, "%s -> %s: %d\n", this->msg, msg, diffusec);
+		fprintf(outfile, "%s -> %s: %d\n", this->msg, msg, diffusec);
 	}
 
 	struct timeval getDiff() {
@@ -104,8 +149,8 @@ public:
 		return diff;
 	}
 };
+#endif
 
-
-}}//end namespace
+} // end namespace
 
 #endif

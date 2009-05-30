@@ -31,7 +31,7 @@ using namespace Shared::Graphics;
 // 	class AiInterface
 // =====================================================
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex){
 	this->world= game.getWorld();
@@ -46,8 +46,8 @@ AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex){
 	ai.init(this);
 
 	//config
-	logLevel= Config::getInstance().getAiLog();
-	redir= Config::getInstance().getAiRedir();
+	logLevel= Config::getInstance().getMiscAiLog();
+	redir= Config::getInstance().getMiscAiRedir();
 
 	//clear log file
 	if(logLevel>0){
@@ -71,7 +71,7 @@ void AiInterface::update(){
 
 void AiInterface::printLog(int logLevel, const string &s){
     if(this->logLevel>=logLevel){
-		string logString= "(" + intToStr(factionIndex) + ") " + s;
+		string logString= "(" + Conversion::toStr(factionIndex) + ") " + s;
 
 		//print log to file
 		FILE *f= fopen(getLogFilename().c_str(), "at");
@@ -110,7 +110,7 @@ CommandResult AiInterface::giveCommand(int unitIndex, const CommandType *command
 // ==================== get data ====================
 
 int AiInterface::getMapMaxPlayers(){
-     return world->getMaxPlayers();
+     return world->getMaxFactions();
 }
 
 Vec2i AiInterface::getHomeLocation(){
@@ -234,4 +234,4 @@ bool AiInterface::isFreeCells(const Vec2i &pos, int size, Field field){
     return world->getMap()->isFreeCells(pos, size, field);
 }
 
-}}//end namespace
+} // end namespace

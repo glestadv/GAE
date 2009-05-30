@@ -9,22 +9,27 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_ELEMENTTYPE_H_
-#define _GLEST_GAME_ELEMENTTYPE_H_
+#ifndef _GAME_ELEMENTTYPE_H_
+#define _GAME_ELEMENTTYPE_H_
 
 #include <vector>
+#include <map>
 #include <string>
+
 
 #include "texture.h"
 #include "resource.h"
 #include "xml_parser.h"
+#include "util.h"
 
 using std::vector;
+using std::map;
 using std::string;
+
 
 using Shared::Graphics::Texture2D;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using namespace Shared::Xml;
 
@@ -35,39 +40,62 @@ class UnitType;
 class UpgradeType;
 class DisplayableType;
 class ResourceType;
+class Unit;
+class Faction;
 
+typedef vector<Unit*> Units;
+typedef map<int, Unit*> UnitMap;
+typedef vector<Faction*> Factions;
+typedef map<int, Faction*> FactionMap;
 
 // =====================================================
-// 	class NameIdPair
-//
-///	Base class for anything that has both a name and id
+// 	class IdNamePair
 // =====================================================
-class NameIdPair {
+
+/** Base class for anything that has both a name and id */
+class IdNamePair : public Printable, public XmlWritable {
 protected:
-	int id;				//id
-	string name;		//name
+	int id;
+	string name;
 
 public:
-	NameIdPair() : id(0) {}
-	virtual ~NameIdPair() {}
+	static const int invalidId = -1;
+
+public:
+	IdNamePair() : id(invalidId) {}
+	IdNamePair(int id, const char *name) : id(id), name(name) {}
+	IdNamePair(int id, const string &name) : id(id), name(name) {}
+	IdNamePair(const XmlNode &node);
+	virtual ~IdNamePair() {}
 
 	int getId() const					{return id;}
 	string getName() const				{return name;}
+	
+	virtual void print(ObjectPrinter &op) const;
+	virtual void write(XmlNode &node) const;
+
+protected:
+	void setId(int v)					{id = v;}
+	void setName(const string &v)		{name = v;}
 };
 
 // =====================================================
 // 	class DisplayableType
-//
-///	Base class for anything that has a name and a portrait
 // =====================================================
 
-class DisplayableType : public NameIdPair {
+/** Base class for anything that has a name, id and a portrait. */
+class DisplayableType : public IdNamePair {
 protected:
-	Texture2D *image;	//portrait
+	Texture2D* image;	//portrait
 
 public:
 	DisplayableType() : image(NULL) {}
+	DisplayableType(const XmlNode &node, const string &dir);
+	DisplayableType(int id, const char *name, Texture2D *image) :
+			IdNamePair(id, name), image(image) {}
 	virtual ~DisplayableType() {};
+
+	virtual void load(const XmlNode *baseNode, const string &dir);
 
 	//get
 	const Texture2D *getImage() const	{return image;}
@@ -91,6 +119,9 @@ protected:
 	int subfactionsReqs;		//bitmask of subfactions producable is restricted to
 
 public:
+	RequirableType() : DisplayableType(), subfactionsReqs(0) {}
+	RequirableType(int id, const char *name, Texture2D *image) :
+			DisplayableType(id, name, image), subfactionsReqs(0) {}
 	//get
 	int getUpgradeReqCount() const						{return upgradeReqs.size();}
 	int getUnitReqCount() const							{return unitReqs.size();}
@@ -104,21 +135,13 @@ public:
 	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
 };
 
-/*
-class SubfactionAdvancement {
-private:
-	int fromSubfaction;
-	int toSubfaction;
-	bool immediate;
-};
-*/
 // =====================================================
 // 	class ProducibleType
 //
 ///	Base class for anything that can be produced
 // =====================================================
 
-class ProducibleType: public RequirableType{
+class ProducibleType: public RequirableType {
 private:
 	typedef vector<Resource> Costs;
 
@@ -156,6 +179,6 @@ public:
 	virtual string getReqDesc() const;
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

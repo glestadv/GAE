@@ -726,20 +726,10 @@ void Pixmap2D::subCopy(int x, int y, const Pixmap2D *sourcePixmap){
 		throw runtime_error("Pixmap2D::subCopy(), bad dimensions");
 	}
 
-	uint8 *pixel= new uint8[components];
-
-	for(int i=0; i<sourcePixmap->getW(); ++i){
-		for(int j=0; j<sourcePixmap->getH(); ++j){
-			sourcePixmap->getPixel(i, j, pixel);
-			setPixel(i+x, j+y, pixel);
-		}
+	const size_t chunkSize = sourcePixmap->getW() * sourcePixmap->getComponents();
+	for (int yy = 0; yy < sourcePixmap->getH(); ++yy) {
+		memcpy(getPixel(x, y + yy), sourcePixmap->getPixel(0, yy), chunkSize);
 	}
-
-	delete pixel;
-}
-
-bool Pixmap2D::doDimensionsAgree(const Pixmap2D *pixmap){
-	return pixmap->getW() == w && pixmap->getH() == h;
 }
 
 // =====================================================

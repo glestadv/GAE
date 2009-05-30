@@ -9,37 +9,63 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_CHATMANAGER_H_
-#define _GLEST_GAME_CHATMANAGER_H_
+#ifndef _GAME_CHATMANAGER_H_
+#define _GAME_CHATMANAGER_H_
 
 #include <string>
+#include <queue>
+
+#include "keymap.h"
 
 using std::string;
+using Shared::Platform::Key;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 class Console;
 
 // =====================================================
-//	class ChatManager
+// class ChatMessage
 // =====================================================
 
-class ChatManager{
+class ChatMessage {
 private:
-	static const int maxTextLenght;
+	string text;
+	string sender;
+	int teamIndex;
+
+public:
+	ChatMessage(const string &text, const string &sender, int teamIndex);
+	// allow default copy ctor
+
+	const string &getText() const	{return text;}
+	const string &getSender() const	{return sender;}
+	int getTeamIndex() const		{return teamIndex;}
+};
+
+typedef std::queue<ChatMessage*> ChatMessages;
+
+// =====================================================
+// class ChatManager
+// =====================================================
+
+class ChatManager {
+private:
+	static const int maxTextLenght = 256;
 
 private:
+	const Keymap &keymap;
 	bool editEnabled;
 	bool teamMode;
 	Console* console;
-	string text;
 	int thisTeamIndex;
+	string text;
 
 public:
-	ChatManager();
+	ChatManager(const Keymap &keymap);
 	void init(Console* console, int thisTeamIndex);
 
-	void keyDown(char key);
+	bool keyDown(const Key &key);
 	void keyPress(char c);
 	void updateNetwork();
 
@@ -48,6 +74,6 @@ public:
 	string getText() const		{return text;}
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

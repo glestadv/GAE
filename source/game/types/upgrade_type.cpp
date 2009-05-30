@@ -31,7 +31,7 @@
 using namespace Shared::Util;
 using namespace Shared::Xml;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class UpgradeType
@@ -39,7 +39,7 @@ namespace Glest{ namespace Game{
 
 // ==================== misc ====================
 
-void UpgradeType::load(const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum) {
+void UpgradeType::load(const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums) {
 	string path;
 
 	Logger::getInstance().add("Upgrade type: "+ dir, true);
@@ -47,7 +47,7 @@ void UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 	path = dir + "/" + name + ".xml";
 
 	try {
-		checksum.addFile(path, true);
+		checksums.addFile(path, true);
 
 		XmlTree xmlTree;
 		xmlTree.load(path);
@@ -116,4 +116,4 @@ string UpgradeType::getDesc() const {
 	return str;
 }
 
-}}//end namespace
+} // end namespace

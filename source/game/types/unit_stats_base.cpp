@@ -29,7 +29,7 @@
 using namespace Shared::Util;
 using namespace Shared::Xml;
 
-namespace Glest { namespace Game {
+namespace Game {
 
 const char *Fields::names[] = {"land", "air"/*, "water", "subterranean"*/};
 const char *UnitProperties::names[] = {"burnable", "rotated_climb", "wall"};
@@ -157,46 +157,47 @@ void UnitStatsBase::applyMultipliers(const EnhancementTypeBase &e) {
 // legacy load for Unit class
 void UnitStatsBase::load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType) {
 	//maxHp
-	maxHp = baseNode->getChild("max-hp")->getAttribute("value")->getIntValue();
+	maxHp = baseNode->getChildIntValue("max-hp");
 
 	//hpRegeneration
-	hpRegeneration = baseNode->getChild("max-hp")->getAttribute("regeneration")->getIntValue();
+	hpRegeneration = baseNode->getChild("max-hp")->getIntAttribute("regeneration");
 
 	//maxEp
-	maxEp = baseNode->getChild("max-ep")->getAttribute("value")->getIntValue();
+	maxEp = baseNode->getChildIntValue("max-ep");
 
 	//epRegeneration
-	if (maxEp == 0) {
+	if (maxEp) {
+		epRegeneration = baseNode->getChild("max-ep")->getIntAttribute("regeneration");
+	} else {
 		XmlAttribute *epRegenAttr = baseNode->getChild("max-ep")->getAttribute("regeneration", false);
 		epRegeneration = epRegenAttr ? epRegenAttr->getIntValue() : 0;
-	} else {
-		epRegeneration = baseNode->getChild("max-ep")->getAttribute("regeneration")->getIntValue();
 	}
 
 	//sight
-	sight = baseNode->getChild("sight")->getAttribute("value")->getIntValue();
+	sight = baseNode->getChildIntValue("sight");
 
 	//armor
-	armor = baseNode->getChild("armor")->getAttribute("value")->getIntValue();
+	armor = baseNode->getChildIntValue("armor");
 
 	//armor type string
-	string armorTypeName = baseNode->getChild("armor-type")->getAttribute("value")->getRestrictedValue();
+	string armorTypeName = baseNode->getChildRestrictedValue("armor-type");
 	armorType = techTree->getArmorType(armorTypeName);
 
 	//light & lightColor
 	const XmlNode *lightNode = baseNode->getChild("light");
 	light = lightNode->getAttribute("enabled")->getBoolValue();
 	if (light) {
+		lightColor = lightNode->getColor3Value();/*
 		lightColor.x = lightNode->getAttribute("red")->getFloatValue(0.f, 1.f);
 		lightColor.y = lightNode->getAttribute("green")->getFloatValue(0.f, 1.f);
-		lightColor.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);
+		lightColor.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);*/
 	}
 
 	//size
-	size = baseNode->getChild("size")->getAttribute("value")->getIntValue();
+	size = baseNode->getChildIntValue("size");
 
 	//height
-	height = baseNode->getChild("height")->getAttribute("value")->getIntValue();
+	height = baseNode->getChildIntValue("height");
 }
 
 void UnitStatsBase::save(XmlNode *node) {
@@ -290,7 +291,7 @@ void EnhancementTypeBase::addMultipliers(const EnhancementTypeBase &e, float str
 	harvestSpeedMult += (e.getHarvestSpeedMult() - 1.0f) * strength;
 }
 
-inline void EnhancementTypeBase::formatModifier(string &str, const char *pre, const char* label,
+/*inline */void EnhancementTypeBase::formatModifier(string &str, const char *pre, const char* label,
 		int value, float multiplier) {
 	Lang &lang = Lang::getInstance();
 
@@ -396,7 +397,7 @@ void EnhancementTypeBase::initMultiplier(const XmlNode *node, const string &dir)
 	} else if (name == "effect-strength") {
 		effectStrengthMult = value;
 	} else if (name == "attack-percent-stolen") {
-		attackPctStolenMult	 = value;
+		attackPctStolenMult = value;
 	} else if (name == "attack-range") {
 		attackRangeMult = value;
 	} else if (name == "move-speed") {
@@ -435,4 +436,4 @@ void EnhancementTypeBase::load(const XmlNode *baseNode, const string &dir, const
 }
 
 
-}}//end namespace
+} // end namespace

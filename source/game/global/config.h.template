@@ -10,12 +10,15 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_CONFIG_H_
-#define _GLEST_GAME_CONFIG_H_
+// This file is auto-generated from config.h.template using ../config.db and the script
+// ../mkconfig.sh.  To modify actual config settings, edit config.db and re-run ../mkconfig.sh.
+
+#ifndef _GAME_CONFIG_H_
+#define _GAME_CONFIG_H_
 
 #include "properties.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Util::Properties;
 
@@ -25,13 +28,30 @@ using Shared::Util::Properties;
 //	Game configuration
 // =====================================================
 
-class Config : protected Properties {
+class Config {
 private:
+	Properties *properties;
 	string fileName;
 
 CONFIG_VARIABLES
 
 	Config(const char* fileName);
+	
+	static bool isWindows() {
+#if defined(WIN32) || defined(WIN64)
+		return true;
+#else
+		return false;
+#endif
+	}
+
+	const char *getDefaultFontStr() const {
+		if(isWindows()) {
+			return "Verdana";
+		} else {
+			return "-*-*-*-*-*-12-*-*-*-*-*-*-*";
+		}
+	}
 
 public:
 	static Config &getInstance() {
@@ -40,15 +60,13 @@ public:
 	}
 
 	void save(const char *path = "glestadv.ini");
-	string toString()							{return Properties::toString();}
 
 CONFIG_GETTERS
 
 CONFIG_SETTERS
-
 };
 
-}}//end namespace
+} // end namespace
 
 #endif
 

@@ -24,13 +24,13 @@ namespace Shared{ namespace Graphics{ namespace Gl{
 
 using namespace Platform;
 
-GLint toWrapModeGl(Texture::WrapMode wrapMode){
-	switch(wrapMode){
-	case Texture::wmClamp:
+GLint toWrapModeGl(Texture::WrapMode wrapMode) {
+	switch (wrapMode) {
+	case Texture::WRAP_MODE_CLAMP:
 		return GL_CLAMP;
-	case Texture::wmRepeat:
+	case Texture::WRAP_MODE_REPEAT:
 		return GL_REPEAT;
-	case Texture::wmClampToEdge:
+	case Texture::WRAP_MODE_CLAMP_TO_EDGE:
 		return GL_CLAMP_TO_EDGE;
 	default:
 		assert(false);
@@ -38,10 +38,10 @@ GLint toWrapModeGl(Texture::WrapMode wrapMode){
 	}
 }
 
-GLint toFormatGl(Texture::Format format, int components){
-	switch(format){
-	case Texture::fAuto:
-		switch(components){
+GLint toFormatGl(Texture::Format format, int components) {
+	switch (format) {
+	case Texture::FORMAT_AUTO:
+		switch (components) {
 		case 1:
 			return GL_LUMINANCE;
 		case 3:
@@ -53,13 +53,13 @@ GLint toFormatGl(Texture::Format format, int components){
 			return GL_RGBA;
 		}
 		break;
-	case Texture::fLuminance:
+	case Texture::FORMAT_LUMINANCE:
 		return GL_LUMINANCE;
-	case Texture::fAlpha:
+	case Texture::FORMAT_ALPHA:
 		return GL_ALPHA;
-	case Texture::fRgb:
+	case Texture::FORMAT_RGB:
 		return GL_RGB;
-	case Texture::fRgba:
+	case Texture::FORMAT_RGBA:
 		return GL_RGBA;
 	default:
 		assert(false);
@@ -67,10 +67,10 @@ GLint toFormatGl(Texture::Format format, int components){
 	}
 }
 
-GLint toInternalFormatGl(Texture::Format format, int components){
-	switch(format){
-	case Texture::fAuto:
-		switch(components){
+GLint toInternalFormatGl(Texture::Format format, int components) {
+	switch (format) {
+	case Texture::FORMAT_AUTO:
+		switch (components) {
 		case 1:
 			return GL_LUMINANCE8;
 		case 3:
@@ -82,13 +82,13 @@ GLint toInternalFormatGl(Texture::Format format, int components){
 			return GL_RGBA8;
 		}
 		break;
-	case Texture::fLuminance:
+	case Texture::FORMAT_LUMINANCE:
 		return GL_LUMINANCE8;
-	case Texture::fAlpha:
+	case Texture::FORMAT_ALPHA:
 		return GL_ALPHA8;
-	case Texture::fRgb:
+	case Texture::FORMAT_RGB:
 		return GL_RGB8;
-	case Texture::fRgba:
+	case Texture::FORMAT_RGBA:
 		return GL_RGBA8;
 	default:
 		assert(false);
@@ -126,7 +126,7 @@ void Texture1DGl::init(Filter filter, int maxAnisotropy){
 		}
 
 		if(mipmap){
-			GLuint glFilter= filter==fTrilinear? GL_LINEAR_MIPMAP_LINEAR: GL_LINEAR_MIPMAP_NEAREST;
+			GLuint glFilter= filter==FILTER_TRILINEAR? GL_LINEAR_MIPMAP_LINEAR: GL_LINEAR_MIPMAP_NEAREST;
 
 			//build mipmaps
 			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, glFilter);
@@ -199,7 +199,7 @@ void Texture2DGl::init(Filter filter, int maxAnisotropy){
 		}
 
 		if(mipmap){
-			GLuint glFilter= filter==fTrilinear? GL_LINEAR_MIPMAP_LINEAR: GL_LINEAR_MIPMAP_NEAREST;
+			GLuint glFilter= filter==FILTER_TRILINEAR? GL_LINEAR_MIPMAP_LINEAR: GL_LINEAR_MIPMAP_NEAREST;
 
 			//build mipmaps
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glFilter);
@@ -316,7 +316,7 @@ void TextureCubeGl::init(Filter filter, int maxAnisotropy){
 
 		//filter
 		if(mipmap){
-			GLuint glFilter= filter==fTrilinear? GL_LINEAR_MIPMAP_LINEAR: GL_LINEAR_MIPMAP_NEAREST;
+			GLuint glFilter= filter==FILTER_TRILINEAR? GL_LINEAR_MIPMAP_LINEAR: GL_LINEAR_MIPMAP_NEAREST;
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, glFilter);
 			glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}

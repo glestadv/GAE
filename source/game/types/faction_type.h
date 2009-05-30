@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_FACTIONTYPE_H_
-#define _GLEST_GAME_FACTIONTYPE_H_
+#ifndef _GAME_FACTIONTYPE_H_
+#define _GAME_FACTIONTYPE_H_
 
 #include "unit_type.h"
 #include "upgrade_type.h"
@@ -19,7 +19,7 @@
 using Shared::Sound::StrSound;
 using Shared::Sound::StaticSound;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class SubfactionType
@@ -65,7 +65,7 @@ private:
 public:
 	//init
 	FactionType();
-    void load(const string &dir, const TechTree *techTree, Checksum &checksum);
+    void load(const string &dir, const TechTree *techTree, Checksums &checksums);
 	~FactionType();
 
     //get
@@ -91,6 +91,6 @@ public:
 	int getStartingResourceAmount(const ResourceType *resourceType) const;
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

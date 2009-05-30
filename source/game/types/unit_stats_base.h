@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_UNIT_STAT_BASE_H_
-#define _GLEST_GAME_UNIT_STAT_BASE_H_
+#ifndef _GAME_UNIT_STAT_BASE_H_
+#define _GAME_UNIT_STAT_BASE_H_
 
 #include <cassert>
 #include <stdexcept>
@@ -23,7 +23,7 @@
 
 using std::runtime_error;
 
-namespace Glest{ namespace Game{
+namespace Game {
 using namespace Shared::Graphics;
 using namespace Shared::Xml;
 using namespace Shared::Util;
@@ -310,7 +310,7 @@ public:
 			if(value > 0) {
 				str += "+";
 			}
-			str += intToStr(value);
+			str += Conversion::toStr(value);
 		}
 	}
 
@@ -329,6 +329,6 @@ private:
 	static void formatModifier(string &str, const char *pre, const char* label, int value, float multiplier);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

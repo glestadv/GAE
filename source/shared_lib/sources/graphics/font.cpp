@@ -33,7 +33,7 @@ FontMetrics::~FontMetrics() {
 	delete [] widths;
 }
 
-Vec2f FontMetrics::getTextDiminsions(const string &str) const{
+Vec2f FontMetrics::getTextDiminsions(const string &str) const {
 	Vec2f dim(0.f, height);
 	float width = 0.f;
 
@@ -46,7 +46,7 @@ Vec2f FontMetrics::getTextDiminsions(const string &str) const{
 			width = 0.f;
 			dim.y += height;
 		} else {
-			width += widths[str[i]];
+			width += widths[static_cast<unsigned char>(str[i])];
 		}
 	}
 

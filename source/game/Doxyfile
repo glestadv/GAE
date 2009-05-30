@@ -3,7 +3,7 @@
 #---------------------------------------------------------------------------
 # Project related configuration options
 #---------------------------------------------------------------------------
-PROJECT_NAME           = glest_game
+PROJECT_NAME           = Glest Advanced Engine
 PROJECT_NUMBER         = 1
 OUTPUT_DIRECTORY       = 
 CREATE_SUBDIRS         = NO
@@ -82,7 +82,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = /home/daniel/proj/glest/trunk/source/glest_game
+INPUT                  = /home/daniel/proj/glest/trunk/source/game
 FILE_PATTERNS          = *.c \
                          *.cc \
                          *.cxx \
@@ -246,7 +246,7 @@ SKIP_FUNCTION_MACROS   = YES
 # Configuration::additions related to external references   
 #---------------------------------------------------------------------------
 TAGFILES               = 
-GENERATE_TAGFILE       = glest_game.tag
+GENERATE_TAGFILE       = game.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = YES
 PERL_PATH              = /usr/bin/perl

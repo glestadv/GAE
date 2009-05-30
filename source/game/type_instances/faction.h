@@ -10,8 +10,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_FACTION_H_
-#define _GLEST_GAME_FACTION_H_
+#ifndef _GAME_FACTION_H_
+#define _GAME_FACTION_H_
 
 #include <vector>
 #include <map>
@@ -21,13 +21,14 @@
 #include "texture.h"
 #include "resource.h"
 #include "game_constants.h"
+#include "game_settings.h"
 #include "element_type.h"
 #include "vec.h"
 
 using std::map;
 using std::vector;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::Texture2D;
 using Shared::Graphics::Vec3f;
@@ -47,43 +48,45 @@ class World;
 ///	Each of the game players
 // =====================================================
 
-class Faction : public NameIdPair {
+class Faction : public IdNamePair {
 public:
 	typedef vector<const ResourceType *> ResourceTypes;
-	typedef vector<Unit*> Units;
 
 private:
-    typedef vector<Resource> Resources;
-    typedef vector<Resource> Store;
-	typedef map<int, Unit*> UnitMap;
-
+	typedef vector<Resource> Resources;
+	typedef vector<Resource> Store;
+	
 	UpgradeManager upgradeManager;
-
-    Resources resources;
-    Store store;
+	
+	Resources resources;
+	Store store;
 	Units units;
 	UnitMap unitMap;
-
-    ControlType control;
-
+	
+	ControlType control;
+	
 	Texture2D *texture;
 	const FactionType *factionType;
-
+	
 	int teamIndex;
 	int startLocationIndex;
-
+	const Players &players;
+//	PlayerInfo playerInfo;
+	
 	bool thisFaction;
 	int subfaction;			// the current subfaction index starting at zero
 	time_t lastAttackNotice;
 	time_t lastEnemyNotice;
 	Vec3f lastEventLoc;
-
+	
 	static ResourceTypes neededResources;
 
 public:
-    void init(
-		const FactionType *factionType, ControlType control, TechTree *techTree,
-		int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction);
+	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction);
+	/*
+    void init(const FactionType *factionType, ControlType control, TechTree *techTree,
+			int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction,
+			bool autoRepairEnabled, bool autoReturnEnabled);*/
 	void end();
 
     //get
@@ -91,23 +94,25 @@ public:
 	const Resource *getResource(int i) const			{assert(i < resources.size()); return &resources[i];}
 	int getStoreAmount(const ResourceType *rt) const;
 	const FactionType *getType() const					{return factionType;}
-	int getIndex() const								{return id;}
+	int getIndex() const								{return getId();}
 	int getTeam() const									{return teamIndex;}
-	bool getCpuControl() const;
-	bool getCpuUltraControl() const						{return control==ctCpuUltra;}
+	bool getCpuControl() const							{return control == CT_CPU_ULTRA || control == CT_CPU;}
+	bool getCpuUltraControl() const						{return control == CT_CPU_ULTRA;}
 	Unit *getUnit(int i) const							{assert(units.size() == unitMap.size()); assert(i < units.size()); return units[i];}
 	int getUnitCount() const							{return units.size();}
 	const Units &getUnits() const						{return units;}
 	const UpgradeManager *getUpgradeManager() const		{return &upgradeManager;}
 	const Texture2D *getTexture() const					{return texture;}
 	int getStartLocationIndex() const					{return startLocationIndex;}
+	const Player &getPrimaryPlayer() const				{return *players.front();}
+	bool isThisFaction() const							{return thisFaction;}
 	int getSubfaction() const							{return subfaction;}
 	Vec3f getLastEventLoc() const						{return lastEventLoc;}
 	static const ResourceTypes &getNeededResources() 	{return neededResources;}
 
 	//upgrades
-	void startUpgrade(const UpgradeType *ut);
-	void cancelUpgrade(const UpgradeType *ut);
+	void startUpgrade(const UpgradeType *ut)	{upgradeManager.startUpgrade(ut, id);}
+	void cancelUpgrade(const UpgradeType *ut)	{upgradeManager.cancelUpgrade(ut);}
 	void finishUpgrade(const UpgradeType *ut);
 
 	//cost application
@@ -127,7 +132,7 @@ public:
 	bool isAvailable(const RequirableType *rt) const	{return rt->isAvailableInSubfaction(subfaction);}
 
 	//diplomacy
-	bool isAlly(const Faction *faction);
+	bool isAlly(const Faction *faction)					{return teamIndex == faction->getTeam();}
 
     //other
 	Unit *findUnit(int id) {
@@ -136,23 +141,14 @@ public:
 		return it == unitMap.end() ? NULL : it->second;
 	}
 
-	void addUnit(Unit *unit);
-	void removeUnit(Unit *unit);
+	void add(Unit *unit);
+	void remove(Unit *unit);
 	void addStore(const UnitType *unitType);
 	void removeStore(const UnitType *unitType);
 	void setLastEventLoc(Vec3f lastEventLoc)	{this->lastEventLoc = lastEventLoc;}
 	void attackNotice(const Unit *u);
 	void advanceSubfaction(int subfaction);
-
-	void checkAdvanceSubfaction(const ProducibleType *pt, bool finished) {
-		int advance = pt->getAdvancesToSubfaction();
-		if(advance && subfaction < advance) {
-			bool immediate = pt->isAdvanceImmediately();
-			if(immediate && !finished || !immediate && finished) {
-				advanceSubfaction(advance);
-			}
-		}
-	}
+	void checkAdvanceSubfaction(const ProducibleType *pt, bool finished);
 
 	//resources
 	void incResourceAmount(const ResourceType *rt, int amount);
@@ -169,6 +165,6 @@ private:
 	void resetResourceAmount(const ResourceType *rt);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

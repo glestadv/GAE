@@ -9,13 +9,13 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GLEST_GAME_BATTLEEND_H_
-#define _GLEST_GAME_BATTLEEND_H_
+#ifndef _GAME_BATTLEEND_H_
+#define _GAME_BATTLEEND_H_
 
 #include "program.h"
 #include "stats.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class BattleEnd  
@@ -23,19 +23,20 @@ namespace Glest{ namespace Game{
 ///	ProgramState representing the end of the game
 // =====================================================
 
-class BattleEnd: public ProgramState{
+class BattleEnd: public ProgramState {
 private:
+	shared_ptr<GameSettings> gs;
 	Stats stats;
 
 public:
-	BattleEnd(Program *program, const Stats *stats);
+	BattleEnd(Program &program, const shared_ptr<GameSettings> &gs, const Stats &stats);
 	~BattleEnd();
-	virtual void update();
+	virtual void update() {}
 	virtual void render();
-	virtual void keyDown(char key);
+	virtual void keyDown(const Key &key);
 	virtual void mouseDownLeft(int x, int y);
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

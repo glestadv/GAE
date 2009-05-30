@@ -37,20 +37,22 @@ using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class Program::CrashProgramState
 // =====================================================
 
-Program::CrashProgramState::CrashProgramState(Program *program, const exception *e) : ProgramState(program) {
+Program::CrashProgramState::CrashProgramState(Program &program, const exception *e) :
+		ProgramState(program) {
 	msgBox.init("", "Exit");
 	if(e) {
 		fprintf(stderr, "%s\n", e->what());
 		msgBox.setText(string("Exception: ") + e->what());
 	} else {
 		msgBox.setText("Glest Advanced Engine has crashed.  Please help us improve GAE by emailing "
-				" the file gae-crash.txt to " + gaeMailString + ".");
+				" the file gae-crash.txt to " + getGaeMailString()
+				+ " or reporting your bug at http://bugs.codemonger.org.");
 	}
 	mouse2dAnim = mouseY = mouseX = 0;
 	this->e = e;
@@ -67,11 +69,11 @@ void Program::CrashProgramState::render() {
 
 void Program::CrashProgramState::mouseDownLeft(int x, int y) {
 	if(msgBox.mouseClick(x,y)) {
-		program->exit();
+		program.exit();
 	}
 }
 
-void Program::CrashProgramState::mouseMove(int x, int y, const MouseState *mouseState) {
+void Program::CrashProgramState::mouseMove(int x, int y, const MouseState &mouseState) {
 	mouseX = x;
 	mouseY = y;
 	msgBox.mouseMove(x, y);
@@ -91,22 +93,22 @@ Program *Program::singleton = NULL;
 // ===================== PUBLIC ========================
 
 Program::Program(Config &config, int argc, char** argv) :
-		renderTimer(config.getMaxFPS(), 1),
+		renderTimer(config.getRenderFpsMax(), 1),
 		tickTimer(1.f, maxTimes, -1),
-		updateTimer(config.getWorldUpdateFPS(), maxTimes, 2),
-		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10) {
-
-	programState = NULL;
-	preCrashState = NULL;
+		updateTimer(static_cast<float>(config.getGsWorldUpdateFps()), maxTimes, 2),
+		updateCameraTimer(static_cast<float>(GameConstants::cameraFps), maxTimes, 10),
+		programState(NULL),
+		preCrashState(NULL),
+		keymap(getInput(), "keymap.ini") {
 
     //set video mode
 	setDisplaySettings();
 
 	//window
-	setText("Glest");
-	setStyle(config.getWindowed() ? wsWindowedFixed: wsFullscreen);
+	setText("Glest Advanced Engine");
+	setStyle(config.getDisplayWindowed() ? wsWindowedFixed: wsFullscreen);
 	setPos(0, 0);
-	setSize(config.getScreenWidth(), config.getScreenHeight());
+	setSize(config.getDisplayWidth(), config.getDisplayHeight());
 	create();
 
     //log start
@@ -118,12 +120,12 @@ Program::Program(Config &config, int argc, char** argv) :
 
 	//lang
 	Lang &lang= Lang::getInstance();
-	lang.load("data/lang/"+ config.getLang());
+	lang.load("data/lang/" + config.getUiLang());
 
 	//render
 	Renderer &renderer= Renderer::getInstance();
 
-	initGl(config.getColorBits(), config.getDepthBits(), config.getStencilBits());
+	initGl(config.getRenderColorBits(), config.getRenderDepthBits(), config.getRenderStencilBits());
 	makeCurrentGl();
 
 	//coreData, needs renderer, but must load before renderer init
@@ -136,22 +138,24 @@ Program::Program(Config &config, int argc, char** argv) :
 	//sound
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 	soundRenderer.init(this);
+	
+	keymap.save("keymap.ini");
 
 	// startup and immediately host a game
 	if(argc == 2 && string(argv[1]) == "-server") {
-		MainMenu* mainMenu = new MainMenu(this);
+		MainMenu* mainMenu = new MainMenu(*this);
 		setState(mainMenu);
-		mainMenu->setState(new MenuStateNewGame(this, mainMenu, true));
+		mainMenu->setState(new MenuStateNewGame(*this, mainMenu, true));
 
 	// startup and immediately connect to server
 	} else if(argc == 3 && string(argv[1]) == "-client") {
-		MainMenu* mainMenu = new MainMenu(this);
+		MainMenu* mainMenu = new MainMenu(*this);
 		setState(mainMenu);
-		mainMenu->setState(new MenuStateJoinGame(this, mainMenu, true, Ip(argv[2])));
+		mainMenu->setState(new MenuStateJoinGame(*this, mainMenu, true, IpAddress(argv[2])));
 
 	// normal startup
 	} else {
-		setState(new Intro(this));
+		setState(new Intro(*this));
 	}
 
 	singleton = this;
@@ -175,37 +179,47 @@ Program::~Program() {
 }
 
 void Program::loop() {
-	size_t sleepTime = renderTimer.timeToWait();
+	while(handleEvent()) {
+		// determine the soonest time that any of the timers are due.
+		int64 nextExec = renderTimer.getNextExecution();
+		if(nextExec > updateCameraTimer.getNextExecution()) {
+			nextExec = updateCameraTimer.getNextExecution();
+		}
+		if(nextExec > updateTimer.getNextExecution()) {
+			nextExec = updateTimer.getNextExecution();
+		}
+		if(nextExec > tickTimer.getNextExecution()) {
+			nextExec = tickTimer.getNextExecution();
+		}
 
-	sleepTime = sleepTime < updateCameraTimer.timeToWait() ? sleepTime : updateCameraTimer.timeToWait();
-	sleepTime = sleepTime < updateTimer.timeToWait() ? sleepTime : updateTimer.timeToWait();
-	sleepTime = sleepTime < tickTimer.timeToWait() ? sleepTime : tickTimer.timeToWait();
+		// If the difference is positive, sleep for that amount of time.
+		int sleepTime = static_cast<int>((nextExec - Chrono::getCurMicros()) / 1000);
+		if(sleepTime > 0) {
+			Shared::Platform::sleep(sleepTime / 1000);
+		}
 
-	if(sleepTime) {
-		Shared::Platform::sleep(sleepTime);
-	}
+		//render
+		while(renderTimer.isTime()) {
+			programState->render();
+		}
+	
+		//update camera
+		while(updateCameraTimer.isTime()) {
+			programState->updateCamera();
+		}
 
-	//render
-	while(renderTimer.isTime()){
-		programState->render();
-	}
+		//update world
+		while(updateTimer.isTime()) {
+			GraphicComponent::update();
+//			NetworkManager::getInstance().beginUpdate();
+			programState->update();
+			SoundRenderer::getInstance().update();
+		}
 
-	//update camera
-	while(updateCameraTimer.isTime()){
-		programState->updateCamera();
-	}
-
-	//update world
-	while(updateTimer.isTime()){
-		GraphicComponent::update();
-		programState->update();
-		SoundRenderer::getInstance().update();
-		NetworkManager::getInstance().update();
-	}
-
-	//tick timer
-	while(tickTimer.isTime()){
-		programState->tick();
+		//tick timer
+		while(tickTimer.isTime()) {
+			programState->tick();
+		}
 	}
 }
 
@@ -259,19 +273,19 @@ void Program::setDisplaySettings(){
 	Config &config= Config::getInstance();
 	// bool multisamplingSupported = isGlExtensionSupported("WGL_ARB_multisample");
 
-	if(!config.getWindowed()){
+	if(!config.getDisplayWindowed()){
 
-		int freq= config.getRefreshFrequency();
-		int colorBits= config.getColorBits();
-		int screenWidth= config.getScreenWidth();
-		int screenHeight= config.getScreenHeight();
+		int freq= config.getDisplayRefreshFrequency();
+		int colorBits= config.getRenderColorBits();
+		int screenWidth= config.getDisplayWidth();
+		int screenHeight= config.getDisplayHeight();
 
 		if(!(changeVideoMode(screenWidth, screenHeight, colorBits, freq) ||
 			changeVideoMode(screenWidth, screenHeight, colorBits, 0)))
 		{
 			throw runtime_error(
 				"Error setting video mode: " +
-				intToStr(screenWidth) + "x" + intToStr(screenHeight) + "x" + intToStr(colorBits));
+				Conversion::toStr(screenWidth) + "x" + Conversion::toStr(screenHeight) + "x" + Conversion::toStr(colorBits));
 		}
 	}
 }
@@ -279,7 +293,7 @@ void Program::setDisplaySettings(){
 void Program::restoreDisplaySettings(){
 	Config &config= Config::getInstance();
 
-	if(!config.getWindowed()){
+	if(!config.getDisplayWindowed()){
 		restoreVideoMode();
 	}
 }
@@ -288,14 +302,12 @@ void Program::crash(const exception *e) {
 	// if we've already crashed then we just try to exit
 	if(!preCrashState) {
 		preCrashState = programState;
-		programState = new CrashProgramState(this, e);
+		programState = new CrashProgramState(*this, e);
 
-		while(Window::handleEvent()) {
-			loop();
-		}
+		loop();
 	} else {
 		exit();
 	}
 }
 
-}}//end namespace
+} // end namespace

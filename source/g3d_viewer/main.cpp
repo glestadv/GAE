@@ -13,7 +13,7 @@ using namespace Shared::Util;
 
 using namespace std;
 
-namespace Shared{ namespace G3dViewer{
+namespace Shared { namespace G3dViewer {
 
 // ===============================================
 // 	class MainWindow

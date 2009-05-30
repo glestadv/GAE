@@ -25,7 +25,7 @@
 using namespace Shared::Xml;
 using namespace Shared::Graphics;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class ParticleSystemType
@@ -43,7 +43,7 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 	if (textureNode->getAttribute("value")->getBoolValue()) {
 		Texture2D *texture = renderer.newTexture2D(rsGame);
 		if (textureNode->getAttribute("luminance")->getBoolValue()) {
-			texture->setFormat(Texture::fAlpha);
+			texture->setFormat(Texture::FORMAT_ALPHA);
 			texture->getPixmap()->init(1);
 		} else {
 			texture->getPixmap()->init(4);
@@ -73,9 +73,6 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 	} else {
 		throw runtime_error("Invalid primitive type: " + primativeTypeStr);
 	}
-
-	//smooth
-	smooth = particleSystemNode->getOptionalBoolValue("smooth", false);
 
 	//offset
 	offset = particleSystemNode->getChildVec3fValue("offset");
@@ -109,10 +106,10 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 	sizeNoEnergy = particleSystemNode->getChildFloatValue("size-no-energy");
 
 	//speed
-	speed = particleSystemNode->getChildFloatValue("speed") / Config::getInstance().getWorldUpdateFPS();
+	speed = particleSystemNode->getChildFloatValue("speed") / Config::getInstance().getGsWorldUpdateFps();
 
 	//gravity
-	gravity= particleSystemNode->getChildFloatValue("gravity") / Config::getInstance().getWorldUpdateFPS();
+	gravity= particleSystemNode->getChildFloatValue("gravity") / Config::getInstance().getGsWorldUpdateFps();
 
 	//emission rate
 	emissionRate = particleSystemNode->getChildIntValue("emission-rate");
@@ -125,6 +122,13 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 
 	//speed
 	energyVar= particleSystemNode->getChildIntValue("energy-var");
+
+	//draw count
+	drawCount = particleSystemNode->getOptionalIntValue("draw-count", 1);
+
+	//inner size
+	//innerSize = particleSystemNode->getChildFloatValue("inner-size");
+
 }
 
 /*
@@ -162,7 +166,7 @@ void ParticleSystemTypeProjectile::load(const string &dir, const string &path){
 		trajectory = tajectoryNode->getAttribute("type")->getRestrictedValue();
 
 		//trajectory speed
-		trajectorySpeed = tajectoryNode->getChildFloatValue("speed") / Config::getInstance().getWorldUpdateFPS();
+		trajectorySpeed = tajectoryNode->getChildFloatValue("speed") / Config::getInstance().getGsWorldUpdateFps();
 
 		if(trajectory == "parabolic" || trajectory == "spiral" || trajectory == "random") {
 			//trajectory scale
@@ -256,4 +260,4 @@ ParticleSystem *ParticleSystemTypeSplash::create(){
 	return ps;
 }
 
-}}//end mamespace
+} // end namespace

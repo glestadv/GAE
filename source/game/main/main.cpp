@@ -28,7 +28,7 @@ using namespace std;
 using namespace Shared::Platform;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class ExceptionHandler
@@ -47,7 +47,7 @@ public:
 		char *timeString = asctime(localtime(&t));
 
 		fprintf(f, "Crash\n");
-		fprintf(f, "Version: Advanced Engine %s\n", gaeVersionString.c_str());
+		fprintf(f, "Version: Advanced Engine %s\n", getGaeVersion().toString().c_str());
 		fprintf(f, "Time: %s", timeString);
 		if(description) {
 			fprintf(f, "Description: %s\n", description);
@@ -81,7 +81,7 @@ public:
 		Shared::Platform::message(
 				"An error ocurred and Glest will close.\n"
 				"Crash info has been saved in the crash.txt file\n"
-				"Please report this bug to " + gaeMailString);
+				"Please report this bug to " + getGaeMailString());
 	}
 };
 
@@ -90,35 +90,37 @@ public:
 // =====================================================
 
 int glestMain(int argc, char** argv) {
-	ExceptionHandler exceptionHandler;
+	Config &config = Config::getInstance();
 
-	try {
-		Config &config = Config::getInstance();
-		if(config.getCatchExceptions()) {
-			exceptionHandler.install();
-		}
-		Program program(config, argc, argv);
-
-		showCursor(config.getWindowed());
+	if(config.getMiscCatchExceptions()) {
+		ExceptionHandler exceptionHandler;
 
 		try {
-			//main loop
-			while(Window::handleEvent()) {
+			exceptionHandler.install();
+			Program program(config, argc, argv);
+			showCursor(config.getDisplayWindowed());
+
+			try {
+				//main loop
 				program.loop();
+			} catch(const exception &e) {
+				// friendlier error handling
+				program.crash(&e);
+				restoreVideoMode();
 			}
 		} catch(const exception &e) {
-			// friendlier error handling
-			program.crash(&e);
 			restoreVideoMode();
+			exceptionMessage(e);
 		}
-	} catch(const exception &e) {
-		restoreVideoMode();
-		exceptionMessage(e);
+	} else {
+		Program program(config, argc, argv);
+		showCursor(config.getDisplayWindowed());
+		program.loop();
 	}
 
 	return 0;
 }
 
-}}//end namespace
+} // end namespace
 
-MAIN_FUNCTION(Glest::Game::glestMain)
+MAIN_FUNCTION(Game::glestMain)

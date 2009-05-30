@@ -8,8 +8,8 @@
 //	by the Free Software Foundation; either version 2 of the 
 //	License, or (at your option) any later version
 // ==============================================================
-#ifndef _GLEST_GAME_OBJECTTYPE_H_
-#define _GLEST_GAME_OBJECTTYPE_H_
+#ifndef _GAME_OBJECTTYPE_H_
+#define _GAME_OBJECTTYPE_H_
 
 #include <vector>
 
@@ -18,7 +18,7 @@
 
 using std::vector;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 using Shared::Graphics::Model;
 using Shared::Graphics::Vec3f;
@@ -57,6 +57,6 @@ public:
 	bool isATree() const			{return objectClass==tree1 || objectClass==tree2;}
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

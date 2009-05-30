@@ -27,18 +27,18 @@
 using namespace Shared::Util;
 using namespace Shared::Xml;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class TechTree
 // =====================================================
 
-void TechTree::load(const string &dir, const vector<string> &factionNames, Checksum &checksum){
+void TechTree::load(const string &dir, const vector<string> &factionNames, Checksums &checksums) {
 
 	string str;
     vector<string> filenames;
 
-	Logger::getInstance().add("TechTree: "+ dir, true);
+	Logger::getInstance().add("TechTree: " + dir, true);
 
 	//load resources
 	str= dir + "/resources/*.";
@@ -49,7 +49,7 @@ void TechTree::load(const string &dir, const vector<string> &factionNames, Check
 
         for(int i=0; i<filenames.size(); ++i){
             str=dir+"/resources/"+filenames[i];
-            resourceTypes[i].load(str, i, checksum);
+            resourceTypes[i].load(str, i, checksums);
 			resourceTypeMap[filenames[i]] = &resourceTypes[i];
         }
     } catch(const exception &e) {
@@ -61,7 +61,7 @@ void TechTree::load(const string &dir, const vector<string> &factionNames, Check
 		XmlTree	xmlTree;
 		string path= dir+"/"+lastDir(dir)+".xml";
 
-		checksum.addFile(path, true);
+		checksums.addFile(path, true);
 
 		xmlTree.load(path);
 		const XmlNode *techTreeNode= xmlTree.getRootNode();
@@ -119,13 +119,13 @@ void TechTree::load(const string &dir, const vector<string> &factionNames, Check
 /*
         for(int i=0; i<filenames.size(); ++i){
             str=dir+"/factions/"+filenames[i];
-			factionTypes[i].load(str, this, checksum);
+			factionTypes[i].load(str, this, checksums);
 			factionTypeMap[filenames[i]] = &factionTypes[i];
         }*/
 		int i = 0;
 		for(vector<string>::const_iterator fn = factionNames.begin();
 				fn != factionNames.end(); ++i, ++fn) {
-			factionTypes[i].load(dir + "/factions/" + *fn, this, checksum);
+			factionTypes[i].load(dir + "/factions/" + *fn, this, checksums);
 			factionTypeMap[*fn] = &factionTypes[i];
 		}
     } catch(const exception &e) {
@@ -181,4 +181,4 @@ int TechTree::addEffectType(EffectType *et) {
 	}
 }
 
-}}//end namespace
+} // end namespace

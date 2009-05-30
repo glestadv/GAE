@@ -14,44 +14,31 @@
 
 #include "leak_dumper.h"
 
-namespace Glest{ namespace Game{
-
-// =====================================================
-//	class NetworkCommand
-// =====================================================
+namespace Game { namespace Net {
 /*
-NetworkCommand::NetworkCommand(int networkCommandType, int unitId, int commandTypeId, bool queue, bool _auto, const Vec2i &pos, int unitTypeId, int targetId){
-	this->networkCommandType= networkCommandType;
-	this->unitId= unitId;
-	this->commandTypeId= commandTypeId;
-	flags.set(cpQueue, queue);
-	flags.set(cpAuto, _auto);
-	this->positionX= pos.x;
-	this->positionY= pos.y;
-	this->unitTypeId= unitTypeId;
-	this->targetId= targetId;
+template<int S> 
+size_t NetworkString::getNetSize() const {
+	//return s.size() + sizeof(uint16);
+	return sizeof(size) + size;
+}
+
+template<int S> 
+size_t NetworkString::getMaxNetSize() const {
+	return sizeof(size) + sizeof(buffer);
+}
+
+template<int S> 
+void NetworkString::write(NetworkDataBuffer &buf) const {
+	buf.write(size);
+	buf.write(buffer, size);
+}
+
+template<int S> 
+void NetworkString::read(NetworkDataBuffer &buf) {
+	buf.read(size);
+	assert(size < S);
+	buf.read(buffer, size);
+	buffer[size] = 0;
 }
 */
-
-void NetworkCommand::read(NetworkDataBuffer &buf) {
-	buf.read(networkCommandType);
-	buf.read(unitId);
-	buf.read(commandTypeId);
-	buf.read(flags.flags);
-	buf.read(positionX);
-	buf.read(positionY);
-	buf.read(unitTypeId);
-	buf.read(targetId);
-}
-
-void NetworkCommand::write(NetworkDataBuffer &buf) const {
-	buf.write(networkCommandType);
-	buf.write(unitId);
-	buf.write(commandTypeId);
-	buf.write(flags.flags);
-	buf.write(positionX);
-	buf.write(positionY);
-	buf.write(unitTypeId);
-	buf.write(targetId);
-}
-}}//end namespace
+}} // end namespace

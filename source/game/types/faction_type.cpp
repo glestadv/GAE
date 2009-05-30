@@ -25,7 +25,7 @@
 using namespace Shared::Util;
 using namespace Shared::Xml;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ======================================================
 //          Class FactionType
@@ -41,7 +41,7 @@ FactionType::FactionType(){
 }
 
 //load a faction, given a directory
-void FactionType::load(const string &dir, const TechTree *techTree, Checksum &checksum){
+void FactionType::load(const string &dir, const TechTree *techTree, Checksums &checksums){
 
     Logger::getInstance().add("Faction type: "+ dir, true);
     name= lastDir(dir);
@@ -69,7 +69,7 @@ void FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 	//open xml file
     string path= dir+"/"+name+".xml";
 
-	checksum.addFile(path, true);
+	checksums.addFile(path, true);
 
 	XmlTree xmlTree;
 	xmlTree.load(path);
@@ -91,7 +91,7 @@ void FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 	try{
 		for(int i=0; i<unitTypes.size(); ++i){
             string str= dir + "/units/" + unitTypes[i].getName();
-            unitTypes[i].load(i, str, techTree, this, checksum);
+            unitTypes[i].load(i, str, techTree, this, checksums);
         }
     }
 	catch(const exception &e){
@@ -102,7 +102,7 @@ void FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 	try{
 		for(int i=0; i<upgradeTypes.size(); ++i){
             string str= dir + "/upgrades/" + upgradeTypes[i].getName();
-            upgradeTypes[i].load(str, techTree, this, checksum);
+            upgradeTypes[i].load(str, techTree, this, checksums);
         }
     }
 	catch(const exception &e){
@@ -222,4 +222,4 @@ int FactionType::getStartingResourceAmount(const ResourceType *resourceType) con
 	return 0;
 }
 
-}}//end namespace
+} // end namespace

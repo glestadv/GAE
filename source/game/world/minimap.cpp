@@ -29,7 +29,7 @@ using namespace Shared::Graphics;
 using Shared::Platform::uint8;
 using Shared::Platform::NetworkDataBuffer;
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // =====================================================
 // 	class Minimap
@@ -40,7 +40,7 @@ const float Minimap::exploredAlpha= 0.5f;
 Minimap::Minimap(){
 	fowPixmap0= NULL;
 	fowPixmap1= NULL;
-	fogOfWar= Config::getInstance().getFogOfWar();
+	fogOfWar= Config::getInstance().getGsFogOfWarEnabled();
 }
 
 void Minimap::init(int w, int h, const World *world){
@@ -60,7 +60,7 @@ void Minimap::init(int w, int h, const World *world){
 	fowTex= renderer.newTexture2D(rsGame);
 	fowTex->setMipmap(false);
 	fowTex->setPixmapInit(false);
-	fowTex->setFormat(Texture::fAlpha);
+	fowTex->setFormat(Texture::FORMAT_ALPHA);
 	fowTex->getPixmap()->init(next2Power(scaledW), next2Power(scaledH), 1);
 	fowTex->getPixmap()->setPixels(&f);
 
@@ -80,16 +80,7 @@ Minimap::~Minimap(){
 
 // ==================== set ====================
 
-void Minimap::incFowTextureAlphaSurface(const Vec2i &sPos, float alpha) {
-
-	assert(sPos.x < fowPixmap1->getW() && sPos.y < fowPixmap1->getH());
-
-	if(fowPixmap1->getPixelf(sPos.x, sPos.y) < alpha) {
-		fowPixmap1->setPixel(sPos.x, sPos.y, alpha);
-	}
-}
-
-void Minimap::resetFowTex(){
+void Minimap::resetFowTex() {
 	Pixmap2D *tmpPixmap= fowPixmap0;
 	fowPixmap0= fowPixmap1;
 	fowPixmap1= tmpPixmap;
@@ -360,4 +351,4 @@ void Minimap::computeTexture(const World *world){
 	}
 }
 
-}}//end namespace
+} // end namespace
