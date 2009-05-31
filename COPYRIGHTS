@@ -1,2 +1,31 @@
-All files are copyright by their respective owners.  Different license apply
-to various files.
+All files are copyright by their respective owners.  Different license apply to various files.
+
+Glest source code is GPL (see file COPYING for license). For the data you can do whatever you want with it as long as you give the creator credit; This will work fine with nearly every open source license GPL/BSD/CreativeCommon. Only Public Domain will not work, as it has not credits.
+
+Glest is copyright of the Glest Team ( http://glest.org/en/credits.php ). Glest Advanced Engine (GAE) is forked from Glest 3.1.2.
+
+Libaries used by Glest Advanced Engine:
+* Ogg/Vorbis win32sdk v1.0.1
+  license: specification is public domain with software packages under various free/open-source software licenses
+  site: http://www.vorbis.com
+  binaries: http://www.vorbis.com/files/1.0.1/windows/oggvorbis-win32sdk-1.0.1.zip
+  sources: http://downloads.xiph.org/releases/vorbis
+* Apache Xerces C++ Parser v2.8.0 for Windows x86 VC8
+  license: Apache Software License, Version 2.0
+  site: http://xerces.apache.org/xerces-c
+  download: http://xerces.apache.org/xerces-c/download.cgi
+* SGI's OpenGL Sample Implementation SDK
+  license: see website
+  site: http://oss.sgi.com/projects/ogl-sample
+  sources: http://oss.sgi.com/projects/ogl-sample/GLsdk.zip
+* Microsoft DirectX SDK Nov 2007
+* zlib 1.2.3
+  license: http://www.zlib.net/zlib_license.html
+  site: http://www.zlib.net/
+* SDL
+  license: GNU LGPL version 2
+  site: http://www.libsdl.org/
+
+glprocs.c and glprocs.h have been modified from their original form using the GLsdk.patch file.
+
+If you have any questions about the license/copyright ask on the forum. http://glest.org/glest_board/

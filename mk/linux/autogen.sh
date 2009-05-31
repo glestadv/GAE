@@ -27,18 +27,19 @@ autoconf
 
 rm -rf autom4te.cache build
 
-mkdir -p /tmp/gae/build
-ln -s /tmp/gae/build .
+mkdir -p /tmp/$(whoami)/gae/0.2
+ln -s /tmp/$(whoami)/gae/0.2 build
 
 # create symlinks to the source dirs
 
 echo "Updating Source symlinks..."
 
 for f in data docs maps scenarios techs tilesets; do
-	ln -sf ../../data/glest_game/$f .;
+	ln -sf ../../data/game/$f .;
 done
 
 ln -sf ../../source/shared_lib .
-ln -sf ../../source/glest_game .
-ln -sf ../../source/glest_map_editor .
+ln -sf ../../source/game .
+ln -sf ../../source/map_editor .
+ln -sf ../../source/test .
 

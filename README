@@ -1,8 +1,28 @@
 Windows:
-Install Glest 3.1.2
-Extract windows install file into Glest 3.1.2 directory (it will overwrite one file, menu.xml)
+1. Install Glest 3.1.2
+2. Extract windows install file into Glest 3.1.2 directory, it will overwrite a
+   few files (menu.xml, english.lng, etc.)
 
 Linux:
-Install Glest 3.1.2
-Compile or download executable and copy into Glest 3.1.2 directory as "glestadv"
-Extract dependency files into Glest 3.1.2 directory
+1. Install Glest 3.1.2
+Download:
+2. Download tarball and extract into Glest 3.1.2 directory.
+-- or --
+Compile: 
+2. type "cd mk/linux"
+3. run "./autogen.sh"
+4. run "./configure" (use "configure --help" for options)
+5. run "jam" (if running on a multicore system, running "jam -jx" is
+   reccomended, where "x" is the number of cores plus one.
+6. Copy into Glest 3.1.2 directory by running something similar to the
+   following: "tar c glestadv ./data/core/menu/menu.xml ./data/core/menu/textures/textentry.tga ./data/lang/english.lng ./glestadv.ini | tar xC <glest directory>"
+
+
+Useful URLs:
+Glest - http://glest.org/
+Forums - http://glest.org/glest_board/
+GAE - http://glest.codemonger.org/
+GAE Bug Tracker - https://bugs.codemonger.org/
+Wiki - http://glest.wikia.com/
+SVN repository - https://glest.codemonger.org/svn/repos/gae
+Sourceforge - http://sourceforge.net/projects/glestae/

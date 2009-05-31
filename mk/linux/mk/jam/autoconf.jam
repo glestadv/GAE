@@ -3,30 +3,32 @@
 ##  Setup some stuff that makes usage of autoconf easier
 rule UseAutoconf
 {
-    # construct some clean targets
-    Clean distclean : config.log config.status config.cache aclocal.m4
-                      Jamconfig config.h out.txt log.txt stamp-h1 
-                      libtool ;
-    CleanDir distclean : autom4te.cache out ;
-    Depends distclean : clean ;
+    #distclean
+    Clean distclean          : config.log config.status config.cache aclocal.m4
+                               Jamconfig config.h out.txt log.txt stamp-h1
+                               libtool ;
+    CleanDir distclean       : autom4te.cache out ;
+    Depends distclean        : clean ;
                                                                                 
-    Clean maintainer-clean : configure aclocal.m4 config.h.in Jamconfig.in ;
+    #maintainer-clean
+    Clean maintainer-clean   : configure aclocal.m4 config.h.in Jamconfig.in
+                               data docs maps scenariostechs tilesets source ;
     Depends maintainer-clean : distclean ;
 
-	Clean very-clean : data docs maps scenarios techs tilesets shared_lib
-                       glest_game glest_map_editor glestadv.log
-                       glestadv-server.log glestadv-client.log ;
-    CleanDir very-clean : savegames screens incoming build ;
-    Depends very-clean : maintainer-clean ;
+    #very-clean
+    Clean very-clean         : glestadv.log gae-crash.txt glestadv-server.log
+                               glestadv-client.log ;
+    CleanDir very-clean      : savegames screens incoming build ;
+    Depends very-clean       : maintainer-clean ;
                                                                                 
-    Help clean : "Cleanup objectfiles and targets" ;
-    Help distclean : "Cleanup objectfiles and build configuration" ;
-    Help maintainer-clean :
-        "Cleanup all objectfiles, buildconfig and generated files." ;
-    Help very-clean :
-        "Cleanup all objectfiles, buildconfig, generated files, symlinks, log "
-        "files as well as savegame and incoming directories created from "
-        "program execution." ;
+    Help clean               : "Cleanup objectfiles and targets" ;
+    Help distclean           : "Cleanup objectfiles and build configuration" ;
+    Help maintainer-clean    : "Cleanup all objectfiles, buildconfig and "
+                               "generated files and symlinks." ;
+    Help very-clean          : "Cleanup all objectfiles, buildconfig, "
+                               "generated files, log files as well as savegame "
+                               "and incoming directories created from program "
+                               "execution." ;
 
     Package autogen.sh configure.ac configure config.h.in
             Jamrules Jamconfig.in ;
