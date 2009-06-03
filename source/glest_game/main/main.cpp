@@ -93,8 +93,8 @@ int glestMain(int argc, char** argv) {
 	ExceptionHandler exceptionHandler;
 
 	try {
-		Config &config = Config::getInstance();
-		if(config.getMiscCatchExceptions()) {
+		Config &config = Config::getInstance();  // install exception handler
+		if(config.getMiscCatchExceptions()) {    //   if option set in ini
 			exceptionHandler.install();
 		}
 		Program program(config, argc, argv);

@@ -177,7 +177,7 @@ public:
 	bool findPosForBuilding(const UnitType* building, const Vec2i &searchPos, Vec2i &pos);
 	bool findAbleUnit(int *unitIndex, CommandClass ability, bool idleOnly);
 	bool findAbleUnit(int *unitIndex, CommandClass ability, CommandClass currentCommand);
-	bool beingAttacked(Vec2i &pos, Field &field, int radius);
+	bool beingAttacked(Vec2i &pos, Zone &field, int radius);
 	void updateStatistics();
 	int getNeededUpgrades()		{return availableUpgrades.size();}
 	int getNeededBuildings() {
@@ -200,7 +200,7 @@ public:
 
     //actions
     void sendScoutPatrol();
-    void massiveAttack(const Vec2i &pos, Field field, bool ultraAttack= false);
+    void massiveAttack(const Vec2i &pos, Zone field, bool ultraAttack= false);
     void returnBase(int unitIndex);
     void harvest(int unitIndex);
 };

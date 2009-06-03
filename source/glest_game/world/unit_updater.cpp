@@ -63,7 +63,8 @@ void UnitUpdater::init(Game &game) {
 	this->world = game.getWorld();
 	this->map = world->getMap();
 	this->console = game.getConsole();
-	pathFinder.init(map);
+   pathFinder = PathFinder::getInstance ();
+	pathFinder->init(map);
 }
 
 // ==================== progress skills ====================
@@ -77,7 +78,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 	if (currSkill->getSound() != NULL) {
 		float soundStartTime = currSkill->getSoundStartTime();
 		if (soundStartTime >= unit->getLastAnimProgress() && soundStartTime < unit->getAnimProgress()) {
-			if (map->getSurfaceCell(Map::toSurfCoords(unit->getPos()))->isVisible(world->getThisTeamIndex())) {
+			if (map->getTile(Map::toTileCoords(unit->getPos()))->isVisible(world->getThisTeamIndex())) {
 				soundRenderer.playFx(currSkill->getSound(), unit->getCurrVector(), gameCamera->getPos());
 			}
 		}
@@ -128,12 +129,12 @@ void UnitUpdater::updateUnit(Unit *unit) {
 			unit->setCurrSkill(scStop);
 		}
 
-		//move unit in cells
+		//move unit in cells   // who updates nextPos, etc? and where??? pathfinder.
 		if (unit->getCurrSkill()->getClass() == scMove) {
 			world->moveUnitCells(unit);
 
 			//play water sound
-			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() && unit->getCurrField() == fLand) {
+			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() && unit->getCurrField() == fSurface) {
 				soundRenderer.playFx(CoreData::getInstance().getWaterSound());
 			}
 		}
@@ -181,10 +182,34 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 		}
 	}
 }
+/*
+void UnitUpdater::GetClear ( Unit *unit, const Vec2i &pos1, const Vec2i &pos2 )
+{
+   static const int DistanceToClear = 10; // +/- 5
 
-// ==================== updateStop ====================
-
-
+   Vec2i dir = pos1 - pos2;
+   Vec2f perp1 ( dir.y * -1, dir.x );
+   Vec2f perp2 ( dir.y, dir.x * -1);
+   perp1.normalize (); perp1 = perp1 * DistanceToClear;
+   perp2.normalize (); perp2 = perp2 * DistanceToClear;
+   Vec2i p1 ( (int)ceil (perp1.x), (int)ceil (perp1.y) );
+   Vec2i p2 ( (int)ceil (perp2.x), (int)ceil (perp2.y) );
+   Vec2i dest, midPoint;
+   midPoint.x = pos1.x > pos2.x ? pos2.x + ( pos1.x - pos2.x ) / 2
+                                : pos1.x + ( pos2.x - pos1.x ) / 2;
+   midPoint.y = pos1.y > pos2.y ? pos1.y + ( pos2.y - pos1.x ) / 2
+                                : pos2.y + ( pos1.y - pos2.y ) / 2;
+   if ( map->getNearestFreePos ( dest, unit, midPoint + p1, 1, 5 ) )
+      unit->giveCommand ( new Command(unit->getType()->getFirstCtOfClass(ccMove), CommandFlags(cpAuto), dest) );
+   else if ( map->getNearestFreePos ( dest, unit, midPoint + p1, 1, 5 ) )
+      unit->giveCommand ( new Command(unit->getType()->getFirstCtOfClass(ccMove), CommandFlags(cpAuto), dest) );
+   else
+   {
+      // look elsewhere ?
+   }
+   //
+}
+*/
 Command *UnitUpdater::doAutoAttack(Unit *unit) {
 	if(unit->getType()->hasCommandClass(ccAttack) || unit->getType()->hasCommandClass(ccAttackStopped)) {
 
@@ -296,6 +321,9 @@ Command *UnitUpdater::doAutoFlee(Unit *unit) {
 	return NULL;
 }
 
+
+// ==================== updateStop ====================
+
 void UnitUpdater::updateStop(Unit *unit) {
 	Command *command= unit->getCurrCommand();
 	const StopCommandType *sct = static_cast<const StopCommandType*>(command->getType());
@@ -346,7 +374,7 @@ void UnitUpdater::updateMove(Unit *unit) {
 		pos = command->getPos();
 	}
 
-	switch(pathFinder.findPath(unit, pos)) {
+	switch(pathFinder->findPath(unit, pos)) {
 	case PathFinder::tsOnTheWay:
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
@@ -358,7 +386,7 @@ void UnitUpdater::updateMove(Unit *unit) {
 		}
 		break;
 
-	default:
+	default: // tsArrived
 		unit->finishCommand();
 	}
 
@@ -425,7 +453,7 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		}
 
 		//if unit arrives destPos order has ended
-		switch(pathFinder.findPath(unit, pos)) {
+		switch(pathFinder->findPath(unit, pos)) {
 		case PathFinder::tsOnTheWay:
 			unit->setCurrSkill(act->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -493,7 +521,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 		Vec2i waypoint;
 
 		// find the nearest place for the builder
-		if(map->getNearestAdjacentFreePos(waypoint, unit, command->getPos(), fLand, buildingSize)) {
+		if(map->getNearestAdjacentFreePos(waypoint, unit, command->getPos(), mfWalkable, buildingSize)) {
 			if(waypoint != unit->getTargetPos()) {
 				unit->setTargetPos(waypoint);
 				unit->getPath()->clear();
@@ -504,7 +532,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 			return;
 		}
 
-		switch (pathFinder.findPath(unit, waypoint)) {
+		switch (pathFinder->findPath(unit, waypoint)) {
 		case PathFinder::tsOnTheWay:
 			unit->setCurrSkill(bct->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -527,7 +555,9 @@ void UnitUpdater::updateBuild(Unit *unit){
 		}
 
 		//if arrived destination
-		if(map->isFreeCells(command->getPos(), buildingSize, fLand)) {
+		if ( map->areFreeCells ( command->getPos(), buildingSize, mfWalkable) 
+      &&  ! ( command->getPos().x == 0 || command->getPos().y == 0 ) ) 
+      {
 			if(!verifySubfaction(unit, builtUnitType)) {
 				return;
 			}
@@ -569,6 +599,11 @@ void UnitUpdater::updateBuild(Unit *unit){
 					getServerInterface()->unitUpdate(unit);
 					getServerInterface()->updateFactions();
 				}
+            // HOOK IN HERE to update PathFinder::metrics
+            if ( !builtUnit->isMobile() )
+               pathFinder->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, mfWalkable );
+
+
 			}
 
 			//play start sound
@@ -581,7 +616,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 		} else {
 			// there are no free cells
 			vector<Unit *>occupants;
-			map->getOccupants(occupants, command->getPos(), buildingSize, fLand);
+			map->getOccupants(occupants, command->getPos(), buildingSize, fSurface);
 
 			// is construction already under way?
 			Unit *builtUnit = occupants.size() == 1 ? occupants[0] : NULL;
@@ -661,7 +696,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 		//if not working
 		if (!unit->getLoadCount()) {
 			//if not loaded go for resources
-			Resource *r = map->getSurfaceCell(Map::toSurfCoords(command->getPos()))->getResource();
+			Resource *r = map->getTile(Map::toTileCoords(command->getPos()))->getResource();
 			if (r && hct->canHarvest(r->getType())) {
 				//if can harvest dest. pos
 				if (unit->getPos().dist(command->getPos()) < harvestDistance &&
@@ -671,14 +706,35 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					unit->setTargetPos(targetPos);
 					unit->face(targetPos);
 					unit->setLoadCount(0);
-					unit->setLoadType(map->getSurfaceCell(Map::toSurfCoords(targetPos))->getResource()->getType());
+					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
 				} else {
 					//if not continue walking
-					switch (pathFinder.findPath(unit, command->getPos())) {
+					switch (pathFinder->findPath(unit, command->getPos())) {
 					case PathFinder::tsOnTheWay:
 						unit->setCurrSkill(hct->getMoveSkillType());
 						unit->face(unit->getNextPos());
 						break;
+               case PathFinder::tsBlocked:
+                  // couldn't get to the goods, look for other resources of the same type nearby.
+                  // If can't find any, we're probably standing somewhere between the store 
+                  // and the resources we couldn't get to (due to congestion most likely). 
+                  // Move out of the way (perpendicular to store.pos - resource.pos)
+                  /*
+                  if ( ! searchForResource(unit, hct)) 
+                  {
+                     if ( unit->getCommands ().size () <= 1 )
+                     {
+                        Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
+                        Vec2i storePos = store->getPos();
+                        storePos.x += store->getSize() / 2;
+                        storePos.y += store->getSize() / 2;
+                        GetClear ( unit, storePos, command->getPos() );
+                     }
+                     // else the unit has something else to do anyway...
+                     unit->finishCommand();
+      				}
+                  */
+                  break;
 					default:
 						break;
 					}
@@ -694,7 +750,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			//if loaded, return to store
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
-				switch (pathFinder.findPath(unit, store->getNearestOccupiedCell(unit->getPos()))) {
+				switch (pathFinder->findPath(unit, store->getNearestOccupiedCell(unit->getPos()))) {
 				case PathFinder::tsOnTheWay:
 					unit->setCurrSkill(hct->getMoveLoadedSkillType());
 					unit->face(unit->getNextPos());
@@ -730,7 +786,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 		}
 	} else {
 		//if working
-		SurfaceCell *sc = map->getSurfaceCell(Map::toSurfCoords(unit->getTargetPos()));
+		Tile *sc = map->getTile(Map::toTileCoords(unit->getTargetPos()));
 		Resource *r = sc->getResource();
 		if (r != NULL) {
 			//if there is a resource, continue working, until loaded
@@ -741,7 +797,10 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 
 				//if resource exausted, then delete it and stop
 				if (r->decAmount(1)) {
+               Vec2i rPos = r->getPos ();
 					sc->deleteResource();
+               // let the pathfinder know
+               pathFinder->updateMapMetrics ( rPos, 2, false, mfWalkable );
 					unit->setCurrSkill(hct->getStopLoadedSkillType());
 				}
 
@@ -825,7 +884,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			targetPos = command->getPos();
 		}
 
-		switch(pathFinder.findPath(unit, targetPos)) {
+		switch(pathFinder->findPath(unit, targetPos)) {
 		case PathFinder::tsArrived:
 			if(repaired && unit->getPos() != targetPos) {
 				// presume blocked
@@ -870,8 +929,9 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			unit->setCurrSkill(scStop);
 		} else {
 			//shiney
+         
 			if(rst->getSplashParticleSystemType()){
-				const SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(repaired->getCenteredPos()));
+				const Tile *sc= map->getTile(Map::toTileCoords(repaired->getCenteredPos()));
 				bool visible= sc->isVisible(world->getThisTeamIndex());
 
 				SplashParticleSystem *psSplash = rst->getSplashParticleSystemType()->createSplashParticleSystem();
@@ -879,7 +939,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				psSplash->setVisible(visible);
 				Renderer::getInstance().manageParticleSystem(psSplash, rsGame);
 			}
-
+         
 			bool wasBuilt = repaired->isBuilt();
 
 			assert(repaired->isAlive() && repaired->getHp() > 0);
@@ -1034,9 +1094,28 @@ void UnitUpdater::updateMorph(Unit *unit){
 
 	if(unit->getCurrSkill()->getClass() != scMorph){
 		//if not morphing, check space
-		if(map->isFreeCellsOrHasUnit(unit->getPos(), mct->getMorphUnit()->getSize(), unit->getCurrField(), unit)){
+
+      bool gotSpace = false;
+      Fields mfs = mct->getMorphUnit()->getFields ();
+      Field mf = (Field)0;
+      while ( mf != mfCount )
+      {
+         if ( mfs.get ( mf ) ) 
+         {
+		      if ( map->areFreeCellsOrHasUnit ( unit->getPos(), mct->getMorphUnit()->getSize(), mf, unit) )
+            {
+               gotSpace = true;
+               break;
+            }
+         }
+         mf = (Field)(mf + 1);
+      }
+
+		if ( gotSpace )
+      {
 			unit->setCurrSkill(mct->getMorphSkillType());
 			unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), false);
+         unit->setCurrField ( mf );
 		} else {
 			if(unit->getFactionIndex() == world->getThisFactionIndex()){
 				console->addStdMessage("InvalidPosition");
@@ -1047,10 +1126,16 @@ void UnitUpdater::updateMorph(Unit *unit){
 		unit->update2();
 		if(unit->getProgress2()>mct->getProduced()->getProductionTime()) {
 
+         bool mapUpdate = unit->isMobile () != mct->getMorphUnit()->isMobile ();
 			//finish the command
 			if(unit->morph(mct)){
 				unit->finishCommand();
-				if(gui->isSelected(unit)) {
+            if ( mapUpdate )
+            {
+               bool adding = !mct->getMorphUnit()->isMobile ();
+               pathFinder->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, mfWalkable );
+            }
+               if(gui->isSelected(unit)) {
 					gui->onSelectionChanged();
 				}
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
@@ -1149,7 +1234,7 @@ void UnitUpdater::updateEmanations(Unit *unit) {
 			i != unit->getGetEmanations().end(); i++) {
 		singleEmanation.resize(1);
 		singleEmanation[0] = *i;
-		applyEffects(unit, singleEmanation, unit->getPos(), fLand, (*i)->getRadius());
+		applyEffects(unit, singleEmanation, unit->getPos(), fSurface, (*i)->getRadius());
 		applyEffects(unit, singleEmanation, unit->getPos(), fAir, (*i)->getRadius());
 	}
 }
@@ -1162,7 +1247,7 @@ void UnitUpdater::hit(Unit *attacker) {
 	hit(attacker, static_cast<const AttackSkillType*>(attacker->getCurrSkill()), attacker->getTargetPos(), attacker->getTargetField());
 }
 
-void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked){
+void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Zone targetField, Unit *attacked){
 
 	//hit attack positions
 	if(ast->getSplash() && ast->getSplashRadius()) {
@@ -1275,8 +1360,8 @@ void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 	Vec3f endPos = unit->getTargetVec();
 
 	//make particle system
-	const SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(unit->getPos()));
-	const SurfaceCell *tsc= map->getSurfaceCell(Map::toSurfCoords(unit->getTargetPos()));
+	const Tile *sc= map->getTile(Map::toTileCoords(unit->getPos()));
+	const Tile *tsc= map->getTile(Map::toTileCoords(unit->getTargetPos()));
 	bool visible= sc->isVisible(world->getThisTeamIndex()) || tsc->isVisible(world->getThisTeamIndex());
 
 	//projectile
@@ -1342,7 +1427,7 @@ void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 
 // Apply effects to a specific location, with or without splash
 void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes,
-		const Vec2i &targetPos, Field targetField, int splashRadius) {
+		const Vec2i &targetPos, Zone targetField, int splashRadius) {
 
 	Unit *target;
 
@@ -1474,7 +1559,7 @@ bool UnitUpdater::searchForResource(Unit *unit, const HarvestCommandType *hct) {
 			world->getPosIteratorFactory().getInsideOutIterator(1, maxResSearchRadius));
 
 	while(pci.getNext(pos)) {
-		Resource *r = map->getSurfaceCell(Map::toSurfCoords(pos))->getResource();
+		Resource *r = map->getTile(Map::toTileCoords(pos))->getResource();
 		if (r && hct->canHarvest(r->getType())) {
 			unit->getCurrCommand()->setPos(pos);
 			return true;
@@ -1523,7 +1608,7 @@ bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr, con
 
 			//all fields
 			for(int k=0; k<fCount; k++){
-				Field f= static_cast<Field>(k);
+				Zone f= static_cast<Zone>(k);
 
 				//check field
 				if(!asts || asts->getField(f)) {
@@ -1604,7 +1689,7 @@ bool UnitUpdater::repairableOnRange(
 	while (pci.getNext(pos, distance)) {
 		//all fields
 		for (int f = 0; f < fCount; f++) {
-			Unit *candidate = map->getCell(pos)->getUnit((Field)f);
+			Unit *candidate = map->getCell(pos)->getUnit((Zone)f);
 	
 			//is it a repairable?
 			if (candidate

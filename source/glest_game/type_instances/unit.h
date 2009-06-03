@@ -103,7 +103,7 @@ private:
 
 private:
 	int blockCount;
-	vector<Vec2i> pathQueue;
+	list<Vec2i> pathQueue;
 
 public:
 	UnitPath() : blockCount(0), pathQueue() {}
@@ -113,12 +113,18 @@ public:
 	void clear()					{pathQueue.clear(); blockCount = 0;}
 	void incBlockCount()			{pathQueue.clear();	blockCount++;}
 	void push(const Vec2i &path)	{pathQueue.push_back(path);}
+   void push_front ( const Vec2i &cell ) { pathQueue.push_front ( cell ); }
 	Vec2i pop()						{
 		Vec2i p = pathQueue.front();
 		pathQueue.erase(pathQueue.begin());
 		return p;
 	}
-	
+   Vec2i peek () { return pathQueue.front (); }
+   int size () { return pathQueue.size (); }
+	bool AssertValidity ();
+   char* Output ();
+
+
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
 };
@@ -145,10 +151,10 @@ public:
 	typedef list<Command*> Commands;
 	typedef list<UnitObserver*> Observers;
 	typedef list<UnitReference> Pets;
-	static const float speedDivider;
-	static const int maxDeadCount;
-	static const float highlightTime;
-	static const int invalidId;
+	static const float speedDivider; //  ??? anim related ???
+	static const int maxDeadCount; // ???
+	static const float highlightTime; // fade out time of selection circle on target selection
+	static const int invalidId; // ??? 
 
 private:
 	int id;
@@ -159,14 +165,14 @@ private:
 	float progress;			//between 0 and 1
 	float lastAnimProgress;	//between 0 and 1
 	float animProgress;		//between 0 and 1
-	float highlight;
+	float highlight;  // opacity (0-1) to draw selection circle
 	int progress2;
 	int kills;
 
 	UnitReference targetRef;
 
 	Field currField;
-	Field targetField;
+	Zone targetField;
 	const Level *level;
 
 	Vec2i pos;				/** Current position */
@@ -198,7 +204,7 @@ private:
 	Effects effectsCreated;
 
 	/** All stat changes from upgrades and level ups */
-	EnhancementTypeBase totalUpgrade;
+	EnhancementTypeBase totalUpgrade; // wtf? we inherit from this ?!? hangover from Vanilla Glest?
 	Faction *faction;
 	ParticleSystem *fire;
 	Map *map;
@@ -242,7 +248,7 @@ public:
 	Vec2i getNextPos() const					{return nextPos;}
 	Vec2i getTargetPos() const					{return targetPos;}
 	Vec3f getTargetVec() const					{return targetVec;}
-	Field getTargetField() const				{return targetField;}
+	Zone getTargetField() const				{return targetField;}
 	Vec2i getMeetingPos() const					{return meetingPos;}
 	Faction *getFaction() const					{return faction;}
 	const ResourceType *getLoadType() const		{return loadType;}
@@ -257,7 +263,7 @@ public:
 	const Level *getNextLevel() const;
 	string getFullName() const;
 	const UnitPath *getPath() const				{return &unitPath;}
-	UnitPath *getPath()							{return &unitPath;}
+	UnitPath *getPath()							{return &unitPath;} //called from PathFinder & UnitUpdater
 	int getSpeed(const SkillType *st) const;
 	int getSpeed() const						{return getSpeed(currSkill);}
 	Unit *getMaster() const						{return master;}
@@ -267,6 +273,8 @@ public:
 	int getPetCount(const UnitType *unitType) const;
 	const Commands &getCommands() const			{return commands;}
 	const RepairCommandType *getRepairCommandType(const Unit *u) const;
+   bool isMobile () { return type->isMobile(); }
+   
 	int getDeadCount() const					{return deadCount;}
 	const int64 &getLastUpdated() const			{return lastUpdated;}
 	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}

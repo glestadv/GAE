@@ -156,7 +156,7 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 		}
 	}
 	else{
-		listBoxControls[1].setSelectedItemIndex(ctCpu);
+		//listBoxControls[1].setSelectedItemIndex(ctCpu);
 	}
 	updateControlers();
 	updateNetworkSlots();

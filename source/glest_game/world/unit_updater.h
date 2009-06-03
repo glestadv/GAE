@@ -17,6 +17,7 @@
 #include "particle.h"
 #include "random.h"
 #include "network_manager.h"
+//#include "earthquake.h"
 
 using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
@@ -39,6 +40,7 @@ class ParticleDamager;
 class UnitUpdater{
 private:
 	friend class ParticleDamager;
+   friend class World; // need's access to PathFinder::UpdateMapMetrics()
 
 private:
 	static const int maxResSearchRadius= 10;
@@ -58,13 +60,12 @@ private:
 	Map *map;
 	World *world;
 	Console *console;
-	PathFinder pathFinder;
 	Random random;
+   PathFinder *pathFinder;
 
 public:
     void init(Game &game);
-
-	//update skills
+    //update skills
     void updateUnit(Unit *unit);
 
     //update commands
@@ -86,12 +87,12 @@ public:
 private:
     //attack
     void hit(Unit *attacker);
-	void hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked = NULL);
+	void hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Zone targetField, Unit *attacked = NULL);
 	void damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance);
 	void startAttackSystems(Unit *unit, const AttackSkillType* ast);
 
 	//effects
-	void applyEffects(Unit *source, const EffectTypes &effectTypes, const Vec2i &targetPos, Field targetField, int splashRadius);
+	void applyEffects(Unit *source, const EffectTypes &effectTypes, const Vec2i &targetPos, Zone targetField, int splashRadius);
 	void applyEffects(Unit *source, const EffectTypes &effectTypes, Unit *dest, float distance);
 	void appyEffect(Unit *unit, Effect *effect);
 	void updateEmanations(Unit *unit);
@@ -101,6 +102,10 @@ private:
 	Command *doAutoRepair(Unit *unit);
 	Command *doAutoFlee(Unit *unit);
     bool searchForResource(Unit *unit, const HarvestCommandType *hct);
+
+    // If the unit is vaguely between pos1 and pos2, give move command to clear the area
+    //void GetClear ( Unit *unit, const Vec2i &pos1, const Vec2i &pos2 );
+
     bool attackerOnSight(const Unit *unit, Unit **enemyPtr);
     bool attackableOnSight(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
     bool attackableOnRange(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
@@ -162,7 +167,7 @@ public:
 	UnitUpdater *unitUpdater;
 	const GameCamera *gameCamera;
 	Vec2i targetPos;
-	Field targetField;
+	Zone targetField;
 	UnitReference targetRef;
 
 

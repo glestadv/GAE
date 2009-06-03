@@ -137,6 +137,13 @@ public:
 	float getHalfSize() const							{return halfSize;}
 	float getHalfHeight() const							{return halfHeight;}
 
+   bool isMobile () const
+   {
+      const SkillType *st = getFirstStOfClass(scMove);
+      if ( !st ) return false;
+      if ( st->getSpeed () <= 0 ) return false; //??
+      return true;
+   }
 	//cellmap
 	bool *cellMap;
 
@@ -154,7 +161,7 @@ public:
 	const CommandType *getFirstCtOfClass(CommandClass commandClass) const {return firstCommandTypeOfClass[commandClass];}
 	const SkillType *getFirstStOfClass(SkillClass skillClass) const {return firstSkillTypeOfClass[skillClass];}
     const HarvestCommandType *getFirstHarvestCommand(const ResourceType *resourceType) const;
-	const AttackCommandType *getFirstAttackCommand(Field field) const;
+	const AttackCommandType *getFirstAttackCommand(Zone field) const;
 	const RepairCommandType *getFirstRepairCommand(const UnitType *repaired) const;
 
 	//has

@@ -83,7 +83,7 @@ private:
 	vector<const AttackSkillType*> types;
 	vector<AttackSkillPreferences> associatedPrefs;
 	int maxRange;
-	Fields fields;
+	Zones fields;
 	AttackSkillPreferences allPrefs;
 
 public:
@@ -91,7 +91,7 @@ public:
 	int getMaxRange() const									{return maxRange;}
 // const vector<const AttackSkillType*> &getTypes() const	{return types;}
 	void getDesc(string &str, const Unit *unit) const;
-	bool getField(Field field) const						{return fields.get(field);}
+	bool getField(Zone field) const						{return fields.get(field);}
 	bool hasPreference(AttackSkillPreference pref) const	{return allPrefs.get(pref);}
 	const AttackSkillType *getPreferredAttack(const Unit *unit, const Unit *target, int rangeToTarget) const;
 	const AttackSkillType *getSkillForPref(AttackSkillPreference pref, int rangeToTarget) const {

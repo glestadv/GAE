@@ -53,6 +53,8 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	labelTextures3D.init(200, 280);
 	labelLights.init(200, 250);
 
+   labelMaxPathNodes.init ( 200, 560 );
+
 	//list boxes
 	listBoxVolumeFx.init(350, 530, 80);
 	listBoxVolumeAmbient.init(350, 500, 80);
@@ -66,6 +68,8 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	listBoxTextures3D.init(350, 280, 80);
 	listBoxLights.init(350, 250, 80);
 
+   listBoxMaxPathNodes.init ( 350, 560, 80 );
+
 	//set text
 	buttonReturn.setText(lang.get("Return"));
 	buttonAutoConfig.setText(lang.get("AutoConfig"));
@@ -78,6 +82,8 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	labelVolumeFx.setText(lang.get("FxVolume"));
 	labelVolumeAmbient.setText(lang.get("AmbientVolume"));
 	labelVolumeMusic.setText(lang.get("MusicVolume"));
+
+   labelMaxPathNodes.setText ( lang.get("MaxPathNodes") );
 
 	//sound
 
@@ -123,6 +129,10 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	listBoxVolumeFx.setSelectedItem(intToStr(config.getSoundVolumeFx()/5*5));
 	listBoxVolumeAmbient.setSelectedItem(intToStr(config.getSoundVolumeAmbient()/5*5));
 	listBoxVolumeMusic.setSelectedItem(intToStr(config.getSoundVolumeMusic()/5*5));
+
+   for ( int i=100; i <= 2000; i+=100 )
+      listBoxMaxPathNodes.pushBackItem ( intToStr ( i ) );
+   listBoxMaxPathNodes.setSelectedItem ( intToStr ( config.getPathFinderMaxNodes() ) );
 }
 
 void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
@@ -183,6 +193,11 @@ void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
 		config.setSoundVolumeMusic(atoi(listBoxVolumeMusic.getSelectedItem().c_str()));
 		saveConfig();
 	}
+   else if ( listBoxMaxPathNodes.mouseClick ( x,y ) )
+   {
+      config.setPathFinderMaxNodes ( strToInt ( this->listBoxMaxPathNodes.getSelectedItem () ) );
+      saveConfig ();
+   }
 
 
 }
@@ -200,6 +215,7 @@ void MenuStateOptions::mouseMove(int x, int y, const MouseState &ms){
 	listBoxShadows.mouseMove(x, y);
 	listBoxTextures3D.mouseMove(x, y);
 	listBoxLights.mouseMove(x, y);
+   listBoxMaxPathNodes.mouseMove (x, y);
 }
 
 void MenuStateOptions::render(){
@@ -216,6 +232,7 @@ void MenuStateOptions::render(){
 	renderer.renderListBox(&listBoxVolumeFx);
 	renderer.renderListBox(&listBoxVolumeAmbient);
 	renderer.renderListBox(&listBoxVolumeMusic);
+   renderer.renderListBox ( &listBoxMaxPathNodes );
 	renderer.renderLabel(&labelLang);
 	renderer.renderLabel(&labelShadows);
 	renderer.renderLabel(&labelTextures3D);
@@ -224,6 +241,7 @@ void MenuStateOptions::render(){
 	renderer.renderLabel(&labelVolumeFx);
 	renderer.renderLabel(&labelVolumeAmbient);
 	renderer.renderLabel(&labelVolumeMusic);
+   renderer.renderLabel( & labelMaxPathNodes );
 }
 
 void MenuStateOptions::saveConfig(){

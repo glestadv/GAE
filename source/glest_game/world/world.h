@@ -58,17 +58,21 @@ public:
 	static const int generationArea= 100;
 	static const float airHeight;
 	static const int indirectSightRange= 5;
-
+#ifdef PATHFINDER_TIMING
+   UnitUpdater unitUpdater;
+#else
 private:
-
-	Map map;
+   UnitUpdater unitUpdater;
+#endif
+private:
+   Map map;
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
 	Game &game;
 	const GameSettings &gs;
 
-	UnitUpdater unitUpdater;
+	
     WaterEffects waterEffects;
 	Minimap minimap;
     Stats stats;
@@ -147,10 +151,15 @@ public:
 	}
 	
 	bool toRenderUnit(const Unit *unit) const {
-		return map.getSurfaceCell(Map::toSurfCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
+		return map.getTile(Map::toTileCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
 			|| (unit->getCurrSkill()->getClass() == scAttack
-			&& map.getSurfaceCell(Map::toSurfCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
+			&& map.getTile(Map::toTileCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
 	}
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   void loadPFDebugTextures ();
+   Texture2D *PFDebugTextures[10];
+   int getNumPathPos () { return map.PathPositions.size (); }
+#endif
 
 private:
 	void initCells();

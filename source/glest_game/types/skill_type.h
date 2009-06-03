@@ -147,7 +147,7 @@ public:
 	//other
 	virtual string toString() const		{return Lang::getInstance().get(typeName);}
 	static string skillClassToStr(SkillClass skillClass);
-	static string fieldToStr(Field field);
+	static string fieldToStr(Zone field);
 
 	// get removing effects
 	int getEffectsRemoved() const			{return effectsRemoved;}
@@ -219,7 +219,7 @@ public:
 
 class TargetBasedSkillType: public SkillType {
 protected:
-	Fields fields;
+	Zones fields;
 
 public:
 	TargetBasedSkillType(SkillClass skillClass, const char* typeName);
@@ -228,8 +228,8 @@ public:
 	virtual void getDesc(string &str, const Unit *unit) const	{getDesc(str, unit, "Range");}
 	virtual void getDesc(string &str, const Unit *unit, const char* rangeDesc) const;
 
-	Fields getFields() const				{return fields;}
-	bool getField(Field field) const		{return fields.get(field);}
+	Zones getFields() const				{return fields;}
+	bool getField(Zone field) const		{return fields.get(field);}
 };
 
 // ===============================

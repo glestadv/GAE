@@ -151,7 +151,7 @@ private:
 
 private:
 	Vec2i attackPos;
-	Field field;
+	Zone field;
 	bool ultraAttack;
 
 public:

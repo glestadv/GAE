@@ -208,7 +208,7 @@ const ResourceType *Ai::getNeededResource() {
 	return neededResource;
 }
 
-bool Ai::beingAttacked(Vec2i &pos, Field &field, int radius) {
+bool Ai::beingAttacked(Vec2i &pos, Zone &field, int radius) {
 	int count = aiInterface->onSightUnitCount();
 	const Unit *unit;
 
@@ -216,7 +216,7 @@ bool Ai::beingAttacked(Vec2i &pos, Field &field, int radius) {
 		unit = aiInterface->getOnSightUnit(i);
 		if (!aiInterface->isAlly(unit) && unit->isAlive()) {
 			pos = unit->getPos();
-			field = unit->getCurrField();
+         field = unit->getCurrField() == mfAir ? fAir : fSurface;
 			if (pos.dist(aiInterface->getHomeLocation()) < radius) {
 				baseSeen = true;
 				aiInterface->printLog(2, "Being attacked at pos " + intToStr(pos.x) + "," + intToStr(pos.y) + "\n");
@@ -286,7 +286,7 @@ bool Ai::findPosForBuilding(const UnitType* building, const Vec2i &searchPos, Ve
 		for (int i = searchPos.x - currRadius; i < searchPos.x + currRadius; ++i) {
 			for (int j = searchPos.y - currRadius; j < searchPos.y + currRadius; ++j) {
 				outPos = Vec2i(i, j);
-				if (aiInterface->isFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, fLand)) {
+				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, mfWalkable)) {
 					return true;
 				}
 			}
@@ -481,7 +481,7 @@ void Ai::sendScoutPatrol(){
 	}
 }
 
-void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
+void Ai::massiveAttack(const Vec2i &pos, Zone field, bool ultraAttack){
 
     for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
         const Unit *unit= aiInterface->getMyUnit(i);

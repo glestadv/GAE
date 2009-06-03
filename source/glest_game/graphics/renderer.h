@@ -26,6 +26,7 @@
 #include "graphics_factory_gl.h"
 #include "font_manager.h"
 #include "camera.h"
+#include "map.h"
 
 namespace Glest{ namespace Game{
 
@@ -71,6 +72,9 @@ enum ResourceScope{
 // ===========================================================
 
 class Renderer{
+
+   friend class Game; // debug
+
 public:
 	//progress bar
 	static const int maxProgressBar;
@@ -201,7 +205,8 @@ public:
 	void manageParticleSystem(ParticleSystem *particleSystem, ResourceScope rs);
 	void updateParticleManager(ResourceScope rs);
 	void renderParticleManager(ResourceScope rs);
-	void swapBuffers();
+	void swapBuffers ();
+   //void flush () {glFlush();}
 
     //lights and camera
 	void setupLighting();
@@ -232,6 +237,9 @@ public:
 
     //complex rendering
     void renderSurface();
+#ifdef PATHFINDER_DEBUG_TEXTURES
+    void renderSurfacePFDebug ();
+#endif
 	void renderObjects();
 	void renderWater();
     void renderUnits();

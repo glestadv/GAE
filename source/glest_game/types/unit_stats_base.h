@@ -33,26 +33,58 @@ class FactionType;
 class EnhancementTypeBase;
 
 // ===============================
-// 	enum Field & class Fields
+// 	enum Field & class Zones
 // ===============================
 
-enum Field{
-     fLand,
-     fAir,
-//     fWater,
-//     fSubterranean,
+// Adding a new field ???
+// see instructions at the top of path_finder.h
 
-     fCount
+//enum Zone
+enum Zone // Zone of unit _occupance_
+{  // used for attack fields, actual occupance is indirectly 
+   // specified by the current Field
+   fSurface,
+   fAir,
+   //fSubSurface,
+   fCount
 };
 
-/** Fields of attack, travel or residence (air, land, etc.) */
-class Fields : public XmlBasedFlags<Field, fCount> {
+//enum SurfaceType
+enum SurfaceType // for each cell's surface zone,
+{  // is computed in Map::setCellTypes ()
+   ttLand, ttFordable, ttDeepWater, ttCount
+};
+
+//enum Field
+enum Field // Zones of Movement
+{
+   mfWalkable, // fSurface + ( ttLand || ttFordable )
+   mfAir,      // fAir
+   mfAnyWater, // fSurface + ( ttFordable || ttDeepWater )
+   mfDeepWater, // fSurface + ttDeepWater
+   mfAmphibious, // fSurface
+   mfCount
+};
+
+/** Fields of travel, and indirectly zone of occupance */
+class Fields : public XmlBasedFlags<Field, mfCount> {
+private:
+	static const char *names[mfCount];
+
+public:
+	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
+		XmlBasedFlags<Field, mfCount>::load(node, dir, tt, ft, "field", names);
+	}
+};
+
+/** Zones of attack (air, surface, etc.) */
+class Zones : public XmlBasedFlags<Zone, fCount> {
 private:
 	static const char *names[fCount];
 
 public:
 	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Field, fCount>::load(node, dir, tt, ft, "field", names);
+		XmlBasedFlags<Zone, fCount>::load(node, dir, tt, ft, "field", names);
 	}
 };
 
@@ -94,7 +126,7 @@ protected:
 	int epRegeneration;
 
 	/**
-	 * Fields of travel. For enhancment-type objects, there are fields that are
+	 * Zones of travel. For enhancment-type objects, there are fields that are
 	 * added.
 	 */
 	Fields fields;
@@ -237,8 +269,8 @@ protected:
 	//Note: the member variables fields, properties, armorType, bodyType, light,
 	//lightColor, size and height don't get multipliers.
 
-	/** Fields which are removed by this enhancement/degridation object. */
-	Fields antiFields;
+	/** Zones which are removed by this enhancement/degridation object. */
+	Zones antiFields;
 
 	/** Properties which are removed by this enhancement/degridation object. */
 	UnitProperties antiProperties;
@@ -264,8 +296,8 @@ public:
 	float getRepairSpeedMult() const	{return repairSpeedMult;}
 	float getHarvestSpeedMult() const	{return harvestSpeedMult;}
 
-	const Fields &getRemovedFields() const				{return antiFields;}
-	bool getRemovedField(Field field) const				{return antiFields.get(field);}
+	const Zones &getRemovedFields() const				{return antiFields;}
+	bool getRemovedField(Zone field) const				{return antiFields.get(field);}
 	const UnitProperties &getRemovedProperties() const	{return antiProperties;}
 	bool getRemovedProperty(Property property) const	{return antiProperties.get(property);}
 

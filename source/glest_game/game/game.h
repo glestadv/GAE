@@ -30,11 +30,33 @@
 
 using std::vector;
 
+//#define GAME_UPDATE_PROFILING
+//#define GAME_RENDER_PROFILING
+//#define LOG_FRAMERATE_DROPS
+
 namespace Glest { namespace Game {
 
 class GraphicMessageBox;
 class GraphicTextEntryBox;
 
+#ifdef GAME_UPDATE_PROFILING
+struct GameUpdateStats
+{
+   int updateLoops;
+   int64 worldUpdate, aiUpdate, netUpdate, particleUpdate;
+   void reset () { updateLoops = worldUpdate = aiUpdate = netUpdate = particleUpdate = 0;}
+   GameUpdateStats () {reset();}
+};
+#endif
+#ifdef GAME_RENDER_PROFILING
+struct GameRenderStats
+{
+   int64 r2d, r3d, swap;
+   void reset () { r2d = r3d = swap = 0;}
+   GameRenderStats () { reset (); }
+
+};
+#endif
 // =====================================================
 // 	class Game
 //
@@ -104,7 +126,15 @@ public:
     ~Game();
 	static Game *getInstance()				{return singleton;}
 
-    //get
+#ifdef GAME_UPDATE_PROFILING
+   static GameUpdateStats updateStats;
+   static bool reportUpdateStats;
+#endif
+#ifdef GAME_RENDER_PROFILING
+   static GameRenderStats renderStats;
+   static bool reportRenderStats;
+#endif
+   //get
 	GameSettings &getGameSettings()			{return gameSettings;}
 	const Keymap &getKeymap() const			{return keymap;}
 	const Input &getInput() const			{return input;}
@@ -147,7 +177,7 @@ public:
 
 private:
 	//render
-    void render3d();
+    void render3d ( bool log = false );
     void render2d();
 
 	//misc

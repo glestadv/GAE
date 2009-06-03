@@ -99,7 +99,7 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	uiLang = p->getString("UiLang", "english.lng");
 	uiPhotoMode = p->getBool("UiPhotoMode", false);
 	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
-
+   pathFinderMaxNodes = p->getInt ( "PathFinderMaxNodes", 400 );
 	delete p;
 }
 
@@ -175,7 +175,7 @@ void Config::save(const char *path) {
 	p->setString("UiLang", uiLang);
 	p->setBool("UiPhotoMode", uiPhotoMode);
 	p->setFloat("UiScrollSpeed", uiScrollSpeed);
-
+   p->setInt ( "PathFinderMaxNodes", pathFinderMaxNodes );
 	p->save(path);
 	delete p;
 }

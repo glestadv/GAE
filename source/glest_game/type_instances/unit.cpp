@@ -77,10 +77,46 @@ void UnitPath::read(const XmlNode *node) {
 	delete[] buf;
 	*/
 }
+char *UnitPath::Output ()
+{
+   static char buffer[4096];
+   if ( isEmpty () ) sprintf ( buffer, "Path is empty.\n" );
+   else
+   {
+      int offset = sprintf ( buffer, "Path has %d steps ->", size() );
+      list<Vec2i>::iterator i = pathQueue.begin ();
+      offset += sprintf ( buffer + offset, "(%d,%d)", i->x, i->y );
+      ++i;
+      for ( ; i != pathQueue.end(); ++i )
+      {
+         offset += sprintf ( buffer + offset, "->(%d,%d)", i->x, i->y );
+         if ( offset > 4000 ) break;
+      }
+      sprintf ( buffer + offset, "\n" );
+   }
+   return buffer;
+}
+bool UnitPath::AssertValidity ()
+{
+   const Vec2i *prev = NULL;
+	for ( list<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i ) 
+   {
+		if ( i == pathQueue.begin() ) 
+      {
+			prev = &*i;
+         continue;
+		}
+      if ( i->x != prev->x - 1 && i->x != prev->x + 1
+      &&   i->y != prev->y - 1 && i->y != prev->y + 1 )
+         return false;
+      prev = &*i;
+	}
+   return true;
+}
 
 void UnitPath::write(XmlNode *node) const {
 	stringstream s;
-	for (vector<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i) {
+	for (list<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i) {
 		if(i != pathQueue.begin()) {
 			s << ",";
 		}
@@ -130,11 +166,11 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(fAir)) currField = fAir;
-//	if(getType()->getField(fWater)) currField = fWater;
-//	if(getType()->getField(fSubterranean)) currField = fSubterranean;
-	if(type->getField(fLand)) currField = fLand;
-	targetField = fLand;		// init just to keep it pretty in memory
+	if(type->getField(mfAir)) currField = mfAir;
+	if(type->getField(mfAnyWater)) currField = mfAnyWater;
+	if(type->getField(mfDeepWater)) currField = mfDeepWater;
+	if(type->getField(mfWalkable)) currField = mfWalkable;
+	targetField = fSurface;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -359,7 +395,7 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 	if(!recentlyCommanded) {
 		progress2 = node->getChildIntValue("progress2");
 		currField = (Field)node->getChildIntValue("currField");
-		targetField = (Field)node->getChildIntValue("targetField");
+		targetField = (Zone)node->getChildIntValue("targetField");
 
 
 		pos = node->getChildVec2iValue("pos");		//map->putUnitCells() will set this, so we reload it later
@@ -892,12 +928,12 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
 	const CommandType *commandType = NULL;
-	SurfaceCell *sc = map->getSurfaceCell(Map::toSurfCoords(pos));
+	Tile *sc = map->getTile(Map::toTileCoords(pos));
 
 	if (targetUnit) {
 		//attack enemies
 		if (!isAlly(targetUnit)) {
-			commandType = type->getFirstAttackCommand(targetUnit->getCurrField());
+			commandType = type->getFirstAttackCommand(targetUnit->getCurrField()==mfAir?fAir:fSurface);
 
 		//repair allies
 		} else {
@@ -924,6 +960,7 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 }
 
 /** @return true when the current skill has completed a cycle */
+// updates current skill, return true if it is now complete
 bool Unit::update() {
 	assert(progress <= 1.f);
 
@@ -1314,7 +1351,7 @@ void Unit::incKills() {
 bool Unit::morph(const MorphCommandType *mct) {
 	const UnitType *morphUnitType = mct->getMorphUnit();
 
-	if (map->isFreeCellsOrHasUnit(pos, morphUnitType->getSize(), currField, this)) {
+	if (map->areFreeCellsOrHasUnit(pos, morphUnitType->getSize(), currField, this)) {
 		map->clearUnitCells(this, pos);
 		faction->deApplyStaticCosts(type);
 		type = morphUnitType;
@@ -1416,9 +1453,9 @@ void Unit::effectExpired(Effect *e){
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
-	if (currField == fAir) {
+	if (currField == mfAir) {
 		height += World::airHeight;
-	}
+   }
 
 	return height;
 }
@@ -1435,7 +1472,7 @@ void Unit::updateTarget(const Unit *target) {
 		targetPos = useNearestOccupiedCell
 				? target->getNearestOccupiedCell(pos)
 				: targetPos = target->getCenteredPos();
-		targetField = target->getCurrField();
+		targetField = target->getCurrField()==mfAir?fAir:fSurface;
 		targetVec = target->getCurrVector();
 		
 		if(faceTarget) {

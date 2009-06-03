@@ -21,6 +21,8 @@
 #include "components.h"
 #include "keymap.h"
 
+//#define PROGRAM_HANDLE_EVENTS_PROFILING
+
 /*
 using Shared::Graphics::Context;
 using Shared::Platform::WindowGl;
@@ -32,7 +34,14 @@ using Shared::Platform::Ip;
 using namespace Shared::Platform;
 
 namespace Glest { namespace Game {
-
+#ifdef PROGRAM_HANDLE_EVENTS_PROFILING
+struct ProgramHandleEventsStats
+{
+   int64 time;
+   void reset () {time = 0;}
+   ProgramHandleEventsStats () {reset();}
+};
+#endif
 class Program;
 class MainWindow;
 
@@ -50,11 +59,11 @@ protected:
 public:
 	ProgramState(Program &program) : program(program) {}
 	virtual ~ProgramState(){}
-
 	virtual void render() = 0;
 	virtual void update(){}
 	virtual void updateCamera(){}
 	virtual void tick(){}
+   virtual void debugTick () {}
 	virtual void init(){}
 	virtual void load(){}
 	virtual void end(){}
@@ -87,13 +96,13 @@ private:
 		int mouse2dAnim;
 		const exception *e;
 
-	public:
-		CrashProgramState(Program &program, const exception *e);
+	   public:
+		   CrashProgramState(Program &program, const exception *e);
 
-		virtual void render();
-		virtual void mouseDownLeft(int x, int y);
-		virtual void mouseMove(int x, int y, const MouseState &mouseState);
-		virtual void update();
+		   virtual void render();
+		   virtual void mouseDownLeft(int x, int y);
+		   virtual void mouseMove(int x, int y, const MouseState &mouseState);
+		   virtual void update();
 	};
 
 	static const int maxTimes;
@@ -103,6 +112,7 @@ private:
 	PerformanceTimer tickTimer;
 	PerformanceTimer updateTimer;
 	PerformanceTimer updateCameraTimer;
+   PerformanceTimer debugTimer;
 
     ProgramState *programState;
     ProgramState *preCrashState;	// program state prior to a crash
@@ -119,6 +129,9 @@ public:
 
 	Keymap &getKeymap() 			{return keymap;}
 
+#ifdef PROGRAM_HANDLE_EVENTS_PROFILING
+   ProgramHandleEventsStats stats;
+#endif
 	virtual void eventMouseDown(int x, int y, MouseButton mouseButton) {
 		const Metrics &metrics = Metrics::getInstance();
 		int vx = metrics.toVirtualX(x);

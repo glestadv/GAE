@@ -22,7 +22,7 @@
 #include "tech_tree.h"
 #include "faction_type.h"
 #include "map.h"
-
+//#include "earthquake.h"
 #include "leak_dumper.h"
 
 
@@ -226,12 +226,11 @@ string SkillType::skillClassToStr(SkillClass skillClass){
 	};
 }
 
-string SkillType::fieldToStr(Field field){
+string SkillType::fieldToStr(Zone field){
 	switch(field){
-	case fLand: return "Land";
+	case fSurface: return "Surface";
 	case fAir: return "Air";
-//	case fWater: return "Water";
-//	case fSubterranean: return "Subterranean";
+//	case fSubsurface: return "Subsurface";
 
 		default:
 		assert(false);
@@ -322,9 +321,9 @@ void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* ra
 	descRange(str, unit, rangeDesc);
 
 	//fields
-	str+= lang.get("Fields") + ": ";
+	str+= lang.get("Zones") + ": ";
 	for(int i= 0; i < fCount; i++){
-		Field field = static_cast<Field>(i);
+		Zone field = static_cast<Zone>(i);
 		if(fields.get(field)){
 			str+= fieldToStr(field) + " ";
 		}

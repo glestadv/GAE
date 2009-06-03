@@ -23,8 +23,11 @@
 #include "sound_renderer.h"
 #include "game_settings.h"
 #include "network_message.h"
+//#include "earthquake.h"
 
 #include "leak_dumper.h"
+
+#include "renderer.h" // can remove after loadPFDebugTextures () is removed
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;
@@ -90,7 +93,7 @@ void World::save(XmlNode *node) const {
 
 void World::init(const XmlNode *worldNode) {
 
-	unitUpdater.init(game);
+	unitUpdater.init(game); // is map data loaded ? ?
 
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
@@ -135,7 +138,9 @@ void World::init(const XmlNode *worldNode) {
 	if(isNetworkServer()) {
 		initNetworkServer();
 	}
-
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   loadPFDebugTextures ();
+#endif
 	alive = true;
 }
 
@@ -159,6 +164,28 @@ void World::loadTileset(Checksum &checksum) {
 	timeFlow.init(&tileset);
 }
 
+#ifdef PATHFINDER_DEBUG_TEXTURES
+#define _load_tex(i,f) \
+   PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
+   PFDebugTextures[i]->setMipmap(false);\
+   PFDebugTextures[i]->getPixmap()->load(f);
+
+void World::loadPFDebugTextures()
+{
+   char buff[128];
+   for ( int i=0; i < 4; ++i )
+   {
+      sprintf ( buff, "data/core/misc_textures/%02d.bmp", i );
+      _load_tex ( i, buff );
+   }
+   _load_tex ( 9, "data/core/misc_textures/path.bmp" );
+   _load_tex ( 8, "data/core/misc_textures/path-return.bmp" );
+   _load_tex ( 7, "data/core/misc_textures/path-both.bmp" );
+   _load_tex ( 6, "data/core/misc_textures/path-dest.bmp" );
+   _load_tex ( 5, "data/core/misc_textures/path-start.bmp" );
+}
+#undef _do_tex
+#endif
 //load tech
 void World::loadTech(Checksum &checksum) {
 	vector<string> names;
@@ -279,7 +306,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 	}
 	Vec2i lastPos = unit->getPos();
 	int lastHp = unit->getHp();
-	Field lastField = unit->getCurrField();
+//	Zone lastField = unit->getCurrField();
 	const SkillType *lastSkill = unit->getCurrSkill();
 	bool wasEvicted = false;
 	bool morphed = false;
@@ -540,7 +567,7 @@ void World::update() {
 			if(unit->getToBeUndertaken()){
 				unit->undertake();
 				delete unit;
-				j--;
+				j--; /// yikes!! surely there's a 'cleaner' way to do this
 			}
 		}
 	}
@@ -561,7 +588,7 @@ void World::update() {
 		minimap.updateFowTex(clamp(fogFactor, 0.f, 1.f));
 	}
 
-	//tick
+	//tick // why is this here, there is a tick timer ???
 	if (frameCount % Config::getInstance().getGsWorldUpdateFps() == 0) {
 		computeFow();
 		tick();
@@ -598,12 +625,15 @@ void World::doKill(Unit *killer, Unit *killed) {
 	if(killed->getCurrSkill()->getClass() != scDie) {
 	   killed->kill();
 	}
+   // HOOK
+   if ( !killed->isMobile() )
+      unitUpdater.pathFinder->updateMapMetrics ( killed->getPos (), killed->getSize (), false, mfWalkable );
 }
 
 void World::tick() {
-	if(!fogOfWarSmoothing){
-		minimap.updateFowTex(1.f);
-	}
+//	if(!fogOfWarSmoothing){
+//		minimap.updateFowTex(1.f);
+//	}
 	
 	//apply hack cleanup
 	doHackyCleanUp();
@@ -677,31 +707,38 @@ const UnitType* World::findUnitTypeById(const FactionType* factionType, int id){
 
 //looks for a place for a unit around a start lociacion, returns true if succeded
 bool World::placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spaciated){
-    bool freeSpace;
-	int size= unit->getType()->getSize();
-	Field currField= unit->getCurrField();
+   bool freeSpace;
+   int size= unit->getType()->getSize();
+   Field currField= unit->getCurrField();
 
-    for(int r=1; r<radius; r++){
-        for(int i=-r; i<r; ++i){
-            for(int j=-r; j<r; ++j){
-                Vec2i pos= Vec2i(i,j)+startLoc;
-				if(spaciated){
-                    const int spacing= 2;
-					freeSpace= map.isFreeCells(pos-Vec2i(spacing), size+spacing*2, currField);
-				}
-				else{
-                    freeSpace= map.isFreeCells(pos, size, currField);
-				}
-
-                if(freeSpace){
-                    unit->setPos(pos);
-					unit->setMeetingPos(pos - Vec2i(1));
-                    return true;
-                }
+   for(int r=1; r<radius; r++){
+      for(int i=-r; i<r; ++i){
+         for(int j=-r; j<r; ++j){
+            Vec2i pos= Vec2i(i,j)+startLoc;
+            if(spaciated){
+               const int spacing= 2;
+               freeSpace= map.areFreeCells(pos-Vec2i(spacing), size+spacing*2, currField);
             }
-        }
-    }
-    return false;
+            else{
+               freeSpace= map.areFreeCells(pos, size, currField);
+            }
+
+            if(freeSpace){
+               unit->setPos(pos);
+               unit->setMeetingPos(pos - Vec2i(1));
+
+               // HOOK IN HERE to update PathFinder::metrics
+               //if ( !unit->getMoveSpeed () ) // is there a better way to tell if this a "building" ?
+               //   unitUpdater.pathFinder.UpdateMapMetrics ( pos, size, true );
+               // metrics only initialised after starting units are placed...
+               // Does this function get called from anywhere else???
+
+               return true;
+            }
+         }
+      }
+   }
+   return false;
 }
 
 //clears a unit old position from map and places new position
@@ -725,13 +762,13 @@ void World::moveUnitCells(Unit *unit) {
 	*/
 	//}
 
-	assert(map.canMove(unit, unit->getPos(), newPos));
+//	assert(map.canMove(unit, unit->getPos(), newPos));
 	map.clearUnitCells(unit, unit->getPos());
 	map.putUnitCells(unit, newPos);
 
 	//water splash
-	if(tileset.getWaterEffects() && unit->getCurrField()==fLand){
-		if(map.getSubmerged(map.getCell(unit->getLastPos()))){
+	if(tileset.getWaterEffects() && unit->getCurrField()==fSurface){
+      if ( map.getCell(unit->getLastPos())->isSubmerged () ){
 			for(int i=0; i<3; ++i){
 				waterEffects.addWaterSplash(
 					Vec2f(unit->getLastPos().x+random.randRange(-0.4f, 0.4f), unit->getLastPos().y+random.randRange(-0.4f, 0.4f)));
@@ -765,14 +802,14 @@ Unit *World::nearestStore(const Vec2i &pos, int factionIndex, const ResourceType
 void World::initCells() {
 
 	Logger::getInstance().add("State cells", true);
-    for(int i=0; i<map.getSurfaceW(); ++i){
-        for(int j=0; j<map.getSurfaceH(); ++j){
+    for(int i=0; i<map.getTileW(); ++i){
+        for(int j=0; j<map.getTileH(); ++j){
 
-			SurfaceCell *sc= map.getSurfaceCell(i, j);
+			Tile *sc= map.getTile(i, j);
 
 			sc->setFowTexCoord(Vec2f(
-				i/(next2Power(map.getSurfaceW())-1.f),
-				j/(next2Power(map.getSurfaceH())-1.f)));
+				i/(next2Power(map.getTileW())-1.f),
+				j/(next2Power(map.getTileH())-1.f)));
 
 			for(int k=0; k<GameConstants::maxPlayers; k++){
 				sc->setExplored(k, false);
@@ -784,22 +821,22 @@ void World::initCells() {
 
 //init surface textures
 void World::initSplattedTextures(){
-	for(int i=0; i<map.getSurfaceW()-1; ++i){
-        for(int j=0; j<map.getSurfaceH()-1; ++j){
+	for(int i=0; i<map.getTileW()-1; ++i){
+        for(int j=0; j<map.getTileH()-1; ++j){
 			Vec2f coord;
 			const Texture2D *texture;
-			SurfaceCell *sc00= map.getSurfaceCell(i, j);
-			SurfaceCell *sc10= map.getSurfaceCell(i+1, j);
-			SurfaceCell *sc01= map.getSurfaceCell(i, j+1);
-			SurfaceCell *sc11= map.getSurfaceCell(i+1, j+1);
+			Tile *sc00= map.getTile(i, j);
+			Tile *sc10= map.getTile(i+1, j);
+			Tile *sc01= map.getTile(i, j+1);
+			Tile *sc11= map.getTile(i+1, j+1);
 			tileset.addSurfTex(
-				sc00->getSurfaceType(),
-				sc10->getSurfaceType(),
-				sc01->getSurfaceType(),
-				sc11->getSurfaceType(),
+				sc00->getTileType(),
+				sc10->getTileType(),
+				sc01->getTileType(),
+				sc11->getTileType(),
 				coord, texture);
 			sc00->setSurfTexCoord(coord);
-			sc00->setSurfaceTexture(texture);
+			sc00->setTileTexture(texture);
 		}
 	}
 }
@@ -861,11 +898,12 @@ void World::initUnits() {
 				if(unit->getType()->hasSkillClass(scBeBuilt)){
                     map.flatternTerrain(unit);
 				}
-            }
+         }
 		}
 	}
 	map.computeNormals();
 	map.computeInterpolatedHeights();
+   unitUpdater.pathFinder->initMapMetrics ();
 }
 
 void World::initMap(){
@@ -874,10 +912,10 @@ void World::initMap(){
 
 void World::initExplorationState(){
 	if(!fogOfWar){
-		for(int i=0; i<map.getSurfaceW(); ++i){
-			for(int j=0; j<map.getSurfaceH(); ++j){
-				map.getSurfaceCell(i, j)->setVisible(thisTeamIndex, true);
-				map.getSurfaceCell(i, j)->setExplored(thisTeamIndex, true);
+		for(int i=0; i<map.getTileW(); ++i){
+			for(int j=0; j<map.getTileH(); ++j){
+				map.getTile(i, j)->setVisible(thisTeamIndex, true);
+				map.getTile(i, j)->setExplored(thisTeamIndex, true);
 			}
 		}
 	}
@@ -888,7 +926,7 @@ void World::initExplorationState(){
 
 void World::exploreCells(const Vec2i &newPos, int sightRange, int teamIndex) {
 
-	Vec2i newSurfPos = Map::toSurfCoords(newPos);
+	Vec2i newSurfPos = Map::toTileCoords(newPos);
 	int surfSightRange = sightRange / Map::cellScale + 1;
 	int sweepRange = surfSightRange + indirectSightRange + 1;
 
@@ -898,9 +936,9 @@ void World::exploreCells(const Vec2i &newPos, int sightRange, int teamIndex) {
 			Vec2i currRelPos(x, y);
 			Vec2i currPos = newSurfPos + currRelPos;
 
-			if (map.isInsideSurface(currPos)) {
+			if (map.isInsideTile(currPos)) {
 				float dist = currRelPos.length();
-				SurfaceCell *sc = map.getSurfaceCell(currPos);
+				Tile *sc = map.getTile(currPos);
 
 				//explore
 				if (dist < sweepRange) {
@@ -925,9 +963,9 @@ void World::computeFow() {
 	//reset visibility in cells
 	for(int k = 0; k < GameConstants::maxPlayers; ++k){
 		if(fogOfWar || k != thisTeamIndex) {
-			for(int i = 0; i < map.getSurfaceW(); ++i) {
-				for(int j = 0; j < map.getSurfaceH(); ++j) {
-					map.getSurfaceCell(i, j)->setVisible(k, false);
+			for(int i = 0; i < map.getTileW(); ++i) {
+				for(int j = 0; j < map.getTileH(); ++j) {
+					map.getTile(i, j)->setVisible(k, false);
 				}
 			}
 		}
@@ -953,7 +991,7 @@ void World::computeFow() {
 			//fire
 			ParticleSystem *fire = unit->getFire();
 			if (fire) {
-				fire->setActive(map.getSurfaceCell(Map::toSurfCoords(unit->getPos()))->isVisible(thisTeamIndex));
+				fire->setActive(map.getTile(Map::toTileCoords(unit->getPos()))->isVisible(thisTeamIndex));
 			}
 		}
 	}
@@ -974,13 +1012,13 @@ void World::computeFow() {
 				//iterate through all cells
 				PosCircularIteratorSimple pci(map, unit->getPos(), sightRange + indirectSightRange);
 				while (pci.getNext(pos, distance)) {
-					Vec2i surfPos = Map::toSurfCoords(pos);
+					Vec2i surfPos = Map::toTileCoords(pos);
 
 					//compute max alpha
 					float maxAlpha;
-					if (surfPos.x > 1 && surfPos.y > 1 && surfPos.x < map.getSurfaceW() - 2 && surfPos.y < map.getSurfaceH() - 2) {
+					if (surfPos.x > 1 && surfPos.y > 1 && surfPos.x < map.getTileW() - 2 && surfPos.y < map.getTileH() - 2) {
 						maxAlpha = 1.f;
-					} else if (surfPos.x > 0 && surfPos.y > 0 && surfPos.x < map.getSurfaceW() - 1 && surfPos.y < map.getSurfaceH() - 1) {
+					} else if (surfPos.x > 0 && surfPos.y > 0 && surfPos.x < map.getTileW() - 1 && surfPos.y < map.getTileH() - 1) {
 						maxAlpha = 0.3f;
 					} else {
 						maxAlpha = 0.0f;

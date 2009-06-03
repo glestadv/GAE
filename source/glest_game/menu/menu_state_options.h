@@ -34,6 +34,7 @@ private:
 	GraphicLabel labelVolumeFx;
 	GraphicLabel labelVolumeAmbient;
 	GraphicLabel labelVolumeMusic;
+   GraphicLabel labelMaxPathNodes;
 	GraphicListBox listBoxLang;
 	GraphicListBox listBoxShadows;
 	GraphicListBox listBoxFilter;
@@ -43,6 +44,7 @@ private:
 	GraphicListBox listBoxVolumeAmbient;
 	GraphicListBox listBoxVolumeMusic;
 	GraphicListBox listBoxMusicSelect;
+   GraphicListBox listBoxMaxPathNodes;
 
 private:
 	MenuStateOptions(const MenuStateOptions &);

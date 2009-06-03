@@ -43,6 +43,14 @@ const char *controlTypeNames[ctCount] = {
 	"Network",
 	"Human"
 };
+#ifdef GAME_UPDATE_PROFILING
+GameUpdateStats Game::updateStats;
+bool Game::reportUpdateStats = false;
+#endif
+#ifdef GAME_RENDER_PROFILING
+GameRenderStats Game::renderStats;
+bool Game::reportRenderStats = false;
+#endif
 
 // =====================================================
 // 	class Game
@@ -130,7 +138,7 @@ Game::~Game() {
 void Game::load(){
 	Logger::getInstance().setState(Lang::getInstance().get("Loading"));
 
-	//tileset
+    //tileset
     world.loadTileset(checksum);
 
     //tech, load before map because of resources
@@ -138,6 +146,7 @@ void Game::load(){
 
     //map
     world.loadMap(checksum);
+
 }
 
 void Game::init() {
@@ -173,7 +182,7 @@ void Game::init() {
 		gui.load(savedGame->getChild("gui"));
 	}
 
-	//create IAs
+	//create IAs (what's an IA ? :)
 	aiInterfaces.resize(world.getFactionCount());
 	for(int i=0; i<world.getFactionCount(); ++i){
 		Faction *faction= world.getFaction(i);
@@ -264,20 +273,34 @@ void Game::update() {
 	// b) Updates depandant on speed
 
 	int updateLoops= getUpdateLoops();
-
+#ifdef GAME_UPDATE_PROFILING
+   updateStats.updateLoops += updateLoops;
+#endif
 	//update
 	for (int i = 0; i < updateLoops; ++i) {
 		Renderer &renderer = Renderer::getInstance();
 
+#ifdef GAME_UPDATE_PROFILING
+      int64 start = Chrono::getCurMillis();
+#endif
 		//AiInterface
 		for (int i = 0; i < world.getFactionCount(); ++i){
 			if (world.getFaction(i)->getCpuControl()) {
 				aiInterfaces[i]->update();
 			}
 		}
-
+#ifdef GAME_UPDATE_PROFILING
+      int64 end = Chrono::getCurMillis();
+      updateStats.aiUpdate += end - start;
+      start = Chrono::getCurMillis();
+#endif
 		//World
 		world.update();
+#ifdef GAME_UPDATE_PROFILING
+      end = Chrono::getCurMillis ();
+      updateStats.worldUpdate += end - start;
+      start = Chrono::getCurMillis ();
+#endif
 
 		try {
 			// Commander
@@ -286,7 +309,11 @@ void Game::update() {
 			displayError(e);
 			return;
 		}
-
+#ifdef GAME_UPDATE_PROFILING
+      end = Chrono::getCurMillis ();
+      updateStats.netUpdate += end - start;
+      start = Chrono::getCurMillis ();
+#endif
 		//Gui
 		gui.update();
 
@@ -295,6 +322,10 @@ void Game::update() {
 			weatherParticleSystem->setPos(gameCamera.getPos());
 		}
 		renderer.updateParticleManager(rsGame);
+#ifdef GAME_UPDATE_PROFILING
+      end = Chrono::getCurMillis ();
+      updateStats.particleUpdate += end - start;
+#endif
 	}
 
 	try {
@@ -339,19 +370,58 @@ void Game::updateCamera(){
 //render
 void Game::render(){
 	renderFps++;
-	render3d();
-	render2d();
+#ifdef GAME_RENDER_PROFILING
+   int64 start = Chrono::getCurMillis ();
+	//if ( lastRenderFps < 15 ) render3d( true );
+   /*else*/ render3d();
+   int64 end = Chrono::getCurMillis ();
+   renderStats.r3d += end - start;
+   start = Chrono::getCurMillis ();
+	//Renderer::getInstance().clearBuffers();
+   render2d();
+   end = Chrono::getCurMillis ();
+   renderStats.r2d += end - start;
+   start = Chrono::getCurMillis ();
 	Renderer::getInstance().swapBuffers();
+   end = Chrono::getCurMillis ();
+   renderStats.swap += end - start;
+#else
+   render3d();
+   render2d();
+   Renderer::getInstance().swapBuffers();
+#endif
 }
 
 // ==================== tick ====================
 
-void Game::tick(){
+void Game::tick()
+{
+#ifdef GAME_RENDER_PROFILING
+   static char rbuf[256];
+   sprintf ( rbuf, "Render: FPS:%d, 2d:%dms, 3d:%dms, swap():%dms", 
+      renderFps, (int)renderStats.r2d, (int)renderStats.r3d, (int)renderStats.swap );
+   Logger::getInstance ().add ( rbuf );   
+   renderStats.reset ();
+#endif
 	lastUpdateFps= updateFps;
 	lastRenderFps= renderFps;
 	updateFps= 0;
 	renderFps= 0;
-
+#ifdef PATHFINDER_TIMING
+   PathFinder::getInstance ()->resetCounters ();
+#endif
+#ifdef GAME_UPDATE_PROFILING
+   static char ubuf[256];
+   sprintf ( ubuf, "Update: %d, World:%dms, ai:%dms, net:%dms, particles:%dms", 
+      updateStats.updateLoops, (int)updateStats.worldUpdate, (int)updateStats.aiUpdate,
+      (int)updateStats.netUpdate, (int)updateStats.particleUpdate);
+   Logger::getInstance ().add ( ubuf );   
+   updateStats.reset ();
+#endif
+#ifdef LOG_FRAMERATE_DROPS
+   if ( lastRenderFps < 15 )
+      Logger::getInstance().add ( "Frame rate very low." );
+#endif
 	//Win/lose check
 	checkWinner();
 	gui.tick();
@@ -741,41 +811,94 @@ void Game::keyPress(char c) {
 
 // ==================== render ====================
 
-void Game::render3d(){
-
+void Game::render3d ( bool log )
+{
 	Renderer &renderer= Renderer::getInstance();
 
+   static char buf[1024], *ptr;
+   int64 start, stop;
+   ptr = buf;
+
+   if ( log ) start = Chrono::getCurMillis ();
 	//init
 	renderer.reset3d();
 	renderer.computeVisibleQuad();
 	renderer.loadGameCameraMatrix();
 	renderer.setupLighting();
 
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Init: %dms, ", (int)(stop-start) );
+      start = Chrono::getCurMillis ();
+   }
 	//shadow map
 	renderer.renderShadowsToTexture();
 
 	//clear buffers
 	renderer.clearBuffers();
 
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Shadows: %dms, ", (int)(stop-start) );
+      start = Chrono::getCurMillis ();
+   }
 	//surface
 	renderer.renderSurface();
 
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Surface: %dms, ", (int)(stop-start) );
+      start = Chrono::getCurMillis ();
+   }
 	//selection circles
 	renderer.renderSelectionEffects();
 
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Selection: %dms, ", (int)(stop-start) );
+      start = Chrono::getCurMillis ();
+   }
 	//units
 	renderer.renderUnits();
 
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Units: %dms, ", (int)(stop-start) );
+      start = Chrono::getCurMillis ();
+   }
 	//objects
 	renderer.renderObjects();
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Objects: %dms, ", (int)(stop-start) );
+      start = Chrono::getCurMillis ();
+   }
 
 	//water
 	renderer.renderWater();
 	renderer.renderWaterEffects();
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Water: %dms, ", (int)(stop-start) );
+      start = Chrono::getCurMillis ();
+   }
 
 	//particles
 	renderer.renderParticleManager(rsGame);
 
+   if ( log ) 
+   {
+      stop = Chrono::getCurMillis ();
+      ptr += sprintf ( ptr, "Particles: %dms, ", (int)(stop-start) );
+      Logger::getInstance().add ( buf );
+   }
 	//mouse 3d
 	renderer.renderMouse3d();
 }
@@ -810,7 +933,7 @@ void Game::render2d(){
 		renderer.renderTextEntryBox(saveBox);
 	}
 
-	renderer.renderChatManager(&chatManager);
+	//renderer.renderChatManager(&chatManager);
 
     //debug info
 	if(config.getMiscDebugMode()){
@@ -820,15 +943,21 @@ void Game::render2d(){
 			<< "PosObjWord: " << gui.getPosObjWorld().x << "," << gui.getPosObjWorld().y << endl
 			<< "Render FPS: " << lastRenderFps << endl
 			<< "Update FPS: " << lastUpdateFps << endl
-			<< "GameCamera pos: " << gameCamera.getPos().x
-				<< "," << gameCamera.getPos().y
-				<< "," << gameCamera.getPos().z << endl
+			//<< "GameCamera pos: " << gameCamera.getPos().x
+			//	<< "," << gameCamera.getPos().y
+			//	<< "," << gameCamera.getPos().z << endl
 			<< "Time: " << world.getTimeFlow()->getTime() << endl
 			<< "Triangle count: " << renderer.getTriangleCount() << endl
 			<< "Vertex count: " << renderer.getPointCount() << endl
 			<< "Frame count: " << world.getFrameCount() << endl;
-
-		//visible quad
+      //str << "ParticleManager[rsGame].size() : " << Renderer::getInstance().particleManager[rsGame]->particleSystems.size () << endl;
+#ifdef PATHFINDER_TIMING
+      //str << "aaStar() : " << PathFinder::getInstance ()->statNew.GetStats () << endl;
+      str << "aaStar() New Heuristic : " << PathFinder::getInstance ()->statNew.GetTotalStats () << endl;
+      //str << "aaStar() Old Heuristic : " << PathFinder::getInstance ()->statOld.GetTotalStats () << endl;
+#endif
+      /*
+      //visible quad
 		Quad2i visibleQuad= renderer.getVisibleQuad();
 		
 		str << "Visible quad: ";
@@ -837,7 +966,6 @@ void Game::render2d(){
 		}
 		str << endl;
 		str << "Visible quad area: " << visibleQuad.area() << endl;
-		
 		// resources
        for(int i=0; i<world.getFactionCount(); ++i){
             str << "Player " << i << " res: ";
@@ -846,7 +974,7 @@ void Game::render2d(){
             }
             str << endl;
         }
-
+      */
 		Renderer::getInstance().renderText(
 			str.str(), coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 10, 500, false);
@@ -860,13 +988,13 @@ void Game::render2d(){
 			gui.getDisplay()->getColor(), 750, 75, false);
 	}
 
-    //resource info
+   //resource info
 	if(!config.getUiPhotoMode()){
-        renderer.renderResourceStatus();
-		renderer.renderConsole(&console);
-    }
+      renderer.renderResourceStatus();
+      renderer.renderConsole(&console);
+   }
 
-    //2d mouse
+   //2d mouse
 	renderer.renderMouse2d(mouseX, mouseY, mouse2d, gui.isSelectingPos()? 1.f: 0.f);
 }
 

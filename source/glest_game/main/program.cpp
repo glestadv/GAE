@@ -98,7 +98,8 @@ Program::Program(Config &config, int argc, char** argv) :
 		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10),
 		programState(NULL),
 		preCrashState(NULL),
-		keymap(getInput(), "keymap.ini") {
+		keymap(getInput(), "keymap.ini"),
+      debugTimer ( 1.f, -1, 1 ) {
 
     //set video mode
 	setDisplaySettings();
@@ -154,7 +155,11 @@ Program::Program(Config &config, int argc, char** argv) :
 
 	// normal startup
 	} else {
-		setState(new Intro(*this));
+		MainMenu* mainMenu = new MainMenu(*this);
+		setState(mainMenu);
+		mainMenu->setState(new MenuStateNewGame( *this, mainMenu ));
+
+		//setState(new Intro(*this));
 	}
 
 	singleton = this;
@@ -177,30 +182,47 @@ Program::~Program() {
 	restoreDisplaySettings();
 }
 
-void Program::loop() {
-	while(handleEvent()) {
+void Program::loop() 
+{
+#ifdef PROGRAM_HANDLE_EVENTS_PROFILING
+   while ( true )
+   {
+      int64 start = Chrono::getCurMillis ();
+      bool goOn = handleEvent ();
+      int64 end = Chrono::getCurMillis ();
+      stats.time += end - start;
+      if ( !goOn ) break;
+#else
+	while(handleEvent()) 
+   {
+#endif
 		size_t sleepTime = renderTimer.timeToWait();
 	
 		sleepTime = sleepTime < updateCameraTimer.timeToWait() ? sleepTime : updateCameraTimer.timeToWait();
 		sleepTime = sleepTime < updateTimer.timeToWait() ? sleepTime : updateTimer.timeToWait();
 		sleepTime = sleepTime < tickTimer.timeToWait() ? sleepTime : tickTimer.timeToWait();
+      sleepTime = sleepTime < debugTimer.timeToWait () ? sleepTime : debugTimer.timeToWait ();
 	
-		if(sleepTime) {
+		if(sleepTime)
 			Shared::Platform::sleep(sleepTime);
-		}
 	
 		//render
-		while(renderTimer.isTime()){
-			programState->render();
-		}
+      int renders = 0;
+		while(renderTimer.isTime()) // should be 'if' ? 
+      {                           // wont consecutive calls to this stall horribly ??
+         programState->render();  // is this the culprit of the slow down?
+         renders ++;              // Timer has maxTimes = 1, so... no ?
+         if ( renders > 1 ) throw new runtime_error ( "Boo!" );
+      }
+                                          
 	
 		//update camera
-		while(updateCameraTimer.isTime()){
+		while(updateCameraTimer.isTime())
 			programState->updateCamera();
-		}
 	
 		//update world
-		while(updateTimer.isTime()){
+		while(updateTimer.isTime())
+      {
 			GraphicComponent::update();
 			programState->update();
 			SoundRenderer::getInstance().update();
@@ -208,9 +230,19 @@ void Program::loop() {
 		}
 	
 		//tick timer
-		while(tickTimer.isTime()){
+		while(tickTimer.isTime())
+      {
 			programState->tick();
-		}
+#ifdef PROGRAM_HANDLE_EVENTS_PROFILING
+         static char buf[256];
+         sprintf ( buf, "Handle Events took %dms", stats.time );
+         Logger::getInstance().add ( buf );
+         stats.reset();
+#endif
+      }
+
+      while ( debugTimer.isTime () ) // didn't realise the tick timer is essentially the 
+         programState->debugTick (); // same thing when I added this, can be removed some time...
 	}
 }
 
