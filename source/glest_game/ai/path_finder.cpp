@@ -580,7 +580,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       params.start = forward.back(); // is not necessarily targetPos, ie. if nodeLimit was hit
       
       aaStar ( params, backward, false );
-#ifdef PATHFINDER_DEBUG_TEXTURES
+/*#ifdef PATHFINDER_DEBUG_TEXTURES
       map->ClearPathPos ();
       map->PathStart = forward.front();
       map->PathDest = forward.back();
@@ -588,7 +588,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
          if ( *it != forward.front() && *it != forward.back() ) map->SetPathPos ( *it );
       for ( VListIt it = backward.begin(); it != backward.end(); ++it )
          if ( *it != backward.front() && *it != backward.back() ) map->SetPathPos ( *it, true );
-#endif
+#endif*/
 
       if ( backward.back() == forward.front() ) // aaStar() doesn't guarantee 'symmetrical success'
       {
@@ -603,7 +603,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    }
    else
       copyToPath ( forward, unit->getPath () );
-/*
+
 #ifdef PATHFINDER_DEBUG_TEXTURES
    map->ClearPathPos ();
    if ( cross.size() )
@@ -620,7 +620,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       for ( VListIt it = forward.begin(); it != forward.end(); ++it )
          map->SetPathPos ( *it );
    }
-#endif */
+#endif 
 	Vec2i pos= path->pop();//crash point
    if ( ! isLegalMove ( unit, pos ) )
    {
@@ -747,7 +747,7 @@ void PathFinder::copyToPath ( const list<Vec2i> pathList, UnitPath *path )
 
 void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, UnitPath *path )
 {
-   //list<Vec2i> endPath;
+   list<Vec2i> endPath;
    assert ( co.size () <= fwd.size () );
    if ( fwd.size () == co.size () ) 
    {  // paths never diverge
@@ -775,19 +775,26 @@ void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, lis
       while ( *coIt == *fIt )
       {
          path->push ( *coIt );
-         //endPath.push_back ( *coIt );
+#ifdef PATHFINDER_DEBUG_TEXTURES
+         endPath.push_back ( *coIt );
+#endif
          //assert ( *fIt == *bIt );
          if ( *fIt != *bIt )
             throw new runtime_error ( "PathFinder::MergePath() was passed a dodgey crossover list..." );
          coIt = co.erase ( coIt );
-         if ( coIt == co.end() ) return;//goto CopyToList; // done
+         if ( coIt == co.end() ) 
+#ifdef PATHFINDER_DEBUG_TEXTURES
+            goto CopyToList; // done
+#else
+            return;
+#endif
          ++fIt; ++bIt;
       }
       // coIt now points to the next common pos, 
       // fIt and bIt point to the positions where the path's have just diverged
       int fGap = 0, bGap = 0;
-      list<Vec2i>::const_iterator fStart = fIt;
-      list<Vec2i>::const_reverse_iterator bStart = bIt;
+      list<Vec2i>::const_iterator fStart = fIt; // save our spot
+      list<Vec2i>::const_reverse_iterator bStart = bIt; // ditto
       while ( *fIt != *coIt ) { fIt ++; fGap ++; }
       while ( *bIt != *coIt ) { bIt ++; bGap ++; }
       if ( bGap < fGap )
@@ -795,7 +802,9 @@ void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, lis
          // copy section from bwd
          while ( *bStart != *coIt )
          {
-            //endPath.push_back ( *bStart );
+#ifdef PATHFINDER_DEBUG_TEXTURES
+            endPath.push_back ( *bStart );
+#endif
             path->push ( *bStart );
             bStart ++;
          }
@@ -805,18 +814,22 @@ void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, lis
          // copy section from fwd
          while ( *fStart != *coIt )
          {
-            //endPath.push_back ( *fStart );
+#ifdef PATHFINDER_DEBUG_TEXTURES
+            endPath.push_back ( *fStart );
+#endif
             path->push ( *fStart );
             fStart ++;
          }
       }
       // now *fIt == *bIt == *coIt... skip duplicates, etc etc...
    }
-//CopyToList:
-//   for ( list<Vec2i>::iterator it = endPath.begin(); it != endPath.end(); ++it )
-//   {
-//      co.push_back ( *it );
-//   }
+#ifdef PATHFINDER_DEBUG_TEXTURES
+CopyToList:
+   for ( list<Vec2i>::iterator it = endPath.begin(); it != endPath.end(); ++it )
+   {
+      co.push_back ( *it );
+   }
+#endif
 }
 
 inline void PathFinder::getPassthroughDiagonals ( const Vec2i &s, const Vec2i &d, 
@@ -923,7 +936,8 @@ bool PathFinder::canPathOut ( const Vec2i &pos, const int radius, Field field  )
          {
             if ( ! (i||j) ) continue;
             Vec2i sucPos = maxNode->pos + Vec2i(i, j);
-            if ( ! map->getCell( sucPos )->isFree( field == mfAir ? fAir: fSurface ) )  // check isFree()
+            if ( ! map->isInside ( sucPos ) 
+            ||   ! map->getCell( sucPos )->isFree( field == mfAir ? fAir: fSurface ) )
                continue;
             //CanOccupy() will be cheapest, do it first...
             if ( canOccupy (sucPos, 1, field) && ! nPool.isListed (sucPos) )

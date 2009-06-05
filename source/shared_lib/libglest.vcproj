@@ -39,6 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/D PATHFINDER_DEBUG_TEXTURES"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
@@ -503,11 +504,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\socket.h"
+				RelativePath=".\include\platform\win32\socket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\socket.h"
+				RelativePath=".\include\platform\socket.h"
 				>
 			</File>
 			<File
@@ -559,11 +560,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\thread.h"
+				RelativePath=".\include\platform\thread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\thread.h"
+				RelativePath=".\include\platform\win32\thread.h"
 				>
 			</File>
 			<File
@@ -571,11 +572,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\types.h"
+				RelativePath=".\include\platform\win32\types.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\types.h"
+				RelativePath=".\include\platform\types.h"
 				>
 			</File>
 			<File
@@ -591,11 +592,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File
