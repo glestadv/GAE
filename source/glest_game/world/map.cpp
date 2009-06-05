@@ -513,7 +513,10 @@ bool Map::isFreeCell(const Vec2i &pos, Field field) const
    // leave ^^^ that
    // replace all the rest with lookups into the map metrics...
    //return PathFinder::getInstance()->canOccupy ( pos, 1, field );
+   // placeUnit() needs to use this... and the metrics aren't constructed at that point...
    if ( field == mfWalkable && getCell(pos)->isDeepSubmerged () )
+      return false;
+   if ( field == mfWalkable && ( pos.x > getW() - 4 || pos.y > getH() - 4 ) )
       return false;
    if ( field == mfAnyWater && !getCell(pos)->isSubmerged () )
       return false;

@@ -533,6 +533,15 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    int64 time = Chrono::getCurMicros ();
 #endif
 	const Vec2i targetPos = computeNearestFreePos ( unit, finalPos );
+
+   static char buffer[256];
+   int off = sprintf ( buffer, "Start Pos: %d,%d", unit->getPos().x, unit->getPos().y );
+   off += sprintf ( buffer + off, " finalPos: %d,%d", finalPos.x, finalPos.y );
+   off += sprintf ( buffer + off, " targetPos: %d,%d", targetPos.x, targetPos.y );
+   off += sprintf ( buffer + off, " metric at target: %d",
+      PathFinder::getInstance()->metrics[targetPos.y][targetPos.x].get ( mfWalkable ) );
+   Logger::getInstance ().add ( buffer );
+
    //if arrived (as close as we can get to it)
 	if ( targetPos == unit->getPos () )
    {
@@ -704,6 +713,7 @@ bool PathFinder::aaStar ( AAStarParams params, list<Vec2i> &path, bool ucStart )
 	AStarNode *lastNode= minNode;
    // if ( nodeLimtReached ) iterate over closed list, testing for a lower h node ...
 
+   if ( nodeLimitReached ) Logger::getInstance ().add ( "Node Limit Exceeded." );
 	// on the way
    // fill in next pointers
 	AStarNode *currNode = lastNode;

@@ -1344,7 +1344,6 @@ void Renderer::renderSurfacePFDebug ()
             glVertex3fv(bl.ptr());                        
          glEnd ();
          met = PathFinder::getInstance()->metrics[cy+1][cx+1].get ( mfWalkable );
-         met = PathFinder::getInstance()->metrics[cy][cx+1].get ( mfWalkable );
          onPath = false, onRetPath = false, isStart = false, isDest = false;
          cPos = Vec2i ( cx + 1, cy + 1 );
          if ( map->PathStart == cPos ) isStart = true;
