@@ -978,6 +978,7 @@ bool Unit::update() {
 	if(currSkill->getClass() == scMove) {
 
 		//if moving in diagonal move slower
+      // can't we just set this once in UnitUpdater::updateUnitCommand() ???
 		Vec2i dest = pos - lastPos;
 		if(abs(dest.x) + abs(dest.y) == 2) {
 			progressSpeed *= 0.71f;
@@ -1467,18 +1468,17 @@ void Unit::updateTarget(const Unit *target) {
 
 	//find a free pos in cellmap
 //	setTargetPos(unit->getCellPos());
-	
-	if(target) {
-		targetPos = useNearestOccupiedCell
-				? target->getNearestOccupiedCell(pos)
-				: targetPos = target->getCenteredPos();
-		targetField = target->getCurrField()==mfAir?fAir:fSurface;
-		targetVec = target->getCurrVector();
-		
-		if(faceTarget) {
-			face(target->getCenteredPos());
-		}
-	}
+	if ( target )
+   {
+	   targetPos = useNearestOccupiedCell
+			       ? target->getNearestOccupiedCell(pos)
+			       : target->getCenteredPos();
+	   targetField = target->getCurrField()==mfAir?fAir:fSurface;
+	   targetVec = target->getCurrVector();
+   	
+	   if(faceTarget)
+		   face(target->getCenteredPos());
+   }
 }
 
 void Unit::clearCommands() {

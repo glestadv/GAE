@@ -533,7 +533,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    int64 time = Chrono::getCurMicros ();
 #endif
 	const Vec2i targetPos = computeNearestFreePos ( unit, finalPos );
-
+/*
    static char buffer[256];
    int off = sprintf ( buffer, "Start Pos: %d,%d", unit->getPos().x, unit->getPos().y );
    off += sprintf ( buffer + off, " finalPos: %d,%d", finalPos.x, finalPos.y );
@@ -541,7 +541,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    off += sprintf ( buffer + off, " metric at target: %d",
       PathFinder::getInstance()->metrics[targetPos.y][targetPos.x].get ( mfWalkable ) );
    Logger::getInstance ().add ( buffer );
-
+*/
    //if arrived (as close as we can get to it)
 	if ( targetPos == unit->getPos () )
    {
@@ -570,9 +570,14 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       }
    }
    nPool.reset ();
-   if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );
-   else if ( dist < 10 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 4 );
-   else if ( dist < 15 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 2 );
+   // dynamic adjustment of nodeLimit, based on distance to target
+   if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
+   else if ( dist < 10 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 4 );// == 200 nodes
+   else if ( dist < 15 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 2 );// == 400 nodes
+   // else a fixed -100, so the backward run has more nodes,
+   // and if the forward run hits the nodeLimit, the backward run is
+   // more likely to succeed.
+   else nPool.setMaxNodes ( nPool.getMaxNodes () - 100 );// == 700 nodes
 
    list<Vec2i> forward, backward, cross;
    AAStarParams params (unit);
@@ -584,7 +589,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    }
    if ( dist > 15 )
    {
-      nPool.reset ();
+      nPool.reset ();// == 800 nodes
       params.dest = params.start;
       params.start = forward.back(); // is not necessarily targetPos, ie. if nodeLimit was hit
       
@@ -606,6 +611,8 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       }
       else
       {
+         // Shouldn't happen too often now the backward run is gauranteed at least
+         // 100 more nodes than the foward run, but is inevitable in some cases
          Logger::getInstance().add ( "MergePath() Failed." );
          copyToPath ( forward, unit->getPath () );
       }
@@ -713,7 +720,7 @@ bool PathFinder::aaStar ( AAStarParams params, list<Vec2i> &path, bool ucStart )
 	AStarNode *lastNode= minNode;
    // if ( nodeLimtReached ) iterate over closed list, testing for a lower h node ...
 
-   if ( nodeLimitReached ) Logger::getInstance ().add ( "Node Limit Exceeded." );
+   //if ( nodeLimitReached ) Logger::getInstance ().add ( "Node Limit Exceeded." );
 	// on the way
    // fill in next pointers
 	AStarNode *currNode = lastNode;
@@ -751,6 +758,7 @@ void PathFinder::getCrossOverPoints ( const list<Vec2i> &forward, const list<Vec
 void PathFinder::copyToPath ( const list<Vec2i> pathList, UnitPath *path )
 {
    list<Vec2i>::const_iterator it = pathList.begin();
+   // skip start pos, store rest
    for ( ++it; it != pathList.end(); ++it )
       path->push ( *it );
 }

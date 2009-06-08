@@ -21,6 +21,8 @@
 
 #include "leak_dumper.h"
 
+#include "world.h"
+
 using namespace std;
 using namespace Shared::Util;
 
@@ -108,9 +110,14 @@ void UpgradeManager::finishUpgrade(const UpgradeType *upgradeType){
 		}
 	}
 
-	if(it!=upgrades.end()){
+	if(it!=upgrades.end())
+   {
 		(*it)->setState(usUpgraded);
-	}
+
+      Faction *f = World::getCurrWorld ()->getFaction ( (*it)->getFactionIndex() );
+      f->applyStaticProduction ( (*it)->getType () );
+
+   }
 	else{
 		throw runtime_error("Error finishing upgrade, upgrade not found in upgrade manager");
 	}

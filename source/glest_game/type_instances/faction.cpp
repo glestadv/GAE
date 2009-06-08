@@ -353,8 +353,8 @@ void Faction::applyStaticCosts(const ProducibleType *p) {
 }
 
 //apply static production (when a mana source is done)
-void Faction::applyStaticProduction(const ProducibleType *p) {
-
+void Faction::applyStaticProduction(const ProducibleType *p) 
+{
 	//decrease static resources
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();

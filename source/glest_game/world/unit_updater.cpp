@@ -129,7 +129,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 			unit->setCurrSkill(scStop);
 		}
 
-		//move unit in cells   // who updates nextPos, etc? and where??? pathfinder.
+		//move unit in cells
 		if (unit->getCurrSkill()->getClass() == scMove) {
 			world->moveUnitCells(unit);
 
