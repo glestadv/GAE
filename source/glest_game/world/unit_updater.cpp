@@ -1135,7 +1135,7 @@ void UnitUpdater::updateMorph(Unit *unit){
                bool adding = !mct->getMorphUnit()->isMobile ();
                pathFinder->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, mfWalkable );
             }
-               if(gui->isSelected(unit)) {
+            if(gui->isSelected(unit)) {
 					gui->onSelectionChanged();
 				}
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
@@ -1226,6 +1226,27 @@ void UnitUpdater::updatePatrol(Unit *unit){
 	}
 }
 
+void UnitUpdater::updateDummy ( Unit *unit )
+{
+	Command *command= unit->getCurrCommand();
+	const DummyCommandType *dct= static_cast<const DummyCommandType*>(command->getType());
+
+   if ( unit->getCurrSkill ()->getClass () != scDummy ) 
+      unit->setCurrSkill ( dct->getDummySkillType () );
+	else 
+   {
+      const DummySkillType *dst = static_cast<const DummySkillType*>(unit->getCurrSkill ());
+      unit->update2 ();
+      if ( unit->getProgress2() >= dst->getTime () )
+      {
+         unit->finishCommand ();
+      }
+   }
+
+   //
+   // 
+   //
+}
 
 void UnitUpdater::updateEmanations(Unit *unit) {
 	// This is a little hokey, but probably the best way to reduce redundant code

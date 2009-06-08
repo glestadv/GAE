@@ -58,6 +58,7 @@ enum SkillClass{
 	scFallDown,
 	scGetUp,
 	scWaitForServer,
+   scDummy,
 
 	scCount
 };
@@ -68,7 +69,7 @@ enum SkillClass{
 ///	A basic action that an unit can perform
 // =====================================================
 
-class SkillType {
+class SkillType : ProducibleType {
 public:
 	typedef vector<Model *> Animations;
 	enum AnimationsStyle {
@@ -435,6 +436,21 @@ public:
 	WaitForServerSkillType(const SkillType *model);
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft) {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
+};
+
+class DummySkillType : public SkillType
+{
+private:
+   int time;
+public:
+   DummySkillType () : SkillType ( scDummy, "Dummy" ) {}
+   virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft) 
+   {
+      SkillType::load ( sn, dir, tt, ft );
+      time = sn->getChildIntValue("time");
+   }
+	virtual void getDesc(string &str, const Unit *unit) const {}
+   int getTime () const { return time; }
 };
 
 // ===============================

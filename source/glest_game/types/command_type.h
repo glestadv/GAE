@@ -48,6 +48,7 @@ enum CommandClass {
 	ccGuard,
 	ccPatrol,
 	ccSetMeetingPoint,
+   ccDummy,
 
 	ccCount,
 	ccNull
@@ -452,6 +453,19 @@ public:
 			CommandType("SetMeetingPoint", ccSetMeetingPoint, cTwo) {}
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
+};
+
+class DummyCommandType : public CommandType
+{
+private:
+	const DummySkillType* dummySkillType;
+public:
+   DummyCommandType () : CommandType ( "Dummy", ccDummy, cOne ) {}
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void getDesc(string &str, const Unit *unit) const;
+   virtual string getReqDesc () const;
+
+	const DummySkillType *getDummySkillType() const	{return dummySkillType;}
 };
 
 // ===============================

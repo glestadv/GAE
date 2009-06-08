@@ -60,8 +60,9 @@ SkillType::~SkillType(){
 	deleteValues(sounds.getSounds().begin(), sounds.getSounds().end());
 }
 
-void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft){
-
+void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft)
+{
+   ProducibleType::load ( sn, dir, tt, ft );
 	name = sn->getChildStringValue("name");
 	epCost = sn->getOptionalIntValue("ep-cost");
 	speed = sn->getChildIntValue("speed");
@@ -549,6 +550,8 @@ WaitForServerSkillType::WaitForServerSkillType(const SkillType *model) :
     animations.push_back((Model *)model->getAnimation());
 }
 
+
+
 // =====================================================
 // 	class SkillTypeFactory
 // =====================================================
@@ -568,6 +571,7 @@ SkillTypeFactory::SkillTypeFactory(){
 	registerClass<CastSpellSkillType>("cast_spell");
 	registerClass<FallDownSkillType>("fall_down");
 	registerClass<GetUpSkillType>("get_up");
+   registerClass<DummySkillType>("dummy");
 }
 
 SkillTypeFactory &SkillTypeFactory::getInstance(){

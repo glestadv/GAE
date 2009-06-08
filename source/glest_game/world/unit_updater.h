@@ -83,6 +83,7 @@ public:
 	void updateCastSpell(Unit *unit);
 	void updateGuard(Unit *unit);
 	void updatePatrol(Unit *unit);
+   void updateDummy ( Unit *unit );
 
 private:
     //attack

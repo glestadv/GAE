@@ -202,6 +202,10 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			unitUpdater->updatePatrol(unit);
 			break;
 
+      case ccDummy:
+         unitUpdater->updateDummy (unit);
+         break;
+
 		case ccSetMeetingPoint:
 		case ccCount:
 		case ccNull:
@@ -609,6 +613,22 @@ void GuardCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	maxDistance = n->getChild("max-distance")->getAttribute("value")->getIntValue();
 }
 
+void DummyCommandType::load (const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft)
+{
+	CommandType::load(n, dir, tt, ft);
+   //skill...
+	string skillName= n->getChild("dummy-skill")->getAttribute("value")->getRestrictedValue();
+	dummySkillType= static_cast<const DummySkillType*>(unitType->getSkillType(skillName, scDummy));
+}
+void DummyCommandType::getDesc(string &str, const Unit *unit) const
+{
+	dummySkillType->getDesc(str, unit);
+}
+
+string DummyCommandType::getReqDesc() const{
+	return RequirableType::getReqDesc();
+}
+
 // =====================================================
 // 	class CommandFactory
 // =====================================================
@@ -628,6 +648,7 @@ CommandTypeFactory::CommandTypeFactory(){
 	registerClass<GuardCommandType>("guard");
 	registerClass<PatrolCommandType>("patrol");
 	registerClass<SetMeetingPointCommandType>("set-meeting-point");
+   registerClass<DummyCommandType>("dummy");
 }
 
 CommandTypeFactory &CommandTypeFactory::getInstance(){
