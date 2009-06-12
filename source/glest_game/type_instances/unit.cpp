@@ -796,12 +796,14 @@ Command *Unit::popCommand() {
 //pop front (used when order is done)
 CommandResult Unit::finishCommand() {
 
+   /*
    if ( commands.front() && commands.front()->getType()->getClass() == ccDummy )
       Logger::getInstance().add ( "Dummy command finsihed." );
    if ( commands.front() && commands.front()->getType()->getClass() == ccMorph )
       Logger::getInstance().add ( "Morph command finsihed." );
    if ( commands.front() && commands.front()->getType()->getClass() == ccMove )
       Logger::getInstance().add ( "Move command finsihed." );
+   */
 	//is empty?
 	if(commands.empty()) {
 		return crFailUndefined;

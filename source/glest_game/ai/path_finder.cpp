@@ -993,44 +993,72 @@ PathFinder::AAStarParams::AAStarParams ( Unit *u )
 TreeStats::TreeStats ()
 {
    numTreesBuilt = avgSearchesPerTree = 0;
-   avgSearchTime = avgWorstSearchTime = worstEver = 0;
+   avgSearchTime = avgWorstSearchTime = worstSearchEver = 0;
 
    searchesThisTree = 0;
-   avgSearchTimeThisTree = worstSearchThisTree = 0;
+   avgSearchThisTree = worstSearchThisTree = 0;
+
+   avgInsertsPerTree = avgInsertTime = avgWorstInsertTime = worstInsertEver = 0;
+   insertsThisTree = 0;
+   avgInsertThisTree = worstInsertThisTree = 0;
 
 }
 void TreeStats::reset () 
 {
-   avgSearchTime = ( avgSearchTime * numTreesBuilt + avgSearchTimeThisTree ) / ( numTreesBuilt + 1 );
+   avgSearchTime = ( avgSearchTime * numTreesBuilt + avgSearchThisTree ) / ( numTreesBuilt + 1 );
    avgWorstSearchTime = ( avgWorstSearchTime * numTreesBuilt + worstSearchThisTree ) / ( numTreesBuilt + 1 );
    avgSearchesPerTree = ( avgSearchesPerTree * numTreesBuilt + searchesThisTree ) / ( numTreesBuilt + 1 );
-   if ( worstSearchThisTree > worstEver ) 
-      worstEver = worstSearchThisTree;
+   if ( worstSearchThisTree > worstSearchEver ) 
+      worstSearchEver = worstSearchThisTree;
+
+   avgInsertTime = ( avgInsertTime * numTreesBuilt + avgInsertThisTree ) / ( numTreesBuilt + 1 );
+   avgWorstInsertTime = ( avgWorstInsertTime * numTreesBuilt + avgInsertThisTree ) / ( numTreesBuilt + 1 );
+   avgInsertsPerTree = ( avgInsertsPerTree * numTreesBuilt + insertsThisTree ) / ( numTreesBuilt + 1 );
+   if ( worstInsertThisTree > worstInsertEver )
+      worstInsertEver = worstInsertThisTree;
+
 }
 void TreeStats::newTree () 
 { 
-   if ( searchesThisTree ) 
+   if ( searchesThisTree || insertsThisTree ) 
+   {
       reset(); 
-   numTreesBuilt++; 
+      numTreesBuilt++; 
+   }
    searchesThisTree = 0;
-   avgSearchTimeThisTree = 0; 
+   avgSearchThisTree = 0; 
    worstSearchThisTree = 0;
+   insertsThisTree = 0;
+   avgInsertThisTree = 0;
+   worstInsertThisTree = 0;
 }
 
 void TreeStats::addSearch ( int64 time )
 {
    if ( searchesThisTree )
-      avgSearchTimeThisTree = avgSearchTimeThisTree * searchesThisTree + time;
+      avgSearchThisTree = avgSearchThisTree * searchesThisTree + time;
    else
-      avgSearchTimeThisTree = time;
+      avgSearchThisTree = time;
    searchesThisTree ++;
-   avgSearchTimeThisTree /= searchesThisTree;
+   avgSearchThisTree /= searchesThisTree;
    if ( time > worstSearchThisTree ) worstSearchThisTree = time;
+}
+void TreeStats::addInsert ( int64 time )
+{
+   if ( insertsThisTree )
+      avgInsertThisTree = avgInsertThisTree * insertsThisTree + time;
+   else
+      avgInsertThisTree = time;
+   insertsThisTree ++;
+   avgInsertThisTree /= insertsThisTree;
+   if ( time > worstInsertThisTree ) worstInsertThisTree = time;
 }
 char * TreeStats::output ( char *prefix )
 {
-   sprintf ( buffer, "%s Avg number of searches on each tree: %d. Avg search time: %d. Avg Worst: %d. Absolute Worst: %d", 
-      prefix, avgSearchesPerTree, (int)avgSearchTime, (int)avgWorstSearchTime, (int)worstEver );
+   int off = sprintf ( buffer, "%s Avg number of searches on each tree: %d. Avg search time: %d. Avg Worst: %d. Absolute Worst: %d\n", 
+      prefix, avgSearchesPerTree, (int)avgSearchTime, (int)avgWorstSearchTime, (int)worstSearchEver );
+   sprintf ( buffer + off, "%s Avg number of inserts on each tree: %d. Avg insert time: %d. Avg Worst: %d. Absolute Worst: %d", 
+      prefix, avgInsertsPerTree, (int)avgInsertTime, (int)avgWorstInsertTime, (int)worstInsertEver );
    return buffer;
 }
 #endif
@@ -1102,9 +1130,11 @@ void PathFinder::NodePool::setMaxNodes ( const int max )
 void PathFinder::NodePool::addToTree ( const Vec2i &pos )
 {
 #ifdef PATHFINDER_TREE_TIMING
+   int64 start = Chrono::getCurTicks ();
    if ( useSet ) 
    {
       posSet.insert ( pos );
+      setStats.addInsert ( Chrono::getCurTicks () - start );
       return;
    }
 #endif
@@ -1152,12 +1182,15 @@ void PathFinder::NodePool::addToTree ( const Vec2i &pos )
       }
    }
    numPos++;
+#ifdef PATHFINDER_TREE_TIMING
+   rbStats.addInsert ( Chrono::getCurTicks () - start );
+#endif
 }
+
 #define DAD(x) (x->parent)
 #define GRANDPA(x) (x->parent->parent)
 #define UNCLE(x) (x->parent->parent?x->parent->parent->left==x->parent\
                   ?x->parent->parent->right:x->parent->parent->left:NULL)
-
 //
 // Restore Red-Black properties on PosTree, with 'node' having just been inserted
 //
@@ -1234,7 +1267,7 @@ bool PathFinder::NodePool::assertTreeValidity ()
       // T5 [Visit P, P = P->right, goto T2]
       if ( ptr->colour == Red && ( ptr->left->colour == Red || ptr->right->colour == Red ) )
       {
-         Logger::getInstance ().add ( "RedBlack Tree Invalid, Red-Red Property violated." );
+         Logger::getInstance ().add ( "Red-Black Tree Invalid, Red-Black Property violated." );
          dumpTree ();
          return false;
       }

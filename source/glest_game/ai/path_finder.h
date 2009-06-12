@@ -119,20 +119,31 @@ struct PathFinderStats
 struct TreeStats
 {
    int numTreesBuilt;
+   
    int avgSearchesPerTree;
    int64 avgSearchTime;
    int64 avgWorstSearchTime;
-   int64 worstEver;
+   int64 worstSearchEver;
 
    int searchesThisTree;
-   int64 avgSearchTimeThisTree;
+   int64 avgSearchThisTree;
    int64 worstSearchThisTree;
 
+   int avgInsertsPerTree;
+   int64 avgInsertTime;
+   int64 avgWorstInsertTime;
+   int64 worstInsertEver;
+
+   int insertsThisTree;
+   int64 avgInsertThisTree;
+   int64 worstInsertThisTree;
+   
    char buffer[512];
    TreeStats ();
    void reset ();
    void newTree ();
    void addSearch ( int64 time );
+   void addInsert ( int64 time );
    char * output ( char *prefix = "");
 };
 #endif
@@ -173,7 +184,7 @@ public:
    char* treeStats ()
    {
       static char buffer[2048];
-      sprintf ( buffer, "Tree Look-Up Stats...\n%s\n%s", nPool.getStats ( true ), nPool.getStats ( false ) );
+      sprintf ( buffer, "Tree Look-Up & Insert Stats...\n%s\n%s", nPool.getStats ( true ), nPool.getStats ( false ) );
       return buffer;
    }
 #endif
