@@ -69,7 +69,7 @@ enum SkillClass{
 ///	A basic action that an unit can perform
 // =====================================================
 
-class SkillType : ProducibleType {
+class SkillType : public ProducibleType {
 public:
 	typedef vector<Model *> Animations;
 	enum AnimationsStyle {
@@ -441,16 +441,16 @@ public:
 class DummySkillType : public SkillType
 {
 private:
-   int time;
+   int repeat;
 public:
    DummySkillType () : SkillType ( scDummy, "Dummy" ) {}
    virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft) 
    {
       SkillType::load ( sn, dir, tt, ft );
-      time = sn->getChildIntValue("time");
+      repeat = sn->getChildIntValue("repeat");
    }
 	virtual void getDesc(string &str, const Unit *unit) const {}
-   int getTime () const { return time; }
+   int getRepeat () const { return repeat; }
 };
 
 // ===============================

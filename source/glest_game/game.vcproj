@@ -39,7 +39,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/D PATHFINDER_DEBUG_TEXTURES"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
@@ -963,9 +962,9 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						FavorSizeOrSpeed="1"
+						Optimization="0"
+						InlineFunctionExpansion="0"
+						FavorSizeOrSpeed="0"
 						BasicRuntimeChecks="0"
 						SmallerTypeCheck="false"
 						EnableEnhancedInstructionSet="2"

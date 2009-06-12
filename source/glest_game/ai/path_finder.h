@@ -17,7 +17,10 @@
 
 #include <vector>
 #include <list>
+#include <set>
 #include "unit_stats_base.h"
+
+//#define PATHFINDER_TREE_TIMING
 
 // Time calls to aStar() and aaStar() ? All the below symbols require this one too.
 //#define PATHFINDER_TIMING
@@ -112,6 +115,28 @@ struct PathFinderStats
    char buffer[512];
 };
 #endif
+#ifdef PATHFINDER_TREE_TIMING
+struct TreeStats
+{
+   int numTreesBuilt;
+   int avgSearchesPerTree;
+   int64 avgSearchTime;
+   int64 avgWorstSearchTime;
+   int64 worstEver;
+
+   int searchesThisTree;
+   int64 avgSearchTimeThisTree;
+   int64 worstSearchThisTree;
+
+   char buffer[512];
+   TreeStats ();
+   void reset ();
+   void newTree ();
+   void addSearch ( int64 time );
+   char * output ( char *prefix = "");
+};
+#endif
+
 
 // =====================================================
 // 	class PathFinder
@@ -143,6 +168,15 @@ public:
 
    // legal move ?
    bool isLegalMove ( Unit *unit, const Vec2i &pos ) const;
+
+#ifdef PATHFINDER_TREE_TIMING
+   char* treeStats ()
+   {
+      static char buffer[2048];
+      sprintf ( buffer, "Tree Look-Up Stats...\n%s\n%s", nPool.getStats ( true ), nPool.getStats ( false ) );
+      return buffer;
+   }
+#endif
 #if defined(PATHFINDER_TIMING) || defined(PATHFINDER_DEBUG_TEXTURES )
    CellMetrics **metrics; // clearance values [y][x]
 #else
@@ -194,6 +228,7 @@ private:
 //      {return (abs( sp.x - fp.x ) + abs( sp.y - fp.y ));}
 //   static bool heuristicFlipper;
 //#endif
+
    struct AStarNode
    {
 		Vec2i pos;
@@ -208,19 +243,38 @@ private:
       float distToHere;
 		bool exploredCell;
    };
+   enum Colour { Red, Black };
    struct PosTreeNode
    {
-      PosTreeNode *left, *right;
+      PosTreeNode *left, *right, *parent;
+      Colour colour;
       Vec2i pos;
    };
    class NodePool
    {
       AStarNode *stock;
-      AStarNode **list;
+      AStarNode **lists;
       PosTreeNode *posStock;
       PosTreeNode *posRoot;
+      PosTreeNode sentinel;
       int numOpen, numClosed, numTotal, numPos;
       int maxNodes, tmpMaxNodes;
+
+#ifdef PATHFINDER_TREE_TIMING
+   public:
+      TreeStats setStats, rbStats;
+      std::set<Vec2i> posSet; // for comparison
+      bool useSet; // the flipper
+      int numRuns; // number of times to consecutively run with same structure
+      int curRun;
+
+      char *getStats ( bool set )
+      {
+         if ( set ) return setStats.output ( "std::set" );
+         else       return rbStats.output  ( "PosTree:" );
+      }
+#endif
+
 
    public:
       NodePool ();
@@ -233,7 +287,11 @@ private:
       // sets a temporary maximum number of nodes to use (50 <= max <= pathFindMaxNodes)
       void setMaxNodes ( const int max );
       // Is this pos already listed?
-      bool isListed ( const Vec2i &pos ) const;
+      bool isListed ( const Vec2i &pos )
+#ifndef PATHFINDER_TREE_TIMING  
+         const
+#endif
+         ;
       // add this pos, return true on success, false if out of nodes
 //#ifdef PATHFINDER_TIMING
 //      bool addToOpen ( AStarNode* prev, const Vec2i &pos, void *h, float d, bool exp );
@@ -248,7 +306,15 @@ private:
 
       // should be private, but getCrossOverPoints() also uses this 'functionality'
       void addToTree ( const Vec2i &pos );
+      void rebalanceTree ( PosTreeNode *node );
+      void rebalance2 ( PosTreeNode *node );
+      inline void rotateRight ( PosTreeNode *node );
+      inline void rotateLeft ( PosTreeNode *node );
 
+#if defined(DEBUG) || defined(_DEBUG)
+      bool assertTreeValidity ();
+      void dumpTree ();
+#endif
    }; // class PathFinder::NodePool
 
    NodePool nPool;

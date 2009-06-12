@@ -796,6 +796,12 @@ Command *Unit::popCommand() {
 //pop front (used when order is done)
 CommandResult Unit::finishCommand() {
 
+   if ( commands.front() && commands.front()->getType()->getClass() == ccDummy )
+      Logger::getInstance().add ( "Dummy command finsihed." );
+   if ( commands.front() && commands.front()->getType()->getClass() == ccMorph )
+      Logger::getInstance().add ( "Morph command finsihed." );
+   if ( commands.front() && commands.front()->getType()->getClass() == ccMove )
+      Logger::getInstance().add ( "Move command finsihed." );
 	//is empty?
 	if(commands.empty()) {
 		return crFailUndefined;
@@ -840,6 +846,10 @@ CommandResult Unit::cancelCommand() {
 
 /** cancel current command */
 CommandResult Unit::cancelCurrCommand() {
+   if ( commands.front() && commands.front()->getType()->getClass() == ccDummy )
+      Logger::getInstance().add ( "Dummy command canceled." );
+   if ( commands.front() && commands.front()->getType()->getClass() == ccMorph )
+      Logger::getInstance().add ( "Morph command canceled." );
 	//is empty?
 	if(commands.empty()) {
 		return crFailUndefined;
@@ -978,7 +988,6 @@ bool Unit::update() {
 	if(currSkill->getClass() == scMove) {
 
 		//if moving in diagonal move slower
-      // can't we just set this once in UnitUpdater::updateUnitCommand() ???
 		Vec2i dest = pos - lastPos;
 		if(abs(dest.x) + abs(dest.y) == 2) {
 			progressSpeed *= 0.71f;
@@ -991,7 +1000,7 @@ bool Unit::update() {
 		animationSpeed *= heightFactor;
 	}
 
-	//update progresses
+   //update progresses
 	lastAnimProgress = animProgress;
 	progress += nextUpdateFrames * progressSpeed;
 	animProgress += nextUpdateFrames * animationSpeed;

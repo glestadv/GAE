@@ -101,6 +101,16 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 	//update unit
 	if (unit->update()) {
+      /*
+      if ( unit->getCurrSkill ()->getClass () == scDummy )
+         Logger::getInstance ().add ( "Dummy Skill complete... applying static production." );
+      if ( unit->getCurrSkill ()->getClass () == scMorph )
+         Logger::getInstance ().add ( "Morph Skill complete..." );
+      if ( unit->getCurrSkill ()->getClass () == scMove )
+         Logger::getInstance ().add ( "Move Skill complete..." );
+      */
+      unit->getFaction ()->applyStaticProduction ( unit->getCurrSkill () );
+
 		// make sure attack systems are started even on laggy computers
 		/* this is causing double attacks for some reason
 		if (unit->getCurrSkill()->getClass() == scAttack) {
@@ -121,6 +131,15 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 		updateUnitCommand(unit);
 
+      // Apply Costs, for new skill?
+      // CHECK FIRST, Cancel if no go... do once per command ???
+      unit->getFaction ()->applyCosts ( unit->getCurrSkill () );
+      /*
+      if ( unit->getCurrSkill ()->getClass () == scDummy )
+         Logger::getInstance().add ( "Dummy Skill starting... applying costs" );
+      if ( unit->getCurrSkill ()->getClass () == scMove )
+         Logger::getInstance().add ( "Move Skill starting..." );
+      */
 		//if unit is out of EP, it stops
 		if (unit->computeEp()) {
 			if (unit->getCurrCommand()) {
@@ -139,6 +158,11 @@ void UnitUpdater::updateUnit(Unit *unit) {
 			}
 		}
 	}
+   //else if ( unit->getCurrSkill ()->getClass () == scDummy )
+   //   Logger::getInstance ().add ( "Dummy Skill updated." );
+   //else if ( unit->getCurrSkill ()->getClass () == scMove )
+   //   Logger::getInstance ().add ( "Move Skill updated..." );
+
 
 	//unit death
 	if (unit->isDead() && unit->getCurrSkill()->getClass() != scDie) {
@@ -201,7 +225,7 @@ void UnitUpdater::GetClear ( Unit *unit, const Vec2i &pos1, const Vec2i &pos2 )
                                 : pos2.y + ( pos1.y - pos2.y ) / 2;
    if ( map->getNearestFreePos ( dest, unit, midPoint + p1, 1, 5 ) )
       unit->giveCommand ( new Command(unit->getType()->getFirstCtOfClass(ccMove), CommandFlags(cpAuto), dest) );
-   else if ( map->getNearestFreePos ( dest, unit, midPoint + p1, 1, 5 ) )
+   else if ( map->getNearestFreePos ( dest, unit, midPoint + p2, 1, 5 ) )
       unit->giveCommand ( new Command(unit->getType()->getFirstCtOfClass(ccMove), CommandFlags(cpAuto), dest) );
    else
    {
@@ -358,7 +382,10 @@ void UnitUpdater::updateStop(Unit *unit) {
 
 // ==================== updateMove ====================
 
-void UnitUpdater::updateMove(Unit *unit) {
+void UnitUpdater::updateMove(Unit *unit) 
+{
+   //Logger::getInstance().add ( "UnitUpdater::updateMove ();" );
+
 	Command *command= unit->getCurrCommand();
 	const MoveCommandType *mct= static_cast<const MoveCommandType*>(command->getType());
 	bool autoCommand = command->isAuto();
@@ -1084,6 +1111,7 @@ void UnitUpdater::updateUpgrade(Unit *unit) {
 
 void UnitUpdater::updateMorph(Unit *unit){
 
+   //Logger::getInstance().add ( "UnitUpdater::updateMorph()" );
 	Command *command= unit->getCurrCommand();
 	const MorphCommandType *mct= static_cast<const MorphCommandType*>(command->getType());
 
@@ -1113,6 +1141,7 @@ void UnitUpdater::updateMorph(Unit *unit){
 
 		if ( gotSpace )
       {
+         //Logger::getInstance().add ("Morph commencing...");
 			unit->setCurrSkill(mct->getMorphSkillType());
 			unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), false);
          unit->setCurrField ( mf );
@@ -1120,9 +1149,11 @@ void UnitUpdater::updateMorph(Unit *unit){
 			if(unit->getFactionIndex() == world->getThisFactionIndex()){
 				console->addStdMessage("InvalidPosition");
 			}
+         //Logger::getInstance().add ("Morph failed... insufficient space.");
 			unit->cancelCurrCommand();
 		}
 	} else {
+      //Logger::getInstance().add ("Updating progress2....");
 		unit->update2();
 		if(unit->getProgress2()>mct->getProduced()->getProductionTime()) {
 
@@ -1237,7 +1268,7 @@ void UnitUpdater::updateDummy ( Unit *unit )
    {
       const DummySkillType *dst = static_cast<const DummySkillType*>(unit->getCurrSkill ());
       unit->update2 ();
-      if ( unit->getProgress2() >= dst->getTime () )
+      if ( unit->getProgress2() >= dst->getProductionTime() )
       {
          unit->finishCommand ();
       }

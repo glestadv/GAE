@@ -410,6 +410,9 @@ void Game::tick()
 #ifdef PATHFINDER_TIMING
    PathFinder::getInstance ()->resetCounters ();
 #endif
+#ifdef PATHFINDER_TREE_TIMING
+   Logger::getInstance().add ( PathFinder::getInstance()->treeStats() );
+#endif
 #ifdef GAME_UPDATE_PROFILING
    static char ubuf[256];
    sprintf ( ubuf, "Update: %d, World:%dms, ai:%dms, net:%dms, particles:%dms", 

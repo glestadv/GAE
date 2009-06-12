@@ -842,6 +842,7 @@ void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, lis
       // now *fIt == *bIt == *coIt... skip duplicates, etc etc...
    }
 #ifdef PATHFINDER_DEBUG_TEXTURES
+   // A kludge, to get at the endpath easier for debugging... UnitPath hides everything...
 CopyToList:
    for ( list<Vec2i>::iterator it = endPath.begin(); it != endPath.end(); ++it )
    {
@@ -988,27 +989,99 @@ PathFinder::AAStarParams::AAStarParams ( Unit *u )
    size = u->getSize (); 
    team = u->getTeam ();
 }
+#ifdef PATHFINDER_TREE_TIMING
+TreeStats::TreeStats ()
+{
+   numTreesBuilt = avgSearchesPerTree = 0;
+   avgSearchTime = avgWorstSearchTime = worstEver = 0;
+
+   searchesThisTree = 0;
+   avgSearchTimeThisTree = worstSearchThisTree = 0;
+
+}
+void TreeStats::reset () 
+{
+   avgSearchTime = ( avgSearchTime * numTreesBuilt + avgSearchTimeThisTree ) / ( numTreesBuilt + 1 );
+   avgWorstSearchTime = ( avgWorstSearchTime * numTreesBuilt + worstSearchThisTree ) / ( numTreesBuilt + 1 );
+   avgSearchesPerTree = ( avgSearchesPerTree * numTreesBuilt + searchesThisTree ) / ( numTreesBuilt + 1 );
+   if ( worstSearchThisTree > worstEver ) 
+      worstEver = worstSearchThisTree;
+}
+void TreeStats::newTree () 
+{ 
+   if ( searchesThisTree ) 
+      reset(); 
+   numTreesBuilt++; 
+   searchesThisTree = 0;
+   avgSearchTimeThisTree = 0; 
+   worstSearchThisTree = 0;
+}
+
+void TreeStats::addSearch ( int64 time )
+{
+   if ( searchesThisTree )
+      avgSearchTimeThisTree = avgSearchTimeThisTree * searchesThisTree + time;
+   else
+      avgSearchTimeThisTree = time;
+   searchesThisTree ++;
+   avgSearchTimeThisTree /= searchesThisTree;
+   if ( time > worstSearchThisTree ) worstSearchThisTree = time;
+}
+char * TreeStats::output ( char *prefix )
+{
+   sprintf ( buffer, "%s Avg number of searches on each tree: %d. Avg search time: %d. Avg Worst: %d. Absolute Worst: %d", 
+      prefix, avgSearchesPerTree, (int)avgSearchTime, (int)avgWorstSearchTime, (int)worstEver );
+   return buffer;
+}
+#endif
 
 PathFinder::NodePool::NodePool ()
 {
    maxNodes = PathFinder::pathFindNodesMax;
    stock = new AStarNode[maxNodes];
-   list = new AStarNode*[maxNodes];
+   lists = new AStarNode*[maxNodes];
    posStock = new PosTreeNode[maxNodes];
+   sentinel.colour = Black;
+   sentinel.left = sentinel.right = sentinel.parent = NULL;
+   sentinel.pos = Vec2i(-1,-1);
+   posRoot = NULL;
+#ifdef PATHFINDER_TREE_TIMING
+   useSet = false;
+   numRuns = 4;
+   curRun = 0;
+#endif
    reset ();
 }
 
 PathFinder::NodePool::~NodePool () 
 {
    delete stock;
-   delete list;
+   delete lists;
    delete posStock;
 }
 
 // reset the node pool
 void PathFinder::NodePool::reset ()
 {
+#ifndef PATHFINDER_TREE_TIMING
+   assert ( assertTreeValidity() ); // DO NOT do this if timing.
    posRoot = NULL;
+#else
+   if ( useSet && posSet.size () )
+   {
+      curRun ++;
+      posSet.clear ();
+      setStats.newTree ();
+      if ( curRun % numRuns == 0 ) useSet = !useSet;
+   }
+   else if ( !useSet && posRoot )
+   {
+      curRun ++;
+      posRoot = NULL;
+      rbStats.newTree ();
+      if ( curRun % numRuns == 0 ) useSet = !useSet;
+   }
+#endif
    numOpen = numClosed = numTotal = numPos = 0;
    tmpMaxNodes = maxNodes;
 }
@@ -1021,23 +1094,43 @@ void PathFinder::NodePool::setMaxNodes ( const int max )
    tmpMaxNodes = max;
 }
 
+//
+// A regular tree insert, the new node is coloured explicitly
+// if it's the root it's coloured black and we're done, otherwise the new node is coloured
+// Red, inserted then passed to rebalance() to fix any Red-Black property violations
+//
 void PathFinder::NodePool::addToTree ( const Vec2i &pos )
 {
+#ifdef PATHFINDER_TREE_TIMING
+   if ( useSet ) 
+   {
+      posSet.insert ( pos );
+      return;
+   }
+#endif
    posStock[numPos].pos = pos;
-   posStock[numPos].left = posStock[numPos].right = NULL;
+   posStock[numPos].left = posStock[numPos].right = &sentinel;
+   
    if ( ! numPos )
+   {
       posRoot = &posStock[0];
+      posStock[0].parent = &sentinel;
+      posStock[0].colour = Black;
+   }
    else
    {
       PathFinder::PosTreeNode *parent = posRoot;
+      posStock[numPos].colour = Red;
       while ( true )
       {
          if ( pos.x < parent->pos.x 
          ||   ( pos.x == parent->pos.x && pos.y < parent->pos.y ) )
          {  // go left
-            if ( ! parent->left )
+            if ( parent->left == &sentinel )
             {  // insert and break
                parent->left = &posStock[numPos];
+               posStock[numPos].parent = parent;
+               rebalanceTree ( &posStock[numPos] );
                break;
             }
             else parent = parent->left;
@@ -1045,9 +1138,11 @@ void PathFinder::NodePool::addToTree ( const Vec2i &pos )
          else if ( pos.x > parent->pos.x 
          ||   ( pos.x == parent->pos.x && pos.y > parent->pos.y ) )
          {  // go right
-            if ( ! parent->right )
+            if ( parent->right == &sentinel )
             {  // insert and break
                parent->right = &posStock[numPos];
+               posStock[numPos].parent = parent;
+               rebalanceTree ( &posStock[numPos] );
                break;
             }
             else parent = parent->right;
@@ -1058,26 +1153,289 @@ void PathFinder::NodePool::addToTree ( const Vec2i &pos )
    }
    numPos++;
 }
+#define DAD(x) (x->parent)
+#define GRANDPA(x) (x->parent->parent)
+#define UNCLE(x) (x->parent->parent?x->parent->parent->left==x->parent\
+                  ?x->parent->parent->right:x->parent->parent->left:NULL)
+
+//
+// Restore Red-Black properties on PosTree, with 'node' having just been inserted
+//
+void PathFinder::NodePool::rebalanceTree ( PosTreeNode *node )
+{
+   while ( DAD(node)->colour == Red )
+   {
+      if ( UNCLE(node)->colour == Red )
+      {
+         // case 'Red Uncle', colour flip dad, uncle, and grandpa then restart with grandpa
+         DAD(node)->colour = UNCLE(node)->colour = Black;
+         GRANDPA(node)->colour = Red;
+         assert ( GRANDPA(node) != &sentinel );
+         node = GRANDPA(node);
+      }
+      else
+      {
+         // UNCLE(node) is black
+         if ( DAD(node) == GRANDPA(node)->left )
+         {
+            if ( node == DAD(node)->right )
+            {
+               node = DAD(node);
+               rotateLeft ( node );
+            }
+            DAD(node)->colour = Black;
+            GRANDPA(node)->colour = Red;
+            assert ( GRANDPA(node) != &sentinel );
+            rotateRight ( GRANDPA(node) ); 
+         }
+         else // Dad is right child of grandpa
+         {
+            PosTreeNode *prevDad = DAD(node), *prevGrandpa = GRANDPA(node);
+            if ( node == DAD(node)->left )
+            {
+               node = DAD(node);
+               rotateRight ( node );
+            }
+            DAD(node)->colour = Black;
+            GRANDPA(node)->colour = Red;
+            assert ( GRANDPA(node) != &sentinel );
+            rotateLeft ( GRANDPA(node) );
+         } // end if..else, dad left or right child of grandpa
+      } // end if..else, uncle red or black
+   } // end while, dad red
+   posRoot->colour = Black; // node is new root
+}
+
+#if defined(DEBUG) || defined(_DEBUG)
+bool PathFinder::NodePool::assertTreeValidity ()
+{
+   if ( !posRoot ) return true;
+   Vec2i low = Vec2i ( -1,-1 );
+   // Inorder traversal, ref [Algorithm T, Knuth Vol 1 pg 317]
+   // T1 [Initialize]
+   list<PosTreeNode*> stack; // stupid VC++ doesn't have stack...
+   PosTreeNode *ptr = posRoot;
+   while ( true )
+   {
+      // T2 [if P == NULL goto T4]
+      if ( ptr != &sentinel ) 
+      {
+         // T3 [stack.push(P), P = P->left, goto T2]
+         stack.push_back ( ptr );
+         ptr = ptr->left;
+         continue;
+      }
+      // T4 [if stack.empty() terminate, else P = stack.pop()]
+      if ( stack.empty () ) 
+         break;
+      ptr = stack.back ();
+      stack.pop_back ();
+      //
+      // T5 [Visit P, P = P->right, goto T2]
+      if ( ptr->colour == Red && ( ptr->left->colour == Red || ptr->right->colour == Red ) )
+      {
+         Logger::getInstance ().add ( "RedBlack Tree Invalid, Red-Red Property violated." );
+         dumpTree ();
+         return false;
+      }
+      if ( ptr->pos.x < low.x || ( ptr->pos.x == low.x && ptr->pos.y < low.y ) )  
+      {
+         Logger::getInstance ().add ( "Search Tree Invalid! Elements out of order." );
+         dumpTree ();
+         return false;
+      }
+      low = ptr->pos;
+      ptr = ptr->right;
+   }
+   return true;
+}
+void PathFinder::NodePool::dumpTree ()
+{
+   static char buf[1024*4];
+   char *ptr = buf;
+   if ( !posRoot )
+   {
+      Logger::getInstance ().add ( "Tree Empty." );
+      return;
+   }
+   list<PosTreeNode*> *thisLevel = new list<PosTreeNode*>();
+   list<PosTreeNode*> *nextLevel = NULL;
+   thisLevel->push_back ( posRoot );
+   while ( ! thisLevel->empty () )
+   {
+      ptr += sprintf ( ptr, "\n" );
+      nextLevel = new list<PosTreeNode*>();
+      for ( list<PosTreeNode*>::iterator it = thisLevel->begin(); it != thisLevel->end(); ++it )
+      {
+         ptr += sprintf ( ptr, "[%d,%d|", (*it)->pos.x, (*it)->pos.y );
+         if ( (*it)->left )
+         {
+            ptr += sprintf ( ptr, "L:%d,%d|", (*it)->left->pos.x, (*it)->left->pos.y );
+            nextLevel->push_back ( (*it)->left );
+         }
+         else ptr += sprintf ( ptr, "L:NIL|" );
+         if ( (*it)->right )
+         {
+            ptr += sprintf ( ptr, "R:%d,%d|", (*it)->right->pos.x, (*it)->right->pos.y );
+            nextLevel->push_back ( (*it)->right );
+         }
+         else ptr += sprintf ( ptr, "R:NIL|" );
+         ptr += sprintf ( ptr, "%s] ", (*it)->colour ? "Black" : "Red" );
+
+      }
+      delete thisLevel;
+      thisLevel = nextLevel;
+   }
+   delete thisLevel;
+   Logger::getInstance ().add ( buf );
+}
+#endif
+
+
+void PathFinder::NodePool::rebalance2 ( PosTreeNode *node )
+{
+   while ( /*DAD(node) && */DAD(node)->colour == Red )
+   {
+      if ( DAD(node) == GRANDPA(node)->left )
+      {
+         if ( /*UNCLE(node) &&*/ UNCLE(node)->colour == Red )
+         {
+            DAD(node)->colour = UNCLE(node)->colour = Black;
+            GRANDPA(node)->colour = Red;
+            assert ( GRANDPA(node) != &sentinel );
+            node = GRANDPA(node); // start again with grandpa
+         }
+         else 
+         {
+            if ( node == DAD(node)->right ) // Uncle is black
+            {
+               node = DAD(node);
+               assert ( node->right != &sentinel );
+               rotateLeft ( node );
+            }
+            DAD(node)->colour = Black;
+            GRANDPA(node)->colour = Red;
+            assert ( GRANDPA(node) != &sentinel );
+            //if ( GRANDPA(node)->left != &sentinel );
+               rotateRight ( GRANDPA(node) );
+         }
+      }
+      else // DAD(node) == GRANDPA(node)->right
+      {
+         if ( /*UNCLE(node) &&*/ UNCLE(node)->colour == Red )
+         {
+            DAD(node)->colour = UNCLE(node)->colour = Black;
+            GRANDPA(node)->colour = Red;
+            assert ( GRANDPA(node) != &sentinel );
+            node = GRANDPA(node); // start again with grandpa
+         }
+         else 
+         {
+            if ( node == DAD(node)->left ) // Uncle is black or null
+            {
+               node = DAD(node);
+               assert ( node->left != &sentinel );
+               rotateRight ( node );
+            }
+            DAD(node)->colour = Black;
+            GRANDPA(node)->colour = Red;
+            assert ( GRANDPA(node) != &sentinel );
+            //if ( GRANDPA(node)->right != &sentinel )
+               rotateLeft ( GRANDPA(node) );
+         }
+      }
+   }
+   posRoot->colour = Black;
+}
+
+
+#define ROTATE_ERR_MSG "PathFinder::NodePool::rotateLeft() was called on a node with no right child."
+void PathFinder::NodePool::rotateLeft ( PosTreeNode *root )
+{
+   PosTreeNode *pivot = root->right; // 1
+   if ( pivot == &sentinel ) 
+      throw new runtime_error ( ROTATE_ERR_MSG );
+   root->right = pivot->left;  // 2
+   //if ( root->right != &sentinel ) 
+      root->right->parent = root; // 3
+   pivot->parent = root->parent; // 4
+   root->parent = pivot; // 11
+   pivot->left = root; // 10
+   if ( pivot->parent != &sentinel ) // 5
+   {
+      if ( pivot->parent->left == root ) // 7
+         pivot->parent->left = pivot; // 8
+      else
+         pivot->parent->right = pivot; // 9
+   }
+   else posRoot = pivot; // 6
+}
+#define ROTATE_ERR_MSG "PathFinder::NodePool::rotateRight() was called on a node with no left child."
+void PathFinder::NodePool::rotateRight ( PosTreeNode *root )
+{
+   PosTreeNode *pivot = root->left;
+   if ( pivot == &sentinel ) 
+      throw new runtime_error ( ROTATE_ERR_MSG );
+   root->left = pivot->right;
+   //if ( root->left != &sentinel )
+      root->left->parent = root;
+   pivot->parent = root->parent;
+   root->parent = pivot;
+   pivot->right = root;
+   if ( pivot->parent != &sentinel)
+   {
+      if ( pivot->parent->left == root )
+         pivot->parent->left = pivot;
+      else
+         pivot->parent->right = pivot;
+   }
+   else posRoot = pivot;
+}
+#undef ROTATE_ERR_MSG
 
 // is pos already listed?
-bool PathFinder::NodePool::isListed ( const Vec2i &pos ) const
+bool PathFinder::NodePool::isListed ( const Vec2i &pos ) 
+#ifndef PATHFINDER_TREE_TIMING  
+const
+#endif
 {
-   PathFinder::PosTreeNode *ptr = posRoot;
-   while ( ptr )
+#ifdef PATHFINDER_TREE_TIMING
+   int64 start = Chrono::getCurTicks ();
+   if ( useSet )
    {
-      if ( pos.x == ptr->pos.x )
+      set<Vec2i>::iterator it = posSet.find ( pos );
+      setStats.addSearch ( Chrono::getCurTicks () - start );
+      if ( it == posSet.end() ) return false;
+      return true;
+   }
+#endif
+   PathFinder::PosTreeNode *ptr = posRoot;
+   while ( ptr != &sentinel)
+   {
+      if ( pos.x < ptr->pos.x )
+         ptr = ptr->left;
+      else if ( pos.x > ptr->pos.x )
+         ptr = ptr->right;
+      else //  pos.x == ptr->pos.x 
       {
-         if ( pos.y == ptr->pos.y ) return true;
          if ( pos.y < ptr->pos.y )
             ptr = ptr->left;
-         else
+         else if ( pos.y > ptr->pos.y ) 
             ptr = ptr->right;
+         else // pos == ptr->pos
+#ifdef PATHFINDER_TREE_TIMING  
+         {
+            rbStats.addSearch ( Chrono::getCurTicks () - start );
+            return true;
+         }
+#else
+            return true;
+#endif
       }
-      else if ( pos.x < ptr->pos.x )
-         ptr = ptr->left;
-      else
-         ptr = ptr->right;
    }
+#ifdef PATHFINDER_TREE_TIMING
+   rbStats.addSearch ( Chrono::getCurTicks () - start );
+#endif
    return false;
 }
 
@@ -1104,7 +1462,7 @@ bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float 
    stock[numTotal].distToHere = d;
    stock[numTotal].exploredCell = exp;
    const int top = tmpMaxNodes - 1;
-   if ( !numOpen ) list[top] = &stock[numTotal];
+   if ( !numOpen ) lists[top] = &stock[numTotal];
    else
    {  // find insert index
       // due to the nature of the modified A*, new nodes are likely to have lower heuristics
@@ -1114,14 +1472,14 @@ bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float 
       /*
 #ifdef PATHFINDER_TIMING
       if ( heuristicFlipper )
-         while ( offset < top && list[offset+1]->heuristic.i < stock[numTotal].heuristic.i ) 
+         while ( offset < top && lists[offset+1]->heuristic.i < stock[numTotal].heuristic.i ) 
             offset ++;
       else
-         while ( offset < top && list[offset+1]->heuristic.f < stock[numTotal].heuristic.f ) 
+         while ( offset < top && lists[offset+1]->heuristic.f < stock[numTotal].heuristic.f ) 
             offset ++;
 #else
             */
-      while ( offset < top && list[offset+1]->heuristic < stock[numTotal].heuristic ) 
+      while ( offset < top && lists[offset+1]->heuristic < stock[numTotal].heuristic ) 
          offset ++;
 //#endif
       if ( offset > openStart ) // shift lower nodes down...
@@ -1129,12 +1487,12 @@ bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float 
          int moveNdx = openStart;
          while ( moveNdx <= offset )
          {
-            list[moveNdx-1] = list[moveNdx];
+            lists[moveNdx-1] = lists[moveNdx];
             moveNdx ++;
          }
       }
       // insert newbie in sorted pos.
-      list[offset] = &stock[numTotal];
+      lists[offset] = &stock[numTotal];
    }
    addToTree ( pos );
    numTotal ++;
@@ -1147,10 +1505,10 @@ bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float 
 PathFinder::AStarNode* PathFinder::NodePool::getBestCandidate ()
 {
    if ( !numOpen ) return NULL;
-   list[numClosed] = list[tmpMaxNodes - numOpen];
+   lists[numClosed] = lists[tmpMaxNodes - numOpen];
    numOpen --;
    numClosed ++;
-   return list[numClosed-1];
+   return lists[numClosed-1];
 }
 
 bool PathFinder::NodePool::addToOpenHD ( AStarNode* prev, const Vec2i &pos, float d )
@@ -1163,24 +1521,24 @@ bool PathFinder::NodePool::addToOpenHD ( AStarNode* prev, const Vec2i &pos, floa
    stock[numTotal].distToHere = d;
    stock[numTotal].exploredCell = true;
    const int top = tmpMaxNodes - 1;
-   if ( !numOpen ) list[top] = &stock[numTotal];
+   if ( !numOpen ) lists[top] = &stock[numTotal];
    else
    {
       const int openStart = tmpMaxNodes - numOpen - 1;
       int offset = openStart;
-      while ( offset < top && list[offset+1]->distToHere > stock[numTotal].distToHere ) offset ++;
+      while ( offset < top && lists[offset+1]->distToHere > stock[numTotal].distToHere ) offset ++;
 
       if ( offset > openStart ) // shift higher distance nodes down...
       {
          int moveNdx = openStart;
          while ( moveNdx <= offset )
          {
-            list[moveNdx] = list[moveNdx+1];
+            lists[moveNdx] = lists[moveNdx+1];
             moveNdx ++;
          }
       }
      // insert newbie in sorted pos.
-      list[offset] = &stock[numTotal];
+      lists[offset] = &stock[numTotal];
    }
    addToTree ( pos );
    numTotal ++;

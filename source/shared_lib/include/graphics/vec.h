@@ -74,6 +74,11 @@ public:
 		return x != v.x || y != v.y;
 	}
 
+   bool operator < ( const Vec2<T> &rhs ) const
+   {
+      return x < rhs.x || ( x == rhs.x && y < rhs.y );
+   }
+
 	Vec2<T> operator +(const Vec2<T> &v) const {
 		return Vec2(x + v.x, y + v.y);
 	}
