@@ -125,6 +125,7 @@ public:
 	Game(Program &program, const GameSettings &gs, XmlNode *savedGame = NULL);
     ~Game();
 	static Game *getInstance()				{return singleton;}
+   virtual bool isGame () { return true; }
 
 #ifdef GAME_UPDATE_PROFILING
    static GameUpdateStats updateStats;

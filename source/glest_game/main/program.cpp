@@ -181,7 +181,7 @@ Program::~Program() {
 	//restore video mode
 	restoreDisplaySettings();
 }
-
+//#define TIME_WORLD_UPDATE
 void Program::loop() 
 {
 #ifdef PROGRAM_HANDLE_EVENTS_PROFILING
@@ -221,14 +221,29 @@ void Program::loop()
 			programState->updateCamera();
 	
 		//update world
-		while(updateTimer.isTime())
-      {
+		while(updateTimer.isTime()){
 			GraphicComponent::update();
+
+#ifdef TIME_WORLD_UPDATE
+         int64 start;
+         if ( programState->isGame () )
+            start = Chrono::getCurMillis ();
+         programState->update();
+         if ( programState->isGame () )
+         {
+            int64 time = Chrono::getCurMillis () - start;
+            timerStats.updates ++;
+            timerStats.totalTimeInUpdate += time;
+            timerStats.avgTimeInUpdate = timerStats.totalTimeInUpdate / timerStats.updates;
+            if ( time > timerStats.worstUpdateLoop )
+               timerStats.worstUpdateLoop = time;
+         }
+#else
 			programState->update();
+#endif	
 			SoundRenderer::getInstance().update();
 			NetworkManager::getInstance().update();
 		}
-	
 		//tick timer
 		while(tickTimer.isTime())
       {
@@ -238,6 +253,16 @@ void Program::loop()
          sprintf ( buf, "Handle Events took %dms", stats.time );
          Logger::getInstance().add ( buf );
          stats.reset();
+#endif
+#ifdef TIME_WORLD_UPDATE
+         if ( programState->isGame () )
+         {
+            static char buffer[512];
+            sprintf ( buffer, "Updates: %d, Avg: %dms, Worst: %dms.", 
+               timerStats.updates, (int)timerStats.avgTimeInUpdate, (int)timerStats.worstUpdateLoop );
+            Logger::getInstance().add ( buffer );
+            timerStats.reset ();
+         }
 #endif
       }
 

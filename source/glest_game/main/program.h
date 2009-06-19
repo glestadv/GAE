@@ -81,6 +81,20 @@ public:
 	virtual void keyDown(const Key &key){}
 	virtual void keyUp(const Key &key){}
 	virtual void keyPress(char c){}
+
+   virtual bool isGame () { return false;
+}};
+
+struct TimerStats
+{
+   int64 totalTimeInUpdate,
+         avgTimeInUpdate,
+         worstUpdateLoop;
+   int updates;
+   TimerStats () {reset();}
+   void reset ()
+   { totalTimeInUpdate = avgTimeInUpdate =  
+     worstUpdateLoop = updates = 0; }
 };
 
 // ===============================
@@ -126,7 +140,7 @@ public:
     Program(Config &config, int argc, char** argv);
     ~Program();
 	static Program *getInstance()	{return singleton;}
-
+   TimerStats timerStats;
 	Keymap &getKeymap() 			{return keymap;}
 
 #ifdef PROGRAM_HANDLE_EVENTS_PROFILING

@@ -133,7 +133,10 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
       // Apply Costs, for new skill?
       // CHECK FIRST, Cancel if no go... do once per command ???
-      unit->getFaction ()->applyCosts ( unit->getCurrSkill () );
+      /* IF */unit->getFaction ()->applyCosts ( unit->getCurrSkill () );
+      /* THEN Do It
+         ELSE Cancel It, or 'downgrade' it*/
+
       /*
       if ( unit->getCurrSkill ()->getClass () == scDummy )
          Logger::getInstance().add ( "Dummy Skill starting... applying costs" );

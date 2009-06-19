@@ -1444,7 +1444,7 @@ void Renderer::renderObjects(){
 				glTranslatef(v.x, v.y, v.z);
 				glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
 
-				//objModel->updateInterpolationData(0.f, true); // 0.f ? why do this at all ???
+				objModel->updateInterpolationData(0.f, true); // 0.f ? why do this at all ???
 				modelRenderer->render(objModel);
 
 				triangleCount+= objModel->getTriangleCount();

@@ -76,12 +76,12 @@ void PathFinderStats::resetCounters ()
 }
 char * PathFinderStats::GetStats ()
 {
-   sprintf ( buffer, "Processed last second: %d, Average: %d", (int)lastsec_calls, (int)lastsec_avg );
+   sprintf ( buffer, "aaStar() Processed last second: %d, Average (micro-seconds): %d", (int)lastsec_calls, (int)lastsec_avg );
    return buffer;
 }
 char * PathFinderStats::GetTotalStats ()
 {
-   sprintf ( buffer, "Total Calls: Processed: %d, Rejected: %d\n\t\tProcessed Call Average Ticks: %d, Worst: %d.",
+   sprintf ( buffer, "aaStar() Total Calls: Processed: %d, Rejected: %d, Processed Call Average (micro-seconds): %d, Worst: %d.",
       (int)total_astar_calls, (int)calls_rejected, (int)total_astar_avg, (int)worst_astar );
    return buffer;
 }
@@ -206,6 +206,7 @@ PathFinder::~PathFinder()
 
 void PathFinder::init(Map *map){
 	this->map= map;
+   nPool.markerArray.init ( map->getW(), map->getH() );
    // insert code here
    // I inserted it in its own method, initMapMetrics (), so it can be 
    // called after the initial buildings have been placed... 
@@ -237,7 +238,6 @@ typedef list<Vec2i>::iterator VListIt;
 // pos: location of object added/removed
 // size: size of same object
 // adding: true if the object has been added, false if it has been removed.
-// INCOMPLETE: Needs to take a Field param
 void PathFinder::updateMapMetrics ( const Vec2i &pos, const int size, bool adding, Field field )
 {
    // first, re-evaluate the cells occupied (or formerly occupied)
@@ -282,6 +282,7 @@ void PathFinder::updateMapMetrics ( const Vec2i &pos, const int size, bool addin
             // than shell, we need to update it
             if ( adding && metrics[it->y][it->x].get(field) > shell )
             {
+               // BUG: Does not handle cell maps properly ( shell + metric[y][x+shell].fieldX ??? )
                metrics[it->y][it->x].set ( field, shell );
                if ( it->x - 1 >= 0 ) // if there is a cell to the left, add it to
                   newLeftList->push_back ( Vec2i(it->x-1,it->y) ); // the new left list
@@ -298,7 +299,7 @@ void PathFinder::updateMapMetrics ( const Vec2i &pos, const int size, bool addin
                // if we didn't change the metric, no need to keep looking left
             }
             // else we didn't need to update this metric, and cells to the left
-            // will therefore also sill have correct metrics and we can stop
+            // will therefore also still have correct metrics and we can stop
             // looking along this row (it->y).
          }
       }
@@ -384,7 +385,7 @@ CellMetrics PathFinder::computeClearances ( const Vec2i &pos )
    CellMetrics clearances;
    Tile *container = map->getTile ( map->toTileCoords ( pos ) );
  
-   if ( container->isFree () ) // surface cell is walkable?
+   if ( container->isFree () ) // Tile is walkable?
    {
       // Walkable
       while ( canClear ( pos, clearances.get ( mfWalkable ) + 1, mfWalkable ) )
@@ -396,14 +397,19 @@ CellMetrics PathFinder::computeClearances ( const Vec2i &pos )
       while ( canClear ( pos, clearances.get ( mfDeepWater ) + 1, mfDeepWater ) )
          clearances.set ( mfDeepWater, clearances.get ( mfDeepWater ) + 1 );
    }
-   // BUGS: need to check if we are up against the east or south edges of the map...
-   int clearAir = maxClearanceValue;
-   // 
-
+   
    // Air
-   clearances.set ( mfAir, maxClearanceValue );
+   int clearAir = maxClearanceValue;
+   if ( pos.x == map->getW() - 3 ) clearAir = 1;
+   else if ( pos.x == map->getW() - 4 ) clearAir = 2;
+   if ( pos.y == map->getH() - 3 ) clearAir = 1;
+   else if ( pos.y == map->getH() - 4 && clearAir > 2 ) clearAir = 2;
+   clearances.set ( mfAir, clearAir );
+   
    // Amphibious
-   clearances.set ( mfAmphibious, maxClearanceValue );
+   int clearSurf = clearances.get ( mfWalkable );
+   if ( clearances.get ( mfAnyWater ) > clearSurf ) clearSurf = clearances.get ( mfAnyWater );
+   clearances.set ( mfAmphibious, clearSurf );
 
    // use previously calculated base fields to calc combinations ??
 
@@ -445,6 +451,7 @@ bool PathFinder::canClear ( const Vec2i &pos, int clear, Field field )
 {
    if ( clear > maxClearanceValue ) return false;
 
+   // on map ?
    if ( pos.x + clear >= map->getW() - 2 || pos.y + clear >= map->getH() - 2 ) 
       return false;
 
@@ -477,10 +484,9 @@ bool PathFinder::canClear ( const Vec2i &pos, int clear, Field field )
    }// end for
    return true;
 }
-// size...
+
 bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const
 {
-   //return map->canMove ( unit, unit->getPos (), pos2 );
    if ( unit->getPos().dist ( pos2 ) > 1.5 ) return false; // shouldn't really need this....
 
    const Vec2i &pos1 = unit->getPos ();
@@ -669,7 +675,7 @@ bool PathFinder::aaStar ( AAStarParams params, list<Vec2i> &path, bool ucStart )
    path.clear ();
 
 	//a) push starting pos into openNodes
-   nPool.addToOpen ( NULL, startPos, heuristic (startPos, finalPos), 0 );
+   nPool.addToOpen ( NULL, startPos, heuristic (startPos, finalPos) );
 
    //b) loop
 	bool pathFound= true;
@@ -698,7 +704,11 @@ bool PathFinder::aaStar ( AAStarParams params, list<Vec2i> &path, bool ucStart )
             if ( minNode->pos.dist ( ucPos ) < 5.f && !map->getCell( sucPos )->isFree(zone) && sucPos != ucPos )
                continue; // check nearby units
             // CanOccupy () will be cheapest, do it first...
-            if ( canOccupy (sucPos, size, field ) && ! nPool.isListed ( sucPos ) )
+#ifdef PATHFINDER_NODEPOOL_USE_MARKER_ARRAY
+            if ( canOccupy (sucPos, size, field ) && ! nPool.isListedMarker ( sucPos ) )
+#else
+            if ( canOccupy (sucPos, size, field ) && ! nPool.isListedTree ( sucPos ) )
+#endif
             {
                if ( minNode->pos.x != sucPos.x && minNode->pos.y != sucPos.y ) 
                {  // if diagonal move and either diag cell is not free...
@@ -711,7 +721,7 @@ bool PathFinder::aaStar ( AAStarParams params, list<Vec2i> &path, bool ucStart )
                }
                // else move is legal.
                bool exp = map->getTile (Map::toTileCoords (sucPos))->isExplored (team);
-               if ( ! nPool.addToOpen ( minNode, sucPos, heuristic ( sucPos, finalPos ), minNode->distToHere + 1, exp ) )
+               if ( ! nPool.addToOpen ( minNode, sucPos, heuristic ( sucPos, finalPos ), exp ) )
                   nodeLimitReached = true;
             }
 			} // end for
@@ -747,12 +757,19 @@ void PathFinder::getCrossOverPoints ( const list<Vec2i> &forward, const list<Vec
 {
    result.clear ();
    nPool.reset ();
+#ifdef PATHFINDER_NODEPOOL_USE_MARKER_ARRAY
+   for ( list<Vec2i>::const_reverse_iterator it1 = backward.rbegin(); it1 != backward.rend(); ++it1 )
+      nPool.addMarker ( *it1 );
+   for ( list<Vec2i>::const_iterator it2 = forward.begin(); it2 != forward.end(); ++it2 )
+      if ( nPool.isListedMarker ( *it2 ) )
+         result.push_back ( *it2 );
+#else
    for ( list<Vec2i>::const_reverse_iterator it1 = backward.rbegin(); it1 != backward.rend(); ++it1 )
       nPool.addToTree ( *it1 );
-
    for ( list<Vec2i>::const_iterator it2 = forward.begin(); it2 != forward.end(); ++it2 )
-      if ( nPool.isListed ( *it2 ) )
+      if ( nPool.isListedTree ( *it2 ) )
          result.push_back ( *it2 );
+#endif
 }
 
 void PathFinder::copyToPath ( const list<Vec2i> pathList, UnitPath *path )
@@ -763,14 +780,14 @@ void PathFinder::copyToPath ( const list<Vec2i> pathList, UnitPath *path )
       path->push ( *it );
 }
 
-void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, UnitPath *path )
+bool PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, UnitPath *path )
 {
    list<Vec2i> endPath;
    assert ( co.size () <= fwd.size () );
    if ( fwd.size () == co.size () ) 
    {  // paths never diverge
       copyToPath ( fwd, path );
-      return;
+      return true;
    }
    list<Vec2i>::const_iterator fIt = fwd.begin ();
    list<Vec2i>::const_reverse_iterator bIt = bwd.rbegin ();
@@ -779,8 +796,12 @@ void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, lis
    //the 'first' and 'last' nodes on fwd and bwd must be the first and last on co...
    //assert ( *coIt == *fIt && *coIt == *bIt );
    assert ( co.back() == fwd.back() && co.back() == bwd.front() );
-   if ( ! ( *coIt == *fIt && *coIt == *bIt ) ) 
-      throw new runtime_error ( "PathFinder::MergePath() was passed dodgey data..." );
+   if ( ! ( *coIt == *fIt && *coIt == *bIt ) )
+   {
+      //throw new runtime_error ( "PathFinder::MergePath() was passed dodgey data..." );
+      copyToPath ( fwd, path );
+      return false;
+   }
    
    ++fIt; ++bIt;
    // Should probably just iterate over co aswell...
@@ -798,13 +819,18 @@ void PathFinder::MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, lis
 #endif
          //assert ( *fIt == *bIt );
          if ( *fIt != *bIt )
-            throw new runtime_error ( "PathFinder::MergePath() was passed a dodgey crossover list..." );
+         {
+            //throw new runtime_error ( "PathFinder::MergePath() was passed a dodgey crossover list..." );
+            path->clear ();
+            copyToPath ( fwd, path );
+            return false;
+         }
          coIt = co.erase ( coIt );
          if ( coIt == co.end() ) 
 #ifdef PATHFINDER_DEBUG_TEXTURES
             goto CopyToList; // done
 #else
-            return;
+            return true;
 #endif
          ++fIt; ++bIt;
       }
@@ -941,7 +967,7 @@ bool PathFinder::canPathOut ( const Vec2i &pos, const int radius, Field field  )
 {
    assert ( radius > 0 && radius <= 5 );
    nPool.reset ();
-   nPool.addToOpenHD ( NULL, pos, 0 );
+   nPool.addToOpen ( NULL, pos, 0 );
 	bool pathFound= false;
    AStarNode *maxNode = NULL;
 
@@ -959,7 +985,11 @@ bool PathFinder::canPathOut ( const Vec2i &pos, const int radius, Field field  )
             ||   ! map->getCell( sucPos )->isFree( field == mfAir ? fAir: fSurface ) )
                continue;
             //CanOccupy() will be cheapest, do it first...
-            if ( canOccupy (sucPos, 1, field) && ! nPool.isListed (sucPos) )
+#ifdef PATHFINDER_NODEPOOL_USE_MARKER_ARRAY
+            if ( canOccupy (sucPos, 1, field) && ! nPool.isListedMarker (sucPos) )
+#else
+            if ( canOccupy (sucPos, 1, field) && ! nPool.isListedTree (sucPos) )
+#endif
             {
                if ( maxNode->pos.x != sucPos.x && maxNode->pos.y != sucPos.y ) // if diagonal move
                {
@@ -972,10 +1002,10 @@ bool PathFinder::canPathOut ( const Vec2i &pos, const int radius, Field field  )
                      continue; // not allowed
                }
                // Move is legal.
-               if ( maxNode->distToHere + 1 >= radius ) 
+               if ( -(maxNode->heuristic) + 1 >= radius ) 
                   pathFound = true;
                else
-                  nPool.addToOpenHD ( maxNode, sucPos, maxNode->distToHere + 1 );
+                  nPool.addToOpen ( maxNode, sucPos, maxNode->heuristic - 1.f );
 				} // end if
 			} // end for
 		} // end for
@@ -1112,6 +1142,7 @@ void PathFinder::NodePool::reset ()
 #endif
    numOpen = numClosed = numTotal = numPos = 0;
    tmpMaxNodes = maxNodes;
+   markerArray.newSearch ();
 }
 
 void PathFinder::NodePool::setMaxNodes ( const int max )
@@ -1206,11 +1237,11 @@ void PathFinder::NodePool::rebalanceTree ( PosTreeNode *node )
          assert ( GRANDPA(node) != &sentinel );
          node = GRANDPA(node);
       }
-      else
+      else // UNCLE(node) is black
       {
-         // UNCLE(node) is black
          if ( DAD(node) == GRANDPA(node)->left )
          {
+            // dad red left child, uncle black
             if ( node == DAD(node)->right )
             {
                node = DAD(node);
@@ -1223,6 +1254,7 @@ void PathFinder::NodePool::rebalanceTree ( PosTreeNode *node )
          }
          else // Dad is right child of grandpa
          {
+            // dad red right child, uncle black
             PosTreeNode *prevDad = DAD(node), *prevGrandpa = GRANDPA(node);
             if ( node == DAD(node)->left )
             {
@@ -1324,73 +1356,16 @@ void PathFinder::NodePool::dumpTree ()
 }
 #endif
 
-
-void PathFinder::NodePool::rebalance2 ( PosTreeNode *node )
-{
-   while ( /*DAD(node) && */DAD(node)->colour == Red )
-   {
-      if ( DAD(node) == GRANDPA(node)->left )
-      {
-         if ( /*UNCLE(node) &&*/ UNCLE(node)->colour == Red )
-         {
-            DAD(node)->colour = UNCLE(node)->colour = Black;
-            GRANDPA(node)->colour = Red;
-            assert ( GRANDPA(node) != &sentinel );
-            node = GRANDPA(node); // start again with grandpa
-         }
-         else 
-         {
-            if ( node == DAD(node)->right ) // Uncle is black
-            {
-               node = DAD(node);
-               assert ( node->right != &sentinel );
-               rotateLeft ( node );
-            }
-            DAD(node)->colour = Black;
-            GRANDPA(node)->colour = Red;
-            assert ( GRANDPA(node) != &sentinel );
-            //if ( GRANDPA(node)->left != &sentinel );
-               rotateRight ( GRANDPA(node) );
-         }
-      }
-      else // DAD(node) == GRANDPA(node)->right
-      {
-         if ( /*UNCLE(node) &&*/ UNCLE(node)->colour == Red )
-         {
-            DAD(node)->colour = UNCLE(node)->colour = Black;
-            GRANDPA(node)->colour = Red;
-            assert ( GRANDPA(node) != &sentinel );
-            node = GRANDPA(node); // start again with grandpa
-         }
-         else 
-         {
-            if ( node == DAD(node)->left ) // Uncle is black or null
-            {
-               node = DAD(node);
-               assert ( node->left != &sentinel );
-               rotateRight ( node );
-            }
-            DAD(node)->colour = Black;
-            GRANDPA(node)->colour = Red;
-            assert ( GRANDPA(node) != &sentinel );
-            //if ( GRANDPA(node)->right != &sentinel )
-               rotateLeft ( GRANDPA(node) );
-         }
-      }
-   }
-   posRoot->colour = Black;
-}
-
-
+// Tree rotations, ref [Cormen, 13.2]
 #define ROTATE_ERR_MSG "PathFinder::NodePool::rotateLeft() was called on a node with no right child."
 void PathFinder::NodePool::rotateLeft ( PosTreeNode *root )
 {
    PosTreeNode *pivot = root->right; // 1
-   if ( pivot == &sentinel ) 
-      throw new runtime_error ( ROTATE_ERR_MSG );
+   assert ( pivot != &sentinel );
+   //if ( pivot == &sentinel ) 
+   //   throw new runtime_error ( ROTATE_ERR_MSG );
    root->right = pivot->left;  // 2
-   //if ( root->right != &sentinel ) 
-      root->right->parent = root; // 3
+   root->right->parent = root; // 3
    pivot->parent = root->parent; // 4
    root->parent = pivot; // 11
    pivot->left = root; // 10
@@ -1407,11 +1382,11 @@ void PathFinder::NodePool::rotateLeft ( PosTreeNode *root )
 void PathFinder::NodePool::rotateRight ( PosTreeNode *root )
 {
    PosTreeNode *pivot = root->left;
-   if ( pivot == &sentinel ) 
-      throw new runtime_error ( ROTATE_ERR_MSG );
+   assert ( pivot != &sentinel );
+   //if ( pivot == &sentinel ) 
+   //   throw new runtime_error ( ROTATE_ERR_MSG );
    root->left = pivot->right;
-   //if ( root->left != &sentinel )
-      root->left->parent = root;
+   root->left->parent = root;
    pivot->parent = root->parent;
    root->parent = pivot;
    pivot->right = root;
@@ -1427,7 +1402,7 @@ void PathFinder::NodePool::rotateRight ( PosTreeNode *root )
 #undef ROTATE_ERR_MSG
 
 // is pos already listed?
-bool PathFinder::NodePool::isListed ( const Vec2i &pos ) 
+bool PathFinder::NodePool::isListedTree ( const Vec2i &pos ) 
 #ifndef PATHFINDER_TREE_TIMING  
 const
 #endif
@@ -1476,7 +1451,7 @@ const
 //#ifdef PATHFINDER_TIMING
 //bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, void *h, float d, bool exp )
 //#else
-bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float h, float d, bool exp )
+bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float h, bool exp )
 //#endif
 {
    if ( numTotal == tmpMaxNodes ) 
@@ -1492,7 +1467,6 @@ bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float 
 #else*/
    stock[numTotal].heuristic = h;
 //#endif
-   stock[numTotal].distToHere = d;
    stock[numTotal].exploredCell = exp;
    const int top = tmpMaxNodes - 1;
    if ( !numOpen ) lists[top] = &stock[numTotal];
@@ -1527,7 +1501,11 @@ bool PathFinder::NodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float 
       // insert newbie in sorted pos.
       lists[offset] = &stock[numTotal];
    }
+#ifdef PATHFINDER_NODEPOOL_USE_MARKER_ARRAY
+   addMarker ( pos );
+#else
    addToTree ( pos );
+#endif
    numTotal ++;
    numOpen ++;
    return true;
@@ -1543,7 +1521,7 @@ PathFinder::AStarNode* PathFinder::NodePool::getBestCandidate ()
    numClosed ++;
    return lists[numClosed-1];
 }
-
+/*
 bool PathFinder::NodePool::addToOpenHD ( AStarNode* prev, const Vec2i &pos, float d )
 {
    if ( numTotal == tmpMaxNodes ) 
@@ -1577,7 +1555,7 @@ bool PathFinder::NodePool::addToOpenHD ( AStarNode* prev, const Vec2i &pos, floa
    numTotal ++;
    numOpen ++;
    return true;
-}
+}*/
 #ifdef DEBUG
 // Why is this here?  Doesn't it belong in world.cpp?  It's here because we compile path_finder.cpp
 // optimized in debug since it's the only possible way you can really debug and this is a dog slow

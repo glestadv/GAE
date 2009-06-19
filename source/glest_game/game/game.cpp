@@ -408,6 +408,13 @@ void Game::tick()
 	updateFps= 0;
 	renderFps= 0;
 #ifdef PATHFINDER_TIMING
+   static int logCounter = 0;
+   logCounter++;
+   if ( logCounter % 15 == 0 )
+   {
+      Logger::getInstance ().add ( PathFinder::getInstance()->statNew.GetStats () );
+      Logger::getInstance ().add ( PathFinder::getInstance()->statNew.GetTotalStats () );
+   }
    PathFinder::getInstance ()->resetCounters ();
 #endif
 #ifdef PATHFINDER_TREE_TIMING

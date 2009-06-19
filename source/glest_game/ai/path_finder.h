@@ -20,10 +20,12 @@
 #include <set>
 #include "unit_stats_base.h"
 
+#define PATHFINDER_NODEPOOL_USE_MARKER_ARRAY
+
 //#define PATHFINDER_TREE_TIMING
 
 // Time calls to aStar() and aaStar() ? All the below symbols require this one too.
-//#define PATHFINDER_TIMING
+#define PATHFINDER_TIMING
 
 // dump state if path not found [aaStar()]
 //#define PATHFINDER_DEBUGGING_LOG_FAILURES
@@ -211,7 +213,7 @@ private:
    //TravelState aaStar ( Unit *unit, const Vec2i &finalPos );
 
    void getCrossOverPoints ( const list<Vec2i> &one, const list<Vec2i> &two, list<Vec2i> &result );
-   void MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, UnitPath *path );
+   bool MergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, UnitPath *path );
 
    // true if any path to at least radius cells away can be found
    bool canPathOut ( const Vec2i &pos, const int radius, Field field );
@@ -251,7 +253,7 @@ private:
 //#else
       float heuristic;
 //#endif
-      float distToHere;
+      //float distToHere;
 		bool exploredCell;
    };
    enum Colour { Red, Black };
@@ -260,6 +262,21 @@ private:
       PosTreeNode *left, *right, *parent;
       Colour colour;
       Vec2i pos;
+   };
+   struct PosMarkerArray
+   {
+      int stride;
+      unsigned int counter;
+      unsigned int *marker;
+      
+      PosMarkerArray () {counter=0;marker=NULL;};
+      ~PosMarkerArray () {if (marker) delete marker; }
+
+      void init ( int w, int h ) { stride = w; marker = new unsigned int[w*h]; 
+               memset ( marker, 0, w * h * sizeof(unsigned int) ); }
+      inline void newSearch () { ++counter; }
+      inline void setMark ( const Vec2i &pos ) { marker[pos.y * stride + pos.x] = counter; }
+      inline bool isMarked ( const Vec2i &pos ) { return marker[pos.y * stride + pos.x] == counter; }
    };
    class NodePool
    {
@@ -291,6 +308,7 @@ private:
       NodePool ();
       ~NodePool ();
 
+      PosMarkerArray markerArray;
       // reset everything, include maxNodes...
       void reset ();
       // will be == PathFinder::pathFindMaxNodes (returns 'normal' max, not temp)
@@ -298,22 +316,25 @@ private:
       // sets a temporary maximum number of nodes to use (50 <= max <= pathFindMaxNodes)
       void setMaxNodes ( const int max );
       // Is this pos already listed?
-      bool isListed ( const Vec2i &pos )
+      bool isListedTree ( const Vec2i &pos )
 #ifndef PATHFINDER_TREE_TIMING  
          const
 #endif
          ;
+      bool isListedMarker ( const Vec2i &pos ) { return markerArray.isMarked (pos); }
+      void addMarker ( const Vec2i &pos ) { markerArray.setMark (pos);};
+
       // add this pos, return true on success, false if out of nodes
 //#ifdef PATHFINDER_TIMING
 //      bool addToOpen ( AStarNode* prev, const Vec2i &pos, void *h, float d, bool exp );
 //#else
-      bool addToOpen ( AStarNode* prev, const Vec2i &pos, float h, float d, bool exp = true );
+      bool addToOpen ( AStarNode* prev, const Vec2i &pos, float h, bool exp = true );
 //#endif
       // moves 'best' node from open to closed, and returns it, or NULL if open is empty
       AStarNode* getBestCandidate ();
 
       // used to insert by highest distance rather than lowest heuristic, for PathFinder::CanPathOut()
-      bool addToOpenHD ( AStarNode* prev, const Vec2i &pos, float d );
+      //bool addToOpenHD ( AStarNode* prev, const Vec2i &pos, float d );
 
       // should be private, but getCrossOverPoints() also uses this 'functionality'
       void addToTree ( const Vec2i &pos );
