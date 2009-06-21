@@ -1253,7 +1253,7 @@ void Renderer::renderSurfacePFDebug ()
          uint32 met;
 
          bool onPath = false, onRetPath = false, isStart = false, isDest = false;
-         met = PathFinder::getInstance()->metrics[cy][cx].get ( mfWalkable );
+         met = LowLevelSearch::aMap->metrics[cy][cx].get ( mfWalkable );
          Vec2i cPos ( cx, cy );
          if ( map->PathStart == cPos ) isStart = true;
          if ( map->PathDest == cPos ) isDest = true;
@@ -1283,7 +1283,7 @@ void Renderer::renderSurfacePFDebug ()
             glNormal3fv(tc00->getNormal().ptr());
             glVertex3fv(ml.ptr());                        
          glEnd ();
-         met = PathFinder::getInstance()->metrics[cy][cx+1].get ( mfWalkable );
+         met = LowLevelSearch::aMap->metrics[cy][cx+1].get ( mfWalkable );
          onPath = false, onRetPath = false, isStart = false, isDest = false;
          cPos = Vec2i ( cx + 1, cy );
          if ( map->PathStart == cPos ) isStart = true;
@@ -1313,7 +1313,7 @@ void Renderer::renderSurfacePFDebug ()
             glNormal3fv(tc00->getNormal().ptr());
             glVertex3fv(mc.ptr());                        
          glEnd ();
-         met = PathFinder::getInstance()->metrics[cy+1][cx].get ( mfWalkable );
+         met = LowLevelSearch::aMap->metrics[cy+1][cx].get ( mfWalkable );
          onPath = false, onRetPath = false, isStart = false, isDest = false;
          cPos = Vec2i ( cx, cy + 1);
          if ( map->PathStart == cPos ) isStart = true;
@@ -1343,7 +1343,7 @@ void Renderer::renderSurfacePFDebug ()
             glNormal3fv(tc00->getNormal().ptr());
             glVertex3fv(bl.ptr());                        
          glEnd ();
-         met = PathFinder::getInstance()->metrics[cy+1][cx+1].get ( mfWalkable );
+         met = LowLevelSearch::aMap->metrics[cy+1][cx+1].get ( mfWalkable );
          onPath = false, onRetPath = false, isStart = false, isDest = false;
          cPos = Vec2i ( cx + 1, cy + 1 );
          if ( map->PathStart == cPos ) isStart = true;

@@ -241,7 +241,7 @@ public:
 	//bool getSubmerged(const Cell *c) const				{return c->getHeight()<waterLevel;}
 	bool getDeepSubmerged(const Tile *sc) const	{return sc->getHeight()<waterLevel-(1.5f/heightFactor);}
 	//bool getDeepSubmerged(const Cell *c) const			{return c->getHeight()<waterLevel-(1.5f/heightFactor);}
-	float getSurfaceHeight(const Vec2i &pos) const;
+	//float getSurfaceHeight(const Vec2i &pos) const;
 	
    const Earthquakes &getEarthquakes() const			{return earthquakes;}
 

@@ -726,13 +726,6 @@ bool World::placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spacia
             if(freeSpace){
                unit->setPos(pos);
                unit->setMeetingPos(pos - Vec2i(1));
-
-               // HOOK IN HERE to update PathFinder::metrics
-               //if ( !unit->getMoveSpeed () ) // is there a better way to tell if this a "building" ?
-               //   unitUpdater.pathFinder.UpdateMapMetrics ( pos, size, true );
-               // metrics only initialised after starting units are placed...
-               // Does this function get called from anywhere else???
-
                return true;
             }
          }
@@ -887,10 +880,16 @@ void World::initUnits() {
 				Unit *unit= new Unit(getNextUnitId(), Vec2i(0), ut, f, &map);
 				int startLocationIndex= f->getStartLocationIndex();
 
-				if(placeUnit(map.getStartLocation(startLocationIndex), generationArea, unit, true)) {
-					unit->create(true);
-					unit->born();
-				} else {
+				if(placeUnit(map.getStartLocation(startLocationIndex), generationArea, unit, true)) 
+            {
+               unit->create(true);
+               unit->born();
+               if ( !unit->isMobile() )
+                  unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(), 
+                                 unit->getSize(), true, unit->getCurrField () );
+            } 
+            else 
+            {
 					throw runtime_error("Unit cant be placed, this error is caused because there "
 							"is no enough place to put the units near its start location, make a "
 							"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
@@ -903,7 +902,6 @@ void World::initUnits() {
 	}
 	map.computeNormals();
 	map.computeInterpolatedHeights();
-   unitUpdater.pathFinder->initMapMetrics ();
 }
 
 void World::initMap(){

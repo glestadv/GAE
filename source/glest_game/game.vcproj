@@ -396,6 +396,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ai\annotated_map.h"
+				>
+			</File>
+			<File
 				RelativePath=".\main\battle_end.h"
 				>
 			</File>
@@ -612,6 +616,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ai\path_finder_llsr.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pch.h"
 				>
 			</File>
@@ -733,6 +741,10 @@
 			</File>
 			<File
 				RelativePath=".\ai\ai_rule.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ai\annotated_map.cpp"
 				>
 			</File>
 			<File
@@ -958,22 +970,6 @@
 				RelativePath=".\ai\path_finder.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						InlineFunctionExpansion="0"
-						FavorSizeOrSpeed="0"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						BrowseInformation="1"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release|Win32"
 					>
 					<Tool
@@ -1005,6 +1001,10 @@
 						DebugInformationFormat="3"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\ai\path_finder_llsr.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\pch.cpp"
