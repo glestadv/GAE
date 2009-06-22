@@ -16,7 +16,8 @@
 #include <string>
 #include <vector>
 
-#include <xercesc/util/XercesDefs.hpp>
+#include "tinyxml.h"
+//#include <xercesc/util/XercesDefs.hpp>
 #include "vec.h"
 #include "conversion.h"
 
@@ -25,7 +26,7 @@ using std::vector;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace XERCES_CPP_NAMESPACE {
+/*namespace XERCES_CPP_NAMESPACE {
 	class DOMImplementation;
 	class DOMDocument;
 	class DOMNode;
@@ -36,6 +37,7 @@ using XERCES_CPP_NAMESPACE::DOMImplementation;
 //using XERCES_CPP_NAMESPACE::DOMDocument;
 using XERCES_CPP_NAMESPACE::DOMNode;
 using XERCES_CPP_NAMESPACE::DOMElement;
+*/
 
 namespace Shared { namespace Xml {
 
@@ -55,7 +57,7 @@ class XmlAttribute;
 class XmlIo {
 private:
 	static bool initialized;
-	DOMImplementation *implementation;
+	//DOMImplementation *implementation;
 
 private:
 	XmlIo();
@@ -109,7 +111,7 @@ private:
 	void operator =(XmlAttribute&);
 
 public:
-	XmlAttribute(DOMNode *attribute);
+	XmlAttribute(TiXmlAttribute *attribute);
 	XmlAttribute(const char *name, const char *value) : name(name), value(value){}
 	XmlAttribute(const string &name, const string &value) : name(name), value(value){}
 
@@ -140,7 +142,7 @@ private:
 	void operator =(XmlNode&);
 
 public:
-	XmlNode(DOMNode *node);
+	XmlNode(TiXmlElement *node);
 	XmlNode(const string &name);
 	~XmlNode();
 
@@ -334,8 +336,8 @@ public:
 		return child;
 	}
 
-	void populateElement(DOMElement *node, XERCES_CPP_NAMESPACE::DOMDocument *document) const;
-	DOMElement *buildElement(XERCES_CPP_NAMESPACE::DOMDocument *document) const;
+	//void populateElement(DOMElement *node, XERCES_CPP_NAMESPACE::DOMDocument *document) const;
+	//DOMElement *buildElement(XERCES_CPP_NAMESPACE::DOMDocument *document) const;
 
 	int getOptionalIntValue(const char* name, int defaultValue = 0) const {
 		const XmlNode *node = getChild(name, 0, false);

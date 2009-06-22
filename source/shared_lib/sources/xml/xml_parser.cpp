@@ -16,21 +16,22 @@
 #include <fstream>
 #include <stdexcept>
 
-#include <xercesc/dom/DOM.hpp>
+/*#include <xercesc/dom/DOM.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/framework/LocalFileFormatTarget.hpp>
 #include <xercesc/framework/MemBufInputSource.hpp>
 #include <xercesc/framework/Wrapper4InputSource.hpp>
+*/
 
 #include "conversion.h"
 
 #include "leak_dumper.h"
 
-XERCES_CPP_NAMESPACE_USE
+/*XERCES_CPP_NAMESPACE_USE
 
 #if !defined(WIN32) || !defined(WIN64) // windows is a piece of shit
 #	define DOMDocument XERCES_CPP_NAMESPACE::DOMDocument
-#endif
+#endif*/
 
 using namespace std;
 
@@ -42,7 +43,7 @@ using namespace Util;
 //	class ErrorHandler
 // =====================================================
 
-class ErrorHandler: public DOMErrorHandler{
+/*class ErrorHandler: public DOMErrorHandler{
 public:
 	virtual bool handleError (const DOMError &domError){
 		if(domError.getSeverity()== DOMError::DOM_SEVERITY_FATAL_ERROR){
@@ -55,6 +56,7 @@ public:
 		return true;
 	}
 };
+*/
 
 // =====================================================
 //	class XmlIo
@@ -63,7 +65,7 @@ public:
 bool XmlIo::initialized= false;
 
 XmlIo::XmlIo(){
-	try{
+	/*try{
 		XMLPlatformUtils::Initialize();
 	}
 	catch(const XMLException&){
@@ -78,7 +80,7 @@ XmlIo::XmlIo(){
 	}
 	catch(const DOMException){
 		throw runtime_error("Exception while creating XML parser");
-	}
+	}*/
 }
 
 XmlIo &XmlIo::getInstance(){
@@ -87,32 +89,21 @@ XmlIo &XmlIo::getInstance(){
 }
 
 XmlIo::~XmlIo(){
-	XMLPlatformUtils::Terminate();
+	//XMLPlatformUtils::Terminate();
 }
 
 XmlNode *XmlIo::load(const string &path){
-
-#if XERCES_VERSION_MAJOR < 3
-	DOMBuilder *parser = NULL;
-#else
-	DOMLSParser *parser = NULL;
-#endif
+	/*DOMBuilder *parser = NULL;
 	DOMDocument *document = NULL;
 	XmlNode *rootNode = NULL;
 
 	try{
 		ErrorHandler errorHandler;
-#if XERCES_VERSION_MAJOR < 3
+
 		parser= (static_cast<DOMImplementationLS*>(implementation))->createDOMBuilder(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
 		parser->setErrorHandler(&errorHandler);
 		parser->setFeature(XMLUni::fgXercesSchemaFullChecking, true);
 		parser->setFeature(XMLUni::fgDOMValidation, true);
-#else
-		parser = (static_cast<DOMImplementationLS*>(implementation))->createLSParser(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
-    		DOMConfiguration  *config = parser->getDomConfig();
-		config->setParameter(XMLUni::fgXercesSchemaFullChecking, true);
-		config->setParameter(XMLUni::fgDOMValidate, true);
-#endif
 		document= parser->parseURI(path.c_str());
 
 		if(!document){
@@ -131,16 +122,27 @@ XmlNode *XmlIo::load(const string &path){
 			parser->release();
 		}
 		throw runtime_error("Exception while loading: " + path + ": " + XMLString::transcode(e.msg));
+	}*/
+
+	// creates a document from file
+
+	TiXmlDocument document( path.c_str() );
+
+	if ( !document.LoadFile() )	{
+		throw runtime_error("Can not parse URL: " + path);
 	}
+	/*
+	{
+		printf("Error parsing XML, file: %s, line %i, %s\n", pFilename, doc.ErrorRow(), doc.ErrorDesc());
+	}*/
+
+	XmlNode *rootNode = new XmlNode(document.RootElement());
+
+	return rootNode;
 }
 
 XmlNode *XmlIo::parseString(const char *doc, size_t size) {
-#if XERCES_VERSION_MAJOR < 3
-	DOMBuilder *parser = NULL;
-#else
-	DOMLSParser *parser = NULL;
-	DOMConfiguration  *config = NULL;
-#endif
+	/*DOMBuilder *parser = NULL;
 	DOMDocument *document = NULL;
 	XmlNode *rootNode = NULL;
 
@@ -152,17 +154,11 @@ XmlNode *XmlIo::parseString(const char *doc, size_t size) {
 		ErrorHandler errorHandler;
 		MemBufInputSource memInput((const XMLByte*)doc, size, (const XMLCh*)L"bite me");
 		Wrapper4InputSource wrapperSource(&memInput, false);
-#if XERCES_VERSION_MAJOR < 3
+
 		parser= (static_cast<DOMImplementationLS*>(implementation))->createDOMBuilder(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
 		parser->setErrorHandler(&errorHandler);
 		parser->setFeature(XMLUni::fgXercesSchemaFullChecking, true);
 		parser->setFeature(XMLUni::fgDOMValidation, true);
-#else
-		parser = (static_cast<DOMImplementationLS*>(implementation))->createLSParser(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
-		config = parser->getDomConfig();
-		config->setParameter(XMLUni::fgXercesSchemaFullChecking, true);
-		config->setParameter(XMLUni::fgDOMValidate, true);
-#endif
 		document = parser->parse(wrapperSource);
 
 		if(document == NULL){
@@ -181,17 +177,21 @@ XmlNode *XmlIo::parseString(const char *doc, size_t size) {
 			parser->release();
 		}
 		throw runtime_error(string("Exception while parsing in-memory document: ") + XMLString::transcode(e.msg));
-	}
+	}*/
+
+	// creates a document from string
+
+	TiXmlDocument document;
+
+	document.Parse(doc); // returns const char* but not sure why
+
+	XmlNode *rootNode = new XmlNode(document.RootElement());
+
+	return rootNode;
 }
 
-void XmlIo::save(const string &path, const XmlNode *node){
-#if XERCES_VERSION_MAJOR < 3		
-	DOMWriter* writer = NULL;
-#else
-	DOMLSSerializer *serializer = NULL;
-	DOMLSOutput* output = NULL;
-	DOMConfiguration* config = NULL;
-#endif
+void XmlIo::save(const string &path, const XmlNode *node){		
+	/*DOMWriter* writer = NULL;
 	DOMDocument *document = NULL;
 	DOMElement *documentElement = NULL;
 	
@@ -206,53 +206,29 @@ void XmlIo::save(const string &path, const XmlNode *node){
 		node->populateElement(documentElement, document);
 
 		LocalFileFormatTarget file(path.c_str());
-#if XERCES_VERSION_MAJOR < 3		
+
 		DOMWriter* writer = implementation->createDOMWriter();
 		writer->setFeature(XMLUni::fgDOMWRTFormatPrettyPrint, true);
 		writer->writeNode(&file, *document);
-#else	
-		serializer = implementation->createLSSerializer();
-		output=implementation->createLSOutput();
-		config=serializer->getDomConfig();
-		config->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint,true);
-		output->setByteStream(&file);
-		serializer->write(document,output);
-		output->release();
-		serializer->release();
-#endif
-		
 		document->release();
 	}
 	catch(const DOMException &e){
-#if XERCES_VERSION_MAJOR < 3
 		if(writer) {
 			writer->release();
 		}
-#else
-		if(serializer) {
-			serializer->release();
-		}
-		if(output) {
-			output->release();
-		}
-#endif
 		
 		if(document) {
 			document->release();
 		}
 		throw runtime_error("Exception while saving: " + path + ": " + XMLString::transcode(e.msg));
 	}
+	*/
 }
 
 /** WARNING: return value must be freed by calling XmlIo::getInstance().releaseString(). */
-char *XmlIo::toString(const XmlNode *node, bool pretty) {
-#if XERCES_VERSION_MAJOR < 3		
-	DOMWriter* writer = NULL;
-#else
-	DOMLSSerializer *serializer = NULL;
-	DOMLSOutput* output = NULL;
-	DOMConfiguration* config = NULL;
-#endif
+char *XmlIo::toString(const XmlNode *node, bool pretty) {		
+	/*DOMWriter* writer = NULL;
+
 	XMLCh str[strSize];
 	DOMDocument *document = NULL;
 	DOMElement *documentElement;
@@ -268,7 +244,6 @@ char *XmlIo::toString(const XmlNode *node, bool pretty) {
 		node->populateElement(documentElement, document);
 
 		// retrieve as string
-#if XERCES_VERSION_MAJOR < 3
 		DOMWriter* writer = implementation->createDOMWriter();
 		writer->setFeature(XMLUni::fgDOMWRTFormatPrettyPrint, pretty);
 		writer->setEncoding((const XMLCh*)L"UTF-8");
@@ -276,35 +251,14 @@ char *XmlIo::toString(const XmlNode *node, bool pretty) {
 		ret = XMLString::transcode(xmlText);
 		XMLString::release(&xmlText);
 		writer->release();
-#else
-		serializer = implementation->createLSSerializer();
-		output=implementation->createLSOutput();
-		config=serializer->getDomConfig();
-		config->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint,true);
-		//output->setByteStream(&file);
-		xmlText = serializer->writeToString(document);
-		ret = XMLString::transcode(xmlText);
-		XMLString::release(&xmlText);
-		output->release();
-		serializer->release();
-#endif
 		
 		document->release();
 		return ret;
 	}
 	catch(const DOMException &e){
-#if XERCES_VERSION_MAJOR < 3
 		if(writer) {
 			writer->release();
 		}
-#else
-		if(serializer) {
-			serializer->release();
-		}
-		if(output) {
-			output->release();
-		}
-#endif
 		if(xmlText) {
 			XMLString::release(&xmlText);
 		}
@@ -312,11 +266,14 @@ char *XmlIo::toString(const XmlNode *node, bool pretty) {
 			document->release();
 		}
 		throw runtime_error(string("Exception while converting to string: ") + XMLString::transcode(e.msg));
-	}
+	}*/
+
+	return "fake";
 }
 
 void XmlIo::releaseString(char **domAllocatedString) {
-	XMLString::release(domAllocatedString);
+	//XMLString::release(domAllocatedString);
+	delete domAllocatedString;
 }
 
 // =====================================================
@@ -347,8 +304,8 @@ XmlTree::~XmlTree(){
 //	class XmlNode
 // =====================================================
 
-XmlNode::XmlNode(DOMNode *node){
-
+XmlNode::XmlNode(TiXmlElement *node){
+/*
 	//get name
 	char str[strSize];
 	XMLString::transcode(node->getNodeName(), str, strSize-1);
@@ -378,6 +335,45 @@ XmlNode::XmlNode(DOMNode *node){
 				attributes.push_back(xmlAttribute);
 			}
 		}
+	}*/
+	//no node
+	if ( !node ) {
+		name = "";
+		return;
+	}
+
+	//get name
+	name = node->ValueStr();
+
+	//check document
+	if (node->Type() == TiXmlNode::NodeType::DOCUMENT) {
+		name = "document";
+	}
+
+	//add children to node
+	TiXmlNode *firstChild = node->FirstChild();
+	TiXmlElement *childElement = NULL;
+
+	if ( firstChild ) { // make sure there is a child node
+		 childElement = firstChild->ToElement();
+	}
+
+	while ( childElement )	{
+		XmlNode *xmlNode = new XmlNode(childElement); // recursive, null childElement as base
+		children.push_back(xmlNode);
+
+		childElement = childElement->NextSiblingElement();
+	}
+
+	//add attributes to node
+	TiXmlElement *element = node->ToElement();
+	TiXmlAttribute *attribute = element->FirstAttribute();
+
+	while ( attribute ) {
+		XmlAttribute *xmlAttribute = new XmlAttribute(attribute);
+		attributes.push_back(xmlAttribute);
+
+		attribute = attribute->Next();
 	}
 }
 
@@ -454,7 +450,7 @@ XmlAttribute *XmlNode::addAttribute(const char *name, const char *value){
 	return attr;
 }
 
-void XmlNode::populateElement(DOMElement *node, DOMDocument *document) const {
+/*void XmlNode::populateElement(DOMElement *node, DOMDocument *document) const {
 	XMLCh str[strSize];
 	for (int i = 0; i < attributes.size(); ++i) {
 		XMLString::transcode(attributes[i]->getName().c_str(), str, strSize - 1);
@@ -476,10 +472,10 @@ DOMElement *XmlNode::buildElement(DOMDocument *document) const {
 	XMLString::transcode(name.c_str(), str, strSize - 1);
 	DOMElement *node = document->createElement(str);
 
-	populateElement(node, document);
+	//populateElement(node, document);
 	return node;
 }
-
+*/
 string XmlNode::getTreeString() const{
 	string str;
 
@@ -501,14 +497,17 @@ string XmlNode::getTreeString() const{
 //	class XmlAttribute
 // =====================================================
 
-XmlAttribute::XmlAttribute(DOMNode *attribute){
-	char str[strSize];
+XmlAttribute::XmlAttribute(TiXmlAttribute *attribute){
+	/*char str[strSize];
 
 	XMLString::transcode(attribute->getNodeValue(), str, strSize-1);
 	value= str;
 
 	XMLString::transcode(attribute->getNodeName(), str, strSize-1);
-	name= str;
+	name= str;*/
+
+	name = attribute->Name();
+	value = attribute->ValueStr();
 }
 
 bool XmlAttribute::getBoolValue() const {
