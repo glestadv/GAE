@@ -14,7 +14,7 @@
 #define _GLEST_GAME_PATHFINDER_H_
 
 #include "annotated_map.h"
-#include "path_finder_llsr.h"
+//#include "path_finder_llsr.h"
 
 using std::vector;
 using std::list;

@@ -11,7 +11,7 @@
 //
 // File: path_finder_llsr.h
 //
-// Low Level Search Routines, and additional support structures
+// Low Level Search Routines and additional support structures
 //
 
 #ifndef _GLEST_GAME_PATHFINDER_LLSR_H_
@@ -20,18 +20,26 @@
 #include "vec.h"
 #include "unit_stats_base.h"
 
+// TODO: Figure out why pre-compiled headers are not working with gcc...
 #include <vector>
 #include <list>
 #include <set>
 
 //
+// define this if you know your heuristic is admissable,
+// or if it isn't but you don't care (you'll get sub-optimal
+// paths, but you'll get them faster).
+#define LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
+
+//
 // Please select your preferred internal data structure...
 // Note: this data structure is only used to test whether
 // a position is listed already or not, the actual open/closed
-// lists are indeed lists (in the same memory space, closed 
-// grows 'up' from the bottom, open grows 'down' from the top).
-// This structure was optimized for the LHF algorithm, and 
-// may not be appropriate for more typical search algorithms.
+// lists are indeed 'lists' (actually indexed arrays, in the 
+// same memory space, closed grows 'up' from the bottom, open 
+// grows 'down' from the top).
+// This 'dual-list' structure was optimized for the BFS algorithm, 
+// and may not be appropriate for more typical search algorithms.
 //
 // Please define exactly one of these...
 #define NODEPOOL_USE_MARKER_ARRAY
@@ -42,37 +50,21 @@
 // Marker Arrays are simply an array, a 'perfect' hashtable for rectangular maps.
 //
 // The default marker array uses a lazy clearing scheme (ie, the array is never
-// cleared) and a single comparison to test a position's 'listedness', it therefore
-// runs in 'constant time' [O(1)]. Fastest, but requires 4 (or 8) bytes per map cell.
+// cleared) and a single comparison to test a position's 'listedness', being an array
+// 'look-ups' and 'inserts' operate in 'constant time' [O(1)]. Fastest, but requires 4 
+// (or 8) bytes per map cell.
 //
 // The packed marker array uses a single bit per map cell, and therefore needs to be 
-// cleared before use, and lookups require some bit masking. It still runs in 
-// constant time [O(1)], but is obviously slightly slower than the unpacked version.
+// cleared before use, and lookups require some bit masking. 'Look-ups' and 'inserts' are
+// still constant time ops [O(1)], but is obviously slightly slower than the unpacked version.
+// NB: If the map is very large this will exhibit better caching characteristics
+// than the lazy cleared version, and will probably out-perform it.
 //
 // The Red-Black tree is my own implementation of a Red-Black tree, plans to extend
 // this class exist, to make it a suitable structure for the open list of a regular 
 // A* search. As is it provides performance virtualy identical to std::set, which 
 // isn't surprising of course, as std::set is almost certainly also a Red-Black Tree.
-// Runs in logarithmic time [O(log n)]
-
-
-//#define PATHFINDER_TREE_TIMING
-
-// Time calls to aStar() and aaStar() ? All the below symbols require this one too.
-//#define PATHFINDER_TIMING
-
-// dump state if path not found [aaStar()]
-//#define PATHFINDER_DEBUGGING_LOG_FAILURES
-
-// dump state on excessively long calls [aaStar()]
-//#define PATHFINDER_DEBUGGING_LOG_LONG_CALLS
-
-// what constitutes a excessively long time ?
-//#define PATHFINDER_LOGLIMIT 5000
-
-// Intensive timing of aaStar()
-// Defining this symbol will log EVERY call to aaStar()
-//#define PATHFINDER_INTENSIVE_TIMING
+// look-ups and inserts run in logarithmic time [O(log n)]
 
 using std::list;
 
@@ -84,85 +76,119 @@ typedef list<Vec2i>::const_iterator VLConIt;
 typedef list<Vec2i>::reverse_iterator VLRevIt;
 typedef list<Vec2i>::const_reverse_iterator VLConRevIt;
 
-class NodePool;
-struct SearchParams;
-struct SearchNode;
-//struct AStarNode;
 class Map;
 class AnnotatedMap;
 
 // =====================================================
-// class LowLevelSearch
+// namespace LowLevelSearch
 //
 // static collection of low level search routines
 // and a few support functions.
 // =====================================================
-class LowLevelSearch
+namespace LowLevelSearch
 {
-public:
+
+   class BFSNodePool;
+   class AStarNodePool;
+
+   struct SearchParams;
+   struct BFSNode;
+   struct AStarNode;
    //
-   // Function pointers, to be supplied by the implementing application,
+   // Function pointers, to be supplied/filled in by the implementing application,
    // preferably before searching ;-)
    //
-   //coming soon!
+
+   //
+   // The heuristic to use, supply your own or use one of
+   // LowLevelSearch::euclideanDistance or 
+   // LowLevelSearch::manhattenDistance
+   //
+   // To create an simple over-estimating heuristic, simply scale a call 
+   // to either of the above,
+   // eg.
+   // float myHeuristic ( const Vec2i &p1, const Vec2i &p2 ) 
+   //    { return LowLevelSearch::manhattenDistance (p1,p2) * 1.8; }
+   //
+   // If you do this, technically you should un-define LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
+   // but if sub-optimal paths are acceptable, don't...
+   //
+   extern float (*heuristic) ( const Vec2i &p1, const Vec2i &p2 );
+   
+   //
+   // The search function. init() currently sets this to BestFirstPingPong
+   //
+   // see under 'Search Functions' below ...
+   extern bool (*search) ( SearchParams &sp, list<Vec2i> &path );
 
    //
    // Some variables we need...
    //
-   static AnnotatedMap *aMap; // the annotated map to search on
-   static Map *cMap; // the cell map // REMOVE ME, replace with function pointer to a hasUnit() type function
-   static NodePool nodePool;
+   // These need to be supplied externally
+   extern AnnotatedMap *aMap; // the annotated map to search on
+   extern Map *cMap; // the cell map // REMOVE ME, replace with function pointer to a hasUnit() type function
+
+   // init() will create these.
+   extern BFSNodePool *bNodePool;
+   extern AStarNodePool *aNodePool;
+
+   void init (); // basic/advanced nodepool ?
 
    //
    // Search Functions
    //
 
-   // Least Heuristic First Search
-   // Glest's original algorithm, with shiny new custom data structures
-   static bool LHF_Search ( SearchParams params, list<Vec2i> &path, bool ucStart=true );
+   // Best First Search, this is called by BestFirstSearch, and twice by BestFirstPingPong
+   // the unit checking behaviour needs to be reversed with the PingPong method, hence
+   // the funny signature, assign BestFirstSearch to 'search' if you just want a regular
+   // best first search
+   bool _BestFirstSearch ( SearchParams &params, list<Vec2i> &path, bool ucStart );
 
-   // 'Least Heuristic First Ping Pong'
-   // LHF_Search() run from start to goal, then goal to start and
-   // the paths 'merged' to create a single higher quality path
-   static bool LHF_PingPong ( SearchParams params, list<Vec2i> &path );
+   // A Best First Search (BFS)
+   bool BestFirstSearch ( SearchParams &params, list<Vec2i> &path );
+      
+   // 'Best First Search - Ping Pong'
+   // BestFirstSearch() run from start to goal, then goal to start and
+   // the two paths 'merged' to create a single higher quality path
+   bool BestFirstPingPong ( SearchParams &params, list<Vec2i> &path );
 
    // The Classic A* [Hart, Nilsson, & Raphael, 1968]
-   //static bool AStar ( SearchParams params, list<Vec2i> &path, bool ucStart=true );
+   bool AStar ( SearchParams &params, list<Vec2i> &path );
 
    // Fringe Search ? (a bit of A* with a dash of IDA*) [Björnsson, et al, 2005]
-   //static bool FringeSearch ( SearchParams params, list<Vec2i> &path, bool ucStart=true );
+   //static bool FringeSearch ( SearchParams params, list<Vec2i> &path );
 
    // Algorithm C ? [Bagchi & Mahanti, 1983]
-   //static bool AlgorithmC ( SearchParams params, list<Vec2i> &path, bool ucStart=true );
+   //static bool AlgorithmC ( SearchParams params, list<Vec2i> &path );
 
    //
    // Support functions
    //
 
    // Euclidean distance heuristic
-   static float heuristic ( const Vec2i &p1, const Vec2i &p2 ) { return p1.dist ( p2 ); }
+   __inline float euclideanHeuristic ( const Vec2i &p1, const Vec2i &p2 );
 
    // true if any path to at least radius cells away can be found
-   // Performs a modified LHF search where the heuristic is substituted
+   // Performs a modified Best First Search where the heuristic is substituted
    // for zero minus the distance to here, the algorithm thus tries to 'escape'
    // (ie, get as far from start as quickly as possible).
-   static bool canPathOut ( const Vec2i &pos, const int radius, Field field );
+   bool canPathOut ( const Vec2i &pos, const int radius, Field field );
+
+   void getCrossOverPoints ( const list<Vec2i> &one, const list<Vec2i> &two, list<Vec2i> &result );
+   bool mergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, list<Vec2i> &path );
+
+   void copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path );
+   
+   // Direction Vectors...
+   extern Vec2i Directions[8];
 
    // fills d1 and d2 with the diagonal cells(coords) that need checking for a 
    // unit of size to move from s to d, for diagonal moves.
    // WARNING: ASSUMES ( s.x != d.x && s.y != d.y ) ie. the move IS diagonal
    // if this condition is not true, results are undefined
    //
-   // This should be inline (or even __inline perhaps), but that's causing issues with gcc...
-   static void getPassthroughDiagonals ( const Vec2i &s, const Vec2i &d, 
+   __inline void getPassthroughDiagonals ( const Vec2i &s, const Vec2i &d, 
                                     const int size, Vec2i &d1, Vec2i &d2 );
-
-   static void getCrossOverPoints ( const list<Vec2i> &one, const list<Vec2i> &two, list<Vec2i> &result );
-   static bool mergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, list<Vec2i> &path );
-
-   static void copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path );
-   
-};
 
 // =====================================================
 // class SearchParams
@@ -178,29 +204,36 @@ struct SearchParams
 };
 
 // =====================================================
-// struct SearchNode
+// struct BFSNode
 //
-// A basic search node, has no 'distance to here' field
+// A Best First Search Node
 // =====================================================
-struct SearchNode
+struct BFSNode
 {
 	Vec2i pos;
-	SearchNode *next;
-	SearchNode *prev;
+	BFSNode *next;
+	BFSNode *prev;
    float heuristic;//union { float f; int i; } heuristic;
 	bool exploredCell;
-};
+}; // 21 bytes == 24 in mem ?
 
 // =====================================================
 // struct AStarNode
 //
 // A node structure for A* and friends
 // =====================================================
-//struct AStarNode : public SearchNode
-//{
-//   union { float f; int i; } distToHere;
-//};
+struct AStarNode
+{
+	Vec2i pos;
+	AStarNode *next;
+	AStarNode *prev;
+   float heuristic;
+   float distToHere;
+	bool exploredCell;
+   float estCost () const { return distToHere + heuristic; }
+}; // 25 bytes == 28 in mem ?
 
+#if defined ( NODEPOOL_USE_REDBLACK_TREE )
 // =====================================================
 // struct PosTreeNode
 //
@@ -245,7 +278,7 @@ private:
    inline void rotateRight ( PosTreeNode *node );
    inline void rotateLeft ( PosTreeNode *node );
 };
-
+#elif defined ( NODEPOOL_USE_MARKER_ARRAY )
 // =====================================================
 // struct PosMarkerArray
 //
@@ -269,28 +302,62 @@ struct PosMarkerArray
 };
 
 // =====================================================
+// struct DoubleMarkerArray
+//
+// A Marker Array supporting two mark types, open and closed.
+// =====================================================
+struct DoubleMarkerArray
+{
+   int stride;
+   unsigned int counter;
+   unsigned int *marker;
+   
+   DoubleMarkerArray () {counter=0;marker=NULL;};
+   ~DoubleMarkerArray () {if (marker) delete marker; }
+
+   void init ( int w, int h ) { stride = w; marker = new unsigned int[w*h]; 
+            memset ( marker, 0, w * h * sizeof(unsigned int) ); }
+   inline void newSearch () { counter += 2; }
+
+   inline void setNeither ( const Vec2i &pos ) { marker[pos.y * stride + pos.x] = 0; }
+   inline void setOpen ( const Vec2i &pos ) { marker[pos.y * stride + pos.x] = counter; }
+   inline void setClosed ( const Vec2i &pos ) { marker[pos.y * stride + pos.x] = counter + 1; }
+   
+   inline bool isOpen ( const Vec2i &pos ) { return marker[pos.y * stride + pos.x] == counter; }
+   inline bool isClosed ( const Vec2i &pos ) { return marker[pos.y * stride + pos.x] == counter + 1; }
+   inline bool isListed ( const Vec2i &pos ) { return marker[pos.y * stride + pos.x] >= counter; }
+   
+};
+#elif defined ( NODEPOOL_USE_PACKED_MARKER_ARRAY )
+// =====================================================
 // struct PackedPosMarkerArray
 //
 // A Packed Marker Array, using 1 bit per cell, must be 
-// cleared before use, and involves much bit masking.
+// cleared before use, and involves some bit masking.
 // =====================================================
 struct PackedPosMarkerArray
 {
    // TODO: Fill me in!
 };
+#endif
 
 // =====================================================
-// class NodePool
+// class BFSNodePool
 //
 // An interface to the open/closed lists, used mainly to 
 // hide away all the nasty conditional compilation to
 // support various different underlying data structures
 //
+// This NodePool supports the BFS algorithm, and operates
+// on BFSNode structures. Tests for 'listedness' report 
+// if a position is listed or not, there is no mechanism 
+// to test whether a listed position is open or closed.
+//
 // =====================================================
-class NodePool
+class BFSNodePool
 {
-   SearchNode *stock;
-   SearchNode **lists;
+   BFSNode *stock;
+   BFSNode **lists;
    int numOpen, numClosed, numTotal, numPos;
    int maxNodes, tmpMaxNodes;
 
@@ -304,8 +371,8 @@ class NodePool
    set<Vec2i> posSet;
 #endif
 public:
-   NodePool ();
-   ~NodePool ();
+   BFSNodePool ();
+   ~BFSNodePool ();
    void init ( Map *map );
 
    // reset everything, include maxNodes...
@@ -320,6 +387,8 @@ public:
       { return posTree.isIn ( pos ); }
 #elif defined ( NODEPOOL_USE_MARKER_ARRAY )
       { return markerArray.isMarked ( pos ); }
+#elif defined ( NODEPOOL_USE_STL_SET )
+      { return posSet.find ( pos ) != posSet.end(); }
 #endif
 
    void listPos ( const Vec2i &pos )
@@ -327,20 +396,60 @@ public:
       { posTree.add ( pos ); }
 #elif defined ( NODEPOOL_USE_MARKER_ARRAY )
       { markerArray.setMark ( pos ); }
+#elif defined ( NODEPOOL_USE_STL_SET )
+      { posSet.add ( pos ); }
 #endif
 
-   bool addToOpen ( SearchNode* prev, const Vec2i &pos, float h, bool exp = true );
+   bool addToOpen ( BFSNode* prev, const Vec2i &pos, float h, bool exp = true );
 
    // moves 'best' node from open to closed, and returns it, or NULL if open is empty
-   SearchNode* getBestCandidate ();
+   BFSNode* getBestCandidate ();
 
-   // used to insert by highest distance rather than lowest heuristic, for PathFinder::CanPathOut()
-   //bool addToOpenHD ( AStarNode* prev, const Vec2i &pos, float d );
+}; // class BFSNodePool
 
-#ifdef NODEPOOL_USE_REDBLACK_TREE
+// =====================================================
+// class AStarNodePool
+//
+// An interface to the open/closed lists, used mainly to 
+// hide away all the nasty conditional compilation to
+// support various different underlying data structures
+//
+// =====================================================
+class AStarNodePool
+{
+   DoubleMarkerArray markerArray;
+   AStarNode *stock;
+   AStarNode **lists;
+   int numOpen, numClosed, numTotal, numPos;
+   int maxNodes, tmpMaxNodes;
+
+public:
+   AStarNodePool ();
+   ~AStarNodePool ();
+   void init ( Map *map );
+
+   // reset everything, include maxNodes...
+   void reset ();
+   // will be == PathFinder::pathFindMaxNodes (returns 'normal' max, not temp)
+   int getMaxNodes () const { return maxNodes; }
+   // sets a temporary maximum number of nodes to use (50 <= max <= pathFindMaxNodes)
+   void setMaxNodes ( const int max );
+   // Is this pos already listed?
+   bool isListed ( const Vec2i &pos ) { return markerArray.isListed ( pos ); }
+   bool isOpen ( const Vec2i &pos ) { return markerArray.isOpen ( pos ); }
+   //AStarNode* getOpenNode ( const Vec2i &pos );
+   void updateOpenNode ( const Vec2i &pos, AStarNode *curr );
+
+#ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
+   bool isClosed ( const Vec2i &pos ) { return markerArray.isClosed ( pos ); }
+   AStarNode* getClosedNode ( const Vec2i &pos );
+   void reOpen ( AStarNode *node );
 #endif
-}; // class PathFinder::NodePool
+   bool addToOpen ( AStarNode* prev, const Vec2i &pos, float h, float d, bool exp = true );
 
+   // moves 'best' node from open to closed, and returns it, or NULL if open is empty
+   AStarNode* getBestCandidate ();
+};
 
 // =====================================================
 // Debugging Structures 
@@ -404,6 +513,6 @@ struct TreeStats
 };
 #endif
 
-}}
+}}}; // namespace Glest::Game::LowLevelSearch
 
 #endif

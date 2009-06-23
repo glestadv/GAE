@@ -13,7 +13,7 @@
 // Does not use pre-compiled header because it's optimized in debug build.
 
 // Currently DOES use precompiled header, because it's no longer optimized in debug
-// because debugging optimized code is not such much fun :-)
+// because debugging optimized code is not much fun :-)
 
 // Actually, no need for this one to be optimized anymore, when path finding is stable again, 
 // pathfinder_llsr.cpp should get this treatment, that's where the 'hard work' is done now.
@@ -21,6 +21,7 @@
 #include "pch.h"
 
 #include "path_finder.h"
+#include "path_finder_llsr.h"
 
 /*
 #include <algorithm>
@@ -67,6 +68,7 @@ PathFinder* PathFinder::getInstance ()
 
 PathFinder::PathFinder()
 {
+   LowLevelSearch::init ();
    LowLevelSearch::aMap = NULL;
    LowLevelSearch::cMap = NULL;
    annotatedMap = NULL;
@@ -87,7 +89,8 @@ void PathFinder::init ( Map *map )
    annotatedMap = new AnnotatedMap ( map );
    LowLevelSearch::cMap = map;
    LowLevelSearch::aMap = annotatedMap;
-   LowLevelSearch::nodePool.init ( map );
+   LowLevelSearch::bNodePool->init ( map );
+   LowLevelSearch::aNodePool->init ( map );
 }
 
 bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const
@@ -124,6 +127,7 @@ bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const
 
 PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
 {
+   static int flipper = 0;
    //route cache
 	UnitPath *path= unit->getPath();
 	if(finalPos==unit->getPos())
@@ -167,23 +171,49 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
          return tsBlocked;
       }
    }
-   NodePool &nPool = LowLevelSearch::nodePool;
-   nPool.reset ();
-   // dynamic adjustment of nodeLimit, based on distance to target
-   if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
-   else if ( dist < 10 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 4 );// == 200 nodes
-   else if ( dist < 15 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 2 );// == 400 nodes
-   // else a fixed -100, so the backward run has more nodes, and if the forward run hits 
-   // the nodeLimit, the backward run is more likely to succeed.
-   else nPool.setMaxNodes ( nPool.getMaxNodes () - 100 );// == 700 nodes
 
-   SearchParams params (unit);
-   params.dest = targetPos;
-   list<Vec2i> pathList;
-   if ( LowLevelSearch::LHF_PingPong ( params, pathList ) )
-      copyToPath ( pathList, unit->getPath () );
+   if ( flipper ++ % 2 )
+   {
+      LowLevelSearch::BFSNodePool &nPool = *LowLevelSearch::bNodePool;
+      LowLevelSearch::search = &LowLevelSearch::BestFirstPingPong;
+      nPool.reset ();
+      // dynamic adjustment of nodeLimit, based on distance to target
+      if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
+      else if ( dist < 10 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 4 );// == 200 nodes
+      else if ( dist < 15 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 2 );// == 400 nodes
+      // else a fixed -100, so the backward run has more nodes, and if the forward run hits 
+      // the nodeLimit, the backward run is more likely to succeed.
+      else nPool.setMaxNodes ( nPool.getMaxNodes () - 100 );// == 700 nodes
+   }
    else
    {
+      LowLevelSearch::AStarNodePool &nPool = *LowLevelSearch::aNodePool;
+      LowLevelSearch::search = &LowLevelSearch::AStar;
+      nPool.reset ();
+      // dynamic adjustment of nodeLimit, based on distance to target
+      if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
+      else if ( dist < 10 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 4 );// == 200 nodes
+      else if ( dist < 15 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 2 );// == 400 nodes
+   }
+
+   LowLevelSearch::SearchParams params (unit);
+   params.dest = targetPos;
+   list<Vec2i> pathList;
+   
+   if ( LowLevelSearch::search ( params, pathList ) )
+   {
+      copyToPath ( pathList, unit->getPath () );
+      if ( LowLevelSearch::search == LowLevelSearch::BestFirstPingPong )
+         Logger::getInstance ().add ( "BestFirstPingPong Used, returned true." );
+      else
+         Logger::getInstance ().add ( "AStar Used, returned true." );
+   }
+   else
+   {
+      if ( LowLevelSearch::search == LowLevelSearch::BestFirstPingPong )
+         Logger::getInstance ().add ( "BestFirstPingPong Failed." );
+      else
+         Logger::getInstance ().add ( "AStar Failed." );
       unit->getPath()->incBlockCount ();
       unit->setCurrSkill(scStop);
       return tsBlocked;

@@ -101,15 +101,21 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 	//update unit
 	if (unit->update()) {
-      /*
-      if ( unit->getCurrSkill ()->getClass () == scDummy )
-         Logger::getInstance ().add ( "Dummy Skill complete... applying static production." );
-      if ( unit->getCurrSkill ()->getClass () == scMorph )
-         Logger::getInstance ().add ( "Morph Skill complete..." );
-      if ( unit->getCurrSkill ()->getClass () == scMove )
-         Logger::getInstance ().add ( "Move Skill complete..." );
-      */
-      unit->getFaction ()->applyStaticProduction ( unit->getCurrSkill () );
+      
+      if ( unit->getCurrSkill () )
+      {
+         if ( unit->getCurrSkill ()->getClass () == scDummy )
+            Logger::getInstance ().add ( "Dummy Skill complete..." );
+         if ( unit->getCurrSkill ()->getClass () == scMorph )
+            Logger::getInstance ().add ( "Morph Skill complete..." );
+         if ( unit->getCurrSkill ()->getClass () == scMove )
+            Logger::getInstance ().add ( "Move Skill complete..." );
+      }
+      else
+         Logger::getInstance ().add ( "NULL skill complete !?!?!?" );
+
+      // Allow static production for skills... (certain skills ??)
+//      unit->getFaction ()->applyStaticProduction ( unit->getCurrSkill () );
 
 		// make sure attack systems are started even on laggy computers
 		/* this is causing double attacks for some reason
@@ -132,17 +138,23 @@ void UnitUpdater::updateUnit(Unit *unit) {
 		updateUnitCommand(unit);
 
       // Apply Costs, for new skill?
-      // CHECK FIRST, Cancel if no go... do once per command ???
-      /* IF */unit->getFaction ()->applyCosts ( unit->getCurrSkill () );
-      /* THEN Do It
-         ELSE Cancel It, or 'downgrade' it*/
+//      if ( unit->getFaction ()->checkCosts ( unit->getCurrSkill () ) )
+//         unit->getFaction ()->applyCosts ( unit->getCurrSkill () );
+//      else
+//         unit->cancelCurrCommand ();
 
-      /*
-      if ( unit->getCurrSkill ()->getClass () == scDummy )
-         Logger::getInstance().add ( "Dummy Skill starting... applying costs" );
-      if ( unit->getCurrSkill ()->getClass () == scMove )
-         Logger::getInstance().add ( "Move Skill starting..." );
-      */
+      if ( unit->getCurrSkill () )
+      {
+         if ( unit->getCurrSkill ()->getClass () == scDummy )
+            Logger::getInstance ().add ( "Dummy Skill commencing..." );
+         if ( unit->getCurrSkill ()->getClass () == scMorph )
+            Logger::getInstance ().add ( "Morph Skill commencing..." );
+         if ( unit->getCurrSkill ()->getClass () == scMove )
+            Logger::getInstance ().add ( "Move Skill commencing..." );
+      }
+      else
+         Logger::getInstance ().add ( "NULL skill commencing !?!?!?" );
+
 		//if unit is out of EP, it stops
 		if (unit->computeEp()) {
 			if (unit->getCurrCommand()) {
@@ -387,7 +399,7 @@ void UnitUpdater::updateStop(Unit *unit) {
 
 void UnitUpdater::updateMove(Unit *unit) 
 {
-   //Logger::getInstance().add ( "UnitUpdater::updateMove ();" );
+   Logger::getInstance().add ( "UnitUpdater::updateMove ()" );
 
 	Command *command= unit->getCurrCommand();
 	const MoveCommandType *mct= static_cast<const MoveCommandType*>(command->getType());
@@ -406,17 +418,20 @@ void UnitUpdater::updateMove(Unit *unit)
 
 	switch(pathFinder->findPath(unit, pos)) {
 	case PathFinder::tsOnTheWay:
+      Logger::getInstance().add ( "\ttsOnTheWay..." );
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
 		break;
 
 	case PathFinder::tsBlocked:
+      Logger::getInstance().add ( "\ttsBlocked..." );
 		if(unit->getPath()->isBlocked() && !command->getUnit()){
 			unit->finishCommand();
 		}
 		break;
 
 	default: // tsArrived
+      Logger::getInstance().add ( "\ttsArrived..." );
 		unit->finishCommand();
 	}
 
@@ -1114,7 +1129,7 @@ void UnitUpdater::updateUpgrade(Unit *unit) {
 
 void UnitUpdater::updateMorph(Unit *unit){
 
-   //Logger::getInstance().add ( "UnitUpdater::updateMorph()" );
+   Logger::getInstance().add ( "UnitUpdater::updateMorph()" );
 	Command *command= unit->getCurrCommand();
 	const MorphCommandType *mct= static_cast<const MorphCommandType*>(command->getType());
 
@@ -1123,68 +1138,77 @@ void UnitUpdater::updateMorph(Unit *unit){
 		return;
 	}
 
-	if(unit->getCurrSkill()->getClass() != scMorph){
+	if(unit->getCurrSkill()->getClass() != scMorph)
+   {
 		//if not morphing, check space
-
       bool gotSpace = false;
       Fields mfs = mct->getMorphUnit()->getFields ();
       Field mf = (Field)0;
       while ( mf != mfCount )
       {
-         if ( mfs.get ( mf ) ) 
+         if ( mfs.get ( mf )
+		   &&   map->areFreeCellsOrHasUnit ( unit->getPos(), mct->getMorphUnit()->getSize(), mf, unit) )
          {
-		      if ( map->areFreeCellsOrHasUnit ( unit->getPos(), mct->getMorphUnit()->getSize(), mf, unit) )
-            {
-               gotSpace = true;
-               break;
-            }
+            gotSpace = true;
+            break;
          }
          mf = (Field)(mf + 1);
       }
 
 		if ( gotSpace )
       {
-         //Logger::getInstance().add ("Morph commencing...");
+         Logger::getInstance().add ("\tMorph commencing...");
 			unit->setCurrSkill(mct->getMorphSkillType());
 			unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), false);
          unit->setCurrField ( mf );
-		} else {
-			if(unit->getFactionIndex() == world->getThisFactionIndex()){
+		} 
+      else 
+      {
+			if(unit->getFactionIndex() == world->getThisFactionIndex())
 				console->addStdMessage("InvalidPosition");
-			}
-         //Logger::getInstance().add ("Morph failed... insufficient space.");
+         Logger::getInstance().add ("\tMorph failed... insufficient space.");
 			unit->cancelCurrCommand();
 		}
-	} else {
+	} 
+   else // already started
+   {
       //Logger::getInstance().add ("Updating progress2....");
 		unit->update2();
-		if(unit->getProgress2()>mct->getProduced()->getProductionTime()) {
-
+		if(unit->getProgress2()>mct->getProduced()->getProductionTime()) 
+      {
          bool mapUpdate = unit->isMobile () != mct->getMorphUnit()->isMobile ();
 			//finish the command
-			if(unit->morph(mct)){
+			if(unit->morph(mct))
+         {
 				unit->finishCommand();
             if ( mapUpdate )
             {
                bool adding = !mct->getMorphUnit()->isMobile ();
                pathFinder->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, mfWalkable );
             }
-            if(gui->isSelected(unit)) {
+            if(gui->isSelected(unit))
 					gui->onSelectionChanged();
-				}
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
-				if(isNetworkServer()) {
+				if(isNetworkServer()) 
+            {
 					getServerInterface()->unitMorph(unit);
 					getServerInterface()->updateFactions();
 				}
-			} else {
+            Logger::getInstance().add ("\tMorph complete.");
+			} 
+         else 
+         {
 				unit->cancelCurrCommand();
-				if(unit->getFactionIndex() == world->getThisFactionIndex()){
+				if(unit->getFactionIndex() == world->getThisFactionIndex())
+            {
 					console->addStdMessage("InvalidPosition");
+               Logger::getInstance().add ("\tMorph canceled, insufficient space...");
 				}
 			}
 			unit->setCurrSkill(scStop);
 		}
+      else
+         Logger::getInstance().add ("\tMorph continuing...");
 	}
 }
 
@@ -1262,18 +1286,27 @@ void UnitUpdater::updatePatrol(Unit *unit){
 
 void UnitUpdater::updateDummy ( Unit *unit )
 {
+   Logger::getInstance ().add ( "UnitUpdater::updateDummy ()" );
 	Command *command= unit->getCurrCommand();
 	const DummyCommandType *dct= static_cast<const DummyCommandType*>(command->getType());
 
-   if ( unit->getCurrSkill ()->getClass () != scDummy ) 
+   if ( unit->getCurrSkill ()->getClass () != scDummy )
+   {
       unit->setCurrSkill ( dct->getDummySkillType () );
-	else 
+      Logger::getInstance ().add ( "\tCommencing Dummy Command" );
+   }
+   else 
    {
       const DummySkillType *dst = static_cast<const DummySkillType*>(unit->getCurrSkill ());
       unit->update2 ();
       if ( unit->getProgress2() >= dst->getProductionTime() )
       {
          unit->finishCommand ();
+         Logger::getInstance ().add ( "\tFinsihed Dummy Command" );
+      }
+      else
+      {
+         Logger::getInstance ().add ( "\tContinuing Dummy Command" );
       }
    }
 

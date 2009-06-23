@@ -28,7 +28,9 @@
 
 #include "leak_dumper.h"
 
-//#define PATHFINDER_DEBUG_TEXTURES
+#ifdef PATHFINDER_DEBUG_TEXTURES
+#include "path_finder_llsr.h"
+#endif
 
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;

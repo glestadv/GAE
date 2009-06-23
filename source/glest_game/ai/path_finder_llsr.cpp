@@ -12,66 +12,100 @@
 #include "pch.h"
 //
 // When stable, this file should get optimized even in debug
-// as pathfinder.cpp previously did.
+// as path_finder.cpp previously did.
 //
 #include "path_finder_llsr.h"
 #include "path_finder.h"
 #include "map.h"
 
-namespace Glest { namespace Game {
+namespace Glest { namespace Game { namespace LowLevelSearch {
 
-AnnotatedMap* LowLevelSearch::aMap = NULL;
-Map* LowLevelSearch::cMap = NULL;
-NodePool LowLevelSearch::nodePool;
+AnnotatedMap *aMap = NULL;
+Map *cMap = NULL;
+BFSNodePool *bNodePool = NULL;
+AStarNodePool *aNodePool = NULL;
+float (*heuristic) ( const Vec2i &p1, const Vec2i &p2 ) = NULL;
+bool (*search) ( SearchParams &sp, list<Vec2i> &path ) = NULL;
+Vec2i Directions[8];
 
-bool LowLevelSearch::canPathOut ( const Vec2i &pos, const int radius, Field field  )
+void init ()
+{
+   Directions[0] = Vec2i ( -1, -1 );
+   Directions[1] = Vec2i ( -1,  0 );
+   Directions[2] = Vec2i ( -1,  1 );
+   Directions[3] = Vec2i (  0, -1 );
+   Directions[4] = Vec2i (  0,  1 );
+   Directions[5] = Vec2i (  1, -1 );
+   Directions[6] = Vec2i (  1,  0 );
+   Directions[7] = Vec2i (  1,  1 );
+
+   if ( ! bNodePool )
+      bNodePool = new BFSNodePool ();
+
+   if ( ! aNodePool )
+      aNodePool = new AStarNodePool ();
+
+   heuristic = &LowLevelSearch::euclideanHeuristic;
+   search = &LowLevelSearch::BestFirstPingPong;
+}
+
+float euclideanHeuristic ( const Vec2i &p1, const Vec2i &p2 )
+{ 
+   return p1.dist ( p2 ); 
+}
+
+bool canPathOut ( const Vec2i &pos, const int radius, Field field  )
 {
    assert ( radius > 0 && radius <= 5 );
-   nodePool.reset ();
-   nodePool.addToOpen ( NULL, pos, 0 );
+   bNodePool->reset ();
+   bNodePool->addToOpen ( NULL, pos, 0 );
 	bool pathFound= false;
-   SearchNode *maxNode = NULL;
+   BFSNode *maxNode = NULL;
 
    while( ! pathFound ) 
    {
-      maxNode = nodePool.getBestCandidate ();
+      maxNode = bNodePool->getBestCandidate ();
       if ( ! maxNode ) break; // failure
-		for ( int i = -1; i <= 1 && ! pathFound; ++i )
+      for ( int i = 0; i < 8 && ! pathFound; ++ i )
       {
-			for ( int j = -1; j <= 1 && ! pathFound; ++j )
+         Vec2i sucPos = maxNode->pos + Directions[i];
+         if ( ! cMap->isInside ( sucPos ) 
+         ||   ! cMap->getCell( sucPos )->isFree( field == mfAir ? fAir: fSurface ) )
+            continue;
+         //CanOccupy() will be cheapest, do it first...
+         if ( aMap->canOccupy (sucPos, 1, field) && ! bNodePool->isListed (sucPos) )
          {
-            if ( ! (i||j) ) continue;
-            Vec2i sucPos = maxNode->pos + Vec2i(i, j);
-            if ( ! cMap->isInside ( sucPos ) 
-            ||   ! cMap->getCell( sucPos )->isFree( field == mfAir ? fAir: fSurface ) )
-               continue;
-            //CanOccupy() will be cheapest, do it first...
-            if ( aMap->canOccupy (sucPos, 1, field) && ! nodePool.isListed (sucPos) )
+            if ( maxNode->pos.x != sucPos.x && maxNode->pos.y != sucPos.y ) // if diagonal move
             {
-               if ( maxNode->pos.x != sucPos.x && maxNode->pos.y != sucPos.y ) // if diagonal move
-               {
-                  Vec2i diag1 ( maxNode->pos.x, sucPos.y );
-                  Vec2i diag2 ( sucPos.x, maxNode->pos.y );
-                  // and either diag cell is not free...
-                  if ( ! aMap->canOccupy ( diag1, 1, field ) 
-                  ||   ! aMap->canOccupy ( diag2, 1, field )
-                  ||   ! cMap->getCell( diag1 )->isFree( field == mfAir ? fAir: fSurface ) 
-                  ||   ! cMap->getCell( diag2 )->isFree( field == mfAir ? fAir: fSurface ) )
-                     continue; // not allowed
-               }
-               // Move is legal.
-               if ( -(maxNode->heuristic) + 1 >= radius ) 
-                  pathFound = true;
-               else
-                  nodePool.addToOpen ( maxNode, sucPos, maxNode->heuristic - 1.f );
-				} // end if
-			} // end for
+               Vec2i diag1 ( maxNode->pos.x, sucPos.y );
+               Vec2i diag2 ( sucPos.x, maxNode->pos.y );
+               // and either diag cell is not free...
+               if ( ! aMap->canOccupy ( diag1, 1, field ) 
+               ||   ! aMap->canOccupy ( diag2, 1, field )
+               ||   ! cMap->getCell( diag1 )->isFree( field == mfAir ? fAir: fSurface ) 
+               ||   ! cMap->getCell( diag2 )->isFree( field == mfAir ? fAir: fSurface ) )
+                  continue; // not allowed
+            }
+            // Move is legal.
+            if ( -(maxNode->heuristic) + 1 >= radius ) 
+               pathFound = true;
+            else
+               bNodePool->addToOpen ( maxNode, sucPos, maxNode->heuristic - 1.f );
+			} // end if
 		} // end for
 	} // end while
    return pathFound;
 }
 
-bool LowLevelSearch::LHF_Search ( SearchParams params, list<Vec2i> &path, bool ucStart )
+bool BestFirstSearch ( SearchParams &params, list<Vec2i> &path )
+{ 
+   return _BestFirstSearch ( params, path, true ); 
+}
+
+//
+// Best First Search
+//
+bool _BestFirstSearch ( SearchParams &params, list<Vec2i> &path, bool ucStart )
 {
    Vec2i &startPos = params.start;
    Vec2i &finalPos = params.dest;
@@ -81,64 +115,53 @@ bool LowLevelSearch::LHF_Search ( SearchParams params, list<Vec2i> &path, bool u
    Zone zone = field == mfAir ? fAir : fSurface;
    
    path.clear ();
-
-	//a) push starting pos into openNodes
-   nodePool.addToOpen ( NULL, startPos, heuristic (startPos, finalPos) );
-
-   //b) loop
+   // Assumes Node Pool was reset by caller, allowing 
+   // for dynamic adjustment of the node limit
+   bNodePool->addToOpen ( NULL, startPos, heuristic (startPos, finalPos) );
 	bool pathFound= true;
 	bool nodeLimitReached= false;
-	SearchNode *minNode= NULL;
+	BFSNode *minNode= NULL;
 
    Vec2i ucPos = ucStart ? startPos : finalPos;
    while( ! nodeLimitReached ) 
    {
-      minNode = nodePool.getBestCandidate ();
-      if ( ! minNode ) // open was empty?
-         return false;
-
-      if ( minNode->pos == finalPos || ! minNode->exploredCell )
-			break;
-
-		for(int i=-1; i<=1 && !nodeLimitReached; ++i)
+      minNode = bNodePool->getBestCandidate ();
+      if ( ! minNode ) return false;// open was empty?
+      if ( minNode->pos == finalPos || ! minNode->exploredCell ) break;
+      for ( int i = 0; i < 8 && ! nodeLimitReached; ++ i )
       {
-			for(int j=-1; j<=1 && !nodeLimitReached; ++j)
+         Vec2i sucPos = minNode->pos + Directions[i];
+         if ( ! cMap->isInside ( sucPos ) ) 
+            continue;
+         if ( minNode->pos.dist ( ucPos ) < 5.f && !cMap->getCell( sucPos )->isFree(zone) && ucPos != sucPos )
+            continue; // check nearby units
+         // CanOccupy () will be cheapest, do it first...
+         if ( aMap->canOccupy (sucPos, size, field ) && ! bNodePool->isListed ( sucPos ) )
          {
-            if ( ! (i||j) ) // i==j==0 == minNode, minor performance hack, 
-               continue;   // wouldn't get 'picked up' until nPool.isListed() otherwise...
-            Vec2i sucPos = minNode->pos + Vec2i(i, j);
-            if ( ! cMap->isInside ( sucPos ) ) 
-               continue;
-            if ( minNode->pos.dist ( ucPos ) < 5.f && !cMap->getCell( sucPos )->isFree(zone) && sucPos != ucPos )
-               continue; // check nearby units
-            // CanOccupy () will be cheapest, do it first...
-            if ( aMap->canOccupy (sucPos, size, field ) && ! nodePool.isListed ( sucPos ) )
-            {
-               if ( minNode->pos.x != sucPos.x && minNode->pos.y != sucPos.y ) 
-               {  // if diagonal move and either diag cell is not free...
-                  Vec2i diag1, diag2;
-                  getPassthroughDiagonals ( minNode->pos, sucPos, size, diag1, diag2 );
-                  if ( !aMap->canOccupy ( diag1, 1, field ) 
-                  ||   !aMap->canOccupy ( diag2, 1, field ) 
-                  ||  (minNode->pos.dist(ucPos) < 5.f  && !cMap->getCell (diag1)->isFree (zone) && diag1 != ucPos)
-                  ||  (minNode->pos.dist(ucPos) < 5.f  && !cMap->getCell (diag2)->isFree (zone) && diag2 != ucPos) )
-                     continue; // not allowed
-               }
-               // else move is legal.
-               bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (team);
-               if ( ! nodePool.addToOpen ( minNode, sucPos, heuristic ( sucPos, finalPos ), exp ) )
-                  nodeLimitReached = true;
+            if ( minNode->pos.x != sucPos.x && minNode->pos.y != sucPos.y ) 
+            {  // if diagonal move and either diag cell is not free...
+               Vec2i diag1, diag2;
+               getPassthroughDiagonals ( minNode->pos, sucPos, size, diag1, diag2 );
+               if ( !aMap->canOccupy ( diag1, 1, field ) 
+               ||   !aMap->canOccupy ( diag2, 1, field ) 
+               ||  (minNode->pos.dist(ucPos) < 5.f  && !cMap->getCell (diag1)->isFree (zone) && diag1 != ucPos)
+               ||  (minNode->pos.dist(ucPos) < 5.f  && !cMap->getCell (diag2)->isFree (zone) && diag2 != ucPos) )
+                  continue; // not allowed
             }
-			} // end for
+            // else move is legal.
+            bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (team);
+            if ( ! bNodePool->addToOpen ( minNode, sucPos, heuristic ( sucPos, finalPos ), exp ) )
+               nodeLimitReached = true;
+         }
 		} // end for ... inner loop
 	} // end while ... outer loop
-	SearchNode *lastNode= minNode;
+	BFSNode *lastNode= minNode;
    // if ( nodeLimtReached ) iterate over closed list, testing for a lower h node ...
 
    //if ( nodeLimitReached ) Logger::getInstance ().add ( "Node Limit Exceeded." );
 	// on the way
    // fill in next pointers
-	SearchNode *currNode = lastNode;
+	BFSNode *currNode = lastNode;
    int steps = 0;
 	while ( currNode->prev )
    {
@@ -146,7 +169,7 @@ bool LowLevelSearch::LHF_Search ( SearchParams params, list<Vec2i> &path, bool u
 		currNode = currNode->prev;
       steps++;
 	}
-   SearchNode *firstNode = currNode;
+   BFSNode *firstNode = currNode;
 
    //store path
 	currNode = firstNode;
@@ -158,10 +181,10 @@ bool LowLevelSearch::LHF_Search ( SearchParams params, list<Vec2i> &path, bool u
    return true;
 }
 
-bool LowLevelSearch::LHF_PingPong ( SearchParams params, list<Vec2i> &path )
+bool BestFirstPingPong ( SearchParams &params, list<Vec2i> &path )
 {
    list<Vec2i> forward, backward, cross;
-   if ( ! LHF_Search ( params, forward ) )
+   if ( ! BestFirstSearch ( params, forward ) )
 		return false;
 #ifdef PATHFINDER_DEBUG_TEXTURES
    cMap->ClearPathPos ();
@@ -170,17 +193,17 @@ bool LowLevelSearch::LHF_PingPong ( SearchParams params, list<Vec2i> &path )
    cMap->PathStart = forward.front ();
    cMap->PathDest = forward.back ();
 #endif
-   nodePool.reset ();// == 800 nodes
+   bNodePool->reset ();// == 800 nodes
    params.dest = params.start;
    params.start = forward.back(); // is not necessarily targetPos, ie. if nodeLimit was hit
    
-   if ( LHF_Search ( params, backward, false ) )
+   if ( _BestFirstSearch ( params, backward, false ) )
    {
 #ifdef PATHFINDER_DEBUG_TEXTURES
       for ( VLIt it = backward.begin(); it != backward.end(); ++it )
          cMap->SetPathPos ( *it, true );
 #endif
-      if ( backward.back() == forward.front() ) // LHF_Search() doesn't guarantee 'symmetrical success'
+      if ( backward.back() == forward.front() ) // BFSearch() doesn't guarantee 'symmetrical success'
       {
          getCrossOverPoints ( forward, backward, cross );
          mergePath ( forward, backward, cross, path );
@@ -197,13 +220,86 @@ bool LowLevelSearch::LHF_PingPong ( SearchParams params, list<Vec2i> &path )
    return true;
 }
 
-void LowLevelSearch::copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path )
+bool AStar ( SearchParams &params, list<Vec2i> &path )
+{
+   Vec2i &startPos = params.start;
+   Vec2i &finalPos = params.dest;
+   int &size = params.size;
+   int &team = params.team;
+   Field &field = params.field;
+   Zone zone = field == mfAir ? fAir : fSurface;
+   
+	bool pathFound= true;
+	bool nodeLimitReached= false;
+	AStarNode *minNode= NULL;
+   aNodePool->addToOpen ( NULL, startPos, heuristic ( startPos, finalPos ), 0 );
+
+   while ( ! nodeLimitReached )
+   {
+      minNode = aNodePool->getBestCandidate ();
+      if ( ! minNode ) { pathFound = false; break; } // done, failed
+      if ( minNode->pos == finalPos || ! minNode->exploredCell ) break; // done, success
+      for ( int i = 0; i < 8 && ! nodeLimitReached; ++ i )
+      {
+         Vec2i sucPos = minNode->pos + Directions[i];
+         if ( ! cMap->isInside ( sucPos ) || ! aMap->canOccupy (sucPos, size, field )) 
+            continue;
+         if ( minNode->pos.dist ( sucPos ) < 5.f && !cMap->getCell( sucPos )->isFree(zone) )
+            continue; // check nearby units
+
+         float heur = heuristic ( sucPos, finalPos );
+         float cost = minNode->distToHere + 1 + heur;
+         AStarNode *sucNode = NULL;
+         if ( aNodePool->isOpen ( sucPos ) )
+            aNodePool->updateOpenNode ( sucPos, minNode );
+#ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC 
+         if ( aNodePool->isClosed ( sucPos ) )
+         {
+            sucNode = aNodePool->getClosedNode ( sucPos );
+            if ( cost < sucNode->estCost () )
+            {
+               // update and move back to open
+               sucNode->distToHere = minNode->distToHere + 1;
+               sucNode->prev = minNode;
+               aNodePool->reOpen ( sucNode );
+            }
+         }
+#endif // Non-Admissable Heuristic... Closed list check.
+         if ( !aNodePool->isListed ( sucPos ) )
+         {
+            assert ( !sucNode );
+            bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (team);
+            if ( ! aNodePool->addToOpen ( minNode, sucPos, heur, minNode->distToHere + 1, exp ) )
+               nodeLimitReached = true;
+         }
+      } // end for each neighbour of minNode
+   } // end while ( ! nodeLimitReached )
+   // fill in path
+   path.clear ();
+   if ( ! pathFound ) 
+      return false;
+	while ( minNode )
+   {
+      path.push_front ( minNode->pos );
+		minNode = minNode->prev;
+	}
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   cMap->ClearPathPos ();
+   for ( VLIt it = path.begin(); it != path.end(); ++it )
+      cMap->SetPathPos ( *it );
+   cMap->PathStart = path.front ();
+   cMap->PathDest = path.back ();
+#endif
+   return true;
+}
+
+void copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path )
 {
    for ( VLConIt it = pathList.begin (); it != pathList.end(); ++it )
       path.push_back ( *it );
 }
 
-void LowLevelSearch::getPassthroughDiagonals ( const Vec2i &s, const Vec2i &d, 
+void getPassthroughDiagonals ( const Vec2i &s, const Vec2i &d, 
                                           const int size, Vec2i &d1, Vec2i &d2 )
 {
    assert ( s.x != d.x && s.y != d.y );
@@ -241,18 +337,18 @@ void LowLevelSearch::getPassthroughDiagonals ( const Vec2i &s, const Vec2i &d,
    }
 }
 
-void LowLevelSearch::getCrossOverPoints ( const list<Vec2i> &forward, const list<Vec2i> &backward, list<Vec2i> &result )
+void getCrossOverPoints ( const list<Vec2i> &forward, const list<Vec2i> &backward, list<Vec2i> &result )
 {
    result.clear ();
-   nodePool.reset ();
+   bNodePool->reset ();
    for ( VLConRevIt it1 = backward.rbegin(); it1 != backward.rend(); ++it1 )
-      nodePool.listPos ( *it1 );
+      bNodePool->listPos ( *it1 );
    for ( VLConIt it2 = forward.begin(); it2 != forward.end(); ++it2 )
-      if ( nodePool.isListed ( *it2 ) )
+      if ( bNodePool->isListed ( *it2 ) )
          result.push_back ( *it2 );
 }
 
-bool LowLevelSearch::mergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, list<Vec2i> &path )
+bool mergePath ( const list<Vec2i> &fwd, const list<Vec2i> &bwd, list<Vec2i> &co, list<Vec2i> &path )
 {
    assert ( co.size () <= fwd.size () );
 
@@ -342,6 +438,7 @@ SearchParams::SearchParams ( Unit *u )
    team = u->getTeam ();
 }
 
+#if defined ( NODEPOOL_USE_REDBLACK_TREE )
 PosTree::PosTree ()
 {
    numPos = 0;
@@ -547,7 +644,7 @@ void PosTree::dump ()
    delete thisLevel;
    Logger::getInstance ().add ( buf );
 }
-#endif
+#endif // defined(DEBUG) || defined(_DEBUG)
 
 // Tree rotations, ref [Cormen, 13.2]
 #define ROTATE_ERR_MSG "PathFinder::NodePool::rotateLeft() was called on a node with no right child."
@@ -618,29 +715,29 @@ bool PosTree::isIn ( const Vec2i &pos ) const
 
    return false;
 }
+#endif // defined ( NODEPOOL_USE_REDBLACK_TREE )
 
-
-NodePool::NodePool ()
+BFSNodePool::BFSNodePool ()
 {
    maxNodes = PathFinder::pathFindNodesMax;
-   stock = new SearchNode[maxNodes];
-   lists = new SearchNode*[maxNodes];
+   stock = new BFSNode[maxNodes];
+   lists = new BFSNode*[maxNodes];
    reset ();
 }
 
-NodePool::~NodePool () 
+BFSNodePool::~BFSNodePool () 
 {
    delete stock;
    delete lists;
 }
-void NodePool::init ( Map *map )
+void BFSNodePool::init ( Map *map )
 {
 #ifdef NODEPOOL_USE_MARKER_ARRAY
    markerArray.init ( map->getW(), map->getH() );
 #endif
 }
 // reset the node pool
-void NodePool::reset ()
+void BFSNodePool::reset ()
 {
    numOpen = numClosed = numTotal = numPos = 0;
    tmpMaxNodes = maxNodes;
@@ -648,17 +745,19 @@ void NodePool::reset ()
    markerArray.newSearch ();
 #elif defined ( NODEPOOL_USE_REDBLACK_TREE )
    posTree.clear ();
+#elif defined ( NODEPOOL_USE_STL_SET )
+   posSet.clear ();
 #endif
 }
 
-void NodePool::setMaxNodes ( const int max )
+void BFSNodePool::setMaxNodes ( const int max )
 {
    assert ( max >= 50 && max <= maxNodes ); // reasonable number ?
    assert ( !numTotal ); // can't do this after we've started using it.
    tmpMaxNodes = max;
 }
 
-bool NodePool::addToOpen ( SearchNode* prev, const Vec2i &pos, float h, bool exp )
+bool BFSNodePool::addToOpen ( BFSNode* prev, const Vec2i &pos, float h, bool exp )
 {
    if ( numTotal == tmpMaxNodes ) 
       return false;
@@ -691,11 +790,7 @@ bool NodePool::addToOpen ( SearchNode* prev, const Vec2i &pos, float h, bool exp
       // insert newbie in sorted pos.
       lists[offset] = &stock[numTotal];
    }
-#if defined ( NODEPOOL_USE_REDBLACK_TREE )
-      posTree.add ( pos );
-#elif defined ( NODEPOOL_USE_MARKER_ARRAY )
-      markerArray.setMark ( pos );
-#endif
+   listPos ( pos );
    numTotal ++;
    numOpen ++;
    return true;
@@ -703,7 +798,7 @@ bool NodePool::addToOpen ( SearchNode* prev, const Vec2i &pos, float h, bool exp
 
 // Moves the lowest heuristic node from open to closed and returns a 
 // pointer to it, or NULL if there are no open nodes.
-SearchNode* NodePool::getBestCandidate ()
+BFSNode* BFSNodePool::getBestCandidate ()
 {
    if ( !numOpen ) return NULL;
    lists[numClosed] = lists[tmpMaxNodes - numOpen];
@@ -712,4 +807,131 @@ SearchNode* NodePool::getBestCandidate ()
    return lists[numClosed-1];
 }
 
-}}
+
+// AStarNodePool
+
+AStarNodePool::AStarNodePool ()
+{
+   maxNodes = PathFinder::pathFindNodesMax;
+   stock = new AStarNode[maxNodes];
+   lists = new AStarNode*[maxNodes];
+   reset ();
+}
+
+AStarNodePool::~AStarNodePool () 
+{
+   delete stock;
+   delete lists;
+}
+void AStarNodePool::init ( Map *map )
+{
+#ifdef NODEPOOL_USE_MARKER_ARRAY
+   markerArray.init ( map->getW(), map->getH() );
+#endif
+}
+// reset the node pool
+void AStarNodePool::reset ()
+{
+   numOpen = numClosed = numTotal = numPos = 0;
+   tmpMaxNodes = maxNodes;
+   markerArray.newSearch ();
+}
+
+void AStarNodePool::setMaxNodes ( const int max )
+{
+   assert ( max >= 50 && max <= maxNodes ); // reasonable number ?
+   assert ( !numTotal ); // can't do this after we've started using it.
+   tmpMaxNodes = max;
+}
+
+bool AStarNodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float h, float d, bool exp )
+{
+   if ( numTotal == tmpMaxNodes ) 
+      return false;
+   stock[numTotal].next = NULL;
+   stock[numTotal].prev = prev;
+   stock[numTotal].pos = pos;
+   stock[numTotal].distToHere = d;
+   stock[numTotal].heuristic = h;
+   stock[numTotal].exploredCell = exp;
+   const int top = tmpMaxNodes - 1;
+   if ( !numOpen ) lists[top] = &stock[numTotal];
+   else
+   {  // find insert index
+      float cost = d + h;
+      const int openStart = tmpMaxNodes - numOpen - 1;
+      int offset = openStart;
+
+      while ( offset < top && lists[offset+1]->estCost () < cost ) 
+         offset ++;
+
+      if ( offset > openStart ) // shift lower nodes down...
+      {
+         int moveNdx = openStart;
+         while ( moveNdx <= offset )
+         {
+            lists[moveNdx-1] = lists[moveNdx];
+            moveNdx ++;
+         }
+      }
+      // insert newbie in sorted pos.
+      lists[offset] = &stock[numTotal];
+   }
+   markerArray.setOpen ( pos );
+   numTotal ++;
+   numOpen ++;
+   return true;
+}
+
+// Moves the lowest heuristic node from open to closed and returns a 
+// pointer to it, or NULL if there are no open nodes.
+AStarNode* AStarNodePool::getBestCandidate ()
+{
+   if ( !numOpen ) return NULL;
+   lists[numClosed] = lists[tmpMaxNodes - numOpen];
+   markerArray.setClosed ( lists[numClosed]->pos );
+   numOpen --;
+   numClosed ++;
+   return lists[numClosed-1];
+}
+
+// Assumes pos is open
+void AStarNodePool::updateOpenNode ( const Vec2i &pos, AStarNode *curr )
+{
+   // combine with getOpenNode ==> updateOpenNode ( const Veci &pos, AStarNode *curr )
+   const int startOpen = tmpMaxNodes - numOpen;
+   int ndx = tmpMaxNodes - numOpen;
+   while ( ndx < tmpMaxNodes )
+   {
+      if ( lists[ndx]->pos == pos )
+         break;;
+      ndx ++;
+   }
+   // assume we found it...
+   if ( curr->distToHere + 1 < lists[ndx]->estCost () )
+   {
+      AStarNode *ptr = lists[ndx];
+      ptr->distToHere = curr->distToHere + 1;
+      ptr->prev = curr;
+      // shuffle stuff ?
+      // TODO: Clean up, this is a bit of a kludge
+      if ( ndx > startOpen )
+      {
+         if ( ptr->estCost () < lists[ndx-1]->estCost () )
+         {
+            while ( ndx > startOpen && ptr->estCost () < lists[ndx-1]->estCost () )
+            {
+               lists[ndx] = lists[ndx-1];
+               ndx--;
+            }
+            lists[ndx] = ptr;
+         }
+         // else it's still in position
+      }
+      // else it was the lowest anyway, and we just made it lower...
+   }
+
+}
+
+
+}}}; // namespace Glest::Game::LowLevelSearch
