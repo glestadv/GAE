@@ -247,8 +247,8 @@ void XmlIo::save(const string &path, const XmlNode *node){
 }
 
 /** WARNING: return value must be freed by calling XmlIo::getInstance().releaseString(). */
-char *XmlIo::toString(const XmlNode *node, bool pretty) {		
-	/*DOMWriter* writer = NULL;
+/*char *XmlIo::toString(const XmlNode *node, bool pretty) {		
+	DOMWriter* writer = NULL;
 
 	XMLCh str[strSize];
 	DOMDocument *document = NULL;
@@ -287,12 +287,10 @@ char *XmlIo::toString(const XmlNode *node, bool pretty) {
 			document->release();
 		}
 		throw runtime_error(string("Exception while converting to string: ") + XMLString::transcode(e.msg));
-	}*/
+	}
 
 	// formats tree as string, goes along network, then parses xml string. used in network_message (lines 477, 544)
-
-	return "fake";
-}
+}*/
 
 void XmlIo::releaseString(char **domAllocatedString) {
 	//XMLString::release(domAllocatedString);
@@ -315,9 +313,17 @@ void XmlTree::load(const string &path){
 	this->rootNode= XmlIo::getInstance().load(path);
 }
 
-/*void XmlTree::save(const string &path){
+void XmlTree::save(const string &path){
 	XmlIo::getInstance().save(path, rootNode);
-}*/
+}
+
+void XmlTree::parse(const string &xml){
+	this->rootNode= XmlIo::getInstance().parseString(xml.c_str());
+}
+
+char *XmlTree::toString() const {
+	return rootNode->toString();
+}
 
 XmlTree::~XmlTree(){
 	delete rootNode;
@@ -466,6 +472,34 @@ XmlAttribute *XmlNode::addAttribute(const char *name, const char *value){
 	XmlAttribute *attr= new XmlAttribute(name, value);
 	attributes.push_back(attr);
 	return attr;
+}
+
+char *XmlNode::toString() const {
+	string xmlString = "<" + name;
+	
+	//add attributes to string
+	for (int i = 0; i < attributes.size(); ++i) {
+		xmlString += " " + attributes[i]->toString();
+	}
+	
+	if (children.size() <= 0) {
+		xmlString += "/>";
+	} else {
+		xmlString += ">";
+
+		//add children nodes to string
+		for (int i = 0; i < children.size(); ++i) {
+			xmlString += children[i]->toString(); // recursive, base when no children
+		}
+
+		//closing tag
+		xmlString += "</" + name + ">";
+	}
+
+	char *cstr = new char [xmlString.size()+1];
+	strcpy(cstr, xmlString.c_str());
+
+	return cstr;
 }
 
 void XmlNode::populateElement(TiXmlElement *node) const {

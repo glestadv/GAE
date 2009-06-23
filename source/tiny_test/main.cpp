@@ -1,5 +1,6 @@
 #include "../shared_lib/include/xml/xml_parser.h"
 #include <string>
+#include <iostream>
 
 using namespace std;
 using namespace Shared::Xml;
@@ -44,7 +45,13 @@ const char *test = "<?xml version=\"1.0\" standalone=\"no\"?> \
 		xmlTree.load(path);
 		
 		const XmlNode *treeNode = xmlTree.getRootNode();
-		treeNode->getChild("parameters3"); // invoke error to see the structure
+		treeNode->getChild("Texture");
+
+		cout << xmlTree.toString() << endl;
+
+		xmlTree.parse(xmlTree.toString());
+
+		treeNode->getChild("Texture3");
 
 	} catch (exception &e) {
 		cout << e.what() << endl;

@@ -69,7 +69,7 @@ public:
 	void save(const string &path, const XmlNode *node);
 	XmlNode *parseString(const char *doc, size_t size = (size_t)-1);
 	/** WARNING: return value must be freed by calling XmlIo::getInstance().releaseString(). */
-	char *toString(const XmlNode *node, bool pretty);
+	//char *toString(const XmlNode *node, bool pretty);
 	void releaseString(char **domAllocatedString);
 };
 
@@ -92,7 +92,9 @@ public:
 	void init(const string &name);
 	void load(const string &path);
 	void save(const string &path);
-
+	void parse(const string &xml);
+	
+	char *toString() const;
 	XmlNode *getRootNode() const	{return rootNode;}
 };
 
@@ -118,6 +120,7 @@ public:
 public:
 	const string &getName() const						{return name;}
 	const string &getValue() const						{return value;}
+	string toString() const								{return name + "=\"" + value + "\""; }
 
 	bool getBoolValue() const;
 	int getIntValue() const								{return strToInt(value);}
@@ -360,9 +363,9 @@ public:
 	}
 
 	/** WARNING: return value must be freed by calling XmlIo::getInstance().releaseString(). */
-	char *toString(bool pretty) const {
+	char *toString() const;/*bool pretty) const {
 		return XmlIo::getInstance().toString(this, pretty);
-	}
+	}*/
 
 private:
 	string getTreeString() const;
