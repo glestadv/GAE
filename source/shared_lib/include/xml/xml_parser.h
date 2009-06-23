@@ -142,7 +142,7 @@ private:
 	void operator =(XmlNode&);
 
 public:
-	XmlNode(TiXmlElement *node);
+	XmlNode(TiXmlNode *node);
 	XmlNode(const string &name);
 	~XmlNode();
 
@@ -336,7 +336,7 @@ public:
 		return child;
 	}
 
-	//void populateElement(DOMElement *node, XERCES_CPP_NAMESPACE::DOMDocument *document) const;
+	void populateElement(TiXmlElement *node) const;
 	//DOMElement *buildElement(XERCES_CPP_NAMESPACE::DOMDocument *document) const;
 
 	int getOptionalIntValue(const char* name, int defaultValue = 0) const {

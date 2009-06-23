@@ -2,7 +2,8 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa,
-//				  2008 Daniel Santos <daniel.santos@pobox.com>
+//				  2008 Daniel Santos <daniel.santos@pobox.com>,
+//				  2009 Nathan Turner <hailstone3>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -129,12 +130,10 @@ XmlNode *XmlIo::load(const string &path){
 	TiXmlDocument document( path.c_str() );
 
 	if ( !document.LoadFile() )	{
-		throw runtime_error("Can not parse URL: " + path);
+		char message[strSize];
+		sprintf(message, "Error parsing XML, file: %s, line %i, %s", path.c_str(), document.ErrorRow(), document.ErrorDesc());
+		throw runtime_error(message);
 	}
-	/*
-	{
-		printf("Error parsing XML, file: %s, line %i, %s\n", pFilename, doc.ErrorRow(), doc.ErrorDesc());
-	}*/
 
 	XmlNode *rootNode = new XmlNode(document.RootElement());
 
@@ -185,6 +184,12 @@ XmlNode *XmlIo::parseString(const char *doc, size_t size) {
 
 	document.Parse(doc); // returns const char* but not sure why
 
+	if ( document.Error() ) {
+		char message[strSize];
+		sprintf(message, "Error parsing XML text: line %i, %s", document.ErrorRow(), document.ErrorDesc());
+		throw runtime_error(message);
+	}
+
 	XmlNode *rootNode = new XmlNode(document.RootElement());
 
 	return rootNode;
@@ -223,6 +228,22 @@ void XmlIo::save(const string &path, const XmlNode *node){
 		throw runtime_error("Exception while saving: " + path + ": " + XMLString::transcode(e.msg));
 	}
 	*/
+	// doesn't keep: space chars, doc type declaration (although a generic one 
+	//	can be added), any other text like comments
+
+	TiXmlDocument document;
+
+	TiXmlElement *rootElement = new TiXmlElement(node->getName().c_str());
+	
+	if ( !document.LinkEndChild(rootElement) ) { // TinyXML owns pointer
+		throw runtime_error("Problem adding xml child element to: document");
+	}
+
+	node->populateElement(rootElement);
+
+	if ( !document.SaveFile( path.c_str() ) ) {
+		throw runtime_error("Unable to save xml file: " + path);
+	}
 }
 
 /** WARNING: return value must be freed by calling XmlIo::getInstance().releaseString(). */
@@ -268,6 +289,8 @@ char *XmlIo::toString(const XmlNode *node, bool pretty) {
 		throw runtime_error(string("Exception while converting to string: ") + XMLString::transcode(e.msg));
 	}*/
 
+	// formats tree as string, goes along network, then parses xml string. used in network_message (lines 477, 544)
+
 	return "fake";
 }
 
@@ -292,9 +315,9 @@ void XmlTree::load(const string &path){
 	this->rootNode= XmlIo::getInstance().load(path);
 }
 
-void XmlTree::save(const string &path){
+/*void XmlTree::save(const string &path){
 	XmlIo::getInstance().save(path, rootNode);
-}
+}*/
 
 XmlTree::~XmlTree(){
 	delete rootNode;
@@ -304,7 +327,7 @@ XmlTree::~XmlTree(){
 //	class XmlNode
 // =====================================================
 
-XmlNode::XmlNode(TiXmlElement *node){
+XmlNode::XmlNode(TiXmlNode *node){
 /*
 	//get name
 	char str[strSize];
@@ -351,14 +374,9 @@ XmlNode::XmlNode(TiXmlElement *node){
 	}
 
 	//add children to node
-	TiXmlNode *firstChild = node->FirstChild();
-	TiXmlElement *childElement = NULL;
+	TiXmlElement *childElement = node->FirstChildElement();
 
-	if ( firstChild ) { // make sure there is a child node
-		 childElement = firstChild->ToElement();
-	}
-
-	while ( childElement )	{
+	while ( childElement ) {
 		XmlNode *xmlNode = new XmlNode(childElement); // recursive, null childElement as base
 		children.push_back(xmlNode);
 
@@ -450,8 +468,8 @@ XmlAttribute *XmlNode::addAttribute(const char *name, const char *value){
 	return attr;
 }
 
-/*void XmlNode::populateElement(DOMElement *node, DOMDocument *document) const {
-	XMLCh str[strSize];
+void XmlNode::populateElement(TiXmlElement *node) const {
+	/*XMLCh str[strSize];
 	for (int i = 0; i < attributes.size(); ++i) {
 		XMLString::transcode(attributes[i]->getName().c_str(), str, strSize - 1);
 		DOMAttr *attr = document->createAttribute(str);
@@ -464,9 +482,27 @@ XmlAttribute *XmlNode::addAttribute(const char *name, const char *value){
 
 	for (int i = 0; i < children.size(); ++i) {
 		node->appendChild(children[i]->buildElement(document));
+	}*/
+
+
+	//add all the attributes to the element node
+	for (int i = 0; i < attributes.size(); ++i) {
+		node->SetAttribute(attributes[i]->getName(), attributes[i]->getValue().c_str());
+	}
+
+	//add all the children to the element node
+	for (int i = 0; i < children.size(); ++i) {
+		TiXmlElement *childElement = new TiXmlElement(children[i]->getName().c_str());
+		
+		if ( !(node->LinkEndChild(childElement)) ) { // TinyXML owns pointer
+			throw runtime_error("Problem adding xml child element to: " + name);
+		}
+
+		children[i]->populateElement(childElement); // recursive, base when no children
 	}
 }
 
+/*
 DOMElement *XmlNode::buildElement(DOMDocument *document) const {
 	XMLCh str[strSize];
 	XMLString::transcode(name.c_str(), str, strSize - 1);

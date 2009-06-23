@@ -6,18 +6,18 @@ using namespace Shared::Xml;
 
 int main()
 {
-	try 
+	try
 	{
 		XmlTree	xmlTree;
-		const string path = "GUILayout.xml";
+		/*const string path = "GUILayout.xml";
 
 		xmlTree.load(path);
 		const XmlNode *treeNode = xmlTree.getRootNode();
 
 		treeNode->getChild("Texture");
-
+*/
 		XmlIo io = XmlIo::getInstance();
-/*const char *test = "<?xml version=\"1.0\" standalone=\"no\"?> \
+const char *test = "<?xml version=\"1.0\" standalone=\"no\"?> \
 \
 <Panel visible     = \"true\"\
        name        = \"Main Frame\">\
@@ -32,11 +32,19 @@ int main()
 \
     <Filter mag         = \"LINEAR\" \
             min         = \"LINEAR_MIPMAP_LINEAR\" />\
-  </Texture>\0";*/
-const char *test = " \0";
+  </Texture>\n</Panel>\0";
+//const char *test = "\0"; //empty test
 		const XmlNode *parsedNode = io.parseString(test);
 
-		parsedNode->getChild("Texture");
+		io.save("test.xml", parsedNode);
+
+		//const string path = "air_ballista.xml"; // xml comment test
+		const string path = "test.xml"; // test the saved xml text
+		
+		xmlTree.load(path);
+		
+		const XmlNode *treeNode = xmlTree.getRootNode();
+		treeNode->getChild("parameters3"); // invoke error to see the structure
 
 	} catch (exception &e) {
 		cout << e.what() << endl;
