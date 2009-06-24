@@ -24,6 +24,7 @@
 #include "faction.h"
 #include "network_manager.h"
 #include "checksum.h"
+#include "path_finder_llsr.h"
 
 #include "leak_dumper.h"
 #ifdef _MSC_VER
@@ -412,10 +413,12 @@ void Game::tick()
    logCounter++;
    if ( logCounter % 15 == 0 )
    {
-      Logger::getInstance ().add ( PathFinder::getInstance()->statNew.GetStats () );
-      Logger::getInstance ().add ( PathFinder::getInstance()->statNew.GetTotalStats () );
+      Logger::getInstance ().add ( LowLevelSearch::statsAStar->GetStats () );
+      Logger::getInstance ().add ( LowLevelSearch::statsAStar->GetTotalStats () );
+      Logger::getInstance ().add ( LowLevelSearch::statsBFSPP->GetStats () );
+      Logger::getInstance ().add ( LowLevelSearch::statsBFSPP->GetTotalStats () );
+      LowLevelSearch::resetCounters ();
    }
-   PathFinder::getInstance ()->resetCounters ();
 #endif
 #ifdef PATHFINDER_TREE_TIMING
    Logger::getInstance().add ( PathFinder::getInstance()->treeStats() );
@@ -962,9 +965,8 @@ void Game::render2d(){
 			<< "Frame count: " << world.getFrameCount() << endl;
       //str << "ParticleManager[rsGame].size() : " << Renderer::getInstance().particleManager[rsGame]->particleSystems.size () << endl;
 #ifdef PATHFINDER_TIMING
-      //str << "aaStar() : " << PathFinder::getInstance ()->statNew.GetStats () << endl;
-      str << "aaStar() New Heuristic : " << PathFinder::getInstance ()->statNew.GetTotalStats () << endl;
-      //str << "aaStar() Old Heuristic : " << PathFinder::getInstance ()->statOld.GetTotalStats () << endl;
+      str << "AStar() New Heuristic : " << LowLevelSearch::statsAStar->GetTotalStats () << endl;
+      str << "BFSPP() New Heuristic : " << LowLevelSearch::statsAStar->GetTotalStats () << endl;
 #endif
       /*
       //visible quad

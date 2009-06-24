@@ -27,7 +27,10 @@ AStarNodePool *aNodePool = NULL;
 float (*heuristic) ( const Vec2i &p1, const Vec2i &p2 ) = NULL;
 bool (*search) ( SearchParams &sp, list<Vec2i> &path ) = NULL;
 Vec2i Directions[8];
-
+#ifdef PATHFINDER_TIMING
+   PathFinderStats *statsAStar = NULL;
+   PathFinderStats *statsBFSPP = NULL;
+#endif
 void init ()
 {
    Directions[0] = Vec2i ( -1, -1 );
@@ -38,6 +41,11 @@ void init ()
    Directions[5] = Vec2i (  1, -1 );
    Directions[6] = Vec2i (  1,  0 );
    Directions[7] = Vec2i (  1,  1 );
+
+#ifdef PATHFINDER_TIMING
+   statsAStar = new PathFinderStats ( "Admissable A-Star : " );
+   statsBFSPP = new PathFinderStats ( "Best-First Search : " );
+#endif
 
    if ( ! bNodePool )
       bNodePool = new BFSNodePool ();
@@ -183,9 +191,17 @@ bool _BestFirstSearch ( SearchParams &params, list<Vec2i> &path, bool ucStart )
 
 bool BestFirstPingPong ( SearchParams &params, list<Vec2i> &path )
 {
+#ifdef PATHFINDER_TIMING
+   int64 start = Chrono::getCurMicros ();
+#endif
    list<Vec2i> forward, backward, cross;
    if ( ! BestFirstSearch ( params, forward ) )
+   {
 		return false;
+#ifdef PATHFINDER_TIMING
+      statsBFSPP->AddEntry ( Chrono::getCurMicros () - start );
+#endif
+   }
 #ifdef PATHFINDER_DEBUG_TEXTURES
    cMap->ClearPathPos ();
    for ( VLIt it = forward.begin(); it != forward.end(); ++it )
@@ -217,11 +233,17 @@ bool BestFirstPingPong ( SearchParams &params, list<Vec2i> &path )
    }
    else
       copyToPath ( forward, path );
+#ifdef PATHFINDER_TIMING
+   statsBFSPP->AddEntry ( Chrono::getCurMicros () - start );
+#endif
    return true;
 }
 
 bool AStar ( SearchParams &params, list<Vec2i> &path )
 {
+#ifdef PATHFINDER_TIMING
+   int64 start = Chrono::getCurMicros ();
+#endif
    Vec2i &startPos = params.start;
    Vec2i &finalPos = params.dest;
    int &size = params.size;
@@ -251,7 +273,10 @@ bool AStar ( SearchParams &params, list<Vec2i> &path )
          float cost = minNode->distToHere + 1 + heur;
          AStarNode *sucNode = NULL;
          if ( aNodePool->isOpen ( sucPos ) )
+         {
             aNodePool->updateOpenNode ( sucPos, minNode );
+            continue;
+         }
 #ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC 
          if ( aNodePool->isClosed ( sucPos ) )
          {
@@ -268,17 +293,36 @@ bool AStar ( SearchParams &params, list<Vec2i> &path )
          if ( !aNodePool->isListed ( sucPos ) )
          {
             assert ( !sucNode );
+            if ( minNode->pos.x != sucPos.x && minNode->pos.y != sucPos.y ) 
+            {  // if diagonal move and either diag cell is not free...
+               Vec2i diag1, diag2;
+               getPassthroughDiagonals ( minNode->pos, sucPos, size, diag1, diag2 );
+               if ( !aMap->canOccupy ( diag1, 1, field ) 
+               ||   !aMap->canOccupy ( diag2, 1, field ) 
+               ||  (minNode->pos.dist(startPos) < 5.f  && !cMap->getCell (diag1)->isFree (zone) )
+               ||  (minNode->pos.dist(startPos) < 5.f  && !cMap->getCell (diag2)->isFree (zone) ) )
+                  continue; // not allowed
+            }
             bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (team);
             if ( ! aNodePool->addToOpen ( minNode, sucPos, heur, minNode->distToHere + 1, exp ) )
                nodeLimitReached = true;
          }
       } // end for each neighbour of minNode
    } // end while ( ! nodeLimitReached )
+   if ( nodeLimitReached )
+   {
+      Logger::getInstance ().add ( "AStar() ... Node limit exceeded..." );
+   }
    // fill in path
    path.clear ();
    if ( ! pathFound ) 
+   {
+#ifdef PATHFINDER_TIMING
+      statsAStar->AddEntry ( Chrono::getCurMicros () - start );
+#endif
       return false;
-	while ( minNode )
+   }
+   while ( minNode )
    {
       path.push_front ( minNode->pos );
 		minNode = minNode->prev;
@@ -289,6 +333,9 @@ bool AStar ( SearchParams &params, list<Vec2i> &path )
       cMap->SetPathPos ( *it );
    cMap->PathStart = path.front ();
    cMap->PathDest = path.back ();
+#endif
+#ifdef PATHFINDER_TIMING
+      statsAStar->AddEntry ( Chrono::getCurMicros () - start );
 #endif
    return true;
 }
@@ -933,5 +980,133 @@ void AStarNodePool::updateOpenNode ( const Vec2i &pos, AStarNode *curr )
 
 }
 
+#ifdef PATHFINDER_TIMING
+void resetCounters ()
+{
+   statsAStar->resetCounters ();
+   statsBFSPP->resetCounters ();
+}
+
+PathFinderStats::PathFinderStats ( char *name )
+{
+   assert ( strlen ( name ) < 31 );
+   if ( name ) strcpy ( prefix, name );
+   else strcpy ( prefix, "??? : " );
+   num_searches = search_avg = num_searches_last_interval = 
+      search_avg_last_interval = worst_search = calls_rejected = 
+      num_searches_this_interval = search_avg_this_interval = 0;
+}
+
+void PathFinderStats::resetCounters ()
+{
+   num_searches_last_interval = num_searches_this_interval;;
+   search_avg_last_interval = search_avg_this_interval;
+   num_searches_this_interval = 0;
+   search_avg_this_interval = 0;
+}
+char * PathFinderStats::GetStats ()
+{
+   sprintf ( buffer, "%s Processed last interval: %d, Average (micro-seconds): %d", prefix,
+      (int)num_searches_last_interval, (int)search_avg_this_interval );
+   return buffer;
+}
+char * PathFinderStats::GetTotalStats ()
+{
+   sprintf ( buffer, "%s Total Searches: %d, Search Average (micro-seconds): %d, Worst: %d.", prefix,
+      (int)num_searches, (int)search_avg, (int)worst_search );
+   return buffer;
+}
+void PathFinderStats::AddEntry ( int64 ticks )
+{
+   if ( num_searches_this_interval )
+      search_avg_this_interval = ( search_avg_this_interval * num_searches_this_interval + ticks ) 
+                                 / ( num_searches_this_interval + 1 );
+   else
+      search_avg_this_interval = ticks;
+   num_searches_this_interval++;
+   if ( num_searches )
+      search_avg  = ( num_searches * search_avg + ticks ) / ( num_searches + 1 );
+   else
+      search_avg = ticks;
+   num_searches++;
+
+   if ( ticks > worst_search ) worst_search = ticks;
+}
+#endif // defined ( PATHFINDER_TIMING )
+#if defined ( DEBUG ) || defined ( _DEBUG )
+void dumpPath ( const list<Vec2i> &path )
+{
+   const Vec2i &start = path.front ();
+   const Vec2i &dest = path.back ();
+   static char buffer[1024*1024];
+   char *ptr = buffer;
+   if ( path.size () < 3 ) 
+   {
+      Logger::getInstance ().add ( "Boo!" );
+      return;
+   }
+   ptr += sprintf ( buffer, "Start Pos: %d,%d Destination pos: %d,%d.\n",
+      start.x, start.y, dest.x, dest.y );
+   
+   // output section of map
+   Vec2i tl ( (start.x <= dest.x ? start.x : dest.x) - 4, 
+              (start.y <= dest.y ? start.y : dest.y) - 4 );
+   Vec2i br ( (start.x <= dest.x ? dest.x : start.x) + 4, 
+              (start.y <= dest.y ? dest.y : start.y) + 4 );
+   if ( tl.x < 0 ) tl.x = 0;
+   if ( tl.y < 0 ) tl.y = 0;
+   if ( br.x > cMap->getW()-2 ) br.x = cMap->getW()-2;
+   if ( br.y > cMap->getH()-2 ) br.y = cMap->getH()-2;
+   for ( int y = tl.y; y <= br.y; ++y )
+   {
+      for ( int x = tl.x; x <= br.x; ++x )
+      {
+         Vec2i pos (x,y);
+         Unit *unit = cMap->getCell ( pos )->getUnit ( fSurface );
+         Object *obj = cMap->getTile ( Map::toTileCoords (pos) )->getObject ();
+         if ( pos == start )
+            ptr += sprintf ( ptr, "S" );
+         else if ( pos == dest )
+            ptr += sprintf ( ptr, "D" );
+         else if ( unit && unit->isMobile () ) 
+            ptr += sprintf ( ptr, "U" );
+         else if ( unit && ! unit->isMobile () ) 
+            ptr += sprintf ( ptr, "B" );
+         //else if ( obj && obj->getResource () )
+         //   ptr += sprintf ( ptr, "R" );
+         else if ( obj )//&& ! obj->getResource () )
+            ptr += sprintf ( ptr, "X" );
+         else
+            ptr += sprintf ( ptr, "0" );
+         if ( x != br.x ) ptr += sprintf ( ptr, "," );
+      }
+      ptr += sprintf ( ptr, "\n" );
+   }
+   Logger::getInstance ().add ( buffer );
+   // output path
+   ptr = buffer;
+   int steps = 0;
+   for ( VLConIt it = path.begin(); it != path.end (); ++it )
+   {
+      if ( ++steps % 8 == 0 ) ptr += sprintf ( ptr, "\n" );
+      ptr += sprintf ( ptr, "(%d,%d)->", it->x, it->y );
+   }
+   Logger::getInstance ().add ( buffer );
+}
+void assertValidPath ( AStarNode *node )
+{
+   while ( node->next )
+   {
+      Vec2i &pos1 = node->pos;
+      Vec2i &pos2 = node->next->pos;
+      if ( pos1.dist ( pos2 ) > 1.5 || pos1.dist ( pos2 ) < 0.9 )
+      {
+         Logger::getInstance().add ( "Invalid Path Generated..." );
+         assert ( false );
+      }
+      node = node->next;
+   }
+}
+#endif // defined ( DEBUG ) || defined ( _DEBUG )
 
 }}}; // namespace Glest::Game::LowLevelSearch

@@ -21,7 +21,6 @@
 #include "unit_stats_base.h"
 
 // TODO: Figure out why pre-compiled headers are not working with gcc...
-#include <vector>
 #include <list>
 #include <set>
 
@@ -67,6 +66,7 @@
 // look-ups and inserts run in logarithmic time [O(log n)]
 
 using std::list;
+using Shared::Platform::int64;
 
 namespace Glest { namespace Game {
 
@@ -78,7 +78,6 @@ typedef list<Vec2i>::const_reverse_iterator VLConRevIt;
 
 class Map;
 class AnnotatedMap;
-
 // =====================================================
 // namespace LowLevelSearch
 //
@@ -94,6 +93,9 @@ namespace LowLevelSearch
    struct SearchParams;
    struct BFSNode;
    struct AStarNode;
+#ifdef PATHFINDER_TIMING
+   struct PathFinderStats;
+#endif
    //
    // Function pointers, to be supplied/filled in by the implementing application,
    // preferably before searching ;-)
@@ -190,6 +192,16 @@ namespace LowLevelSearch
    __inline void getPassthroughDiagonals ( const Vec2i &s, const Vec2i &d, 
                                     const int size, Vec2i &d1, Vec2i &d2 );
 
+#ifdef PATHFINDER_TIMING
+   extern PathFinderStats *statsAStar;
+   extern PathFinderStats *statsBFSPP;
+   void resetCounters ();
+#endif
+
+#if defined ( DEBUG ) || defined ( _DEBUG )
+   void dumpPath ( const list<Vec2i> &path );
+   void assertValidPath ( AStarNode *node );
+#endif
 // =====================================================
 // class SearchParams
 //
@@ -459,25 +471,25 @@ public:
 
 #ifdef PATHFINDER_TIMING
 struct PathFinderStats
-{
-   int64 astar_calls;
-   int64 astar_avg;
-   int64 lastsec_calls;
-   int64 lastsec_avg;
-   int64 total_astar_calls;
-   int64 total_astar_avg;
-   int64 total_path_recalcs;
+{      
+   int64 num_searches;
+   int64 search_avg;
+   int64 num_searches_last_interval;
+   int64 search_avg_last_interval;
+   int64 num_searches_this_interval;
+   int64 search_avg_this_interval;
 
-   int64 worst_astar;
+   int64 worst_search;
    int64 calls_rejected;
 
-   PathFinderStats ();
+   PathFinderStats ( char * name );
    void resetCounters ();
    void AddEntry ( int64 ticks );
    void IncReject () { calls_rejected++; }
    char* GetTotalStats ();
    char* GetStats ();
    char buffer[512];
+   char prefix[32];
 };
 #endif
 #ifdef PATHFINDER_TREE_TIMING

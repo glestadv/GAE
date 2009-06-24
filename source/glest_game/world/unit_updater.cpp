@@ -102,6 +102,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 	//update unit
 	if (unit->update()) {
       
+#ifdef SKILL_LOGGING
       if ( unit->getCurrSkill () )
       {
          if ( unit->getCurrSkill ()->getClass () == scDummy )
@@ -113,6 +114,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
       }
       else
          Logger::getInstance ().add ( "NULL skill complete !?!?!?" );
+#endif
 
       // Allow static production for skills... (certain skills ??)
 //      unit->getFaction ()->applyStaticProduction ( unit->getCurrSkill () );
@@ -143,6 +145,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 //      else
 //         unit->cancelCurrCommand ();
 
+#ifdef SKILL_LOGGING
       if ( unit->getCurrSkill () )
       {
          if ( unit->getCurrSkill ()->getClass () == scDummy )
@@ -153,8 +156,8 @@ void UnitUpdater::updateUnit(Unit *unit) {
             Logger::getInstance ().add ( "Move Skill commencing..." );
       }
       else
-         Logger::getInstance ().add ( "NULL skill commencing !?!?!?" );
-
+         Logger::getInstance ().add ( "wtf?!? NULL skill commencing !?!?!?" );
+#endif
 		//if unit is out of EP, it stops
 		if (unit->computeEp()) {
 			if (unit->getCurrCommand()) {
@@ -399,8 +402,9 @@ void UnitUpdater::updateStop(Unit *unit) {
 
 void UnitUpdater::updateMove(Unit *unit) 
 {
+#ifdef SKILL_LOGGING
    Logger::getInstance().add ( "UnitUpdater::updateMove ()" );
-
+#endif
 	Command *command= unit->getCurrCommand();
 	const MoveCommandType *mct= static_cast<const MoveCommandType*>(command->getType());
 	bool autoCommand = command->isAuto();
@@ -418,20 +422,26 @@ void UnitUpdater::updateMove(Unit *unit)
 
 	switch(pathFinder->findPath(unit, pos)) {
 	case PathFinder::tsOnTheWay:
+#ifdef SKILL_LOGGING
       Logger::getInstance().add ( "\ttsOnTheWay..." );
+#endif
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
 		break;
 
 	case PathFinder::tsBlocked:
+#ifdef SKILL_LOGGING
       Logger::getInstance().add ( "\ttsBlocked..." );
+#endif
 		if(unit->getPath()->isBlocked() && !command->getUnit()){
 			unit->finishCommand();
 		}
 		break;
 
 	default: // tsArrived
+#ifdef SKILL_LOGGING
       Logger::getInstance().add ( "\ttsArrived..." );
+#endif
 		unit->finishCommand();
 	}
 
@@ -1128,8 +1138,9 @@ void UnitUpdater::updateUpgrade(Unit *unit) {
 // ==================== updateMorph ====================
 
 void UnitUpdater::updateMorph(Unit *unit){
-
+#ifdef SKILL_LOGGING
    Logger::getInstance().add ( "UnitUpdater::updateMorph()" );
+#endif
 	Command *command= unit->getCurrCommand();
 	const MorphCommandType *mct= static_cast<const MorphCommandType*>(command->getType());
 
@@ -1157,7 +1168,9 @@ void UnitUpdater::updateMorph(Unit *unit){
 
 		if ( gotSpace )
       {
+#ifdef SKILL_LOGGING
          Logger::getInstance().add ("\tMorph commencing...");
+#endif
 			unit->setCurrSkill(mct->getMorphSkillType());
 			unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), false);
          unit->setCurrField ( mf );
@@ -1166,8 +1179,10 @@ void UnitUpdater::updateMorph(Unit *unit){
       {
 			if(unit->getFactionIndex() == world->getThisFactionIndex())
 				console->addStdMessage("InvalidPosition");
+#ifdef SKILL_LOGGING
          Logger::getInstance().add ("\tMorph failed... insufficient space.");
-			unit->cancelCurrCommand();
+#endif
+         unit->cancelCurrCommand();
 		}
 	} 
    else // already started
@@ -1194,22 +1209,28 @@ void UnitUpdater::updateMorph(Unit *unit){
 					getServerInterface()->unitMorph(unit);
 					getServerInterface()->updateFactions();
 				}
+#ifdef SKILL_LOGGING
             Logger::getInstance().add ("\tMorph complete.");
-			} 
+#endif
+         } 
          else 
          {
 				unit->cancelCurrCommand();
 				if(unit->getFactionIndex() == world->getThisFactionIndex())
             {
 					console->addStdMessage("InvalidPosition");
+#ifdef SKILL_LOGGING
                Logger::getInstance().add ("\tMorph canceled, insufficient space...");
+#endif
 				}
 			}
 			unit->setCurrSkill(scStop);
 		}
+#ifdef SKILL_LOGGING
       else
          Logger::getInstance().add ("\tMorph continuing...");
-	}
+#endif
+   }
 }
 
 // ==================== updateCastSpell ====================
@@ -1286,14 +1307,18 @@ void UnitUpdater::updatePatrol(Unit *unit){
 
 void UnitUpdater::updateDummy ( Unit *unit )
 {
+#ifdef SKILL_LOGGING
    Logger::getInstance ().add ( "UnitUpdater::updateDummy ()" );
-	Command *command= unit->getCurrCommand();
+#endif
+   Command *command= unit->getCurrCommand();
 	const DummyCommandType *dct= static_cast<const DummyCommandType*>(command->getType());
 
    if ( unit->getCurrSkill ()->getClass () != scDummy )
    {
       unit->setCurrSkill ( dct->getDummySkillType () );
+#ifdef SKILL_LOGGING
       Logger::getInstance ().add ( "\tCommencing Dummy Command" );
+#endif
    }
    else 
    {
@@ -1302,12 +1327,16 @@ void UnitUpdater::updateDummy ( Unit *unit )
       if ( unit->getProgress2() >= dst->getProductionTime() )
       {
          unit->finishCommand ();
+#ifdef SKILL_LOGGING
          Logger::getInstance ().add ( "\tFinsihed Dummy Command" );
+#endif
       }
+#ifdef SKILL_LOGGING
       else
       {
          Logger::getInstance ().add ( "\tContinuing Dummy Command" );
       }
+#endif
    }
 
    //

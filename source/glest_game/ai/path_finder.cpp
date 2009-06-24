@@ -172,10 +172,10 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       }
    }
 
-   if ( flipper ++ % 2 )
+   if ( flipper ++ % 2 == 0 )
    {
-      LowLevelSearch::BFSNodePool &nPool = *LowLevelSearch::bNodePool;
       LowLevelSearch::search = &LowLevelSearch::BestFirstPingPong;
+      LowLevelSearch::BFSNodePool &nPool = *LowLevelSearch::bNodePool;
       nPool.reset ();
       // dynamic adjustment of nodeLimit, based on distance to target
       if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
@@ -187,8 +187,8 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    }
    else
    {
-      LowLevelSearch::AStarNodePool &nPool = *LowLevelSearch::aNodePool;
       LowLevelSearch::search = &LowLevelSearch::AStar;
+      LowLevelSearch::AStarNodePool &nPool = *LowLevelSearch::aNodePool;
       nPool.reset ();
       // dynamic adjustment of nodeLimit, based on distance to target
       if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
@@ -485,106 +485,5 @@ void World::doHackyCleanUp() {
 	}
 	newlydead.clear();
 }
-#ifdef PATHFINDER_TIMING
-PathFinderStats::PathFinderStats ()
-{
-   astar_calls = astar_avg = total_astar_calls = 
-      total_astar_avg = total_path_recalcs = worst_astar = 
-      lastsec_calls = lastsec_avg = calls_rejected = 0;
-}
-
-void PathFinderStats::resetCounters ()
-{
-   lastsec_calls = astar_calls;
-   lastsec_avg = astar_avg;
-   astar_calls = 0;
-   astar_avg = 0;
-}
-char * PathFinderStats::GetStats ()
-{
-   sprintf ( buffer, "aaStar() Processed last second: %d, Average (micro-seconds): %d", (int)lastsec_calls, (int)lastsec_avg );
-   return buffer;
-}
-char * PathFinderStats::GetTotalStats ()
-{
-   sprintf ( buffer, "aaStar() Total Calls: Processed: %d, Rejected: %d, Processed Call Average (micro-seconds): %d, Worst: %d.",
-      (int)total_astar_calls, (int)calls_rejected, (int)total_astar_avg, (int)worst_astar );
-   return buffer;
-}
-void PathFinderStats::AddEntry ( int64 ticks )
-{
-   if ( astar_calls )
-      astar_avg = ( astar_avg * astar_calls + ticks ) / ( astar_calls + 1 );
-   else
-      astar_avg = ticks;
-   astar_calls++;
-   if ( total_astar_calls )
-      total_astar_avg = ( total_astar_avg * total_astar_calls + ticks ) / ( total_astar_calls + 1 );
-   else
-      total_astar_avg = ticks;
-   total_astar_calls++;
-
-   if ( ticks > worst_astar ) worst_astar = ticks;
-}
-void PathFinder::DumpPath ( UnitPath *path, const Vec2i &start, const Vec2i &dest )
-{
-   static char buffer[1024*1024];
-   char *ptr = buffer;
-   ptr += sprintf ( buffer, "Start Pos: %d,%d Destination pos: %d,%d.\n",
-      start.x, start.y, dest.x, dest.y );
-   
-   // output section of map
-   Vec2i tl ( (start.x <= dest.x ? start.x : dest.x) - 4, 
-              (start.y <= dest.y ? start.y : dest.y) - 4 );
-   Vec2i br ( (start.x <= dest.x ? dest.x : start.x) + 4, 
-              (start.y <= dest.y ? dest.y : start.y) + 4 );
-   if ( tl.x < 0 ) tl.x = 0;
-   if ( tl.y < 0 ) tl.y = 0;
-   if ( br.x > map->getW()-2 ) br.x = map->getW()-2;
-   if ( br.y > map->getH()-2 ) br.y = map->getH()-2;
-   for ( int y = tl.y; y <= br.y; ++y )
-   {
-      for ( int x = tl.x; x <= br.x; ++x )
-      {
-         Vec2i pos (x,y);
-         Unit *unit = map->getCell ( pos )->getUnit ( fSurface );
-         Object *obj = map->getTile ( Map::toTileCoords (pos) )->getObject ();
-         if ( pos == start )
-            ptr += sprintf ( ptr, "S" );
-         else if ( pos == dest )
-            ptr += sprintf ( ptr, "D" );
-         else if ( unit && unit->isMobile () ) 
-            ptr += sprintf ( ptr, "U" );
-         else if ( unit && ! unit->isMobile () ) 
-            ptr += sprintf ( ptr, "B" );
-         //else if ( obj && obj->getResource () )
-         //   ptr += sprintf ( ptr, "R" );
-         else if ( obj )//&& ! obj->getResource () )
-            ptr += sprintf ( ptr, "X" );
-         else
-            ptr += sprintf ( ptr, "0" );
-         if ( x != br.x ) ptr += sprintf ( ptr, "," );
-      }
-      ptr += sprintf ( ptr, "\n" );
-   }
-   Logger::getInstance ().add ( buffer );
-   // output path
-   if ( path ) Logger::getInstance ().add ( path->Output () );
-}
-void PathFinder::AssertValidPath ( AStarNode *node )
-{
-   while ( node->next )
-   {
-      Vec2i &pos1 = node->pos;
-      Vec2i &pos2 = node->next->pos;
-      if ( pos1.dist ( pos2 ) > 1.5 || pos1.dist ( pos2 ) < 0.9 )
-      {
-         Logger::getInstance.add ( "Invalid Path Generated..." );
-         assert ( false );
-      }
-      node = node->next;
-   }
-}
-#endif
 
 }} //end namespace

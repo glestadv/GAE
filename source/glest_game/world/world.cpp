@@ -92,13 +92,12 @@ void World::save(XmlNode *node) const {
 // ========================== init ===============================================
 
 void World::init(const XmlNode *worldNode) {
-
-	unitUpdater.init(game); // is map data loaded ? ?
-
+	
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
 	initMap();
 	initSplattedTextures();
+   unitUpdater.init(game); // is map data loaded ? ?
 
 	//minimap must be init after sum computation
 	initMinimap();
