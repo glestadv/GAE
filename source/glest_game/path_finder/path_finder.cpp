@@ -16,13 +16,14 @@
 // because debugging optimized code is not much fun :-)
 
 // Actually, no need for this one to be optimized anymore, when path finding is stable again, 
-// pathfinder_llsr.cpp should get this treatment, that's where the 'hard work' is done now.
+// path_finder_llsr.cpp should get this treatment, that's where the 'hard work' is done now.
 
 #include "pch.h"
 
 #include "path_finder.h"
-#include "path_finder_llsr.h"
-
+#include "graph_search.h"
+#include "bestfirst_node_pool.h"
+#include "pf_np_astar_dia.h"
 /*
 #include <algorithm>
 #include <cassert>
@@ -40,22 +41,14 @@ using namespace std;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Glest{ namespace Game{ namespace PathFinder {
+
 
 // =====================================================
 // 	class PathFinder
 // =====================================================
 
 // ===================== PUBLIC ========================
-
-const int PathFinder::maxFreeSearchRadius = 10;
-
-// this is limiting the stored path ... why calculate 
-// a long path, then only store the first 10 steps!!!
-// We can handle this better by simply recalcing when/if blocked
-// (which is happening anyway?)
-const int PathFinder::pathFindRefresh = 10; // now unused
-const int PathFinder::pathFindNodesMax = 800;// = Config::getInstance ().getPathFinderMaxNodes ();
 
 PathFinder* PathFinder::singleton = NULL;
 
@@ -68,29 +61,23 @@ PathFinder* PathFinder::getInstance ()
 
 PathFinder::PathFinder()
 {
-   LowLevelSearch::init ();
-   LowLevelSearch::aMap = NULL;
-   LowLevelSearch::cMap = NULL;
+   search = new GraphSearch ();
    annotatedMap = NULL;
    singleton = this;
 }
 
 PathFinder::~PathFinder ()
 {
-   LowLevelSearch::aMap = NULL;
-   LowLevelSearch::cMap = NULL;
-   if ( annotatedMap ) delete annotatedMap;
+   delete search;
+   delete annotatedMap;
 }
 
 void PathFinder::init ( Map *map )
 {
 	this->map= map;
-   if ( annotatedMap ) delete annotatedMap;
+   delete annotatedMap;
    annotatedMap = new AnnotatedMap ( map );
-   LowLevelSearch::cMap = map;
-   LowLevelSearch::aMap = annotatedMap;
-   LowLevelSearch::bNodePool->init ( map );
-   LowLevelSearch::aNodePool->init ( map );
+   search->init ( map, annotatedMap );
 }
 
 bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const
@@ -108,7 +95,7 @@ bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const
    if ( pos1.x != pos2.x && pos1.y != pos2.y )
    {  // Proposed move is diagonal, check if cells either 'side' are free.
       Vec2i diag1, diag2;
-      LowLevelSearch::getPassthroughDiagonals ( pos1, pos2, size, diag1, diag2 );
+      search->getDiags ( pos1, pos2, size, diag1, diag2 );
       if ( ! annotatedMap->canOccupy (diag1, 1, field) 
       ||   ! annotatedMap->canOccupy (diag2, 1, field) ) 
 		   return false; // obstruction, can not move to pos2
@@ -125,27 +112,31 @@ bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const
 	return true;
 }
 
-PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
+TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
 {
+   //Logger::getInstance ().add ( "findPath() Called..." );
    static int flipper = 0;
    //route cache
-	UnitPath *path= unit->getPath();
-	if(finalPos==unit->getPos())
+	UnitPath &path = *unit->getPath ();
+	if( finalPos == unit->getPos () )
    {	//if arrived (where we wanted to go)
-		unit->setCurrSkill(scStop);
+		unit->setCurrSkill ( scStop );
+      //Logger::getInstance ().add ( "findPath() ... Returning, Arrived ..." );
 		return tsArrived;
 	}
-	else if(!path->isEmpty())
+   else if( ! path.isEmpty () )
    {	//route cache
-		Vec2i pos= path->pop();
+		Vec2i pos = path.pop();
       if ( isLegalMove ( unit, pos ) )
       {
-			unit->setNextPos(pos);
+			unit->setNextPos ( pos );
+         //Logger::getInstance ().add ( "findPath() ... Returning, On the way ..." );
 			return tsOnTheWay;
 		}
 	}
    //route cache miss
 	const Vec2i targetPos = computeNearestFreePos ( unit, finalPos );
+   //Logger::getInstance ().add ( "findPath() ... route cache miss ..." );
 
    //if arrived (as close as we can get to it)
 	if ( targetPos == unit->getPos () )
@@ -164,62 +155,47 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       else if ( dist < 10 ) radius = 3;
       else if ( dist < 15 ) radius = 4;
       else radius = 5;
-      if ( ! LowLevelSearch::canPathOut ( targetPos, radius, mfWalkable ) ) 
+      if ( ! search->canPathOut ( targetPos, radius, mfWalkable ) ) 
       {
          unit->getPath()->incBlockCount ();
          unit->setCurrSkill(scStop);
+         //Logger::getInstance ().add ( "findPath() ... Returning, target blocked ..." );
          return tsBlocked;
       }
    }
 
-   if ( flipper ++ % 2 == 0 )
+   /*
+   if ( flipper % 2 == 0 )
    {
-      LowLevelSearch::search = &LowLevelSearch::BestFirstPingPong;
-      LowLevelSearch::BFSNodePool &nPool = *LowLevelSearch::bNodePool;
-      nPool.reset ();
-      // dynamic adjustment of nodeLimit, based on distance to target
-      if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
-      else if ( dist < 10 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 4 );// == 200 nodes
-      else if ( dist < 15 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 2 );// == 400 nodes
-      // else a fixed -100, so the backward run has more nodes, and if the forward run hits 
-      // the nodeLimit, the backward run is more likely to succeed.
-      else nPool.setMaxNodes ( nPool.getMaxNodes () - 100 );// == 700 nodes
-   }
-   else
-   {
-      LowLevelSearch::search = &LowLevelSearch::AStar;
-      LowLevelSearch::AStarNodePool &nPool = *LowLevelSearch::aNodePool;
-      nPool.reset ();
-      // dynamic adjustment of nodeLimit, based on distance to target
-      if ( dist < 5 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 8 );      // == 100 nodes
-      else if ( dist < 10 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 4 );// == 200 nodes
-      else if ( dist < 15 ) nPool.setMaxNodes ( nPool.getMaxNodes () / 2 );// == 400 nodes
-   }
 
-   LowLevelSearch::SearchParams params (unit);
+   }
+   else 
+   {
+
+   }
+   */
+
+   //flipper ++;
+
+   SearchParams params (unit);
    params.dest = targetPos;
    list<Vec2i> pathList;
-   
-   if ( LowLevelSearch::search ( params, pathList ) )
+   //Logger::getInstance ().add ( "findPath()... annotating local..." );
+   annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
+   //bool result = search->GreedySearch ( params, pathList );
+   bool result = search->AStarSearch ( params, pathList );
+   annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
+   //Logger::getInstance ().add ( "findPath()... clearing local annotations ..." );
+   if ( ! result )
    {
-      copyToPath ( pathList, unit->getPath () );
-      if ( LowLevelSearch::search == LowLevelSearch::BestFirstPingPong )
-         Logger::getInstance ().add ( "BestFirstPingPong Used, returned true." );
-      else
-         Logger::getInstance ().add ( "AStar Used, returned true." );
-   }
-   else
-   {
-      if ( LowLevelSearch::search == LowLevelSearch::BestFirstPingPong )
-         Logger::getInstance ().add ( "BestFirstPingPong Failed." );
-      else
-         Logger::getInstance ().add ( "AStar Failed." );
       unit->getPath()->incBlockCount ();
       unit->setCurrSkill(scStop);
+      //Logger::getInstance ().add ( "findPath() ... Returning, Search Failed ..." );
       return tsBlocked;
    }
-
-	Vec2i pos= path->pop(); //crash point
+   else
+      copyToPath ( pathList, unit->getPath () );
+	Vec2i pos = path.pop(); //crash point
    if ( ! isLegalMove ( unit, pos ) )
    {
 		unit->setCurrSkill(scStop);
@@ -229,6 +205,7 @@ PathFinder::TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    unit->setNextPos(pos);
 	return tsOnTheWay;
 }
+
 void PathFinder::copyToPath ( const list<Vec2i> pathList, UnitPath *path )
 {
    list<Vec2i>::const_iterator it = pathList.begin();
@@ -280,81 +257,7 @@ Vec2i PathFinder::computeNearestFreePos (const Unit *unit, const Vec2i &finalPos
 	return nearestPos;
 }
 
-
-#ifdef PATHFINDER_TREE_TIMING
-TreeStats::TreeStats ()
-{
-   numTreesBuilt = avgSearchesPerTree = 0;
-   avgSearchTime = avgWorstSearchTime = worstSearchEver = 0;
-
-   searchesThisTree = 0;
-   avgSearchThisTree = worstSearchThisTree = 0;
-
-   avgInsertsPerTree = avgInsertTime = avgWorstInsertTime = worstInsertEver = 0;
-   insertsThisTree = 0;
-   avgInsertThisTree = worstInsertThisTree = 0;
-
-}
-void TreeStats::reset () 
-{
-   avgSearchTime = ( avgSearchTime * numTreesBuilt + avgSearchThisTree ) / ( numTreesBuilt + 1 );
-   avgWorstSearchTime = ( avgWorstSearchTime * numTreesBuilt + worstSearchThisTree ) / ( numTreesBuilt + 1 );
-   avgSearchesPerTree = ( avgSearchesPerTree * numTreesBuilt + searchesThisTree ) / ( numTreesBuilt + 1 );
-   if ( worstSearchThisTree > worstSearchEver ) 
-      worstSearchEver = worstSearchThisTree;
-
-   avgInsertTime = ( avgInsertTime * numTreesBuilt + avgInsertThisTree ) / ( numTreesBuilt + 1 );
-   avgWorstInsertTime = ( avgWorstInsertTime * numTreesBuilt + avgInsertThisTree ) / ( numTreesBuilt + 1 );
-   avgInsertsPerTree = ( avgInsertsPerTree * numTreesBuilt + insertsThisTree ) / ( numTreesBuilt + 1 );
-   if ( worstInsertThisTree > worstInsertEver )
-      worstInsertEver = worstInsertThisTree;
-
-}
-void TreeStats::newTree () 
-{ 
-   if ( searchesThisTree || insertsThisTree ) 
-   {
-      reset(); 
-      numTreesBuilt++; 
-   }
-   searchesThisTree = 0;
-   avgSearchThisTree = 0; 
-   worstSearchThisTree = 0;
-   insertsThisTree = 0;
-   avgInsertThisTree = 0;
-   worstInsertThisTree = 0;
-}
-
-void TreeStats::addSearch ( int64 time )
-{
-   if ( searchesThisTree )
-      avgSearchThisTree = avgSearchThisTree * searchesThisTree + time;
-   else
-      avgSearchThisTree = time;
-   searchesThisTree ++;
-   avgSearchThisTree /= searchesThisTree;
-   if ( time > worstSearchThisTree ) worstSearchThisTree = time;
-}
-void TreeStats::addInsert ( int64 time )
-{
-   if ( insertsThisTree )
-      avgInsertThisTree = avgInsertThisTree * insertsThisTree + time;
-   else
-      avgInsertThisTree = time;
-   insertsThisTree ++;
-   avgInsertThisTree /= insertsThisTree;
-   if ( time > worstInsertThisTree ) worstInsertThisTree = time;
-}
-char * TreeStats::output ( char *prefix )
-{
-   int off = sprintf ( buffer, "%s Avg number of searches on each tree: %d. Avg search time: %d. Avg Worst: %d. Absolute Worst: %d\n", 
-      prefix, avgSearchesPerTree, (int)avgSearchTime, (int)avgWorstSearchTime, (int)worstSearchEver );
-   sprintf ( buffer + off, "%s Avg number of inserts on each tree: %d. Avg insert time: %d. Avg Worst: %d. Absolute Worst: %d", 
-      prefix, avgInsertsPerTree, (int)avgInsertTime, (int)avgWorstInsertTime, (int)worstInsertEver );
-   return buffer;
-}
-#endif
-
+} // end namespace Glest::Game::PathFinder
 
 #ifdef DEBUG
 // Why is this here?  Doesn't it belong in world.cpp?  It's here because we compile path_finder.cpp

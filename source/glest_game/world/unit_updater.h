@@ -61,7 +61,7 @@ private:
 	World *world;
 	Console *console;
 	Random random;
-   PathFinder *pathFinder;
+   PathFinder::PathFinder *pathFinder;
 
 public:
     void init(Game &game);

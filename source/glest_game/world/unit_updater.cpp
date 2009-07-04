@@ -63,7 +63,7 @@ void UnitUpdater::init(Game &game) {
 	this->world = game.getWorld();
 	this->map = world->getMap();
 	this->console = game.getConsole();
-   pathFinder = PathFinder::getInstance ();
+   pathFinder = PathFinder::PathFinder::getInstance ();
 	pathFinder->init(map);
 }
 

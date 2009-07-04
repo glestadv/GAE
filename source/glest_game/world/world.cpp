@@ -182,7 +182,11 @@ void World::loadPFDebugTextures()
    _load_tex ( 7, "data/core/misc_textures/path-both.bmp" );
    _load_tex ( 6, "data/core/misc_textures/path-dest.bmp" );
    _load_tex ( 5, "data/core/misc_textures/path-start.bmp" );
+   _load_tex ( 10, "data/core/misc_textures/path_node.bmp" );
+   _load_tex ( 11, "data/core/misc_textures/open_node.bmp" );
+   _load_tex ( 12, "data/core/misc_textures/closed_node.bmp" );
 }
+
 #undef _do_tex
 #endif
 //load tech

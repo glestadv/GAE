@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world"
+				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1;PATHFINDER_DEBUG_TEXTURES"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -225,7 +225,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world"
+				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;XML_LIBRARY;USE_PCH=1;PATHFINDER_TIMING"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -396,11 +396,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ai\annotated_map.h"
+				RelativePath=".\path_finder\annotated_map.h"
 				>
 			</File>
 			<File
 				RelativePath=".\main\battle_end.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\bestfirst_node_pool.h"
 				>
 			</File>
 			<File
@@ -497,6 +501,10 @@
 			</File>
 			<File
 				RelativePath=".\facilities\game_util.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\graph_search.h"
 				>
 			</File>
 			<File
@@ -612,15 +620,27 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ai\path_finder.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ai\path_finder_llsr.h"
+				RelativePath=".\path_finder\path_finder.h"
 				>
 			</File>
 			<File
 				RelativePath=".\pch.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_datastructs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_nodepool.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_np_astar_dia.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_np_astar_stl.h"
 				>
 			</File>
 			<File
@@ -744,11 +764,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ai\annotated_map.cpp"
+				RelativePath=".\path_finder\annotated_map.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\main\battle_end.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\bestfirst_node_pool.cpp"
 				>
 			</File>
 			<File
@@ -837,6 +861,10 @@
 			</File>
 			<File
 				RelativePath=".\facilities\game_util.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\graph_search.cpp"
 				>
 			</File>
 			<File
@@ -967,43 +995,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ai\path_finder.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release+SSE2|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="2"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						BrowseInformation="1"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\ai\path_finder_llsr.cpp"
+				RelativePath=".\path_finder\path_finder.cpp"
 				>
 			</File>
 			<File
@@ -1041,6 +1033,18 @@
 						UsePrecompiledHeader="0"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_nodepool.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_np_astar_dia.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_np_astar_stl.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\facilities\pos_iterator.cpp"

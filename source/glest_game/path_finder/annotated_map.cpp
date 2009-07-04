@@ -16,10 +16,11 @@
 #include "pch.h"
 
 #include "annotated_map.h"
-#include "path_finder_llsr.h"
+#include "graph_search.h"
 #include "map.h"
+#include "path_finder.h"
 
-namespace Glest { namespace Game {
+namespace Glest { namespace Game { namespace PathFinder {
 
 inline uint32 CellMetrics::get ( const Field field )
 {
@@ -55,8 +56,8 @@ const int AnnotatedMap::maxClearanceValue = 3;
 AnnotatedMap::AnnotatedMap ( Map *m )
 {
    metrics = NULL;
-   map = m;
-   initMapMetrics ( map );
+   cMap = m;
+   initMapMetrics ( cMap );
 }
 
 AnnotatedMap::~AnnotatedMap ()
@@ -75,7 +76,7 @@ void AnnotatedMap::initMapMetrics ( Map *map )
    if ( metrics )
    {
       for ( int i=0; i < metricHeight; ++i ) 
-         delete metrics[i];
+         delete [] metrics[i];
       delete [] metrics;
    }
    metrics = new CellMetrics* [map->getH()];
@@ -239,7 +240,7 @@ CellMetrics AnnotatedMap::computeClearances ( const Vec2i &pos )
    assert ( sizeof ( CellMetrics ) == 4 );
 
    CellMetrics clearances;
-   Tile *container = map->getTile ( map->toTileCoords ( pos ) );
+   Tile *container = cMap->getTile ( cMap->toTileCoords ( pos ) );
  
    if ( container->isFree () ) // Tile is walkable?
    {
@@ -256,10 +257,10 @@ CellMetrics AnnotatedMap::computeClearances ( const Vec2i &pos )
    
    // Air
    int clearAir = maxClearanceValue;
-   if ( pos.x == map->getW() - 3 ) clearAir = 1;
-   else if ( pos.x == map->getW() - 4 ) clearAir = 2;
-   if ( pos.y == map->getH() - 3 ) clearAir = 1;
-   else if ( pos.y == map->getH() - 4 && clearAir > 2 ) clearAir = 2;
+   if ( pos.x == cMap->getW() - 3 ) clearAir = 1;
+   else if ( pos.x == cMap->getW() - 4 ) clearAir = 2;
+   if ( pos.y == cMap->getH() - 3 ) clearAir = 1;
+   else if ( pos.y == cMap->getH() - 4 && clearAir > 2 ) clearAir = 2;
    clearances.set ( mfAir, clearAir );
    
    // Amphibious
@@ -275,7 +276,7 @@ CellMetrics AnnotatedMap::computeClearances ( const Vec2i &pos )
 uint32 AnnotatedMap::computeClearance ( const Vec2i &pos, Field field )
 {
    uint32 clearance = 0;
-   Tile *container = map->getTile ( map->toTileCoords ( pos ) );
+   Tile *container = cMap->getTile ( cMap->toTileCoords ( pos ) );
    switch ( field )
    {
    case mfWalkable:
@@ -308,7 +309,7 @@ bool AnnotatedMap::canClear ( const Vec2i &pos, int clear, Field field )
    if ( clear > maxClearanceValue ) return false;
 
    // on map ?
-   if ( pos.x + clear >= map->getW() - 2 || pos.y + clear >= map->getH() - 2 ) 
+   if ( pos.x + clear >= cMap->getW() - 2 || pos.y + clear >= cMap->getH() - 2 ) 
       return false;
 
    for ( int i=pos.y; i < pos.y + clear; ++i )
@@ -316,8 +317,8 @@ bool AnnotatedMap::canClear ( const Vec2i &pos, int clear, Field field )
       for ( int j=pos.x; j < pos.x + clear; ++j )
       {
          Vec2i checkPos ( j, i );
-	      Cell *cell = map->getCell ( checkPos );
-         Tile *sc = map->getTile ( map->toTileCoords ( checkPos ) );
+	      Cell *cell = cMap->getCell ( checkPos );
+         Tile *sc = cMap->getTile ( cMap->toTileCoords ( checkPos ) );
          switch ( field )
          {
          case mfWalkable:
@@ -345,8 +346,48 @@ bool AnnotatedMap::canClear ( const Vec2i &pos, int clear, Field field )
 bool AnnotatedMap::canOccupy ( const Vec2i &pos, int size, Field field ) const
 {
    //assert ( pos.x >= 0 && pos.x < map->getW() && pos.y >= 0 && pos.y < map->getH() );
-   assert ( map->isInside ( pos ) );
+   assert ( cMap->isInside ( pos ) );
    return metrics[pos.y][pos.x].get ( field ) >= size ? true : false;
 }
 
-}}
+void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field field )
+{
+   const Vec2i *directions = NULL;
+   int numDirs;
+   if ( size == 1 ) 
+   {
+      directions = Directions;
+      numDirs = 8;
+   }
+   else if ( size == 2 )
+   {
+      directions = DirectionsSize2;
+      numDirs = 12;
+   }
+   else
+      assert ( false );
+
+   Zone zone = field == mfAir ? fAir : fSurface;
+   for ( int i = 0; i < numDirs; ++i )
+   {
+      Vec2i aPos = pos + directions[i];
+      if ( cMap->isInside (aPos) && ! cMap->getCell (aPos)->isFree (zone) )
+      {  // remember the metric
+         localAnnt[aPos] = metrics[aPos.y][aPos.x].get ( field );
+         metrics[aPos.y][aPos.x].set ( field, 0 );
+      }
+   }
+}
+
+void AnnotatedMap::clearLocalAnnotations ( Field field )
+{
+   for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it )
+   {
+      assert ( it->second <= maxClearanceValue );
+      assert ( cMap->isInside ( it->first ) );
+      metrics [ it->first.y ][ it->first.x ].set ( field, it->second );
+   }
+   localAnnt.clear ();
+}
+
+}}}

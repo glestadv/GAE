@@ -29,7 +29,7 @@
 #include "leak_dumper.h"
 
 #ifdef PATHFINDER_DEBUG_TEXTURES
-#include "path_finder_llsr.h"
+//#include "path_finder_llsr.h"
 #endif
 
 using namespace Shared::Graphics;
@@ -1211,6 +1211,7 @@ void Renderer::renderSurfacePFDebug ()
 	int currTex;
 	const World *world= game->getWorld();
 	const Map *map= world->getMap();
+   const PathFinder::PathFinder *pathFinder = PathFinder::PathFinder::getInstance ();
 	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
 	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
 
@@ -1218,7 +1219,7 @@ void Renderer::renderSurfacePFDebug ()
 
 	glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT);
 
-	glEnable(GL_BLEND); // GL_REPLACE ???
+	glEnable(GL_BLEND);
 	glEnable(GL_COLOR_MATERIAL); 
 	glDisable(GL_ALPHA_TEST);
 	glActiveTexture(baseTexUnit);
@@ -1254,22 +1255,14 @@ void Renderer::renderSurfacePFDebug ()
          uint32 tex = 0;
          uint32 met;
 
-         bool onPath = false, onRetPath = false, isStart = false, isDest = false;
-         met = LowLevelSearch::aMap->metrics[cy][cx].get ( mfWalkable );
          Vec2i cPos ( cx, cy );
-         if ( map->PathStart == cPos ) isStart = true;
-         if ( map->PathDest == cPos ) isDest = true;
-         for ( list<Vec2i>::const_iterator it = map->PathPositions.begin(); it != map->PathPositions.end(); ++it )
-            if ( *it == cPos ) onPath = true;
-         for ( list<Vec2i>::const_iterator it = map->ReturnPathPositions.begin(); it != map->ReturnPathPositions.end(); ++it )
-            if ( *it == cPos ) onRetPath = true;
-         if ( isStart ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[5])->getHandle ();
-         else if ( isDest ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[6])->getHandle ();
-         else if ( onPath && onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[7])->getHandle ();
-         else if ( onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[8])->getHandle ();
-         else if ( onPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[9])->getHandle ();
-         else tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-         
+         if ( map->PathStart == cPos ) met = 5;
+         else if ( map->PathDest == cPos ) met = 6;
+         else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
+         else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
+         else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
             glTexCoord2f ( 0.f, 1.f );
@@ -1285,21 +1278,15 @@ void Renderer::renderSurfacePFDebug ()
             glNormal3fv(tc00->getNormal().ptr());
             glVertex3fv(ml.ptr());                        
          glEnd ();
-         met = LowLevelSearch::aMap->metrics[cy][cx+1].get ( mfWalkable );
-         onPath = false, onRetPath = false, isStart = false, isDest = false;
-         cPos = Vec2i ( cx + 1, cy );
-         if ( map->PathStart == cPos ) isStart = true;
-         if ( map->PathDest == cPos ) isDest = true;
-         for ( list<Vec2i>::const_iterator it = map->PathPositions.begin(); it != map->PathPositions.end(); ++it )
-            if ( *it == cPos ) onPath = true;
-         for ( list<Vec2i>::const_iterator it = map->ReturnPathPositions.begin(); it != map->ReturnPathPositions.end(); ++it )
-            if ( *it == cPos ) onRetPath = true;
-         if ( isStart ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[5])->getHandle ();
-         else if ( isDest ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[6])->getHandle ();
-         else if ( onPath && onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[7])->getHandle ();
-         else if ( onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[8])->getHandle ();
-         else if ( onPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[9])->getHandle ();
-         else tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();         
+
+         cPos = Vec2i( cx+1, cy );
+         if ( map->PathStart == cPos ) met = 5;
+         else if ( map->PathDest == cPos ) met = 6;
+         else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
+         else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
+         else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
             glTexCoord2f ( 0.f, 1.f );
@@ -1315,21 +1302,15 @@ void Renderer::renderSurfacePFDebug ()
             glNormal3fv(tc00->getNormal().ptr());
             glVertex3fv(mc.ptr());                        
          glEnd ();
-         met = LowLevelSearch::aMap->metrics[cy+1][cx].get ( mfWalkable );
-         onPath = false, onRetPath = false, isStart = false, isDest = false;
-         cPos = Vec2i ( cx, cy + 1);
-         if ( map->PathStart == cPos ) isStart = true;
-         if ( map->PathDest == cPos ) isDest = true;
-         for ( list<Vec2i>::const_iterator it = map->PathPositions.begin(); it != map->PathPositions.end(); ++it )
-            if ( *it == cPos ) onPath = true;
-         for ( list<Vec2i>::const_iterator it = map->ReturnPathPositions.begin(); it != map->ReturnPathPositions.end(); ++it )
-            if ( *it == cPos ) onRetPath = true;
-         if ( isStart ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[5])->getHandle ();
-         else if ( isDest ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[6])->getHandle ();
-         else if ( onPath && onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[7])->getHandle ();
-         else if ( onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[8])->getHandle ();
-         else if ( onPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[9])->getHandle ();
-         else tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();         
+
+         cPos = Vec2i( cx, cy + 1 );
+         if ( map->PathStart == cPos ) met = 5;
+         else if ( map->PathDest == cPos ) met = 6;
+         else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
+         else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
+         else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
             glTexCoord2f ( 0.f, 1.f );
@@ -1345,21 +1326,15 @@ void Renderer::renderSurfacePFDebug ()
             glNormal3fv(tc00->getNormal().ptr());
             glVertex3fv(bl.ptr());                        
          glEnd ();
-         met = LowLevelSearch::aMap->metrics[cy+1][cx+1].get ( mfWalkable );
-         onPath = false, onRetPath = false, isStart = false, isDest = false;
-         cPos = Vec2i ( cx + 1, cy + 1 );
-         if ( map->PathStart == cPos ) isStart = true;
-         if ( map->PathDest == cPos ) isDest = true;
-         for ( list<Vec2i>::const_iterator it = map->PathPositions.begin(); it != map->PathPositions.end(); ++it )
-            if ( *it == cPos ) onPath = true;
-         for ( list<Vec2i>::const_iterator it = map->ReturnPathPositions.begin(); it != map->ReturnPathPositions.end(); ++it )
-            if ( *it == cPos ) onRetPath = true;
-         if ( isStart ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[5])->getHandle ();
-         else if ( isDest ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[6])->getHandle ();
-         else if ( onPath && onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[7])->getHandle ();
-         else if ( onRetPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[8])->getHandle ();
-         else if ( onPath ) tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[9])->getHandle ();
-         else tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();         
+
+         cPos = Vec2i( cx + 1, cy + 1 );
+         if ( map->PathStart == cPos ) met = 5;
+         else if ( map->PathDest == cPos ) met = 6;
+         else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
+         else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
+         else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
             glTexCoord2f ( 0.f, 1.f );

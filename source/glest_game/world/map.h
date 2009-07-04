@@ -17,6 +17,7 @@
 
 #include <cassert>
 #include <map>
+#include <set>
 
 #include "vec.h"
 #include "math_util.h"
@@ -221,6 +222,12 @@ public:
    Vec2i PathStart, PathDest;
    void ClearPathPos () {PathPositions.clear();ReturnPathPositions.clear();};
    void SetPathPos ( Vec2i pos, bool ret=false ) {ret?ReturnPathPositions.push_back(pos):PathPositions.push_back(pos);};
+
+   set<Vec2i> open, closed, path;
+   void setOpenNode ( const Vec2i &pos ) { open.insert(pos); }
+   void setClosedNode ( const Vec2i &pos ) { closed.insert(pos); }
+   void setPathNode ( const Vec2i &pos ) { path.insert(pos); }
+   void clearNodes () { open.clear(); closed.clear(); path.clear(); }
 #endif
 	//get
 	Cell *getCell(int x, int y) const					{assert(isInside(x, y)); return &cells[y * w + x];}

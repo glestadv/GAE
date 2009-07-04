@@ -28,6 +28,8 @@ namespace Glest { namespace Game {
 
 class Map;
 
+namespace PathFinder {
+
 // Adding a new field?
 // add the new Field (enum defined in units_stats_base.h)
 // add the 'xml' name to the Fields::names array (in units_stats_base.cpp)
@@ -85,6 +87,9 @@ public:
 
    static const int maxClearanceValue;
 
+   void annotateLocal ( const Vec2i &pos, const int size, const Field field );
+   void clearLocalAnnotations ( Field field );
+
 private:
    // for initMetrics () and updateMapMetrics ()
    CellMetrics computeClearances ( const Vec2i & );
@@ -92,14 +97,14 @@ private:
    bool canClear ( const Vec2i &pos, int clear, Field field );
 
    int metricHeight;
-
-   Map *map;
+   std::map<Vec2i,uint32> localAnnt;
+   Map *cMap;
 #if defined(PATHFINDER_TIMING) || defined(PATHFINDER_DEBUG_TEXTURES )
 public:
 #endif
    CellMetrics **metrics; // clearance values [y][x]
 };
 
-}}
+}}}
 
 #endif
