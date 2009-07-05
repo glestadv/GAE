@@ -37,6 +37,7 @@ AStarNodePool::AStarNodePool ()
    stock = new AStarNode[pathFindNodesMax];
    numNodes = 0;
    tmpMaxNodes = pathFindNodesMax;
+   leastH = NULL;
 }
 
 AStarNodePool::~AStarNodePool ()
@@ -48,6 +49,7 @@ void AStarNodePool::reset ()
 {
    numNodes = 0;
    tmpMaxNodes = pathFindNodesMax;
+   leastH = NULL;
 }
 
 void AStarNodePool::setMaxNodes ( const int max )
@@ -68,8 +70,21 @@ bool AStarNodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float h, floa
    stock[numNodes].heuristic = h;
    stock[numNodes].exploredCell = exp;
    this->addOpenNode ( &stock[numNodes] );
+   if ( numNodes )
+   {
+      if ( h < leastH->heuristic )
+         leastH = &stock[numNodes];
+   }
+   else
+      leastH = &stock[numNodes];
+
    numNodes++;
    return true;
+}
+
+AStarNode* AStarNodePool::getBestHNode ()
+{
+   return leastH;
 }
 
 #ifdef PATHFINDER_TIMING

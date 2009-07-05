@@ -204,17 +204,32 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
 #ifdef PATHFINDER_TIMING
    statsAStar->AddEntry ( aNodePool->stopTimer () );
 #endif
-   if ( nodeLimitReached )
-      Logger::getInstance ().add ( "AStarSearch() ... Node limit exceeded..." );
    if ( ! pathFound && ! nodeLimitReached ) 
          return false;
-   // fill in path
-   path.clear ();
-   while ( minNode )
+   if ( nodeLimitReached )
    {
-      path.push_front ( minNode->pos );
-		minNode = minNode->prev;
-	}
+      // get node closest to goal
+      minNode = aNodePool->getBestHNode ();
+      Logger::getInstance ().add ( "AStarSearch() ... Node limit exceeded..." );
+      // back up a bit, to avoid any possible cul-de-sac
+      for ( int i=0; i < 15; ++i )
+         if ( minNode->prev ) minNode = minNode->prev;
+      path.clear ();
+      while ( minNode )
+      {
+         path.push_front ( minNode->pos );
+		   minNode = minNode->prev;
+	   }
+   }
+   else
+   {  // fill in path
+      path.clear ();
+      while ( minNode )
+      {
+         path.push_front ( minNode->pos );
+		   minNode = minNode->prev;
+	   }
+   }
 #ifdef PATHFINDER_DEBUG_TEXTURES
    cMap->clearNodes ();
    list<Vec2i> *alist = aNodePool->getOpenNodes ();

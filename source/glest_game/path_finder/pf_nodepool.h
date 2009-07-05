@@ -118,6 +118,8 @@ public:
 
    // DO NOT OVERRIDE, override addOpenNode ()
    bool addToOpen ( AStarNode* prev, const Vec2i &pos, float h, float d, bool exp = true );
+   
+   AStarNode* getBestHNode ();
 
    virtual bool isOpen ( const Vec2i &pos ) = 0;
    virtual void updateOpenNode ( const Vec2i &pos, AStarNode *neighbour, float cost ) = 0;
@@ -142,6 +144,7 @@ public:
 protected:
    virtual void addOpenNode ( AStarNode *node ) = 0;
 
+   AStarNode *leastH;
    AStarNode *stock;
    int numNodes;
    int tmpMaxNodes;
