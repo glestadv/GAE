@@ -9,35 +9,41 @@
 //	License, or (at your option) any later version
 // ==============================================================
 //
-// File: pf_nodepool.cpp
-//
-// Low Level Search Routines and additional support structures
+// File: astar_nodepool.cpp
 //
 #include "pch.h"
 
 #include "path_finder.h"
-#include "pf_nodepool.h"
+#include "astar_nodepool.h"
 #include "map.h"
 #include "unit.h"
 
 namespace Glest { namespace Game { namespace PathFinder {
 
-   
-SearchParams::SearchParams ( Unit *u ) 
+bool AStarComp::operator () ( const AStarNode *one, const AStarNode *two ) const
 {
-   start = u->getPos(); 
-   field = u->getCurrField ();
-   size = u->getSize (); 
-   team = u->getTeam ();
+   if ( one->distToHere + one->heuristic < two->distToHere + two->heuristic ) 
+      return false;
+   if ( one->distToHere + one->heuristic > two->distToHere + two->heuristic ) 
+      return true;
+   // tie, prefer closer to goal...
+   if ( one->heuristic < two->heuristic )
+      return false;
+   if ( one->heuristic > two->heuristic )
+      return true;
+   // still tied... prefer nodes 'in line' with goal ???
+
+   // just distinguish them somehow...
+   return one < two;
 }
 
 AStarNodePool::AStarNodePool ()
 {
-   Logger::getInstance ().add ( "AStarNodePool::AStarNodePool ()" );
    stock = new AStarNode[pathFindNodesMax];
    numNodes = 0;
    tmpMaxNodes = pathFindNodesMax;
    leastH = NULL;
+   openHeap.reserve ( pathFindNodesMax );
 }
 
 AStarNodePool::~AStarNodePool ()
@@ -45,11 +51,23 @@ AStarNodePool::~AStarNodePool ()
    delete [] stock;
 }
 
+void AStarNodePool::init ( Map *map )
+{
+   markerArray.init ( map->getW(), map->getH() );
+   pointerArray.init ( map->getW(), map->getH() );
+}
+
 void AStarNodePool::reset ()
 {
    numNodes = 0;
    tmpMaxNodes = pathFindNodesMax;
    leastH = NULL;
+   markerArray.newSearch ();
+   openHeap.clear ();
+
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   listedNodes.clear ();
+#endif
 }
 
 void AStarNodePool::setMaxNodes ( const int max )
@@ -69,7 +87,7 @@ bool AStarNodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float h, floa
    stock[numNodes].distToHere = d;
    stock[numNodes].heuristic = h;
    stock[numNodes].exploredCell = exp;
-   this->addOpenNode ( &stock[numNodes] );
+   addOpenNode ( &stock[numNodes] );
    if ( numNodes )
    {
       if ( h < leastH->heuristic )
@@ -82,10 +100,79 @@ bool AStarNodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float h, floa
    return true;
 }
 
-AStarNode* AStarNodePool::getBestHNode ()
+void AStarNodePool::addOpenNode ( AStarNode *node )
 {
-   return leastH;
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   listedNodes.push_back ( node->pos );
+#endif
+   markerArray.setOpen ( node->pos );
+   pointerArray.set ( node->pos, node );
+   openHeap.push_back ( node );
+   push_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
 }
+
+void AStarNodePool::updateOpenNode ( const Vec2i &pos, AStarNode *neighbour, float cost )
+{
+   AStarNode *posNode = (AStarNode*)pointerArray.get ( pos );
+   if ( neighbour->distToHere + cost < posNode->distToHere )
+   {
+      posNode->distToHere = neighbour->distToHere + cost;
+      posNode->prev = neighbour;
+
+      // We could just push_heap from begin to 'posNode' (as we're only decreasing key)
+      // but we need a quick method to get an iterator to posNode...
+      make_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
+   }
+}
+
+#ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
+
+void AStarNodePool::updateClosedNode ( const Vec2i &pos, AStarNode *neighbour, float cost )
+{
+   AStarNode *posNode = closed[pos];
+   if ( neighbour->distToHere + cost < posNode->distToHere )
+   {
+      posNode->distToHere = neighbour->distToHere + cost;
+      posNode->prev = neighbour;
+      addOpenNode ( posNode );
+      map<Vec2i,AStarNode*>::iterator it = closed.find ( posNode->pos );
+      closed.erase ( it );
+   }
+}
+
+#endif
+
+AStarNode* AStarNodePool::getBestCandidate ()
+{
+   if ( openHeap.empty() ) return NULL;
+   pop_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
+   AStarNode *ret = openHeap.back();
+   openHeap.pop_back ();
+   markerArray.setClosed ( ret->pos );
+   return ret;
+}
+
+#ifdef PATHFINDER_DEBUG_TEXTURES
+
+list<Vec2i>* AStarNodePoolSTL::getOpenNodes ()
+{
+   list<Vec2i> *ret = new list<Vec2i> ();
+   list<Vec2i>::iterator it = listedNodes.begin();
+   for ( ; it != listedNodes.end (); ++it )
+      if ( isOpen ( *it ) ) ret->push_back ( *it );
+   return ret;
+}
+
+list<Vec2i>* AStarNodePoolSTL::getClosedNodes ()
+{
+   list<Vec2i> *ret = new list<Vec2i> ();
+   list<Vec2i>::iterator it = listedNodes.begin();
+   for ( ; it != listedNodes.end (); ++it )
+      if ( isClosed ( *it ) ) ret->push_back ( *it );
+   return ret;
+}
+
+#endif // defined ( PATHFINDER_DEBUG_TEXTURES )
 
 #ifdef PATHFINDER_TIMING
 

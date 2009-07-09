@@ -400,6 +400,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\path_finder\astar_nodepool.h"
+				>
+			</File>
+			<File
 				RelativePath=".\main\battle_end.h"
 				>
 			</File>
@@ -628,22 +632,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\pf_datastructs.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_nodepool.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_np_astar_dia.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_np_astar_stl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\facilities\pos_iterator.h"
 				>
 			</File>
@@ -765,6 +753,10 @@
 			</File>
 			<File
 				RelativePath=".\path_finder\annotated_map.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\astar_nodepool.cpp"
 				>
 			</File>
 			<File
@@ -1033,18 +1025,6 @@
 						UsePrecompiledHeader="0"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_nodepool.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_np_astar_dia.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_np_astar_stl.cpp"
-				>
 			</File>
 			<File
 				RelativePath=".\facilities\pos_iterator.cpp"

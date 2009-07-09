@@ -21,7 +21,6 @@ namespace Glest { namespace Game { namespace PathFinder {
 
 BFSNodePool::BFSNodePool ()
 {
-   Logger::getInstance ().add ( "BFSNodePool::BFSNodePool()" );
    maxNodes = pathFindNodesMax;
    stock = new BFSNode[maxNodes];
    lists = new BFSNode*[maxNodes];
@@ -34,7 +33,6 @@ BFSNodePool::~BFSNodePool ()
 }
 void BFSNodePool::init ( Map *map )
 {
-   Logger::getInstance ().add ( "BFSNodePool::init ()" );
    markerArray.init ( map->getW(), map->getH() );
    reset ();
 }

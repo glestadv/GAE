@@ -17,7 +17,7 @@
 #ifndef _GLEST_GAME_PATHFINDER_GRAPH_SEARCH_H_
 #define _GLEST_GAME_PATHFINDER_GRAPH_SEARCH_H_
 
-#include "pf_nodepool.h"
+#include "astar_nodepool.h"
 #include "bestfirst_node_pool.h"
 #include "vec.h"
 
@@ -34,6 +34,20 @@ class Map;
 namespace PathFinder {
 
 class AnnotatedMap;
+
+// =====================================================
+// class SearchParams
+//
+// Parameters for a single search
+// =====================================================
+struct SearchParams
+{
+   Vec2i start, dest;
+   Field field;
+   int size, team;
+   SearchParams ( Unit *u );
+};
+
 /*
 struct EuclideanHeuristic
 {
@@ -68,6 +82,14 @@ __inline float heuristic ( const Vec2i &p1, const Vec2i &p2 )
    return 1.4 * diagonal + 1.0 * straight;
 }
 
+// fills d1 and d2 with the diagonal cells(coords) that need checking for a 
+// unit of size to move from s to d, for diagonal moves.
+// WARNING: ASSUMES ( s.x != d.x && s.y != d.y ) ie. the move IS diagonal
+// if this condition is not true, results are undefined
+__inline 
+void getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 );
+
+
 // class GraphSearch
 //
 // Encapsulates the search algorithms
@@ -100,13 +122,6 @@ public:
    // for zero minus the distance to here, the algorithm thus tries to 'escape'
    // (ie, get as far from start as quickly as possible).
    bool canPathOut ( const Vec2i &pos, const int radius, Field field );
-
-   // fills d1 and d2 with the diagonal cells(coords) that need checking for a 
-   // unit of size to move from s to d, for diagonal moves.
-   // WARNING: ASSUMES ( s.x != d.x && s.y != d.y ) ie. the move IS diagonal
-   // if this condition is not true, results are undefined
-   static __inline void getDiags ( const Vec2i &s, const Vec2i &d, 
-                           const int size, Vec2i &d1, Vec2i &d2 );
 
 private:
    void init (); 

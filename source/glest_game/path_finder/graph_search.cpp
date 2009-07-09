@@ -16,13 +16,19 @@
 #include "pch.h"
 
 #include "graph_search.h"
-#include "pf_np_astar_dia.h"
-#include "pf_np_astar_stl.h"
 #include "path_finder.h"
 #include "map.h"
 #include "vec.h"
 
 namespace Glest { namespace Game { namespace PathFinder {
+
+SearchParams::SearchParams ( Unit *u ) 
+{
+   start = u->getPos(); 
+   field = u->getCurrField ();
+   size = u->getSize (); 
+   team = u->getTeam ();
+}
 
 GraphSearch::GraphSearch ()
 {
@@ -30,8 +36,7 @@ GraphSearch::GraphSearch ()
    cMap = NULL;
 
    bNodePool = new BFSNodePool ();
-   //aNodePool = new AStarNodePoolDIA ();
-   aNodePool = new AStarNodePoolSTL ();
+   aNodePool = new AStarNodePool ();
 
 #  ifdef PATHFINDER_TIMING
       statsAStar = new PathFinderStats ( "A-Star Search : " );
@@ -300,8 +305,7 @@ void GraphSearch::copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path )
 }
 
 
-void GraphSearch::getDiags ( const Vec2i &s, const Vec2i &d, 
-                        const int size, Vec2i &d1, Vec2i &d2 )
+void getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 )
 {
    assert ( s.x != d.x && s.y != d.y );
    if ( size == 1 )

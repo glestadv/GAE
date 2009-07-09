@@ -19,8 +19,6 @@
 
 #include "vec.h"
 #include <list>
-#include "pf_datastructs.h"
-#include "pf_nodepool.h"
 
 using Shared::Graphics::Vec2i;
 using std::list;
@@ -32,20 +30,54 @@ class Map;
 namespace PathFinder {
 
 // =====================================================
+// struct BFSNode
+//
+// A Greedy 'Best First' Search Node
+// =====================================================
+struct BFSNode
+{
+   Vec2i pos;
+   BFSNode *next;
+   BFSNode *prev;
+   float heuristic;
+   bool exploredCell;
+};
+
+// ========================================================
 // class BFSNodePool
 //
-// An interface to the open/closed lists, used mainly to 
-// hide away all the nasty conditional compilation to
-// support various different underlying data structures
+// An interface to the open/closed lists.
 //
-// This NodePool supports the BFS algorithm, and operates
-// on BFSNode structures. Tests for 'listedness' report 
-// if a position is listed or not, there is no mechanism 
-// to test whether a listed position is open or closed.
-//
-// =====================================================
+// This NodePool supports the Greedy search algorithm, and 
+// operates on BFSNode structures. Tests for 'listedness'
+// report if a position is listed or not, there is no 
+// mechanism to test whether a listed position is open or 
+// closed.
+// ========================================================
 class BFSNodePool
 {
+   // =====================================================
+   // struct PosMarkerArray
+   //
+   // A Marker Array, using sizeof(unsigned int) bytes per 
+   // cell, and a lazy clearing scheme.
+   // =====================================================
+   struct PosMarkerArray
+   {
+      int stride;
+      unsigned int counter;
+      unsigned int *marker;
+      
+      PosMarkerArray () {counter=0;marker=NULL;};
+      ~PosMarkerArray () {if (marker) delete marker; }
+
+      void init ( int w, int h ) { stride = w; marker = new unsigned int[w*h]; 
+               memset ( marker, 0, w * h * sizeof(unsigned int) ); }
+      inline void newSearch () { ++counter; }
+      inline void setMark ( const Vec2i &pos ) { marker[pos.y * stride + pos.x] = counter; }
+      inline bool isMarked ( const Vec2i &pos ) { return marker[pos.y * stride + pos.x] == counter; }
+   };
+
    BFSNode *stock;
    BFSNode **lists;
    int numOpen, numClosed, numTotal, numPos;
