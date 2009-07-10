@@ -561,7 +561,7 @@ void Renderer::renderMouse3d(){
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
 				//choose color
-				if(map->areFreeCellsOrHaveUnits (*i, building->getSize(), mfWalkable, units)) {
+				if(map->areFreeCellsOrHaveUnits (*i, building->getSize(), FieldWalkable, units)) {
 					color= Vec4f(1.f, 1.f, 1.f, 0.5f);
 				} else {
 					color= Vec4f(1.f, 0.f, 0.f, 0.5f);
@@ -1261,7 +1261,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
-         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
@@ -1285,7 +1285,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
-         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
@@ -1309,7 +1309,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
-         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
@@ -1333,7 +1333,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
-         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( mfWalkable );
+         else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
          glBegin ( GL_TRIANGLE_FAN );
@@ -1643,7 +1643,7 @@ void Renderer::renderUnits(){
 
          // floating units should maintain their 'y' coord properly...
          // Quick fix: float boats
-         if ( unit->getCurrField () == mfDeepWater )
+         if ( unit->getCurrField () == FieldDeepWater )
             currVec.y = game->getWorld()->getMap()->getWaterLevel ();
 
 			// let dead units start sinking before they go away

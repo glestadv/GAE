@@ -146,10 +146,12 @@ public:
    }
 	//cellmap
 	bool *cellMap;
+   char *fieldMap;
 
 	int getStoredResourceCount() const					{return storedResources.size();}
 	const Resource *getStoredResource(int i) const		{return &storedResources[i];}
 	bool getCellMapCell(int x, int y) const				{return cellMap[size * y + x];}
+   char getFieldMapCell ( int x, int y ) const { return fieldMap[size*y+x]; }
 	bool hasMeetingPoint() const						{return meetingPoint;}
 	Texture2D *getMeetingPointImage() const				{return meetingPointImage;}
 	StaticSound *getSelectionSound() const				{return selectionSounds.getRandSound();}

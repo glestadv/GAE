@@ -77,6 +77,7 @@ UnitType::UnitType(){
 	reset();
     multiSelect= false;
 	cellMap= NULL;
+   fieldMap = NULL;
 }
 
 UnitType::~UnitType(){
@@ -138,6 +139,27 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 				}
 			}
 		}
+
+      // fieldmap
+      const XmlNode *fieldMapNode = parametersNode->getChild ( "fieldmap", 0, false );
+      if ( fieldMapNode && fieldMapNode->getAttribute("value")->getBoolValue () )
+      {
+         fieldMap = new char[size*size];
+			for ( int i=0; i < size; ++i )
+         {
+            const XmlNode *rowNode = fieldMapNode->getChild ( "row", i );
+				string row = rowNode->getAttribute("value")->getRestrictedValue();
+				if(row.size()!=size)
+					throw runtime_error("Fieldmap row is not the same length as unit size");
+				for(int j=0; j<row.size(); ++j)
+            {
+               if ( row[j] != 'l' && row[j] != 'a' && row[j] != 'w' )
+                  throw new runtime_error ( "Fieldmap contains illegal value." );
+					fieldMap[i*size+j]= row[j];
+            }
+         }
+
+      }
 
 		//levels
 		const XmlNode *levelsNode= parametersNode->getChild("levels", 0, false);
@@ -324,11 +346,11 @@ const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *r
 	return NULL;
 }
 
-const AttackCommandType *UnitType::getFirstAttackCommand(Zone field) const{
+const AttackCommandType *UnitType::getFirstAttackCommand(Zone zone) const{
 	for(int i=0; i<commandTypes.size(); ++i){
 		if(commandTypes[i]->getClass()== ccAttack){
 			const AttackCommandType *act= static_cast<const AttackCommandType*>(commandTypes[i]);
-			if(act->getAttackSkillTypes()->getField(field)){
+			if(act->getAttackSkillTypes()->getZone(zone)){
 				return act;
 			}
 		}

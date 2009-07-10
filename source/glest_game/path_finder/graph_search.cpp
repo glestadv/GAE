@@ -66,7 +66,7 @@ bool GraphSearch::GreedySearch ( SearchParams &params, list<Vec2i> &path)
 #ifdef PATHFINDER_TIMING
    int64 startTime = Chrono::getCurMicros ();
 #endif
-   Zone zone = params.field == mfAir ? fAir : fSurface;
+   Zone zone = params.field == FieldAir ? ZoneAir : ZoneSurface;
    bNodePool->reset ();
    bNodePool->addToOpen ( NULL, params.start, heuristic ( params.start, params.dest ) );
 	bool pathFound= true;
@@ -216,15 +216,16 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
       // get node closest to goal
       minNode = aNodePool->getBestHNode ();
       Logger::getInstance ().add ( "AStarSearch() ... Node limit exceeded..." );
-      // back up a bit, to avoid any possible cul-de-sac
-      for ( int i=0; i < 15; ++i )
-         if ( minNode->prev ) minNode = minNode->prev;
       path.clear ();
       while ( minNode )
       {
          path.push_front ( minNode->pos );
 		   minNode = minNode->prev;
 	   }
+      int backoff = path.size () / 10;
+      // back up a bit, to avoid a possible cul-de-sac
+      for ( int i=0; i < backoff ; ++i )
+         path.pop_back ();
    }
    else
    {  // fill in path
@@ -271,7 +272,7 @@ bool GraphSearch::canPathOut ( const Vec2i &pos, const int radius, Field field  
       {
          Vec2i sucPos = maxNode->pos + Directions[i];
          if ( ! cMap->isInside ( sucPos ) 
-         ||   ! cMap->getCell( sucPos )->isFree( field == mfAir ? fAir: fSurface ) )
+         ||   ! cMap->getCell( sucPos )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) )
             continue;
          //CanOccupy() will be cheapest, do it first...
          if ( aMap->canOccupy (sucPos, 1, field) && ! bNodePool->isListed (sucPos) )
@@ -283,8 +284,8 @@ bool GraphSearch::canPathOut ( const Vec2i &pos, const int radius, Field field  
                // and either diag cell is not free...
                if ( ! aMap->canOccupy ( diag1, 1, field ) 
                ||   ! aMap->canOccupy ( diag2, 1, field )
-               ||   ! cMap->getCell( diag1 )->isFree( field == mfAir ? fAir: fSurface ) 
-               ||   ! cMap->getCell( diag2 )->isFree( field == mfAir ? fAir: fSurface ) )
+               ||   ! cMap->getCell( diag1 )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) 
+               ||   ! cMap->getCell( diag2 )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) )
                   continue; // not allowed
             }
             // Move is legal.

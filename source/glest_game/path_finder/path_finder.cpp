@@ -81,7 +81,7 @@ bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const
    const Vec2i &pos1 = unit->getPos ();
    const int &size = unit->getSize ();
    const Field &field = unit->getCurrField ();
-   Zone cellField = field == mfAir ? fAir : fSurface;
+   Zone cellField = field == FieldAir ? ZoneAir : ZoneSurface;
    Tile *sc = map->getTile ( map->toTileCoords ( pos2 ) );
 
    if ( ! annotatedMap->canOccupy ( pos2, size, field ) )
@@ -141,7 +141,7 @@ TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
    // some tricks to determine if we are probably blocked on a short path, without
    // an exhuastive and expensive search through pathFindNodesMax nodes
    float dist = unit->getPos().dist ( targetPos );
-   if ( unit->getCurrField () == mfWalkable 
+   if ( unit->getCurrField () == FieldWalkable 
    &&   map->getTile (Map::toTileCoords ( targetPos ))->isVisible (unit->getTeam ()) )
    {
       int radius;
@@ -149,7 +149,7 @@ TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       else if ( dist < 10 ) radius = 3;
       else if ( dist < 15 ) radius = 4;
       else radius = 5;
-      if ( ! search->canPathOut ( targetPos, radius, mfWalkable ) ) 
+      if ( ! search->canPathOut ( targetPos, radius, FieldWalkable ) ) 
       {
          unit->getPath()->incBlockCount ();
          unit->setCurrSkill(scStop);
@@ -216,7 +216,7 @@ Vec2i PathFinder::computeNearestFreePos (const Unit *unit, const Vec2i &finalPos
 	//unit data
 	Vec2i unitPos= unit->getPos();
 	int size= unit->getType()->getSize();
-   Field field = unit->getCurrField();// == mfAir ? fAir : fSurface;
+   Field field = unit->getCurrField();// == FieldAir ? ZoneAir : ZoneSurface;
 	int teamIndex= unit->getTeam();
 
 	//if finalPos is free return it
@@ -263,12 +263,12 @@ public:
 	int w;
 	char *cells;
 
-	ValidationMap(int h, int w) : h(h), w(w), cells(new char[h * w * fCount]) {
+	ValidationMap(int h, int w) : h(h), w(w), cells(new char[h * w * ZoneCount]) {
 		reset();
 	}
 
 	void reset() {
-		memset(cells, 0, h * w * fCount);
+		memset(cells, 0, h * w * ZoneCount);
 	}
 
 	void validate(int x, int y, Field field) {
@@ -279,7 +279,7 @@ public:
 	char &getCell(int x, int y, Field field) {
 		assert(x >= 0 && x < w);
 		assert(y >= 0 && y < h);
-		assert(field >= 0 && field < fCount);
+		assert(field >= 0 && field < ZoneCount);
 		return cells[field * h * w + x * w + y];
 	}
 };
@@ -347,7 +347,7 @@ void World::assertConsistiency() {
 	// make sure that every cell that was not validated is empty
 	for(int x = 0; x < map.getW(); ++x) {
 		for(int y = 0; y < map.getH(); ++y ) {
-			for(int field = 0; field < fCount; ++field) {
+			for(int field = 0; field < ZoneCount; ++field) {
 				if(!validationMap.getCell(x, y, (Field)field)) {
 					Cell *cell = map.getCell(x, y);
 					if(cell->getUnit(field)) {
@@ -372,7 +372,7 @@ void World::doHackyCleanUp() {
 		for(int y = 0; y < h; ++y) {
 			Cell *cell = map.getCell(x, y);
 			for(Units::const_iterator u = newlydead.begin(); u != newlydead.end(); ++u) {
-				for(int f = 0; f < fCount; ++f) {
+				for(int f = 0; f < ZoneCount; ++f) {
 					if(cell->getUnit((Zone)f) == *u) {
 						cell->setUnit((Zone)f, NULL);
 					}

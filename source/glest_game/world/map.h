@@ -61,7 +61,7 @@ class Earthquake;
 
 class Cell{
 private:
-   Unit *units[fCount];	//units on this cell
+   Unit *units[ZoneCount];	//units on this cell
    float height;
    SurfaceType surfaceType;
    Cell(Cell&);
@@ -71,17 +71,17 @@ public:
    Cell() {
 		memset(units, 0, sizeof(units));
 		height= 0;
-      surfaceType = ttLand;
+      surfaceType = SurfaceTypeLand;
 	}
 
 	// get
 	Unit *getUnit (Zone zone) const		{return units[zone];}
-   Unit *getUnit ( Field field ) {return getUnit(field==mfAir?fAir:fSurface);}
+   Unit *getUnit ( Field field ) {return getUnit(field==FieldAir?ZoneAir:ZoneSurface);}
 	float getHeight () const				{return height;}
    SurfaceType getType () const { return surfaceType; }
 
-   bool isSubmerged () const { return surfaceType != ttLand; }
-   bool isDeepSubmerged () const { return surfaceType == ttDeepWater; }
+   bool isSubmerged () const { return surfaceType != SurfaceTypeLand; }
+   bool isDeepSubmerged () const { return surfaceType == SurfaceTypeDeepWater; }
 
    // set
    void setUnit ( Zone field, Unit *unit) {units[field]= unit;}

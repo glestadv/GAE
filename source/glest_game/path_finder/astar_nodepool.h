@@ -168,6 +168,7 @@ public:
 #ifdef PATHFINDER_DEBUG_TEXTURES
    virtual list<Vec2i>* getOpenNodes ();
    virtual list<Vec2i>* getClosedNodes ();
+   list<Vec2i> listedNodes;
 #endif
 #ifdef PATHFINDER_TIMING
    int64 startTime;

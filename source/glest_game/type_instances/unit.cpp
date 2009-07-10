@@ -166,11 +166,11 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(mfAir)) currField = mfAir;
-	if(type->getField(mfAnyWater)) currField = mfAnyWater;
-	if(type->getField(mfDeepWater)) currField = mfDeepWater;
-	if(type->getField(mfWalkable)) currField = mfWalkable;
-	targetField = fSurface;		// init just to keep it pretty in memory
+	if(type->getField(FieldAir)) currField = FieldAir;
+	if(type->getField(FieldAnyWater)) currField = FieldAnyWater;
+	if(type->getField(FieldDeepWater)) currField = FieldDeepWater;
+	if(type->getField(FieldWalkable)) currField = FieldWalkable;
+	targetField = ZoneSurface;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -945,7 +945,7 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 	if (targetUnit) {
 		//attack enemies
 		if (!isAlly(targetUnit)) {
-			commandType = type->getFirstAttackCommand(targetUnit->getCurrField()==mfAir?fAir:fSurface);
+			commandType = type->getFirstAttackCommand(targetUnit->getCurrField()==FieldAir?ZoneAir:ZoneSurface);
 
 		//repair allies
 		} else {
@@ -1465,7 +1465,7 @@ void Unit::effectExpired(Effect *e){
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
-	if (currField == mfAir) {
+	if (currField == FieldAir) {
 		height += World::airHeight;
    }
 
@@ -1484,7 +1484,7 @@ void Unit::updateTarget(const Unit *target) {
 	   targetPos = useNearestOccupiedCell
 			       ? target->getNearestOccupiedCell(pos)
 			       : target->getCenteredPos();
-	   targetField = target->getCurrField()==mfAir?fAir:fSurface;
+	   targetField = target->getCurrField()==FieldAir?ZoneAir:ZoneSurface;
 	   targetVec = target->getCurrVector();
    	
 	   if(faceTarget)

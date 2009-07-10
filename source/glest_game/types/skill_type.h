@@ -220,7 +220,7 @@ public:
 
 class TargetBasedSkillType: public SkillType {
 protected:
-	Zones fields;
+	Zones zones;
 
 public:
 	TargetBasedSkillType(SkillClass skillClass, const char* typeName);
@@ -229,8 +229,8 @@ public:
 	virtual void getDesc(string &str, const Unit *unit) const	{getDesc(str, unit, "Range");}
 	virtual void getDesc(string &str, const Unit *unit, const char* rangeDesc) const;
 
-	Zones getFields() const				{return fields;}
-	bool getField(Zone field) const		{return fields.get(field);}
+	Zones getZones () const				{return zones;}
+	bool getZone ( Zone zone ) const		{return zones.get(zone);}
 };
 
 // ===============================
@@ -441,16 +441,16 @@ public:
 class DummySkillType : public SkillType
 {
 private:
-   int repeat;
+   int time;
 public:
    DummySkillType () : SkillType ( scDummy, "Dummy" ) {}
    virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft) 
    {
       SkillType::load ( sn, dir, tt, ft );
-      repeat = sn->getChildIntValue("repeat");
+      time = sn->getChildIntValue ( "time" );
    }
 	virtual void getDesc(string &str, const Unit *unit) const {}
-   int getRepeat () const { return repeat; }
+   int getTime () const { return time; }
 };
 
 // ===============================

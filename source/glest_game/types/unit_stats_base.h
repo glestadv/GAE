@@ -37,54 +37,58 @@ class EnhancementTypeBase;
 // ===============================
 
 // Adding a new field ???
-// see instructions at the top of path_finder.h
+// see instructions at the top of annotated_map.h
 
 //enum Zone
 enum Zone // Zone of unit _occupance_
 {  // used for attack fields, actual occupance is indirectly 
    // specified by the current Field
-   fSurface,
-   fAir,
-   //fSubSurface,
-   fCount
+   ZoneSurface,
+   ZoneAir,
+   //ZoneSubSurface,
+   ZoneCount
 };
 
 //enum SurfaceType
 enum SurfaceType // for each cell's surface zone,
 {  // is computed in Map::setCellTypes ()
-   ttLand, ttFordable, ttDeepWater, ttCount
+   // FIXME: may change... need hook in Map::prepareTerrain()
+   SurfaceTypeLand, 
+   SurfaceTypeFordable, 
+   SurfaceTypeDeepWater, 
+   SurfaceTypeCount
 };
 
 //enum Field
 enum Field // Zones of Movement
 {
-   mfWalkable, // fSurface + ( ttLand || ttFordable )
-   mfAir,      // fAir
-   mfAnyWater, // fSurface + ( ttFordable || ttDeepWater )
-   mfDeepWater, // fSurface + ttDeepWater
-   mfAmphibious, // fSurface
-   mfCount
+   FieldWalkable, // ZoneSurface + ( SurfaceTypeLand || SurfaceTypeFordable )
+   FieldAir,      // ZoneAir
+   FieldAnyWater, // ZoneSurface + ( SurfaceTypeFordable || SurfaceTypeDeepWater )
+   FieldDeepWater, // ZoneSurface + SurfaceTypeDeepWater
+   FieldAmphibious, // ZoneSurface + SuraceType*
+   FieldCount
 };
 
 /** Fields of travel, and indirectly zone of occupance */
-class Fields : public XmlBasedFlags<Field, mfCount> {
+class Fields : public XmlBasedFlags<Field, FieldCount> {
 private:
-	static const char *names[mfCount];
+	static const char *names[FieldCount];
 
 public:
 	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Field, mfCount>::load(node, dir, tt, ft, "field", names);
+		XmlBasedFlags<Field, FieldCount>::load(node, dir, tt, ft, "field", names);
 	}
 };
 
 /** Zones of attack (air, surface, etc.) */
-class Zones : public XmlBasedFlags<Zone, fCount> {
+class Zones : public XmlBasedFlags<Zone, ZoneCount> {
 private:
-	static const char *names[fCount];
+	static const char *names[ZoneCount];
 
 public:
 	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Zone, fCount>::load(node, dir, tt, ft, "field", names);
+		XmlBasedFlags<Zone, ZoneCount>::load(node, dir, tt, ft, "field", names);
 	}
 };
 

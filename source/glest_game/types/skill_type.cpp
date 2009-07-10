@@ -229,8 +229,8 @@ string SkillType::skillClassToStr(SkillClass skillClass){
 
 string SkillType::fieldToStr(Zone field){
 	switch(field){
-	case fSurface: return "Surface";
-	case fAir: return "Air";
+	case ZoneSurface: return "Surface";
+	case ZoneAir: return "Air";
 //	case fSubsurface: return "Subsurface";
 
 		default:
@@ -306,7 +306,7 @@ void TargetBasedSkillType::load(const XmlNode *sn, const string &dir, const Tech
 	if(!attackFieldsNode && !fieldsNode) {
 		throw runtime_error("Must specify either <attack-fields> or <fields>.");
 	}
-	fields.load(fieldsNode ? fieldsNode : attackFieldsNode, dir, tt, ft);
+	zones.load(fieldsNode ? fieldsNode : attackFieldsNode, dir, tt, ft);
 }
 
 void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* rangeDesc) const {
@@ -323,10 +323,10 @@ void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* ra
 
 	//fields
 	str+= lang.get("Zones") + ": ";
-	for(int i= 0; i < fCount; i++){
-		Zone field = static_cast<Zone>(i);
-		if(fields.get(field)){
-			str+= fieldToStr(field) + " ";
+	for(int i= 0; i < ZoneCount; i++){
+		Zone zone = static_cast<Zone>(i);
+		if(zones.get(zone)){
+			str+= fieldToStr(zone) + " ";
 		}
 	}
 	str+="\n";

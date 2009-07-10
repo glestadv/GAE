@@ -216,7 +216,7 @@ bool Ai::beingAttacked(Vec2i &pos, Zone &field, int radius) {
 		unit = aiInterface->getOnSightUnit(i);
 		if (!aiInterface->isAlly(unit) && unit->isAlive()) {
 			pos = unit->getPos();
-         field = unit->getCurrField() == mfAir ? fAir : fSurface;
+         field = unit->getCurrField() == FieldAir ? ZoneAir : ZoneSurface;
 			if (pos.dist(aiInterface->getHomeLocation()) < radius) {
 				baseSeen = true;
 				aiInterface->printLog(2, "Being attacked at pos " + intToStr(pos.x) + "," + intToStr(pos.y) + "\n");
@@ -286,7 +286,7 @@ bool Ai::findPosForBuilding(const UnitType* building, const Vec2i &searchPos, Ve
 		for (int i = searchPos.x - currRadius; i < searchPos.x + currRadius; ++i) {
 			for (int j = searchPos.y - currRadius; j < searchPos.y + currRadius; ++j) {
 				outPos = Vec2i(i, j);
-				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, mfWalkable)) {
+				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, FieldWalkable)) {
 					return true;
 				}
 			}

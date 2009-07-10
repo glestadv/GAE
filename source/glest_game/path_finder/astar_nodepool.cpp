@@ -154,7 +154,7 @@ AStarNode* AStarNodePool::getBestCandidate ()
 
 #ifdef PATHFINDER_DEBUG_TEXTURES
 
-list<Vec2i>* AStarNodePoolSTL::getOpenNodes ()
+list<Vec2i>* AStarNodePool::getOpenNodes ()
 {
    list<Vec2i> *ret = new list<Vec2i> ();
    list<Vec2i>::iterator it = listedNodes.begin();
@@ -163,7 +163,7 @@ list<Vec2i>* AStarNodePoolSTL::getOpenNodes ()
    return ret;
 }
 
-list<Vec2i>* AStarNodePoolSTL::getClosedNodes ()
+list<Vec2i>* AStarNodePool::getClosedNodes ()
 {
    list<Vec2i> *ret = new list<Vec2i> ();
    list<Vec2i>::iterator it = listedNodes.begin();

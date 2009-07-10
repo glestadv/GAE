@@ -9,7 +9,7 @@
 //	License, or (at your option) any later version
 // ==============================================================
 //
-// File: annotated_map.h
+// File: annotated_map.cpp
 //
 // Annotated Map, for use in pathfinding.
 //
@@ -26,11 +26,11 @@ inline uint32 CellMetrics::get ( const Field field )
 {
    switch ( field )
    {
-   case mfWalkable: return field0;
-   case mfAir: return field1;
-   case mfAnyWater: return field2;
-   case mfDeepWater: return field3;
-   case mfAmphibious: return field4;
+   case FieldWalkable: return field0;
+   case FieldAir: return field1;
+   case FieldAnyWater: return field2;
+   case FieldDeepWater: return field3;
+   case FieldAmphibious: return field4;
    default: throw new runtime_error ( "Unknown Field passed to CellMetrics::get()" );
    }
    return 0;
@@ -41,11 +41,11 @@ inline void CellMetrics::set ( const Field field, uint32 val )
    assert ( val <= AnnotatedMap::maxClearanceValue );
    switch ( field )
    {
-   case mfWalkable: field0 = val; return;
-   case mfAir: field1 = val; return;
-   case mfAnyWater: field2 = val; return;
-   case mfDeepWater: field3 = val; return;
-   case mfAmphibious: field4 = val; return;
+   case FieldWalkable: field0 = val; return;
+   case FieldAir: field1 = val; return;
+   case FieldAnyWater: field2 = val; return;
+   case FieldDeepWater: field3 = val; return;
+   case FieldAmphibious: field4 = val; return;
    default: throw new runtime_error ( "Unknown Field passed to CellMetrics::set()" );
    }
 
@@ -139,7 +139,7 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
             // than shell, we need to update it
             if ( adding && metrics[it->y][it->x].get(field) > shell )
             {
-               // BUG: Does not handle cell maps properly ( shell + metric[y][x+shell].fieldX ??? )
+               // FIXME: Does not handle cell maps properly ( shell + metric[y][x+shell].fieldX ??? )
                metrics[it->y][it->x].set ( field, shell );
                if ( it->x - 1 >= 0 ) // if there is a cell to the left, add it to
                   newLeftList->push_back ( Vec2i(it->x-1,it->y) ); // the new left list
@@ -192,7 +192,7 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
             if ( x - 1 >= 0 )
             {
                newLeftList->push_back ( Vec2i(x-1,y) );
-               if ( y - 1 >= 0 ) corner = &Vec2i(x-1,y-1);
+               if ( y - 1 >= 0 ) corner = &Vec2i(x-1,y-1); // dodgey... &local
                else corner = NULL;
             }
             else corner = NULL;
@@ -245,14 +245,14 @@ CellMetrics AnnotatedMap::computeClearances ( const Vec2i &pos )
    if ( container->isFree () ) // Tile is walkable?
    {
       // Walkable
-      while ( canClear ( pos, clearances.get ( mfWalkable ) + 1, mfWalkable ) )
-         clearances.set ( mfWalkable, clearances.get ( mfWalkable ) + 1 );
+      while ( canClear ( pos, clearances.get ( FieldWalkable ) + 1, FieldWalkable ) )
+         clearances.set ( FieldWalkable, clearances.get ( FieldWalkable ) + 1 );
       // Any Water
-      while ( canClear ( pos, clearances.get ( mfAnyWater ) + 1, mfAnyWater ) )
-         clearances.set ( mfAnyWater, clearances.get ( mfAnyWater ) + 1 );
+      while ( canClear ( pos, clearances.get ( FieldAnyWater ) + 1, FieldAnyWater ) )
+         clearances.set ( FieldAnyWater, clearances.get ( FieldAnyWater ) + 1 );
       // Deep Water
-      while ( canClear ( pos, clearances.get ( mfDeepWater ) + 1, mfDeepWater ) )
-         clearances.set ( mfDeepWater, clearances.get ( mfDeepWater ) + 1 );
+      while ( canClear ( pos, clearances.get ( FieldDeepWater ) + 1, FieldDeepWater ) )
+         clearances.set ( FieldDeepWater, clearances.get ( FieldDeepWater ) + 1 );
    }
    
    // Air
@@ -261,12 +261,12 @@ CellMetrics AnnotatedMap::computeClearances ( const Vec2i &pos )
    else if ( pos.x == cMap->getW() - 4 ) clearAir = 2;
    if ( pos.y == cMap->getH() - 3 ) clearAir = 1;
    else if ( pos.y == cMap->getH() - 4 && clearAir > 2 ) clearAir = 2;
-   clearances.set ( mfAir, clearAir );
+   clearances.set ( FieldAir, clearAir );
    
    // Amphibious
-   int clearSurf = clearances.get ( mfWalkable );
-   if ( clearances.get ( mfAnyWater ) > clearSurf ) clearSurf = clearances.get ( mfAnyWater );
-   clearances.set ( mfAmphibious, clearSurf );
+   int clearSurf = clearances.get ( FieldWalkable );
+   if ( clearances.get ( FieldAnyWater ) > clearSurf ) clearSurf = clearances.get ( FieldAnyWater );
+   clearances.set ( FieldAmphibious, clearSurf );
 
    // use previously calculated base fields to calc combinations ??
 
@@ -279,24 +279,24 @@ uint32 AnnotatedMap::computeClearance ( const Vec2i &pos, Field field )
    Tile *container = cMap->getTile ( cMap->toTileCoords ( pos ) );
    switch ( field )
    {
-   case mfWalkable:
+   case FieldWalkable:
       if ( container->isFree () ) // surface cell is walkable?
-         while ( canClear ( pos, clearance + 1, mfWalkable ) )
+         while ( canClear ( pos, clearance + 1, FieldWalkable ) )
             clearance++;
       return clearance;
-   case mfAir:
+   case FieldAir:
       return maxClearanceValue;
-   case mfAnyWater:
+   case FieldAnyWater:
       if ( container->isFree () )
-         while ( canClear ( pos, clearance + 1, mfAnyWater ) )
+         while ( canClear ( pos, clearance + 1, FieldAnyWater ) )
             clearance++;
       return clearance;
-   case mfDeepWater:
+   case FieldDeepWater:
       if ( container->isFree () )
-         while ( canClear ( pos, clearance + 1, mfDeepWater ) )
+         while ( canClear ( pos, clearance + 1, FieldDeepWater ) )
             clearance++;
       return clearance;
-   case mfAmphibious:
+   case FieldAmphibious:
       return maxClearanceValue;
    default:
       throw new runtime_error ( "Illegal Field passed to PathFinder::computeClearance()" );
@@ -321,18 +321,18 @@ bool AnnotatedMap::canClear ( const Vec2i &pos, int clear, Field field )
          Tile *sc = cMap->getTile ( cMap->toTileCoords ( checkPos ) );
          switch ( field )
          {
-         case mfWalkable:
-            if ( ( cell->getUnit(fSurface) && !cell->getUnit(fSurface)->isMobile() )
+         case FieldWalkable:
+            if ( ( cell->getUnit(ZoneSurface) && !cell->getUnit(ZoneSurface)->isMobile() )
             ||   !sc->isFree () || cell->isDeepSubmerged () ) 
                return false;
             break;
-         case mfAnyWater:
-            if ( ( cell->getUnit(fSurface) && !cell->getUnit(fSurface)->isMobile() )
+         case FieldAnyWater:
+            if ( ( cell->getUnit(ZoneSurface) && !cell->getUnit(ZoneSurface)->isMobile() )
             ||   !sc->isFree () || !cell->isSubmerged () )
                return false;
             break;
-         case mfDeepWater:
-            if ( ( cell->getUnit(fSurface) && !cell->getUnit(fSurface)->isMobile() )
+         case FieldDeepWater:
+            if ( ( cell->getUnit(ZoneSurface) && !cell->getUnit(ZoneSurface)->isMobile() )
             ||   !sc->isFree () || !cell->isDeepSubmerged () ) 
                return false;
             break;
@@ -367,7 +367,7 @@ void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field
    else
       assert ( false );
 
-   Zone zone = field == mfAir ? fAir : fSurface;
+   Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
    for ( int i = 0; i < numDirs; ++i )
    {
       Vec2i aPos = pos + directions[i];

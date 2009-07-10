@@ -52,11 +52,11 @@ struct CellMetrics
    inline void   set ( const Field, uint32 val );
 
 private:
-   uint32 field0 : 2; // In Use: mfWalkable = land + shallow water 
-   uint32 field1 : 2; // In Use: mfAir = air
-   uint32 field2 : 2; // In Use: mfAnyWater = shallow + deep water
-   uint32 field3 : 2; // In Use: mfDeepWater = deep water
-   uint32 field4 : 2; // In Use: mfAmphibious = land + shallow + deep water 
+   uint32 field0 : 2; // In Use: FieldWalkable = land + shallow water 
+   uint32 field1 : 2; // In Use: FieldAir = air
+   uint32 field2 : 2; // In Use: FieldAnyWater = shallow + deep water
+   uint32 field3 : 2; // In Use: FieldDeepWater = deep water
+   uint32 field4 : 2; // In Use: FieldAmphibious = land + shallow + deep water 
    uint32 field5 : 2; // Unused: ?
    uint32 field6 : 2; // Unused: ?
    uint32 field7 : 2; // Unused: ?

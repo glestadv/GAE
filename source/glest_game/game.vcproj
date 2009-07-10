@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
+				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1;PATHFINDER_DEBUG_TEXTURES"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -225,7 +225,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
+				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;XML_LIBRARY;USE_PCH=1;PATHFINDER_TIMING"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -424,7 +424,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\types\command_type.h"
+				RelativePath=".\command_types\command_type.h"
 				>
 			</File>
 			<File
@@ -632,6 +632,22 @@
 				>
 			</File>
 			<File
+				RelativePath=".\path_finder\pf_datastructs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_nodepool.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_np_astar_dia.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\pf_np_astar_stl.h"
+				>
+			</File>
+			<File
 				RelativePath=".\facilities\pos_iterator.h"
 				>
 			</File>
@@ -760,11 +776,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\command_types\attack_command_type.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main\battle_end.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\path_finder\bestfirst_node_pool.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\command_types\build_command_type.cpp"
 				>
 			</File>
 			<File
@@ -780,7 +804,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\types\command_type.cpp"
+				RelativePath=".\command_types\command_type.cpp"
 				>
 			</File>
 			<File
@@ -813,6 +837,10 @@
 			</File>
 			<File
 				RelativePath=".\gui\display.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\command_types\dummy_command_type.cpp"
 				>
 			</File>
 			<File
@@ -856,11 +884,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\command_types\gaurd_command_type.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\path_finder\graph_search.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\gui\gui.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\command_types\harvest_command_type.cpp"
 				>
 			</File>
 			<File
@@ -940,6 +976,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\command_types\morph_command_type.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\command_types\move_command_type.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\network\network_interface.cpp"
 				>
 			</File>
@@ -991,6 +1035,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\command_types\patrol_command_type.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\pch.cpp"
 				>
 				<FileConfiguration
@@ -1031,6 +1079,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\command_types\produce_command_type.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main\program.cpp"
 				>
 			</File>
@@ -1052,6 +1104,10 @@
 						DebugInformationFormat="3"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\command_types\repair_command_type.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\type_instances\resource.cpp"
@@ -1123,6 +1179,10 @@
 			</File>
 			<File
 				RelativePath=".\type_instances\upgrade.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\command_types\upgrade_command_type.cpp"
 				>
 			</File>
 			<File

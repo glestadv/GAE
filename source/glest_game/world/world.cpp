@@ -628,9 +628,9 @@ void World::doKill(Unit *killer, Unit *killed) {
 	if(killed->getCurrSkill()->getClass() != scDie) {
 	   killed->kill();
 	}
-   // HOOK
+   //FIXME: make Field friendly
    if ( !killed->isMobile() )
-      unitUpdater.pathFinder->updateMapMetrics ( killed->getPos (), killed->getSize (), false, mfWalkable );
+      unitUpdater.pathFinder->updateMapMetrics ( killed->getPos (), killed->getSize (), false, FieldWalkable );
 }
 
 void World::tick() {
@@ -763,7 +763,7 @@ void World::moveUnitCells(Unit *unit) {
 	map.putUnitCells(unit, newPos);
 
 	//water splash
-	if(tileset.getWaterEffects() && unit->getCurrField()==fSurface){
+	if(tileset.getWaterEffects() && unit->getCurrField()==ZoneSurface){
       if ( map.getCell(unit->getLastPos())->isSubmerged () ){
 			for(int i=0; i<3; ++i){
 				waterEffects.addWaterSplash(
