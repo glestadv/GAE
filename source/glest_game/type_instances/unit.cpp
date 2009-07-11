@@ -849,9 +849,11 @@ CommandResult Unit::cancelCommand() {
 /** cancel current command */
 CommandResult Unit::cancelCurrCommand() {
    if ( commands.front() && commands.front()->getType()->getClass() == ccDummy )
-      Logger::getInstance().add ( "Dummy command canceled." );
-   if ( commands.front() && commands.front()->getType()->getClass() == ccMorph )
-      Logger::getInstance().add ( "Morph command canceled." );
+   {
+      // If already started, give refund...
+      if ( getCurrSkill()->getClass () == scDummy )
+         faction->deApplyCosts ( getCurrSkill() );
+   }
 	//is empty?
 	if(commands.empty()) {
 		return crFailUndefined;

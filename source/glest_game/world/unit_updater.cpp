@@ -90,34 +90,8 @@ void UnitUpdater::updateUnit(Unit *unit) {
 	}
 
 	//update unit
-	if (unit->update()) {
-      
-#ifdef SKILL_LOGGING
-      if ( unit->getCurrSkill () )
-      {
-         if ( unit->getCurrSkill ()->getClass () == scDummy )
-            Logger::getInstance ().add ( "Dummy Skill complete..." );
-         if ( unit->getCurrSkill ()->getClass () == scMorph )
-            Logger::getInstance ().add ( "Morph Skill complete..." );
-         if ( unit->getCurrSkill ()->getClass () == scMove )
-            Logger::getInstance ().add ( "Move Skill complete..." );
-      }
-      else
-         Logger::getInstance ().add ( "NULL skill complete !?!?!?" );
-#endif
-
-      // Allow static production for skills... (certain skills ??)
-//      unit->getFaction ()->applyStaticProduction ( unit->getCurrSkill () );
-
-		// make sure attack systems are started even on laggy computers
-		/* this is causing double attacks for some reason
-		if (unit->getCurrSkill()->getClass() == scAttack) {
-			const AttackSkillType *ast = static_cast<const AttackSkillType*>(unit->getCurrSkill());
-			if (ast->getStartTime() < unit->getLastAnimProgress()) {
-				startAttackSystems(unit, ast);
-			}
-		}*/
-
+	if (unit->update()) 
+   {
 		const UnitType *ut = unit->getType();
 
 		if (unit->getCurrSkill()->getClass() == scFallDown) {
@@ -129,25 +103,6 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 		updateUnitCommand(unit);
 
-      // Apply Costs, for new skill?
-//      if ( unit->getFaction ()->checkCosts ( unit->getCurrSkill () ) )
-//         unit->getFaction ()->applyCosts ( unit->getCurrSkill () );
-//      else
-//         unit->cancelCurrCommand ();
-
-#ifdef SKILL_LOGGING
-      if ( unit->getCurrSkill () )
-      {
-         if ( unit->getCurrSkill ()->getClass () == scDummy )
-            Logger::getInstance ().add ( "Dummy Skill commencing..." );
-         if ( unit->getCurrSkill ()->getClass () == scMorph )
-            Logger::getInstance ().add ( "Morph Skill commencing..." );
-         if ( unit->getCurrSkill ()->getClass () == scMove )
-            Logger::getInstance ().add ( "Move Skill commencing..." );
-      }
-      else
-         Logger::getInstance ().add ( "wtf?!? NULL skill commencing !?!?!?" );
-#endif
 		//if unit is out of EP, it stops
 		if (unit->computeEp()) {
 			if (unit->getCurrCommand()) {
@@ -166,11 +121,6 @@ void UnitUpdater::updateUnit(Unit *unit) {
 			}
 		}
 	}
-   //else if ( unit->getCurrSkill ()->getClass () == scDummy )
-   //   Logger::getInstance ().add ( "Dummy Skill updated." );
-   //else if ( unit->getCurrSkill ()->getClass () == scMove )
-   //   Logger::getInstance ().add ( "Move Skill updated..." );
-
 
 	//unit death
 	if (unit->isDead() && unit->getCurrSkill()->getClass() != scDie) {

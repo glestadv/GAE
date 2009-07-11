@@ -215,7 +215,6 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
    {
       // get node closest to goal
       minNode = aNodePool->getBestHNode ();
-      Logger::getInstance ().add ( "AStarSearch() ... Node limit exceeded..." );
       path.clear ();
       while ( minNode )
       {
@@ -235,6 +234,11 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
          path.push_front ( minNode->pos );
 		   minNode = minNode->prev;
 	   }
+   }
+   if ( path.size () < 2 )
+   {
+      path.clear ();
+      return false;
    }
 #ifdef PATHFINDER_DEBUG_TEXTURES
    cMap->clearNodes ();
