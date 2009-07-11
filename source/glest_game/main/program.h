@@ -129,7 +129,7 @@ private:
    PerformanceTimer debugTimer;
 
     ProgramState *programState;
-    ProgramState *preCrashState;	// program state prior to a crash
+    bool crashed;
 	Keymap keymap;
 
 private:

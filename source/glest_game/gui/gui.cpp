@@ -112,6 +112,7 @@ Gui::Gui(Game &game) : game(game), input(game.getInput()) {
 	draggingMinimap = false;
 	needSelectionUpdate = false;
 	currentGui = this;
+   currentGroup= invalidGroupIndex;
 }
 
 void Gui::init(){
@@ -411,11 +412,17 @@ void Gui::mouseDoubleClickLeftGraphics(int x, int y){
 	}
 }
 
-void Gui::groupKey(int groupIndex){
-	if (input.isCtrlDown()) {
+void Gui::groupKey(int groupIndex)
+{
+	if (input.isCtrlDown()) 
 		selection.assignGroup(groupIndex);
-	} else {
+   else 
+   {
+		if(currentGroup == groupIndex)
+			centerCameraOnSelection();
+
 		selection.recallGroup(groupIndex);
+      currentGroup= groupIndex;
 	}
 }
 

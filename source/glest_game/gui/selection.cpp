@@ -225,7 +225,10 @@ void Selection::update() {
 		}
 
 		meetable = uniform && commandable && frontUT->hasMeetingPoint();
-	}
+   }
+   //in case Game::init() isn't called, eg crash at loading data
+   if (gui)
+      gui->onSelectionUpdated();
 }
 
 void Selection::load(const XmlNode *node) {
