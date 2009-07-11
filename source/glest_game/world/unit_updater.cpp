@@ -48,12 +48,13 @@ namespace Glest{ namespace Game{
 const float UnitUpdater::repairerToFriendlySearchRadius = 1.25f;
 
 void UnitUpdater::init(Game &game) {
-	this->gui = game.getGui();
-	this->gameCamera = game.getGameCamera();
-	this->world = game.getWorld();
-	this->map = world->getMap();
-	this->console = game.getConsole();
+	gui = game.getGui();
+	gameCamera = game.getGameCamera();
+	world = game.getWorld();
+	map = world->getMap();
+	console = game.getConsole();
    pathFinder = PathFinder::PathFinder::getInstance ();
+   scriptManager = game.getScriptManager ();
 	pathFinder->init(map);
 }
 
@@ -434,6 +435,7 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 	if (attacked->decHp(static_cast<int>(damage))) {
 		world->doKill(attacker, attacked);
 		actualDamage = startingHealth;
+      scriptManager->onUnitDied ( attacked );
 	} else {
 		actualDamage = (int)roundf(damage);
 	}

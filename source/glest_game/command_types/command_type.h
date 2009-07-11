@@ -22,6 +22,7 @@
 #include "sound_container.h"
 #include "skill_type.h"
 #include "upgrade_type.h"
+#include "script_manager.h"
 
 namespace Glest { namespace Game {
 

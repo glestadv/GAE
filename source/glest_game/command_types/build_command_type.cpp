@@ -202,7 +202,11 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 			unit->finishCommand();
 			unit->setCurrSkill(scStop);
 			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), true);
-			if(unit->getFactionIndex()==world->getThisFactionIndex()) {
+			//FIXME: born() here or when building started ???
+         //builtUnit->born();
+         unitUpdater->scriptManager->onUnitCreated ( builtUnit );
+
+         if(unit->getFactionIndex()==world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(
 					this->getBuiltSound(),
 					unit->getCurrVector(),

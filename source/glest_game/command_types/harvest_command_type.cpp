@@ -148,6 +148,7 @@ void HarvestCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
 					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
+               unitUpdater->scriptManager->onResourceHarvested ();
 
 					//if next to a store unload resources
 					unit->getPath()->clear();

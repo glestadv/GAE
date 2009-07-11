@@ -181,6 +181,8 @@ void RepairCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 				unit->setCurrSkill(scStop);
 				if(!wasBuilt) {
 					//building finished
+               //repaired->born();//FIXME: born() ?!?!?!
+			      unitUpdater->scriptManager->onUnitCreated(repaired);
 					if(unit->getFactionIndex() == world->getThisFactionIndex()) {
 						// try to find finish build sound
 						BuildCommandType *bct = (BuildCommandType *)unit->getType()->getFirstCtOfClass(ccBuild);

@@ -32,7 +32,7 @@ namespace Shared { namespace Util {
 	
 Properties::Properties() {}
 
-void Properties::load(const string &path, bool trim) {
+void Properties::load(const string &path) {
 	ifstream fileStream;
 	char lineBuffer[maxLine];
 	string line, key, value;
@@ -50,6 +50,7 @@ void Properties::load(const string &path, bool trim) {
 	while (!fileStream.eof()) {
 		fileStream.getline(lineBuffer, maxLine);
 
+      lineBuffer[maxLine-1] = '\0';
 		if (lineBuffer[0] == ';' || lineBuffer[0] == '#') {
 			continue;
 		}
@@ -69,20 +70,14 @@ void Properties::load(const string &path, bool trim) {
 
 		key = line.substr(0, pos);
 		value = line.substr(pos + 1);
-		if(trim) {
-			while(!key.empty() && isspace(key[0])) {
-				key.erase(0, 1);
-			}
-			while(!key.empty() && isspace(key[key.size() - 1])) {
-				key.erase(key.size() - 1);
-			}
-			while(!value.empty() && isspace(value[0])) {
-				value.erase(0, 1);
-			}
-			while(!value.empty() && isspace(value[value.size() - 1])) {
-				value.erase(value.size() - 1);
-			}
-		}
+		while(!key.empty() && isspace(key[0]))
+			key.erase(0, 1);
+		while(!key.empty() && isspace(key[key.size() - 1]))
+			key.erase(key.size() - 1);
+		while(!value.empty() && isspace(value[0]))
+			value.erase(0, 1);
+		while(!value.empty() && isspace(value[value.size() - 1]))
+			value.erase(value.size() - 1);
 		propertyMap.insert(PropertyPair(key, value));
 		propertyVector.push_back(PropertyPair(key, value));
 	}
@@ -116,6 +111,11 @@ const string *Properties::_getString(const string &key, bool required) const {
 	} else {
 		return &it->second;
 	}
+}
+
+void Properties::clear(){
+	propertyMap.clear();
+	propertyVector.clear();
 }
 
 template<typename T>

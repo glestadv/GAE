@@ -221,10 +221,6 @@ public:
 	}
 
 	//misc
-	void switchToNextDisplayColor() {
-		display.switchColor();
-	}
-
 	void onSelectionChanged() {
 		selection.update();
 		resetState();

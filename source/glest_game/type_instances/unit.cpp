@@ -911,15 +911,16 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	}
 	setCurrSkill(scDie);
 
-	notifyObservers(UnitObserver::eKill);
+	//no longer needs static resources
+	if ( isBeingBuilt () )
+		faction->deApplyStaticConsumption (type);
+	else
+		faction->deApplyStaticCosts (type);
+
+   notifyObservers(UnitObserver::eKill);
 
 	//clear commands
 	clearCommands();
-
-	//no longer needs static resources
-	if(!isBeingBuilt()) {
-		faction->deApplyStaticCosts(type);
-	}
 
 	//kill or free pets
 	killPets();

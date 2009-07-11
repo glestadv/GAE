@@ -330,6 +330,7 @@ public:
 	//static
 	static Vec2i toTileCoords(Vec2i unitPos)	{return unitPos/cellScale;}
 	static Vec2i toUnitCoords(Vec2i surfPos)	{return surfPos*cellScale;}
+   static string getMapPath(const string &mapName)	{return "maps/"+mapName+".gbm";}
 
 private:
 	//compute

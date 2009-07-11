@@ -42,6 +42,13 @@ BattleEnd::~BattleEnd() {
 	SoundRenderer::getInstance().playMusic(CoreData::getInstance().getMenuMusic());
 }
 
+void BattleEnd::update(){
+/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateBattleEnd(program);
+	}*/
+}
+
 void BattleEnd::render() {
 	Renderer &renderer = Renderer::getInstance();
 	TextRenderer2D *textRenderer = renderer.getTextRenderer();

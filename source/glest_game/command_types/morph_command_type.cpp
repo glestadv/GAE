@@ -109,6 +109,7 @@ void MorphCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
             }
             if(unitUpdater->gui->isSelected(unit))
 					unitUpdater->gui->onSelectionChanged();
+            unitUpdater->scriptManager->onUnitCreated ( unit );
 				unit->getFaction()->checkAdvanceSubfaction(this->getMorphUnit(), true);
 				if(unitUpdater->isNetworkServer()) 
             {

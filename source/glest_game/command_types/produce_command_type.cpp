@@ -88,6 +88,7 @@ void ProduceCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 			} else {
 				produced->create();
 				produced->born();
+            unitUpdater->scriptManager->onUnitCreated ( produced );
 				world->getStats().produce(unit->getFactionIndex());
 				const CommandType *ct = produced->computeCommandType(unit->getMeetingPos());
 

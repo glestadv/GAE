@@ -136,10 +136,10 @@ void CoreData::load(){
 
 }
 
-int CoreData::computeFontSize(int size){
-	int screenW= Config::getInstance().getDisplayWidth();
-	int rs= size*screenW/1000;
-	if(rs<12){
+int CoreData::computeFontSize(int size)
+{
+	int screenH= Config::getInstance().getDisplayHeight();
+	int rs= size*screenH/1000;	if(rs<12){
 		rs= 12;
 	}
 	return rs;

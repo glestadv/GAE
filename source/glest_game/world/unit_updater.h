@@ -26,6 +26,7 @@ namespace Glest{ namespace Game{
 
 class Unit;
 class Map;
+class ScriptManager;
 
 // =====================================================
 //	class UnitUpdater
@@ -58,6 +59,7 @@ public:
 	Map *map;
 	World *world;
 	Console *console;
+   ScriptManager *scriptManager;
 	Random random;
    PathFinder::PathFinder *pathFinder;
 

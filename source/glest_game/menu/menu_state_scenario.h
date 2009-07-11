@@ -38,22 +38,32 @@ private:
 	GraphicLabel labelScenario;
 	GraphicListBox listBoxScenario;
     
-	vector<string> scenarioFiles;
+	GraphicLabel labelCategory;
+	GraphicListBox listBoxCategory;
+   vector<string> categories;
 
-    ScenarioInfo scenarioInfo;
+   vector<string> scenarioFiles;
+
+   ScenarioInfo scenarioInfo;
 
 public:
 	MenuStateScenario(Program &program, MainMenu *mainMenu);
 
-    void mouseClick(int x, int y, MouseButton mouseButton);
+   void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
+	void update();
+ 
+	void launchGame();
+	void setScenario(int i);
+	int getScenarioCount() const	{ return listBoxScenario.getItemCount(); }
 
 private:
-    void loadScenarioInfo(string file, ScenarioInfo *scenarioInfo);
-    void loadGameSettings(const ScenarioInfo *scenarioInfo, GameSettings *gameSettings);
+   void updateScenarioList(const string category);
+   void loadScenarioInfo(string file, ScenarioInfo *scenarioInfo);
+   void loadGameSettings(const ScenarioInfo *scenarioInfo, GameSettings *gameSettings);
 	Difficulty computeDifficulty(const ScenarioInfo *scenarioInfo);
-    ControlType strToControllerType(const string &str);
+   ControlType strToControllerType(const string &str);
 
 };
 

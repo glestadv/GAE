@@ -21,6 +21,7 @@
 #include "ai_interface.h"
 #include "program.h"
 #include "chat_manager.h"
+#include "script_manager.h"
 #include "game_settings.h"
 #include "config.h"
 #include "keymap.h"
@@ -99,6 +100,7 @@ private:
     Commander commander;
     Console console;
 	ChatManager chatManager;
+   ScriptManager scriptManager;
 
 	//misc
 	Checksum checksum;
@@ -114,7 +116,7 @@ private:
 	Speed speed;
 	float fUpdateLoops;
 	float lastUpdateLoopsFraction;
-	GraphicMessageBox *exitMessageBox;
+	GraphicMessageBox mainMessageBox;
 	GraphicTextEntryBox *saveBox;
 	Vec2i lastMousePos;
 
@@ -146,9 +148,11 @@ public:
 	Gui *getGui()							{return &gui;}
 	const Gui *getGui() const				{return &gui;}
 	Commander *getCommander()				{return &commander;}
+   ScriptManager *getScriptManager() { return &scriptManager; }
 	Console *getConsole()					{return &console;}
 	World *getWorld()						{return &world;}
 	const World *getWorld() const			{return &world;}
+   void quitGame ();
 
     //init
     virtual void load();
@@ -184,14 +188,20 @@ private:
 	//misc
 	void _init();
 	void checkWinner();
-	bool hasBuilding(const Faction *faction);
+   void checkWinnerStandard();
+   void checkWinnerScripted();	bool hasBuilding(const Faction *faction);
 	void incSpeed();
 	void decSpeed();
 	void resetSpeed();
 	void updateSpeed();
 	int getUpdateLoops();
+
+   void showLoseMessageBox();
+   void showWinMessageBox();
+   void showMessageBox(const string &text, const string &header, bool toggle);
 	void showExitMessageBox(const string &text, bool toggle);
-	string controllerTypeToStr(ControlType ct);
+
+   string controllerTypeToStr(ControlType ct);
 	Unit *findUnit(int id);
 	char getStringFromFile(ifstream *fileStream, string *str);
 	void saveGame(string name) const;

@@ -26,8 +26,9 @@ using Shared::Util::Properties;
 
 class Lang {
 private:
-	string name;
-	Properties langStrings;
+   string language;
+   Properties strings;
+   Properties scenarioStrings;
 
 private:
 	Lang() {}
@@ -38,9 +39,11 @@ public:
 		return lang;
 	}
 
-	void load(string file) {langStrings.load(file, true);}
-	string getName() const {return name;}
-	string get(const string &s) const;
+   void loadStrings ( const string &language );
+   void loadScenarioStrings ( const string &scenarioDir, const string &scenarioName );
+
+   string getScenarioString ( const string &s );
+   string get(const string &s) const;
 };
 
 }}//end namespace

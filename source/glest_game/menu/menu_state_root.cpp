@@ -62,6 +62,14 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
 	NetworkManager::getInstance().end();
 }
 
+//MERGE ADD START
+void MenuStateRoot::update(){
+	/*if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateRoot(program, mainMenu);
+	}*/
+}
+//MERGE ADD END
+
 void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton){
 
 	CoreData &coreData=  CoreData::getInstance();
