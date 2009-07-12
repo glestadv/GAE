@@ -42,6 +42,9 @@ GraphSearch::GraphSearch ()
       statsAStar = new PathFinderStats ( "A-Star Search : " );
       statsGreedy = new PathFinderStats ( "Greedy Search : " );
 #  endif
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      debug_texture_action = LocalAnnotations;
+#  endif
 }
 GraphSearch::~GraphSearch ()
 {
@@ -161,10 +164,9 @@ bool GraphSearch::GreedySearch ( SearchParams &params, list<Vec2i> &path)
 
 bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
 {
-   //Logger::getInstance ().add ( "AStarSearch() Called..." );
-#ifdef PATHFINDER_TIMING
-   aNodePool->startTimer ();
-#endif
+#  ifdef PATHFINDER_TIMING
+      aNodePool->startTimer ();
+#  endif
 	bool pathFound = false, nodeLimitReached = false;
 	AStarNode *minNode = NULL;
 
@@ -192,13 +194,13 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
          }
          if ( aNodePool->isOpen ( sucPos ) )
             aNodePool->updateOpenNode ( sucPos, minNode, diag ? 1.4 : 1.0 );
-#ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
-         else if ( aNodePool->isClosed ( sucPos ) )
-            aNodePool->updateClosedNode ( sucPos, minNode, diag ? 1.4 : 1.0 );
-         else
-#else
-         else if ( ! aNodePool->isClosed ( sucPos ) )
-#endif
+#        ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
+            else if ( aNodePool->isClosed ( sucPos ) )
+               aNodePool->updateClosedNode ( sucPos, minNode, diag ? 1.4 : 1.0 );
+            else
+#        else
+            else if ( ! aNodePool->isClosed ( sucPos ) )
+#        endif
          {
             bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (params.team);
             if ( ! aNodePool->addToOpen ( minNode, sucPos, heuristic ( sucPos, params.dest ), minNode->distToHere + (diag?1.4:1.0), exp ) )
@@ -206,9 +208,9 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
          }
       } // end for each neighbour of minNode
    } // end while ( ! nodeLimitReached )
-#ifdef PATHFINDER_TIMING
-   statsAStar->AddEntry ( aNodePool->stopTimer () );
-#endif
+#  ifdef PATHFINDER_TIMING
+      statsAStar->AddEntry ( aNodePool->stopTimer () );
+#  endif
    if ( ! pathFound && ! nodeLimitReached ) 
          return false;
    if ( nodeLimitReached )
@@ -240,21 +242,34 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
       path.clear ();
       return false;
    }
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   cMap->clearNodes ();
-   list<Vec2i> *alist = aNodePool->getOpenNodes ();
-   for ( VLIt it = alist->begin(); it != alist->end(); ++it )
-      cMap->setOpenNode ( *it );
-   delete alist;
-   alist = aNodePool->getClosedNodes ();
-   for ( VLIt it = alist->begin(); it != alist->end(); ++it )
-      cMap->setClosedNode ( *it );
-   delete alist;
-   for ( VLIt it = path.begin(); it != path.end(); ++it )
-      cMap->setPathNode ( *it );
-   cMap->PathStart = path.front ();
-   cMap->PathDest = path.back ();
-#endif
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      cMap->clearNodes ();
+      cMap->PathStart = path.front ();
+      cMap->PathDest = path.back ();
+      if ( debug_texture_action == OpenClosedSets )
+      {
+         list<Vec2i> *alist = aNodePool->getOpenNodes ();
+         for ( VLIt it = alist->begin(); it != alist->end(); ++it )
+            cMap->setOpenNode ( *it );
+         delete alist;
+         alist = aNodePool->getClosedNodes ();
+         for ( VLIt it = alist->begin(); it != alist->end(); ++it )
+            cMap->setClosedNode ( *it );
+         delete alist;
+      }
+      if ( debug_texture_action == OpenClosedSets 
+      ||   debug_texture_action == PathOnly )
+         for ( VLIt it = path.begin(); it != path.end(); ++it )
+            cMap->setPathNode ( *it );
+      if ( debug_texture_action == LocalAnnotations )
+      {
+         cMap->clearLocal0 ();
+         list<Vec2i> *annt = aMap->getLocalAnnotations ();
+         for ( VLIt it = annt->begin(); it != annt->end(); ++it )
+            cMap->setLocal0 ( *it );
+         delete annt;
+      }
+#  endif
    //Logger::getInstance ().add ( "AStarSearch() ... Returning..." );
    //assertValidPath ( path );
    return true;

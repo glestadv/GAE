@@ -34,7 +34,7 @@ namespace PathFinder {
 
 const int maxFreeSearchRadius = 10;
 const int pathFindRefresh = 10; // now unused
-const int pathFindNodesMax = 2048;// = Config::getInstance ().getPathFinderMaxNodes ();
+const int pathFindNodesMax = 4096;// = Config::getInstance ().getPathFinderMaxNodes ();
 
 const Vec2i Directions[8] = 
 {
@@ -62,6 +62,22 @@ const Vec2i DirectionsSize2[12] =
    Vec2i ( -1,  1 ), // w1
    Vec2i ( -1,  0 ), // w2
    Vec2i ( -1, -1 )  // nw
+};
+
+const Vec2i AboveLeftDist1[3] = 
+{
+   Vec2i ( -1,  0 ),
+   Vec2i ( -1, -1 ),
+   Vec2i (  0, -1 )
+};
+
+const Vec2i AboveLeftDist2[5] =
+{
+   Vec2i ( -2,  0 ),
+   Vec2i ( -2, -1 ),
+   Vec2i ( -2, -2 ),
+   Vec2i ( -1, -2 ),
+   Vec2i (  0, -2 )
 };
    
 enum TravelState { tsArrived, tsOnTheWay, tsBlocked };

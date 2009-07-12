@@ -134,6 +134,11 @@ private:
    BFSNodePool *bNodePool;
    AStarNodePool *aNodePool;
 
+#ifdef PATHFINDER_DEBUG_TEXTURES
+public:
+   enum { PathOnly, OpenClosedSets, LocalAnnotations } debug_texture_action;
+#endif
+
 #ifdef PATHFINDER_TIMING
 public:
    static PathFinderStats *statsAStar;

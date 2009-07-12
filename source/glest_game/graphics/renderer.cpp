@@ -1292,6 +1292,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else if ( map->local0.find ( cPos ) != map->local0.end() ) met = 4;// local annotation
          else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
@@ -1316,6 +1317,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else if ( map->local0.find ( cPos ) != map->local0.end() ) met = 4;// local annotation
          else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
@@ -1340,6 +1342,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else if ( map->local0.find ( cPos ) != map->local0.end() ) met = 4;// local annotation
          else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);
@@ -1364,6 +1367,7 @@ void Renderer::renderSurfacePFDebug ()
          else if ( map->path.find ( cPos ) != map->path.end() ) met = 10; // on path
          else if ( map->open.find ( cPos ) != map->open.end() ) met = 11; // open nodes
          else if ( map->closed.find ( cPos ) != map->closed.end() ) met = 12; // closed nodes
+         else if ( map->local0.find ( cPos ) != map->local0.end() ) met = 4;// local annotation
          else met = pathFinder->annotatedMap->metrics[cPos.y][cPos.x].get ( FieldWalkable );
          tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
          glBindTexture(GL_TEXTURE_2D, tex);

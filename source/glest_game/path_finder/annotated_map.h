@@ -90,6 +90,8 @@ public:
    void annotateLocal ( const Vec2i &pos, const int size, const Field field );
    void clearLocalAnnotations ( Field field );
 
+   list<Vec2i>* getLocalAnnotations ();
+
 private:
    // for initMetrics () and updateMapMetrics ()
    CellMetrics computeClearances ( const Vec2i & );

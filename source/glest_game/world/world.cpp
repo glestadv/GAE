@@ -178,11 +178,14 @@ void World::loadPFDebugTextures()
       sprintf ( buff, "data/core/misc_textures/%02d.bmp", i );
       _load_tex ( i, buff );
    }
+   _load_tex ( 4, "data/core/misc_textures/local0.bmp" );
+
+   _load_tex ( 5, "data/core/misc_textures/path_start.bmp" );
+   _load_tex ( 6, "data/core/misc_textures/path_dest.bmp" );
+   _load_tex ( 7, "data/core/misc_textures/path_both.bmp" );
+   _load_tex ( 8, "data/core/misc_textures/path_return.bmp" );
    _load_tex ( 9, "data/core/misc_textures/path.bmp" );
-   _load_tex ( 8, "data/core/misc_textures/path-return.bmp" );
-   _load_tex ( 7, "data/core/misc_textures/path-both.bmp" );
-   _load_tex ( 6, "data/core/misc_textures/path-dest.bmp" );
-   _load_tex ( 5, "data/core/misc_textures/path-start.bmp" );
+
    _load_tex ( 10, "data/core/misc_textures/path_node.bmp" );
    _load_tex ( 11, "data/core/misc_textures/open_node.bmp" );
    _load_tex ( 12, "data/core/misc_textures/closed_node.bmp" );

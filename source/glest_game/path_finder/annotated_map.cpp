@@ -375,8 +375,50 @@ void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field
       {  // remember the metric
          localAnnt[aPos] = metrics[aPos.y][aPos.x].get ( field );
          metrics[aPos.y][aPos.x].set ( field, 0 );
+         if ( size == 2 )
+         {
+            int shell = 1;
+            for ( int i=0; i < 3; ++i )
+            {
+               Vec2i check = aPos + AboveLeftDist1[i];
+               if ( metrics[check.y][check.x].get ( field ) > shell )
+               {  // check if we've allready annotated this cell...
+                  if ( localAnnt.find ( check ) != localAnnt.end () )
+                     metrics[check.y][check.x].set ( field, shell );
+                  else
+                  {
+                     localAnnt[check] = metrics[check.y][check.x].get ( field );
+                     metrics[check.y][check.x].set ( field, shell );
+                  }
+               }
+            }
+            shell ++;
+            for ( int i=0; i < 5; ++i )
+            {
+               Vec2i check = aPos + AboveLeftDist2[i];
+               if ( metrics[check.y][check.x].get ( field ) > shell )
+               {  // check if we've allready annotated this cell...
+                  if ( localAnnt.find ( check ) != localAnnt.end () )
+                     metrics[check.y][check.x].set ( field, shell );
+                  else
+                  {
+                     localAnnt[check] = metrics[check.y][check.x].get ( field );
+                     metrics[check.y][check.x].set ( field, shell );
+                  }
+               }
+            }
+         } // end if ( size == 2 )
       }
+   } // end for
+}
+list<Vec2i>* AnnotatedMap::getLocalAnnotations ()
+{
+   list<Vec2i> *ret = new list<Vec2i> ();
+   for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it )
+   {
+      ret->push_back ( it->first );
    }
+   return ret;
 }
 
 void AnnotatedMap::clearLocalAnnotations ( Field field )

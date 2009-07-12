@@ -228,7 +228,12 @@ public:
    void setClosedNode ( const Vec2i &pos ) { closed.insert(pos); }
    void setPathNode ( const Vec2i &pos ) { path.insert(pos); }
    void clearNodes () { open.clear(); closed.clear(); path.clear(); }
+
+   set<Vec2i> local0;
+   void setLocal0 ( const Vec2i &pos ) { local0.insert ( pos ); }
+   void clearLocal0 () { local0.clear(); }
 #endif
+
 	//get
 	Cell *getCell(int x, int y) const					{assert(isInside(x, y)); return &cells[y * w + x];}
 	Cell *getCell(const Vec2i &pos) const				{assert(isInside(pos.x, pos.y)); return getCell(pos.x, pos.y);}
