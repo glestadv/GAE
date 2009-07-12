@@ -229,8 +229,8 @@ public:
    void setPathNode ( const Vec2i &pos ) { path.insert(pos); }
    void clearNodes () { open.clear(); closed.clear(); path.clear(); }
 
-   set<Vec2i> local0;
-   void setLocal0 ( const Vec2i &pos ) { local0.insert ( pos ); }
+   map<Vec2i,uint32> local0;
+   void setLocal0 ( const Vec2i &pos, uint32 val ) { local0[pos] = val; }
    void clearLocal0 () { local0.clear(); }
 #endif
 

@@ -70,6 +70,20 @@ private:
    uint32 fieldf : 2; // Unused: ?
 };
 
+class MetricMap
+{
+private:
+   CellMetrics *metrics;
+   int stride;
+
+public:
+   MetricMap () { stride = 0; metrics = NULL; }
+   virtual ~MetricMap () { delete [] metrics; }
+
+   void init ( int w, int h ) { assert (w>0&&h>0); stride = w; metrics = new CellMetrics[w*h]; }
+   CellMetrics& operator [] ( const Vec2i &pos ) const { return metrics[pos.y*stride+pos.x]; }
+};
+
 class AnnotatedMap
 {
 public:
@@ -90,7 +104,9 @@ public:
    void annotateLocal ( const Vec2i &pos, const int size, const Field field );
    void clearLocalAnnotations ( Field field );
 
-   list<Vec2i>* getLocalAnnotations ();
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   list<std::pair<Vec2i,uint32>>* getLocalAnnotations ();
+#endif
 
 private:
    // for initMetrics () and updateMapMetrics ()
@@ -104,7 +120,7 @@ private:
 #if defined(PATHFINDER_TIMING) || defined(PATHFINDER_DEBUG_TEXTURES )
 public:
 #endif
-   CellMetrics **metrics; // clearance values [y][x]
+   MetricMap metrics;
 };
 
 }}}

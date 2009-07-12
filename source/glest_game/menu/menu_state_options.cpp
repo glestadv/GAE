@@ -54,7 +54,11 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	labelLights.init(200, 250);
 
    labelMaxPathNodes.init ( 200, 560 );
-
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      labelPFAlgorithm.init ( 500, 560 );
+      labelPFTexturesOn.init ( 500, 530 );
+      labelPFTextureMode.init ( 500, 500 );
+#  endif
 	//list boxes
 	listBoxVolumeFx.init(350, 530, 80);
 	listBoxVolumeAmbient.init(350, 500, 80);
@@ -69,6 +73,11 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	listBoxLights.init(350, 250, 80);
 
    listBoxMaxPathNodes.init ( 350, 560, 80 );
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      listBoxPFAlgorithm.init ( 650, 560, 180 );
+      listBoxPFTexturesOn.init ( 650, 530, 180 );
+      listBoxPFTextureMode.init ( 650, 500, 180 );
+#  endif
 
 	//set text
 	buttonReturn.setText(lang.get("Return"));
@@ -84,7 +93,11 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	labelVolumeMusic.setText(lang.get("MusicVolume"));
 
    labelMaxPathNodes.setText ( lang.get("MaxPathNodes") );
-
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      labelPFAlgorithm.setText ( "SearchAlgorithm" );
+      labelPFTexturesOn.setText ( "DebugTextures" );
+      labelPFTextureMode.setText ( "TextureMode" );
+#  endif
 	//sound
 
 	//lang
@@ -130,9 +143,27 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	listBoxVolumeAmbient.setSelectedItem(intToStr(config.getSoundVolumeAmbient()/5*5));
 	listBoxVolumeMusic.setSelectedItem(intToStr(config.getSoundVolumeMusic()/5*5));
 
-   for ( int i=100; i <= 2000; i+=100 )
-      listBoxMaxPathNodes.pushBackItem ( intToStr ( i ) );
+   // path finder node limit
+   listBoxMaxPathNodes.pushBackItem ( intToStr ( 512 ) );
+   listBoxMaxPathNodes.pushBackItem ( intToStr ( 1024 ) );
+   listBoxMaxPathNodes.pushBackItem ( intToStr ( 2048 ) );
+   listBoxMaxPathNodes.pushBackItem ( intToStr ( 4096 ) );
    listBoxMaxPathNodes.setSelectedItem ( intToStr ( config.getPathFinderMaxNodes() ) );
+
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      listBoxPFAlgorithm.pushBackItem ( "Admissable A*" );
+      //listBoxPFAlgorithm.pushBackItem ( "Greedy 'PingPong'" );
+      listBoxPFAlgorithm.pushBackItem ( "Greedy Best First" );
+      listBoxPFAlgorithm.setSelectedItemIndex ( config.getPathFinderAlgorithm() - 1 );
+      listBoxPFTexturesOn.pushBackItem ( "On" );
+      listBoxPFTexturesOn.pushBackItem ( "Off" );
+      listBoxPFTexturesOn.setSelectedItemIndex ( config.getDebugTextures () ? 0 : 1 );
+      listBoxPFTextureMode.pushBackItem ( "Path Only" );
+      listBoxPFTextureMode.pushBackItem ( "Open/Closed Sets" );
+      listBoxPFTextureMode.pushBackItem ( "Local Annotations" );
+      listBoxPFTextureMode.setSelectedItemIndex ( config.getDebugTextureMode () - 1 );
+#  endif
+
 }
 
 void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
@@ -198,8 +229,23 @@ void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
       config.setPathFinderMaxNodes ( strToInt ( this->listBoxMaxPathNodes.getSelectedItem () ) );
       saveConfig ();
    }
-
-
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+   else if ( listBoxPFAlgorithm.mouseClick ( x,y ) )
+   {
+      config.setPathFinderAlgorithm( listBoxPFAlgorithm.getSelectedItemIndex () + 1 );
+      saveConfig ();
+   }
+   else if ( listBoxPFTexturesOn.mouseClick ( x,y ) )
+   {
+      config.setDebugTextures ( listBoxPFTexturesOn.getSelectedItemIndex () == 0 ? true : false );
+      saveConfig ();
+   }
+   else if ( listBoxPFTextureMode.mouseClick ( x,y ) )
+   {
+      config.setDebugTextureMode( listBoxPFTextureMode.getSelectedItemIndex () + 1 );
+      saveConfig ();
+   }
+#  endif
 }
 
 void MenuStateOptions::mouseMove(int x, int y, const MouseState &ms){
@@ -216,6 +262,11 @@ void MenuStateOptions::mouseMove(int x, int y, const MouseState &ms){
 	listBoxTextures3D.mouseMove(x, y);
 	listBoxLights.mouseMove(x, y);
    listBoxMaxPathNodes.mouseMove (x, y);
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      listBoxPFAlgorithm.mouseMove (x, y);
+      listBoxPFTexturesOn.mouseMove (x, y);
+      listBoxPFTextureMode.mouseMove (x, y);
+#  endif
 }
 
 void MenuStateOptions::render(){
@@ -233,7 +284,12 @@ void MenuStateOptions::render(){
 	renderer.renderListBox(&listBoxVolumeAmbient);
 	renderer.renderListBox(&listBoxVolumeMusic);
    renderer.renderListBox ( &listBoxMaxPathNodes );
-	renderer.renderLabel(&labelLang);
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      renderer.renderListBox ( &listBoxPFAlgorithm );
+      renderer.renderListBox ( &listBoxPFTexturesOn );
+      renderer.renderListBox ( &listBoxPFTextureMode );
+#  endif
+   renderer.renderLabel(&labelLang);
 	renderer.renderLabel(&labelShadows);
 	renderer.renderLabel(&labelTextures3D);
 	renderer.renderLabel(&labelLights);
@@ -242,6 +298,12 @@ void MenuStateOptions::render(){
 	renderer.renderLabel(&labelVolumeAmbient);
 	renderer.renderLabel(&labelVolumeMusic);
    renderer.renderLabel( & labelMaxPathNodes );
+
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      renderer.renderLabel( & labelPFAlgorithm );
+      renderer.renderLabel( & labelPFTexturesOn );
+      renderer.renderLabel( & labelPFTextureMode );
+#  endif
 }
 
 void MenuStateOptions::saveConfig(){

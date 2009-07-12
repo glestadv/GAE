@@ -99,8 +99,13 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	uiLang = p->getString("UiLang", "english.lng");
 	uiPhotoMode = p->getBool("UiPhotoMode", false);
 	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
-   pathFinderMaxNodes = p->getInt ( "PathFinderMaxNodes", 400 );
-	delete p;
+   pathFinderMaxNodes = p->getInt ( "PathFinderMaxNodes", 1024 );
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   debugTextures = p->getBool ( "PathFinderDebugTextures", false );
+   debugTextureMode = p->getInt ( "PathFinderDebugTextureMode", 1 );
+   debugPathFinderAlgorithm = p->getInt ( "PathFinderAlgorithm", 1 );
+#endif
+   delete p;
 }
 
 void Config::save(const char *path) {
@@ -176,6 +181,11 @@ void Config::save(const char *path) {
 	p->setBool("UiPhotoMode", uiPhotoMode);
 	p->setFloat("UiScrollSpeed", uiScrollSpeed);
    p->setInt ( "PathFinderMaxNodes", pathFinderMaxNodes );
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   p->setBool ( "PathFinderDebugTextures", debugTextures );
+   p->setInt ( "PathFinderDebugTextureMode", debugTextureMode );
+   p->setInt ( "PathFinderAlgorithm", debugPathFinderAlgorithm );
+#endif
 	p->save(path);
 	delete p;
 }

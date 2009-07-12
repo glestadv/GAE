@@ -177,7 +177,7 @@ public:
 	}
 #ifdef PATHFINDER_DEBUG_TEXTURES
    void loadPFDebugTextures ();
-   Texture2D *PFDebugTextures[16];
+   Texture2D *PFDebugTextures[18];
    int getNumPathPos () { return map.PathPositions.size (); }
 #endif
 

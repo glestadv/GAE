@@ -175,10 +175,16 @@ void World::loadPFDebugTextures()
    char buff[128];
    for ( int i=0; i < 4; ++i )
    {
-      sprintf ( buff, "data/core/misc_textures/%02d.bmp", i );
+      sprintf ( buff, "data/core/misc_textures/g%02d.bmp", i );
       _load_tex ( i, buff );
    }
-   _load_tex ( 4, "data/core/misc_textures/local0.bmp" );
+   for ( int i=13; i < 13+4; ++i )
+   {
+      sprintf ( buff, "data/core/misc_textures/l%02d.bmp", i-13 );
+      _load_tex ( i, buff );
+   }
+
+   //_load_tex ( 4, "data/core/misc_textures/local0.bmp" );
 
    _load_tex ( 5, "data/core/misc_textures/path_start.bmp" );
    _load_tex ( 6, "data/core/misc_textures/path_dest.bmp" );

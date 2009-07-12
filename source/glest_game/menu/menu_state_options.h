@@ -45,6 +45,14 @@ private:
 	GraphicListBox listBoxVolumeMusic;
 	GraphicListBox listBoxMusicSelect;
    GraphicListBox listBoxMaxPathNodes;
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      GraphicLabel labelPFAlgorithm;
+      GraphicLabel labelPFTexturesOn;
+      GraphicLabel labelPFTextureMode;
+      GraphicListBox listBoxPFAlgorithm;
+      GraphicListBox listBoxPFTexturesOn;
+      GraphicListBox listBoxPFTextureMode;
+#  endif
 
 private:
 	MenuStateOptions(const MenuStateOptions &);

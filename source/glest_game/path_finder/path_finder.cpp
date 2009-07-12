@@ -158,26 +158,20 @@ TravelState PathFinder::findPath(Unit *unit, const Vec2i &finalPos)
       }
    }
 
-   /*
-   if ( flipper % 2 == 0 )
-   {
-
-   }
-   else 
-   {
-
-   }
-   */
-
-   //flipper ++;
-
    SearchParams params (unit);
    params.dest = targetPos;
    list<Vec2i> pathList;
-   //Logger::getInstance ().add ( "findPath()... annotating local..." );
    annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
-   //bool result = search->GreedySearch ( params, pathList );
-   bool result = search->AStarSearch ( params, pathList );
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      bool result;
+      switch ( Config::getInstance().getPathFinderAlgorithm() )
+      {
+      case 1: result = search->AStarSearch ( params, pathList ); break;
+      case 2: result = search->GreedySearch ( params, pathList ); break;
+      }
+#  else
+      bool result = search->AStarSearch ( params, pathList );
+#  endif
    annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
    //Logger::getInstance ().add ( "findPath()... clearing local annotations ..." );
    if ( ! result )

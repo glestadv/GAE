@@ -103,6 +103,11 @@ private:
 	bool uiPhotoMode;
 	float uiScrollSpeed;
    int pathFinderMaxNodes;
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   bool debugTextures;
+   int  debugTextureMode;
+   int  debugPathFinderAlgorithm;
+#endif
 
 	Config(const char* fileName);
 	
@@ -199,8 +204,12 @@ public:
 	string getUiLang() const					{return uiLang;}
 	bool getUiPhotoMode() const					{return uiPhotoMode;}
 	float getUiScrollSpeed() const				{return uiScrollSpeed;}
-
    int getPathFinderMaxNodes () const        { return pathFinderMaxNodes; }
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   bool getDebugTextures () { return debugTextures ; }
+   int  getDebugTextureMode () { return debugTextureMode; }
+   int  getPathFinderAlgorithm () { return  debugPathFinderAlgorithm; }
+#endif
 
    void setCameraFov(float val)				   {cameraFov = val;}
 	void setCameraInvertXAxis(bool val)			{cameraInvertXAxis = val;}
@@ -272,6 +281,11 @@ public:
 	void setUiPhotoMode(bool val)				{uiPhotoMode = val;}
 	void setUiScrollSpeed(float val)			{uiScrollSpeed = val;}
    void setPathFinderMaxNodes ( int max )    { pathFinderMaxNodes = max; }
+#ifdef PATHFINDER_DEBUG_TEXTURES
+   void setDebugTextures (bool val) { debugTextures = val; }
+   void setDebugTextureMode (int val) { debugTextureMode = val; }
+   void setPathFinderAlgorithm (int val) { debugPathFinderAlgorithm = val; }
+#endif
 };
 
 }}//end namespace

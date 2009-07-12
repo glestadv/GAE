@@ -55,41 +55,25 @@ const int AnnotatedMap::maxClearanceValue = 3;
 
 AnnotatedMap::AnnotatedMap ( Map *m )
 {
-   metrics = NULL;
    cMap = m;
+   metrics.init ( m->getW(), m->getH() );
    initMapMetrics ( cMap );
 }
 
 AnnotatedMap::~AnnotatedMap ()
 {
-   if ( metrics )
-   {
-      for ( int i=0; i < metricHeight; ++i ) 
-         delete metrics[i];
-      delete [] metrics;
-   }
-   metrics = NULL;
 }
 
 void AnnotatedMap::initMapMetrics ( Map *map )
 {
-   if ( metrics )
-   {
-      for ( int i=0; i < metricHeight; ++i ) 
-         delete [] metrics[i];
-      delete [] metrics;
-   }
-   metrics = new CellMetrics* [map->getH()];
    for ( int i=0; i < map->getH(); ++i )
    {
-      metrics[i] = new CellMetrics [map->getW()];
       for ( int j=0; j < map->getW(); ++j )
       {
          Vec2i pos( j, i );
-         metrics[i][j] = computeClearances ( pos );
+         metrics[pos] = computeClearances ( pos );
       }
    }
-   metricHeight = map->getH();
 }
 
 // pos: location of object added/removed
@@ -100,8 +84,11 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
    // first, re-evaluate the cells occupied (or formerly occupied)
    for ( int i=0; i < size; ++i )
       for ( int j=0; j < size; ++j )
-         metrics[pos.y + j][pos.x + i].set ( field,
-            computeClearance ( Vec2i (pos.x + i, pos.y + j), field ) );
+      {
+         Vec2i occPos = pos;
+         occPos.x += i; occPos.y += j;
+         metrics[occPos].set ( field, computeClearance ( occPos, field ) );
+      }
 
    // now, look to the left and above those cells, 
    // updating clearances where needed...
@@ -137,23 +124,27 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
          {
             // if we're adding and the current metric is bigger 
             // than shell, we need to update it
-            if ( adding && metrics[it->y][it->x].get(field) > shell )
+            if ( adding && metrics[*it].get(field) > shell )
             {
                // FIXME: Does not handle cell maps properly ( shell + metric[y][x+shell].fieldX ??? )
-               metrics[it->y][it->x].set ( field, shell );
+               metrics[*it].set ( field, shell );
                if ( it->x - 1 >= 0 ) // if there is a cell to the left, add it to
                   newLeftList->push_back ( Vec2i(it->x-1,it->y) ); // the new left list
             }
             // if we're removing and the metrics of the cell to the right has a 
             // larger metric than this cell, we _may_ need to update this cell.
-            else if ( !adding && metrics[it->y][it->x].get(field) < metrics[it->y][it->x+1].get(field) )
+            else if ( !adding )
             {
-               uint32 old = metrics[it->y][it->x].get(field);
-               metrics[it->y][it->x].set ( field, computeClearance ( *it, field ) ); // re-compute
-               // if we changed the metric and there is a cell to the left, add it to the 
-               if ( metrics[it->y][it->x].get(field) != old && it->x - 1 >= 0 ) // new left list
-                  newLeftList->push_back ( Vec2i(it->x-1,it->y) );
-               // if we didn't change the metric, no need to keep looking left
+               Vec2i rightPos ( it->x+1, it->y );
+               if ( metrics[*it].get(field) < metrics[rightPos].get(field) )
+               {
+                  uint32 old = metrics[*it].get(field);
+                  metrics[*it].set ( field, computeClearance ( *it, field ) ); // re-compute
+                  // if we changed the metric and there is a cell to the left, add it to the 
+                  if ( metrics[*it].get(field) != old && it->x - 1 >= 0 ) // new left list
+                     newLeftList->push_back ( Vec2i(it->x-1,it->y) );
+                  // if we didn't change the metric, no need to keep looking left
+               }
             }
             // else we didn't need to update this metric, and cells to the left
             // will therefore also still have correct metrics and we can stop
@@ -165,18 +156,22 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
       {
          for ( VLIt it = AboveList->begin (); it != AboveList->end (); ++it )
          {
-            if ( adding && metrics[it->y][it->x].get(field) > shell )
+            if ( adding && metrics[*it].get(field) > shell )
             {
-               metrics[it->y][it->x].set ( field,  shell );
+               metrics[*it].set ( field,  shell );
                if ( it->y - 1 >= 0 )
                   newAboveList->push_back ( Vec2i(it->x,it->y-1) );
             }
-            else if ( !adding && metrics[it->y][it->x].get(field) < metrics[it->y-1][it->x].get(field) )
+            else if ( !adding )
             {
-               uint32 old = metrics[it->y][it->x].get(field);
-               metrics[it->y][it->x].set ( field, computeClearance ( *it, field ) );
-               if ( metrics[it->y][it->x].get(field) != old && it->y - 1 >= 0 ) 
-                  newAboveList->push_back ( Vec2i(it->x,it->y-1) );
+               Vec2i abovePos ( it->x, it->y-1 );
+               if ( metrics[*it].get(field) < metrics[abovePos].get(field) )
+               {
+                  uint32 old = metrics[*it].get(field);
+                  metrics[*it].set ( field, computeClearance ( *it, field ) );
+                  if ( metrics[*it].get(field) != old && it->y - 1 >= 0 ) 
+                     newAboveList->push_back ( Vec2i(it->x,it->y-1) );
+               }
             }
          }
       }
@@ -184,9 +179,9 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
       {
          // Deal with the corner...
          int x = corner->x, y  = corner->y;
-         if ( adding && metrics[y][x].get(field) > shell ) // adding ?
+         if ( adding && metrics[*corner].get(field) > shell ) // adding ?
          {
-            metrics[y][x].set ( field, shell ); // update
+            metrics[*corner].set ( field, shell ); // update
             // add cell left to the new left list, cell above to new above list, and
             // set corner to point at the next corner (x-1,y-1) (if they're on the map.)
             if ( x - 1 >= 0 )
@@ -198,22 +193,28 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
             else corner = NULL;
             if ( y - 1 >= 0 ) newAboveList->push_back ( Vec2i(x,y-1) );
          }
-         else if ( !adding && metrics[y][x].get(field) < metrics[y+1][x+1].get(field) ) // removing
+         else if ( !adding  ) // removing
          {
-            uint32 old = metrics[y][x].get(field);
-            metrics[y][x].set (field, computeClearance ( *corner, field ) );
-            if ( metrics[y][x].get(field) != old ) // did we update ?
+            Vec2i prevCorner ( x+1, y+1 );
+            if ( metrics[*corner].get(field) < metrics[prevCorner].get(field) )
             {
-               if ( x - 1 >= 0 )
+               uint32 old = metrics[*corner].get(field);
+               metrics[*corner].set (field, computeClearance ( *corner, field ) );
+               if ( metrics[*corner].get(field) != old ) // did we update ?
                {
-                  newLeftList->push_back ( Vec2i(x-1,y) );
-                  if ( y - 1 >= 0 ) corner = &Vec2i(x-1,y-1);
+                  if ( x - 1 >= 0 )
+                  {
+                     newLeftList->push_back ( Vec2i(x-1,y) );
+                     if ( y - 1 >= 0 ) corner = &Vec2i(x-1,y-1);
+                     else corner = NULL;
+                  }
                   else corner = NULL;
+                  if ( y - 1 >= 0 ) newAboveList->push_back ( Vec2i(x,y-1) );
                }
-               else corner = NULL;
-               if ( y - 1 >= 0 ) newAboveList->push_back ( Vec2i(x,y-1) );
+               else // no update, stop looking at corners
+                  corner = NULL;
             }
-            else // no update, stop looking at corners
+            else // no update
                corner = NULL;
          }
          else // no update
@@ -265,10 +266,9 @@ CellMetrics AnnotatedMap::computeClearances ( const Vec2i &pos )
    
    // Amphibious
    int clearSurf = clearances.get ( FieldWalkable );
-   if ( clearances.get ( FieldAnyWater ) > clearSurf ) clearSurf = clearances.get ( FieldAnyWater );
+   if ( clearances.get ( FieldAnyWater ) > clearSurf ) 
+      clearSurf = clearances.get ( FieldAnyWater );
    clearances.set ( FieldAmphibious, clearSurf );
-
-   // use previously calculated base fields to calc combinations ??
 
    return clearances;
 }
@@ -345,9 +345,8 @@ bool AnnotatedMap::canClear ( const Vec2i &pos, int clear, Field field )
 
 bool AnnotatedMap::canOccupy ( const Vec2i &pos, int size, Field field ) const
 {
-   //assert ( pos.x >= 0 && pos.x < map->getW() && pos.y >= 0 && pos.y < map->getH() );
    assert ( cMap->isInside ( pos ) );
-   return metrics[pos.y][pos.x].get ( field ) >= size ? true : false;
+   return metrics[pos].get ( field ) >= size ? true : false;
 }
 
 void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field field )
@@ -372,54 +371,49 @@ void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field
    {
       Vec2i aPos = pos + directions[i];
       if ( cMap->isInside (aPos) && ! cMap->getCell (aPos)->isFree (zone) )
-      {  // remember the metric
-         localAnnt[aPos] = metrics[aPos.y][aPos.x].get ( field );
-         metrics[aPos.y][aPos.x].set ( field, 0 );
+      {  // store the 'true' metric, if not already stored
+         if ( localAnnt.find ( aPos ) == localAnnt.end () )
+            localAnnt[aPos] = metrics[aPos].get ( field );
+         metrics[aPos].set ( field, 0 );
          if ( size == 2 )
-         {
+         {  // we don't bother with this for size 1 unit's, the metrics may 
+            // be 'wrong', but they are 'right enough' (1, 2 & 3 are all the 
+            // same to a size 1 unit).
             int shell = 1;
             for ( int i=0; i < 3; ++i )
             {
                Vec2i check = aPos + AboveLeftDist1[i];
-               if ( metrics[check.y][check.x].get ( field ) > shell )
+               if ( metrics[check].get ( field ) > shell )
                {  // check if we've allready annotated this cell...
-                  if ( localAnnt.find ( check ) != localAnnt.end () )
-                     metrics[check.y][check.x].set ( field, shell );
-                  else
-                  {
-                     localAnnt[check] = metrics[check.y][check.x].get ( field );
-                     metrics[check.y][check.x].set ( field, shell );
-                  }
+                  if ( localAnnt.find ( check ) == localAnnt.end () )
+                     localAnnt[check] = metrics[check].get ( field );
+                  metrics[check].set ( field, shell );
                }
             }
             shell ++;
             for ( int i=0; i < 5; ++i )
             {
                Vec2i check = aPos + AboveLeftDist2[i];
-               if ( metrics[check.y][check.x].get ( field ) > shell )
+               if ( metrics[check].get ( field ) > shell )
                {  // check if we've allready annotated this cell...
-                  if ( localAnnt.find ( check ) != localAnnt.end () )
-                     metrics[check.y][check.x].set ( field, shell );
-                  else
-                  {
-                     localAnnt[check] = metrics[check.y][check.x].get ( field );
-                     metrics[check.y][check.x].set ( field, shell );
-                  }
+                  if ( localAnnt.find ( check ) == localAnnt.end () )
+                     localAnnt[check] = metrics[check].get ( field );
+                  metrics[check].set ( field, shell );
                }
             }
          } // end if ( size == 2 )
       }
    } // end for
 }
-list<Vec2i>* AnnotatedMap::getLocalAnnotations ()
+#ifdef PATHFINDER_DEBUG_TEXTURES
+list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations ()
 {
-   list<Vec2i> *ret = new list<Vec2i> ();
+   list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>> ();
    for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it )
-   {
-      ret->push_back ( it->first );
-   }
+      ret->push_back ( pair<Vec2i,uint32> (it->first,metrics[it->first].get(FieldWalkable)) );
    return ret;
 }
+#endif
 
 void AnnotatedMap::clearLocalAnnotations ( Field field )
 {
@@ -427,7 +421,7 @@ void AnnotatedMap::clearLocalAnnotations ( Field field )
    {
       assert ( it->second <= maxClearanceValue );
       assert ( cMap->isInside ( it->first ) );
-      metrics [ it->first.y ][ it->first.x ].set ( field, it->second );
+      metrics[it->first].set ( field, it->second );
    }
    localAnnt.clear ();
 }
