@@ -19,7 +19,6 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
@@ -45,7 +44,7 @@ void DummyCommandType::getDesc(string &str, const Unit *unit) const
 	dummySkillType->getDesc(str, unit);
 }
 
-void DummyCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void DummyCommandType::update(Unit *unit) const
 {
    Command *command= unit->getCurrCommand();
 

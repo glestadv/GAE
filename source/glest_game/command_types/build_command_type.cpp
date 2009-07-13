@@ -21,7 +21,7 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
+#include "game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
@@ -39,14 +39,17 @@ BuildCommandType::~BuildCommandType(){
 	deleteValues(startSounds.getSounds().begin(), startSounds.getSounds().end());
 }
 
-void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void BuildCommandType::update(Unit *unit) const
 {
 	Command *command= unit->getCurrCommand();
 	const UnitType *builtUnitType= command->getUnitType();
 	Unit *builtUnit = NULL;
 	Unit *target = unit->getTarget();
-   Map *map = unitUpdater->getMap ();
-   World *world = unitUpdater->getWorld ();
+   Game *game = Game::getInstance ();
+   World *world = game->getWorld ();
+   Map *map = world->getMap ();
+   PathFinder::PathFinder *pathFinder = PathFinder::PathFinder::getInstance ();
+   NetworkManager &net = NetworkManager::getInstance();
 	assert(command->getUnitType());
 
 	if(unit->getCurrSkill()->getClass() != scBuild) {
@@ -62,12 +65,13 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 				unit->getPath()->clear();
 			}
 		} else {
-			unitUpdater->console->addStdMessage("Blocked");
+
+         game->getConsole()->addStdMessage("Blocked");
 			unit->cancelCurrCommand();
 			return;
 		}
 
-		switch (unitUpdater->pathFinder->findPath(unit, waypoint)) {
+		switch (pathFinder->findPath(unit, waypoint)) {
 		case PathFinder::tsOnTheWay:
 			unit->setCurrSkill(this->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -75,14 +79,14 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 
 		case PathFinder::tsBlocked:
 			if(unit->getPath()->isBlocked()) {
-				unitUpdater->console->addStdMessage("Blocked");
+				game->getConsole()->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
 			}
 			return;
 
 		case PathFinder::tsArrived:
 			if(unit->getPos() != waypoint) {
-				unitUpdater->console->addStdMessage("Blocked");
+				game->getConsole()->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
 				return;
 			}
@@ -97,9 +101,10 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 				return;
 			}
 
+
 			// network client has to wait for the server to tell them to begin building.  If the
 			// creates the building, we can have an id mismatch.
-			if(unitUpdater->isNetworkClient()) {
+			if(net.isNetworkClient()) {
 				unit->setCurrSkill(scWaitForServer);
 				// FIXME: Might play start sound multiple times or never at all
 			} else {
@@ -108,7 +113,7 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 					command->setReserveResources(true);
 					if(unit->checkCommand(*command) != crSuccess) {
 						if(unit->getFactionIndex() == world->getThisFactionIndex()){
-							unitUpdater->console->addStdMessage("BuildingNoRes");
+							game->getConsole()->addStdMessage("BuildingNoRes");
 						}
 						unit->finishCommand();
 						return;
@@ -129,14 +134,14 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 				map->prepareTerrain(builtUnit);
 				command->setUnit(builtUnit);
 				unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
-				if(unitUpdater->isNetworkGame()) {
-					unitUpdater->getServerInterface()->newUnit(builtUnit);
-					unitUpdater->getServerInterface()->unitUpdate(unit);
-					unitUpdater->getServerInterface()->updateFactions();
+				if(net.isNetworkGame()) {
+					net.getServerInterface()->newUnit(builtUnit);
+					net.getServerInterface()->unitUpdate(unit);
+					net.getServerInterface()->updateFactions();
 				}
             //FIXME: make Field friendly
             if ( !builtUnit->isMobile() )
-               unitUpdater->pathFinder->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
+               pathFinder->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
 			}
 
 			//play start sound
@@ -144,7 +149,7 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
             SoundRenderer::getInstance().playFx(
 					this->getStartSound(),
 					unit->getCurrVector(),
-					unitUpdater->gameCamera->getPos());
+					game->getGameCamera()->getPos());
 			}
 		} else {
 			// there are no free cells
@@ -184,7 +189,7 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 				unit->cancelCurrCommand();
 				unit->setCurrSkill(scStop);
 				if (unit->getFactionIndex() == world->getThisFactionIndex()) {
-					unitUpdater->console->addStdMessage("BuildingNoPlace");
+               game->getConsole()->addStdMessage("BuildingNoPlace");
 				}
 			}
 		}
@@ -204,18 +209,18 @@ void BuildCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), true);
 			//FIXME: born() here or when building started ???
          //builtUnit->born();
-         unitUpdater->scriptManager->onUnitCreated ( builtUnit );
+         game->getScriptManager()->onUnitCreated ( builtUnit );
 
          if(unit->getFactionIndex()==world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(
 					this->getBuiltSound(),
 					unit->getCurrVector(),
-					unitUpdater->gameCamera->getPos());
+               game->getGameCamera()->getPos());
 			}
-			if(unitUpdater->isNetworkServer()) {
-				unitUpdater->getServerInterface()->unitUpdate(unit);
-				unitUpdater->getServerInterface()->unitUpdate(builtUnit);
-				unitUpdater->getServerInterface()->updateFactions();
+			if(net.isNetworkServer()) {
+				net.getServerInterface()->unitUpdate(unit);
+				net.getServerInterface()->unitUpdate(builtUnit);
+				net.getServerInterface()->updateFactions();
 			}
 		}
 	}

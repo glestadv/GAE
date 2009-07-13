@@ -21,7 +21,6 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
@@ -35,7 +34,7 @@ namespace Glest { namespace Game {
 // 	class PatrolCommandType
 // =====================================================
 
-void PatrolCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void PatrolCommandType::update(Unit *unit) const
 {
 	Command *command= unit->getCurrCommand();
 	Unit *target = command->getUnit();
@@ -62,7 +61,7 @@ void PatrolCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 	}
 
 	// If destination reached or blocked, turn around on next frame.
-	if ( updateAttackGeneric ( unitUpdater, unit ) )
+	if ( updateAttackGeneric ( unit ) )
    {
 		command->swap();
 		/*

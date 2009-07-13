@@ -28,7 +28,7 @@ namespace Glest { namespace Game {
 
 using Shared::Util::MultiFactory;
 
-class UnitUpdater;
+//class UnitUpdater;
 class Unit;
 class UnitType;
 class TechTree;
@@ -140,7 +140,8 @@ private:
 public:
 	CommandType(const char* name, CommandClass cc, Clicks clicks, bool queuable = false);
 
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const {};
+   virtual void update (Unit *unit) const {};
+
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void setUnitTypeAndIndex(const UnitType *unitType, int unitTypeIndex);
 	virtual void getDesc(string &str, const Unit *unit) const = 0;
@@ -160,6 +161,16 @@ public:
 		getDesc(str, unit);
 		return str;
 	}
+
+   // need here? push down to AttackCommandTypeBase ??
+   static bool attackerOnSight(const Unit *unit, Unit **enemyPtr);
+   static bool attackableOnSight(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
+   static bool attackableOnRange(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
+	static bool unitOnRange(const Unit *unit, int range, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
+
+    // auto commands
+    static void doAutoCommand ( Unit *unit );
+    static void updateAutoCommand ( Unit *unit );
 };
 
 // ===============================
@@ -201,7 +212,7 @@ public:
 class StopCommandType: public StopBaseCommandType {
 public:
 	StopCommandType() : StopBaseCommandType("Stop", ccStop, cOne) {}
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 };
 
 // ===============================
@@ -211,7 +222,9 @@ public:
 class MoveCommandType: public MoveBaseCommandType {
 public:
 	MoveCommandType() : MoveBaseCommandType("Move", ccMove, cTwo) {}
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
+
+   static Command *doAutoFlee(Unit *unit);
 };
 
 // ===============================
@@ -228,7 +241,9 @@ public:
 
 // const AttackSkillType *getAttackSkillType() const	{return attackSkillTypes.begin()->first;}
 // const AttackSkillType *getAttackSkillType(Field field) const;
-	const AttackSkillTypes *getAttackSkillTypes() const	{return &attackSkillTypes;}	
+	const AttackSkillTypes *getAttackSkillTypes() const	{return &attackSkillTypes;}
+
+   static Command *doAutoAttack(Unit *unit);
 };
 
 // ===============================
@@ -245,8 +260,8 @@ public:
 		AttackCommandTypeBase::getDesc(str, unit);
 		MoveBaseCommandType::getDesc(str, unit);
 	}
-   virtual void update ( UnitUpdater *unitUpdater, Unit *unit ) const;
-   bool updateAttackGeneric ( UnitUpdater *unitUpdater, Unit *unit ) const;
+   virtual void update ( Unit *unit ) const;
+   bool updateAttackGeneric ( Unit *unit ) const;
 };
 
 // =======================================
@@ -260,7 +275,7 @@ public:
 	virtual void getDesc(string &str, const Unit *unit) const {
 		AttackCommandTypeBase::getDesc(str, unit);
 	}
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 };
 
 
@@ -282,7 +297,7 @@ public:
 	virtual void getDesc(string &str, const Unit *unit) const {
 		buildSkillType->getDesc(str, unit);
 	}
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 
 	//get
 	const BuildSkillType *getBuildSkillType() const	{return buildSkillType;}
@@ -314,7 +329,7 @@ public:
 	HarvestCommandType() : MoveBaseCommandType("Harvest", ccHarvest, cTwo) {}
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 
 	//get
 	const MoveSkillType *getMoveLoadedSkillType() const		{return moveLoadedSkillType;}
@@ -342,7 +357,7 @@ public:
 	~RepairCommandType();
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 
 	//get
 	const RepairSkillType *getRepairSkillType() const	{return repairSkillType;}
@@ -357,6 +372,9 @@ public:
 	bool repairableOnSight ( const Unit *unit, Map *map, Unit **rangedPtr, const RepairCommandType *rct, 
                             bool allowSelf) const;
 
+   static Command *doAutoRepair(Unit *unit);
+	
+	static const float repairerToFriendlySearchRadius;
 };
 
 
@@ -373,7 +391,7 @@ public:
 	ProduceCommandType() : CommandType("Produce", ccProduce, cOne, true) {}
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 
 	virtual string getReqDesc() const;
 	virtual const ProducibleType *getProduced() const;
@@ -402,7 +420,7 @@ public:
 		upgradeSkillType->getDesc(str, unit);
 		str += "\n" + getProducedUpgrade()->getDesc();
 	}
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 
 	//get
 	const UpgradeSkillType *getUpgradeSkillType() const	{return upgradeSkillType;}
@@ -425,7 +443,7 @@ public:
 	virtual void getDesc(string &str, const Unit *unit) const;
 	virtual string getReqDesc() const;
 	virtual const ProducibleType *getProduced() const;
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 
 	//get
 	const MorphSkillType *getMorphSkillType() const	{return morphSkillType;}
@@ -462,7 +480,7 @@ public:
 			AttackCommandType(name, commandTypeClass, clicks) {}
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	int getMaxDistance() const {return maxDistance;}
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 };
 
 // ===============================
@@ -472,7 +490,7 @@ public:
 class PatrolCommandType: public GuardCommandType {
 public:
 	PatrolCommandType() : GuardCommandType("Patrol", ccPatrol, cTwo) {}
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 };
 
 
@@ -497,7 +515,7 @@ public:
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
    virtual string getReqDesc () const;
-   virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
+   virtual void update(Unit *unit) const;
 
 	const DummySkillType *getDummySkillType() const	{return dummySkillType;}
 };

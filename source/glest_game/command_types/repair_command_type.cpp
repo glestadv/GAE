@@ -22,7 +22,7 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
+#include "game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
@@ -37,6 +37,9 @@ namespace Glest { namespace Game {
 
 RepairCommandType::~RepairCommandType(){
 }
+
+//REFACTOR ( move to RepairSkillType || RepairCommandType ?? )
+const float RepairCommandType::repairerToFriendlySearchRadius = 1.25f;
 
 void RepairCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
 	MoveBaseCommandType::load(n, dir, tt, ft);
@@ -53,15 +56,13 @@ void RepairCommandType::load(const XmlNode *n, const string &dir, const TechTree
 	}
 }
 
-void RepairCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void RepairCommandType::update(Unit *unit) const
 {
 	Command *command= unit->getCurrCommand();
-	//const CommandType *ct = command->getType();
-	//assert(ct->getClass() == ccRepair);
-   Map *map = unitUpdater->getMap ();
-   World *world = unitUpdater->getWorld ();
-   PathFinder::PathFinder *pathFinder = unitUpdater->pathFinder;
-	//const RepairCommandType *rct= static_cast<const RepairCommandType*>(ct);
+   World *world = Game::getInstance()->getWorld ();
+   Map *map = world->getMap ();
+   PathFinder::PathFinder *pathFinder = PathFinder::PathFinder::getInstance ();
+	
 	const RepairSkillType *rst = this->getRepairSkillType();
 	bool repairThisFrame = unit->getCurrSkill()->getClass() == scRepair;
 	Unit *repaired = command->getUnit();
@@ -182,7 +183,7 @@ void RepairCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 				if(!wasBuilt) {
 					//building finished
                //repaired->born();//FIXME: born() ?!?!?!
-			      unitUpdater->scriptManager->onUnitCreated(repaired);
+               Game::getInstance()->getScriptManager ()->onUnitCreated(repaired);
 					if(unit->getFactionIndex() == world->getThisFactionIndex()) {
 						// try to find finish build sound
 						BuildCommandType *bct = (BuildCommandType *)unit->getType()->getFirstCtOfClass(ccBuild);
@@ -190,13 +191,14 @@ void RepairCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 							SoundRenderer::getInstance().playFx(
 								bct->getBuiltSound(),
 								unit->getCurrVector(),
-								unitUpdater->gameCamera->getPos());
+                        Game::getInstance ()->getGameCamera ()->getPos());
 						}
 					}
-               if(unitUpdater->isNetworkServer()) {
-						unitUpdater->getServerInterface()->unitUpdate(unit);
-						unitUpdater->getServerInterface()->unitUpdate(repaired);
-						unitUpdater->getServerInterface()->updateFactions();
+               NetworkManager &net = NetworkManager::getInstance();
+               if( net.isNetworkServer()) {
+						net.getServerInterface()->unitUpdate(unit);
+						net.getServerInterface()->unitUpdate(repaired);
+						net.getServerInterface()->updateFactions();
 					}
 				}
 			}
@@ -248,7 +250,7 @@ bool RepairCommandType::repairableOnRange ( const Unit *unit, Map *map, Vec2i ce
 					&& rct->isRepairableUnitType(candidate->getType())) {
 	
 				//record the nearest distance to target (target may be on multiple cells)
-				repairables.record(candidate, distance);
+				repairables.record(candidate, (int)distance);
 			}
 		}
 	}
@@ -315,6 +317,38 @@ bool RepairCommandType::repairableOnSight(const Unit *unit, Map *map, Unit **ran
 {
 	return repairableOnRange(unit, map, rangedPtr, rct, unit->getSight(), allowSelf);
 }
+
+
+//REFACTOR ( move to RepairCommandType )
+Command *RepairCommandType::doAutoRepair(Unit *unit) 
+{
+   Map *map = Game::getInstance ()->getWorld ()->getMap ();
+	if(unit->getType()->hasCommandClass(ccRepair) && unit->isAutoRepairEnabled()) {
+
+		for(int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
+			const CommandType *ct = unit->getType()->getCommandType(i);
+
+			if(!unit->getFaction()->isAvailable(ct) || ct->getClass() != ccRepair) {
+				continue;
+			}
+
+			//look a repair skill
+			const RepairCommandType *rct = (const RepairCommandType*)ct;
+			const RepairSkillType *rst = rct->getRepairSkillType();
+			Unit *sighted = NULL;
+
+			if(unit->getEp() >= rst->getEpCost() && rct->repairableOnSight(unit, map, &sighted, rct, rst->isSelfAllowed())) {
+				Command *newCommand;
+				newCommand = new Command(rct, CommandFlags(cpQueue, cpAuto),
+						Map::getNearestPos(unit->getPos(), sighted, rst->getMinRange(), rst->getMaxRange()));
+				newCommand->setPos2(unit->getPos());
+				return newCommand;
+			}
+		}
+	}
+	return NULL;
+}
+
 
 }}
 

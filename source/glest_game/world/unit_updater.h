@@ -27,6 +27,7 @@ namespace Glest{ namespace Game{
 class Unit;
 class Map;
 class ScriptManager;
+class ParticleDamager;
 
 // =====================================================
 //	class UnitUpdater
@@ -35,8 +36,6 @@ class ScriptManager;
 ///	controlled units, performs basic actions only
 ///	such as responding to an attack
 // =====================================================
-
-class ParticleDamager;
 
 class UnitUpdater{
 private:
@@ -50,7 +49,6 @@ private:
 	 * can attack.  This is used to decide if the repiarer stays put in to backup a friendly who
 	 * we presume will be fighting, of if the repairer flees.
 	 */
-	static const float repairerToFriendlySearchRadius;
 
 private:
 public:
@@ -75,9 +73,6 @@ public:
     //update commands
     void updateUnitCommand(Unit *unit);
 
-    // auto commands
-    void doAutoCommand ( Unit *unit );
-    void updateAutoCommand ( Unit *unit );
 
 private:
     //attack
@@ -92,26 +87,19 @@ private:
 	void appyEffect(Unit *unit, Effect *effect);
 	void updateEmanations(Unit *unit);
 
-	//misc
-	Command *doAutoAttack(Unit *unit);
-	Command *doAutoRepair(Unit *unit);
-	Command *doAutoFlee(Unit *unit);
-
-    // If the unit is vaguely between pos1 and pos2, give move command to clear the area
-    //void GetClear ( Unit *unit, const Vec2i &pos1, const Vec2i &pos2 );
-
 public:
 	bool isLocal()							{return NetworkManager::getInstance().isLocal();}
 	bool isNetworkGame()					{return NetworkManager::getInstance().isNetworkGame();}
 	bool isNetworkServer() 					{return NetworkManager::getInstance().isNetworkServer();}
 	bool isNetworkClient() 					{return NetworkManager::getInstance().isNetworkClient();}
 	ServerInterface *getServerInterface()	{return NetworkManager::getInstance().getServerInterface();}
-
+/*
    bool attackerOnSight(const Unit *unit, Unit **enemyPtr) const;
    bool attackableOnSight(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past) const;
    bool attackableOnRange(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past) const;
 	bool unitOnRange(const Unit *unit, int range, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past) const;
-	//void enemiesAtDistance(const Unit *unit, const Unit *priorityUnit, int distance, vector<Unit*> &enemies);
+*/
+   //void enemiesAtDistance(const Unit *unit, const Unit *priorityUnit, int distance, vector<Unit*> &enemies);
 };
 
 // =====================================================

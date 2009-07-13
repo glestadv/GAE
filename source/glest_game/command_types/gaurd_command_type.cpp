@@ -21,7 +21,6 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
@@ -41,7 +40,7 @@ void GuardCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	maxDistance = n->getChild("max-distance")->getAttribute("value")->getIntValue();
 }
 
-void GuardCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void GuardCommandType::update(Unit *unit) const
 {
 	if ( unit->getCurrSkill()->getClass() == scStop 
    &&   unit->getLastCommandUpdate() < 250000 )
@@ -64,7 +63,7 @@ void GuardCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 	else
 		pos = Map::getNearestPos(unit->getPos(), command->getPos(), 1, this->getMaxDistance());
 
-	if( updateAttackGeneric ( unitUpdater, unit ) )
+	if( updateAttackGeneric ( unit ) )
 		unit->setCurrSkill(scStop);
 }
 

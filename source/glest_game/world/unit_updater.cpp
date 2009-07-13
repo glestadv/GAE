@@ -45,8 +45,8 @@ namespace Glest{ namespace Game{
 // =====================================================
 
 // ===================== PUBLIC ========================
-const float UnitUpdater::repairerToFriendlySearchRadius = 1.25f;
 
+//REFACTOR ( eliminate, Game is a singleton )
 void UnitUpdater::init(Game &game) {
 	gui = game.getGui();
 	gameCamera = game.getGameCamera();
@@ -62,9 +62,10 @@ void UnitUpdater::init(Game &game) {
 
 //skill dependent actions
 void UnitUpdater::updateUnit(Unit *unit) {
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
 
+   //REFACTOR ( move to SkillType::update() )
 	//play skill sound
+	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
 	const SkillType *currSkill = unit->getCurrSkill();
 	if (currSkill->getSound() != NULL) {
 		float soundStartTime = currSkill->getSoundStartTime();
@@ -75,6 +76,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 		}
 	}
 
+   //REFACTOR ( move to AttackSkillType::update() )
 	//start attack particle system
 	if (unit->getCurrSkill()->getClass() == scAttack) {
 		const AttackSkillType *ast = static_cast<const AttackSkillType*>(unit->getCurrSkill());
@@ -84,26 +86,34 @@ void UnitUpdater::updateUnit(Unit *unit) {
 		}
 	}
 
+   //REFACTOR ( move to SkillType::update() )
 	//update emanations every 8 frames
 	if (unit->getGetEmanations().size() && !((world->getFrameCount() + unit->getId()) % 8)
 			&& unit->isOperative()) {
 		updateEmanations(unit);
 	}
 
+   //REFACTOR ( move to World::update() )
+   //REFACTOR ( Unit::Update() should call SkillType::update() on the current skill )
 	//update unit
 	if (unit->update()) 
    {
 		const UnitType *ut = unit->getType();
 
+      //REFACTOR ( move to FallDownSkillType::update() )
 		if (unit->getCurrSkill()->getClass() == scFallDown) {
 			assert(ut->getFirstStOfClass(scGetUp));
 			unit->setCurrSkill(scGetUp);
-		} else if (unit->getCurrSkill()->getClass() == scGetUp) {
+		}
+      //REFACTOR ( move to GetUpSkillType::update() )
+      else if (unit->getCurrSkill()->getClass() == scGetUp) {
 			unit->setCurrSkill(scStop);
 		}
 
+      //REFACTOR ( move to SkillType::update() )
 		updateUnitCommand(unit);
 
+      //REFACTOR ( move to SkillType::update() )
 		//if unit is out of EP, it stops
 		if (unit->computeEp()) {
 			if (unit->getCurrCommand()) {
@@ -112,7 +122,8 @@ void UnitUpdater::updateUnit(Unit *unit) {
 			unit->setCurrSkill(scStop);
 		}
 
-		//move unit in cells
+		//REFACTOR ( move to MoveSkillType::update() )
+      //move unit in cells
 		if (unit->getCurrSkill()->getClass() == scMove) {
 			world->moveUnitCells(unit);
 
@@ -123,6 +134,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 		}
 	}
 
+   //REFACTOR ( move to DieSkillType::update() )
 	//unit death
 	if (unit->isDead() && unit->getCurrSkill()->getClass() != scDie) {
 		unit->kill();
@@ -133,9 +145,11 @@ void UnitUpdater::updateUnit(Unit *unit) {
 // ==================== progress commands ====================
 
 //VERY IMPORTANT: compute next state depending on the first order of the list
-void UnitUpdater::updateUnitCommand(Unit *unit) {
+void UnitUpdater::updateUnitCommand(Unit *unit) 
+{
 	const SkillType *st = unit->getCurrSkill();
 
+	//REFACTOR ( do this in World::update() ?? or 'update' them with 'nop()' )
 	//commands aren't updated for these skills
 	switch(st->getClass()) {
 		case scWaitForServer:
@@ -147,14 +161,16 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 			break;
 	}
 
-	//if unit has command process it
+	//REFACTOR ( do this in World::update() )
+   //if unit has command process it
 	if(unit->anyCommand()) 
    {
       const CommandType *ct = unit->getCurrCommand()->getType();
-      ct->update ( this, unit );
+      ct->update ( unit );
 	}
 
-	//if no commands stop and add stop command or guard command for pets
+   //REFACTOR ( do this in World::update() )
+   //if no commands stop and add stop command or guard command for pets
 	if(!unit->anyCommand() && unit->isOperative()) {
 		const UnitType *ut = unit->getType();
 		unit->setCurrSkill(scStop);
@@ -195,152 +211,9 @@ void UnitUpdater::GetClear ( Unit *unit, const Vec2i &pos1, const Vec2i &pos2 )
    //
 }
 */
-Command *UnitUpdater::doAutoAttack(Unit *unit) {
-	if(unit->getType()->hasCommandClass(ccAttack) || unit->getType()->hasCommandClass(ccAttackStopped)) {
-
-		for(int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
-			const CommandType *ct = unit->getType()->getCommandType(i);
-
-			if(!unit->getFaction()->isAvailable(ct)) {
-				continue;
-			}
-
-			//look for an attack skill
-			const AttackSkillType *ast = NULL;
-			const AttackSkillTypes *asts = NULL;
-			Unit *sighted = NULL;
-
-			switch (ct->getClass()) {
-			case ccAttack:
-				asts = ((const AttackCommandType*)ct)->getAttackSkillTypes();
-				break;
-
-			case ccAttackStopped:
-				asts = ((const AttackStoppedCommandType*)ct)->getAttackSkillTypes();
-				break;
-
-			default:
-				break;
-			}
-
-			//use it to attack
-			if(asts) {
-				if( attackableOnSight(unit, &sighted, asts, NULL) ) 
-            {
-					Command *newCommand = new Command(ct, CommandFlags(cpAuto), sighted->getPos());
-					newCommand->setPos2(unit->getPos());
-					return newCommand;
-				}
-			}
-		}
-	}
-
-	return NULL;
-}
 
 
-Command *UnitUpdater::doAutoRepair(Unit *unit) {
-	if(unit->getType()->hasCommandClass(ccRepair) && unit->isAutoRepairEnabled()) {
-
-		for(int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
-			const CommandType *ct = unit->getType()->getCommandType(i);
-
-			if(!unit->getFaction()->isAvailable(ct) || ct->getClass() != ccRepair) {
-				continue;
-			}
-
-			//look a repair skill
-			const RepairCommandType *rct = (const RepairCommandType*)ct;
-			const RepairSkillType *rst = rct->getRepairSkillType();
-			Unit *sighted = NULL;
-
-			if(unit->getEp() >= rst->getEpCost() && rct->repairableOnSight(unit, map, &sighted, rct, rst->isSelfAllowed())) {
-				Command *newCommand;
-				newCommand = new Command(rct, CommandFlags(cpQueue, cpAuto),
-						Map::getNearestPos(unit->getPos(), sighted, rst->getMinRange(), rst->getMaxRange()));
-				newCommand->setPos2(unit->getPos());
-				return newCommand;
-			}
-		}
-	}
-	return NULL;
-}
-
-Command *UnitUpdater::doAutoFlee(Unit *unit) {
-	
-	Unit *sighted = NULL;
-	if( unit->getType()->hasCommandClass(ccMove) && attackerOnSight(unit, &sighted)) 
-   {
-		//if there is a friendly military unit that we can heal/repair and is
-		//rougly between us, then be brave
-		if(unit->getType()->hasCommandClass(ccRepair)) {
-			Vec2f myCenter = unit->getFloatCenteredPos();
-			Vec2f signtedCenter = sighted->getFloatCenteredPos();
-			Vec2f fcenter = (myCenter + signtedCenter) / 2.f;
-			Unit *myHero = NULL;
-
-			// calculate the real distance to hostile by subtracting half of the size of each.
-			float actualDistance = myCenter.dist(signtedCenter)
-					- (unit->getType()->getSize() + sighted->getType()->getSize()) / 2.f;
-
-			// allow friendly combat unit to be within a radius of 65% of the actual distance to
-			// hostile, starting from the half way intersection of the repairer and hostile.
-			int searchRadius = (int)roundf(actualDistance * repairerToFriendlySearchRadius / 2.f);
-			Vec2i center((int)roundf(fcenter.x), (int)roundf(fcenter.y));
-
-			//try all of our repair commands
-			for (int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
-				const CommandType *ct= unit->getType()->getCommandType(i);
-				if(ct->getClass() != ccRepair) {
-					continue;
-				}
-				const RepairCommandType *rct = (const RepairCommandType*)ct;
-				const RepairSkillType *rst = rct->getRepairSkillType();
-
-				if(rct->repairableOnRange(unit, map, center, 1, &myHero, rct, rst, searchRadius, false, true, false)) {
-					return NULL;
-				}
-			}
-		}
-		Vec2i escapePos = unit->getPos() * 2 - sighted->getPos();
-		return new Command(unit->getType()->getFirstCtOfClass(ccMove), CommandFlags(cpAuto), escapePos);
-	}
-	return NULL;
-}
-
-// ==================== Auto-Commands ====================
-
-// doAutoCommand ( unit )
-// check if any autocommands can be executed, add command if so
-void UnitUpdater::doAutoCommand ( Unit *unit )
-{
-   Command *autoCmd;
-	//we can attack any unit => attack it
-	if((autoCmd = doAutoAttack(unit))) {
-		unit->giveCommand(autoCmd);
-		return;
-	}
-
-	//we can repair any ally => repair it
-	if((autoCmd = doAutoRepair(unit))) {
-		unit->giveCommand(autoCmd);
-		return;
-	}
-
-	//see any unit and cant attack it => run
-	if((autoCmd = doAutoFlee(unit))) {
-		unit->giveCommand(autoCmd);
-	}
-}
-
-// updateAutoCommand ( unit )
-// if unit is currently doing an auto command, re-evaluate
-void UnitUpdater::updateAutoCommand ( Unit *unit )
-{
-   if ( unit->anyCommand () && unit->getCurrCommand()->isAuto() )
-      doAutoCommand ( unit );
-}
-
+//REFACTOR ( move to EffectType ??? ) 
 void UnitUpdater::updateEmanations(Unit *unit) {
 	// This is a little hokey, but probably the best way to reduce redundant code
 	static EffectTypes singleEmanation;
@@ -357,10 +230,12 @@ void UnitUpdater::updateEmanations(Unit *unit) {
 
 // ==================== attack ====================
 
+//REFACTOR ( move to AttackSkillType )
 void UnitUpdater::hit(Unit *attacker) {
 	hit(attacker, static_cast<const AttackSkillType*>(attacker->getCurrSkill()), attacker->getTargetPos(), attacker->getTargetField());
 }
 
+//REFACTOR ( move to AttackSkillType )
 void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Zone targetField, Unit *attacked){
 
 	//hit attack positions
@@ -407,6 +282,7 @@ void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &t
 	}
 }
 
+//REFACTOR ( move to AttackSkillType )
 void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance){
 
 	if(isNetworkClient()) {
@@ -462,6 +338,7 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 	}
 }
 
+//REFACTOR ( move to AttackSkillType )
 void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 	Renderer &renderer= Renderer::getInstance();
 
@@ -540,6 +417,7 @@ void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 
 // ==================== effects ====================
 
+//REFACTOR ( move to EffectType ??? ) 
 // Apply effects to a specific location, with or without splash
 void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes,
 		const Vec2i &targetPos, Zone targetField, int splashRadius) {
@@ -578,6 +456,7 @@ void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes,
 	}
 }
 
+//REFACTOR ( move to EffectType ??? ) 
 //apply effects to a specific target
 void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes, Unit *target, float distance) {
 	//apply effects
@@ -617,6 +496,7 @@ void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes, Uni
 	}
 }
 
+//REFACTOR ( move to EffectType ??? ) 
 void UnitUpdater::appyEffect(Unit *u, Effect *e) {
 	if(u->add(e)){
 		Unit *attacker = e->getSource();
@@ -628,95 +508,6 @@ void UnitUpdater::appyEffect(Unit *u, Effect *e) {
 			world->getStats().kill(u->getFactionIndex(), u->getFactionIndex());
 		}
 	}
-}
-
-bool UnitUpdater::attackerOnSight(const Unit *unit, Unit **rangedPtr) const
-{
-	int range = unit->getSight();
-	return unitOnRange(unit, range, rangedPtr, NULL, NULL);
-}
-
-bool UnitUpdater::attackableOnSight(const Unit *unit, Unit **rangedPtr, 
-                    const AttackSkillTypes *asts, const AttackSkillType **past) const
-{
-	int range = unit->getSight();
-	return unitOnRange(unit, range, rangedPtr, asts, past);
-}
-
-bool UnitUpdater::attackableOnRange(const Unit *unit, Unit **rangedPtr, 
-                    const AttackSkillTypes *asts, const AttackSkillType **past) const
-{
-	// can't attack beyond range of vision
-	int range = min(unit->getMaxRange(asts), unit->getSight());
-	return unitOnRange(unit, range, rangedPtr, asts, past);
-}
-
-//if the unit has any enemy on range
-/** rangedPtr should point to a pointer that is either NULL or a valid Unit */
-bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr, 
-                  const AttackSkillTypes *asts, const AttackSkillType **past) const
-{
-	Vec2f floatCenter = unit->getFloatCenteredPos();
-	float halfSize = (float)unit->getType()->getSize() / 2.f;
-	float distance;
-	bool needDistance = false;
-
-	if(*rangedPtr && (*rangedPtr)->isDead()) {
-		*rangedPtr = NULL;
-	}
-
-	if(*rangedPtr) {
-		needDistance = true;
-	} else {
-		Targets enemies;
-		Vec2i pos;
-		PosCircularIteratorOrdered pci(*world->getMap(), unit->getPos(), world->getPosIteratorFactory()
-				.getInsideOutIterator(1, (int)roundf(range + halfSize)));
-
-		while (pci.getNext(pos, distance)) {
-
-			//all fields
-			for(int k=0; k<ZoneCount; k++){
-				Zone z= static_cast<Zone>(k);
-
-				//check field
-				if(!asts || asts->getZone(z)) {
-               Unit *possibleEnemy= world->getMap()->getCell(pos)->getUnit(z);
-
-					//check enemy
-					if(possibleEnemy && possibleEnemy->isAlive() && !unit->isAlly(possibleEnemy)) {
-						// If enemy and has an attack command we can short circut this loop now
-						if(possibleEnemy->getType()->hasCommandClass(ccAttack)) {
-							*rangedPtr = possibleEnemy;
-							goto unitOnRange_exitLoop;
-						}
-						// otherwise, we'll record it and figure out who to slap later.
-						enemies.record(possibleEnemy, (int)distance);
-					}
-				}
-			}
-		}
-	
-		if(!enemies.size()) {
-			return false;
-		}
-	
-		*rangedPtr = enemies.getNearest();
-		needDistance = true;
-	}
-unitOnRange_exitLoop:
-	assert(*rangedPtr);
-	
-	if(needDistance) {
-		float targetHalfSize = (float)(*rangedPtr)->getType()->getSize() / 2.f;
-		distance = floatCenter.dist((*rangedPtr)->getFloatCenteredPos()) - targetHalfSize;
-	}
-
-	// check to see if we like this target.
-	if(asts && past) {
-		return (bool)(*past = asts->getPreferredAttack(unit, *rangedPtr, (int)(distance - halfSize)));
-	}
-	return true;
 }
 
 // ==================== misc ====================

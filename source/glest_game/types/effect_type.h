@@ -91,7 +91,7 @@ private:
 
 
 public:
-	/** Rather the effect is detrimental, neutral or benificial */
+	/** Whether the effect is detrimental, neutral or benificial */
 	enum EffectBias {
 		ebDetrimental,
 		ebNeutral,

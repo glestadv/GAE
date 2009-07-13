@@ -23,7 +23,7 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
+#include "game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 
@@ -63,13 +63,15 @@ void HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	hitsPerUnit= n->getChild("hits-per-unit")->getAttribute("value")->getIntValue();
 }
 
-void HarvestCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void HarvestCommandType::update(Unit *unit) const
 {
 	Command *command = unit->getCurrCommand();
 	Vec2i targetPos;
-   World *world = unitUpdater->getWorld ();
-   Map *map = unitUpdater->getMap ();
-   PathFinder::PathFinder *pathFinder = unitUpdater->pathFinder;
+   Game *game = Game::getInstance ();
+   World *world = game->getWorld ();
+   Map *map = world->getMap ();
+   PathFinder::PathFinder *pathFinder = PathFinder::PathFinder::getInstance ();
+   NetworkManager &net = NetworkManager::getInstance();
 
 	if (unit->getCurrSkill()->getClass() != scHarvest) {
 		//if not working
@@ -148,16 +150,16 @@ void HarvestCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
 					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
-               unitUpdater->scriptManager->onResourceHarvested ();
+               game->getScriptManager()->onResourceHarvested ();
 
 					//if next to a store unload resources
 					unit->getPath()->clear();
 					unit->setCurrSkill(scStop);
 					unit->setLoadCount(0);
-					if (unitUpdater->isNetworkServer()) {
+					if (net.isNetworkServer()) {
 						// FIXME: wasteful full update here
-						unitUpdater->getServerInterface()->unitUpdate(unit);
-						unitUpdater->getServerInterface()->updateFactions();
+						net.getServerInterface()->unitUpdate(unit);
+						net.getServerInterface()->updateFactions();
 					}
 				}
 			} else {

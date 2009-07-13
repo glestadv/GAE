@@ -82,6 +82,50 @@ const AttackSkillType * AttackCommandTypeBase::getAttackSkillType(Field field) c
 }
 */
 
+//REFACTOR ( move to AttackCommandTypeBase )
+Command *AttackCommandTypeBase::doAutoAttack(Unit *unit) {
+	if(unit->getType()->hasCommandClass(ccAttack) || unit->getType()->hasCommandClass(ccAttackStopped)) {
+
+		for(int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
+			const CommandType *ct = unit->getType()->getCommandType(i);
+
+			if(!unit->getFaction()->isAvailable(ct)) {
+				continue;
+			}
+
+			//look for an attack skill
+			const AttackSkillType *ast = NULL;
+			const AttackSkillTypes *asts = NULL;
+			Unit *sighted = NULL;
+
+			switch (ct->getClass()) {
+			case ccAttack:
+				asts = ((const AttackCommandType*)ct)->getAttackSkillTypes();
+				break;
+
+			case ccAttackStopped:
+				asts = ((const AttackStoppedCommandType*)ct)->getAttackSkillTypes();
+				break;
+
+			default:
+				break;
+			}
+
+			//use it to attack
+			if(asts) 
+         {
+            if( CommandType::attackableOnSight(unit, &sighted, asts, NULL) ) 
+            {
+					Command *newCommand = new Command(ct, CommandFlags(cpAuto), sighted->getPos());
+					newCommand->setPos2(unit->getPos());
+					return newCommand;
+				}
+			}
+		}
+	}
+
+	return NULL;
+}
 
 // =====================================================
 // 	class AttackCommandType
@@ -92,17 +136,17 @@ void AttackCommandType::load(const XmlNode *n, const string &dir, const TechTree
 	AttackCommandTypeBase::load(n, dir, tt, ft, unitType);
 }
 
-void AttackCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void AttackCommandType::update(Unit *unit) const
 {
 	Command *command= unit->getCurrCommand();
 	Unit *target= command->getUnit();
 
-   if ( updateAttackGeneric( unitUpdater, unit ) )
+   if ( updateAttackGeneric( unit ) )
 		unit->finishCommand();
 }
 
 /** Returns true when completed */
-bool AttackCommandType::updateAttackGeneric ( UnitUpdater *unitUpdater, Unit *unit ) const
+bool AttackCommandType::updateAttackGeneric ( Unit *unit ) const
 {
 	const AttackSkillType *ast = NULL;
    Command *command = unit->getCurrCommand ();
@@ -110,7 +154,7 @@ bool AttackCommandType::updateAttackGeneric ( UnitUpdater *unitUpdater, Unit *un
    const Vec2i &targetPos = command->getPos ();
 
 	//if found
-	if ( unitUpdater->attackableOnRange(unit, &target, this->getAttackSkillTypes(), &ast) ) 
+	if ( attackableOnRange(unit, &target, this->getAttackSkillTypes(), &ast) ) 
    {
 		assert(ast);
 		if(unit->getEp() >= ast->getEpCost()) {
@@ -122,7 +166,7 @@ bool AttackCommandType::updateAttackGeneric ( UnitUpdater *unitUpdater, Unit *un
 	} else {
 		//compute target pos
 		Vec2i pos;
-		if ( unitUpdater->attackableOnSight(unit, &target, this->getAttackSkillTypes(), NULL) ) 
+		if ( attackableOnSight(unit, &target, getAttackSkillTypes(), NULL) ) 
       {
 			pos = target->getNearestOccupiedCell(unit->getPos());
 			if (pos != unit->getTargetPos()) {
@@ -172,7 +216,7 @@ void AttackStoppedCommandType::load(const XmlNode *n, const string &dir, const T
 	AttackCommandTypeBase::load(n, dir, tt, ft, unitType);
 }
 
-void AttackStoppedCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void AttackStoppedCommandType::update(Unit *unit) const
 {
    if ( unit->getLastCommandUpdate () < 250000 ) return;
 
@@ -182,7 +226,7 @@ void AttackStoppedCommandType::update(UnitUpdater *unitUpdater, Unit *unit) cons
 	Unit *enemy = NULL;
 	const AttackSkillType *ast = NULL;
 
-   if ( unitUpdater->attackableOnRange(unit, &enemy, this->getAttackSkillTypes(), &ast)) 
+   if ( attackableOnRange(unit, &enemy, this->getAttackSkillTypes(), &ast)) 
    {
 		assert(ast);
 		unit->setCurrSkill(ast);

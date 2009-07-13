@@ -93,13 +93,13 @@ protected:
 	const char* typeName;
 	int minRange;
 	int maxRange;
-
+/* not used
 	int effectsRemoved;
 	bool removeBenificialEffects;
 	bool removeDetrimentalEffects;
 	bool removeAllyEffects;
 	bool removeEnemyEffects;
-
+*/
 	float startTime;
 
 	bool projectile;
@@ -136,9 +136,7 @@ public:
 	int getEpCost() const				{return epCost;}
 	int getSpeed() const				{return speed;}
 	int getAnimSpeed() const			{return animSpeed;}
-	const Model *getAnimation() const	{
-
-		return animations.front();}
+	const Model *getAnimation() const	{return animations.front();}
 	StaticSound *getSound() const		{return sounds.getRandSound();}
 	float getSoundStartTime() const		{return soundStartTime;}
 	int getMaxRange() const				{return maxRange;}
@@ -151,19 +149,22 @@ public:
 	static string fieldToStr(Zone field);
 
 	// get removing effects
-	int getEffectsRemoved() const			{return effectsRemoved;}
+/* not used...
+   int getEffectsRemoved() const			{return effectsRemoved;}
 	bool isRemoveBenificialEffects() const	{return removeBenificialEffects;}
 	bool isRemoveDetrimentalEffects() const	{return removeDetrimentalEffects;}
 	bool isRemoveAllyEffects() const		{return removeAllyEffects;}
 	bool isRemoveEnemyEffects() const		{return removeEnemyEffects;}
-
-	//get proj
+*/
+	//REFACTOR ( move to AttackSkillType ?? )
+   //get proj 
 	bool getProjectile() const									{return projectile;}
 	ParticleSystemTypeProjectile * getProjParticleType() const	{return projectileParticleSystemType;}
 	StaticSound *getProjSound() const							{return projSounds.getRandSound();}
 
-	//get splash
-	bool getSplash() const										{return splash;}
+	//REFACTOR ( move to AttackSkillType ?? )
+	//get splash 
+   bool getSplash() const										{return splash;}
 	bool getSplashDamageAll() const								{return splashDamageAll;}
 	int getSplashRadius() const									{return splashRadius;}
 	ParticleSystemTypeSplash * getSplashParticleType() const	{return splashParticleSystemType;}};

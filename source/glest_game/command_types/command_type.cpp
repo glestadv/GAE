@@ -26,7 +26,7 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
+#include "game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 
@@ -186,6 +186,137 @@ void CommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, 
 }
 
 
+//REFACTOR ( move to CommandType )
+bool CommandType::attackerOnSight(const Unit *unit, Unit **rangedPtr)
+{
+	int range = unit->getSight();
+	return unitOnRange(unit, range, rangedPtr, NULL, NULL);
+}
+
+//REFACTOR ( move to CommandType )
+bool CommandType::attackableOnSight(const Unit *unit, Unit **rangedPtr, 
+                    const AttackSkillTypes *asts, const AttackSkillType **past)
+{
+	int range = unit->getSight();
+	return unitOnRange(unit, range, rangedPtr, asts, past);
+}
+
+//REFACTOR ( move to CommandType )
+bool CommandType::attackableOnRange(const Unit *unit, Unit **rangedPtr, 
+                    const AttackSkillTypes *asts, const AttackSkillType **past)
+{
+	// can't attack beyond range of vision
+	int range = min(unit->getMaxRange(asts), unit->getSight());
+	return unitOnRange(unit, range, rangedPtr, asts, past);
+}
+
+//REFACTOR ( move to CommandType )
+//if the unit has any enemy on range
+/** rangedPtr should point to a pointer that is either NULL or a valid Unit */
+bool CommandType::unitOnRange(const Unit *unit, int range, Unit **rangedPtr, 
+                  const AttackSkillTypes *asts, const AttackSkillType **past)
+{
+   World *world = Game::getInstance()->getWorld();
+	Vec2f floatCenter = unit->getFloatCenteredPos();
+	float halfSize = (float)unit->getType()->getSize() / 2.f;
+	float distance;
+	bool needDistance = false;
+
+	if(*rangedPtr && (*rangedPtr)->isDead()) {
+		*rangedPtr = NULL;
+	}
+
+	if(*rangedPtr) {
+		needDistance = true;
+	} else {
+		Targets enemies;
+		Vec2i pos;
+		PosCircularIteratorOrdered pci(*world->getMap(), unit->getPos(), world->getPosIteratorFactory()
+				.getInsideOutIterator(1, (int)roundf(range + halfSize)));
+
+		while (pci.getNext(pos, distance)) {
+
+			//all fields
+			for(int k=0; k<ZoneCount; k++){
+				Zone z= static_cast<Zone>(k);
+
+				//check field
+				if(!asts || asts->getZone(z)) {
+               Unit *possibleEnemy= world->getMap()->getCell(pos)->getUnit(z);
+
+					//check enemy
+					if(possibleEnemy && possibleEnemy->isAlive() && !unit->isAlly(possibleEnemy)) {
+						// If enemy and has an attack command we can short circut this loop now
+						if(possibleEnemy->getType()->hasCommandClass(ccAttack)) {
+							*rangedPtr = possibleEnemy;
+							goto unitOnRange_exitLoop;
+						}
+						// otherwise, we'll record it and figure out who to slap later.
+						enemies.record(possibleEnemy, (int)distance);
+					}
+				}
+			}
+		}
+	
+		if(!enemies.size()) {
+			return false;
+		}
+	
+		*rangedPtr = enemies.getNearest();
+		needDistance = true;
+	}
+unitOnRange_exitLoop:
+	assert(*rangedPtr);
+	
+	if(needDistance) {
+		float targetHalfSize = (float)(*rangedPtr)->getType()->getSize() / 2.f;
+		distance = floatCenter.dist((*rangedPtr)->getFloatCenteredPos()) - targetHalfSize;
+	}
+
+	// check to see if we like this target.
+	if(asts && past) {
+		return (bool)(*past = asts->getPreferredAttack(unit, *rangedPtr, (int)(distance - halfSize)));
+	}
+	return true;
+}
+
+// ==================== Auto-Commands ====================
+
+//REFACTOR ( move to CommandType ) 
+// doAutoCommand ( unit )
+// check if any autocommands can be executed, add command if so
+void CommandType::doAutoCommand ( Unit *unit )
+{
+   Command *autoCmd;
+	//we can attack any unit => attack it
+   if((autoCmd = AttackCommandTypeBase::doAutoAttack(unit))) {
+		unit->giveCommand(autoCmd);
+		return;
+	}
+
+	//we can repair any ally => repair it
+   if((autoCmd = RepairCommandType::doAutoRepair(unit))) {
+		unit->giveCommand(autoCmd);
+		return;
+	}
+
+	//see any unit and cant attack it => run
+   if((autoCmd = MoveCommandType::doAutoFlee(unit))) {
+		unit->giveCommand(autoCmd);
+	}
+}
+
+//REFACTOR ( move to CommandType ) 
+// updateAutoCommand ( unit )
+// if unit is currently doing an auto command, re-evaluate
+void CommandType::updateAutoCommand ( Unit *unit )
+{
+   if ( unit->anyCommand () && unit->getCurrCommand()->isAuto() )
+      doAutoCommand ( unit );
+}
+
+
+
 // =====================================================
 // 	class StopBaseCommandType
 // =====================================================
@@ -202,7 +333,7 @@ void StopBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
 // 	class StopCommandType
 // =====================================================
 
-void StopCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void StopCommandType::update(Unit *unit) const
 {
 	if ( unit->getLastCommandUpdate () < 250000) return;
 
@@ -220,7 +351,7 @@ void StopCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
    unit->setCurrSkill( this->getStopSkillType () );
 
    // check auto commands
-   unitUpdater->doAutoCommand ( unit );
+   doAutoCommand ( unit );
 }
 
 

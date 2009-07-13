@@ -48,10 +48,10 @@ void UpgradeCommandType::load(const XmlNode *n, const string &dir, const TechTre
 
 }
 
-void UpgradeCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void UpgradeCommandType::update(Unit *unit) const
 {
 	Command *command = unit->getCurrCommand();
-
+   NetworkManager &net = NetworkManager::getInstance();
 	//if subfaction becomes invalid while updating this command, then cancel it.
 
 	if(!verifySubfaction(unit, this->getProduced())) {
@@ -71,7 +71,7 @@ void UpgradeCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 		}
 
 		if(unit->getProgress2() >= this->getProduced()->getProductionTime()) {
-			if(unitUpdater->isNetworkClient()) {
+			if(net.isNetworkClient()) {
 				// clients will wait for the server to tell them that the upgrade is finished
 				return;
 			}
@@ -79,9 +79,10 @@ void UpgradeCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 			unit->setCurrSkill(scStop);
 			unit->getFaction()->finishUpgrade(this->getProducedUpgrade());
 			unit->getFaction()->checkAdvanceSubfaction(this->getProducedUpgrade(), true);
-			if(unitUpdater->isNetworkServer()) {
-				unitUpdater->getServerInterface()->unitUpdate(unit);
-				unitUpdater->getServerInterface()->updateFactions();
+			if(net.isNetworkServer()) 
+         {
+				net.getServerInterface()->unitUpdate(unit);
+				net.getServerInterface()->updateFactions();
 			}
 		}
 	}

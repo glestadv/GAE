@@ -21,14 +21,13 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
+#include "game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
 
 #include "leak_dumper.h"
 namespace Glest { namespace Game {
-
 
 // =====================================================
 // 	class MoveBaseCommandType
@@ -46,9 +45,10 @@ void MoveBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
 // 	class MoveCommandType
 // =====================================================
 
-void MoveCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void MoveCommandType::update(Unit *unit) const
 {
 	Command *command= unit->getCurrCommand();
+   PathFinder::PathFinder *pathFinder = PathFinder::PathFinder::getInstance();
 	Vec2i pos;
 	if ( command->getUnit () )
    {
@@ -62,23 +62,67 @@ void MoveCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
    else 
 		pos = command->getPos();
 
-	switch(unitUpdater->pathFinder->findPath(unit, pos)) 
+   switch(pathFinder->findPath(unit, pos)) 
    {
-	   case PathFinder::tsOnTheWay:
-		   unit->setCurrSkill ( this->getMoveSkillType() );
-		   unit->face ( unit->getNextPos() );
-		   break;
+      case PathFinder::tsOnTheWay:
+	      unit->setCurrSkill ( this->getMoveSkillType() );
+	      unit->face ( unit->getNextPos() );
+	      break;
 
-	   case PathFinder::tsBlocked:
-		   if ( unit->getPath()->isBlocked() && !command->getUnit() )
-			   unit->finishCommand ();
-		   break;
+      case PathFinder::tsBlocked:
+	      if ( unit->getPath()->isBlocked() && !command->getUnit() )
+		      unit->finishCommand ();
+	      break;
 
-	   default: // tsArrived
-		   unit->finishCommand ();
-	}
+      default: // tsArrived
+	      unit->finishCommand ();
+   }
 	// if we're doing an auto command, let's make sure we still want to do it
-   unitUpdater->updateAutoCommand ( unit );
+   updateAutoCommand ( unit );
+}
+
+//REFACTOR ( move to MoveCommandType ?? ) 
+Command *MoveCommandType::doAutoFlee(Unit *unit) {
+   Map *map = Game::getInstance ()->getWorld ()->getMap ();
+	Unit *sighted = NULL;
+	if( unit->getType()->hasCommandClass(ccMove) && attackerOnSight(unit, &sighted)) 
+   {
+		//if there is a friendly military unit that we can heal/repair and is
+		//rougly between us, then be brave
+		if(unit->getType()->hasCommandClass(ccRepair)) {
+			Vec2f myCenter = unit->getFloatCenteredPos();
+			Vec2f signtedCenter = sighted->getFloatCenteredPos();
+			Vec2f fcenter = (myCenter + signtedCenter) / 2.f;
+			Unit *myHero = NULL;
+
+			// calculate the real distance to hostile by subtracting half of the size of each.
+			float actualDistance = myCenter.dist(signtedCenter)
+					- (unit->getType()->getSize() + sighted->getType()->getSize()) / 2.f;
+
+			// allow friendly combat unit to be within a radius of 65% of the actual distance to
+			// hostile, starting from the half way intersection of the repairer and hostile.
+			int searchRadius = (int)roundf(actualDistance 
+            * RepairCommandType::repairerToFriendlySearchRadius / 2.f);
+			Vec2i center((int)roundf(fcenter.x), (int)roundf(fcenter.y));
+
+			//try all of our repair commands
+			for (int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
+				const CommandType *ct= unit->getType()->getCommandType(i);
+				if(ct->getClass() != ccRepair) {
+					continue;
+				}
+				const RepairCommandType *rct = (const RepairCommandType*)ct;
+				const RepairSkillType *rst = rct->getRepairSkillType();
+
+				if(rct->repairableOnRange(unit, map, center, 1, &myHero, rct, rst, searchRadius, false, true, false)) {
+					return NULL;
+				}
+			}
+		}
+		Vec2i escapePos = unit->getPos() * 2 - sighted->getPos();
+		return new Command(unit->getType()->getFirstCtOfClass(ccMove), CommandFlags(cpAuto), escapePos);
+	}
+	return NULL;
 }
 
 }}

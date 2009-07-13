@@ -21,7 +21,7 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
+#include "game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
@@ -47,11 +47,13 @@ void ProduceCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	producedUnit= ft->getUnitType(producedUnitName);
 }
 
-void ProduceCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void ProduceCommandType::update(Unit *unit) const
 {
 	Command *command = unit->getCurrCommand();
 	Unit *produced;
-   World *world = unitUpdater->getWorld ();
+   Game *game = Game::getInstance ();
+   World *world = game->getWorld ();
+   NetworkManager &net = NetworkManager::getInstance();
 
 	if(unit->getCurrSkill()->getClass() != scProduce) {
 		//if not producing
@@ -64,8 +66,8 @@ void ProduceCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 	} else {
 		unit->update2();
 
-		if(unit->getProgress2() > this->getProduced()->getProductionTime()) {
-			if(unitUpdater->isNetworkClient()) {
+		if(unit->getProgress2() > getProduced()->getProductionTime()) {
+			if(net.isNetworkClient()) {
 				// client predict, presume the server will send us the unit soon.
 				unit->finishCommand();
 				unit->setCurrSkill(scStop);
@@ -88,7 +90,7 @@ void ProduceCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 			} else {
 				produced->create();
 				produced->born();
-            unitUpdater->scriptManager->onUnitCreated ( produced );
+            game->getScriptManager()->onUnitCreated ( produced );
 				world->getStats().produce(unit->getFactionIndex());
 				const CommandType *ct = produced->computeCommandType(unit->getMeetingPos());
 
@@ -96,15 +98,16 @@ void ProduceCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
 					produced->giveCommand(new Command(ct, CommandFlags(), unit->getMeetingPos()));
 				}
 
-				if(this->getProduceSkillType()->isPet()) {
+				if( getProduceSkillType()->isPet() ) 
+            {
 					unit->addPet(produced);
 					produced->setMaster(unit);
 				}
 
 				unit->finishCommand();
 
-				if(unitUpdater->isNetworkServer()) {
-					unitUpdater->getServerInterface()->newUnit(produced);
+				if(net.isNetworkServer()) {
+					net.getServerInterface()->newUnit(produced);
 				}
 			}
 			unit->setCurrSkill(scStop);

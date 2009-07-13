@@ -21,7 +21,7 @@
 #include "graphics_interface.h"
 #include "tech_tree.h"
 #include "faction_type.h"
-#include "unit_updater.h"
+#include "game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "unit_type.h"
@@ -49,11 +49,14 @@ void MorphCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	discount= n->getChild("discount")->getAttribute("value")->getIntValue();
 }
 
-void MorphCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
+void MorphCommandType::update(Unit *unit) const
 {
 	Command *command= unit->getCurrCommand();
-   Map *map = unitUpdater->getMap ();
-   World *world = unitUpdater->getWorld ();
+   Game *game = Game::getInstance ();
+   World *world = game->getWorld ();
+   Map *map = world->getMap ();
+   PathFinder::PathFinder *pathFinder = PathFinder::PathFinder::getInstance ();
+   NetworkManager &net = NetworkManager::getInstance();
 
 	//if subfaction becomes invalid while updating this command, then cancel it.
 	if(!verifySubfaction(unit, this->getMorphUnit())) {
@@ -86,7 +89,7 @@ void MorphCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
       else 
       {
 			if(unit->getFactionIndex() == world->getThisFactionIndex())
-				unitUpdater->console->addStdMessage("InvalidPosition");
+            game->getConsole()->addStdMessage("InvalidPosition");
          unit->cancelCurrCommand();
 		}
 	} 
@@ -105,23 +108,23 @@ void MorphCommandType::update(UnitUpdater *unitUpdater, Unit *unit) const
             {
                bool adding = !this->getMorphUnit()->isMobile ();
                //FIXME: make Field friendly
-               unitUpdater->pathFinder->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, FieldWalkable );
+               pathFinder->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, FieldWalkable );
             }
-            if(unitUpdater->gui->isSelected(unit))
-					unitUpdater->gui->onSelectionChanged();
-            unitUpdater->scriptManager->onUnitCreated ( unit );
+            if(game->getGui()->isSelected(unit))
+					game->getGui()->onSelectionChanged();
+            game->getScriptManager()->onUnitCreated ( unit );
 				unit->getFaction()->checkAdvanceSubfaction(this->getMorphUnit(), true);
-				if(unitUpdater->isNetworkServer()) 
+				if(net.isNetworkServer()) 
             {
-					unitUpdater->getServerInterface()->unitMorph(unit);
-					unitUpdater->getServerInterface()->updateFactions();
+					net.getServerInterface()->unitMorph(unit);
+					net.getServerInterface()->updateFactions();
 				}
          } 
          else 
          {
 				unit->cancelCurrCommand();
 				if(unit->getFactionIndex() == world->getThisFactionIndex())
-					unitUpdater->console->addStdMessage("InvalidPosition");
+					game->getConsole()->addStdMessage("InvalidPosition");
 			}
 			unit->setCurrSkill(scStop);
 		}
