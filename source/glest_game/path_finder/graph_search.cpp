@@ -45,15 +45,6 @@ GraphSearch::GraphSearch ()
       statsAStar = new PathFinderStats ( "A-Star Search : " );
       statsGreedy = new PathFinderStats ( "Greedy Search : " );
 #  endif
-#  ifdef PATHFINDER_DEBUG_TEXTURES
-      switch ( Config::getInstance().getDebugTextureMode() )
-      {
-      case 1: debug_texture_action = PathOnly; break;
-      case 2: debug_texture_action = OpenClosedSets; break;
-      case 3: debug_texture_action = LocalAnnotations; break;
-      default: throw new runtime_error ("Illegal value for DebugTextureMode");
-      }
-#  endif
 }
 GraphSearch::~GraphSearch ()
 {
@@ -71,6 +62,15 @@ void GraphSearch::init ( Map *cell_map, AnnotatedMap *annt_map )
    aMap = annt_map;
    bNodePool->init ( cell_map );
    aNodePool->init ( cell_map );
+#  ifdef PATHFINDER_DEBUG_TEXTURES
+      switch ( Config::getInstance().getDebugTextureMode() )
+      {
+      case 1: debug_texture_action = PathOnly; break;
+      case 2: debug_texture_action = OpenClosedSets; break;
+      case 3: debug_texture_action = LocalAnnotations; break;
+      default: throw new runtime_error ("Illegal value for DebugTextureMode");
+      }
+#  endif
 }
 
 bool GraphSearch::GreedySearch ( SearchParams &params, list<Vec2i> &path)
@@ -84,6 +84,7 @@ bool GraphSearch::GreedySearch ( SearchParams &params, list<Vec2i> &path)
 	bool pathFound= true;
 	bool nodeLimitReached= false;
 	BFSNode *minNode= NULL;
+   const Vec2i *Directions = OffsetsSize1Dist1;
 
    while( ! nodeLimitReached ) 
    {
@@ -196,7 +197,7 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path )
 #  endif
 	bool pathFound = false, nodeLimitReached = false;
 	AStarNode *minNode = NULL;
-
+   const Vec2i *Directions = OffsetsSize1Dist1;
    aNodePool->reset ();
    aNodePool->addToOpen ( NULL, params.start, heuristic ( params.start, params.dest ), 0 );
    while ( ! nodeLimitReached )
@@ -309,6 +310,7 @@ bool GraphSearch::canPathOut ( const Vec2i &pos, const int radius, Field field  
    bNodePool->addToOpen ( NULL, pos, 0 );
 	bool pathFound= false;
    BFSNode *maxNode = NULL;
+   const Vec2i *Directions = OffsetsSize1Dist1;
 
    while( ! pathFound ) 
    {

@@ -92,9 +92,12 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
 
    // now, look to the left and above those cells, 
    // updating clearances where needed...
+   list<Vec2i> leftList1, leftList2, aboveList1, aboveList2;
    list<Vec2i> *LeftList, *AboveList;
-   LeftList = new list<Vec2i> ();
-   AboveList = new list<Vec2i> ();
+   LeftList = &leftList1;
+   AboveList = &aboveList1;
+
+
    // the cell to the nothwest...
    Vec2i *corner = NULL;
    if ( pos.x-1 >= 0 && pos.y-1 >= 0 ) corner = &Vec2i(pos.x-1,pos.y-1);
@@ -115,8 +118,8 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
    {
       // the left and above lists for the next loop iteration
       list<Vec2i> *newLeftList, *newAboveList;
-      newLeftList = new list<Vec2i> ();
-      newAboveList = new list<Vec2i> ();
+      newLeftList = LeftList == &leftList1 ? &leftList2 : &leftList1;
+      newAboveList = AboveList == &aboveList1 ? &aboveList2 : &aboveList1;
 
       if ( !LeftList->empty() )
       {
@@ -187,7 +190,7 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
             if ( x - 1 >= 0 )
             {
                newLeftList->push_back ( Vec2i(x-1,y) );
-               if ( y - 1 >= 0 ) corner = &Vec2i(x-1,y-1); // dodgey... &local
+               if ( y - 1 >= 0 ) *corner = Vec2i(x-1,y-1);
                else corner = NULL;
             }
             else corner = NULL;
@@ -205,7 +208,7 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
                   if ( x - 1 >= 0 )
                   {
                      newLeftList->push_back ( Vec2i(x-1,y) );
-                     if ( y - 1 >= 0 ) corner = &Vec2i(x-1,y-1);
+                     if ( y - 1 >= 0 ) *corner = Vec2i(x-1,y-1);
                      else corner = NULL;
                   }
                   else corner = NULL;
@@ -220,12 +223,12 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
          else // no update
             corner = NULL;
       }
-      delete LeftList; LeftList = newLeftList;
-      delete AboveList; AboveList = newAboveList;
+      LeftList->clear (); 
+      LeftList = newLeftList;
+      AboveList->clear (); 
+      AboveList = newAboveList;
       shell++;
    }// end while
-   delete LeftList;
-   delete AboveList;
 }
 
 // this could be made much faster pretty easily... 
@@ -351,26 +354,39 @@ bool AnnotatedMap::canOccupy ( const Vec2i &pos, int size, Field field ) const
 
 void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field field )
 {
-   const Vec2i *directions = NULL;
-   int numDirs;
+   const Vec2i *offsets1 = NULL, *offsets2 = NULL;
+   int numOffsets1, numOffsets2;
    if ( size == 1 ) 
    {
-      directions = Directions;
-      numDirs = 8;
+      offsets1 = OffsetsSize1Dist1;
+      numOffsets1 = numOffsetsSize1Dist1;
+      offsets2 = OffsetsSize1Dist2;
+      numOffsets2 = numOffsetsSize1Dist2;
    }
    else if ( size == 2 )
    {
-      directions = DirectionsSize2;
-      numDirs = 12;
+      offsets1 = OffsetsSize2Dist1;
+      numOffsets1 = numOffsetsSize2Dist1;
+      offsets2 = OffsetsSize2Dist2;
+      numOffsets2 = numOffsetsSize2Dist2;
    }
    else
       assert ( false );
 
+   localAnnotateCells ( pos, size, field, offsets1, numOffsets1 );
+   localAnnotateCells ( pos, size, field, offsets2, numOffsets2 );
+}
+
+
+void AnnotatedMap::localAnnotateCells ( const Vec2i &pos, const int size, const Field field, 
+                           const Vec2i *offsets, const int numOffsets )
+{
    Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
-   for ( int i = 0; i < numDirs; ++i )
+   for ( int i = 0; i < numOffsets; ++i )
    {
-      Vec2i aPos = pos + directions[i];
-      if ( cMap->isInside (aPos) && ! cMap->getCell (aPos)->isFree (zone) )
+      Vec2i aPos = pos + offsets[i];
+      if ( cMap->isInside (aPos) && metrics[aPos].get (field) 
+      &&   ! cMap->getCell (aPos)->isFree (zone) )
       {  // store the 'true' metric, if not already stored
          if ( localAnnt.find ( aPos ) == localAnnt.end () )
             localAnnt[aPos] = metrics[aPos].get ( field );
@@ -402,9 +418,10 @@ void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field
                }
             }
          } // end if ( size == 2 )
-      }
+      } // end if [ on map && metric > 0 && cell has unit ]
    } // end for
 }
+
 #ifdef PATHFINDER_DEBUG_TEXTURES
 list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations ()
 {

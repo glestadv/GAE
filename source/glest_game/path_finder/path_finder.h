@@ -36,7 +36,8 @@ const int maxFreeSearchRadius = 10;
 const int pathFindRefresh = 10; // now unused
 const int pathFindNodesMax = 4096;// = Config::getInstance ().getPathFinderMaxNodes ();
 
-const Vec2i Directions[8] = 
+const int numOffsetsSize1Dist1 = 8;
+const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = 
 {
    Vec2i (  0, -1 ), // n
    Vec2i (  1, -1 ), // ne
@@ -48,38 +49,68 @@ const Vec2i Directions[8] =
    Vec2i ( -1, -1 )  // nw
 };
 
-const Vec2i DirectionsSize2[12] = 
+const int numOffsetsSize1Dist2 = 16;
+const Vec2i OffsetsSize1Dist2 [numOffsetsSize1Dist2] =
 {
-   Vec2i (  0, -1 ), // n1
-   Vec2i (  1, -1 ), // n2
-   Vec2i (  2, -1 ), // ne
-   Vec2i (  2,  0 ), // e1
-   Vec2i (  2,  1 ), // e2
+   Vec2i (  0, -2 ), // n
+   Vec2i (  1, -2 ), // nne
+   Vec2i (  2, -2 ), // ne
+   Vec2i (  2, -1 ), // ene
+   Vec2i (  2,  0 ), // e
+   Vec2i (  2,  1 ), // ese
    Vec2i (  2,  2 ), // se
-   Vec2i (  1,  2 ), // s1
-   Vec2i (  0,  2 ), // s2
+   Vec2i (  1,  2 ), // sse
+   Vec2i (  0,  2 ), // s
+   Vec2i ( -1,  2 ), // ssw
+   Vec2i ( -2,  2 ), // sw
+   Vec2i ( -2,  1 ), // wsw
+   Vec2i ( -2,  0 ), // w
+   Vec2i ( -2, -1 ), // wnw
+   Vec2i ( -2, -2 ), // nw
+   Vec2i ( -1, -2 ), // nnw
+};
+
+const int numOffsetsSize2Dist1 = 12;
+const Vec2i OffsetsSize2Dist1 [numOffsetsSize2Dist1] = 
+{
+   Vec2i (  0, -1 ), // n
+   Vec2i (  1, -1 ), // n
+   Vec2i (  2, -1 ), // ne
+   Vec2i (  2,  0 ), // e
+   Vec2i (  2,  1 ), // e
+   Vec2i (  2,  2 ), // se
+   Vec2i (  1,  2 ), // s
+   Vec2i (  0,  2 ), // s
    Vec2i ( -1,  2 ), // sw
-   Vec2i ( -1,  1 ), // w1
-   Vec2i ( -1,  0 ), // w2
+   Vec2i ( -1,  1 ), // w
+   Vec2i ( -1,  0 ), // w
    Vec2i ( -1, -1 )  // nw
 };
-
-const Vec2i AboveLeftDist1[3] = 
+const int numOffsetsSize2Dist2 = 20;
+const Vec2i OffsetsSize2Dist2 [numOffsetsSize2Dist2] = 
 {
-   Vec2i ( -1,  0 ),
-   Vec2i ( -1, -1 ),
-   Vec2i (  0, -1 )
+   Vec2i (  0, -2 ), // n
+   Vec2i (  1, -2 ), // n
+   Vec2i (  2, -2 ), // nne
+   Vec2i (  3, -2 ), // ne
+   Vec2i (  3, -1 ), // ene
+   Vec2i (  3,  0 ), // e
+   Vec2i (  3,  1 ), // e
+   Vec2i (  3,  2 ), // ese
+   Vec2i (  3,  3 ), // se
+   Vec2i (  2,  3 ), // sse
+   Vec2i (  1,  3 ), // s
+   Vec2i (  0,  3 ), // s
+   Vec2i ( -1,  3 ), // ssw
+   Vec2i ( -2,  3 ), // sw
+   Vec2i ( -2,  2 ), // wsw
+   Vec2i ( -2,  1 ), // w
+   Vec2i ( -2,  0 ), // w
+   Vec2i ( -2, -1 ), // wnw
+   Vec2i ( -2, -2 ), // nw
+   Vec2i ( -1, -2 ), // nnw
 };
 
-const Vec2i AboveLeftDist2[5] =
-{
-   Vec2i ( -2,  0 ),
-   Vec2i ( -2, -1 ),
-   Vec2i ( -2, -2 ),
-   Vec2i ( -1, -2 ),
-   Vec2i (  0, -2 )
-};
-   
 enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
 
 // =====================================================

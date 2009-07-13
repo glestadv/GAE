@@ -30,6 +30,22 @@ class Map;
 
 namespace PathFinder {
 
+const Vec2i AboveLeftDist1[3] = 
+{
+   Vec2i ( -1,  0 ),
+   Vec2i ( -1, -1 ),
+   Vec2i (  0, -1 )
+};
+
+const Vec2i AboveLeftDist2[5] =
+{
+   Vec2i ( -2,  0 ),
+   Vec2i ( -2, -1 ),
+   Vec2i ( -2, -2 ),
+   Vec2i ( -1, -2 ),
+   Vec2i (  0, -2 )
+};
+
 // Adding a new field?
 // add the new Field (enum defined in units_stats_base.h)
 // add the 'xml' name to the Fields::names array (in units_stats_base.cpp)
@@ -101,7 +117,10 @@ public:
 
    static const int maxClearanceValue;
 
+   // Temporarily annotate the map for nearby units
    void annotateLocal ( const Vec2i &pos, const int size, const Field field );
+
+   // Clear temporary annotations
    void clearLocalAnnotations ( Field field );
 
 #ifdef PATHFINDER_DEBUG_TEXTURES
@@ -113,6 +132,10 @@ private:
    CellMetrics computeClearances ( const Vec2i & );
    uint32 computeClearance ( const Vec2i &, Field );
    bool canClear ( const Vec2i &pos, int clear, Field field );
+
+   // for annotateLocal ()
+   void localAnnotateCells ( const Vec2i &pos, const int size, const Field field, 
+                        const Vec2i *offsets, const int numOffsets );
 
    int metricHeight;
    std::map<Vec2i,uint32> localAnnt;
