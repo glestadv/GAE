@@ -98,6 +98,10 @@ Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
 		weatherParticleSystem(NULL) {
 	assert(!singleton);
 	singleton = this;
+   if ( gs.getDefaultVictoryConditions () )
+      Logger::getInstance ().add ( "default victory conditions" );
+   else
+      Logger::getInstance ().add ( "scripted victory conditions" );
 }
 
 const char *Game::SpeedDesc[sCount] = {
@@ -1074,8 +1078,10 @@ void Game::render2d(){
 
 void Game::checkWinner()
 {
+   Logger::getInstance ().add ( "checkWinner()" );
    if ( !gameOver )
    {
+      Logger::getInstance ().add ( "checkWinner() game not over" );
 		if(gameSettings.getDefaultVictoryConditions())
 			checkWinnerStandard();
 		else
@@ -1085,6 +1091,8 @@ void Game::checkWinner()
 
 void Game::checkWinnerStandard()
 {
+   Logger::getInstance ().add ( "checkWinnerStandard()" );
+
 	//lose
 	bool lose= false;
 	if(!hasBuilding(world.getThisFaction()))
@@ -1119,7 +1127,9 @@ void Game::checkWinnerStandard()
 	}
 }
 
-void Game::checkWinnerScripted(){
+void Game::checkWinnerScripted()
+{
+   Logger::getInstance ().add ( "checkWinnerScripted()" );
 	if(scriptManager.getGameOver()){
 		gameOver= true;
 		for(int i= 0; i<world.getFactionCount(); ++i){

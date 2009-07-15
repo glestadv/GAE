@@ -560,12 +560,17 @@ void Renderer::renderMouse3d(){
 
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
+            //REFACTOR redundant code, should be done in Gui, and stored as flag...
 				//choose color
-				if(map->areFreeCellsOrHaveUnits (*i, building->getSize(), FieldWalkable, units)) {
-					color= Vec4f(1.f, 1.f, 1.f, 0.5f);
-				} else {
+				if(map->areFreeCellsOrHaveUnits (*i, building->getSize(), FieldWalkable, units)) 
+            {
+               if ( building->hasFieldMap () && ! map->isFieldMapCompatible ( *i, building ) )
+					   color= Vec4f(1.f, 0.f, 0.f, 0.5f);
+               else
+                  color= Vec4f(1.f, 1.f, 1.f, 0.5f);
+				} 
+            else 
 					color= Vec4f(1.f, 0.f, 0.f, 0.5f);
-				}
 
 				modelRenderer->begin(true, true, false);
 				glColor4fv(color.ptr());
@@ -1132,12 +1137,15 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 
 void Renderer::renderSurface()
 {
-#ifdef PATHFINDER_DEBUG_TEXTURES
+#if defined PATHFINDER_DEBUG_TEXTURES
    if ( Config::getInstance().getDebugTextures () )
    {
       renderSurfacePFDebug ();
 	   return;
    }
+#elif defined FIELDMAP_DEBUG_TEXTURES
+   renderSurfaceFMDebug ();
+   return;
 #endif
 	int lastTex=-1;
 	int currTex;
@@ -1404,6 +1412,166 @@ void Renderer::renderSurfacePFDebug ()
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
 }
+#endif
+
+#ifdef FIELDMAP_DEBUG_TEXTURES
+
+void Renderer::renderSurfaceFMDebug ()
+{
+	int lastTex=-1;
+	int currTex;
+   World *world= Game::getInstance()->getWorld();
+	Map *map= world->getMap();
+	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
+	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
+
+	assertGl();
+
+	glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT);
+
+	glEnable(GL_BLEND);
+	glEnable(GL_COLOR_MATERIAL); 
+	glDisable(GL_ALPHA_TEST);
+	glActiveTexture(baseTexUnit);
+
+	Quad2i scaledQuad= visibleQuad/Map::cellScale;
+
+	PosQuadIterator pqi(scaledQuad);
+	while(pqi.next()){
+
+      const Vec2i &pos= pqi.getPos();
+      int cx, cy;
+      cx = pos.x * 2;
+      cy = pos.y * 2;
+      if(mapBounds.isInside(pos)){
+
+			Tile *tc00= map->getTile(pos.x, pos.y);
+			Tile *tc10= map->getTile(pos.x+1, pos.y);
+			Tile *tc01= map->getTile(pos.x, pos.y+1);
+			Tile *tc11= map->getTile(pos.x+1, pos.y+1);
+
+         Vec3f tl = tc00->getVertex ();
+         Vec3f tr = tc10->getVertex ();
+         Vec3f bl = tc01->getVertex ();
+         Vec3f br = tc11->getVertex ();
+
+         Vec3f tc = tl + (tr - tl) / 2;
+         Vec3f ml = tl + (bl - tl) / 2;
+         Vec3f mr = tr + (br - tr) / 2;
+         Vec3f mc = ml + (mr - ml) / 2;
+         Vec3f bc = bl + (br - bl) / 2;
+
+         // cx,cy
+         uint32 tex = 0;
+
+         Vec2i cPos ( cx, cy );
+         if ( map->FieldMapDebug.find ( cPos ) != map->FieldMapDebug.end() )
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[map->FieldMapDebug[cPos]])->getHandle ();
+         else
+         {
+            int ndx = map->getCell ( cPos )->getType () + 6;
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[ndx])->getHandle ();
+         }
+         glBindTexture(GL_TEXTURE_2D, tex);
+         glBegin ( GL_TRIANGLE_FAN );
+            glTexCoord2f ( 0.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(tl.ptr());
+            glTexCoord2f ( 1.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(tc.ptr());
+            glTexCoord2f ( 1.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(mc.ptr());
+            glTexCoord2f ( 0.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(ml.ptr());                        
+         glEnd ();
+
+         cPos = Vec2i( cx+1, cy );
+         if ( map->FieldMapDebug.find ( cPos ) != map->FieldMapDebug.end() )
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[map->FieldMapDebug[cPos]])->getHandle ();
+         else
+         {
+            int ndx = map->getCell ( cPos )->getType () + 6;
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[ndx])->getHandle ();
+         }
+         glBindTexture(GL_TEXTURE_2D, tex);
+         glBegin ( GL_TRIANGLE_FAN );
+            glTexCoord2f ( 0.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(tc.ptr());
+            glTexCoord2f ( 1.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(tr.ptr());
+            glTexCoord2f ( 1.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(mr.ptr());
+            glTexCoord2f ( 0.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(mc.ptr());                        
+         glEnd ();
+
+         cPos = Vec2i( cx, cy + 1 );
+         if ( map->FieldMapDebug.find ( cPos ) != map->FieldMapDebug.end() )
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[map->FieldMapDebug[cPos]])->getHandle ();
+         else
+         {
+            int ndx = map->getCell ( cPos )->getType () + 6;
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[ndx])->getHandle ();
+         }
+         glBindTexture(GL_TEXTURE_2D, tex);
+         glBegin ( GL_TRIANGLE_FAN );
+            glTexCoord2f ( 0.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(ml.ptr());
+            glTexCoord2f ( 1.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(mc.ptr());
+            glTexCoord2f ( 1.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(bc.ptr());
+            glTexCoord2f ( 0.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(bl.ptr());                        
+         glEnd ();
+
+         cPos = Vec2i( cx + 1, cy + 1 );
+         if ( map->FieldMapDebug.find ( cPos ) != map->FieldMapDebug.end() )
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[map->FieldMapDebug[cPos]])->getHandle ();
+         else
+         {
+            int ndx = map->getCell ( cPos )->getType () + 6;
+            tex = static_cast<const Texture2DGl*>(world->FMDebugTextures[ndx])->getHandle ();
+         }
+         glBindTexture(GL_TEXTURE_2D, tex);
+         glBegin ( GL_TRIANGLE_FAN );
+            glTexCoord2f ( 0.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(mc.ptr());
+            glTexCoord2f ( 1.f, 1.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(mr.ptr());
+            glTexCoord2f ( 1.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(br.ptr());
+            glTexCoord2f ( 0.f, 0.f );
+            glNormal3fv(tc00->getNormal().ptr());
+            glVertex3fv(bc.ptr());                        
+         glEnd ();
+		}
+	}
+	glEnd();
+
+	//Restore
+	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
+	glPopAttrib();
+
+	//assert
+	glGetError();	//remove when first mtex problem solved
+	assertGl();
+}
+
 #endif
 
 void Renderer::renderObjects(){

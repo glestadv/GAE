@@ -217,6 +217,9 @@ public:
 	void init();
 	void load(const string &path, TechTree *techTree, Tileset *tileset);
 
+#ifdef FIELDMAP_DEBUG_TEXTURES
+   map<Vec2i, int> FieldMapDebug;
+#endif
 #ifdef PATHFINDER_DEBUG_TEXTURES
    list<Vec2i> PathPositions, ReturnPathPositions;
    Vec2i PathStart, PathDest;
@@ -235,10 +238,11 @@ public:
 #endif
 
 	//get
-	Cell *getCell(int x, int y) const					{assert(isInside(x, y)); return &cells[y * w + x];}
-	Cell *getCell(const Vec2i &pos) const				{assert(isInside(pos.x, pos.y)); return getCell(pos.x, pos.y);}
-	Tile *getTile(int sx, int sy) const	{assert(isInsideTile(sx, sy)); return &tiles[sy*tileW+sx];}
-	Tile *getTile(const Vec2i &sPos) const{assert(isInsideTile(sPos.x, sPos.y)); return getTile(sPos.x, sPos.y);}
+	Cell *getCell(int x, int y) const;
+	Cell *getCell(const Vec2i &pos) const;
+	Tile *getTile(int sx, int sy) const;
+	Tile *getTile(const Vec2i &sPos) const;
+
 	int getW() const									{return w;}
 	int getH() const									{return h;}
 	int getTileW() const								{return tileW;}
@@ -272,6 +276,7 @@ public:
 
 	//bool areFreeCells(const Vec2i &pos, int size, Zone field) const;
    bool areFreeCells(const Vec2i &pos, int size, Field field) const;
+   bool areFreeCells ( const Vec2i &pos, int size, char *fieldMap ) const;
 
    bool isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) const;
 	bool areFreeCellsOrHasUnit(const Vec2i &pos, int size, Field field, const Unit *unit) const;
@@ -285,7 +290,8 @@ public:
    void getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Zone field) const;
 	//bool isFreeCell(const Vec2i &pos, Field field) const;
 
-   bool fieldsCompatable ( Cell *cell, Field mf ) const;
+   bool fieldsCompatible ( Cell *cell, Field mf ) const;
+   bool isFieldMapCompatible ( const Vec2i &pos, const UnitType *unitType ) const;
 
 	// location calculations
 	static Vec2i getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &target, Field field, int targetSize = 1);
@@ -316,7 +322,8 @@ public:
 	void clampPos(Vec2i &pos) const;
 
 	void prepareTerrain(const Unit *unit);
-	void flatternTerrain(const Unit *unit);
+	//void flatternTerrain(const Unit *unit);
+	void flattenTerrain(const Unit *unit);
 	void computeNormals(Rect2i range = Rect2i(0, 0, 0, 0));
 	void computeInterpolatedHeights(Rect2i range = Rect2i(0, 0, 0, 0));
 	void read(NetworkDataBuffer &buf);

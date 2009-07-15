@@ -141,6 +141,7 @@ void World::init(const XmlNode *worldNode) {
 #ifdef PATHFINDER_DEBUG_TEXTURES
    loadPFDebugTextures ();
 #endif
+   loadFMDebugTextures ();
 	alive = true;
 }
 
@@ -163,6 +164,26 @@ void World::loadTileset(Checksum &checksum) {
 	tileset.load(game.getGameSettings().getTilesetPath(), checksum);
 	timeFlow.init(&tileset);
 }
+
+
+#define _load_tex(i,f) \
+   FMDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
+   FMDebugTextures[i]->setMipmap(false);\
+   FMDebugTextures[i]->getPixmap()->load(f);
+
+void World::loadFMDebugTextures ()
+{
+   _load_tex ( 0, "data/core/misc_textures/fm_land.bmp" );
+   _load_tex ( 1, "data/core/misc_textures/fm_any.bmp" );
+   _load_tex ( 2, "data/core/misc_textures/fm_water.bmp" );
+   _load_tex ( 3, "data/core/misc_textures/fm_ref.bmp" );
+   _load_tex ( 4, "data/core/misc_textures/fm_flatten.bmp" );
+   _load_tex ( 5, "data/core/misc_textures/fm_ignore.bmp" );
+   _load_tex ( 6, "data/core/misc_textures/st_land.bmp" );
+   _load_tex ( 7, "data/core/misc_textures/st_shallow.bmp" );
+   _load_tex ( 8, "data/core/misc_textures/st_deep.bmp" );
+}
+#undef _load_tex
 
 #ifdef PATHFINDER_DEBUG_TEXTURES
 #define _load_tex(i,f) \
@@ -197,7 +218,7 @@ void World::loadPFDebugTextures()
    _load_tex ( 12, "data/core/misc_textures/closed_node.bmp" );
 }
 
-#undef _do_tex
+#undef _load_tex
 #endif
 //load tech
 void World::loadTech(Checksum &checksum) {
@@ -1082,7 +1103,7 @@ void World::initUnits() {
 							"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
 				}
 				if(unit->getType()->hasSkillClass(scBeBuilt)){
-                    map.flatternTerrain(unit);
+                    map.flattenTerrain(unit);
 				}
          }
 		}

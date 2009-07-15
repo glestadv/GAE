@@ -272,7 +272,27 @@ Map::~Map() {
 	if(startLocations)	{delete[] startLocations;}
 	if (surfaceHeights)	{delete[] surfaceHeights;}
 }
-
+//get
+Cell *Map::getCell(int x, int y) const					
+{  assert(isInside(x, y)); 
+   return &cells[y * w + x];
+}
+Cell *Map::getCell(const Vec2i &pos) const				
+{  assert(isInside(pos.x, pos.y)); 
+   return getCell(pos.x, pos.y);
+}
+Tile *Map::getTile(int sx, int sy) const	
+{  
+   if ( ! isInsideTile(sx, sy) )
+      throw new runtime_error ("");
+   return &tiles[sy*tileW+sx];
+}
+Tile *Map::getTile(const Vec2i &sPos) const
+{  
+   if ( ! isInsideTile(sPos) )
+      throw new runtime_error ("");
+   return getTile(sPos.x, sPos.y);
+}
 void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 	FILE *f = NULL;
 
@@ -494,7 +514,7 @@ bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resour
 
 
 // ==================== free cells ====================
-bool Map::fieldsCompatable ( Cell *cell, Field mf ) const
+bool Map::fieldsCompatible ( Cell *cell, Field mf ) const
 {
    if ( mf == FieldAir || mf == FieldAmphibious
    ||  (mf == FieldWalkable && ! cell->isDeepSubmerged ()) 
@@ -552,7 +572,7 @@ bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) c
    {
 		Cell *c = getCell(pos);
 		if ( c->getUnit(unit->getCurrField()) == unit 
-      &&   fieldsCompatable ( c, field) ) 
+      &&   fieldsCompatible ( c, field) ) 
 			return true;
 		else 
 			return isFreeCell ( pos, field );
@@ -563,7 +583,7 @@ bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) c
 bool Map::isFreeCellOrHaveUnits(const Vec2i &pos, Field field, const Selection::UnitContainer &units) const {
 	if(isInside(pos)) {
       Unit *containedUnit = getCell(pos)->getUnit(field);
-		if ( containedUnit && fieldsCompatable ( getCell(pos), field ) ) 
+		if ( containedUnit && fieldsCompatible ( getCell(pos), field ) ) 
       {
 			Selection::UnitContainer::const_iterator i;
 			for(i = units.begin(); i != units.end(); ++i) 
@@ -601,6 +621,28 @@ bool Map::areFreeCells(const Vec2i & pos, int size, Field field) const{
 			if(!isFreeCell(Vec2i(i,j), field)){
                 return false;
 			}
+		}
+	}
+    return true;
+}
+
+bool Map::areFreeCells( const Vec2i &pos, int size, char *fieldMap ) const
+{
+	for ( int i = 0; i < size; ++i)
+   {
+		for ( int j = 0; j < size; ++j)
+      {
+         Field field;
+         switch ( fieldMap[j*size+i] )
+         {
+         case 'l': field = FieldWalkable; break;
+         case 'a': field = FieldAmphibious; break;
+         case 'w': field = FieldDeepWater; break;
+         case 'r': field = FieldWalkable; break;
+         default: throw new runtime_error ( "Bad value in fieldMap" );
+         }
+			if ( ! isFreeCell (Vec2i(pos.x+i, pos.y+j), field) )
+                return false;
 		}
 	}
     return true;
@@ -658,6 +700,27 @@ void Map::getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Zone
 			}
 		}
 	}
+}
+
+bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) const
+{
+   for ( int i=0; i < building->getSize(); ++i )
+   {
+      for ( int j=0; j < building->getSize(); ++j )
+      {
+         Field field;
+         switch ( building->getFieldMapCell ( i, j ) )
+         {
+         case 'l': field = FieldWalkable; break;
+         case 'a': field = FieldAmphibious; break;
+         case 'w': field = FieldDeepWater; break;
+         default: throw new runtime_error ( "Illegal value in FieldMap." );
+         }
+         if ( !fieldsCompatible ( getCell ( pos ), field ) )
+            return false;
+      }
+   }
+   return true;
 }
 
 // ==================== location calculations ====================
@@ -1024,8 +1087,8 @@ void Map::clampPos(Vec2i &pos) const{
 }
 
 void Map::prepareTerrain(const Unit *unit) {
-	flatternTerrain(unit);
-    computeNormals();
+	flattenTerrain(unit);
+   computeNormals();
 	computeInterpolatedHeights();
 }
 
@@ -1048,7 +1111,7 @@ void Map::update(float slice) {
 // ==================== PRIVATE ====================
 
 // ==================== compute ====================
-
+/*
 void Map::flatternTerrain(const Unit *unit){
 	float refHeight= getTile(toTileCoords(unit->getCenteredPos()))->getHeight();
 	for(int i=-1; i<=unit->getType()->getSize(); ++i){
@@ -1061,6 +1124,32 @@ void Map::flatternTerrain(const Unit *unit){
 				sc->setHeight(refHeight);
             }
         }
+    }
+}*/
+
+void Map::flattenTerrain ( const Unit *unit )
+{
+   // need to make sure unit->getCenteredPos() is on a 'l' fieldMapCell
+	float refHeight= getTile(toTileCoords(unit->getFlattenPos()))->getHeight();
+   
+	for(int i=-1; i<=unit->getType()->getSize(); ++i)
+   {
+      for(int j=-1; j<=unit->getType()->getSize(); ++j)
+      {
+         Vec2i relPos = Vec2i(i, j);
+         Vec2i pos= unit->getPos() + relPos;
+         // Only flatten for parts of the building on 'land'
+         if ( unit->getType ()->hasFieldMap ()
+         &&   unit->getType ()->getFieldMapCell ( relPos ) != 'l'
+         &&   unit->getType ()->getFieldMapCell ( relPos ) != 'f' ) 
+            continue;
+         Cell *c= getCell(pos);
+         Tile *sc= getTile(toTileCoords(pos));
+         //we change height if pos is inside world, if its free or ocupied by the currenty building
+         if ( isInside(pos) && sc->getObject()==NULL 
+         &&   (c->getUnit(ZoneSurface)==NULL || c->getUnit(ZoneSurface)==unit) )
+	         sc->setHeight(refHeight);
+      }
     }
 }
 

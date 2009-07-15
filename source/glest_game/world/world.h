@@ -180,7 +180,8 @@ public:
    Texture2D *PFDebugTextures[18];
    int getNumPathPos () { return map.PathPositions.size (); }
 #endif
-
+   void loadFMDebugTextures ();
+   Texture2D *FMDebugTextures[9];
 private:
 	void initCells();
 	void initSplattedTextures();

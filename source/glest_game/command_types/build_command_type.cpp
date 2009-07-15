@@ -94,14 +94,19 @@ void BuildCommandType::update(Unit *unit) const
 		}
 
 		//if arrived destination
-		if ( map->areFreeCells ( command->getPos(), buildingSize, FieldWalkable) 
-      &&  ! ( command->getPos().x == 0 || command->getPos().y == 0 ) ) 
+      bool canBuild;
+      if ( builtUnitType->hasFieldMap () )
+         canBuild = map->areFreeCells ( command->getPos(), buildingSize, builtUnitType->fieldMap );
+      else
+         canBuild = map->areFreeCells ( command->getPos(), buildingSize, FieldWalkable);
+      if ( command->getPos().x == 0 || command->getPos().y == 0 )
+         canBuild = false;
+
+		if ( canBuild ) 
       {
          if(!Glest::Game::verifySubfaction(unit, builtUnitType)) {
 				return;
 			}
-
-
 			// network client has to wait for the server to tell them to begin building.  If the
 			// creates the building, we can have an id mismatch.
 			if(net.isNetworkClient()) {
@@ -122,16 +127,14 @@ void BuildCommandType::update(Unit *unit) const
 				}
 
 				builtUnit = new Unit(world->getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world->getMap());
-				builtUnit->create();
-
-				if(!builtUnitType->hasSkillClass(scBeBuilt)){
+				if(!builtUnitType->hasSkillClass(scBeBuilt))
 					throw runtime_error("Unit " + builtUnitType->getName() + " has no be_built skill");
-				}
-
+            
+				map->prepareTerrain(builtUnit); // needs to happen b4 create() for FieldMaps
+            builtUnit->create();
 				builtUnit->setCurrSkill(scBeBuilt);
 				unit->setCurrSkill(this->getBuildSkillType());
 				unit->setTarget(builtUnit, true, true);
-				map->prepareTerrain(builtUnit);
 				command->setUnit(builtUnit);
 				unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
 				if(net.isNetworkGame()) {

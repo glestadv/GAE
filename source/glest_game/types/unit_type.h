@@ -151,7 +151,9 @@ public:
 	int getStoredResourceCount() const					{return storedResources.size();}
 	const Resource *getStoredResource(int i) const		{return &storedResources[i];}
 	bool getCellMapCell(int x, int y) const				{return cellMap[size * y + x];}
-   char getFieldMapCell ( int x, int y ) const { return fieldMap[size*y+x]; }
+   char getFieldMapCell ( int x, int y ) const;
+   char getFieldMapCell ( Vec2i &pos ) const { return getFieldMapCell ( pos.x, pos.y ); }
+   Vec2i getFieldMapRefCell () const;
 	bool hasMeetingPoint() const						{return meetingPoint;}
 	Texture2D *getMeetingPointImage() const				{return meetingPointImage;}
 	StaticSound *getSelectionSound() const				{return selectionSounds.getRandSound();}
@@ -172,6 +174,7 @@ public:
     bool hasSkillType(const SkillType *skillType) const;
     bool hasSkillClass(SkillClass skillClass) const;
 	bool hasCellMap() const								{return cellMap!=NULL;}
+   bool hasFieldMap () const { return fieldMap != NULL; }
 
 	//is
 	bool isOfClass(UnitClass uc) const;

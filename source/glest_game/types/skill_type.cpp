@@ -230,7 +230,9 @@ string SkillType::skillClassToStr(SkillClass skillClass){
 }
 
 string SkillType::fieldToStr(Zone field){
-	switch(field){
+	switch(field)
+   {
+   case ZoneSurfaceProp: return "SurfaceProp";
 	case ZoneSurface: return "Surface";
 	case ZoneAir: return "Air";
 //	case fSubsurface: return "Subsurface";

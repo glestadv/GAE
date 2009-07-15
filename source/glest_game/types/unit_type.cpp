@@ -153,7 +153,7 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 					throw runtime_error("Fieldmap row is not the same length as unit size");
 				for(int j=0; j<row.size(); ++j)
             {
-               if ( row[j] != 'l' && row[j] != 'a' && row[j] != 'w' )
+               if ( row[j] != 'l' && row[j] != 'a' && row[j] != 'w' && row[j] != 'r' )
                   throw new runtime_error ( "Fieldmap contains illegal value." );
 					fieldMap[i*size+j]= row[j];
             }
@@ -368,6 +368,49 @@ const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaire
 		}
 	}
 	return NULL;
+}
+
+Vec2i UnitType::getFieldMapRefCell () const
+{
+   assert ( hasFieldMap () );
+   for ( int i=0; i < size; ++i )
+      for ( int j=0; j < size; ++j )
+         if ( fieldMap[size*i+j] == 'r' )
+            return Vec2i(j,i);
+   return Vec2i(0,0);
+}
+
+char UnitType::getFieldMapCell ( int x, int y ) const
+{ 
+   assert ( hasFieldMap () );
+   if ( x == -1 )
+   {
+      char useMe;
+      if ( y == -1 ) useMe = fieldMap[0];
+      else if ( y == size ) useMe = fieldMap[size*(size-1)];
+      else useMe = fieldMap[size*y];
+      return useMe == 'l' || useMe == 'r' ? 'f' : 'i';
+   }
+   else if ( x == size )
+   {
+      char useMe;
+      if ( y == -1 ) useMe = fieldMap[size-1];
+      else if ( y == size ) useMe = fieldMap[size*size-1];
+      else useMe = fieldMap[size*y+(x-1)];
+      return useMe == 'l' || useMe == 'r' ? 'f' : 'i';
+   }
+   if ( y == -1 )
+   {
+      char useMe = fieldMap[x];
+      return useMe == 'l' || useMe == 'r' ? 'f' : 'i';
+   }
+   else if ( y == size )
+   {
+      char useMe = fieldMap[size*(y-1)+x];
+      return useMe == 'l' || useMe == 'r' ? 'f' : 'i';
+   }
+   else
+      return fieldMap[size*y+x]; 
 }
 
 int UnitType::getStore(const ResourceType *rt) const{

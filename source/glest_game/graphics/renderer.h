@@ -240,6 +240,9 @@ public:
 #ifdef PATHFINDER_DEBUG_TEXTURES
     void renderSurfacePFDebug ();
 #endif
+#ifdef FIELDMAP_DEBUG_TEXTURES
+    void renderSurfaceFMDebug ();
+#endif
 	void renderObjects();
 	void renderWater();
     void renderUnits();

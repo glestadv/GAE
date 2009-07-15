@@ -184,6 +184,8 @@ private:
 	bool faceTarget;		/** If true and target is set, we continue to face target. */
 	bool useNearestOccupiedCell;	/** If true, targetPos is set to target->getNearestOccupiedCell() */
 
+   Vec3f currVectorFlat;
+
 	float lastRotation;		//in degrees
 	float targetRotation;
 	float rotation;
@@ -318,7 +320,7 @@ public:
 	}
 
 	int getMaxRange(const AttackSkillTypes *asts) const {
-		return (int)roundf(asts->getMaxRange() * attackRangeMult + attackRange);
+		return (int)roundf(asts->getMaxRange() * attackRangeMult + attackRange); // ??
 	}
 
 	//pos
@@ -327,6 +329,7 @@ public:
 	Vec2i getCenteredPos() const		{return Vec2i((int)type->getHalfSize()) + pos;}
 	Vec2f getFloatCenteredPos() const	{return Vec2f(type->getHalfSize()) + Vec2f((float)pos.x, (float)pos.y);}
 	Vec2i getNearestOccupiedCell(const Vec2i &from) const;
+   Vec2i getFlattenPos () const;
 //	Vec2i getCellPos() const;
 
 	//is
@@ -374,7 +377,8 @@ public:
 	Vec3f getCurrVector() const							{return getCurrVectorFlat() + Vec3f(0.f, type->getHalfHeight(), 0.f);}
 	//Vec3f getCurrVectorFlat() const;
 	// this is a heavy use function so it's inlined even though it isn't exactly small
-	Vec3f getCurrVectorFlat() const {
+   Vec3f getCurrVectorFlat() const  { return currVectorFlat; }
+/*   {
 		Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
 	
 		if (currSkill->getClass() == scMove) {
@@ -387,8 +391,11 @@ public:
 	
 		return v;
 	}
+*/   
+   // calculate unit position, assumes not moving
+   void setCurrentVectorStatic ();
 
-	//command related
+   //command related
 	const CommandType *getFirstAvailableCt(CommandClass commandClass) const;
 	bool anyCommand() const								{return !commands.empty();}
 
@@ -410,6 +417,7 @@ public:
 	void undertake()									{faction->remove(this);}
 	void save(XmlNode *node, bool morphed = false) const;
 
+   //REFACTOR ??? push UP to 'Observable' interface ?
 	//observers
 	void addObserver(UnitObserver *unitObserver)		{observers.push_back(unitObserver);}
 	void removeObserver(UnitObserver *unitObserver)		{observers.remove(unitObserver);}
@@ -428,31 +436,42 @@ public:
 	bool decHp(int i);
 	int update2()										{return ++progress2;}
 	bool update();
+	void face(const Vec2i &nextPos);
+
+   //REFACTOR ??? push UP to 'interface' type abstract class ('NetworkUpdatable' or somesuch) ?
 	void update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld, bool netClient, float nextAdvanceFrames);
 	void updateMinor(const XmlNode *node);
 	void writeMinorUpdate(XmlNode *node) const;
-	void face(const Vec2i &nextPos);
 
 
 	Unit *tick();
+
+   //REFACTOR move to Upgrade
 	void applyUpgrade(const UpgradeType *upgradeType);
-	void computeTotalUpgrade();
+
+   void computeTotalUpgrade();
 	void incKills();
 	bool morph(const MorphCommandType *mct);
+
+   //REFACTOR move to Command
 	CommandResult checkCommand(const Command &command) const;
 	void applyCommand(const Command &command);
 
+   //REFACTOR move to Effect
 	bool add(Effect *e);
 	void remove(Effect *e);
 	void effectExpired(Effect *effect);
+
 	bool doRegen(int hpRegeneration, int epRegeneration);
 
 //	void writeState(UnitState &us);
 //	void readState(UnitState &us);
 
 private:
+   //ELIMINATE
 	float computeHeight(const Vec2i &pos) const;
-	void updateTarget(const Unit *target = NULL);
+
+   void updateTarget(const Unit *target = NULL);
 	void clearCommands();
 	CommandResult undoCommand(const Command &command);
 	void recalculateStats();
