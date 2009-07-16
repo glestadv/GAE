@@ -204,9 +204,11 @@ void Game::init() {
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
    scriptManager.init(&world, &gameCamera);
+   CommandType::cacheGlobal ();
 
-	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
-		gui.load(savedGame->getChild("gui"));
+	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) 
+   {
+      gui.load(savedGame->getChild("gui"));
 	}
 
 	//create IAs (what's an IA ? :)

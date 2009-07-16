@@ -515,18 +515,18 @@ Vec2i Unit::getFlattenPos () const
 {
    if ( getType()->hasFieldMap () )
    {
-      // search for a reference cell ( an 'f')
+      // search for a reference cell ( an 'r')
       for ( int i=0; i < size; ++i )
          for ( int j=0; j < size; ++j )
-         if ( getType()->getFieldMapCell ( i, j ) == 'f' ) 
-            return pos + Vec2i(i,j);
+            if ( getType()->getFieldMapCell ( i, j ) == 'r' ) 
+               return pos + Vec2i(i,j);
 
       //HACK
       // just find any cell with an 'l' and return it...
       for ( int i=0; i < size; ++i )
          for ( int j=0; j < size; ++j )
-         if ( getType()->getFieldMapCell ( i, j ) == 'l' ) 
-            return pos + Vec2i(i,j);
+            if ( getType()->getFieldMapCell ( i, j ) == 'l' ) 
+               return pos + Vec2i(i,j);
 
       // What we probably should do...
       // get spot as close to center as possible, with an 'l' in fieldMap...

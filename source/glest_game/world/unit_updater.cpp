@@ -55,6 +55,8 @@ void UnitUpdater::init(Game &game) {
 	console = game.getConsole();
    pathFinder = PathFinder::PathFinder::getInstance ();
    scriptManager = game.getScriptManager ();
+
+   //REFACTOR ( move to World::init() )
 	pathFinder->init(map);
 }
 

@@ -37,6 +37,10 @@ class World;
 class Map;
 class Command;
 
+class Game;
+class NetworkManager;
+namespace PathFinder { class PathFinder; }
+
 extern bool verifySubfaction(Unit *unit, const ProducibleType *pt);
 
 enum CommandClass {
@@ -151,7 +155,7 @@ public:
 	const UnitType *getUnitType() const					{return unitType;}
 	int getUnitTypeIndex() const						{return unitTypeIndex;}
 	
-
+   static void cacheGlobal ();
 	//get
 	CommandClass getClass() const						{assert(this); return cc;}
 	Clicks getClicks() const							{return clicks;}
@@ -171,6 +175,15 @@ public:
     // auto commands
     static void doAutoCommand ( Unit *unit );
     static void updateAutoCommand ( Unit *unit );
+
+protected:
+   // static cache...
+   static Game *game;
+   static World *world;
+   static Map *map;
+   static PathFinder::PathFinder *pathFinder;
+   static NetworkManager *net;
+   static ScriptManager *scriptManager;
 };
 
 // ===============================
@@ -301,10 +314,25 @@ public:
 
 	//get
 	const BuildSkillType *getBuildSkillType() const	{return buildSkillType;}
-	int getBuildingCount() const					{return buildings.size();}
+	int getBuildingCount() const					{return buildings.size();} // what's all this then?
 	const UnitType * getBuilding(int i) const		{return buildings[i];}
 	StaticSound *getStartSound() const				{return startSounds.getRandSound();}
 	StaticSound *getBuiltSound() const				{return builtSounds.getRandSound();}
+
+private:
+   void cacheUnit ( Unit *u ) const;
+   // returns true when arrived
+   bool moveToBuildingSite () const;
+   void startBuilding () const;
+   void continueBuilding () const;
+   
+   // unit cache...
+   static Unit *unit;
+	static Command *command;
+	static const UnitType *builtUnitType;
+	static Unit *builtUnit;
+	static Unit *target;
+
 };
 
 

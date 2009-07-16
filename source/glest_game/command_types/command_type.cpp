@@ -185,6 +185,22 @@ void CommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, 
 	RequirableType::load(n, dir, tt, ft);
 }
 
+// static cache...
+Game *CommandType::game;
+World *CommandType::world;
+Map *CommandType::map;
+PathFinder::PathFinder *CommandType::pathFinder;
+NetworkManager *CommandType::net;
+ScriptManager *CommandType::scriptManager;
+
+void CommandType::cacheGlobal ()
+{
+   game = Game::getInstance ();
+   world = game->getWorld ();
+   map = world->getMap ();
+   pathFinder = PathFinder::PathFinder::getInstance ();
+   net = &NetworkManager::getInstance();
+}
 
 //REFACTOR ( move to CommandType )
 bool CommandType::attackerOnSight(const Unit *unit, Unit **rangedPtr)
