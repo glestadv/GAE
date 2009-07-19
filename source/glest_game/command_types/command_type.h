@@ -297,7 +297,7 @@ public:
 // ===============================
 
 class BuildCommandType: public MoveBaseCommandType {
-private:
+protected:
 	const BuildSkillType* buildSkillType;
 	vector<const UnitType*> buildings;
 	SoundContainer startSounds;
@@ -319,7 +319,7 @@ public:
 	StaticSound *getStartSound() const				{return startSounds.getRandSound();}
 	StaticSound *getBuiltSound() const				{return builtSounds.getRandSound();}
 
-private:
+protected:
    void cacheUnit ( Unit *u ) const;
    // returns true when arrived
    bool moveToBuildingSite () const;
@@ -341,10 +341,11 @@ private:
 // ===============================
 
 class HarvestCommandType: public MoveBaseCommandType {
+protected:
 	static const int harvestDistance= 5;
 	static const int ultraResourceFactor= 3;
 	static const int maxResSearchRadius= 10;
-private:
+
 	const MoveSkillType *moveLoadedSkillType;
 	const HarvestSkillType *harvestSkillType;
 	const StopSkillType *stopLoadedSkillType;
@@ -368,7 +369,7 @@ public:
 	int getHarvestedResourceCount() const					{return harvestedResources.size();}
 	const ResourceType* getHarvestedResource(int i) const	{return harvestedResources[i];}
 	bool canHarvest(const ResourceType *resourceType) const;
-private:
+protected:
 	void cacheUnit(Unit *u) const;
 
 	void startHarvesting() const;
