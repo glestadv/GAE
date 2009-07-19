@@ -351,13 +351,13 @@ private:
 	vector<const ResourceType*> harvestedResources;
 	int maxLoad;
 	int hitsPerUnit;
-   bool searchForResource ( Unit *unit, World *world ) const;
+	bool searchForResource ( Unit *unit, World *world ) const;
 
 public:
 	HarvestCommandType() : MoveBaseCommandType("Harvest", ccHarvest, cTwo) {}
 	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
-   virtual void update(Unit *unit) const;
+	virtual void update(Unit *unit) const;
 
 	//get
 	const MoveSkillType *getMoveLoadedSkillType() const		{return moveLoadedSkillType;}
@@ -368,6 +368,22 @@ public:
 	int getHarvestedResourceCount() const					{return harvestedResources.size();}
 	const ResourceType* getHarvestedResource(int i) const	{return harvestedResources[i];}
 	bool canHarvest(const ResourceType *resourceType) const;
+private:
+	void cacheUnit(Unit *u) const;
+
+	void startHarvesting() const;
+	void attemptToHarvest() const;
+	void initHarvest(Vec2i targetPos) const;
+	void moveToResource(Vec2i targetPos) const;
+	void returnToStore() const;
+	void updateAndUnloadResources() const;
+
+	void continueHarvesting() const;
+	
+	// unit cache...
+	static Unit *unit;
+	static Command *command;
+	static Resource *resource;
 };
 
 

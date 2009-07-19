@@ -4,6 +4,7 @@
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //               2008-2009 Daniel Santos
 //               2009 James McCulloch <silnarm at gmail>
+//               2009 Nathan Turner <hailstone3 at sourceforge>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -37,6 +38,11 @@ namespace Glest { namespace Game {
 // 	class HarvestCommandType
 // =====================================================
 
+// unit cache
+Unit *HarvestCommandType::unit = NULL;
+Command *HarvestCommandType::command = NULL;
+Resource *HarvestCommandType::resource = NULL;
+
 void HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
 	MoveBaseCommandType::load(n, dir, tt, ft);
 
@@ -63,151 +69,186 @@ void HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	hitsPerUnit= n->getChild("hits-per-unit")->getAttribute("value")->getIntValue();
 }
 
+void HarvestCommandType::cacheUnit(Unit *u) const
+{
+	unit = u;
+	command = unit->getCurrCommand();
+	resource = map->getTile(Map::toTileCoords(command->getPos()))->getResource();
+}
+
 void HarvestCommandType::update(Unit *unit) const
 {
-	Command *command = unit->getCurrCommand();
-	Vec2i targetPos;
-   Game *game = Game::getInstance ();
-   World *world = game->getWorld ();
-   Map *map = world->getMap ();
-   PathFinder::PathFinder *pathFinder = PathFinder::PathFinder::getInstance ();
-   NetworkManager &net = NetworkManager::getInstance();
+	cacheUnit( unit );
 
 	if (unit->getCurrSkill()->getClass() != scHarvest) {
-		//if not working
 		if (!unit->getLoadCount()) {
-			//if not loaded go for resources
-			Resource *r = map->getTile(Map::toTileCoords(command->getPos()))->getResource();
-			if (r && this->canHarvest(r->getType())) {
-				//if can harvest dest. pos
-				if (unit->getPos().dist(command->getPos()) < harvestDistance &&
-						map->isResourceNear(unit->getPos(), r->getType(), targetPos)) {
-					//if it finds resources it starts harvesting
-					unit->setCurrSkill(this->getHarvestSkillType());
-					unit->setTargetPos(targetPos);
-					unit->face(targetPos);
-					unit->setLoadCount(0);
-					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
-				} else {
-					//if not continue walking
-					switch (pathFinder->findPath(unit, command->getPos())) {
-					case PathFinder::tsOnTheWay:
-						unit->setCurrSkill(this->getMoveSkillType());
-						unit->face(unit->getNextPos());
-						break;
-               case PathFinder::tsBlocked:
-                  // couldn't get to the goods, look for other resources of the same type nearby.
-                  // If can't find any, we're probably standing somewhere between the store 
-                  // and the resources we couldn't get to (due to congestion most likely). 
-                  // Move out of the way (perpendicular to store.pos - resource.pos)
-                  /*
-                  if ( ! searchForResource(unit, hct)) 
-                  {
-                     if ( unit->getCommands ().size () <= 1 )
-                     {
-                        Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
-                        Vec2i storePos = store->getPos();
-                        storePos.x += store->getSize() / 2;
-                        storePos.y += store->getSize() / 2;
-                        GetClear ( unit, storePos, command->getPos() );
-                     }
-                     // else the unit has something else to do anyway...
-                     unit->finishCommand();
-      				}
-                  */
-                  break;
-					default:
-						break;
-					}
-				}
-			} else {
-				//if can't harvest, search for another resource
-				unit->setCurrSkill(scStop);
-				if (!searchForResource(unit, world)) {
-					unit->finishCommand();
-				}
-			}
+			startHarvesting();
 		} else {
-			//if loaded, return to store
-			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
-			if (store) {
-				switch (pathFinder->findPath(unit, store->getNearestOccupiedCell(unit->getPos()))) {
-				case PathFinder::tsOnTheWay:
-					unit->setCurrSkill(this->getMoveLoadedSkillType());
-					unit->face(unit->getNextPos());
-					break;
-				default:
-					break;
-				}
-
-				//world->changePosCells(unit,unit->getPos()+unit->getDest());
-				if (map->isNextTo(unit->getPos(), store)) {
-
-					//update resources
-					int resourceAmount = unit->getLoadCount();
-					if (unit->getFaction()->getCpuUltraControl()) {
-						resourceAmount *= ultraResourceFactor;
-					}
-					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
-					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
-               game->getScriptManager()->onResourceHarvested ();
-
-					//if next to a store unload resources
-					unit->getPath()->clear();
-					unit->setCurrSkill(scStop);
-					unit->setLoadCount(0);
-					if (net.isNetworkServer()) {
-						// FIXME: wasteful full update here
-						net.getServerInterface()->unitUpdate(unit);
-						net.getServerInterface()->updateFactions();
-					}
-				}
-			} else {
-				unit->finishCommand();
-			}
+			returnToStore();
 		}
 	} else {
-		//if working
-		Tile *sc = map->getTile(Map::toTileCoords(unit->getTargetPos()));
-		Resource *r = sc->getResource();
-		if (r != NULL) {
-			//if there is a resource, continue working, until loaded
-			unit->update2();
-			if (unit->getProgress2() >= this->getHitsPerUnit()) {
-				unit->setProgress2(0);
-				unit->setLoadCount(unit->getLoadCount() + 1);
+		continueHarvesting();
+	}
+}
 
-				//if resource exausted, then delete it and stop
-				if (r->decAmount(1)) {
-               Vec2i rPos = r->getPos ();
-					sc->deleteResource();
-               // let the pathfinder know
-               //FIXME: make Field friendly ??? resources in other fields ???
-               pathFinder->updateMapMetrics ( rPos, 2, false, FieldWalkable );
-					unit->setCurrSkill(this->getStopLoadedSkillType());
-				}
-
-				if (unit->getLoadCount() == this->getMaxLoad()) {
-					unit->setCurrSkill(this->getStopLoadedSkillType());
-					unit->getPath()->clear();
-				}
-			}
-		} else {
-			//if there is no resource
-			if (unit->getLoadCount()) {
-				unit->setCurrSkill(this->getStopLoadedSkillType());
-			} else {
-				unit->finishCommand();
-				unit->setCurrSkill(scStop);
-			}
+void HarvestCommandType::startHarvesting() const
+{	
+	if (resource && this->canHarvest(resource->getType())) {
+		attemptToHarvest();
+	} else {
+		//if can't harvest, search for another resource
+		unit->setCurrSkill(scStop);
+		if (!searchForResource(unit, world)) {
+			unit->finishCommand();
 		}
 	}
 }
 
+void HarvestCommandType::attemptToHarvest() const
+{
+	Vec2i targetPos;
+
+	//if can harvest dest. pos
+	if (unit->getPos().dist(command->getPos()) < harvestDistance &&
+		map->isResourceNear(unit->getPos(), resource->getType(), targetPos)) {
+		
+		//if it finds resources it starts harvesting
+		initHarvest(targetPos);
+	} else {
+		//if not continue walking
+		moveToResource(command->getPos());
+	}
+}
+
+void HarvestCommandType::initHarvest(Vec2i targetPos) const
+{
+	unit->setCurrSkill(this->getHarvestSkillType());
+	unit->setTargetPos(targetPos);
+	unit->face(targetPos);
+	unit->setLoadCount(0);
+	unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
+}
+
+void HarvestCommandType::moveToResource(Vec2i targetPos) const
+{
+	switch (pathFinder->findPath(unit, targetPos)) {
+		case PathFinder::tsOnTheWay:
+			unit->setCurrSkill(this->getMoveSkillType());
+			unit->face(unit->getNextPos());
+			break;
+		case PathFinder::tsBlocked:
+			// couldn't get to the goods, look for other resources of the same type nearby.
+			// If can't find any, we're probably standing somewhere between the store 
+			// and the resources we couldn't get to (due to congestion most likely). 
+			// Move out of the way (perpendicular to store.pos - resource.pos)
+			/*
+			if ( ! searchForResource(unit, hct)) 
+			{
+			if ( unit->getCommands ().size () <= 1 )
+			{
+			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
+			Vec2i storePos = store->getPos();
+			storePos.x += store->getSize() / 2;
+			storePos.y += store->getSize() / 2;
+			GetClear ( unit, storePos, command->getPos() );
+			}
+			// else the unit has something else to do anyway...
+			unit->finishCommand();
+			}
+			*/
+			break;
+		default:
+			break;
+	}
+}
+
+void HarvestCommandType::returnToStore() const
+{
+	Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
+	if (store) {
+		switch (pathFinder->findPath(unit, store->getNearestOccupiedCell(unit->getPos()))) {
+		case PathFinder::tsOnTheWay:
+			unit->setCurrSkill(this->getMoveLoadedSkillType());
+			unit->face(unit->getNextPos());
+			break;
+		default:
+			break;
+		}
+
+		//world->changePosCells(unit,unit->getPos()+unit->getDest());
+		if (map->isNextTo(unit->getPos(), store)) {
+			updateAndUnloadResources();
+		}
+	} else {
+		unit->finishCommand();
+	}
+}
+
+void HarvestCommandType::updateAndUnloadResources() const
+{
+	//update resources
+	int resourceAmount = unit->getLoadCount();
+	if (unit->getFaction()->getCpuUltraControl()) {
+		resourceAmount *= ultraResourceFactor;
+	}
+	unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
+	world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
+
+	//fire script event
+	game->getScriptManager()->onResourceHarvested();
+
+	//if next to a store unload resources
+	unit->getPath()->clear();
+	unit->setCurrSkill(scStop);
+	unit->setLoadCount(0);
+	if (net->isNetworkServer()) {
+		// FIXME: wasteful full update here
+		net->getServerInterface()->unitUpdate(unit);
+		net->getServerInterface()->updateFactions();
+	}
+}
+
+void HarvestCommandType::continueHarvesting() const
+{
+	//can these be replaced with cache resource? it uses command pos and this uses unitTargetPos - hailstone
+	Tile *sc = map->getTile(Map::toTileCoords(unit->getTargetPos()));
+	Resource *r = sc->getResource();
+	if (r != NULL) {
+		//if there is a resource, continue working, until loaded
+		unit->update2();
+		if (unit->getProgress2() >= this->getHitsPerUnit()) {
+			unit->setProgress2(0);
+			unit->setLoadCount(unit->getLoadCount() + 1);
+
+			//if resource exausted, then delete it and stop
+			if (r->decAmount(1)) {
+				Vec2i rPos = r->getPos ();
+				sc->deleteResource();
+				// let the pathfinder know
+				//FIXME: make Field friendly ??? resources in other fields ???
+				pathFinder->updateMapMetrics ( rPos, 2, false, FieldWalkable );
+				unit->setCurrSkill(this->getStopLoadedSkillType());
+			}
+
+			if (unit->getLoadCount() == this->getMaxLoad()) {
+				unit->setCurrSkill(this->getStopLoadedSkillType());
+				unit->getPath()->clear();
+			}
+		}
+	} else {
+		//if there is no resource
+		if (unit->getLoadCount()) {
+			unit->setCurrSkill(this->getStopLoadedSkillType());
+		} else {
+			unit->finishCommand();
+			unit->setCurrSkill(scStop);
+		}
+	}
+}
 
 //looks for a resource of type rt, if rt==NULL looks for any
 //resource the unit can harvest
-bool HarvestCommandType::searchForResource ( Unit *unit, World *world ) const 
+bool HarvestCommandType::searchForResource( Unit *unit, World *world ) const 
 {
 	Vec2i pos;
 
