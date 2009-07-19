@@ -60,28 +60,26 @@ void BuildCommandType::update ( Unit *unit ) const
 
 bool BuildCommandType::moveToBuildingSite () const
 {
-   assert(command->getUnitType());
-
-   int buildingSize = builtUnitType->getSize();
-   Vec2i waypoint;
-
-   // find the nearest place for the builder
-   if(map->getNearestAdjacentFreePos(waypoint, unit, command->getPos(), FieldWalkable, buildingSize)) 
-   {
-      if(waypoint != unit->getTargetPos()) 
+   // Have we got a target in mind ? is it still free ?
+   if ( command->getPos2().x == -1 
+   ||   !map->isFreeCellOrHasUnit ( command->getPos2(), unit->getCurrField(), unit ) )
+   {  // find a targetPos
+      int bldngSize = builtUnitType->getSize();
+      Vec2i &bldngPos = command->getPos ();
+      Vec2i waypoint;
+      if ( !map->getNearestAdjacentFreePos ( waypoint, unit, bldngPos, FieldWalkable, bldngSize ) )
       {
-         unit->setTargetPos(waypoint);
-         unit->getPath()->clear();
+         // there is nowhere to 'stand' and build...
+         game->getConsole()->addStdMessage("Blocked");
+         unit->cancelCurrCommand();
+         return false;
       }
-   } 
-   else 
-   {
-      game->getConsole()->addStdMessage("Blocked");
-      unit->cancelCurrCommand();
-      return false;
+      command->setPos2 ( waypoint );
+      unit->setTargetPos ( waypoint );
+      unit->getPath ()->clear ();
    }
 
-   switch (pathFinder->findPath(unit, waypoint)) 
+   switch (pathFinder->findPath(unit, command->getPos2())) 
    {
    case PathFinder::tsOnTheWay:
       unit->setCurrSkill(this->getMoveSkillType());
@@ -97,7 +95,7 @@ bool BuildCommandType::moveToBuildingSite () const
       return false;
 
    case PathFinder::tsArrived:
-      if(unit->getPos() != waypoint) 
+      if(unit->getPos() != command->getPos2()) 
       {
          game->getConsole()->addStdMessage("Blocked");
          unit->cancelCurrCommand();
