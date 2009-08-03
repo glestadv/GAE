@@ -246,7 +246,7 @@ inline int round(float f) {
 }
 
 inline int round(double d) {
-	return static_cast<int>(::round(d));
+	return static_cast<int>(round(d));
 }
 
 //misc

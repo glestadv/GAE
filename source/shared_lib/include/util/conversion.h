@@ -17,6 +17,12 @@
 #include <cstdio>
 #include <cstdlib>
 
+#if defined(WIN32) || defined(WIN64)
+#	define strtoull(np,ep,b) _strtoui64(np,ep,b)
+#	define strtof(np,ep) ((float)strtod(np,ep))
+#	define strtold(np,ep) ((long double)strtod(np,ep))
+#endif
+
 #include "types.h"
 
 using std::string;

@@ -23,6 +23,11 @@
 #	include <sys/time.h>
 #elif defined(WIN32) || defined(WIN64)
 	// use QueryPerformanceCounter with variable precision
+	inline struct tm* localtime_r (const time_t *clock, struct tm *result) {
+	if (!clock || !result) return NULL;
+	memcpy(result,localtime(clock),sizeof(*result));
+	return result;
+}
 #	define	_CHRONO_USE_WIN
 #	include <winbase.h>
 #elif defined(USE_SDL)

@@ -36,6 +36,8 @@
 #	define SocketException PosixException
 #elif defined(WIN32) || defined(WIN64)
 #	define SocketException WinsockException
+#	include <Ws2tcpip.h>
+	typedef int in_addr_t;
 #endif
 
 #include "types.h"
@@ -129,7 +131,6 @@ public:
 	static LibraryManager libraryManager;
 #endif
 
-protected:
 	SOCKET sock;
 	SocketType type;
 

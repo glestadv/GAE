@@ -14,11 +14,11 @@
 
 #include <cmath>
 
-#include "vec.h"
-
 #if defined(WIN32) || defined(WIN64)
 inline float roundf(float f) { return f > 0.f ? floorf(f + 0.5f) : ceilf(f - 0.5f); }
 #endif
+
+#include "vec.h"
 
 namespace Shared { namespace Graphics {
 

@@ -27,6 +27,7 @@
 #	endif
 #	include <glob.h>
 #elif defined(WIN32) || defined(WIN64)
+#	define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
 #	include <windows.h>
 #endif
 

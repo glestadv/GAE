@@ -435,7 +435,7 @@ void NetworkWriteableXmlDoc::uncompress() {
 		free(uncompressedData);
 		throw runtime_error(string("Decompressed data in xml document not the specified size. Should be ")
 				+ Conversion::toStr(size) + " bytes but it's "
-				+ Conversion::toStr(static_cast<unsigned long>(destLen)));
+				+ Conversion::toStr(static_cast<uint64>(destLen)));
 	}
 
 	freeData();

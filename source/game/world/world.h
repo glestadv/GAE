@@ -28,7 +28,7 @@
 #include "faction.h"
 #include "unit_updater.h"
 #include "random.h"
-#include "game_constants.h"
+//#include "game_constants.h"
 #include "pos_iterator.h"
 
 using Shared::Graphics::Quad2i;

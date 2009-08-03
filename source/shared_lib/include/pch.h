@@ -24,7 +24,7 @@
 #	if defined (USE_SDL)
 #		error USE_SDL is not compatible with WIN32 or WIN64
 #	endif
-
+#	include <winsock2.h>
 #	include <windows.h>
 #else
 #	include <unistd.h>
@@ -118,7 +118,6 @@
 
 #if defined(WIN32) || defined(WIN64)
 #	include <glprocs.h>
-#	include <winsock.h>
 #	include <dsound.h>
 #	include <io.h>
 #endif

@@ -15,7 +15,7 @@
 #include "lang.h"
 #include "config.h"
 #include "program.h"
-#include "game_constants.h"
+//#include "game_constants.h"
 
 #include "leak_dumper.h"
 

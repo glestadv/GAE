@@ -15,6 +15,10 @@
 #include <cmath>
 #include "simd.h"
 
+#if defined(WIN32) || defined(WIN64)
+extern float roundf(float f);
+#endif
+
 namespace Shared { namespace Graphics {
 
 template<typename T> class Vec2;

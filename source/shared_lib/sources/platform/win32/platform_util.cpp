@@ -21,7 +21,6 @@
 
 #include "leak_dumper.h"
 
-
 using namespace Shared::Util;
 using namespace std;
 
@@ -56,7 +55,7 @@ LONG WINAPI PlatformExceptionHandler::handler(LPEXCEPTION_POINTERS pointers) {
 	if (exceptionCode == EXCEPTION_ACCESS_VIOLATION) {
 		description += " (";
 		description += exceptionInfo[0] == 0 ? "Reading" : "Writing";
-		description += " address 0x" + intToHex(static_cast<int>(exceptionInfo[1])) + ")";
+		description += " address 0x" + Conversion::toHex (static_cast<int>(exceptionInfo[1])) + ")";
 	}
 
 	singleton->log(description.c_str(), pointers->ExceptionRecord->ExceptionAddress, NULL, 0, NULL);

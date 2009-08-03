@@ -22,7 +22,7 @@
 #ifdef USE_POSIX_SOCKETS
 #	include <arpa/inet.h>
 #elif defined(WIN32) || defined(WIN64)
-#	include <winsock.h>
+#	include <winsock2.h>
 #	define uint16_t uint16
 #	define uint32_t uint32
 #	define uint64_t uint64

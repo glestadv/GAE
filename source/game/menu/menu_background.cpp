@@ -19,7 +19,7 @@
 #include "config.h"
 #include "xml_parser.h"
 #include "util.h"
-#include "game_constants.h"
+//#include "game_constants.h"
 
 #include "leak_dumper.h"
 

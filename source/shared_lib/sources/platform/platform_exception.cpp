@@ -13,6 +13,8 @@
 #include "platform_exception.h"
 #include "leak_dumper.h"
 
+typedef int error_t;
+
 namespace Shared { namespace Platform {
 
 // ===============================

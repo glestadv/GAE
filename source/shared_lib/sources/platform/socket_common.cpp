@@ -13,8 +13,11 @@
 #include "socket.h"
 
 #include <stdexcept>
+#if ! ( defined(WIN32) || defined(WIN64) )
 #include <netdb.h>
-
+#else
+#include <Ws2tcpip.h>
+#endif
 #include "leak_dumper.h"
 
 using std::range_error;

@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1;GAME_CONSTANTS_DEF"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -339,6 +339,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\util\exception_base.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\util\factory.h"
 				>
 			</File>
@@ -388,6 +392,10 @@
 			</File>
 			<File
 				RelativePath=".\include\graphics\interpolation.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\lang_features.h"
 				>
 			</File>
 			<File
@@ -479,6 +487,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\platform\win32\platform_util.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\util\profiler.h"
 				>
 			</File>
@@ -515,11 +527,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\socket.h"
+				RelativePath=".\include\platform\win32\socket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\socket.h"
+				RelativePath=".\include\platform\socket.h"
 				>
 			</File>
 			<File
@@ -571,11 +583,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\thread.h"
+				RelativePath=".\include\platform\thread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\thread.h"
+				RelativePath=".\include\platform\win32\thread.h"
 				>
 			</File>
 			<File
@@ -600,6 +612,10 @@
 			</File>
 			<File
 				RelativePath=".\include\platform\window.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\platform\win32\window.h"
 				>
 			</File>
 			<File
@@ -712,6 +728,10 @@
 			</File>
 			<File
 				RelativePath=".\sources\util\conversion.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\util\exception_base.cpp"
 				>
 			</File>
 			<File
@@ -925,6 +945,10 @@
 						DebugInformationFormat="3"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\sources\platform\net_util.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\sources\graphics\gl\opengl.cpp"
@@ -1152,6 +1176,10 @@
 			</File>
 			<File
 				RelativePath=".\sources\platform\win32\socket.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\platform\socket_common.cpp"
 				>
 			</File>
 			<File

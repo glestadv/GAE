@@ -149,7 +149,7 @@ bool Socket::isWritable() {
 // class ClientSocket
 // =====================================================
 
-ClientSocket(const IpAddress &remoteAddr, unsigned short remotePort)
+ClientSocket::ClientSocket(const IpAddress &remoteAddr, unsigned short remotePort)
 		: Socket(SOCKET_TYPE_CLIENT)
 		, remoteAddr(remoteAddr)
 		, remotePort(remotePort) {
@@ -194,8 +194,12 @@ void ServerSocket::listen(int connectionQueueSize) {
 	}
 }
 
-Socket *ServerSocket::accept() {
-	SOCKET newSock = ::accept(sock, NULL, NULL);
+ClientSocket *ServerSocket::accept() {
+	sockaddr_in addr;
+	socklen_t addr_len = sizeof(addr);
+	memset(&addr, 0, sizeof(addr));
+
+	SOCKET newSock = ::accept(sock, reinterpret_cast<sockaddr*>(&addr), &addr_len );
 	if (newSock == INVALID_SOCKET) {
 		int err = WSAGetLastError();
 		if (err == WSAEWOULDBLOCK) {
@@ -203,7 +207,7 @@ Socket *ServerSocket::accept() {
 		}
 		throw WinsockException("Error accepting socket connection", "accept", NULL, __FILE__, __LINE__, err);
 	}
-	return new Socket(newSock);
+	return new ClientSocket ( newSock, addr );
 }
 
 }} // end namespace

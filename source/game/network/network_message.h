@@ -19,7 +19,7 @@
 #include "timer.h"
 #include "game_settings.h"
 #include "command.h"
-#include "lang_features.h"
+//#include "lang_features.h"
 #ifdef DEBUG_NETWORK_DELAY
 #	include "random.h"
 #endif

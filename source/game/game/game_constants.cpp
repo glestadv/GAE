@@ -11,7 +11,6 @@
 
 #include "pch.h"
 
-#define GAME_CONSTANTS_DEF
 #include "game_constants.h"
 
 namespace Game {
