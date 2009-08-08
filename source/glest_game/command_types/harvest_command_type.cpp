@@ -176,6 +176,7 @@ void HarvestCommandType::moveToResource(Vec2i targetPos) const {
 }
 
 void HarvestCommandType::returnToStore() const {
+	//TODO remove unconditional call to World::nearestStore()
 	Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 	if (store) {
 		//TODO remove unconditional call to Map::getNearestOcupiedCell()

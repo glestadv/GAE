@@ -60,13 +60,11 @@ bool BuildCommandType::moveToBuildingSite () const
 {
    // Have we got a target in mind ? is it still free ?
    if ( command->getPos2().x == -1 
-   ||   !map->isFreeCellOrHasUnit ( command->getPos2(), unit->getCurrField(), unit ) )
-   {  // find a targetPos
+   ||   !map->isFreeCellOrHasUnit ( command->getPos2(), unit->getCurrField(), unit ) ) {  // find a targetPos
       int bldngSize = builtUnitType->getSize();
       Vec2i &bldngPos = command->getPos ();
       Vec2i waypoint;
-      if ( !map->getNearestAdjacentFreePos ( waypoint, unit, bldngPos, FieldWalkable, bldngSize ) )
-      {
+      if ( !map->getNearestAdjacentFreePos ( waypoint, unit, bldngPos, FieldWalkable, bldngSize ) ){
          // there is nowhere to 'stand' and build...
          game->getConsole()->addStdMessage("Blocked");
          unit->cancelCurrCommand();
@@ -77,98 +75,45 @@ bool BuildCommandType::moveToBuildingSite () const
       unit->getPath ()->clear ();
    }
 
-   switch (pathFinder->findPath(unit, command->getPos2())) 
-   {
-   case Search::tsOnTheWay:
-      unit->setCurrSkill(this->getMoveSkillType());
-      unit->face(unit->getNextPos());
-      return false;
+   switch (pathFinder->findPath(unit, command->getPos2())) {
+	   case Search::tsOnTheWay:
+		  unit->setCurrSkill(this->getMoveSkillType());
+		  unit->face(unit->getNextPos());
+		  return false;
 
-   case Search::tsBlocked:
-      if(unit->getPath()->isBlocked()) 
-      {
-         game->getConsole()->addStdMessage("Blocked");
-         unit->cancelCurrCommand();
-      }
-      return false;
+	   case Search::tsBlocked:
+		  if(unit->getPath()->isBlocked()) {
+			 game->getConsole()->addStdMessage("Blocked");
+			 unit->cancelCurrCommand();
+		  }
+		  return false;
 
-   case Search::tsArrived:
-      if(unit->getPos() != command->getPos2()) 
-      {
-         game->getConsole()->addStdMessage("Blocked");
-         unit->cancelCurrCommand();
-         return false;
-      }
-      // otherwise, we fall through
+	   case Search::tsArrived:
+		  if(unit->getPos() != command->getPos2()) {
+			 game->getConsole()->addStdMessage("Blocked");
+			 unit->cancelCurrCommand();
+			 return false;
+		  }
+		  // otherwise, we fall through
    }
    return true;
 }
 
-void BuildCommandType::startBuilding () const
-{
+void BuildCommandType::startBuilding () const {
 	//if arrived destination
-   bool canBuild;
-   int buildingSize = builtUnitType->getSize();
-   if ( builtUnitType->hasFieldMap () )
-      canBuild = map->areFreeCells ( command->getPos(), buildingSize, builtUnitType->fieldMap );
-   else
-      canBuild = map->areFreeCells ( command->getPos(), buildingSize, FieldWalkable);
-   if ( command->getPos().x == 0 || command->getPos().y == 0 )
-      canBuild = false;
+	bool canBuild;
+	int buildingSize = builtUnitType->getSize();
+	if ( builtUnitType->hasFieldMap () )
+		canBuild = map->areFreeCells ( command->getPos(), buildingSize, builtUnitType->fieldMap );
+	else
+		canBuild = map->areFreeCells ( command->getPos(), buildingSize, FieldWalkable);
+	if ( command->getPos().x == 0 || command->getPos().y == 0 )
+		canBuild = false;
 
-	if ( canBuild ) 
-   {
-      if(!Glest::Game::verifySubfaction(unit, builtUnitType)) {
-			return;
-		}
-		// network client has to wait for the server to tell them to begin building.  If the
-		// creates the building, we can have an id mismatch.
-		if(net->isNetworkClient()) {
-			unit->setCurrSkill(scWaitForServer);
-			// FIXME: Might play start sound multiple times or never at all
-		} else {
-			// late resource allocation
-			if(!command->isReserveResources()) {
-				command->setReserveResources(true);
-				if(unit->checkCommand(*command) != crSuccess) {
-					if(unit->getFactionIndex() == world->getThisFactionIndex()){
-						game->getConsole()->addStdMessage("BuildingNoRes");
-					}
-					unit->finishCommand();
-					return;
-				}
-				unit->getFaction()->applyCosts(command->getUnitType());
-			}
-
-			builtUnit = new Unit(world->getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world->getMap());
-			if(!builtUnitType->hasSkillClass(scBeBuilt))
-				throw runtime_error("Unit " + builtUnitType->getName() + " has no be_built skill");
-         
-			map->prepareTerrain(builtUnit); // needs to happen b4 create() for FieldMaps
-         builtUnit->create();
-			builtUnit->setCurrSkill(scBeBuilt);
-			unit->setCurrSkill(this->getBuildSkillType());
-			unit->setTarget(builtUnit, true, true);
-			command->setUnit(builtUnit);
-			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
-			if(net->isNetworkGame()) {
-				net->getServerInterface()->newUnit(builtUnit);
-				net->getServerInterface()->unitUpdate(unit);
-				net->getServerInterface()->updateFactions();
-			}
-         //FIXME: make Field friendly
-         if ( !builtUnit->isMobile() )
-            pathFinder->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
-		}
-
-		//play start sound
-		if(unit->getFactionIndex()==world->getThisFactionIndex()){
-         SoundRenderer::getInstance().playFx(
-				this->getStartSound(),
-				unit->getCurrVector(),
-				game->getGameCamera()->getPos());
-		}
-	} else {
+	if ( canBuild ) {
+		placeBuilding ();
+	} 
+	else {
 		// there are no free cells
 		vector<Unit *>occupants;
 		map->getOccupants(occupants, command->getPos(), buildingSize, ZoneSurface);
@@ -186,34 +131,90 @@ void BuildCommandType::startBuilding () const
 			unit->setCurrSkill(this->getBuildSkillType());
 			command->setUnit(builtUnit);
 
-		} else {
-			// is it not free because there are units in the way?
-			if (occupants.size()) {
-				// Can they get the fuck out of the way?
-				vector<Unit *>::const_iterator i;
-				for (i = occupants.begin();
-						i != occupants.end() && (*i)->getType()->hasSkillClass(scMove); ++i) ;
-				if (i == occupants.end()) {
-					// they all have a move command, so we'll wait
-					return;
-				}
-				//TODO: Check for idle units and tell them to get the fuck out of the way.
-				//TODO: Possibly add a unit notification to let player know builder is waiting
-			}
-
-			// blocked by non-moving units, surface objects (trees, rocks, etc.) or build area
-			// contains deeply submerged terain
-			unit->cancelCurrCommand();
-			unit->setCurrSkill(scStop);
-			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
-            game->getConsole()->addStdMessage("BuildingNoPlace");
-			}
+		} 
+		else {
+			handleBlockedSite ( occupants );
 		}
 	}
 }
+void BuildCommandType::placeBuilding () const {
+	if(!Glest::Game::verifySubfaction(unit, builtUnitType)) {
+		return;
+	}
+	// network client has to wait for the server to tell them to begin building.  If the
+	// creates the building, we can have an id mismatch.
+	if(net->isNetworkClient()) {
+		unit->setCurrSkill(scWaitForServer);
+		// FIXME: Might play start sound multiple times or never at all
+	} 
+	else {
+		// late resource allocation
+		if(!command->isReserveResources()) {
+			command->setReserveResources(true);
+			if(unit->checkCommand(*command) != crSuccess) {
+				if(unit->getFactionIndex() == world->getThisFactionIndex()){
+					game->getConsole()->addStdMessage("BuildingNoRes");
+				}
+				unit->finishCommand();
+				return;
+			}
+			unit->getFaction()->applyCosts(command->getUnitType());
+		}
 
-void BuildCommandType::continueBuilding () const
-{
+		builtUnit = new Unit(world->getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world->getMap());
+		if(!builtUnitType->hasSkillClass(scBeBuilt)) {
+			throw runtime_error("Unit " + builtUnitType->getName() + " has no be_built skill");
+		}
+
+		map->prepareTerrain(builtUnit); // needs to happen b4 create() for FieldMaps
+		builtUnit->create();
+		builtUnit->setCurrSkill(scBeBuilt);
+		unit->setCurrSkill(this->getBuildSkillType());
+		unit->setTarget(builtUnit, true, true);
+		command->setUnit(builtUnit);
+		unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
+		if(net->isNetworkGame()) {
+			net->getServerInterface()->newUnit(builtUnit);
+			net->getServerInterface()->unitUpdate(unit);
+			net->getServerInterface()->updateFactions();
+		}
+		//FIXME: make Field friendly
+		if ( !builtUnit->isMobile() ) {
+			pathFinder->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
+		}
+	}
+
+	//play start sound
+	if(unit->getFactionIndex()==world->getThisFactionIndex()){
+		SoundRenderer::getInstance().playFx( getStartSound(), unit->getCurrVector(), game->getGameCamera()->getPos());
+	}
+}
+
+void BuildCommandType::handleBlockedSite ( vector<Unit *> &occupants ) const {
+	// is it not free because there are units in the way?
+	if (occupants.size()) {
+		// Can they get the fuck out of the way?
+		vector<Unit *>::const_iterator i;
+		for (i = occupants.begin();
+			i != occupants.end() && (*i)->getType()->hasSkillClass(scMove); ++i) ;
+			if (i == occupants.end()) {
+				// they all have a move command, so we'll wait
+				return;
+			}
+			//TODO: Check for idle units and tell them to get the fuck out of the way.
+			//TODO: Possibly add a unit notification to let player know builder is waiting
+	}
+
+	// blocked by non-moving units, surface objects (trees, rocks, etc.) or build area
+	// contains deeply submerged terain
+	unit->cancelCurrCommand();
+	unit->setCurrSkill(scStop);
+	if (unit->getFactionIndex() == world->getThisFactionIndex()) {
+		game->getConsole()->addStdMessage("BuildingNoPlace");
+	}
+}
+
+void BuildCommandType::continueBuilding () const {
 	//if building
 	Unit *builtUnit = command->getUnit();
 

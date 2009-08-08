@@ -329,6 +329,8 @@ protected:
 	// returns true when arrived
 	bool moveToBuildingSite () const;
 	void startBuilding () const;
+	void placeBuilding () const;
+	void handleBlockedSite ( vector<Unit *> &occupants ) const;
 	void continueBuilding () const;
    
 	// unit cache...

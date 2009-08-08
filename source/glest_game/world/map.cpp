@@ -888,10 +888,10 @@ bool Map::getNearestAdjacentFreePos(Vec2i &result, const Unit *unit, const Vec2i
 	float noneFound = h + w;
 	float minDistance = noneFound;
 
-	int topY = target.y - size;
-	int bottomY = target.y + targetSize;
-	int leftX = target.x - size;
-	int rightX = target.x + targetSize;
+	int topY = target.y;// - size;
+	int bottomY = target.y + targetSize - 1;
+	int leftX = target.x;// - size;
+	int rightX = target.x + targetSize - 1;
 
 	if(unit) {
 		for(int i = 0; i < sideSize; ++i) {

@@ -97,7 +97,7 @@ void World::init(const XmlNode *worldNode) {
 
 #  ifdef _GAE_DEBUG_EDITION_
 	loadPFDebugTextures ();
-	loafFMDebugTextures ();
+	loadFMDebugTextures ();
 #  endif
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions

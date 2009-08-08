@@ -544,7 +544,7 @@ void Renderer::renderMouse3d(){
 			const Selection::UnitContainer &units = gui->getSelection()->getUnits();
 
 			//selection building emplacement
-			float offset= building->getSize()/2.f-0.5f;
+			float offset= building->getSize()/2.f;
 
 			for(Gui::BuildPositions::const_iterator i = bp.begin(); i != bp.end(); i++) {
 				glMatrixMode(GL_MODELVIEW);
@@ -1147,6 +1147,7 @@ void Renderer::renderSurface(){
    }
    //TODO optional...
    renderSurfaceFMDebug ();
+   return;
 #  endif
 
 	int lastTex=-1;
