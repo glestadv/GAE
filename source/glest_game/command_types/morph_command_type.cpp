@@ -67,19 +67,19 @@ void MorphCommandType::update(Unit *unit) const {
 	CommandType::cacheUnit ( unit );
 
 	//if subfaction becomes invalid while updating this command, then cancel it.
-	if(!verifySubfaction(unit, this->getMorphUnit())) {
+	if(!verifySubfaction(unit, morphUnit)) {
 		return;
 	}
 
 	if(unit->getCurrSkill()->getClass() != scMorph) {
 		//if not morphing, check space
 		bool gotSpace = false;
-		Fields mfs = this->getMorphUnit()->getFields ();
+		Fields mfs = morphUnit->getFields ();
 		Field mf = (Field)0;
 		//TODO Cleanup, remove 'fields' unit's should only have one.
 		while ( mf != FieldCount ) {
 			if ( mfs.get ( mf )
-			&&   map->areFreeCellsOrHasUnit ( unit->getPos(), getMorphUnit()->getSize(), mf, unit) ) {
+			&&   map->areFreeCellsOrHasUnit ( unit->getPos(), morphUnit->getSize(), mf, unit) ) {
 				gotSpace = true;
 				break;
 			}
@@ -87,33 +87,35 @@ void MorphCommandType::update(Unit *unit) const {
 		}
 
 		if ( gotSpace ) {
-			unit->setCurrSkill(this->getMorphSkillType());
-			unit->getFaction()->checkAdvanceSubfaction(this->getMorphUnit(), false);
+			unit->setCurrSkill(morphSkillType);
+			unit->getFaction()->checkAdvanceSubfaction(morphUnit, false);
 			unit->setCurrField ( mf );
 		} 
 		else {
-			if(unit->getFactionIndex() == world->getThisFactionIndex())
+			if(unit->getFactionIndex() == world->getThisFactionIndex()) {
 				game->getConsole()->addStdMessage("InvalidPosition");
+			}
 			unit->cancelCurrCommand();
 		}
 	} 
 	else { // already started
 		//Logger::getInstance().add ("Updating progress2....");
 		unit->update2();
-		if ( unit->getProgress2() > this->getProduced()->getProductionTime() ) {
-			bool mapUpdate = unit->isMobile () != this->getMorphUnit()->isMobile ();
+		if ( unit->getProgress2() > morphUnit->getProductionTime() ) {
+			bool mapUpdate = unit->isMobile () != morphUnit->isMobile ();
 			//finish the command
 			if(unit->morph(this)) {
 				unit->finishCommand();
 				if ( mapUpdate ) {
-					bool adding = !this->getMorphUnit()->isMobile ();
-					//FIXME: make Field friendly
+					bool adding = !morphUnit->isMobile ();
+					//FIXME: make Field friendly.. ZONES, NOT FIELDS...
 					pathFinder->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, FieldWalkable );
 				}
-				if(game->getGui()->isSelected(unit))
+				if(game->getGui()->isSelected(unit)) {
 					game->getGui()->onSelectionChanged();
-				game->getScriptManager()->onUnitCreated ( unit );
-				unit->getFaction()->checkAdvanceSubfaction(this->getMorphUnit(), true);
+				}
+				scriptManager->onUnitCreated ( unit );
+				unit->getFaction()->checkAdvanceSubfaction(morphUnit, true);
 				if(net->isNetworkServer()) {
 					net->getServerInterface()->unitMorph(unit);
 					net->getServerInterface()->updateFactions();
@@ -121,8 +123,9 @@ void MorphCommandType::update(Unit *unit) const {
 			} 
 			else {
 				unit->cancelCurrCommand();
-				if(unit->getFactionIndex() == world->getThisFactionIndex())
+				if(unit->getFactionIndex() == world->getThisFactionIndex()) {
 					game->getConsole()->addStdMessage("InvalidPosition");
+				}
 			}
 			unit->setCurrSkill(scStop);
 		}

@@ -60,10 +60,8 @@ bool UpgradeCommandType::load(const XmlNode *n, const string &dir, const TechTre
 
 void UpgradeCommandType::update(Unit *unit) const {
 	CommandType::cacheUnit ( unit );
-	NetworkManager &net = NetworkManager::getInstance();
 	//if subfaction becomes invalid while updating this command, then cancel it.
-
-	if(!verifySubfaction(unit, this->getProduced())) {
+	if(!verifySubfaction(unit, producedUpgrade)) {
 		unit->cancelCommand();
 		unit->setCurrSkill(scStop);
 		return;
@@ -71,27 +69,27 @@ void UpgradeCommandType::update(Unit *unit) const {
 
 	if(unit->getCurrSkill()->getClass() != scUpgrade) {
 		//if not producing
-		unit->setCurrSkill(this->getUpgradeSkillType());
-		unit->getFaction()->checkAdvanceSubfaction(this->getProducedUpgrade(), false);
-	} else {
+		unit->setCurrSkill(upgradeSkillType);
+		unit->getFaction()->checkAdvanceSubfaction(producedUpgrade, false);
+	} 
+	else {
 		//if producing
-		if(unit->getProgress2() < this->getProduced()->getProductionTime()) {
+		if(unit->getProgress2() < producedUpgrade->getProductionTime()) {
 			unit->update2();
 		}
 
-		if(unit->getProgress2() >= this->getProduced()->getProductionTime()) {
-			if(net.isNetworkClient()) {
+		if(unit->getProgress2() >= producedUpgrade->getProductionTime()) {
+			if(net->isNetworkClient()) {
 				// clients will wait for the server to tell them that the upgrade is finished
 				return;
 			}
 			unit->finishCommand();
 			unit->setCurrSkill(scStop);
-			unit->getFaction()->finishUpgrade(this->getProducedUpgrade());
-			unit->getFaction()->checkAdvanceSubfaction(this->getProducedUpgrade(), true);
-			if(net.isNetworkServer()) 
-         {
-				net.getServerInterface()->unitUpdate(unit);
-				net.getServerInterface()->updateFactions();
+			unit->getFaction()->finishUpgrade(producedUpgrade);
+			unit->getFaction()->checkAdvanceSubfaction(producedUpgrade, true);
+			if(net->isNetworkServer()) {
+				net->getServerInterface()->unitUpdate(unit);
+				net->getServerInterface()->updateFactions();
 			}
 		}
 	}

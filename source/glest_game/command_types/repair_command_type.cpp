@@ -95,12 +95,12 @@ void RepairCommandType::update(Unit *unit) const {
 		}
 	}*/
 
-	if(repairableOnRange( &repaired, rst->getMaxRange(), rst->isSelfAllowed())) {
+	if(repairableInRange( &repaired, rst->getMaxRange(), rst->isSelfAllowed())) {
 		unit->setTarget(repaired, true, true);
 		unit->setCurrSkill(rst);
 	} else {
 		Vec2i targetPos;
-		if(repairableOnSight( &repaired, rst->isSelfAllowed())) {
+		if(repairableInSight( &repaired, rst->isSelfAllowed())) {
 			if(!map->getNearestFreePos(targetPos, unit, repaired, 1, rst->getMaxRange())) {
 				unit->setCurrSkill(scStop);
 				unit->finishCommand();
@@ -217,7 +217,7 @@ void RepairCommandType::update(Unit *unit) const {
 
 //find a unit we can repair
 /** rangedPtr should point to a pointer that is either NULL or a valid Unit */
-bool RepairCommandType::repairableOnRange ( Vec2i center, int centerSize, Unit **rangedPtr, 
+bool RepairCommandType::repairableInRange ( Vec2i center, int centerSize, Unit **rangedPtr, 
 						int range, bool allowSelf, bool militaryOnly, bool damagedOnly) const {
 	const RepairSkillType *rst = repairSkillType;
 	Targets repairables;
@@ -280,6 +280,13 @@ bool RepairCommandType::repairableOnRange ( Vec2i center, int centerSize, Unit *
 	return true;
 }
 
+Unit* RepairCommandType::repaired = NULL;
+
+void RepairCommandType::cacheUnit ( Unit *u ) const {
+	CommandType::cacheUnit ( u );
+	repaired = command->getUnit ();
+}
+
 void RepairCommandType::getDesc(string &str, const Unit *unit) const{
 	Lang &lang= Lang::getInstance();
 
@@ -310,12 +317,12 @@ bool RepairCommandType::isRepairableUnitType(const UnitType *unitType) const{
 	return false;
 }
 
-bool RepairCommandType::repairableOnRange ( Unit **rangedPtr, int range, bool allowSelf, bool militaryOnly, bool damagedOnly ) const {
-	return repairableOnRange( unit->getPos(), unit->getType()->getSize(), rangedPtr, range, allowSelf, militaryOnly, damagedOnly);
+bool RepairCommandType::repairableInRange ( Unit **rangedPtr, int range, bool allowSelf, bool militaryOnly, bool damagedOnly ) const {
+	return repairableInRange( unit->getPos(), unit->getType()->getSize(), rangedPtr, range, allowSelf, militaryOnly, damagedOnly);
 }
 
-bool RepairCommandType::repairableOnSight( Unit **rangedPtr,  bool allowSelf) const {
-	return repairableOnRange(rangedPtr, unit->getSight(), allowSelf);
+bool RepairCommandType::repairableInSight( Unit **rangedPtr,  bool allowSelf) const {
+	return repairableInRange(rangedPtr, unit->getSight(), allowSelf);
 }
 
 
@@ -336,7 +343,7 @@ Command *RepairCommandType::doAutoRepair(Unit *unit) {
 			const RepairSkillType *rst = rct->getRepairSkillType();
 			Unit *sighted = NULL;
 
-			if(unit->getEp() >= rst->getEpCost() && rct->repairableOnSight(&sighted, rst->isSelfAllowed())) {
+			if(unit->getEp() >= rst->getEpCost() && rct->repairableInSight(&sighted, rst->isSelfAllowed())) {
 				Command *newCommand;
 				newCommand = new Command(rct, CommandFlags(cpQueue, cpAuto),
 						Map::getNearestPos(unit->getPos(), sighted, rst->getMinRange(), rst->getMaxRange()));

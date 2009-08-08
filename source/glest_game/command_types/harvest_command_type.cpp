@@ -43,95 +43,94 @@ Resource *HarvestCommandType::resource = NULL;
 
 bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
 	bool loadOk = MoveBaseCommandType::load(n, dir, tt, ft);
-
-   string skillName;
+	string skillName;
 	//harvest
-   try {
-	   skillName= n->getChild("harvest-skill")->getAttribute("value")->getRestrictedValue();
-	   harvestSkillType= static_cast<const HarvestSkillType*>(unitType->getSkillType(skillName, scHarvest));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		skillName= n->getChild("harvest-skill")->getAttribute("value")->getRestrictedValue();
+		harvestSkillType= static_cast<const HarvestSkillType*>(unitType->getSkillType(skillName, scHarvest));
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
 	//stop loaded
-   try { 
-      skillName= n->getChild("stop-loaded-skill")->getAttribute("value")->getRestrictedValue();
-      stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, scStop));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try { 
+		skillName= n->getChild("stop-loaded-skill")->getAttribute("value")->getRestrictedValue();
+		stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, scStop));
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
 
 	//move loaded
-   try {
-	   skillName= n->getChild("move-loaded-skill")->getAttribute("value")->getRestrictedValue();
-	   moveLoadedSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, scMove));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		skillName= n->getChild("move-loaded-skill")->getAttribute("value")->getRestrictedValue();
+		moveLoadedSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, scMove));
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
 	//resources can harvest
-   try { 
-	   const XmlNode *resourcesNode= n->getChild("harvested-resources");
-	   for(int i=0; i<resourcesNode->getChildCount(); ++i){
-		   const XmlNode *resourceNode= resourcesNode->getChild("resource", i);
-		   harvestedResources.push_back(tt->getResourceType(resourceNode->getAttribute("name")->getRestrictedValue()));
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   try { maxLoad= n->getChild("max-load")->getAttribute("value")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   try { hitsPerUnit= n->getChild("hits-per-unit")->getAttribute("value")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;}
+	try { 
+		const XmlNode *resourcesNode= n->getChild("harvested-resources");
+		for(int i=0; i<resourcesNode->getChildCount(); ++i){
+			const XmlNode *resourceNode= resourcesNode->getChild("resource", i);
+			harvestedResources.push_back(tt->getResourceType(resourceNode->getAttribute("name")->getRestrictedValue()));
+		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
+	try { maxLoad= n->getChild("max-load")->getAttribute("value")->getIntValue(); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
+	try { hitsPerUnit= n->getChild("hits-per-unit")->getAttribute("value")->getIntValue(); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
+	return loadOk;
+}
 
 void HarvestCommandType::cacheUnit(Unit *u) const {
 	CommandType::cacheUnit ( u );
-
-	unit = u;
-	command = unit->getCurrCommand();
 	resource = map->getTile(Map::toTileCoords(command->getPos()))->getResource();
 }
 
 void HarvestCommandType::update(Unit *unit) const {
 	cacheUnit( unit );
 
-	if (unit->getCurrSkill()->getClass() != scHarvest) {
-		if (!unit->getLoadCount()) {
-			startHarvesting();
-		} else {
+	if (unit->getCurrSkill()->getClass() != scHarvest) { // Not Harvesting
+		if (!unit->getLoadCount()) { // Load == 0
+			if (resource && canHarvest(resource->getType())) {
+				if ( !attemptToHarvest() ) {
+					moveToResource();
+				}
+			} 
+			else {
+				//if can't harvest, search for another resource
+				unit->setCurrSkill(scStop);
+				if (!searchForResource(unit, world)) {
+					unit->finishCommand();
+				}
+			}
+		} 
+		else { // Loaded
 			returnToStore();
 		}
-	} else {
+	} 
+	else { // Harvesting
 		continueHarvesting();
 	}
 }
 
-void HarvestCommandType::startHarvesting() const {	
-	if (resource && this->canHarvest(resource->getType())) {
-		attemptToHarvest();
-	} else {
-		//if can't harvest, search for another resource
-		unit->setCurrSkill(scStop);
-		if (!searchForResource(unit, world)) {
-			unit->finishCommand();
-		}
-	}
-}
-
-void HarvestCommandType::attemptToHarvest() const {
+// returns true if harvesting can commence
+bool HarvestCommandType::attemptToHarvest() const {
 	Vec2i targetPos;
 
 	//if can harvest dest. pos
@@ -139,23 +138,18 @@ void HarvestCommandType::attemptToHarvest() const {
 		map->isResourceNear(unit->getPos(), resource->getType(), targetPos)) {
 		
 		//if it finds resources it starts harvesting
-		initHarvest(targetPos);
-	} else {
-		//if not continue walking
-		moveToResource(command->getPos());
+		unit->setCurrSkill(this->getHarvestSkillType());
+		unit->setTargetPos(targetPos);
+		unit->face(targetPos);
+		unit->setLoadCount(0);
+		unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());	
+		return true;
 	}
+	return false;
 }
 
-void HarvestCommandType::initHarvest(Vec2i targetPos) const {
-	unit->setCurrSkill(this->getHarvestSkillType());
-	unit->setTargetPos(targetPos);
-	unit->face(targetPos);
-	unit->setLoadCount(0);
-	unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
-}
-
-void HarvestCommandType::moveToResource(Vec2i targetPos) const {
-	switch (pathFinder->findPathToResource(unit, targetPos, resource->getType())) {
+void HarvestCommandType::moveToResource() const {
+	switch (pathFinder->findPathToResource(unit, command->getPos(), resource->getType())) {
 		case Search::tsOnTheWay:
 			unit->setCurrSkill(this->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -165,6 +159,7 @@ void HarvestCommandType::moveToResource(Vec2i targetPos) const {
 				Vec2i cPos = unit->getPos() + Search::OffsetsSize1Dist1[i];
 				if ( resource && canHarvest (resource->getType()) ) {
 					command->setPos ( cPos );
+					unit->setTargetPos ( cPos );
 					break;
 				}
 			}
@@ -182,59 +177,56 @@ void HarvestCommandType::returnToStore() const {
 		//TODO remove unconditional call to Map::getNearestOcupiedCell()
 		switch (pathFinder->findPathToStore(unit, store->getNearestOccupiedCell(unit->getPos()),store)) {
 			case Search::tsOnTheWay:
-				unit->setCurrSkill(this->getMoveLoadedSkillType());
+				unit->setCurrSkill(moveLoadedSkillType);
 				unit->face(unit->getNextPos());
 				break;
 			default:
 				break;
 		}
 
-		//world->changePosCells(unit,unit->getPos()+unit->getDest());
 		if (map->isNextTo(unit->getPos(), store)) {
-			updateAndUnloadResources();
+			//update resources
+			int resourceAmount = unit->getLoadCount();
+			if (unit->getFaction()->getCpuUltraControl()) {
+				resourceAmount *= ultraResourceFactor;
+			}
+			unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
+			world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
+
+			//fire script event
+			scriptManager->onResourceHarvested();
+
+			//if next to a store unload resources
+			unit->getPath()->clear();
+			unit->setCurrSkill(scStop);
+			unit->setLoadCount(0);
+			if (net->isNetworkServer()) {
+				// FIXME: wasteful full update here
+				net->getServerInterface()->unitUpdate(unit);
+				net->getServerInterface()->updateFactions();
+			}
 		}
 	} else {
 		unit->finishCommand();
 	}
 }
 
-void HarvestCommandType::updateAndUnloadResources() const {
-	//update resources
-	int resourceAmount = unit->getLoadCount();
-	if (unit->getFaction()->getCpuUltraControl()) {
-		resourceAmount *= ultraResourceFactor;
-	}
-	unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
-	world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
-
-	//fire script event
-	game->getScriptManager()->onResourceHarvested();
-
-	//if next to a store unload resources
-	unit->getPath()->clear();
-	unit->setCurrSkill(scStop);
-	unit->setLoadCount(0);
-	if (net->isNetworkServer()) {
-		// FIXME: wasteful full update here
-		net->getServerInterface()->unitUpdate(unit);
-		net->getServerInterface()->updateFactions();
-	}
-}
-
 void HarvestCommandType::continueHarvesting() const {
-	//can these be replaced with cache resource? it uses command pos and this uses unitTargetPos - hailstone
+	//can these be replaced with cache resource? it uses command pos and this uses unitTargetPos - hailstone	
+	// yes, but you still need to check it... it may have been exhausted... -silnarm
+	
 	Tile *sc = map->getTile(Map::toTileCoords(unit->getTargetPos()));
-	Resource *r = sc->getResource();
-	if (r != NULL) {
+	resource = sc->getResource();
+	if (resource != NULL) {
 		//if there is a resource, continue working, until loaded
 		unit->update2();
-		if (unit->getProgress2() >= this->getHitsPerUnit()) {
+		if (unit->getProgress2() >= hitsPerUnit) {
 			unit->setProgress2(0);
 			unit->setLoadCount(unit->getLoadCount() + 1);
 
 			//if resource exausted, then delete it and stop
-			if (r->decAmount(1)) {
-				Vec2i rPos = r->getPos ();
+			if (resource->decAmount(1)) {
+				Vec2i rPos = resource->getPos ();
 				sc->deleteResource();
 				// let the pathfinder know
 				//FIXME: make Field friendly ??? resources in other fields ???
@@ -252,7 +244,8 @@ void HarvestCommandType::continueHarvesting() const {
 		//if there is no resource
 		if (unit->getLoadCount()) {
 			unit->setCurrSkill(this->getStopLoadedSkillType());
-		} else {
+		} 
+		else {
 			unit->finishCommand();
 			unit->setCurrSkill(scStop);
 		}

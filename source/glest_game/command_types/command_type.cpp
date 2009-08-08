@@ -205,6 +205,7 @@ void CommandType::cacheGlobal ()
    map = world->getMap ();
    pathFinder = Search::PathFinder::getInstance ();
    net = &NetworkManager::getInstance();
+   scriptManager = game->getScriptManager ();
 }
 // fill static unit and command members
 void CommandType::cacheUnit ( Unit *u ) const {

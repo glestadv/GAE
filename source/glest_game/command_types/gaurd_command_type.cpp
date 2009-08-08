@@ -53,7 +53,6 @@ void GuardCommandType::update(Unit *unit) const {
 	}
 
 	unit->resetLastCommandUpdated();
-	Command *command= unit->getCurrCommand();
 	Unit *target= command->getUnit();
 	Vec2i pos;
 

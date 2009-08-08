@@ -47,7 +47,8 @@ void PatrolCommandType::update(Unit *unit) const {
 			command->setUnit(NULL);
 			command->setPos(pos);
 		}
-	} else {
+	} 
+	else {
 		pos = command->getPos();
 	}
 
@@ -61,14 +62,13 @@ void PatrolCommandType::update(Unit *unit) const {
 	}
 
 	// If destination reached or blocked, turn around on next frame.
-	if ( updateAttackGeneric () )
-   {
+	if ( updateAttackGeneric () ) {
 		command->swap();
 		/*
 		// can't use minor update here because the command has changed and that wont give the new
 		// command
 		if(isNetworkGame() && isServer()) {
-			getServerInterface()->minorUnitUpdate(unit);
+		getServerInterface()->minorUnitUpdate(unit);
 		}*/
 	}
 }

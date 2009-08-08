@@ -28,7 +28,6 @@ namespace Glest { namespace Game {
 
 using Shared::Util::MultiFactory;
 
-//class UnitUpdater;
 class Unit;
 class UnitType;
 class TechTree;
@@ -377,12 +376,9 @@ public:
 protected:
 	virtual void cacheUnit(Unit *u) const;
 
-	void startHarvesting() const;
-	void attemptToHarvest() const;
-	void initHarvest(Vec2i targetPos) const;
-	void moveToResource(Vec2i targetPos) const;
+	bool attemptToHarvest() const;
+	void moveToResource() const;
 	void returnToStore() const;
-	void updateAndUnloadResources() const;
 
 	void continueHarvesting() const;
 	
@@ -411,14 +407,16 @@ public:
 	const RepairSkillType *getRepairSkillType() const	{return repairSkillType;}
 	bool isRepairableUnitType(const UnitType *unitType) const;
 
-	bool repairableOnRange ( Vec2i cntr, int cntrSz, Unit **rngdPtr, int rng, bool self = false, bool mltry = false, bool dmgd = true) const;
-	bool repairableOnRange ( Unit **rngdPtr, int range, bool self = false, bool mltry = false,  bool dmgd = true) const;
-	bool repairableOnSight ( Unit **rangedPtr, bool allowSelf) const;
+	bool repairableInRange ( Vec2i cntr, int cntrSz, Unit **rngdPtr, int rng, bool self = false, bool mltry = false, bool dmgd = true) const;
+	bool repairableInRange ( Unit **rngdPtr, int range, bool self = false, bool mltry = false,  bool dmgd = true) const;
+	bool repairableInSight ( Unit **rangedPtr, bool allowSelf) const;
 
 	static Command *doAutoRepair(Unit *unit);
 	
 	static const float repairerToFriendlySearchRadius;
-
+protected:
+	virtual void cacheUnit ( Unit *unit ) const;
+	static Unit *repaired;
 };
 
 

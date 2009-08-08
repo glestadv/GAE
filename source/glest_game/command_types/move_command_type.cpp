@@ -117,7 +117,7 @@ Command *MoveCommandType::doAutoFlee(Unit *unit) {
 				const RepairCommandType *rct = (const RepairCommandType*)ct;
 				const RepairSkillType *rst = rct->getRepairSkillType();
 
-				if(rct->repairableOnRange( center, 1, &myHero, searchRadius, false, true, false)) {
+				if(rct->repairableInRange( center, 1, &myHero, searchRadius, false, true, false)) {
 					return NULL;
 				}
 			}

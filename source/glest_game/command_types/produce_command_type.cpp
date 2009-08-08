@@ -60,67 +60,57 @@ bool ProduceCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	return loadOk;
 }
 
+
+
 void ProduceCommandType::update(Unit *unit) const {
 	CommandType::cacheUnit ( unit );
 
 	Unit *produced;
-	Game *game = Game::getInstance ();
-	World *world = game->getWorld ();
-	NetworkManager &net = NetworkManager::getInstance();
 
 	if(unit->getCurrSkill()->getClass() != scProduce) {
 		//if not producing
-		if(!verifySubfaction(unit, this->getProducedUnit())) {
+		if(!verifySubfaction(unit, producedUnit)) {
 			return;
 		}
 
-		unit->setCurrSkill(this->getProduceSkillType());
-		unit->getFaction()->checkAdvanceSubfaction(this->getProducedUnit(), false);
-	} else {
+		unit->setCurrSkill(produceSkillType);
+		unit->getFaction()->checkAdvanceSubfaction(producedUnit, false);
+	} 
+	else {
 		unit->update2();
-
-		if(unit->getProgress2() > getProduced()->getProductionTime()) {
-			if(net.isNetworkClient()) {
+		if(unit->getProgress2() > producedUnit->getProductionTime()) {
+			if(net->isNetworkClient()) {
 				// client predict, presume the server will send us the unit soon.
 				unit->finishCommand();
 				unit->setCurrSkill(scStop);
 				return;
 			}
-
-			produced = new Unit(world->getNextUnitId(), Vec2i(0), this->getProducedUnit(), unit->getFaction(), world->getMap());
-
+			produced = new Unit(world->getNextUnitId(), Vec2i(0), producedUnit, unit->getFaction(), world->getMap());
 			//if no longer a valid subfaction, let them have the unit, but make
 			//sure it doesn't advance the subfaction
-
-			if(verifySubfaction(unit, this->getProducedUnit())) {
-				unit->getFaction()->checkAdvanceSubfaction(this->getProducedUnit(), true);
+			if(verifySubfaction(unit, producedUnit)) {
+				unit->getFaction()->checkAdvanceSubfaction(producedUnit, true);
 			}
-
-			//place unit creates the unit
 			if(!world->placeUnit(unit->getCenteredPos(), 10, produced)) {
 				unit->cancelCurrCommand();
 				delete produced;
-			} else {
+			} 
+			else {
 				produced->create();
 				produced->born();
-            game->getScriptManager()->onUnitCreated ( produced );
+				scriptManager->onUnitCreated ( produced );
 				world->getStats().produce(unit->getFactionIndex());
 				const CommandType *ct = produced->computeCommandType(unit->getMeetingPos());
-
 				if(ct) {
 					produced->giveCommand(new Command(ct, CommandFlags(), unit->getMeetingPos()));
 				}
-
-				if( getProduceSkillType()->isPet() ) 
-            {
+				if( getProduceSkillType()->isPet() )  {
 					unit->addPet(produced);
 					produced->setMaster(unit);
 				}
-
 				unit->finishCommand();
-
-				if(net.isNetworkServer()) {
-					net.getServerInterface()->newUnit(produced);
+				if(net->isNetworkServer()) {
+					net->getServerInterface()->newUnit(produced);
 				}
 			}
 			unit->setCurrSkill(scStop);

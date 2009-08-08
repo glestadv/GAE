@@ -103,12 +103,15 @@ void BuildCommandType::startBuilding () const {
 	//if arrived destination
 	bool canBuild;
 	int buildingSize = builtUnitType->getSize();
-	if ( builtUnitType->hasFieldMap () )
+	if ( builtUnitType->hasFieldMap () ) {
 		canBuild = map->areFreeCells ( command->getPos(), buildingSize, builtUnitType->fieldMap );
-	else
+	}
+	else {
 		canBuild = map->areFreeCells ( command->getPos(), buildingSize, FieldWalkable);
-	if ( command->getPos().x == 0 || command->getPos().y == 0 )
+	}
+	if ( command->getPos().x == 0 || command->getPos().y == 0 ) {
 		canBuild = false;
+	}
 
 	if ( canBuild ) {
 		placeBuilding ();
@@ -216,25 +219,22 @@ void BuildCommandType::handleBlockedSite ( vector<Unit *> &occupants ) const {
 
 void BuildCommandType::continueBuilding () const {
 	//if building
-	Unit *builtUnit = command->getUnit();
-
 	if(builtUnit && builtUnit->getType() != builtUnitType) {
 		unit->setCurrSkill(scStop);
-	} else if(!builtUnit || builtUnit->isBuilt()) {
+	} 
+	else if(!builtUnit || builtUnit->isBuilt()) {
 		unit->finishCommand();
 		unit->setCurrSkill(scStop);
-	} else if(builtUnit->repair()) {
+	} 
+	else if(builtUnit->repair()) {
 		//building finished
 		unit->finishCommand();
 		unit->setCurrSkill(scStop);
 		unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), true);
-      game->getScriptManager()->onUnitCreated ( builtUnit );
+		scriptManager->onUnitCreated ( builtUnit );
 
-      if(unit->getFactionIndex()==world->getThisFactionIndex()) {
-			SoundRenderer::getInstance().playFx(
-				this->getBuiltSound(),
-				unit->getCurrVector(),
-            game->getGameCamera()->getPos());
+		if(unit->getFactionIndex()==world->getThisFactionIndex()) {
+			SoundRenderer::getInstance().playFx( getBuiltSound(), unit->getCurrVector(), game->getGameCamera()->getPos());
 		}
 		if(net->isNetworkServer()) {
 			net->getServerInterface()->unitUpdate(unit);
@@ -244,10 +244,8 @@ void BuildCommandType::continueBuilding () const {
 	}
 }
 
-void BuildCommandType::cacheUnit ( Unit *u ) const
-{
+void BuildCommandType::cacheUnit ( Unit *u ) const {
 	CommandType::cacheUnit ( u );
-
 	builtUnitType= command->getUnitType();
 	builtUnit = NULL;
 	target = unit->getTarget();
@@ -257,66 +255,66 @@ bool BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	bool loadOk = MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//build
-   try {
-	   string skillName= n->getChild("build-skill")->getAttribute("value")->getRestrictedValue();
-	   buildSkillType= static_cast<const BuildSkillType*>(unitType->getSkillType(skillName, scBuild));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		string skillName= n->getChild("build-skill")->getAttribute("value")->getRestrictedValue();
+		buildSkillType= static_cast<const BuildSkillType*>(unitType->getSkillType(skillName, scBuild));
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
 	//buildings built
-   try {
-	   const XmlNode *buildingsNode= n->getChild("buildings");
-	   for(int i=0; i<buildingsNode->getChildCount(); ++i){
-		   const XmlNode *buildingNode= buildingsNode->getChild("building", i);
-		   string name= buildingNode->getAttribute("name")->getRestrictedValue();
-		   buildings.push_back(ft->getUnitType(name));
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		const XmlNode *buildingsNode= n->getChild("buildings");
+		for(int i=0; i<buildingsNode->getChildCount(); ++i){
+			const XmlNode *buildingNode= buildingsNode->getChild("building", i);
+			string name= buildingNode->getAttribute("name")->getRestrictedValue();
+			buildings.push_back(ft->getUnitType(name));
+		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
 
 	//start sound
-   try { 
-	   const XmlNode *startSoundNode= n->getChild("start-sound");
-	   if(startSoundNode->getAttribute("enabled")->getBoolValue()){
-		   startSounds.resize(startSoundNode->getChildCount());
-		   for(int i=0; i<startSoundNode->getChildCount(); ++i){
-			   const XmlNode *soundFileNode= startSoundNode->getChild("sound-file", i);
-			   string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-			   StaticSound *sound= new StaticSound();
-			   sound->load(dir + "/" + path);
-			   startSounds[i]= sound;
-		   }
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try { 
+		const XmlNode *startSoundNode= n->getChild("start-sound");
+		if(startSoundNode->getAttribute("enabled")->getBoolValue()){
+			startSounds.resize(startSoundNode->getChildCount());
+			for(int i=0; i<startSoundNode->getChildCount(); ++i){
+				const XmlNode *soundFileNode= startSoundNode->getChild("sound-file", i);
+				string path= soundFileNode->getAttribute("path")->getRestrictedValue();
+				StaticSound *sound= new StaticSound();
+				sound->load(dir + "/" + path);
+				startSounds[i]= sound;
+			}
+		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
 
 	//built sound
-   try {
-	   const XmlNode *builtSoundNode= n->getChild("built-sound");
-	   if(builtSoundNode->getAttribute("enabled")->getBoolValue()){
-		   builtSounds.resize(builtSoundNode->getChildCount());
-		   for(int i=0; i<builtSoundNode->getChildCount(); ++i){
-			   const XmlNode *soundFileNode= builtSoundNode->getChild("sound-file", i);
-			   string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-			   StaticSound *sound= new StaticSound();
-			   sound->load(dir + "/" + path);
-			   builtSounds[i]= sound;
-		   }
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try {
+		const XmlNode *builtSoundNode= n->getChild("built-sound");
+		if(builtSoundNode->getAttribute("enabled")->getBoolValue()){
+			builtSounds.resize(builtSoundNode->getChildCount());
+			for(int i=0; i<builtSoundNode->getChildCount(); ++i){
+				const XmlNode *soundFileNode= builtSoundNode->getChild("sound-file", i);
+				string path= soundFileNode->getAttribute("path")->getRestrictedValue();
+				StaticSound *sound= new StaticSound();
+				sound->load(dir + "/" + path);
+				builtSounds[i]= sound;
+			}
+		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what () );
+		loadOk = false;
+	}
+	return loadOk;
 }
 
 
