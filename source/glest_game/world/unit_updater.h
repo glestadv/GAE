@@ -40,19 +40,7 @@ namespace Search { class PathFinder; }
 class UnitUpdater{
 private:
 	friend class ParticleDamager;
-   friend class World;
-
-private:
-	static const int maxResSearchRadius= 10;
-	static const int harvestDistance= 5;
-	static const int ultraResourceFactor= 3;
-	/**
-	 * When a unit who can repair, but not attack is faced with a hostile, this is the percentage
-	 * of the radius that we search from the center of the intersection point for a friendly that
-	 * can attack.  This is used to decide if the repiarer stays put in to backup a friendly who
-	 * we presume will be fighting, of if the repairer flees.
-	 */
-	static const float repairerToFriendlySearchRadius;
+	friend class World;
 
 private:
 	const GameCamera *gameCamera;
@@ -60,8 +48,8 @@ private:
 	Map *map;
 	World *world;
 	Console *console;
-   ScriptManager *scriptManager;
-   Search::PathFinder *pathFinder;
+	ScriptManager *scriptManager;
+	Search::PathFinder *pathFinder;
 	Random random;
 
 public:
@@ -72,19 +60,6 @@ public:
 
     //update commands
     void updateUnitCommand(Unit *unit);
-    void updateStop(Unit *unit);
-    void updateMove(Unit *unit);
-    void updateAttack(Unit *unit);
-    void updateAttackStopped(Unit *unit);
-    void updateBuild(Unit *unit);
-    void updateHarvest(Unit *unit);
-    void updateRepair(Unit *unit);
-    void updateProduce(Unit *unit);
-    void updateUpgrade(Unit *unit);
-	void updateMorph(Unit *unit);
-	void updateCastSpell(Unit *unit);
-	void updateGuard(Unit *unit);
-	void updatePatrol(Unit *unit);
 
 private:
     //attack
@@ -100,53 +75,6 @@ private:
 	void updateEmanations(Unit *unit);
 
 	//misc
-	Command *doAutoAttack(Unit *unit);
-	Command *doAutoRepair(Unit *unit);
-	Command *doAutoFlee(Unit *unit);
-    bool searchForResource(Unit *unit, const HarvestCommandType *hct);
-    bool attackerOnSight(const Unit *unit, Unit **enemyPtr);
-    bool attackableOnSight(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
-    bool attackableOnRange(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
-	bool unitOnRange(const Unit *unit, int range, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
-	bool repairableOnRange(
-			const Unit *unit,
-			Vec2i center,
-			int centerSize,
-			Unit **rangedPtr,
-			const RepairCommandType *rct,
-			const RepairSkillType *rst,
-			int range,
-			bool allowSelf = false,
-			bool militaryOnly = false,
-			bool damagedOnly = true);
-
-	bool repairableOnRange(
-			const Unit *unit,
-			Unit **rangedPtr,
-			const RepairCommandType *rct,
-			int range,
-			bool allowSelf = false,
-			bool militaryOnly = false,
-			bool damagedOnly = true) {
-		return repairableOnRange(unit, unit->getPos(), unit->getType()->getSize(),
-				rangedPtr, rct, rct->getRepairSkillType(), range, allowSelf, militaryOnly, damagedOnly);
-	}
-
-	bool repairableOnSight(const Unit *unit, Unit **rangedPtr, const RepairCommandType *rct, bool allowSelf) {
-		return repairableOnRange(unit, rangedPtr, rct, unit->getSight(), allowSelf);
-	}
-
-	void enemiesAtDistance(const Unit *unit, const Unit *priorityUnit, int distance, vector<Unit*> &enemies);
-	bool updateAttackGeneric(Unit *unit, Command *command, const AttackCommandType *act, Unit* target, const Vec2i &targetPos);
-/*
-	Vec2i getNear(const Vec2i &pos, Vec2i target, int minRange, int maxRange, int targetSize = 1) {
-		return map->getNearestPos(pos, target, targetSize, minRange, maxRange);
-	}
-
-	Vec2i getNear(const Vec2i &pos, const Unit *target, int minRange, int maxRange) {
-		return map->getNearestPos(pos, target, minRange, maxRange);
-	}*/
-
 	bool isLocal()							{return NetworkManager::getInstance().isLocal();}
 	bool isNetworkGame()					{return NetworkManager::getInstance().isNetworkGame();}
 	bool isNetworkServer() 					{return NetworkManager::getInstance().isNetworkServer();}

@@ -156,7 +156,7 @@ void Game::load(){
 }
 
 void Game::init() {
-   Lang &lang= Lang::getInstance();
+	Lang &lang= Lang::getInstance();
 	Logger &logger= Logger::getInstance();
 	CoreData &coreData= CoreData::getInstance();
 	Renderer &renderer= Renderer::getInstance();
@@ -182,18 +182,20 @@ void Game::init() {
 	// init world, and place camera
 	commander.init(&world);
 
-   world.init(savedGame ? savedGame->getChild("world") : NULL);
+	world.init(savedGame ? savedGame->getChild("world") : NULL);
 	gui.init();
 	chatManager.init(&console, world.getThisTeamIndex());
 	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
-   scriptManager.init(&world, &gameCamera);
+	scriptManager.init(&world, &gameCamera);
 	
-   if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
+	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
 		gui.load(savedGame->getChild("gui"));
 	}
+
+	CommandType::cacheGlobal ();
 
 	//create IAs
 	aiInterfaces.resize(world.getFactionCount());

@@ -177,6 +177,8 @@ public:
    void loadPFDebugTextures ();
    Texture2D *PFDebugTextures[18];
    //int getNumPathPos () { return map.PathPositions.size (); }
+	void loadFMDebugTextures ();
+	Texture2D *FMDebugTextures[9];
 #endif
 
 private:

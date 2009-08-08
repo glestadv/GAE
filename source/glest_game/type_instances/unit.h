@@ -178,6 +178,8 @@ private:
 	bool faceTarget;		/** If true and target is set, we continue to face target. */
 	bool useNearestOccupiedCell;	/** If true, targetPos is set to target->getNearestOccupiedCell() */
 
+	Vec3f currVectorFlat;
+
 	float lastRotation;		//in degrees
 	float targetRotation;
 	float rotation;
@@ -224,7 +226,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
-   Zone getCurrZone () const  { return currField == FieldAir ? ZoneAir : ZoneSurface; }
+	Zone getCurrZone () const  { return currField == FieldAir ? ZoneAir : ZoneSurface; }
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}
@@ -320,7 +322,10 @@ public:
 	Vec2i getCenteredPos() const		{return Vec2i((int)type->getHalfSize()) + pos;}
 	Vec2f getFloatCenteredPos() const	{return Vec2f(type->getHalfSize()) + Vec2f((float)pos.x, (float)pos.y);}
 	Vec2i getNearestOccupiedCell(const Vec2i &from) const;
-//	Vec2i getCellPos() const;
+	Vec2i getFlattenPos () const;
+	//	Vec2i getCellPos() const;
+	// calculate unit position, assumes not moving
+	void setCurrentVectorStatic ();
 
 	//is
 	bool isHighlighted() const			{return highlight > 0.f;}
@@ -366,20 +371,7 @@ public:
 	const Model *getCurrentModel() const				{return currSkill->getAnimation();}
 	Vec3f getCurrVector() const							{return getCurrVectorFlat() + Vec3f(0.f, type->getHalfHeight(), 0.f);}
 	//Vec3f getCurrVectorFlat() const;
-	// this is a heavy use function so it's inlined even though it isn't exactly small
-	Vec3f getCurrVectorFlat() const {
-		Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
-	
-		if (currSkill->getClass() == scMove) {
-			v = Vec3f(static_cast<float>(lastPos.x), computeHeight(lastPos),
-					  static_cast<float>(lastPos.y)).lerp(progress, v);
-		}
-
-		v.x += type->getHalfSize();
-		v.z += type->getHalfSize();
-	
-		return v;
-	}
+	Vec3f getCurrVectorFlat() const { return currVectorFlat; }
 
 	//command related
 	const CommandType *getFirstAvailableCt(CommandClass commandClass) const;

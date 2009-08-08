@@ -93,12 +93,13 @@ protected:
 	int minRange;
 	int maxRange;
 
+	/* not used yet...
 	int effectsRemoved;
 	bool removeBenificialEffects;
 	bool removeDetrimentalEffects;
 	bool removeAllyEffects;
 	bool removeEnemyEffects;
-
+	*/
 	float startTime;
 
 	bool projectile;
@@ -135,9 +136,7 @@ public:
 	int getEpCost() const				{return epCost;}
 	int getSpeed() const				{return speed;}
 	int getAnimSpeed() const			{return animSpeed;}
-	const Model *getAnimation() const	{
-
-		return animations.front();}
+	const Model *getAnimation() const	{return animations.front();}
 	StaticSound *getSound() const		{return sounds.getRandSound();}
 	float getSoundStartTime() const		{return soundStartTime;}
 	int getMaxRange() const				{return maxRange;}
@@ -148,14 +147,15 @@ public:
 	virtual string toString() const		{return Lang::getInstance().get(typeName);}
 	static string skillClassToStr(SkillClass skillClass);
 	static string fieldToStr(Zone field);
-
+	
+	/* not used yet
 	// get removing effects
 	int getEffectsRemoved() const			{return effectsRemoved;}
 	bool isRemoveBenificialEffects() const	{return removeBenificialEffects;}
 	bool isRemoveDetrimentalEffects() const	{return removeDetrimentalEffects;}
 	bool isRemoveAllyEffects() const		{return removeAllyEffects;}
 	bool isRemoveEnemyEffects() const		{return removeEnemyEffects;}
-
+	*/
 	//get proj
 	bool getProjectile() const									{return projectile;}
 	ParticleSystemTypeProjectile * getProjParticleType() const	{return projectileParticleSystemType;}

@@ -384,18 +384,40 @@ void Gui::mouseMoveGraphics(int x, int y){
 			updateSelection(false, units);
 		}
 	}
-
+#ifdef _GAE_DEBUG_EDITION_
+	Map *map = Game::getInstance ()->getWorld()->getMap ();
+	map->FieldMapDebug.clear ();
+#endif
 	//compute position for building
-	if(isPlacingBuilding()){
+	if ( isPlacingBuilding() ) {
 		validPosObjWorld= Renderer::getInstance().computePosition(Vec2i(x,y), posObjWorld);
 
-		if(!validPosObjWorld) {
+		if ( !validPosObjWorld ) {
 			buildPositions.clear();
-		} else {
-			computeBuildPositions(posObjWorld);
 		}
+		else {
+			computeBuildPositions(posObjWorld);
+#ifdef _GAE_DEBUG_EDITION_
+			//TODO option to turn on/off
+			if ( choosenBuildingType->hasFieldMap () ) {
+			   for(int i=-1; i<=choosenBuildingType->getSize(); ++i) {
+				   for(int j=-1; j<=choosenBuildingType->getSize(); ++j) {
+					   Vec2i relPos = Vec2i(i, j);
+					   Vec2i pos= posObjWorld + relPos;
+					   switch ( choosenBuildingType->getFieldMapCell ( relPos ) ) {
+						   case 'l': map->FieldMapDebug[pos] = 0; break;
+						   case 'a': map->FieldMapDebug[pos] = 1; break;
+						   case 'w': map->FieldMapDebug[pos] = 2; break;
+						   case 'r': map->FieldMapDebug[pos] = 3; break;
+						   case 'f': map->FieldMapDebug[pos] = 4; break;
+						   case 'i': map->FieldMapDebug[pos] = 5; break;
+					   }
+				   }
+			   }
+		   } // end if ( choosenBuildingType->hasFieldMap () )
+#endif
+	   }
 	}
-
 	display.setInfoText("");
 }
 

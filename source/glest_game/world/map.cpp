@@ -4,7 +4,7 @@
 //	Copyright (C) 2001-2008 Marti�o Figueroa,
 //				  2008 Jaagup Rep�n <jrepan@gmail.com>,
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
-//            2009 James McCulloch <silnarm@gmail.com>
+//				  2009 James McCulloch <silnarm@gmail.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -696,7 +696,7 @@ void Map::getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Zone
 		}
 	}
 }
-/*
+
 bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) const
 {
    for ( int i=0; i < building->getSize(); ++i )
@@ -717,7 +717,7 @@ bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) co
    }
    return true;
 }
-*/
+
 // ==================== location calculations ====================
 
 //Rect2(pos.x, pos.y, pos.x + size, pos.y + size)
@@ -1121,32 +1121,31 @@ void Map::flatternTerrain(const Unit *unit){
         }
     }
 }
-/*
-void Map::flattenTerrain ( const Unit *unit )
-{
-   // need to make sure unit->getCenteredPos() is on a 'l' fieldMapCell
+
+void Map::flattenTerrain ( const Unit *unit ) {
+	// need to make sure unit->getCenteredPos() is on a 'l' fieldMapCell
 	float refHeight= getTile(toTileCoords(unit->getFlattenPos()))->getHeight();
-   
-	for(int i=-1; i<=unit->getType()->getSize(); ++i)
-   {
-      for(int j=-1; j<=unit->getType()->getSize(); ++j)
-      {
-         Vec2i relPos = Vec2i(i, j);
-         Vec2i pos= unit->getPos() + relPos;
-         // Only flatten for parts of the building on 'land'
-         if ( unit->getType ()->hasFieldMap ()
-         &&   unit->getType ()->getFieldMapCell ( relPos ) != 'l'
-         &&   unit->getType ()->getFieldMapCell ( relPos ) != 'f' ) 
-            continue;
-         Cell *c= getCell(pos);
-         Tile *sc= getTile(toTileCoords(pos));
-         //we change height if pos is inside world, if its free or ocupied by the currenty building
-         if ( isInside(pos) && sc->getObject()==NULL 
-         &&   (c->getUnit(ZoneSurface)==NULL || c->getUnit(ZoneSurface)==unit) )
-	         sc->setHeight(refHeight);
-      }
-    }
-}*/
+
+	for(int i=-1; i<=unit->getType()->getSize(); ++i) {
+		for(int j=-1; j<=unit->getType()->getSize(); ++j) {
+			Vec2i relPos = Vec2i(i, j);
+			Vec2i pos= unit->getPos() + relPos;
+			// Only flatten for parts of the building on 'land'
+			if ( unit->getType ()->hasFieldMap ()
+			&&   unit->getType ()->getFieldMapCell ( relPos ) != 'l'
+			&&   unit->getType ()->getFieldMapCell ( relPos ) != 'f' ) {
+				continue;
+			}
+			Cell *c= getCell(pos);
+			Tile *sc= getTile(toTileCoords(pos));
+			//we change height if pos is inside world, if its free or ocupied by the currenty building
+			if ( isInside(pos) && sc->getObject()==NULL 
+			&&   (c->getUnit(ZoneSurface)==NULL || c->getUnit(ZoneSurface)==unit) ) {
+				sc->setHeight(refHeight);
+			}
+		}
+	}
+}
 
 //compute normals
 void Map::computeNormals(Rect2i range) {

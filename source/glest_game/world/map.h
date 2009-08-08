@@ -217,6 +217,10 @@ public:
 	void init();
 	void load(const string &path, TechTree *techTree, Tileset *tileset);
 
+#ifdef _GAE_DEBUG_EDITION_
+	map<Vec2i, int> FieldMapDebug;
+#endif
+
 	//get
 	Cell *getCell(int x, int y) const;
 	Cell *getCell(const Vec2i &pos) const;
@@ -303,8 +307,8 @@ public:
 
 	void prepareTerrain(const Unit *unit);
 	void flatternTerrain(const Unit *unit);
+	void flattenTerrain(const Unit *unit);
 
-	//void flattenTerrain(const Unit *unit);
 	void computeNormals(Rect2i range = Rect2i(0, 0, 0, 0));
 	void computeInterpolatedHeights(Rect2i range = Rect2i(0, 0, 0, 0));
 	void read(NetworkDataBuffer &buf);

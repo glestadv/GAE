@@ -40,7 +40,7 @@ class EnhancementTypeBase;
 // see instructions at the top of annotated_map.h
 
 enum Zone // Zone of unit _occupance_
-{  // used for attack fields, actual occupance is indirectly 
+{  // used for attack 'fields', actual occupance is indirectly 
    // specified by the unit's current Field
    ZoneSurfaceProp,
    ZoneSurface,
@@ -51,14 +51,14 @@ enum Zone // Zone of unit _occupance_
 
 enum SurfaceType // for each cell's surface zone,
 {  // is computed in Map::setCellTypes ()
-   // FIXME: may change... need hook in Map::prepareTerrain()
+   // FIXME: may change... need hook in Map::prepareTerrain() &| Map::flatte[r]nTerrain
    SurfaceTypeLand, 
    SurfaceTypeFordable, 
    SurfaceTypeDeepWater, 
    SurfaceTypeCount
 };
 
-enum Field // Zones of Movement
+enum Field // Fields of Movement
 {
    FieldWalkable, // ZoneSurface + ( SurfaceTypeLand || SurfaceTypeFordable )
    FieldAir,      // ZoneAir

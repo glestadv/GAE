@@ -97,6 +97,7 @@ void World::init(const XmlNode *worldNode) {
 
 #  ifdef _GAE_DEBUG_EDITION_
 	loadPFDebugTextures ();
+	loafFMDebugTextures ();
 #  endif
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
@@ -603,7 +604,7 @@ void World::doKill(Unit *killer, Unit *killed) {
 			killer->incKills();
 		}
 	}
-
+	//FIXME: make Field friendly
 	if(killed->getCurrSkill()->getClass() != scDie) {
 	   killed->kill();
 	}
@@ -1042,16 +1043,12 @@ void World::initUnits() {
 							"is no enough place to put the units near its start location, make a "
 							"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
 				}
-            //if ( !unit->isMobile() )
-            //   unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(),
-            //                unit->getSize(), true, unit->getCurrField () );
-				if(unit->getType()->hasSkillClass(scBeBuilt))
-            {
-               map.flatternTerrain(unit);
-               unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(),
-                            unit->getSize(), true, unit->getCurrField () );
+				if(unit->getType()->hasSkillClass(scBeBuilt)) {
+					map.flattenTerrain(unit);
+					unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(),
+								unit->getSize(), true, unit->getCurrField () );
 				}
-         }
+			}
 		}
 	}
 	map.computeNormals();
@@ -1202,6 +1199,25 @@ void World::hackyCleanUp(Unit *unit) {
 
 
 #ifdef _GAE_DEBUG_EDITION_
+#define _load_tex(i,f) \
+   FMDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
+   FMDebugTextures[i]->setMipmap(false);\
+   FMDebugTextures[i]->getPixmap()->load(f);
+
+void World::loadFMDebugTextures ()
+{
+   _load_tex ( 0, "data/core/misc_textures/fm_land.bmp" );
+   _load_tex ( 1, "data/core/misc_textures/fm_any.bmp" );
+   _load_tex ( 2, "data/core/misc_textures/fm_water.bmp" );
+   _load_tex ( 3, "data/core/misc_textures/fm_ref.bmp" );
+   _load_tex ( 4, "data/core/misc_textures/fm_flatten.bmp" );
+   _load_tex ( 5, "data/core/misc_textures/fm_ignore.bmp" );
+   _load_tex ( 6, "data/core/misc_textures/st_land.bmp" );
+   _load_tex ( 7, "data/core/misc_textures/st_shallow.bmp" );
+   _load_tex ( 8, "data/core/misc_textures/st_deep.bmp" );
+}
+
+#undef _load_tex
 #define _load_tex(i,f) \
    PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
    PFDebugTextures[i]->setMipmap(false);\

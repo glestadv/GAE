@@ -245,6 +245,7 @@ public:
 	void setDebugField ( Field f ) { debugField = f; }
 	Field getDebugField () { return debugField; }
     void renderSurfacePFDebug ();
+	void renderSurfaceFMDebug ();
 #endif
 	//computing
     bool computePosition(const Vec2i &screenPos, Vec2i &worldPos);
