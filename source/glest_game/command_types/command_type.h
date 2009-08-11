@@ -331,7 +331,7 @@ protected:
 	void placeBuilding () const;
 	void handleBlockedSite ( vector<Unit *> &occupants ) const;
 	void continueBuilding () const;
-   
+
 	// unit cache...
 	static const UnitType *builtUnitType;
 	static Unit *builtUnit;

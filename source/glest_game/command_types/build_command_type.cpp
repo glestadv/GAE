@@ -43,7 +43,10 @@ BuildCommandType::~BuildCommandType(){
 	deleteValues(builtSounds.getSounds().begin(), builtSounds.getSounds().end());
 	deleteValues(startSounds.getSounds().begin(), startSounds.getSounds().end());
 }
-
+/*
+static char dbgBuffer[512];
+#define log(x) sprintf(dbgBuffer,"Unit ID:%d - %s",unit->getId(),x);Logger::getInstance().add(dbgBuffer);
+*/
 void BuildCommandType::update ( Unit *unit ) const {
 	cacheUnit ( unit );
 	if ( unit->getCurrSkill()->getClass() != scBuild ) {
@@ -56,47 +59,55 @@ void BuildCommandType::update ( Unit *unit ) const {
 	}
 }
 
-bool BuildCommandType::moveToBuildingSite () const
-{
-   // Have we got a target in mind ? is it still free ?
-   if ( command->getPos2().x == -1 
-   ||   !map->isFreeCellOrHasUnit ( command->getPos2(), unit->getCurrField(), unit ) ) {  // find a targetPos
-      int bldngSize = builtUnitType->getSize();
-      Vec2i &bldngPos = command->getPos ();
-      Vec2i waypoint;
-      if ( !map->getNearestAdjacentFreePos ( waypoint, unit, bldngPos, FieldWalkable, bldngSize ) ){
-         // there is nowhere to 'stand' and build...
-         game->getConsole()->addStdMessage("Blocked");
-         unit->cancelCurrCommand();
-         return false;
-      }
-      command->setPos2 ( waypoint );
-      unit->setTargetPos ( waypoint );
-      unit->getPath ()->clear ();
-   }
+bool BuildCommandType::moveToBuildingSite () const {
+	// Have we got a target in mind ? is it still free ?
+	if ( command->getPos2().x == -1 
+	||   !map->isFreeCellOrHasUnit ( command->getPos2(), unit->getCurrField(), unit ) ) {  // find a targetPos
+		int bldngSize = builtUnitType->getSize();
+		Vec2i &bldngPos = command->getPos ();
+		Vec2i waypoint;
+		if ( !map->getNearestAdjacentFreePos ( waypoint, unit, bldngPos, FieldWalkable, bldngSize ) ){
+			// there is nowhere to 'stand' and build...
+			game->getConsole()->addStdMessage("Blocked");
+			unit->cancelCurrCommand();
+			return false;
+		}
+		/*
+		static char buffer[512];
+		sprintf ( buffer, "waypoint={%d,%d}, building loc={%d,%d}, size=%d", 
+			waypoint.x, waypoint.y, bldngPos.x, bldngPos.y, bldngSize );
+		log ( buffer );
+		*/
+		command->setPos2 ( waypoint );
+		unit->setTargetPos ( waypoint );
+		unit->getPath ()->clear ();
+	}
 
-   switch (pathFinder->findPath(unit, command->getPos2())) {
-	   case Search::tsOnTheWay:
-		  unit->setCurrSkill(this->getMoveSkillType());
-		  unit->face(unit->getNextPos());
-		  return false;
+	switch (pathFinder->findPath(unit, command->getPos2())) {
+		case Search::tsOnTheWay:
+			unit->setCurrSkill(this->getMoveSkillType());
+			unit->face(unit->getNextPos());
+			//log ( "moving to bulding site." );
+			return false;
 
-	   case Search::tsBlocked:
-		  if(unit->getPath()->isBlocked()) {
-			 game->getConsole()->addStdMessage("Blocked");
-			 unit->cancelCurrCommand();
-		  }
-		  return false;
+		case Search::tsBlocked:
+			if(unit->getPath()->isBlocked()) {
+				game->getConsole()->addStdMessage("Blocked");
+				unit->cancelCurrCommand();
+				//log ( "can't get to bulding site, command cancelled." );
+			}
+			return false;
 
-	   case Search::tsArrived:
-		  if(unit->getPos() != command->getPos2()) {
-			 game->getConsole()->addStdMessage("Blocked");
-			 unit->cancelCurrCommand();
-			 return false;
-		  }
-		  // otherwise, we fall through
-   }
-   return true;
+		case Search::tsArrived:
+			if(unit->getPos() != command->getPos2()) {
+				game->getConsole()->addStdMessage("Blocked");
+				unit->cancelCurrCommand();
+				//log ( "arrived at building site." );
+				return false;
+			}
+	// otherwise, we fall through
+	}
+	return true;
 }
 
 void BuildCommandType::startBuilding () const {
@@ -133,7 +144,7 @@ void BuildCommandType::startBuilding () const {
 			unit->setTarget(builtUnit, true, true);
 			unit->setCurrSkill(this->getBuildSkillType());
 			command->setUnit(builtUnit);
-
+			//log ( "building already underway." );
 		} 
 		else {
 			handleBlockedSite ( occupants );
@@ -185,6 +196,7 @@ void BuildCommandType::placeBuilding () const {
 		if ( !builtUnit->isMobile() ) {
 			pathFinder->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
 		}
+		//log ( "started building." );
 	}
 
 	//play start sound
@@ -201,6 +213,7 @@ void BuildCommandType::handleBlockedSite ( vector<Unit *> &occupants ) const {
 		for (i = occupants.begin();
 			i != occupants.end() && (*i)->getType()->hasSkillClass(scMove); ++i) ;
 			if (i == occupants.end()) {
+				//log ( "waiting for other unit to get out of the way." );
 				// they all have a move command, so we'll wait
 				return;
 			}
@@ -215,16 +228,25 @@ void BuildCommandType::handleBlockedSite ( vector<Unit *> &occupants ) const {
 	if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 		game->getConsole()->addStdMessage("BuildingNoPlace");
 	}
+	//log ( "building can not be placed." );
 }
 
 void BuildCommandType::continueBuilding () const {
 	//if building
 	if(builtUnit && builtUnit->getType() != builtUnitType) {
 		unit->setCurrSkill(scStop);
+		//log ( "sanity check failed." );
 	} 
 	else if(!builtUnit || builtUnit->isBuilt()) {
 		unit->finishCommand();
 		unit->setCurrSkill(scStop);
+		/*log ( "building has been finished." );
+		if ( !builtUnit ) {
+			log ( "builtUnit was NULL" );
+		}
+		else {
+			log ( "builtUnit->isBuilt() == true" );
+		}*/
 	} 
 	else if(builtUnit->repair()) {
 		//building finished
@@ -241,13 +263,14 @@ void BuildCommandType::continueBuilding () const {
 			net->getServerInterface()->unitUpdate(builtUnit);
 			net->getServerInterface()->updateFactions();
 		}
+		//log ( "building finished." );
 	}
 }
 
 void BuildCommandType::cacheUnit ( Unit *u ) const {
 	CommandType::cacheUnit ( u );
 	builtUnitType= command->getUnitType();
-	builtUnit = NULL;
+	builtUnit = command->getUnit ();
 	target = unit->getTarget();
 }
 
