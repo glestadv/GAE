@@ -24,6 +24,7 @@
 #include "game_settings.h"
 #include "network_message.h"
 #include "path_finder.h"
+#include "earthquake.h"
 
 //DEBUG remove me some time...
 #include "renderer.h"

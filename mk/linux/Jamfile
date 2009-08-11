@@ -41,6 +41,7 @@ SubDir TOP glest_game ;
 GLEST_DIRS =
 	.
 	ai
+	command_types
 	facilities
 	game
 	global
@@ -54,6 +55,7 @@ GLEST_DIRS =
 	type_instances
 	types
 	world
+	world_effects
 ;
 
 for i in $(GLEST_DIRS) {

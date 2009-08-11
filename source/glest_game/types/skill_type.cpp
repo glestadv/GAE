@@ -22,6 +22,7 @@
 #include "tech_tree.h"
 #include "faction_type.h"
 #include "map.h"
+#include "earthquake.h"
 
 #include "leak_dumper.h"
 

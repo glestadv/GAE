@@ -25,6 +25,7 @@
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "game.h"
+#include "earthquake.h"
 #include "path_finder.h"
 #include "object.h"
 #include "faction.h"

@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types"
+				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types;world_effects"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1;_GAE_DEBUG_EDITION_"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -225,7 +225,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types"
+				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types;world_effects"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;XML_LIBRARY;USE_PCH=1"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -464,6 +464,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\world_effects\earthquake.h"
+				>
+			</File>
+			<File
 				RelativePath=".\type_instances\effect.h"
 				>
 			</File>
@@ -688,7 +692,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\world\surface_atlas.h"
+				RelativePath=".\graphics\surface_atlas.h"
 				>
 			</File>
 			<File
@@ -732,7 +736,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\world\water_effects.h"
+				RelativePath=".\world_effects\water_effects.h"
 				>
 			</File>
 			<File
@@ -837,6 +841,10 @@
 			</File>
 			<File
 				RelativePath=".\gui\display.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\world_effects\earthquake.cpp"
 				>
 			</File>
 			<File
@@ -1146,7 +1154,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\world\surface_atlas.cpp"
+				RelativePath=".\graphics\surface_atlas.cpp"
 				>
 			</File>
 			<File
@@ -1194,7 +1202,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\world\water_effects.cpp"
+				RelativePath=".\world_effects\water_effects.cpp"
 				>
 			</File>
 			<File
