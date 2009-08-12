@@ -57,7 +57,13 @@ private:
 	bool miscCatchExceptions;
 	bool miscDebugKeys;
 	bool miscDebugMode;
-	bool miscFirstTime;
+
+   int miscDebugTextureMode;
+	bool miscDebugTextures;
+   int pathFinderMaxNodes;
+   bool pathFinderUseAStar;
+
+   bool miscFirstTime;
 	bool miscLowMemory;
 	bool netChangeSpeedAllowed;
 	bool netConsistencyChecks;
@@ -102,12 +108,6 @@ private:
 	string uiLang;
 	bool uiPhotoMode;
 	float uiScrollSpeed;
-   int pathFinderMaxNodes;
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   bool debugTextures;
-   int  debugTextureMode;
-   int  debugPathFinderAlgorithm;
-#endif
 
 	Config(const char* fileName);
 	
@@ -204,14 +204,13 @@ public:
 	string getUiLang() const					{return uiLang;}
 	bool getUiPhotoMode() const					{return uiPhotoMode;}
 	float getUiScrollSpeed() const				{return uiScrollSpeed;}
-   int getPathFinderMaxNodes () const        { return pathFinderMaxNodes; }
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   bool getDebugTextures () { return debugTextures ; }
-   int  getDebugTextureMode () { return debugTextureMode; }
-   int  getPathFinderAlgorithm () { return  debugPathFinderAlgorithm; }
-#endif
 
-   void setCameraFov(float val)				   {cameraFov = val;}
+   int getMiscDebugTextureMode () const { return miscDebugTextureMode; }
+   bool getMiscDebugTextures () const { return miscDebugTextures; }
+   int getPathFinderMaxNodes () const { return pathFinderMaxNodes; }
+   bool getPathFinderUseAStar () const { return pathFinderUseAStar; }
+
+	void setCameraFov(float val)				{cameraFov = val;}
 	void setCameraInvertXAxis(bool val)			{cameraInvertXAxis = val;}
 	void setCameraInvertYAxis(bool val)			{cameraInvertYAxis = val;}
 	void setCameraMaxDistance(float val)		{cameraMaxDistance = val;}
@@ -220,37 +219,37 @@ public:
 	void setCameraMinYaw(float val)				{cameraMinYaw = val;}
 	void setDisplayHeight(int val)				{displayHeight = val;}
 	void setDisplayRefreshFrequency(int val)	{displayRefreshFrequency = val;}
-	void setDisplayWidth(int val)				   {displayWidth = val;}
+	void setDisplayWidth(int val)				{displayWidth = val;}
 	void setDisplayWindowed(bool val)			{displayWindowed = val;}
 	void setGsAutoRepairEnabled(bool val)		{gsAutoRepairEnabled = val;}
 	void setGsAutoReturnEnabled(bool val)		{gsAutoReturnEnabled = val;}
-	void setGsDayTime(float val)				   {gsDayTime = val;}
+	void setGsDayTime(float val)				{gsDayTime = val;}
 	void setGsFogOfWarEnabled(bool val)			{gsFogOfWarEnabled = val;}
 	void setGsRandStartLocs(bool val)			{gsRandStartLocs = val;}
 	void setGsSpeedFastest(float val)			{gsSpeedFastest = val;}
 	void setGsSpeedSlowest(float val)			{gsSpeedSlowest = val;}
 	void setGsWorldUpdateFps(int val)			{gsWorldUpdateFps = val;}
-	void setMiscAiLog(int val)					   {miscAiLog = val;}
-	void setMiscAiRedir(bool val)				   {miscAiRedir = val;}
+	void setMiscAiLog(int val)					{miscAiLog = val;}
+	void setMiscAiRedir(bool val)				{miscAiRedir = val;}
 	void setMiscCatchExceptions(bool val)		{miscCatchExceptions = val;}
 	void setMiscDebugKeys(bool val)				{miscDebugKeys = val;}
 	void setMiscDebugMode(bool val)				{miscDebugMode = val;}
 	void setMiscFirstTime(bool val)				{miscFirstTime = val;}
 	void setMiscLowMemory(bool val)				{miscLowMemory = val;}
-	void setNetChangeSpeedAllowed(bool val)	{netChangeSpeedAllowed = val;}
+	void setNetChangeSpeedAllowed(bool val)		{netChangeSpeedAllowed = val;}
 	void setNetConsistencyChecks(bool val)		{netConsistencyChecks = val;}
-	void setNetFps(int val)						   {netFps = val;}
+	void setNetFps(int val)						{netFps = val;}
 	void setNetMinFullUpdateInterval(int val)	{netMinFullUpdateInterval = val;}
 	void setNetPauseAllowed(bool val)			{netPauseAllowed = val;}
 	void setNetPlayerName(string val)			{netPlayerName = val;}
 	void setNetServerIp(string val)				{netServerIp = val;}
 	void setNetServerPort(int val)				{netServerPort = val;}
 	void setRenderCheckGlCaps(bool val)			{renderCheckGlCaps = val;}
-	void setRenderColorBits(int val)			   {renderColorBits = val;}
-	void setRenderDepthBits(int val)			   {renderDepthBits = val;}
+	void setRenderColorBits(int val)			{renderColorBits = val;}
+	void setRenderDepthBits(int val)			{renderDepthBits = val;}
 	void setRenderDistanceMax(float val)		{renderDistanceMax = val;}
 	void setRenderDistanceMin(float val)		{renderDistanceMin = val;}
-	void setRenderFilter(string val)			   {renderFilter = val;}
+	void setRenderFilter(string val)			{renderFilter = val;}
 	void setRenderFilterMaxAnisotropy(int val)	{renderFilterMaxAnisotropy = val;}
 	void setRenderFogOfWarSmoothing(bool val)	{renderFogOfWarSmoothing = val;}
 	void setRenderFogOfWarSmoothingFrameSkip(int val){renderFogOfWarSmoothingFrameSkip = val;}
@@ -280,12 +279,12 @@ public:
 	void setUiLang(string val)					{uiLang = val;}
 	void setUiPhotoMode(bool val)				{uiPhotoMode = val;}
 	void setUiScrollSpeed(float val)			{uiScrollSpeed = val;}
-   void setPathFinderMaxNodes ( int max )    { pathFinderMaxNodes = max; }
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   void setDebugTextures (bool val) { debugTextures = val; }
-   void setDebugTextureMode (int val) { debugTextureMode = val; }
-   void setPathFinderAlgorithm (int val) { debugPathFinderAlgorithm = val; }
-#endif
+
+   void setMiscDebugTextureMode ( int val ) { miscDebugTextureMode = val; }
+   void setMiscDebugTextures ( bool val ) { miscDebugTextures = val; }
+   void setPathFinderMaxNodes ( int val ) { pathFinderMaxNodes = val; }
+   void setPathFinderUseAStar ( bool val ) { pathFinderUseAStar = val; }
+
 };
 
 }}//end namespace

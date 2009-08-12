@@ -146,9 +146,9 @@ private:
 
 public:
 	Properties();
-   void clear();
-   void load(const string &path);
-   void save(const string &path);
+	void clear();
+	void load(const string &path);
+	void save(const string &path);
 
 	const PropertyMap &getPropertyMap() const								{return propertyMap;}
 	bool getBool(const string &key) const									{return _getBool(key);}
@@ -163,7 +163,7 @@ public:
 	float getFloat(const string &key, float def, float min, float max) const{return _getFloat(key, &def, &min, &max);}
 	const string &getString(const string &key) const						{return _getString(key);}
 	const string &getString(const string &key, const string &def) const		{return _getString(key, &def);}
-   int getPropertyCount()	{return propertyVector.size();}
+	int getPropertyCount()	{return propertyVector.size();}
 
 	void setInt(const string &key, int value)		{setString(key, intToStr(value));}
 	void setBool(const string &key, bool value)		{setString(key, boolToStr(value));}

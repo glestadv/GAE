@@ -58,7 +58,6 @@ enum SkillClass{
 	scFallDown,
 	scGetUp,
 	scWaitForServer,
-   scDummy,
 
 	scCount
 };
@@ -69,7 +68,7 @@ enum SkillClass{
 ///	A basic action that an unit can perform
 // =====================================================
 
-class SkillType : public ProducibleType {
+class SkillType {
 public:
 	typedef vector<Model *> Animations;
 	enum AnimationsStyle {
@@ -93,13 +92,13 @@ protected:
 	const char* typeName;
 	int minRange;
 	int maxRange;
-/* not used
+
 	int effectsRemoved;
 	bool removeBenificialEffects;
 	bool removeDetrimentalEffects;
 	bool removeAllyEffects;
 	bool removeEnemyEffects;
-*/
+
 	float startTime;
 
 	bool projectile;
@@ -136,7 +135,9 @@ public:
 	int getEpCost() const				{return epCost;}
 	int getSpeed() const				{return speed;}
 	int getAnimSpeed() const			{return animSpeed;}
-	const Model *getAnimation() const	{return animations.front();}
+	const Model *getAnimation() const	{
+
+		return animations.front();}
 	StaticSound *getSound() const		{return sounds.getRandSound();}
 	float getSoundStartTime() const		{return soundStartTime;}
 	int getMaxRange() const				{return maxRange;}
@@ -149,22 +150,19 @@ public:
 	static string fieldToStr(Zone field);
 
 	// get removing effects
-/* not used...
-   int getEffectsRemoved() const			{return effectsRemoved;}
+	int getEffectsRemoved() const			{return effectsRemoved;}
 	bool isRemoveBenificialEffects() const	{return removeBenificialEffects;}
 	bool isRemoveDetrimentalEffects() const	{return removeDetrimentalEffects;}
 	bool isRemoveAllyEffects() const		{return removeAllyEffects;}
 	bool isRemoveEnemyEffects() const		{return removeEnemyEffects;}
-*/
-	//REFACTOR ( move to AttackSkillType ?? )
-   //get proj 
+
+	//get proj
 	bool getProjectile() const									{return projectile;}
 	ParticleSystemTypeProjectile * getProjParticleType() const	{return projectileParticleSystemType;}
 	StaticSound *getProjSound() const							{return projSounds.getRandSound();}
 
-	//REFACTOR ( move to AttackSkillType ?? )
-	//get splash 
-   bool getSplash() const										{return splash;}
+	//get splash
+	bool getSplash() const										{return splash;}
 	bool getSplashDamageAll() const								{return splashDamageAll;}
 	int getSplashRadius() const									{return splashRadius;}
 	ParticleSystemTypeSplash * getSplashParticleType() const	{return splashParticleSystemType;}};
@@ -231,7 +229,7 @@ public:
 	virtual void getDesc(string &str, const Unit *unit, const char* rangeDesc) const;
 
 	Zones getZones () const				{return zones;}
-	bool getZone ( Zone zone ) const		{return zones.get(zone);}
+	bool getZone ( const Zone zone ) const		{return zones.get(zone);}
 };
 
 // ===============================
@@ -437,21 +435,6 @@ public:
 	WaitForServerSkillType(const SkillType *model);
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft) {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
-};
-
-class DummySkillType : public SkillType
-{
-private:
-   int time;
-public:
-   DummySkillType () : SkillType ( scDummy, "Dummy" ) {}
-   virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft) 
-   {
-      SkillType::load ( sn, dir, tt, ft );
-      time = sn->getChildIntValue ( "time" );
-   }
-	virtual void getDesc(string &str, const Unit *unit) const {}
-   int getTime () const { return time; }
 };
 
 // ===============================

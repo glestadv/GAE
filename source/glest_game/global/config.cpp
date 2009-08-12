@@ -99,13 +99,12 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	uiLang = p->getString("UiLang", "english.lng");
 	uiPhotoMode = p->getBool("UiPhotoMode", false);
 	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
+   miscDebugTextureMode = p->getInt ("MiscDebugTextureMode", 0 );
+   miscDebugTextures = p->getBool ( "MiscDebugTextures", false );
    pathFinderMaxNodes = p->getInt ( "PathFinderMaxNodes", 1024 );
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   debugTextures = p->getBool ( "PathFinderDebugTextures", false );
-   debugTextureMode = p->getInt ( "PathFinderDebugTextureMode", 1 );
-   debugPathFinderAlgorithm = p->getInt ( "PathFinderAlgorithm", 1 );
-#endif
-   delete p;
+   pathFinderUseAStar = p->getBool ( "PathFinderUseAStar", false );
+
+	delete p;
 }
 
 void Config::save(const char *path) {
@@ -180,12 +179,13 @@ void Config::save(const char *path) {
 	p->setString("UiLang", uiLang);
 	p->setBool("UiPhotoMode", uiPhotoMode);
 	p->setFloat("UiScrollSpeed", uiScrollSpeed);
+
+   p->setInt("MiscDebugTextureMode", miscDebugTextureMode );
+   p->setBool ( "MiscDebugTextures", miscDebugTextures );
    p->setInt ( "PathFinderMaxNodes", pathFinderMaxNodes );
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   p->setBool ( "PathFinderDebugTextures", debugTextures );
-   p->setInt ( "PathFinderDebugTextureMode", debugTextureMode );
-   p->setInt ( "PathFinderAlgorithm", debugPathFinderAlgorithm );
-#endif
+   p->setBool ( "PathFinderUseAStar", pathFinderUseAStar );
+
+
 	p->save(path);
 	delete p;
 }

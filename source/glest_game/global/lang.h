@@ -38,12 +38,10 @@ public:
 		static Lang lang;
 		return lang;
 	}
-
-   void loadStrings ( const string &language );
-   void loadScenarioStrings ( const string &scenarioDir, const string &scenarioName );
-
-   string getScenarioString ( const string &s );
-   string get(const string &s) const;
+	void loadStrings( const string &language );
+	void loadScenarioStrings ( const string &scenarioDir, const string &scenarioName );
+	string getScenarioString ( const string &s );
+	string get(const string &s) const;
 };
 
 }}//end namespace

@@ -34,7 +34,6 @@ private:
 	GraphicLabel labelVolumeFx;
 	GraphicLabel labelVolumeAmbient;
 	GraphicLabel labelVolumeMusic;
-   GraphicLabel labelMaxPathNodes;
 	GraphicListBox listBoxLang;
 	GraphicListBox listBoxShadows;
 	GraphicListBox listBoxFilter;
@@ -44,16 +43,17 @@ private:
 	GraphicListBox listBoxVolumeAmbient;
 	GraphicListBox listBoxVolumeMusic;
 	GraphicListBox listBoxMusicSelect;
+
+   GraphicLabel labelMaxPathNodes;
    GraphicListBox listBoxMaxPathNodes;
-#  ifdef PATHFINDER_DEBUG_TEXTURES
-      GraphicLabel labelPFAlgorithm;
+   GraphicLabel labelPFAlgorithm;
+   GraphicListBox listBoxPFAlgorithm;
+#  ifdef _GAE_DEBUG_EDITION_
       GraphicLabel labelPFTexturesOn;
       GraphicLabel labelPFTextureMode;
-      GraphicListBox listBoxPFAlgorithm;
       GraphicListBox listBoxPFTexturesOn;
       GraphicListBox listBoxPFTextureMode;
 #  endif
-
 private:
 	MenuStateOptions(const MenuStateOptions &);
 	const MenuStateOptions &operator =(const MenuStateOptions &);

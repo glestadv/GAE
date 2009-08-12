@@ -65,15 +65,10 @@ Command::Command(const CommandType *type, CommandFlags flags, Unit* unit, Unit *
 		pos = unit->getCenteredPos();
 	}
 
-   // this is causing the 'hilight' to show on buildings when a worker is tasked to repair it
-   // regardless of wether it is an AI or Human controlled faction.
-   
-   if( unit && !isAuto() && !unit->getFaction()->getCpuControl () )
-   {
-	   unit->resetHighlight();
+	if(unit && !isAuto() && unit->getFaction()->isThisFaction()) {
+		unit->resetHighlight();
 		//pos = unit->getCellPos();
 	}
-   
 }
 
 

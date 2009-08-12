@@ -421,7 +421,7 @@ string replaceBy(const string &s, char c1, char c2){
 }
 
 // ==================== misc ====================
- 
+
 bool fileExists(const string &path){
 	FILE* file= fopen(path.c_str(), "rb");
 	if(file!=NULL){

@@ -48,7 +48,7 @@ public:
 		effectStrength = 0.1f;
 	}
 
-	virtual void load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
 	int getKills() const			{return kills;}
 };
 
@@ -119,7 +119,7 @@ public:
     UnitType();
     virtual ~UnitType();
 	void preLoad(const string &dir);
-    void load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum);
+    bool load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum);
 
 	//get
 	bool getMultiSelect() const							{return multiSelect;}
@@ -136,24 +136,17 @@ public:
 	bool isMultiBuild() const							{return multiBuild;}
 	float getHalfSize() const							{return halfSize;}
 	float getHalfHeight() const							{return halfHeight;}
-
    bool isMobile () const
    {
       const SkillType *st = getFirstStOfClass(scMove);
-      if ( !st ) return false;
-      if ( st->getSpeed () <= 0 ) return false; //??
-      return true;
+      return st && st->getSpeed() > 0 ? true: false;
    }
 	//cellmap
 	bool *cellMap;
-   char *fieldMap;
 
 	int getStoredResourceCount() const					{return storedResources.size();}
 	const Resource *getStoredResource(int i) const		{return &storedResources[i];}
 	bool getCellMapCell(int x, int y) const				{return cellMap[size * y + x];}
-   char getFieldMapCell ( int x, int y ) const;
-   char getFieldMapCell ( Vec2i &pos ) const { return getFieldMapCell ( pos.x, pos.y ); }
-   Vec2i getFieldMapRefCell () const;
 	bool hasMeetingPoint() const						{return meetingPoint;}
 	Texture2D *getMeetingPointImage() const				{return meetingPointImage;}
 	StaticSound *getSelectionSound() const				{return selectionSounds.getRandSound();}
@@ -165,7 +158,7 @@ public:
 	const CommandType *getFirstCtOfClass(CommandClass commandClass) const {return firstCommandTypeOfClass[commandClass];}
 	const SkillType *getFirstStOfClass(SkillClass skillClass) const {return firstSkillTypeOfClass[skillClass];}
     const HarvestCommandType *getFirstHarvestCommand(const ResourceType *resourceType) const;
-	const AttackCommandType *getFirstAttackCommand(Zone field) const;
+	const AttackCommandType *getFirstAttackCommand(Zone zone) const;
 	const RepairCommandType *getFirstRepairCommand(const UnitType *repaired) const;
 
 	//has
@@ -174,7 +167,6 @@ public:
     bool hasSkillType(const SkillType *skillType) const;
     bool hasSkillClass(SkillClass skillClass) const;
 	bool hasCellMap() const								{return cellMap!=NULL;}
-   bool hasFieldMap () const { return fieldMap != NULL; }
 
 	//is
 	bool isOfClass(UnitClass uc) const;

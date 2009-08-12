@@ -43,7 +43,8 @@ BattleEnd::~BattleEnd() {
 }
 
 void BattleEnd::update(){
-/*
+	//TOOD: add AutoTest to config
+	/*
 	if(Config::getInstance().getBool("AutoTest")){
 		AutoTest::getInstance().updateBattleEnd(program);
 	}*/

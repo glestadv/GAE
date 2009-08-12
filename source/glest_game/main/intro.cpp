@@ -77,13 +77,13 @@ void Intro::update(){
 	if(timer>introTime * Config::getInstance().getGsWorldUpdateFps() / 1000){
 		program.setState(new MainMenu(program));
 	}
-	//MERGE ADD START
+
+	//TOOD: add AutoTest to config
 	/*
 	if(Config::getInstance().getBool("AutoTest")){
 		AutoTest::getInstance().updateIntro(program);
 	}
 	*/
-	//MERGE ADD END
 }
 
 void Intro::render(){

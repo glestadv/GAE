@@ -30,7 +30,7 @@ const string glestVersionString= "v3.2.2";
 const string gaeVersionString= "v0.2.12";
 
 string getCrashDumpFileName(){
-   return "gae" + gaeVersionString + ".dmp";
+	return "gae" + gaeVersionString + ".dmp";
 }
 
 string getNetworkVersionString(){

@@ -156,7 +156,7 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 		}
 	}
 	else{
-		//listBoxControls[1].setSelectedItemIndex(ctCpu);
+		listBoxControls[1].setSelectedItemIndex(ctCpu);
 	}
 	updateControlers();
 	updateNetworkSlots();
@@ -316,6 +316,12 @@ void MenuStateNewGame::render(){
 }
 
 void MenuStateNewGame::update() {
+	//TOOD: add AutoTest to config
+	/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateNewGame(program, mainMenu);
+	}
+	*/
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
 	Lang& lang = Lang::getInstance();
 
@@ -338,17 +344,22 @@ void MenuStateNewGame::update() {
 
 void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings){
 	Random rand;
-	rand.init(654321);
+	rand.init(Shared::Platform::Chrono::getCurMillis());
 
 	int factionCount= 0;
 
 	gameSettings->setDescription(formatString(mapFiles[listBoxMap.getSelectedItemIndex()]));
 	gameSettings->setMap(mapFiles[listBoxMap.getSelectedItemIndex()]);
-   gameSettings->setTileset(tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
-   gameSettings->setTech(techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
-   for(int i=0; i<mapInfo.players; ++i){
-      ControlType ct= static_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());
-      if(ct!=ctClosed){
+    gameSettings->setTileset(tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
+    gameSettings->setTech(techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
+	gameSettings->setDefaultVictoryConditions(true);
+   gameSettings->setDefaultResources (true);
+   gameSettings->setDefaultUnits (true);
+  
+
+    for(int i=0; i<mapInfo.players; ++i){
+		ControlType ct= static_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());
+		if(ct!=ctClosed){
 			if(ct==ctHuman){
 				gameSettings->setThisFactionIndex(factionCount);
 			}
@@ -366,7 +377,7 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings){
 	gameSettings->setFactionCount(factionCount);
 
 	if(listBoxRandomize.getSelectedItemIndex()) {
-		gameSettings->randomizeLocs();
+		gameSettings->randomizeLocs(mapInfo.players);
 	}
 }
 

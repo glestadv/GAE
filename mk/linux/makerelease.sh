@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 VERSION=`autoconf -t AC_INIT | sed -e 's/[^:]*:[^:]*:[^:]*:[^:]*:\([^:]*\):.*/\1/g'`
 RELEASENAME=glest-source
@@ -29,3 +29,6 @@ PACKAGE="$RELEASENAME-$VERSION.tar.bz2"
 echo "creating $PACKAGE"
 tar -c --bzip2 -f "$PACKAGE" "$RELEASENAME-$VERSION"
 popd
+
+
+

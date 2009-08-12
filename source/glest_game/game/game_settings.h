@@ -27,10 +27,10 @@ namespace Glest { namespace Game {
 
 class GameSettings {
 private:
-   string map;
-   string tileset;
-   string tech;
-   string description;
+	string description;
+	string map;
+	string tileset;
+	string tech;
 	string mapPath;
 	string tilesetPath;
 	string techPath;
@@ -61,11 +61,12 @@ public:
 	const string &getMap() const 								{return map;}
 	const string &getTileset() const							{return tileset;}
 	const string &getTech() const								{return tech;}
- 	const string &getMapPath() const 							{return mapPath;}
- 	const string &getTilesetPath() const						{return tilesetPath;}
- 	const string &getTechPath() const							{return techPath;}
+	const string &getMapPath() const 							{return mapPath;}
+	const string &getTilesetPath() const						{return tilesetPath;}
+	const string &getTechPath() const							{return techPath;}
 	const string &getScenario() const							{return scenario;}
 	const string &getScenarioDir() const						{return scenarioDir;}
+   
 	const string &getFactionTypeName(int i) const				{return factionTypeNames[i];}
 	const string &getPlayerName(int i) const					{return playerNames[i];}
 	ControlType getFactionControl(int i) const					{return factionControls[i];}
@@ -73,6 +74,7 @@ public:
 	int getFactionCount() const									{return factionCount;}
 	int getTeam(int i) const									{return teams[i];}
 	int getStartLocationIndex(int i) const						{return startLocationIndex[i];}
+
    bool getDefaultUnits() const				{return defaultUnits;}
    bool getDefaultResources() const			{return defaultResources;}
    bool getDefaultVictoryConditions() const	{return defaultVictoryConditions;}
@@ -91,12 +93,13 @@ public:
 	void setFactionCount(int factionCount)						{this->factionCount = factionCount;}
 	void setTeam(int i, int team)								{this->teams[i] = team;}
 	void setStartLocationIndex(int i, int startLocationIndex)	{this->startLocationIndex[i] = startLocationIndex;}
+
 	void setDefaultUnits(bool defaultUnits) 						{this->defaultUnits= defaultUnits;}
 	void setDefaultResources(bool defaultResources) 				{this->defaultResources= defaultResources;}
 	void setDefaultVictoryConditions(bool defaultVictoryConditions) {this->defaultVictoryConditions= defaultVictoryConditions;}
 
 	//misc
-	void randomizeLocs();
+	void randomizeLocs(int maxPlayers);
 	void save(XmlNode *node) const;
 };
 

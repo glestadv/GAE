@@ -26,7 +26,6 @@
 #include "graphics_factory_gl.h"
 #include "font_manager.h"
 #include "camera.h"
-#include "map.h"
 
 namespace Glest{ namespace Game{
 
@@ -72,9 +71,6 @@ enum ResourceScope{
 // ===========================================================
 
 class Renderer{
-
-   friend class Game; // debug
-
 public:
 	//progress bar
 	static const int maxProgressBar;
@@ -205,8 +201,7 @@ public:
 	void manageParticleSystem(ParticleSystem *particleSystem, ResourceScope rs);
 	void updateParticleManager(ResourceScope rs);
 	void renderParticleManager(ResourceScope rs);
-	void swapBuffers ();
-   //void flush () {glFlush();}
+	void swapBuffers();
 
     //lights and camera
 	void setupLighting();
@@ -237,12 +232,6 @@ public:
 
     //complex rendering
     void renderSurface();
-#ifdef PATHFINDER_DEBUG_TEXTURES
-    void renderSurfacePFDebug ();
-#endif
-#ifdef FIELDMAP_DEBUG_TEXTURES
-    void renderSurfaceFMDebug ();
-#endif
 	void renderObjects();
 	void renderWater();
     void renderUnits();
@@ -251,7 +240,12 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
-
+#ifdef _GAE_DEBUG_EDITION_
+	Field debugField;
+	void setDebugField ( Field f ) { debugField = f; }
+	Field getDebugField () { return debugField; }
+    void renderSurfacePFDebug ();
+#endif
 	//computing
     bool computePosition(const Vec2i &screenPos, Vec2i &worldPos);
 	void computeSelected(Selection::UnitContainer &units, const Vec2i &posDown, const Vec2i &posUp);

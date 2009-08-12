@@ -37,7 +37,7 @@ namespace Glest { namespace Game {
 Faction::ResourceTypes Faction::neededResources;
 
 void Faction::init(const FactionType *factionType, ControlType control, TechTree *techTree,
-		int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources ) {
+      int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources ) {
 	this->control = control;
 	this->factionType = factionType;
 	this->startLocationIndex = startLocationIndex;
@@ -53,10 +53,10 @@ void Faction::init(const FactionType *factionType, ControlType control, TechTree
 	store.resize(techTree->getResourceTypeCount());
 	for (int i = 0; i < techTree->getResourceTypeCount(); ++i) {
 		const ResourceType *rt = techTree->getResourceType(i);
-      int resourceAmount= giveResources? factionType->getStartingResourceAmount(rt): 0;
-      resources[i].init(rt, resourceAmount);
-      store[i].init(rt, 0);
-   }
+		int resourceAmount= giveResources? factionType->getStartingResourceAmount(rt): 0;
+		resources[i].init(rt, resourceAmount);
+		store[i].init(rt, 0);
+	}
 
 	texture = Renderer::getInstance().newTexture2D(rsGame);
 	texture->load("data/core/faction_textures/faction" + intToStr(id) + ".tga");
@@ -354,8 +354,8 @@ void Faction::applyStaticCosts(const ProducibleType *p) {
 }
 
 //apply static production (when a mana source is done)
-void Faction::applyStaticProduction(const ProducibleType *p) 
-{
+void Faction::applyStaticProduction(const ProducibleType *p) {
+
 	//decrease static resources
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
@@ -399,7 +399,7 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 void Faction::deApplyStaticConsumption(const ProducibleType *p){
    
     //decrease resources
-   for(int i=0; i<p->getCostCount(); ++i){
+	for(int i=0; i<p->getCostCount(); ++i){
 		const ResourceType *rt= p->getCost(i)->getType();
 		if(rt->getClass()==rcStatic){
             int cost= p->getCost(i)->getAmount();
@@ -409,7 +409,6 @@ void Faction::deApplyStaticConsumption(const ProducibleType *p){
         }    
     }
 }
-
 
 //apply resource on interval (cosumable resouces)
 void Faction::applyCostsOnInterval() {

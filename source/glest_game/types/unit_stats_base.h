@@ -33,7 +33,7 @@ class FactionType;
 class EnhancementTypeBase;
 
 // ===============================
-// 	enum Field & class Zones
+// 	enum Field & Zone, and SurfaceType
 // ===============================
 
 // Adding a new field ???
@@ -77,6 +77,7 @@ public:
 	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
 		XmlBasedFlags<Field, FieldCount>::load(node, dir, tt, ft, "field", names);
 	}
+	static const char* getName ( Field f ) { return names[f]; }
 };
 
 /** Zones of attack (air, surface, etc.) */
@@ -89,6 +90,7 @@ public:
 		XmlBasedFlags<Zone, ZoneCount>::load(node, dir, tt, ft, "field", names);
 	}
 };
+
 
 // ==============================================================
 // 	enum Property & class UnitProperties
@@ -128,7 +130,7 @@ protected:
 	int epRegeneration;
 
 	/**
-	 * Zones of travel. For enhancment-type objects, there are fields that are
+	 * Fields of travel. For enhancment-type objects, there are fields that are
 	 * added.
 	 */
 	Fields fields;
@@ -216,7 +218,7 @@ public:
 	 * is exactly what XmlNode object the UnitType load() method supplies to
 	 * this method.
 	 */
-	void load(const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	bool load(const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft);
 
 	virtual void save(XmlNode *node);
 
@@ -271,8 +273,8 @@ protected:
 	//Note: the member variables fields, properties, armorType, bodyType, light,
 	//lightColor, size and height don't get multipliers.
 
-	/** Zones which are removed by this enhancement/degridation object. */
-	Zones antiFields;
+	/** Fields which are removed by this enhancement/degridation object. */
+	Fields antiFields;
 
 	/** Properties which are removed by this enhancement/degridation object. */
 	UnitProperties antiProperties;
@@ -298,8 +300,8 @@ public:
 	float getRepairSpeedMult() const	{return repairSpeedMult;}
 	float getHarvestSpeedMult() const	{return harvestSpeedMult;}
 
-	const Zones &getRemovedFields() const				{return antiFields;}
-	bool getRemovedField(Zone field) const				{return antiFields.get(field);}
+	const Fields &getRemovedFields() const				{return antiFields;}
+	bool getRemovedField(Field field) const				{return antiFields.get(field);}
 	const UnitProperties &getRemovedProperties() const	{return antiProperties;}
 	bool getRemovedProperty(Property property) const	{return antiProperties.get(property);}
 
@@ -328,7 +330,7 @@ public:
 	 * Initializes this object from the specified XmlNode object.
 	 * TODO: explain better.
 	 */
-	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
 
 	virtual void save(XmlNode *node) const;
 

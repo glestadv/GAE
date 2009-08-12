@@ -38,16 +38,16 @@ private:
 
 private:
 	string fileName;
-	string sectionName;
+	//string sectionName;
 	string state;
 	Strings logLines;
    string subtitle;
    string current;
    bool loadingGame;
+   static char errorBuf[];
 
 private:
-	Logger(const char *fileName) : fileName(fileName) 
-   { loadingGame = true; } 
+	Logger(const char *fileName) : fileName(fileName) { loadingGame = true; }
 
 public:
 	static Logger &getInstance(){
@@ -65,14 +65,20 @@ public:
 		return logger;
 	}
 
+   static Logger &getErrorLog(){
+		static Logger logger("glestadv-error.log");
+		return logger;
+	}
+
+   void addXmlError ( const string &path, const char *error );
+
 	//void setFile(const string &fileName)	{this->fileName= fileName;}
 	void setState(const string &state);
    void setSubtitle(const string &subtitle)	{this->subtitle= subtitle;}
 
-   void setLoading ( bool loading ) { loadingGame = loading; }
-
 	void add(const string &str, bool renderScreen= false);
 	void renderLoadingScreen();
+   void setLoading ( bool loading ) { loadingGame = loading; }
 
 	void clear();
 };

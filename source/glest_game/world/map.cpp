@@ -1,8 +1,8 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa,
-//				  2008 Jaagup Repän <jrepan@gmail.com>,
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa,
+//				  2008 Jaagup Repï¿½n <jrepan@gmail.com>,
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //            2009 James McCulloch <silnarm@gmail.com>
 //
@@ -273,24 +273,18 @@ Map::~Map() {
 	if (surfaceHeights)	{delete[] surfaceHeights;}
 }
 //get
-Cell *Map::getCell(int x, int y) const					
-{  assert(isInside(x, y)); 
+Cell *Map::getCell(int x, int y) const {
+	assert ( this->isInside ( x,y ) );
    return &cells[y * w + x];
 }
-Cell *Map::getCell(const Vec2i &pos) const				
-{  assert(isInside(pos.x, pos.y)); 
+Cell *Map::getCell(const Vec2i &pos) const {
    return getCell(pos.x, pos.y);
 }
-Tile *Map::getTile(int sx, int sy) const	
-{  
-   if ( ! isInsideTile(sx, sy) )
-      throw new runtime_error ("");
-   return &tiles[sy*tileW+sx];
+Tile *Map::getTile(int sx, int sy) const { 
+	assert ( this->isInsideTile ( sx,sy ) );
+	return &tiles[sy*tileW+sx];
 }
-Tile *Map::getTile(const Vec2i &sPos) const
-{  
-   if ( ! isInsideTile(sPos) )
-      throw new runtime_error ("");
+Tile *Map::getTile(const Vec2i &sPos) const {  
    return getTile(sPos.x, sPos.y);
 }
 void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
@@ -417,7 +411,7 @@ void Map::init() {
 	computeInterpolatedHeights();
 	computeNearSubmerged();
 	computeCellColors();
-   setCellTypes ();
+	setCellTypes ();
 }
 void Map::setCellTypes ()
 {
@@ -431,6 +425,7 @@ void Map::setCellTypes ()
             cell->setType ( SurfaceTypeFordable );
       }
 }
+/*
 void Map::setCellType ( Vec2i pos )
 {
    Cell *cell = getCell ( pos );
@@ -441,7 +436,7 @@ void Map::setCellType ( Vec2i pos )
    else
       cell->setType ( SurfaceTypeLand );
 }
-
+*/
 void Map::read(NetworkDataBuffer &buf) {
 
 	for(int y = 0; y < tileH; ++y) {
@@ -596,7 +591,7 @@ bool Map::isFreeCellOrHaveUnits(const Vec2i &pos, Field field, const Selection::
 }
 
 // if the Cell is visible, true if free, false if occupied
-// if the Cell is explored, true if _SurfaceCell_ is free (no object), false otherwise
+// if the Cell is explored, true if Tile is free (no object), false otherwise
 // if the Cell is unexplored, true
 bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const 
 {
@@ -607,7 +602,7 @@ bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const
 		if (sc->isVisible(teamIndex))
 			return sc->isFree() && isFreeCell(pos, field);
 		else if (sc->isExplored(teamIndex))
-         return field == ZoneSurface ? sc->isFree() && !getCell(pos)->isDeepSubmerged() : true;
+			return field == FieldWalkable ? sc->isFree() && !getCell(pos)->isDeepSubmerged() : true;
 		else
 			return true;
 	}
@@ -639,7 +634,7 @@ bool Map::areFreeCells( const Vec2i &pos, int size, char *fieldMap ) const
          case 'a': field = FieldAmphibious; break;
          case 'w': field = FieldDeepWater; break;
          case 'r': field = FieldWalkable; break;
-         default: throw new runtime_error ( "Bad value in fieldMap" );
+         default: throw runtime_error ( "Bad value in fieldMap" );
          }
 			if ( ! isFreeCell (Vec2i(pos.x+i, pos.y+j), field) )
                 return false;
@@ -701,7 +696,7 @@ void Map::getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Zone
 		}
 	}
 }
-
+/*
 bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) const
 {
    for ( int i=0; i < building->getSize(); ++i )
@@ -714,7 +709,7 @@ bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) co
          case 'l': field = FieldWalkable; break;
          case 'a': field = FieldAmphibious; break;
          case 'w': field = FieldDeepWater; break;
-         default: throw new runtime_error ( "Illegal value in FieldMap." );
+         default: throw runtime_error ( "Illegal value in FieldMap." );
          }
          if ( !fieldsCompatible ( getCell ( pos ), field ) )
             return false;
@@ -722,7 +717,7 @@ bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) co
    }
    return true;
 }
-
+*/
 // ==================== location calculations ====================
 
 //Rect2(pos.x, pos.y, pos.x + size, pos.y + size)
@@ -1005,7 +1000,7 @@ void Map::putUnitCells(Unit *unit, const Vec2i &pos){
 			if(!ut->hasCellMap() || ut->getCellMapCell(x, y)) {
 				if (getCell(currPos)->getUnit(field) != NULL)
             {
-               throw new runtime_error ( "Ooops..." );
+               throw runtime_error ( "Ooops..." );
             }
             assert(getCell(currPos)->getUnit(field) == NULL);
 				getCell(currPos)->setUnit(field, unit);
@@ -1087,7 +1082,7 @@ void Map::clampPos(Vec2i &pos) const{
 }
 
 void Map::prepareTerrain(const Unit *unit) {
-	flattenTerrain(unit);
+	flatternTerrain(unit);
    computeNormals();
 	computeInterpolatedHeights();
 }
@@ -1111,7 +1106,7 @@ void Map::update(float slice) {
 // ==================== PRIVATE ====================
 
 // ==================== compute ====================
-/*
+
 void Map::flatternTerrain(const Unit *unit){
 	float refHeight= getTile(toTileCoords(unit->getCenteredPos()))->getHeight();
 	for(int i=-1; i<=unit->getType()->getSize(); ++i){
@@ -1125,8 +1120,8 @@ void Map::flatternTerrain(const Unit *unit){
             }
         }
     }
-}*/
-
+}
+/*
 void Map::flattenTerrain ( const Unit *unit )
 {
    // need to make sure unit->getCenteredPos() is on a 'l' fieldMapCell
@@ -1151,7 +1146,7 @@ void Map::flattenTerrain ( const Unit *unit )
 	         sc->setHeight(refHeight);
       }
     }
-}
+}*/
 
 //compute normals
 void Map::computeNormals(Rect2i range) {
@@ -1244,6 +1239,16 @@ void Map::computeNearSubmerged(){
 	for(int x = 0; x < tileW; ++x){
 		for(int y = 0; y < tileH; ++y) {
 
+         //FIXME
+         // if the cells have been init already, we could use the new 
+         // SurfaceType enum, it'll be a bit clunky (the code anyway), 
+         // but it will reduce redundant calculation...
+
+         //FIXME
+         // Also, I meant to move getSubmerged(Tile*) into Tile ages ago
+         // That's the logical place for it, getSubmerged(Cell*) now lives
+         // in Cell ( as Cell::isSubmerged() )... 
+
 			// Daniel's optimized version: +speed, +code size
 			/*
 			bool anySubmerged = getSubmerged(getTile(x, y))
@@ -1257,7 +1262,7 @@ void Map::computeNearSubmerged(){
 					|| (x - 1 >= 0		 && y - 1 >= 0		 && getSubmerged(getTile(x - 1, y - 1)));
 			*/
 
-			// Martiño's version: slower, but more compact (altered from original)
+			// Martiï¿½o's version: slower, but more compact (altered from original)
 			bool anySubmerged = false;
 			for(int xoff = -1; xoff <= 2 && !anySubmerged; ++xoff) {
 				for(int yoff = -1; yoff <= 2 && !anySubmerged; ++yoff) {
@@ -1344,7 +1349,7 @@ PosQuadIterator::PosQuadIterator(const Quad2i &quad, int step) :
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2008 Jaagup Repän <jrepan@gmail.com>,
+//	Copyright (C) 2008 Jaagup Repï¿½n <jrepan@gmail.com>,
 //				     2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under

@@ -103,7 +103,7 @@ private:
 
 private:
 	int blockCount;
-	list<Vec2i> pathQueue;
+	vector<Vec2i> pathQueue;
 
 public:
 	UnitPath() : blockCount(0), pathQueue() {}
@@ -113,18 +113,12 @@ public:
 	void clear()					{pathQueue.clear(); blockCount = 0;}
 	void incBlockCount()			{pathQueue.clear();	blockCount++;}
 	void push(const Vec2i &path)	{pathQueue.push_back(path);}
-   void push_front ( const Vec2i &cell ) { pathQueue.push_front ( cell ); }
 	Vec2i pop()						{
 		Vec2i p = pathQueue.front();
 		pathQueue.erase(pathQueue.begin());
 		return p;
 	}
-   Vec2i peek () { return pathQueue.front (); }
-   int size () { return pathQueue.size (); }
-	bool AssertValidity ();
-   char* Output ();
-
-
+	
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
 };
@@ -151,10 +145,10 @@ public:
 	typedef list<Command*> Commands;
 	typedef list<UnitObserver*> Observers;
 	typedef list<UnitReference> Pets;
-	static const float speedDivider; //  ??? anim related ???
-	static const int maxDeadCount; // ???
-	static const float highlightTime; // fade out time of selection circle on target selection
-	static const int invalidId; // ??? 
+	static const float speedDivider;
+	static const int maxDeadCount;
+	static const float highlightTime;
+	static const int invalidId;
 
 private:
 	int id;
@@ -165,14 +159,14 @@ private:
 	float progress;			//between 0 and 1
 	float lastAnimProgress;	//between 0 and 1
 	float animProgress;		//between 0 and 1
-	float highlight;  // opacity (0-1) to draw selection circle
+	float highlight;
 	int progress2;
 	int kills;
 
 	UnitReference targetRef;
 
 	Field currField;
-	Zone targetField;
+	Field targetField;
 	const Level *level;
 
 	Vec2i pos;				/** Current position */
@@ -183,8 +177,6 @@ private:
 	Vec2i meetingPos;
 	bool faceTarget;		/** If true and target is set, we continue to face target. */
 	bool useNearestOccupiedCell;	/** If true, targetPos is set to target->getNearestOccupiedCell() */
-
-   Vec3f currVectorFlat;
 
 	float lastRotation;		//in degrees
 	float targetRotation;
@@ -206,7 +198,7 @@ private:
 	Effects effectsCreated;
 
 	/** All stat changes from upgrades and level ups */
-	EnhancementTypeBase totalUpgrade; // wtf? we inherit from this ?!? hangover from Vanilla Glest?
+	EnhancementTypeBase totalUpgrade;
 	Faction *faction;
 	ParticleSystem *fire;
 	Map *map;
@@ -232,7 +224,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
-   Zone  getCurrZone () const { return currField == FieldAir ? ZoneAir : ZoneSurface; }
+   Zone getCurrZone () const  { return currField == FieldAir ? ZoneAir : ZoneSurface; }
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}
@@ -251,7 +243,7 @@ public:
 	Vec2i getNextPos() const					{return nextPos;}
 	Vec2i getTargetPos() const					{return targetPos;}
 	Vec3f getTargetVec() const					{return targetVec;}
-	Zone getTargetField() const				{return targetField;}
+	Field getTargetField() const				{return targetField;}
 	Vec2i getMeetingPos() const					{return meetingPos;}
 	Faction *getFaction() const					{return faction;}
 	const ResourceType *getLoadType() const		{return loadType;}
@@ -266,7 +258,7 @@ public:
 	const Level *getNextLevel() const;
 	string getFullName() const;
 	const UnitPath *getPath() const				{return &unitPath;}
-	UnitPath *getPath()							{return &unitPath;} //called from PathFinder & UnitUpdater
+	UnitPath *getPath()							{return &unitPath;}
 	int getSpeed(const SkillType *st) const;
 	int getSpeed() const						{return getSpeed(currSkill);}
 	Unit *getMaster() const						{return master;}
@@ -276,13 +268,12 @@ public:
 	int getPetCount(const UnitType *unitType) const;
 	const Commands &getCommands() const			{return commands;}
 	const RepairCommandType *getRepairCommandType(const Unit *u) const;
-   bool isMobile () { return type->isMobile(); }
-   
 	int getDeadCount() const					{return deadCount;}
 	const int64 &getLastUpdated() const			{return lastUpdated;}
 	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
 	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
-	
+   bool isMobile () { return type->isMobile(); }
+
 
 	void addPet(Unit *u)						{pets.push_back(u);}
 	void petDied(Unit *u)						{pets.remove(u);}
@@ -320,7 +311,7 @@ public:
 	}
 
 	int getMaxRange(const AttackSkillTypes *asts) const {
-		return (int)roundf(asts->getMaxRange() * attackRangeMult + attackRange); // ??
+		return (int)roundf(asts->getMaxRange() * attackRangeMult + attackRange);
 	}
 
 	//pos
@@ -329,7 +320,6 @@ public:
 	Vec2i getCenteredPos() const		{return Vec2i((int)type->getHalfSize()) + pos;}
 	Vec2f getFloatCenteredPos() const	{return Vec2f(type->getHalfSize()) + Vec2f((float)pos.x, (float)pos.y);}
 	Vec2i getNearestOccupiedCell(const Vec2i &from) const;
-   Vec2i getFlattenPos () const;
 //	Vec2i getCellPos() const;
 
 	//is
@@ -377,8 +367,7 @@ public:
 	Vec3f getCurrVector() const							{return getCurrVectorFlat() + Vec3f(0.f, type->getHalfHeight(), 0.f);}
 	//Vec3f getCurrVectorFlat() const;
 	// this is a heavy use function so it's inlined even though it isn't exactly small
-   Vec3f getCurrVectorFlat() const  { return currVectorFlat; }
-/*   {
+	Vec3f getCurrVectorFlat() const {
 		Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
 	
 		if (currSkill->getClass() == scMove) {
@@ -391,11 +380,8 @@ public:
 	
 		return v;
 	}
-*/   
-   // calculate unit position, assumes not moving
-   void setCurrentVectorStatic ();
 
-   //command related
+	//command related
 	const CommandType *getFirstAvailableCt(CommandClass commandClass) const;
 	bool anyCommand() const								{return !commands.empty();}
 
@@ -417,7 +403,6 @@ public:
 	void undertake()									{faction->remove(this);}
 	void save(XmlNode *node, bool morphed = false) const;
 
-   //REFACTOR ??? push UP to 'Observable' interface ?
 	//observers
 	void addObserver(UnitObserver *unitObserver)		{observers.push_back(unitObserver);}
 	void removeObserver(UnitObserver *unitObserver)		{observers.remove(unitObserver);}
@@ -436,42 +421,31 @@ public:
 	bool decHp(int i);
 	int update2()										{return ++progress2;}
 	bool update();
-	void face(const Vec2i &nextPos);
-
-   //REFACTOR ??? push UP to 'interface' type abstract class ('NetworkUpdatable' or somesuch) ?
 	void update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld, bool netClient, float nextAdvanceFrames);
 	void updateMinor(const XmlNode *node);
 	void writeMinorUpdate(XmlNode *node) const;
+	void face(const Vec2i &nextPos);
 
 
 	Unit *tick();
-
-   //REFACTOR move to Upgrade
 	void applyUpgrade(const UpgradeType *upgradeType);
-
-   void computeTotalUpgrade();
+	void computeTotalUpgrade();
 	void incKills();
 	bool morph(const MorphCommandType *mct);
-
-   //REFACTOR move to Command
 	CommandResult checkCommand(const Command &command) const;
 	void applyCommand(const Command &command);
 
-   //REFACTOR move to Effect
 	bool add(Effect *e);
 	void remove(Effect *e);
 	void effectExpired(Effect *effect);
-
 	bool doRegen(int hpRegeneration, int epRegeneration);
 
 //	void writeState(UnitState &us);
 //	void readState(UnitState &us);
 
 private:
-   //ELIMINATE
 	float computeHeight(const Vec2i &pos) const;
-
-   void updateTarget(const Unit *target = NULL);
+	void updateTarget(const Unit *target = NULL);
 	void clearCommands();
 	CommandResult undoCommand(const Command &command);
 	void recalculateStats();

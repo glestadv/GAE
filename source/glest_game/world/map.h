@@ -153,7 +153,7 @@ public:
 	void setTileTexture(const Texture2D *st)		{this->tileTexture= st;}
 	void setObject(Object *object)					{this->object= object;}
 	void setFowTexCoord(const Vec2f &ftc)			{this->fowTexCoord= ftc;}
-	void setSurfTexCoord(const Vec2f &stc)			{this->surfTexCoord= stc;}
+	void setTileTexCoord(const Vec2f &stc)			{this->surfTexCoord= stc;}
 	void setExplored(int teamIndex, bool explored)	{this->explored[teamIndex]= explored;}
 	void setVisible(int teamIndex, bool visible)	{this->visible[teamIndex]= visible;}
 	void setNearSubmerged(bool nearSubmerged)		{this->nearSubmerged= nearSubmerged;}
@@ -207,7 +207,7 @@ private:
 	Earthquakes earthquakes;
 
 private:
-	Map(Map&); // what are these for, surely we never copy maps?
+	Map(Map&);
 	void operator=(Map&);
 
 public:
@@ -216,26 +216,6 @@ public:
 
 	void init();
 	void load(const string &path, TechTree *techTree, Tileset *tileset);
-
-#ifdef FIELDMAP_DEBUG_TEXTURES
-   map<Vec2i, int> FieldMapDebug;
-#endif
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   list<Vec2i> PathPositions, ReturnPathPositions;
-   Vec2i PathStart, PathDest;
-   void ClearPathPos () {PathPositions.clear();ReturnPathPositions.clear();};
-   void SetPathPos ( Vec2i pos, bool ret=false ) {ret?ReturnPathPositions.push_back(pos):PathPositions.push_back(pos);};
-
-   set<Vec2i> open, closed, path;
-   void setOpenNode ( const Vec2i &pos ) { open.insert(pos); }
-   void setClosedNode ( const Vec2i &pos ) { closed.insert(pos); }
-   void setPathNode ( const Vec2i &pos ) { path.insert(pos); }
-   void clearNodes () { open.clear(); closed.clear(); path.clear(); }
-
-   map<Vec2i,uint32> local0;
-   void setLocal0 ( const Vec2i &pos, uint32 val ) { local0[pos] = val; }
-   void clearLocal0 () { local0.clear(); }
-#endif
 
 	//get
 	Cell *getCell(int x, int y) const;
@@ -322,8 +302,9 @@ public:
 	void clampPos(Vec2i &pos) const;
 
 	void prepareTerrain(const Unit *unit);
-	//void flatternTerrain(const Unit *unit);
-	void flattenTerrain(const Unit *unit);
+	void flatternTerrain(const Unit *unit);
+
+	//void flattenTerrain(const Unit *unit);
 	void computeNormals(Rect2i range = Rect2i(0, 0, 0, 0));
 	void computeInterpolatedHeights(Rect2i range = Rect2i(0, 0, 0, 0));
 	void read(NetworkDataBuffer &buf);
@@ -350,7 +331,7 @@ private:
 	void computeNearSubmerged();
 	void computeCellColors();
    void setCellTypes ();
-   void setCellType ( Vec2i pos );
+   //void setCellType ( Vec2i pos );
 
 	static void findNearest(Vec2i &result, const Vec2i &start, const Vec2i &candidate, float &minDistance);
 	void findNearestFree(Vec2i &result, const Vec2i &start, int size, Field field, const Vec2i &candidate, float &minDistance) const;

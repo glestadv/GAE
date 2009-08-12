@@ -20,7 +20,6 @@
 
 #include "leak_dumper.h"
 
-
 using namespace std;
 using namespace Shared::Graphics;
 
@@ -40,41 +39,53 @@ void Logger::setState(const string &state){
 }
 
 void Logger::add(const string &str,  bool renderScreen){
-   FILE *f=fopen(fileName.c_str(), "at+");
-   if ( f )
-   {
-	   fprintf(f, "%d: %s\n", (int)(clock() / 1000), str.c_str());
-      fclose(f);
-   }
-   if ( loadingGame )
-   {
-      if(f==NULL)
-         throw runtime_error("Error opening log file"+ fileName);
+	FILE *f=fopen(fileName.c_str(), "at+");
+	if ( f )
+	{
+		fprintf(f, "%d: %s\n", (int)(clock() / 1000), str.c_str());
+		fclose(f);
+	}
+	if ( loadingGame )
+	{
+		if(f==NULL){
+			throw runtime_error("Error opening log file"+ fileName);
+		}
 
-      logLines.push_back(str);
-	   if(logLines.size() > logLineCount)
-		   logLines.pop_front();
-   }
-   else
-      current = str;
+		logLines.push_back(str);
+		if(logLines.size() > logLineCount){
+			logLines.pop_front();
+		}
+	}
+	else
+	{
+		current = str;
+	}
 	if(renderScreen){
 		renderLoadingScreen();
 	}
 }
 
 void Logger::clear() {
-    string s="Log file\n";
+   string s="Log file\n";
 
-	FILE *f= fopen(fileName.c_str(), "wt+");
-	if(!f){
-		throw runtime_error("Error opening log file" + fileName);
-	}
+   FILE *f= fopen(fileName.c_str(), "wt+");
+   if(!f){
+      throw runtime_error("Error opening log file" + fileName);
+   }
 
-    fprintf(f, "%s", s.c_str());
-	fprintf(f, "\n");
+   fprintf(f, "%s", s.c_str());
+   fprintf(f, "\n");
 
-    fclose(f);
+   fclose(f);
 }
+
+void Logger::addXmlError ( const string &path, const char *error )
+{
+   static char buffer[2048];
+   sprintf ( buffer, "XML Error in %s:\n %s", path.c_str(), error );
+   add ( buffer );
+}
+
 
 // ==================== PRIVATE ====================
 
@@ -90,29 +101,29 @@ void Logger::renderLoadingScreen(){
 	renderer.renderBackground(CoreData::getInstance().getBackgroundTexture());
 
 	renderer.renderText(
-      state, coreData.getMenuFontVeryBig(), Vec3f(1.f),
+		state, coreData.getMenuFontBig(), Vec3f(1.f),
 		metrics.getVirtualW()/4, 75*metrics.getVirtualH()/100, false);
-   if ( loadingGame )
-   {
-      int offset= 0;
-      Font2D *font= coreData.getMenuFontBig();
-	   for(Strings::reverse_iterator it= logLines.rbegin(); it!=logLines.rend(); ++it){
-		   float alpha= offset==0? 1.0f: 0.8f-0.8f*static_cast<float>(offset)/logLines.size();
-		   renderer.renderText(
-			   *it, font, alpha ,
-			   metrics.getVirtualW()/4,
-			   70*metrics.getVirtualH()/100 - offset*(font->getSize()+4),
-			   false);
-		   ++offset;
-	   }
-   }
-   else
-   {
-      renderer.renderText(
-         current, coreData.getMenuFontNormal(), 1.0f, 
-         metrics.getVirtualW()/4, 
-         62*metrics.getVirtualH()/100, false);
-   }
+	if ( loadingGame )
+	{
+		int offset= 0;
+		Font2D *font= coreData.getMenuFontNormal();
+		for(Strings::reverse_iterator it= logLines.rbegin(); it!=logLines.rend(); ++it){
+			float alpha= offset==0? 1.0f: 0.8f-0.8f*static_cast<float>(offset)/logLines.size();
+			renderer.renderText(
+				*it, font, alpha ,
+				metrics.getVirtualW()/4,
+				70*metrics.getVirtualH()/100 - offset*(font->getSize()+4),
+				false);
+			++offset;
+		}
+	}
+	else
+	{
+		renderer.renderText(
+			current, coreData.getMenuFontNormal(), 1.0f, 
+			metrics.getVirtualW()/4, 
+			62*metrics.getVirtualH()/100, false);
+	}
 	renderer.swapBuffers();
 }
 

@@ -41,8 +41,8 @@ protected:
 	int x, y, w, h;
 	string text;
 	const Font2D *font;
-   bool enabled;
-	
+	bool enabled;
+
 	static float anim;
 	static float fade;
 
@@ -174,7 +174,8 @@ private:
 
 public:
 	GraphicMessageBox();
-	void init(const string &text, const string &button1Str, const string &button2Str="");
+	void init(const string &text, const string &button1Str, const string &button2Str = "");
+	//void init(const string &text, const string &button1Str); //redundant
 	
 	int getButtonCount() const				{return buttonCount;}
 	const GraphicButton *getButton1() const	{return &button1;}
@@ -192,6 +193,7 @@ public:
 	}
 
 private:
+	//void init(); //redundant
 	void layout();
 };
 

@@ -132,7 +132,7 @@ public:
 class XmlNode{
 private:
 	string name;
-   string text;
+	string text;
 	vector<XmlNode*> children;
 	vector<XmlAttribute*> attributes;
 
@@ -147,9 +147,9 @@ public:
 
 	// get
 	const string &getName() const	{return name;}
-   const string &getText() const	{return text;}
 	int getChildCount() const		{return children.size();}
 	int getAttributeCount() const	{return attributes.size();}
+	const string &getText() const	{return text;}
 
 	XmlAttribute *getAttribute(int i) const;
 	XmlAttribute *getAttribute(const string &name, bool required = true) const;

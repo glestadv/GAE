@@ -23,11 +23,12 @@
 #include "sound_renderer.h"
 #include "game_settings.h"
 #include "network_message.h"
-//#include "earthquake.h"
+#include "path_finder.h"
+
+//DEBUG remove me some time...
+#include "renderer.h"
 
 #include "leak_dumper.h"
-
-#include "renderer.h" // can remove after loadPFDebugTextures () is removed
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;
@@ -93,20 +94,25 @@ void World::save(XmlNode *node) const {
 // ========================== init ===============================================
 
 void World::init(const XmlNode *worldNode) {
-	
+
+#  ifdef _GAE_DEBUG_EDITION_
+	loadPFDebugTextures ();
+#  endif
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
 	initMap();
+
 	initSplattedTextures();
-   scriptManager = game.getScriptManager ();
-   unitUpdater.init(game); // is map data loaded ? ?
+
+	scriptManager = game.getScriptManager();
+	unitUpdater.init(game); // must be done after initMap()
 
 	//minimap must be init after sum computation
 	initMinimap();
 
-	if (worldNode)
+	if(worldNode)
 		loadSaved(worldNode);
-   else if ( game.getGameSettings ().getDefaultUnits () )
+	else if ( game.getGameSettings ().getDefaultUnits () )
 		initUnits();
 
 	initExplorationState();
@@ -138,10 +144,7 @@ void World::init(const XmlNode *worldNode) {
 	if(isNetworkServer()) {
 		initNetworkServer();
 	}
-#ifdef PATHFINDER_DEBUG_TEXTURES
-   loadPFDebugTextures ();
-#endif
-   loadFMDebugTextures ();
+
 	alive = true;
 }
 
@@ -160,94 +163,33 @@ void World::initNetworkServer() {
 }
 
 //load tileset
-void World::loadTileset(Checksum &checksum) {
+bool World::loadTileset(Checksum &checksum) {
 	tileset.load(game.getGameSettings().getTilesetPath(), checksum);
 	timeFlow.init(&tileset);
+   return true;
 }
 
-
-#define _load_tex(i,f) \
-   FMDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
-   FMDebugTextures[i]->setMipmap(false);\
-   FMDebugTextures[i]->getPixmap()->load(f);
-
-void World::loadFMDebugTextures ()
-{
-   _load_tex ( 0, "data/core/misc_textures/fm_land.bmp" );
-   _load_tex ( 1, "data/core/misc_textures/fm_any.bmp" );
-   _load_tex ( 2, "data/core/misc_textures/fm_water.bmp" );
-   _load_tex ( 3, "data/core/misc_textures/fm_ref.bmp" );
-   _load_tex ( 4, "data/core/misc_textures/fm_flatten.bmp" );
-   _load_tex ( 5, "data/core/misc_textures/fm_ignore.bmp" );
-   _load_tex ( 6, "data/core/misc_textures/st_land.bmp" );
-   _load_tex ( 7, "data/core/misc_textures/st_shallow.bmp" );
-   _load_tex ( 8, "data/core/misc_textures/st_deep.bmp" );
-}
-#undef _load_tex
-
-#ifdef PATHFINDER_DEBUG_TEXTURES
-#define _load_tex(i,f) \
-   PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
-   PFDebugTextures[i]->setMipmap(false);\
-   PFDebugTextures[i]->getPixmap()->load(f);
-
-void World::loadPFDebugTextures()
-{
-   char buff[128];
-   for ( int i=0; i < 4; ++i )
-   {
-      sprintf ( buff, "data/core/misc_textures/g%02d.bmp", i );
-      _load_tex ( i, buff );
-   }
-   for ( int i=13; i < 13+4; ++i )
-   {
-      sprintf ( buff, "data/core/misc_textures/l%02d.bmp", i-13 );
-      _load_tex ( i, buff );
-   }
-
-   //_load_tex ( 4, "data/core/misc_textures/local0.bmp" );
-
-   _load_tex ( 5, "data/core/misc_textures/path_start.bmp" );
-   _load_tex ( 6, "data/core/misc_textures/path_dest.bmp" );
-   _load_tex ( 7, "data/core/misc_textures/path_both.bmp" );
-   _load_tex ( 8, "data/core/misc_textures/path_return.bmp" );
-   _load_tex ( 9, "data/core/misc_textures/path.bmp" );
-
-   _load_tex ( 10, "data/core/misc_textures/path_node.bmp" );
-   _load_tex ( 11, "data/core/misc_textures/open_node.bmp" );
-   _load_tex ( 12, "data/core/misc_textures/closed_node.bmp" );
-}
-
-#undef _load_tex
-#endif
 //load tech
-void World::loadTech(Checksum &checksum) {
-	vector<string> names;
-
-	for (int i = 0; i < gs.getFactionCount(); ++i) {
-		if(gs.getFactionTypeName(i).size()) {
-			vector<string>::const_iterator j;
-			for(j = names.begin(); j != names.end() && *j != gs.getFactionTypeName(i); ++j) ;
-
-			if(j == names.end()) {
-				names.push_back(gs.getFactionTypeName(i));
-			}
-		}
-	}
-
-	techTree.load(gs.getTechPath(), names, checksum);
+bool World::loadTech(Checksum &checksum) {
+	set<string> names;
+	for (int i = 0; i < gs.getFactionCount(); ++i)
+		if(gs.getFactionTypeName(i).size())
+         names.insert ( gs.getFactionTypeName(i) );
+	return techTree.load(gs.getTechPath(), names, checksum);
 }
 
 //load map
-void World::loadMap(Checksum &checksum) {
+bool World::loadMap(Checksum &checksum) {
 	const string &path = gs.getMapPath();
 	checksum.addFile(path, false);
-	map.load(path, &techTree, &tileset);
+	map.load( path, &techTree, &tileset);
+   return true;
 }
 
-void World::loadScenario(const string &path, Checksum *checksum){
+bool World::loadScenario(const string &path, Checksum *checksum){
 	checksum->addFile(path, true);
 	scenario.load(path);
+   return true;
 }
 
 //load saved game
@@ -345,7 +287,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 	}
 	Vec2i lastPos = unit->getPos();
 	int lastHp = unit->getHp();
-//	Zone lastField = unit->getCurrField();
+	Field lastField = unit->getCurrField();
 	const SkillType *lastSkill = unit->getCurrSkill();
 	bool wasEvicted = false;
 	bool morphed = false;
@@ -606,7 +548,7 @@ void World::update() {
 			if(unit->getToBeUndertaken()){
 				unit->undertake();
 				delete unit;
-				j--; /// yikes!! surely there's a 'cleaner' way to do this
+				j--;
 			}
 		}
 	}
@@ -627,7 +569,7 @@ void World::update() {
 		minimap.updateFowTex(clamp(fogFactor, 0.f, 1.f));
 	}
 
-	//tick // why is this here, there is a tick timer ???
+	//tick
 	if (frameCount % Config::getInstance().getGsWorldUpdateFps() == 0) {
 		computeFow();
 		tick();
@@ -653,10 +595,11 @@ assertConsistiency();
 }
 
 void World::doKill(Unit *killer, Unit *killed) {
+   scriptManager->onUnitDied ( killed );
 	int kills = 1 + killed->getPets().size();
 	for (int i = 0; i < kills; i++) {
 		stats.kill(killer->getFactionIndex(), killed->getFactionIndex());
-		if (killer->isAlive()) {
+		if (killer->isAlive() && killer->getTeam() != killed->getTeam() ) {
 			killer->incKills();
 		}
 	}
@@ -664,15 +607,14 @@ void World::doKill(Unit *killer, Unit *killed) {
 	if(killed->getCurrSkill()->getClass() != scDie) {
 	   killed->kill();
 	}
-   //FIXME: make Field friendly
    if ( !killed->isMobile() )
       unitUpdater.pathFinder->updateMapMetrics ( killed->getPos (), killed->getSize (), false, FieldWalkable );
 }
 
 void World::tick() {
-//	if(!fogOfWarSmoothing){
-//		minimap.updateFowTex(1.f);
-//	}
+	if(!fogOfWarSmoothing){
+		minimap.updateFowTex(1.f);
+	}
 	
 	//apply hack cleanup
 	doHackyCleanUp();
@@ -746,31 +688,31 @@ const UnitType* World::findUnitTypeById(const FactionType* factionType, int id){
 
 //looks for a place for a unit around a start lociacion, returns true if succeded
 bool World::placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spaciated){
-   bool freeSpace;
-   int size= unit->getType()->getSize();
-   Field currField= unit->getCurrField();
+    bool freeSpace;
+	int size= unit->getType()->getSize();
+	Field currField= unit->getCurrField();
 
-   for(int r=1; r<radius; r++){
-      for(int i=-r; i<r; ++i){
-         for(int j=-r; j<r; ++j){
-            Vec2i pos= Vec2i(i,j)+startLoc;
-            if(spaciated){
-               const int spacing= 2;
-               freeSpace= map.areFreeCells(pos-Vec2i(spacing), size+spacing*2, currField);
-            }
-            else{
-               freeSpace= map.areFreeCells(pos, size, currField);
-            }
+    for(int r=1; r<radius; r++){
+        for(int i=-r; i<r; ++i){
+            for(int j=-r; j<r; ++j){
+                Vec2i pos= Vec2i(i,j)+startLoc;
+				if(spaciated){
+                    const int spacing= 2;
+					freeSpace= map.areFreeCells(pos-Vec2i(spacing), size+spacing*2, currField);
+				}
+				else{
+                    freeSpace= map.areFreeCells(pos, size, currField);
+				}
 
-            if(freeSpace){
-               unit->setPos(pos);
-               unit->setMeetingPos(pos - Vec2i(1));
-               return true;
+                if(freeSpace){
+                    unit->setPos(pos);
+					unit->setMeetingPos(pos - Vec2i(1));
+                    return true;
+                }
             }
-         }
-      }
-   }
-   return false;
+        }
+    }
+    return false;
 }
 
 //clears a unit old position from map and places new position
@@ -794,13 +736,14 @@ void World::moveUnitCells(Unit *unit) {
 	*/
 	//}
 
-//	assert(map.canMove(unit, unit->getPos(), newPos));
+   assert ( unitUpdater.pathFinder->isLegalMove ( unit, newPos ) );
 	map.clearUnitCells(unit, unit->getPos());
 	map.putUnitCells(unit, newPos);
 
 	//water splash
-	if(tileset.getWaterEffects() && unit->getCurrField()==ZoneSurface){
-      if ( map.getCell(unit->getLastPos())->isSubmerged () ){
+	if(tileset.getWaterEffects() && unit->getCurrField()==FieldWalkable){
+      if ( map.getCell(unit->getLastPos())->isSubmerged () )
+      {
 			for(int i=0; i<3; ++i){
 				waterEffects.addWaterSplash(
 					Vec2f(unit->getLastPos().x+random.randRange(-0.4f, 0.4f), unit->getLastPos().y+random.randRange(-0.4f, 0.4f)));
@@ -825,7 +768,6 @@ Unit *World::nearestStore(const Vec2i &pos, int factionIndex, const ResourceType
     return currUnit;
 }
 
-//MERGE ADD START
 void World::createUnit(const string &unitName, int factionIndex, const Vec2i &pos){
 	if(factionIndex<factions.size()){
 		Faction* faction= &factions[factionIndex];
@@ -836,6 +778,10 @@ void World::createUnit(const string &unitName, int factionIndex, const Vec2i &po
 		if(placeUnit(pos, generationArea, unit, true)){
 			unit->create(true);
 			unit->born();
+			if ( !unit->isMobile() ) {
+				Search::PathFinder *pf = Search::PathFinder::getInstance();
+				pf->updateMapMetrics ( unit->getPos(), unit->getSize(), true, FieldWalkable );
+			}
 			scriptManager->onUnitCreated(unit);
 		}
 		else{
@@ -994,8 +940,6 @@ int World::getUnitCountOfType(int factionIndex, const string &typeName){
 		throw runtime_error("Invalid faction index in getUnitCountOfType: " + intToStr(factionIndex));
 	}
 }
-//MERGE ADD END
-
 
 // ==================== PRIVATE ====================
 
@@ -1038,7 +982,7 @@ void World::initSplattedTextures(){
 				sc01->getTileType(),
 				sc11->getTileType(),
 				coord, texture);
-			sc00->setSurfTexCoord(coord);
+			sc00->setTileTexCoord(coord);
 			sc00->setTileTexture(texture);
 		}
 	}
@@ -1057,8 +1001,9 @@ void World::initFactionTypes() {
 	factions.resize(gs.getFactionCount());
 	for(int i=0; i<factions.size(); ++i){
 		const FactionType *ft= techTree.getFactionType(gs.getFactionTypeName(i));
-      factions[i].init( ft, gs.getFactionControl(i), &techTree, i, gs.getTeam(i),
+		factions[i].init( ft, gs.getFactionControl(i), &techTree, i, gs.getTeam(i),
          gs.getStartLocationIndex(i), i==thisFactionIndex, gs.getDefaultResources ());
+
 //		stats.setTeam(i, gs.getTeam(i));
 //		stats.setFactionTypeName(i, formatString(gs.getFactionTypeName(i)));
 //		stats.setControl(i, gs.getFactionControl(i));
@@ -1068,8 +1013,8 @@ void World::initFactionTypes() {
 }
 
 void World::initMinimap() {
-    minimap.init(map.getW(), map.getH(), this);
 	Logger::getInstance().add("Compute minimap surface", true);
+    minimap.init(map.getW(), map.getH(), this);
 }
 
 //place units randomly aroud start location
@@ -1088,22 +1033,23 @@ void World::initUnits() {
 				Unit *unit= new Unit(getNextUnitId(), Vec2i(0), ut, f, &map);
 				int startLocationIndex= f->getStartLocationIndex();
 
-				if(placeUnit(map.getStartLocation(startLocationIndex), generationArea, unit, true)) 
-            {
-               unit->create(true);
-               unit->born();
-               if ( !unit->isMobile() )
-                  unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(), 
-                                 unit->getSize(), true, unit->getCurrField () );
-            } 
-            else 
-            {
+				if(placeUnit(map.getStartLocation(startLocationIndex), generationArea, unit, true)) {
+					unit->create(true);
+					unit->born();
+
+				} else {
 					throw runtime_error("Unit cant be placed, this error is caused because there "
 							"is no enough place to put the units near its start location, make a "
 							"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
 				}
-				if(unit->getType()->hasSkillClass(scBeBuilt)){
-                    map.flattenTerrain(unit);
+            //if ( !unit->isMobile() )
+            //   unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(),
+            //                unit->getSize(), true, unit->getCurrField () );
+				if(unit->getType()->hasSkillClass(scBeBuilt))
+            {
+               map.flatternTerrain(unit);
+               unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(),
+                            unit->getSize(), true, unit->getCurrField () );
 				}
          }
 		}
@@ -1255,6 +1201,41 @@ void World::hackyCleanUp(Unit *unit) {
 }
 
 
+#ifdef _GAE_DEBUG_EDITION_
+#define _load_tex(i,f) \
+   PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
+   PFDebugTextures[i]->setMipmap(false);\
+   PFDebugTextures[i]->getPixmap()->load(f);
+
+void World::loadPFDebugTextures()
+{
+   char buff[128];
+   for ( int i=0; i < 4; ++i )
+   {
+      sprintf ( buff, "data/core/misc_textures/g%02d.bmp", i );
+      _load_tex ( i, buff );
+   }
+   for ( int i=13; i < 13+4; ++i )
+   {
+      sprintf ( buff, "data/core/misc_textures/l%02d.bmp", i-13 );
+      _load_tex ( i, buff );
+   }
+
+   //_load_tex ( 4, "data/core/misc_textures/local0.bmp" );
+
+   _load_tex ( 5, "data/core/misc_textures/path_start.bmp" );
+   _load_tex ( 6, "data/core/misc_textures/path_dest.bmp" );
+   _load_tex ( 7, "data/core/misc_textures/path_both.bmp" );
+   _load_tex ( 8, "data/core/misc_textures/path_return.bmp" );
+   _load_tex ( 9, "data/core/misc_textures/path.bmp" );
+
+   _load_tex ( 10, "data/core/misc_textures/path_node.bmp" );
+   _load_tex ( 11, "data/core/misc_textures/open_node.bmp" );
+   _load_tex ( 12, "data/core/misc_textures/closed_node.bmp" );
+}
+
+#undef _load_tex
+#endif
 
 
 }}//end namespace

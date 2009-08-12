@@ -22,7 +22,7 @@
 #include "tech_tree.h"
 #include "faction_type.h"
 #include "map.h"
-//#include "earthquake.h"
+
 #include "leak_dumper.h"
 
 
@@ -48,22 +48,20 @@ SkillType::SkillType(SkillClass skillClass, const char* typeName) :
 		soundStartTime(0.f),
 		typeName(typeName),
 		minRange(0),
-		maxRange(0)//,
-//		effectsRemoved(0),
-//		removeBenificialEffects(false),
-//		removeDetrimentalEffects(false),
-//		removeAllyEffects(false),
-//		removeEnemyEffects(false) 
-{
+		maxRange(0),
+		effectsRemoved(0),
+		removeBenificialEffects(false),
+		removeDetrimentalEffects(false),
+		removeAllyEffects(false),
+		removeEnemyEffects(false) {
 }
 
 SkillType::~SkillType(){
 	deleteValues(sounds.getSounds().begin(), sounds.getSounds().end());
 }
 
-void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft)
-{
-   ProducibleType::load ( sn, dir, tt, ft );
+void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft){
+
 	name = sn->getChildStringValue("name");
 	epCost = sn->getOptionalIntValue("ep-cost");
 	speed = sn->getChildIntValue("speed");
@@ -103,7 +101,7 @@ void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, c
 			effectTypes[i]= effectType;
 		}
 	}
-/*
+
 	//removing effects
 	const XmlNode *removeEffectsNode = sn->getChild("remove-effects", 0, false);
 	if(removeEffectsNode) {
@@ -115,7 +113,7 @@ void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, c
 	} else {
 		effectsRemoved = 0;
 	}
-*/
+
 	startTime= sn->getOptionalFloatValue("start-time");
 
 	//projectile
@@ -181,7 +179,7 @@ void SkillType::descRange(string &str, const Unit *unit, const char* rangeDesc) 
 
 void SkillType::descEffectsRemoved(string &str, const Unit *unit) const {
 	Lang &lang= Lang::getInstance();
-/*
+
 	if(effectsRemoved) {
 		str+= lang.get("Removes") + " " + intToStr(effectsRemoved) + " ";
 		if(removeBenificialEffects) {
@@ -201,7 +199,6 @@ void SkillType::descEffectsRemoved(string &str, const Unit *unit) const {
 			str += lang.get("enemy") + " ";
 		}
 	}
-   */
 }
 
 void SkillType::descSpeed(string &str, const Unit *unit, const char* speedType) const {
@@ -554,8 +551,6 @@ WaitForServerSkillType::WaitForServerSkillType(const SkillType *model) :
     animations.push_back((Model *)model->getAnimation());
 }
 
-
-
 // =====================================================
 // 	class SkillTypeFactory
 // =====================================================
@@ -575,7 +570,6 @@ SkillTypeFactory::SkillTypeFactory(){
 	registerClass<CastSpellSkillType>("cast_spell");
 	registerClass<FallDownSkillType>("fall_down");
 	registerClass<GetUpSkillType>("get_up");
-   registerClass<DummySkillType>("dummy");
 }
 
 SkillTypeFactory &SkillTypeFactory::getInstance(){

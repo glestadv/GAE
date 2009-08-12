@@ -10,6 +10,7 @@
 // ==============================================================
 
 #include "pch.h"
+
 #include "core_data.h"
 
 #include "logger.h"
@@ -136,10 +137,10 @@ void CoreData::load(){
 
 }
 
-int CoreData::computeFontSize(int size)
-{
+int CoreData::computeFontSize(int size){
 	int screenH= Config::getInstance().getDisplayHeight();
-	int rs= size*screenH/1000;	if(rs<12){
+	int rs= size*screenH/1000;
+	if(rs<12){
 		rs= 12;
 	}
 	return rs;

@@ -42,7 +42,7 @@ const float GraphicComponent::fadeSpeed = 0.01f;
 
 GraphicComponent::GraphicComponent() : x(0), y(0), w(0), h(0), text(), font(NULL) 
 { 
-   enabled = true; 
+   enabled = true;
 }
 
 void GraphicComponent::init(int x, int y, int w, int h) {
@@ -191,25 +191,24 @@ bool GraphicListBox::mouseClick(int x, int y) {
 // =====================================================
 
 GraphicMessageBox::GraphicMessageBox() 
-: GraphicComponent(), button1(), button2(), buttonCount(0) 
-{}
+: GraphicComponent(), button1(), button2(), buttonCount(0) {}
 
 const int GraphicMessageBox::defH = 240;
 const int GraphicMessageBox::defW = 350;
 
-void GraphicMessageBox::init(const string &text, const string &button1Str, const string &button2Str) 
-{
-   font = CoreData::getInstance().getMenuFontNormal();
-   GraphicComponent::setText(text);
-   
-   //init and position the button(s)
-   buttonCount = (button2Str == "") ? 1 : 2;
-   layout();
+void GraphicMessageBox::init(const string &text, const string &button1Str, const string &button2Str) {
+	font = CoreData::getInstance().getMenuFontNormal();
+	GraphicComponent::setText(text);
+	
+	//init and position the button(s)
+	buttonCount = (button2Str == "") ? 1 : 2;
+	layout();
 
 	button1.setText(button1Str);
 
-   if ( buttonCount == 2 )
-      button2.setText(button2Str);
+	if (buttonCount == 2) {
+		button2.setText(button2Str);
+	}
 }
 
 void GraphicMessageBox::layout() {

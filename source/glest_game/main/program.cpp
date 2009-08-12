@@ -98,8 +98,7 @@ Program::Program(Config &config, int argc, char** argv) :
 		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10),
 		programState(NULL),
 		crashed(false),
-		keymap(getInput(), "keymap.ini"),
-      debugTimer ( 1.f, -1, 1 ) {
+		keymap(getInput(), "keymap.ini") {
 
     //set video mode
 	setDisplaySettings();
@@ -117,6 +116,7 @@ Program::Program(Config &config, int argc, char** argv) :
 	logger.clear();
 	Logger::getServerLog().clear();
 	Logger::getClientLog().clear();
+   Logger::getErrorLog().clear();
 
 	//lang
 	Lang &lang= Lang::getInstance();
@@ -155,11 +155,7 @@ Program::Program(Config &config, int argc, char** argv) :
 
 	// normal startup
 	} else {
-		MainMenu* mainMenu = new MainMenu(*this);
-		setState(mainMenu);
-		mainMenu->setState(new MenuStateNewGame( *this, mainMenu ));
-
-		//setState(new Intro(*this));
+		setState(new Intro(*this));
 	}
 
 	singleton = this;
@@ -177,93 +173,41 @@ Program::~Program() {
 	//restore video mode
 	restoreDisplaySettings();
 }
-//#define TIME_WORLD_UPDATE
-void Program::loop() 
-{
-#ifdef PROGRAM_HANDLE_EVENTS_PROFILING
-   while ( true )
-   {
-      int64 start = Chrono::getCurMillis ();
-      bool goOn = handleEvent ();
-      int64 end = Chrono::getCurMillis ();
-      stats.time += end - start;
-      if ( !goOn ) break;
-#else
-	while(handleEvent()) 
-   {
-#endif
+
+void Program::loop() {
+	while(handleEvent()) {
 		size_t sleepTime = renderTimer.timeToWait();
 	
 		sleepTime = sleepTime < updateCameraTimer.timeToWait() ? sleepTime : updateCameraTimer.timeToWait();
 		sleepTime = sleepTime < updateTimer.timeToWait() ? sleepTime : updateTimer.timeToWait();
 		sleepTime = sleepTime < tickTimer.timeToWait() ? sleepTime : tickTimer.timeToWait();
-      sleepTime = sleepTime < debugTimer.timeToWait () ? sleepTime : debugTimer.timeToWait ();
 	
-		if(sleepTime)
+		if(sleepTime) {
 			Shared::Platform::sleep(sleepTime);
+		}
 	
 		//render
-      int renders = 0;
-		while(renderTimer.isTime()) // should be 'if' ? 
-      {                           // wont consecutive calls to this stall horribly ??
-         programState->render();  // is this the culprit of the slow down?
-         renders ++;              // Timer has maxTimes = 1, so... no ?
-         if ( renders > 1 ) throw new runtime_error ( "Boo!" );
-      }
-                                          
+		while(renderTimer.isTime()){
+			programState->render();
+		}
 	
 		//update camera
-		while(updateCameraTimer.isTime())
+		while(updateCameraTimer.isTime()){
 			programState->updateCamera();
+		}
 	
 		//update world
 		while(updateTimer.isTime()){
 			GraphicComponent::update();
-
-#ifdef TIME_WORLD_UPDATE
-         int64 start;
-         if ( programState->isGame () )
-            start = Chrono::getCurMillis ();
-         programState->update();
-         if ( programState->isGame () )
-         {
-            int64 time = Chrono::getCurMillis () - start;
-            timerStats.updates ++;
-            timerStats.totalTimeInUpdate += time;
-            timerStats.avgTimeInUpdate = timerStats.totalTimeInUpdate / timerStats.updates;
-            if ( time > timerStats.worstUpdateLoop )
-               timerStats.worstUpdateLoop = time;
-         }
-#else
 			programState->update();
-#endif	
 			SoundRenderer::getInstance().update();
 			NetworkManager::getInstance().update();
 		}
+	
 		//tick timer
-		while(tickTimer.isTime())
-      {
+		while(tickTimer.isTime()){
 			programState->tick();
-#ifdef PROGRAM_HANDLE_EVENTS_PROFILING
-         static char buf[256];
-         sprintf ( buf, "Handle Events took %dms", stats.time );
-         Logger::getInstance().add ( buf );
-         stats.reset();
-#endif
-#ifdef TIME_WORLD_UPDATE
-         if ( programState->isGame () )
-         {
-            static char buffer[512];
-            sprintf ( buffer, "Updates: %d, Avg: %dms, Worst: %dms.", 
-               timerStats.updates, (int)timerStats.avgTimeInUpdate, (int)timerStats.worstUpdateLoop );
-            Logger::getInstance().add ( buffer );
-            timerStats.reset ();
-         }
-#endif
-      }
-
-      while ( debugTimer.isTime () ) // didn't realise the tick timer is essentially the 
-         programState->debugTick (); // same thing when I added this, can be removed some time...
+		}
 	}
 }
 
@@ -344,16 +288,18 @@ void Program::restoreDisplaySettings(){
 
 void Program::crash(const exception *e) {
 	// if we've already crashed then we just try to exit
-	if ( !crashed )
-   {
+	if(!crashed) {
 		crashed = true;
-		if(programState)
+
+		if(programState) {
 			delete programState;
+		}
+
 		programState = new CrashProgramState(*this, e);
 		loop();
-	} 
-   else 
+	} else {
 		exit();
+	}
 }
 
 }}//end namespace

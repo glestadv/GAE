@@ -77,46 +77,10 @@ void UnitPath::read(const XmlNode *node) {
 	delete[] buf;
 	*/
 }
-char *UnitPath::Output ()
-{
-   static char buffer[4096];
-   if ( isEmpty () ) sprintf ( buffer, "Path is empty.\n" );
-   else
-   {
-      int offset = sprintf ( buffer, "Path has %d steps ->", size() );
-      list<Vec2i>::iterator i = pathQueue.begin ();
-      offset += sprintf ( buffer + offset, "(%d,%d)", i->x, i->y );
-      ++i;
-      for ( ; i != pathQueue.end(); ++i )
-      {
-         offset += sprintf ( buffer + offset, "->(%d,%d)", i->x, i->y );
-         if ( offset > 4000 ) break;
-      }
-      sprintf ( buffer + offset, "\n" );
-   }
-   return buffer;
-}
-bool UnitPath::AssertValidity ()
-{
-   const Vec2i *prev = NULL;
-	for ( list<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i ) 
-   {
-		if ( i == pathQueue.begin() ) 
-      {
-			prev = &*i;
-         continue;
-		}
-      if ( i->x != prev->x - 1 && i->x != prev->x + 1
-      &&   i->y != prev->y - 1 && i->y != prev->y + 1 )
-         return false;
-      prev = &*i;
-	}
-   return true;
-}
 
 void UnitPath::write(XmlNode *node) const {
 	stringstream s;
-	for (list<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i) {
+	for (vector<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i) {
 		if(i != pathQueue.begin()) {
 			s << ",";
 		}
@@ -145,7 +109,6 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 		nextPos(pos),
 		targetPos(0),
 		targetVec(0.0f),
-      currVectorFlat(0.0f),
 		meetingPos(pos),
 		lastCommandUpdate(0),
 		lastCommanded(0) {
@@ -167,11 +130,14 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(FieldAir)) currField = FieldAir;
-	if(type->getField(FieldAnyWater)) currField = FieldAnyWater;
-	if(type->getField(FieldDeepWater)) currField = FieldDeepWater;
 	if(type->getField(FieldWalkable)) currField = FieldWalkable;
-	targetField = ZoneSurface;		// init just to keep it pretty in memory
+	else if(type->getField(FieldAir)) currField = FieldAir;
+
+	if ( type->getField (FieldAmphibious) ) currField = FieldAmphibious;
+	else if ( type->getField (FieldAnyWater) ) currField = FieldAnyWater;
+	else if ( type->getField (FieldDeepWater) ) currField = FieldDeepWater;
+
+	targetField = FieldWalkable;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -396,7 +362,7 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 	if(!recentlyCommanded) {
 		progress2 = node->getChildIntValue("progress2");
 		currField = (Field)node->getChildIntValue("currField");
-		targetField = (Zone)node->getChildIntValue("targetField");
+		targetField = (Field)node->getChildIntValue("targetField");
 
 
 		pos = node->getChildVec2iValue("pos");		//map->putUnitCells() will set this, so we reload it later
@@ -463,7 +429,7 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 	}
 
 	if(!netClient && type->hasSkillClass(scBeBuilt) && !type->hasSkillClass(scMove)) {
-		map->flattenTerrain(this);
+		map->flatternTerrain(this);
 	}
 
 	if(node->getChildBoolValue("fire")) {
@@ -509,30 +475,6 @@ Vec2i Unit::getNearestOccupiedCell(const Vec2i &from) const {
 		assert(nearestPos != Vec2i(-1));
 		return nearestPos;
 	}
-}
-
-Vec2i Unit::getFlattenPos () const
-{
-   if ( getType()->hasFieldMap () )
-   {
-      // search for a reference cell ( an 'r')
-      for ( int i=0; i < size; ++i )
-         for ( int j=0; j < size; ++j )
-            if ( getType()->getFieldMapCell ( i, j ) == 'r' ) 
-               return pos + Vec2i(i,j);
-
-      //HACK
-      // just find any cell with an 'l' and return it...
-      for ( int i=0; i < size; ++i )
-         for ( int j=0; j < size; ++j )
-            if ( getType()->getFieldMapCell ( i, j ) == 'l' ) 
-               return pos + Vec2i(i,j);
-
-      // What we probably should do...
-      // get spot as close to center as possible, with an 'l' in fieldMap...
-   }
-   else
-      return getCenteredPos ();
 }
 /* *
  * If the unit has a cell map, then return the nearest position to the center that is a free cell
@@ -821,14 +763,6 @@ Command *Unit::popCommand() {
 //pop front (used when order is done)
 CommandResult Unit::finishCommand() {
 
-   /*
-   if ( commands.front() && commands.front()->getType()->getClass() == ccDummy )
-      Logger::getInstance().add ( "Dummy command finsihed." );
-   if ( commands.front() && commands.front()->getType()->getClass() == ccMorph )
-      Logger::getInstance().add ( "Morph command finsihed." );
-   if ( commands.front() && commands.front()->getType()->getClass() == ccMove )
-      Logger::getInstance().add ( "Move command finsihed." );
-   */
 	//is empty?
 	if(commands.empty()) {
 		return crFailUndefined;
@@ -873,12 +807,6 @@ CommandResult Unit::cancelCommand() {
 
 /** cancel current command */
 CommandResult Unit::cancelCurrCommand() {
-   if ( commands.front() && commands.front()->getType()->getClass() == ccDummy )
-   {
-      // If already started, give refund...
-      if ( getCurrSkill()->getClass () == scDummy )
-         faction->deApplyCosts ( getCurrSkill() );
-   }
 	//is empty?
 	if(commands.empty()) {
 		return crFailUndefined;
@@ -897,7 +825,6 @@ CommandResult Unit::cancelCurrCommand() {
 void Unit::create(bool startingUnit) {
 	faction->add(this);
 	map->putUnitCells(this, pos);
-   setCurrentVectorStatic ();
 	if(startingUnit){
 		faction->applyStaticCosts(type);
 	}
@@ -920,7 +847,8 @@ void Unit::born(){
 void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	assert(hp <= 0);
 	hp = 0;
-	World::getCurrWorld()->hackyCleanUp(this);
+
+   World::getCurrWorld()->hackyCleanUp(this);
 
 	if(fire != NULL) {
 		fire->fade();
@@ -938,12 +866,12 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	setCurrSkill(scDie);
 
 	//no longer needs static resources
-	if ( isBeingBuilt () )
-		faction->deApplyStaticConsumption (type);
+	if(isBeingBuilt())
+		faction->deApplyStaticConsumption(type);
 	else
-		faction->deApplyStaticCosts (type);
+		faction->deApplyStaticCosts(type);
 
-   notifyObservers(UnitObserver::eKill);
+	notifyObservers(UnitObserver::eKill);
 
 	//clear commands
 	clearCommands();
@@ -974,7 +902,7 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 	if (targetUnit) {
 		//attack enemies
 		if (!isAlly(targetUnit)) {
-			commandType = type->getFirstAttackCommand(targetUnit->getCurrField()==FieldAir?ZoneAir:ZoneSurface);
+			commandType = type->getFirstAttackCommand(targetUnit->getCurrZone());
 
 		//repair allies
 		} else {
@@ -1001,7 +929,6 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 }
 
 /** @return true when the current skill has completed a cycle */
-// updates current skill, return true if it is now complete
 bool Unit::update() {
 	assert(progress <= 1.f);
 
@@ -1020,37 +947,18 @@ bool Unit::update() {
 
 		//if moving in diagonal move slower
 		Vec2i dest = pos - lastPos;
-		if(abs(dest.x) + abs(dest.y) == 2) //PF: Edge Cost == 1.42
+		if(abs(dest.x) + abs(dest.y) == 2) {
 			progressSpeed *= 0.71f;
-
-      // this code is shit...
+		}
 
 		//if moving to a higher cell move slower else move faster
-      // This is wrong, should be diff between lastPos and pos...
 		float heightDiff = map->getCell(pos)->getHeight() - map->getCell(nextPos)->getHeight();
-      // This sucks, besides being the 'wrong way up' conceptually, it is confusing
-      // and should not be hard coded anyway..
-      // Re-engineer, Have max-slope(ascend & descend) and some mechanism to specify
-      // how the slope effects the move speed specified in the untis XML
 		float heightFactor = clamp(1.f + heightDiff / 1.25f, 0.2f, 5.f);
 		progressSpeed *= heightFactor;
 		animationSpeed *= heightFactor;
-
-      // Unit should maintain height, remove computeHeight(), just return the member... 
-      // this will allow us to do funky stuff, like man-able walls, slopes on walkable 
-      // buildings (for bridges amoungst other stuff) with ease.
-
-      // interpolate height... 
-      //float diffToNext = map->getCell(pos)->getHeight() - map->getCell(lastPos)->getHeight();
-      //float myHeight = map->getCell(lastPos)->getHeight() + progress * diffToNext;
-		Vec3f v1( (float)lastPos.x, computeHeight(lastPos), (float)lastPos.y );         
-      Vec3f v2( (float)pos.x,  computeHeight(pos), (float)(pos.y) );
-      currVectorFlat = v1.lerp ( progress, v2 );
-		currVectorFlat.x += type->getHalfSize();
-		currVectorFlat.z += type->getHalfSize();
 	}
 
-   //update progresses
+	//update progresses
 	lastAnimProgress = animProgress;
 	progress += nextUpdateFrames * progressSpeed;
 	animProgress += nextUpdateFrames * animationSpeed;
@@ -1100,16 +1008,6 @@ bool Unit::update() {
 	return false;
 }
 
-void Unit::setCurrentVectorStatic ()
-{
-   Vec2i cPos = pos;
-   if ( type->hasFieldMap () )
-      cPos += type->getFieldMapRefCell ();
-   currVectorFlat = Vec3f( (float)cPos.x + type->getHalfSize(),  
-         computeHeight(cPos), (float)(cPos.y) + type->getHalfSize() );
-}
-
-
 /**
  * Do positive and/or negative Hp and Ep regeneration. This method is
  * provided to reduce redundant code in a number of other places, mostly in
@@ -1124,12 +1022,11 @@ bool Unit::doRegen(int hpRegeneration, int epRegeneration) {
 	}
 
 	//hp regen/degen
-	if(hpRegeneration > 0) {
+	if(hpRegeneration > 0)
 		repair(hpRegeneration);
-	} else if(hpRegeneration < 0) {
-		if(decHp(-hpRegeneration)) {
+	else if(hpRegeneration < 0) {
+		if(decHp(-hpRegeneration))
 			return true;
-		}
 	}
 
 	//ep regen/degen
@@ -1192,11 +1089,6 @@ Unit* Unit::tick() {
 	return killer;
 }
 
-/**
- * Checks if the current skill consumes ep, if so check's if it has enough
- * ep to execute the skill, if so, decreases ep by the required amount.
- * returns true if the unit is out of ep, false if it can continue
- */
 bool Unit::computeEp() {
 
 	//if not enough ep
@@ -1213,10 +1105,6 @@ bool Unit::computeEp() {
 	return false;
 }
 
-/**
- * restores amount * multiplier hp.
- * returns true if the unit is now at full hp
- */
 bool Unit::repair(int amount, float multiplier) {
 	if (!isAlive()) {
 		return false;
@@ -1401,20 +1289,15 @@ void Unit::applyUpgrade(const UpgradeType *upgradeType){
 	}
 }
 
-void Unit::computeTotalUpgrade()
-{
+void Unit::computeTotalUpgrade(){
 	faction->getUpgradeManager()->computeTotalUpgrade(this, &totalUpgrade);
 	level = NULL;
-	for(int i = 0; i < type->getLevelCount(); ++i)
-   {
+	for(int i = 0; i < type->getLevelCount(); ++i){
 		const Level *level = type->getLevel(i);
-		if(kills >= level->getKills()) 
-      {
+		if(kills >= level->getKills()) {
 			totalUpgrade.sum(level);
 			this->level = level;
-		} 
-      else 
-      {
+		} else {
 			break;
 		}
 	}
@@ -1534,13 +1417,12 @@ void Unit::effectExpired(Effect *e){
 
 // ==================== PRIVATE ====================
 
-//ELIMINATE see notes in Unit::update()
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
 	if (currField == FieldAir) {
 		height += World::airHeight;
-   }
+	}
 
 	return height;
 }
@@ -1552,22 +1434,20 @@ void Unit::updateTarget(const Unit *target) {
 
 	//find a free pos in cellmap
 //	setTargetPos(unit->getCellPos());
-	if ( target )
-   {
-	   targetPos = useNearestOccupiedCell
-			       ? target->getNearestOccupiedCell(pos)
-			       : target->getCenteredPos();
-	   targetField = target->getCurrField()==FieldAir?ZoneAir:ZoneSurface;
-	   targetVec = target->getCurrVector();
-   	
-	   if(faceTarget)
-		   face(target->getCenteredPos());
-   }
+	
+	if(target) {
+		targetPos = useNearestOccupiedCell
+				? target->getNearestOccupiedCell(pos)
+				: targetPos = target->getCenteredPos();
+		targetField = target->getCurrField();
+		targetVec = target->getCurrVector();
+		
+		if(faceTarget) {
+			face(target->getCenteredPos());
+		}
+	}
 }
 
-/**
- * Clear the command queue.
- */
 void Unit::clearCommands() {
 	while(!commands.empty()) {
 		undoCommand(*commands.back());
@@ -1575,10 +1455,7 @@ void Unit::clearCommands() {
 		commands.pop_back();
 	}
 }
-/**
- * Check's whether a command can be executed.
- * returns crSuccess if the command can be executed
- */
+
 CommandResult Unit::checkCommand(const Command &command) const {
 	const CommandType *ct = command.getType();
 
@@ -1654,10 +1531,6 @@ CommandResult Unit::checkCommand(const Command &command) const {
 	return crSuccess;
 }
 
-/**
- * Applies costs associated with a command, assumes checkCommand()
- * would return crSuccess, (so, call checkCommand() first!).
- */
 void Unit::applyCommand(const Command &command) {
 	const CommandType *ct = command.getType();
 

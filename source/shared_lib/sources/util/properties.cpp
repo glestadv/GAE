@@ -50,7 +50,8 @@ void Properties::load(const string &path) {
 	while (!fileStream.eof()) {
 		fileStream.getline(lineBuffer, maxLine);
 
-      lineBuffer[maxLine-1] = '\0';
+		lineBuffer[maxLine-1] = '\0';
+
 		if (lineBuffer[0] == ';' || lineBuffer[0] == '#') {
 			continue;
 		}
@@ -100,6 +101,11 @@ void Properties::save(const string &path) {
 	fileStream.close();
 }
 
+void Properties::clear(){
+	propertyMap.clear();
+	propertyVector.clear();
+}
+
 const string *Properties::_getString(const string &key, bool required) const {
 	PropertyMap::const_iterator it;
 	it = propertyMap.find(key);
@@ -111,11 +117,6 @@ const string *Properties::_getString(const string &key, bool required) const {
 	} else {
 		return &it->second;
 	}
-}
-
-void Properties::clear(){
-	propertyMap.clear();
-	propertyVector.clear();
 }
 
 template<typename T>

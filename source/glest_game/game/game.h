@@ -31,33 +31,11 @@
 
 using std::vector;
 
-//#define GAME_UPDATE_PROFILING
-//#define GAME_RENDER_PROFILING
-//#define LOG_FRAMERATE_DROPS
-
 namespace Glest { namespace Game {
 
 class GraphicMessageBox;
 class GraphicTextEntryBox;
 
-#ifdef GAME_UPDATE_PROFILING
-struct GameUpdateStats
-{
-   int updateLoops;
-   int64 worldUpdate, aiUpdate, netUpdate, particleUpdate;
-   void reset () { updateLoops = worldUpdate = aiUpdate = netUpdate = particleUpdate = 0;}
-   GameUpdateStats () {reset();}
-};
-#endif
-#ifdef GAME_RENDER_PROFILING
-struct GameRenderStats
-{
-   int64 r2d, r3d, swap;
-   void reset () { r2d = r3d = swap = 0;}
-   GameRenderStats () { reset (); }
-
-};
-#endif
 // =====================================================
 // 	class Game
 //
@@ -100,7 +78,7 @@ private:
     Commander commander;
     Console console;
 	ChatManager chatManager;
-   ScriptManager scriptManager;
+	ScriptManager scriptManager;
 
 	//misc
 	Checksum checksum;
@@ -117,6 +95,7 @@ private:
 	float fUpdateLoops;
 	float lastUpdateLoopsFraction;
 	GraphicMessageBox mainMessageBox;
+
 	GraphicTextEntryBox *saveBox;
 	Vec2i lastMousePos;
 
@@ -127,17 +106,8 @@ public:
 	Game(Program &program, const GameSettings &gs, XmlNode *savedGame = NULL);
     ~Game();
 	static Game *getInstance()				{return singleton;}
-   virtual bool isGame () { return true; }
 
-#ifdef GAME_UPDATE_PROFILING
-   static GameUpdateStats updateStats;
-   static bool reportUpdateStats;
-#endif
-#ifdef GAME_RENDER_PROFILING
-   static GameRenderStats renderStats;
-   static bool reportRenderStats;
-#endif
-   //get
+    //get
 	GameSettings &getGameSettings()			{return gameSettings;}
 	const Keymap &getKeymap() const			{return keymap;}
 	const Input &getInput() const			{return input;}
@@ -148,11 +118,10 @@ public:
 	Gui *getGui()							{return &gui;}
 	const Gui *getGui() const				{return &gui;}
 	Commander *getCommander()				{return &commander;}
-   ScriptManager *getScriptManager() { return &scriptManager; }
 	Console *getConsole()					{return &console;}
+	ScriptManager *getScriptManager()		{return &scriptManager;}
 	World *getWorld()						{return &world;}
 	const World *getWorld() const			{return &world;}
-   void quitGame ();
 
     //init
     virtual void load();
@@ -176,32 +145,34 @@ public:
 	virtual void eventMouseWheel(int x, int y, int zDelta);
     virtual void mouseMove(int x, int y, const MouseState &mouseState);
 
-	void setCameraCell(int x, int y)	{
+	void setCameraCell(int x, int y) {
 		gameCamera.setPos(Vec2f(static_cast<float>(x), static_cast<float>(y)));
 	}
+	void quitGame ();
 
 private:
 	//render
-    void render3d ( bool log = false );
+    void render3d();
     void render2d();
 
 	//misc
 	void _init();
 	void checkWinner();
-   void checkWinnerStandard();
-   void checkWinnerScripted();	bool hasBuilding(const Faction *faction);
+	void checkWinnerStandard();
+	void checkWinnerScripted();
+	bool hasBuilding(const Faction *faction);
 	void incSpeed();
 	void decSpeed();
 	void resetSpeed();
 	void updateSpeed();
 	int getUpdateLoops();
 
-   void showLoseMessageBox();
-   void showWinMessageBox();
-   void showMessageBox(const string &text, const string &header, bool toggle);
-	void showExitMessageBox(const string &text, bool toggle);
+	void showLoseMessageBox();
+	void showWinMessageBox();
+	void showMessageBox(const string &text, const string &header, bool toggle);
 
-   string controllerTypeToStr(ControlType ct);
+	void showExitMessageBox(const string &text, bool toggle);
+	string controllerTypeToStr(ControlType ct);
 	Unit *findUnit(int id);
 	char getStringFromFile(ifstream *fileStream, string *str);
 	void saveGame(string name) const;

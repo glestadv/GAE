@@ -40,8 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1;FIELDMAP_DEBUG_TEXTURES"
+				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -131,7 +131,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world"
+				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;XML_LIBRARY;USE_PCH=1"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -159,7 +159,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
-				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib xerces-depdom_static_2.lib xerces-c_static_2.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zlib.lib  libcmt.lib"
+				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib xerces-depdom_static_2.lib xerces-c_static_2.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zdll.lib libcmt.lib lua5.1.lib"
 				Version="3.1.0-beta-something"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../deps/lib;&quot;../../build/$(ConfigurationName)/libglest&quot;"
@@ -225,8 +225,8 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
-				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder;command_types"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;XML_LIBRARY;USE_PCH=1;FIELDMAP_DEBUG_TEXTURES"
+				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;XML_LIBRARY;USE_PCH=1"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="true"
@@ -428,7 +428,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\command_types\command_type.h"
+				RelativePath=".\types\command_type.h"
 				>
 			</File>
 			<File
@@ -636,22 +636,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\pf_datastructs.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_nodepool.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_np_astar_dia.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\pf_np_astar_stl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\facilities\pos_iterator.h"
 				>
 			</File>
@@ -788,10 +772,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\command_types\attack_command_type.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\facilities\auto_test.cpp"
 				>
 			</File>
@@ -801,10 +781,6 @@
 			</File>
 			<File
 				RelativePath=".\path_finder\bestfirst_node_pool.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\command_types\build_command_type.cpp"
 				>
 			</File>
 			<File
@@ -820,7 +796,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\command_types\command_type.cpp"
+				RelativePath=".\types\command_type.cpp"
 				>
 			</File>
 			<File
@@ -853,10 +829,6 @@
 			</File>
 			<File
 				RelativePath=".\gui\display.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\command_types\dummy_command_type.cpp"
 				>
 			</File>
 			<File
@@ -900,19 +872,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\command_types\gaurd_command_type.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\path_finder\graph_search.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\gui\gui.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\command_types\harvest_command_type.cpp"
 				>
 			</File>
 			<File
@@ -992,14 +956,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\command_types\morph_command_type.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\command_types\move_command_type.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\network\network_interface.cpp"
 				>
 			</File>
@@ -1051,10 +1007,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\command_types\patrol_command_type.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\pch.cpp"
 				>
 				<FileConfiguration
@@ -1095,24 +1047,12 @@
 				>
 			</File>
 			<File
-				RelativePath=".\command_types\produce_command_type.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\main\program.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\graphics\renderer.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="FIELDMAP_DEBUG_TEXTURES"
-					/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug+opt|Win32"
 					>
@@ -1128,10 +1068,6 @@
 						DebugInformationFormat="3"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\command_types\repair_command_type.cpp"
-				>
 			</File>
 			<File
 				RelativePath=".\type_instances\resource.cpp"
@@ -1211,10 +1147,6 @@
 			</File>
 			<File
 				RelativePath=".\type_instances\upgrade.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\command_types\upgrade_command_type.cpp"
 				>
 			</File>
 			<File

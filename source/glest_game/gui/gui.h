@@ -108,7 +108,7 @@ public:
 	static const int imageCount= 16;
 	static const int invalidPos= -1;
 	static const int doubleClickSelectionRadius= 20;
-   static const int invalidGroupIndex= -1;
+	static const int invalidGroupIndex= -1;
 
 	typedef vector<Vec2i> BuildPositions;
 
@@ -151,7 +151,7 @@ private:
 	bool selectingPos;
 	bool selectingMeetingPoint;
 	bool needSelectionUpdate;
-   int currentGroup;
+	int currentGroup;
 	
 	static Gui* currentGui;
 
@@ -196,11 +196,20 @@ public:
 	void setComputeSelectionFlag()			{computeSelection= true;}
 
 	//events
-	void update() { setComputeSelectionFlag(); mouse3d.update(); }
-	void tick(){ computeDisplay(); }
-	void onSelectionUpdated() { currentGroup= invalidGroupIndex; }
+	void update(){
+		setComputeSelectionFlag();
+		mouse3d.update();
+	}
 
-   void mouseDownLeft(int x, int y);
+	void tick(){
+		computeDisplay();
+	}
+
+	void onSelectionUpdated(){
+		currentGroup= invalidGroupIndex;
+	}
+
+	void mouseDownLeft(int x, int y);
 	void mouseDownRight(int x, int y);
 	void mouseUpLeft(int x, int y);
 	void mouseUpRight(int x, int y);
@@ -221,6 +230,9 @@ public:
 	}
 
 	//misc
+
+	void switchToNextDisplayColor() {display.switchColor();}
+
 	void onSelectionChanged() {
 		selection.update();
 		resetState();

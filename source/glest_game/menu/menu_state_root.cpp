@@ -62,14 +62,6 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
 	NetworkManager::getInstance().end();
 }
 
-//MERGE ADD START
-void MenuStateRoot::update(){
-	/*if(Config::getInstance().getBool("AutoTest")){
-		AutoTest::getInstance().updateRoot(program, mainMenu);
-	}*/
-}
-//MERGE ADD END
-
 void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton){
 
 	CoreData &coreData=  CoreData::getInstance();
@@ -134,6 +126,13 @@ void MenuStateRoot::render(){
 	renderer.renderButton(&buttonAbout);
 	renderer.renderButton(&buttonExit);
 	renderer.renderLabel(&labelVersion);
+}
+
+void MenuStateRoot::update(){
+	//TOOD: add AutoTest to config
+	/*if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateRoot(program, mainMenu);
+	}*/
 }
 
 }}//end namespace

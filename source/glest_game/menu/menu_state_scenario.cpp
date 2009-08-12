@@ -52,14 +52,17 @@ MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu):
 	buttonReturn.setText(lang.get("Return"));
 	buttonPlayNow.setText(lang.get("PlayNow"));
 
-   labelCategory.setText(lang.get("Category"));
-   labelScenario.setText(lang.get("Scenario"));
+	labelCategory.setText(lang.get("Category"));
+    labelScenario.setText(lang.get("Scenario"));
 
-   //categories listBox
-   findAll("gae_scenarios/*.", results);
-   categories= results;
-   if(results.size()==0)
-      throw runtime_error("There are no categories");
+    //categories listBox
+	findAll("gae_scenarios/*.", results);
+	categories= results;
+	
+	if(results.size()==0){
+        throw runtime_error("There are no categories");
+	}
+
 	listBoxCategory.setItems(results);
 	updateScenarioList( categories[listBoxCategory.getSelectedItemIndex()] );
 
@@ -77,21 +80,22 @@ void MenuStateScenario::mouseClick(int x, int y, MouseButton mouseButton){
 		mainMenu->setState(new MenuStateRoot(program, mainMenu)); //TO CHANGE
     }
 	else if(buttonPlayNow.mouseClick(x,y)){
-      launchGame ();
+		soundRenderer.playFx(coreData.getClickSoundC());
+        launchGame();
 	}
-   else if(listBoxScenario.mouseClick(x, y)){
-      loadScenarioInfo( scenarioFiles[listBoxScenario.getSelectedItemIndex()], &scenarioInfo );
-      labelInfo.setText(scenarioInfo.desc);
-   }
-   else if(listBoxCategory.mouseClick(x, y)){
-      updateScenarioList( categories[listBoxCategory.getSelectedItemIndex()] );
-   }
+    else if(listBoxScenario.mouseClick(x, y)){
+        loadScenarioInfo( scenarioFiles[listBoxScenario.getSelectedItemIndex()], &scenarioInfo );
+        labelInfo.setText(scenarioInfo.desc);
+	}
+	else if(listBoxCategory.mouseClick(x, y)){
+        updateScenarioList( categories[listBoxCategory.getSelectedItemIndex()] );
+	}
 }
 
 void MenuStateScenario::mouseMove(int x, int y, const MouseState &ms){
 
 	listBoxScenario.mouseMove(x, y);
-   listBoxCategory.mouseMove(x, y);
+	listBoxCategory.mouseMove(x, y);
 
 	buttonReturn.mouseMove(x, y);
 	buttonPlayNow.mouseMove(x, y);
@@ -102,8 +106,10 @@ void MenuStateScenario::render(){
 	Renderer &renderer= Renderer::getInstance();
 
 	renderer.renderLabel(&labelInfo);
+
 	renderer.renderLabel(&labelCategory);
 	renderer.renderListBox(&listBoxCategory);
+
 	renderer.renderLabel(&labelScenario);
 	renderer.renderListBox(&listBoxScenario);
 
@@ -111,8 +117,8 @@ void MenuStateScenario::render(){
 	renderer.renderButton(&buttonPlayNow);
 }
 
-//MERGE ADD START
 void MenuStateScenario::update(){
+	//TOOD: add AutoTest to config
 	/*
 	if(Config::getInstance().getBool("AutoTest")){
 		AutoTest::getInstance().updateScenario(this);
@@ -130,7 +136,6 @@ void MenuStateScenario::setScenario(int i){
 	listBoxScenario.setSelectedItemIndex(i);
 	loadScenarioInfo( scenarioFiles[listBoxScenario.getSelectedItemIndex()], &scenarioInfo );
 }
-//MERGE ADD END
 
 void MenuStateScenario::updateScenarioList(const string category){
 	vector<string> results;
@@ -152,15 +157,15 @@ void MenuStateScenario::updateScenarioList(const string category){
     labelInfo.setText(scenarioInfo.desc);
 }
 
-
 void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo){
 
-   Lang &lang= Lang::getInstance();
+    Lang &lang= Lang::getInstance();
 
-   XmlTree xmlTree;
+    XmlTree xmlTree;
+	//gae_scenarios/[category]/[scenario]/[scenario].xml
 	xmlTree.load("gae_scenarios/"+categories[listBoxCategory.getSelectedItemIndex()]+"/"+file+"/"+file+".xml");
 
-   const XmlNode *scenarioNode= xmlTree.getRootNode();
+    const XmlNode *scenarioNode= xmlTree.getRootNode();
 	const XmlNode *difficultyNode= scenarioNode->getChild("difficulty");
 	scenarioInfo->difficulty = difficultyNode->getAttribute("value")->getIntValue();
 	if( scenarioInfo->difficulty < dVeryEasy || scenarioInfo->difficulty > dInsane )
@@ -219,21 +224,19 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo
 
 void MenuStateScenario::loadGameSettings(const ScenarioInfo *scenarioInfo, GameSettings *gameSettings){
 
-   gameSettings->setDescription(formatString(scenarioFiles[listBoxScenario.getSelectedItemIndex()]));
-   gameSettings->setMap( scenarioInfo->mapName );
-   gameSettings->setTileset( scenarioInfo->tilesetName );
-   gameSettings->setTech( scenarioInfo->techTreeName );
-   //MERGE ADD START
-   gameSettings->setScenario(scenarioFiles[listBoxScenario.getSelectedItemIndex()]);
-   gameSettings->setScenarioDir("gae_scenarios/" + categories[listBoxCategory.getSelectedItemIndex()] + "/" + gameSettings->getScenario());
-   gameSettings->setDefaultUnits(scenarioInfo->defaultUnits);
-   gameSettings->setDefaultResources(scenarioInfo->defaultResources);
-   gameSettings->setDefaultVictoryConditions(scenarioInfo->defaultVictoryConditions);
-   //MERGE ADD END
- 
-   int factionCount= 0;
-   for(int i=0; i<GameConstants::maxPlayers; ++i){
-      ControlType ct= static_cast<ControlType>(scenarioInfo->factionControls[i]);
+	gameSettings->setDescription(formatString(scenarioFiles[listBoxScenario.getSelectedItemIndex()]));
+	gameSettings->setMap( scenarioInfo->mapName );
+    gameSettings->setTileset( scenarioInfo->tilesetName );
+    gameSettings->setTech( scenarioInfo->techTreeName );
+	gameSettings->setScenario(scenarioFiles[listBoxScenario.getSelectedItemIndex()]);
+	gameSettings->setScenarioDir("gae_scenarios/" + categories[listBoxCategory.getSelectedItemIndex()] + "/" + gameSettings->getScenario());
+	gameSettings->setDefaultUnits(scenarioInfo->defaultUnits);
+	gameSettings->setDefaultResources(scenarioInfo->defaultResources);
+	gameSettings->setDefaultVictoryConditions(scenarioInfo->defaultVictoryConditions);
+
+	int factionCount= 0;
+    for(int i=0; i<GameConstants::maxPlayers; ++i){
+        ControlType ct= static_cast<ControlType>(scenarioInfo->factionControls[i]);
 		if(ct!=ctClosed){
 			if(ct==ctHuman){
 				gameSettings->setThisFactionIndex(factionCount);

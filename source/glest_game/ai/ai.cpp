@@ -208,7 +208,7 @@ const ResourceType *Ai::getNeededResource() {
 	return neededResource;
 }
 
-bool Ai::beingAttacked(Vec2i &pos, Zone &field, int radius) {
+bool Ai::beingAttacked(Vec2i &pos, Field &field, int radius) {
 	int count = aiInterface->onSightUnitCount();
 	const Unit *unit;
 
@@ -216,7 +216,7 @@ bool Ai::beingAttacked(Vec2i &pos, Zone &field, int radius) {
 		unit = aiInterface->getOnSightUnit(i);
 		if (!aiInterface->isAlly(unit) && unit->isAlive()) {
 			pos = unit->getPos();
-         field = unit->getCurrField() == FieldAir ? ZoneAir : ZoneSurface;
+			field = unit->getCurrField();
 			if (pos.dist(aiInterface->getHomeLocation()) < radius) {
 				baseSeen = true;
 				aiInterface->printLog(2, "Being attacked at pos " + intToStr(pos.x) + "," + intToStr(pos.y) + "\n");
@@ -481,11 +481,11 @@ void Ai::sendScoutPatrol(){
 	}
 }
 
-void Ai::massiveAttack(const Vec2i &pos, Zone field, bool ultraAttack){
+void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
 
     for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
         const Unit *unit= aiInterface->getMyUnit(i);
-		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field);
+		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field==FieldAir?ZoneAir:ZoneSurface);
 		bool isWarrior= !unit->getType()->hasCommandClass(ccHarvest) && !unit->getType()->hasCommandClass(ccProduce);
 		bool alreadyAttacking= unit->getCurrSkill()->getClass()==scAttack;
 		if(!alreadyAttacking && act!=NULL && (ultraAttack || isWarrior)){

@@ -44,6 +44,7 @@ class Unit;
 class Config;
 class Game;
 class GameSettings;
+class ScriptManager;
 
 // =====================================================
 // 	class World
@@ -59,14 +60,10 @@ public:
 	static const int generationArea= 100;
 	static const float airHeight;
 	static const int indirectSightRange= 5;
-#ifdef PATHFINDER_TIMING
-   UnitUpdater unitUpdater;
-#else
+
 private:
-   UnitUpdater unitUpdater;
-#endif
-private:
-   Map map;
+
+	Map map;
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
@@ -74,7 +71,7 @@ private:
 	Game &game;
 	const GameSettings &gs;
 
-	
+	UnitUpdater unitUpdater;
     WaterEffects waterEffects;
 	Minimap minimap;
     Stats stats;
@@ -115,7 +112,7 @@ public:
 	const Map *getMap() const 						{return &map;}
 	const Tileset *getTileset() const 				{return &tileset;}
 	const TechTree *getTechTree() const 			{return &techTree;}
-   const Scenario* getScenario () const {return &scenario;}
+	const Scenario* getScenario () const			{return &scenario;}
 	const TimeFlow *getTimeFlow() const				{return &timeFlow;}
 	Tileset *getTileset() 							{return &tileset;}
 	Map *getMap() 									{return &map;}
@@ -133,10 +130,10 @@ public:
 
 	//init & load
 	void init(const XmlNode *worldNode = NULL);
-	void loadTileset(Checksum &checksum);
-	void loadTech(Checksum &checksum);
-	void loadMap(Checksum &checksum);
-   void loadScenario ( const string &path, Checksum *checksum );
+	bool loadTileset(Checksum &checksum);
+	bool loadTech(Checksum &checksum);
+	bool loadMap(Checksum &checksum);
+	bool loadScenario(const string &path, Checksum *checksum);
 
 	void save(XmlNode *node) const;
 
@@ -156,6 +153,12 @@ public:
 		//a unit is rendered if it is in a visible cell or is attacking a unit in a visible cell
 		return visibleQuad.isInside(unit->getCenteredPos()) && toRenderUnit(unit);
 	}
+	
+	bool toRenderUnit(const Unit *unit) const {
+		return map.getTile(Map::toTileCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
+			|| (unit->getCurrSkill()->getClass() == scAttack
+			&& map.getTile(Map::toTileCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
+	}
 
    //scripting interface
 	void createUnit(const string &unitName, int factionIndex, const Vec2i &pos);
@@ -170,18 +173,12 @@ public:
 	int getUnitCount(int factionIndex);
 	int getUnitCountOfType(int factionIndex, const string &typeName);
 
-	bool toRenderUnit(const Unit *unit) const {
-		return map.getTile(Map::toTileCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
-			|| (unit->getCurrSkill()->getClass() == scAttack
-			&& map.getTile(Map::toTileCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
-	}
-#ifdef PATHFINDER_DEBUG_TEXTURES
+#ifdef _GAE_DEBUG_EDITION_
    void loadPFDebugTextures ();
    Texture2D *PFDebugTextures[18];
-   int getNumPathPos () { return map.PathPositions.size (); }
+   //int getNumPathPos () { return map.PathPositions.size (); }
 #endif
-   void loadFMDebugTextures ();
-   Texture2D *FMDebugTextures[9];
+
 private:
 	void initCells();
 	void initSplattedTextures();
