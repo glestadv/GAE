@@ -21,6 +21,21 @@
 #include "menu_background.h"
 #include "game_settings.h"
 
+//NEWGUI
+#include "glgooey/core/StandardException.h"
+#include "glgooey/core/Utils.h"
+#include "glgooey/core/Rectangle.h"
+
+#include "glgooey/WindowManager.h"
+#include "glgooey/FrameWindow.h"
+#include "glgooey/Button.h"
+#include "glgooey/Panel.h"
+#include "glgooey/EditField.h"
+#include "glgooey/ListBox.h"
+#include "glgooey/TimeManager.h"
+#include "glgooey/PropertyScheme.h"
+//END NEWGUI
+
 namespace Glest{ namespace Game{
 
 //misc consts
@@ -87,10 +102,17 @@ public:
     virtual void mouseMove(int x, int y, const MouseState &mouseState);
     virtual void mouseDownLeft(int x, int y);
     virtual void mouseDownRight(int x, int y);
+	virtual void mouseUpLeft(int x, int y);
+	virtual void mouseUpRight(int x, int y);
 	virtual void keyDown(const Key &key);
 	virtual void keyPress(char c);
 
 	void setState(MenuState *state);
+
+//NEWGUI
+private:
+	
+//END NEWGUI
 };
 
 

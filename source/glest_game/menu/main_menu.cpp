@@ -37,6 +37,9 @@ using namespace Shared::Util;
 using namespace Shared::Graphics;
 using namespace Shared::Xml;
 
+//NEWGUI
+using namespace Gooey;
+
 namespace Glest { namespace Game {
 
 // =====================================================
@@ -54,8 +57,6 @@ MainMenu::MainMenu(Program &program) : ProgramState(program) {
 
 	fps = 0;
 	lastFps = 0;
-
-	setState(new MenuStateRoot(program, this));
 }
 
 MainMenu::~MainMenu() {
@@ -63,10 +64,35 @@ MainMenu::~MainMenu() {
 	Renderer::getInstance().endMenu();
 	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
 	soundRenderer.stopAllSounds();
+
+	//NEWGUI
+	WindowManager::instance().terminate();
 }
+//NEWGUI
+bool isShiftPressed()
+{
+    return false;
+}
+
+bool isAltPressed()
+{
+    return false;
+}
+
+bool isCtrlPressed()
+{
+    return false;
+}
+//END NEWGUI
 
 void MainMenu::init() {
 	Renderer::getInstance().initMenu(this);
+	//NEWGUI
+	Gooey::WindowManager::instance().initialize("data/gui/fonts/DejaVuSans.ttf", isShiftPressed, isAltPressed, isCtrlPressed);
+	WindowManager::instance().applicationResized(800, 600); //needed otherwise doesn't display
+
+	setState(new MenuStateRoot(program, this)); //moved from constructor so that the glgooey is setup when the menu state is constructed
+	//END NEWGUI
 }
 
 //asynchronus render update
@@ -92,6 +118,9 @@ void MainMenu::render() {
 	state->render();
 	renderer.renderMouse2d(mouseX, mouseY, mouse2dAnim);
 
+	//NEWGUI
+	Gooey::WindowManager::instance().update();
+
 	if (config.getMiscDebugMode()) {
 		renderer.renderText(
 				"FPS: " + intToStr(lastFps),
@@ -107,6 +136,7 @@ void MainMenu::update() {
 	mouse2dAnim = (mouse2dAnim + 1) % Renderer::maxMouse2dAnim;
 	menuBackground.update();
 	state->update();
+	
 }
 
 void MainMenu::tick() {
@@ -119,16 +149,35 @@ void MainMenu::mouseMove(int x, int y, const MouseState &ms) {
 	mouseX = x;
 	mouseY = y;
 	state->mouseMove(x, y, ms);
+
+	//NEWGUI
+	WindowManager::instance().onMouseMove(x, y);
 }
 
 //returns if exiting
 void MainMenu::mouseDownLeft(int x, int y) {
 	state->mouseClick(x, y, mbLeft);
+
+	//NEWGUI
+	WindowManager::instance().onLeftButtonDown(x, y);
 }
 
 void MainMenu::mouseDownRight(int x, int y) {
 	state->mouseClick(x, y, mbRight);
+
+	//NEWGUI
+	WindowManager::instance().onRightButtonDown(x, y);
 }
+
+//NEWGUI
+void MainMenu::mouseUpLeft(int x, int y) {
+	WindowManager::instance().onLeftButtonUp(x, y);
+}
+
+void MainMenu::mouseUpRight(int x, int y) {
+	WindowManager::instance().onRightButtonUp(x, y);
+}
+//END NEWGUI
 
 void MainMenu::keyDown(const Key &key) {
 	state->keyDown(key);

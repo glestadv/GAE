@@ -20,16 +20,28 @@ namespace Glest { namespace Game {
 // 	class MenuStateRoot  
 // ===============================
 
-class MenuStateRoot: public MenuState {
+class MenuStateRoot: public MenuState, public Gooey::FrameWindow {
 private:
-	GraphicButton buttonNewGame;
+	/*GraphicButton buttonNewGame;
 	GraphicButton buttonJoinGame;
 	GraphicButton buttonScenario;
 	GraphicButton buttonLoadGame;
 	GraphicButton buttonOptions;
 	GraphicButton buttonAbout;
 	GraphicButton buttonExit;
-	GraphicLabel labelVersion;
+	GraphicLabel labelVersion;*/
+
+	//NEWGUI
+	Gooey::Panel  panel_;
+	Gooey::Button btnNewGame;
+	Gooey::Button btnJoinGame;
+	Gooey::Button btnScenario;
+	Gooey::Button btnLoadGame;
+	Gooey::Button btnOptions;
+	Gooey::Button btnAbout;
+	Gooey::Button btnExit;
+	Gooey::StaticText labelVersion;
+	//END NEWGUI
 
 private:
 	MenuStateRoot(const MenuStateRoot &);
@@ -37,6 +49,10 @@ private:
 
 public:
 	MenuStateRoot(Program &program, MainMenu *mainMenu);
+	~MenuStateRoot();
+
+	//NEWGUI
+	void buttonPressed();
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);
