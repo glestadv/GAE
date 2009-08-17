@@ -14,7 +14,7 @@
 #define _GLEST_GAME_PATHFINDER_H_
 
 #include "annotated_map.h"
-#include "graph_search.h"
+#include "abstract_map.h"
 #include "config.h"
 
 #include <set>
@@ -116,7 +116,12 @@ const Vec2i OffsetsSize2Dist2 [numOffsetsSize2Dist2] =
 	Vec2i ( -1, -2 ), // nnw
 };
 
-enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
+struct SearchResult {
+	enum State { Arrived, OnTheWay, Blocked };
+};
+typedef SearchResult::State TravelState;
+
+//enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
 
 // =====================================================
 // 	class PathFinder
@@ -172,7 +177,7 @@ private:
 
 public: // should be private ... debugging...
 	AnnotatedMap *annotatedMap;
-	GraphSearch *search;
+	//GraphSearch *search;
 
 #ifdef _GAE_DEBUG_EDITION_
 	Vec2i PathStart, PathDest;

@@ -21,7 +21,6 @@
 #include "pch.h"
 
 #include "path_finder.h"
-#include "graph_search.h"
 
 #include "config.h"
 #include "map.h"
@@ -86,13 +85,11 @@ PathFinder* PathFinder::getInstance () {
 }
 
 PathFinder::PathFinder() {
-	search = new GraphSearch ();
 	annotatedMap = NULL;
 	singleton = this;
 }
 
 PathFinder::~PathFinder () {
-	delete search;
 	delete annotatedMap;
 }
 
@@ -101,7 +98,7 @@ void PathFinder::init ( Map *map ) {
 	this->map= map;
 	delete annotatedMap;
 	annotatedMap = new AnnotatedMap ( map );
-	search->init ( map, annotatedMap, Config::getInstance().getPathFinderUseAStar() );
+
 #ifdef _GAE_DEBUG_EDITION_
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
 		int foo = Config::getInstance ().getMiscDebugTextureMode ();
@@ -165,14 +162,14 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	if( finalPos == unit->getPos () ) {	//if arrived (where we wanted to go)
 		unit->setCurrSkill ( scStop );
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsArrived;
+		return TravelState::Arrived;
 	}
 	else if( ! path.isEmpty () ) {	//route cache
 		Vec2i pos = path.pop();
 		if ( isLegalMove ( unit, pos ) ) {
 			unit->setNextPos ( pos );
 			//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-			return tsOnTheWay;
+			return TravelState::OnTheWay;
 		}
 	}
 	//route cache miss
@@ -182,30 +179,9 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	if ( targetPos == unit->getPos () ) {
 		unit->setCurrSkill(scStop);
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsArrived;
+		return TravelState::Arrived;
 	}
 
-	bool useAStar = Config::getInstance().getPathFinderUseAStar ();
-	// some tricks to determine if we are probably blocked on a short path, without
-	// an exhuastive and expensive search through pathFindNodesMax nodes
-	/* goal based pathing removes the need for this..
-	* Should probably adapt this to check the entire resource 'patch'
-	float dist = unit->getPos().dist ( targetPos );
-	if ( unit->getCurrField () == FieldWalkable 
-	&&   map->getTile (Map::toTileCoords ( targetPos ))->isVisible (unit->getTeam ()) ) {
-		int radius;
-		if ( dist < 5 ) radius = 2;
-		else if ( dist < 10 ) radius = 3;
-		else if ( dist < 15 ) radius = 4;
-		else radius = 5;
-		if( ( useAStar  && !search->canPathOut ( targetPos, radius, FieldWalkable ) )
-		||  ( !useAStar && !search->canPathOut_Greedy ( targetPos, radius, FieldWalkable ) ) ) {
-			unit->getPath()->incBlockCount ();
-			unit->setCurrSkill(scStop);
-			//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-			return tsBlocked;
-		}
-	}*/
 	SearchParams params (unit);
 	if ( func ) params.goalFunc = func;
 	params.dest = targetPos;
@@ -214,21 +190,18 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	bool result;
 	annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
 	//TODO annotate target if visible ??
-	if ( useAStar )
-		result = search->AStarSearch ( params, pathList );
-	else
-		result = search->GreedySearch ( params, pathList );
+	result = annotatedMap->AStarSearch ( params, pathList );
 	annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
 	if ( ! result ) {
 		unit->getPath()->incBlockCount ();
 		unit->setCurrSkill(scStop);
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsBlocked;
+		return TravelState::Blocked;
 	}
 	else if ( pathList.size() < 2 ) { // goal might be closer than targetPos.
 		unit->setCurrSkill(scStop);
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsArrived;
+		return TravelState::Arrived;
 	}
 	else //TODO: UnitPath to inherit from list<Vec2i> and then be passed directly
 		copyToPath ( pathList, unit->getPath () ); // to the search algorithm
@@ -238,11 +211,11 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 		unit->setCurrSkill(scStop);
 		unit->getPath()->incBlockCount ();
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsBlocked;
+		return TravelState::Blocked;
 	}
 	unit->setNextPos(pos);
 	//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-	return tsOnTheWay;
+	return TravelState::OnTheWay;
 }
 
 //TODO: Make UnitPath inherit from list<Vec2i> then remove all this nonsense...

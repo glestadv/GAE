@@ -19,11 +19,18 @@
 
 #include "vec.h"
 #include "unit_stats_base.h"
+#include "astar_nodepool.h"
+#include "map.h"
 /*
 #include <vector>
 #include <list>
 #include <set>
 */
+typedef list<Vec2i>::iterator VLIt;
+typedef list<Vec2i>::const_iterator VLConIt;
+typedef list<Vec2i>::reverse_iterator VLRevIt;
+typedef list<Vec2i>::const_reverse_iterator VLConRevIt;
+
 
 namespace Glest { namespace Game {
 
@@ -91,6 +98,8 @@ private:
 	uint32 adjStore2 : 1; // to be used for semi co-operative resource gathering
 };
 
+// class MetricMap
+// just a nice wrapper for the clearance metrics array
 class MetricMap {
 private:
 	CellMetrics *metrics;
@@ -108,6 +117,36 @@ public:
 	}
 };
 
+// =====================================================
+// class SearchParams
+//
+// Parameters for a single search
+// =====================================================
+struct SearchParams {
+	Vec2i start, dest;
+	Field field;
+	int size, team;
+	bool (*goalFunc)(const Vec2i&);
+	SearchParams ( Unit *u );
+};
+
+#if ! ( defined WIN32 || defined WIN64 )
+inline int min ( int a, int b ) { return a < b ? a : b; }
+#endif
+
+__inline float heuristic ( const Vec2i &p1, const Vec2i &p2 ) {
+	int diagonal = min ( abs (p1.x-p2.x), abs (p1.y-p2.y) );
+	int straight = abs (p1.x-p2.x) + abs (p1.y-p2.y) - 2 * diagonal;
+	return 1.4 * diagonal + 1.0 * straight;
+}
+
+// =====================================================
+// class AnnotatedMap
+//
+// A compact representation of the map with clearance
+// information for each cell, and home of the low level
+// search function
+// =====================================================
 class AnnotatedMap {
 public:
 	AnnotatedMap ( Map *map );
@@ -130,6 +169,17 @@ public:
 	// Clear temporary annotations
 	void clearLocalAnnotations ( Field field );
 
+	// The Classic A* [Hart, Nilsson, & Raphael, 1968]
+	bool AStarSearch ( SearchParams &params, list<Vec2i> &path );
+
+	// fills d1 and d2 with the diagonal cells(coords) that need checking for a 
+	// unit of size to move from s to d, for diagonal moves.
+	// WARNING: ASSUMES ( s.x != d.x && s.y != d.y ) ie. the move IS diagonal
+	// if this condition is not true, results are undefined
+	static inline void getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 );
+
+	int getWidth () { return cMap->getW(); }
+	int getHeight () { return cMap->getH(); }
 #  ifdef _GAE_DEBUG_EDITION_
 	list<std::pair<Vec2i,uint32>>* getLocalAnnotations ();
 #  endif
@@ -147,6 +197,12 @@ private:
 	int metricHeight;
 	std::map<Vec2i,uint32> localAnnt;
 	Map *cMap;
+
+	void copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path );
+
+	AStarNodePool *aNodePool;
+	bool assertValidPath ( list<Vec2i> &path );
+
 #ifdef _GAE_DEBUG_EDITION_
 public:
 #endif

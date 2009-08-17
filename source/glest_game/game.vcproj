@@ -384,6 +384,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\path_finder\abstract_map.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ai\ai.h"
 				>
 			</File>
@@ -409,10 +413,6 @@
 			</File>
 			<File
 				RelativePath=".\main\battle_end.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\bestfirst_node_pool.h"
 				>
 			</File>
 			<File
@@ -509,10 +509,6 @@
 			</File>
 			<File
 				RelativePath=".\facilities\game_util.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\graph_search.h"
 				>
 			</File>
 			<File
@@ -752,6 +748,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\path_finder\abstract_map.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ai\ai.cpp"
 				>
 			</File>
@@ -777,10 +777,6 @@
 			</File>
 			<File
 				RelativePath=".\main\battle_end.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\bestfirst_node_pool.cpp"
 				>
 			</File>
 			<File
@@ -869,10 +865,6 @@
 			</File>
 			<File
 				RelativePath=".\facilities\game_util.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\graph_search.cpp"
 				>
 			</File>
 			<File

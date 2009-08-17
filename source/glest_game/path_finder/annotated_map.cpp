@@ -16,7 +16,7 @@
 #include "pch.h"
 
 //#include "annotated_map.h"
-//#include "graph_search.h"
+
 #include "map.h"
 #include "path_finder.h"
 
@@ -47,15 +47,27 @@ inline void CellMetrics::set ( const Field field, uint32 val ) {
 
 }
 
+SearchParams::SearchParams ( Unit *u ) {
+	start = u->getPos(); 
+	field = u->getCurrField ();
+	size = u->getSize (); 
+	team = u->getTeam ();
+	goalFunc = NULL;
+}
+
+
 const int AnnotatedMap::maxClearanceValue = 3;
 
 AnnotatedMap::AnnotatedMap ( Map *m ) {
 	cMap = m;
 	metrics.init ( m->getW(), m->getH() );
 	initMapMetrics ( cMap );
+	aNodePool = new AStarNodePool ();
+	aNodePool->init ( cMap );
 }
 
 AnnotatedMap::~AnnotatedMap () {
+	delete aNodePool;
 }
 
 void AnnotatedMap::initMapMetrics ( Map *map ) {
@@ -401,6 +413,166 @@ void AnnotatedMap::clearLocalAnnotations ( Field field ) {
 	}
 	localAnnt.clear ();
 }
+
+bool AnnotatedMap::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
+#	ifdef PATHFINDER_TIMING
+		aNodePool->startTimer ();
+#	endif
+	bool pathFound = false, nodeLimitReached = false;
+	AStarNode *minNode = NULL;
+	const Vec2i *Directions = OffsetsSize1Dist1;
+	aNodePool->reset ();
+	aNodePool->addToOpen ( NULL, params.start, heuristic ( params.start, params.dest ), 0 );
+	while ( ! nodeLimitReached ) {
+		minNode = aNodePool->getBestCandidate ();
+		if ( ! minNode ) break; // done, failed
+		if ( minNode->pos == params.dest || ! minNode->exploredCell 
+		||  ( params.goalFunc && params.goalFunc (minNode->pos ) ) ) { // done, success
+			pathFound = true; 
+			break; 
+		}
+		for ( int i = 0; i < 8 && ! nodeLimitReached; ++i ) {  // for each neighbour
+			Vec2i sucPos = minNode->pos + Directions[i];
+			if ( ! cMap->isInside ( sucPos ) 
+			||	 ! canOccupy (sucPos, params.size, params.field )) {
+				continue;
+			}
+			bool diag = false;
+			if ( minNode->pos.x != sucPos.x && minNode->pos.y != sucPos.y ) {
+				// if diagonal move and either diag cell is not free...
+				diag = true;
+				Vec2i diag1, diag2;
+				getDiags ( minNode->pos, sucPos, params.size, diag1, diag2 );
+				if ( !canOccupy ( diag1, 1, params.field ) 
+				||	 !canOccupy ( diag2, 1, params.field ) ) {
+					continue; // not allowed
+				}
+			}
+			// Assumes heuristic is admissable, or that you don't care if it isn't
+			if ( aNodePool->isOpen ( sucPos ) ) {
+				aNodePool->updateOpenNode ( sucPos, minNode, diag ? 1.4 : 1.0 );
+			}
+			else if ( ! aNodePool->isClosed ( sucPos ) ) {
+				bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (params.team);
+				float h = heuristic ( sucPos, params.dest );
+				float d = minNode->distToHere + (diag?1.4:1.0);
+				if ( ! aNodePool->addToOpen ( minNode, sucPos, h, d, exp ) ) {
+					nodeLimitReached = true;
+				}
+			}
+		} // end for each neighbour of minNode
+	} // end while ( ! nodeLimitReached )
+#	ifdef PATHFINDER_TIMING
+		statsAStar->AddEntry ( aNodePool->stopTimer () );
+#	endif
+	if ( ! pathFound && ! nodeLimitReached ) {
+		return false;
+	}
+	if ( nodeLimitReached ) {
+		// get node closest to goal
+		minNode = aNodePool->getBestHNode ();
+		path.clear ();
+		while ( minNode ) {
+			path.push_front ( minNode->pos );
+			minNode = minNode->prev;
+		}
+		int backoff = path.size () / 10;
+		// back up a bit, to avoid a possible cul-de-sac
+		for ( int i=0; i < backoff ; ++i ) {
+			path.pop_back ();
+		}
+	}
+	else {  // fill in path
+		path.clear ();
+		while ( minNode ) {
+			path.push_front ( minNode->pos );
+			minNode = minNode->prev;
+		}
+	}
+	if ( path.size () < 2 ) {
+		path.clear ();
+		return true; //tsArrived
+	}
+
+#	ifdef _GAE_DEBUG_EDITION_
+		if ( Config::getInstance().getMiscDebugTextures() ) {
+			PathFinder *pf = PathFinder::getInstance();
+			pf->PathStart = path.front();
+			pf->PathDest = path.back();
+			pf->OpenSet.clear(); pf->ClosedSet.clear();
+			pf->PathSet.clear(); pf->LocalAnnotations.clear ();
+			if ( pf->debug_texture_action == PathFinder::ShowOpenClosedSets ) {
+				list<Vec2i> *alist = aNodePool->getOpenNodes ();
+				for ( VLIt it = alist->begin(); it != alist->end(); ++it )
+				pf->OpenSet.insert ( *it );
+				delete alist;
+				alist = aNodePool->getClosedNodes ();
+				for ( VLIt it = alist->begin(); it != alist->end(); ++it )
+				pf->ClosedSet.insert ( *it );
+				delete alist;
+			}
+			if ( pf->debug_texture_action == PathFinder::ShowOpenClosedSets 
+			||   pf->debug_texture_action == PathFinder::ShowPathOnly )
+				for ( VLIt it = path.begin(); it != path.end(); ++it )
+					pf->PathSet.insert ( *it );
+			if ( pf->debug_texture_action == PathFinder::ShowLocalAnnotations ) {
+				pf->LocalAnnotations.clear();
+				list<pair<Vec2i,uint32>> *annt = aMap->getLocalAnnotations ();
+				for ( list<pair<Vec2i,uint32>>::iterator it = annt->begin(); it != annt->end(); ++it )
+				pf->LocalAnnotations[it->first] = it->second;
+				delete annt;
+			}
+		}
+#	endif
+	//assert ( assertValidPath ( path ) );
+	return true;
+}
+
+bool AnnotatedMap::assertValidPath ( list<Vec2i> &path ) {
+	if ( path.size () < 2 ) return true;
+	VLIt it = path.begin();
+	Vec2i prevPos = *it;
+	for ( ++it; it != path.end(); ++it ) {
+		if ( prevPos.dist(*it) < 0.99 || prevPos.dist(*it) > 1.42 )
+			return false;
+		prevPos = *it;
+	}
+	return true;
+}
+void AnnotatedMap::getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 ) {
+	assert ( s.x != d.x && s.y != d.y );
+	if ( size == 1 ) {
+		d1.x = s.x; d1.y = d.y;
+		d2.x = d.x; d2.y = s.y;
+		return;
+	}
+	if ( d.x > s.x ) {  // travelling east
+		if ( d.y > s.y ) {  // se
+			d1.x = d.x + size - 1; d1.y = s.y;
+			d2.x = s.x; d2.y = d.y + size - 1;
+		}
+		else {  // ne
+			d1.x = s.x; d1.y = d.y;
+			d2.x = d.x + size - 1; d2.y = s.y - size + 1;
+		}
+	}
+	else {  // travelling west
+		if ( d.y > s.y ) {  // sw
+			d1.x = d.x; d1.y = s.y;
+			d2.x = s.x + size - 1; d2.y = d.y + size - 1;
+		}
+		else {  // nw
+			d1.x = d.x; d1.y = s.y - size + 1;
+			d2.x = s.x + size - 1; d2.y = d.y;
+		}
+	}
+}
+
+void AnnotatedMap::copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path ) {
+	for ( VLConIt it = pathList.begin (); it != pathList.end(); ++it )
+		path.push_back ( *it );
+}
+
 
 #ifdef _GAE_DEBUG_EDITION_
 

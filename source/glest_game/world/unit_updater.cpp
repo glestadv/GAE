@@ -35,6 +35,7 @@
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 using namespace Glest::Game::Search;
+
 namespace Glest{ namespace Game{
 
 //FIXME: We check the subfaction in born too.  Should it be removed from there?
@@ -349,12 +350,12 @@ void UnitUpdater::updateMove(Unit *unit) {
 	}
 
 	switch(pathFinder->findPath(unit, pos)) {
-	case Search::tsOnTheWay:
+	case TravelState::OnTheWay:
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
 		break;
 
-	case Search::tsBlocked:
+	case TravelState::Blocked:
 		if(unit->getPath()->isBlocked() && !command->getUnit()){
 			unit->finishCommand();
 		}
@@ -434,11 +435,11 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 
 		//if unit arrives destPos order has ended
 		switch(pathFinder->findPath(unit, pos)) {
-		case Search::tsOnTheWay:
+		case TravelState::OnTheWay:
 			unit->setCurrSkill(act->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;
-		case Search::tsBlocked:
+		case TravelState::Blocked:
 			if (unit->getPath()->isBlocked()) {
 				return true;
 			}
@@ -513,19 +514,19 @@ void UnitUpdater::updateBuild(Unit *unit){
 		}
 
 		switch (pathFinder->findPath(unit, waypoint)) {
-		case Search::tsOnTheWay:
+		case TravelState::OnTheWay:
 			unit->setCurrSkill(bct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			return;
 
-		case Search::tsBlocked:
+		case TravelState::Blocked:
 			if(unit->getPath()->isBlocked()) {
 				console->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
 			}
 			return;
 
-		case Search::tsArrived:
+		case TravelState::Arrived:
 			if(unit->getPos() != waypoint) {
 				console->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
@@ -687,11 +688,11 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				} 
 				else { //if not continue walking
 					switch (pathFinder->findPathToResource(unit, command->getPos(), r->getType())) {
-					case Search::tsOnTheWay:
+					case TravelState::OnTheWay:
 						unit->setCurrSkill(hct->getMoveSkillType());
 						unit->face(unit->getNextPos());
 						break;
-					case Search::tsArrived:
+					case TravelState::Arrived:
 						for ( int i=0; i < 8; ++i ) { // reset target
 							Vec2i cPos = unit->getPos() + Search::OffsetsSize1Dist1[i];
 							Resource *res = map->getTile (Map::toTileCoords(cPos))->getResource();
@@ -720,7 +721,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
 				switch (pathFinder->findPathToStore(unit, store->getNearestOccupiedCell(unit->getPos()), store)) {
-				case Search::tsOnTheWay:
+				case TravelState::OnTheWay:
 					unit->setCurrSkill(hct->getMoveLoadedSkillType());
 					unit->face(unit->getNextPos());
 					break;
@@ -855,7 +856,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 		}
 
 		switch(pathFinder->findPath(unit, targetPos)) {
-		case Search::tsArrived:
+		case TravelState::Arrived:
 			if(repaired && unit->getPos() != targetPos) {
 				// presume blocked
 				unit->setCurrSkill(scStop);
@@ -870,12 +871,12 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			}
 			break;
 
-		case Search::tsOnTheWay:
+		case TravelState::OnTheWay:
 			unit->setCurrSkill(rct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;
 
-		case Search::tsBlocked:
+		case TravelState::Blocked:
 			if(unit->getPath()->isBlocked()){
 				unit->setCurrSkill(scStop);
 				unit->finishCommand();
