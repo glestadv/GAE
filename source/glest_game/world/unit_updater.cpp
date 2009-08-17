@@ -103,21 +103,13 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 	//update unit
 	if (unit->update()) {
-		// make sure attack systems are started even on laggy computers
-		/* this is causing double attacks for some reason
-		if (unit->getCurrSkill()->getClass() == scAttack) {
-			const AttackSkillType *ast = static_cast<const AttackSkillType*>(unit->getCurrSkill());
-			if (ast->getStartTime() < unit->getLastAnimProgress()) {
-				startAttackSystems(unit, ast);
-			}
-		}*/
-
 		const UnitType *ut = unit->getType();
 
 		if (unit->getCurrSkill()->getClass() == scFallDown) {
 			assert(ut->getFirstStOfClass(scGetUp));
 			unit->setCurrSkill(scGetUp);
-		} else if (unit->getCurrSkill()->getClass() == scGetUp) {
+		} 
+		else if (unit->getCurrSkill()->getClass() == scGetUp) {
 			unit->setCurrSkill(scStop);
 		}
 
@@ -217,7 +209,7 @@ void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &t
 		float distance;
 
 		PosCircularIteratorSimple pci(*map, targetPos, ast->getSplashRadius());
-		while(pci.getNext(pos, distance)) {
+		while(pci.getNext(pos, distance)) { 
 			attacked = map->getCell(pos)->getUnit(targetField);
 			if(attacked && (distance == 0  || ast->getSplashDamageAll() || !attacker->isAlly(attacked))) {
 				//float distance = pci.getPos().dist(attacker->getTargetPos());
@@ -239,7 +231,7 @@ void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &t
 				applyEffects(attacker, ast->getEffectTypes(), i->first, i->second);
 			}
 		}
-	} else {
+	} else { // no splash
 		if(!attacked) {
 			attacked= map->getCell(targetPos)->getUnit(targetField);
 		}
@@ -462,6 +454,7 @@ void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes, Uni
 	}
 }
 
+//FIXME ? will death here fire a script event?
 void UnitUpdater::appyEffect(Unit *u, Effect *e) {
 	if(u->add(e)){
 		Unit *attacker = e->getSource();

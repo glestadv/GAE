@@ -81,7 +81,7 @@ void RepairCommandType::update(Unit *unit) const {
 		unit->finishCommand();
 		return;
 	}
-/*
+	/*
 	if(command->isAuto() && unit->getType()->hasCommandClass(ccAttack)) {
 		Command *autoAttackCmd;
 		// attacking is 1st priority
@@ -171,7 +171,7 @@ void RepairCommandType::update(Unit *unit) const {
 			unit->setCurrSkill(scStop);
 		} else {
 			//shiney
-         
+
 			if(rst->getSplashParticleSystemType()){
 				const Tile *sc= map->getTile(Map::toTileCoords(repaired->getCenteredPos()));
 				bool visible= sc->isVisible(world->getThisTeamIndex());
@@ -181,7 +181,7 @@ void RepairCommandType::update(Unit *unit) const {
 				psSplash->setVisible(visible);
 				Renderer::getInstance().manageParticleSystem(psSplash, rsGame);
 			}
-         
+
 			bool wasBuilt = repaired->isBuilt();
 
 			assert(repaired->isAlive() && repaired->getHp() > 0);
@@ -190,8 +190,8 @@ void RepairCommandType::update(Unit *unit) const {
 				unit->setCurrSkill(scStop);
 				if(!wasBuilt) {
 					//building finished
-               //repaired->born();//FIXME: born() ?!?!?!
-               Game::getInstance()->getScriptManager ()->onUnitCreated(repaired);
+					//repaired->born();//FIXME: born() ?!?!?!
+					Game::getInstance()->getScriptManager ()->onUnitCreated(repaired);
 					if(unit->getFactionIndex() == world->getThisFactionIndex()) {
 						// try to find finish build sound
 						BuildCommandType *bct = (BuildCommandType *)unit->getType()->getFirstCtOfClass(ccBuild);
@@ -199,11 +199,11 @@ void RepairCommandType::update(Unit *unit) const {
 							SoundRenderer::getInstance().playFx(
 								bct->getBuiltSound(),
 								unit->getCurrVector(),
-                        Game::getInstance ()->getGameCamera ()->getPos());
+								Game::getInstance ()->getGameCamera ()->getPos());
 						}
 					}
-               NetworkManager &net = NetworkManager::getInstance();
-               if( net.isNetworkServer()) {
+					NetworkManager &net = NetworkManager::getInstance();
+					if( net.isNetworkServer()) {
 						net.getServerInterface()->unitUpdate(unit);
 						net.getServerInterface()->unitUpdate(repaired);
 						net.getServerInterface()->updateFactions();
@@ -214,6 +214,71 @@ void RepairCommandType::update(Unit *unit) const {
 	}
 }
 
+/*
+RepairCommandType::update ( Unit )
+	If the unit I was supposed to repair died or is already fixed
+		set stop skill, pop command, return
+	EndIf
+	If there is a repairable friendly within repair range
+		set target, set repair skill
+	Else
+		If repairable friendly in sight
+			if there's no spot to stand and repair, 
+				set stop skill, pop command, return
+			if targetPos has changed
+				set new targetPos, clear Path
+		Else // No repairables in sight...
+			If no more damaged units and on auto command 
+				turn around
+			If autocommand and return pos set
+				turn around
+			Else
+				set stop skill, pop command, return
+			set targetPos (from command)
+		Find path to targetPos
+	EndIf
+	If 'repaired' is not damaged
+		set stop skill, pop command
+	EndIf
+	If repairing
+		setTarget (?)
+		If repaired is NULL
+			set stop skill
+		Else
+			do special effects
+			repair the unit
+			If its now full repaired
+				If this was a building still under construction
+					scriptManager, pathfinder, network, other stuff
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+*/
+
+
+/*
+
+update
+{
+	if ( !checkTarget () ) {
+		finish
+	}
+	if ( moveIntoPosition () ) {
+		if ( performRepair () ) {
+			finish
+		}
+	}
+}
+
+// return true if target good
+bool checkTarget ();
+// return true when good to go
+bool moveIntoPosition ();
+// return true when fully repaired
+bool performRepair ();
+
+*/
 
 //find a unit we can repair
 /** rangedPtr should point to a pointer that is either NULL or a valid Unit */
@@ -264,7 +329,8 @@ bool RepairCommandType::repairableInRange ( Vec2i center, int centerSize, Unit *
 	// if no repairables or just one then it's a simple choice.
 	if(repairables.empty()) {
 		return false;
-	} else if(repairables.size() == 1) {
+	} 
+	else if(repairables.size() == 1) {
 		*rangedPtr = repairables.begin()->first;
 		return true;
 	}
@@ -309,7 +375,10 @@ void RepairCommandType::getDesc(string &str, const Unit *unit) const{
 
 //get
 bool RepairCommandType::isRepairableUnitType(const UnitType *unitType) const{
+	//CHANGEME repairableUnits should be a set<UnitType*> ?? 
+	//  then this becomes return repairableUnits.find (unitType) != repairableUnits.end();
 	for(int i=0; i<repairableUnits.size(); ++i){
+		// is there some reason we need to cast a UnitType* to a UnitType* ??
 		if(static_cast<const UnitType*>(repairableUnits[i])==unitType){
 			return true;
 		}

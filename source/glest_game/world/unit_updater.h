@@ -62,13 +62,16 @@ public:
     void updateUnitCommand(Unit *unit);
 
 private:
+	//REFACTOR perform in AttackSkillType::update () ?
     //attack
     void hit(Unit *attacker);
 	void hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked = NULL);
 	void damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance);
 	void startAttackSystems(Unit *unit, const AttackSkillType* ast);
 
+	//REFACTOR EffectType::update () ?
 	//effects
+	//FIXME this needs to take a target zone, not field
 	void applyEffects(Unit *source, const EffectTypes &effectTypes, const Vec2i &targetPos, Field targetField, int splashRadius);
 	void applyEffects(Unit *source, const EffectTypes &effectTypes, Unit *dest, float distance);
 	void appyEffect(Unit *unit, Effect *effect);
