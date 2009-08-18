@@ -22,10 +22,8 @@ namespace Glest { namespace Game {
 
 class GUIConsole;
 
-class MenuStateRoot: public MenuState {
+class MenuStateRoot: public MenuState, public Gooey::Panel {
 private:
-	//NEWGUI
-	/*Gooey::Panel  panel_;
 	Gooey::Button btnNewGame;
 	Gooey::Button btnJoinGame;
 	Gooey::Button btnScenario;
@@ -33,14 +31,14 @@ private:
 	Gooey::Button btnOptions;
 	Gooey::Button btnAbout;
 	Gooey::Button btnExit;
-	Gooey::StaticText labelVersion;*/
-	//END NEWGUI
 
-	GUIConsole* menuFrame;
+	GraphicLabel labelVersion;
 
 private:
 	MenuStateRoot(const MenuStateRoot &);
 	const MenuStateRoot &operator =(const MenuStateRoot &);
+
+	void initButton(Gooey::Button *b, const std::string text);
 
 public:
 	MenuStateRoot(Program &program, MainMenu *mainMenu);
@@ -50,6 +48,9 @@ public:
 	void mouseMove(int x, int y, const MouseState &ms) {}
 	void render();
 	void update();
+
+	//slots
+	void buttonPressed();
 };
 
 
