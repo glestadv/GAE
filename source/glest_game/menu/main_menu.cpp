@@ -53,6 +53,8 @@ MainMenu::MainMenu(Program &program) : ProgramState(program) {
 	mouseY = 100;
 
 	state = NULL;
+	//NEWGUI
+	oldState = NULL;
 	//this->program = program;
 
 	fps = 0;
@@ -136,7 +138,13 @@ void MainMenu::update() {
 	mouse2dAnim = (mouse2dAnim + 1) % Renderer::maxMouse2dAnim;
 	menuBackground.update();
 	state->update();
-	
+
+	// deferred delete of state so that no longer in a GLGooey slot
+	// - doesn't work in update or render, no idea why
+	if (oldState != NULL) {
+		delete oldState;
+		oldState = NULL;
+	}
 }
 
 void MainMenu::tick() {
@@ -150,7 +158,6 @@ void MainMenu::mouseMove(int x, int y, const MouseState &ms) {
 	mouseY = y;
 	state->mouseMove(x, y, ms);
 
-	//NEWGUI
 	WindowManager::instance().onMouseMove(x, y);
 }
 
@@ -158,14 +165,12 @@ void MainMenu::mouseMove(int x, int y, const MouseState &ms) {
 void MainMenu::mouseDownLeft(int x, int y) {
 	state->mouseClick(x, y, mbLeft);
 
-	//NEWGUI
 	WindowManager::instance().onLeftButtonDown(x, y);
 }
 
 void MainMenu::mouseDownRight(int x, int y) {
 	state->mouseClick(x, y, mbRight);
 
-	//NEWGUI
 	WindowManager::instance().onRightButtonDown(x, y);
 }
 
@@ -188,10 +193,12 @@ void MainMenu::keyPress(char c) {
 }
 
 void MainMenu::setState(MenuState *state) {
-	delete this->state;
+	// store the old state to be deleted later and apply 
+	// the new state
+	oldState = this->state;
 	this->state = state;
-	GraphicComponent::resetFade();
 
+	GraphicComponent::resetFade();
 	menuBackground.setTargetCamera(state->getCamera());
 }
 
