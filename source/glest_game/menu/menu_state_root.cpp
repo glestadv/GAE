@@ -39,7 +39,7 @@ namespace Glest{ namespace Game{
 
 MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu)
 		: MenuState(program, mainMenu, "root")
-		, Panel(Core::Rectangle(250, 250, 500, 500), 0, "")
+		, Panel(Core::Rectangle(250, 250, 500, 500 /*800, 600*/), 0, "")
 		, btnNewGame(0, "")
 		, btnJoinGame(0, "")
 		, btnScenario(0, "")
@@ -65,14 +65,21 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu)
 	this->arrangeChildren();
 
     WindowManager::instance().addWindow(this);
+	//WindowManager::instance().setMouseCapture(this);
 
 	labelVersion.init(520, 460);
 	labelVersion.setText("Advanced Engine " + gaeVersionString);
 }
 
+void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton) {
+	
+	labelVersion.setText("X: " + intToStr(x) + ",Y: " + intToStr(y) + ",vX: " + 
+		intToStr(Metrics::getInstance().toVirtualX(x)) + ",vY: " + intToStr(Metrics::getInstance().toVirtualY(y)));
+}
+
 MenuStateRoot::~MenuStateRoot() {
 	//NOTE: must be done before removing the window
-	WindowManager::instance().releaseMouseCapture();
+	//WindowManager::instance().releaseMouseCapture();
 	WindowManager::instance().removeWindow(this);
 }
 

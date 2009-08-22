@@ -44,7 +44,7 @@ public:
 	MenuStateRoot(Program &program, MainMenu *mainMenu);
 	~MenuStateRoot();
 
-	void mouseClick(int x, int y, MouseButton mouseButton) {}
+	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &ms) {}
 	void render();
 	void update();

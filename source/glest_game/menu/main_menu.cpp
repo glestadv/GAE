@@ -91,7 +91,9 @@ void MainMenu::init() {
 	Renderer::getInstance().initMenu(this);
 	//NEWGUI
 	Gooey::WindowManager::instance().initialize("data/gui/fonts/DejaVuSans.ttf", isShiftPressed, isAltPressed, isCtrlPressed);
-	WindowManager::instance().applicationResized(800, 600); //needed otherwise doesn't display
+
+	Metrics m = Metrics::getInstance();
+	WindowManager::instance().applicationResized(m.getScreenW(), m.getScreenH()); //needed otherwise doesn't display
 
 	setState(new MenuStateRoot(program, this)); //moved from constructor so that the glgooey is setup when the menu state is constructed
 	//END NEWGUI
@@ -118,10 +120,11 @@ void MainMenu::render() {
 	//2d
 	renderer.reset2d();
 	state->render();
-	renderer.renderMouse2d(mouseX, mouseY, mouse2dAnim);
 
-	//NEWGUI
+	//NEWGUI : must be here not in update, not sure why
 	Gooey::WindowManager::instance().update();
+
+	renderer.renderMouse2d(mouseX, mouseY, mouse2dAnim);
 
 	if (config.getMiscDebugMode()) {
 		renderer.renderText(
@@ -140,7 +143,6 @@ void MainMenu::update() {
 	state->update();
 
 	// deferred delete of state so that no longer in a GLGooey slot
-	// - doesn't work in update or render, no idea why
 	if (oldState != NULL) {
 		delete oldState;
 		oldState = NULL;
@@ -158,29 +160,29 @@ void MainMenu::mouseMove(int x, int y, const MouseState &ms) {
 	mouseY = y;
 	state->mouseMove(x, y, ms);
 
-	WindowManager::instance().onMouseMove(x, y);
+	WindowManager::instance().onMouseMove(x, Metrics::getInstance().invertHeight(y));
 }
 
 //returns if exiting
 void MainMenu::mouseDownLeft(int x, int y) {
 	state->mouseClick(x, y, mbLeft);
 
-	WindowManager::instance().onLeftButtonDown(x, y);
+	WindowManager::instance().onLeftButtonDown(x, Metrics::getInstance().invertHeight(y));
 }
 
 void MainMenu::mouseDownRight(int x, int y) {
 	state->mouseClick(x, y, mbRight);
 
-	WindowManager::instance().onRightButtonDown(x, y);
+	WindowManager::instance().onRightButtonDown(x, Metrics::getInstance().invertHeight(y));
 }
 
 //NEWGUI
 void MainMenu::mouseUpLeft(int x, int y) {
-	WindowManager::instance().onLeftButtonUp(x, y);
+	WindowManager::instance().onLeftButtonUp(x, Metrics::getInstance().invertHeight(y));
 }
 
 void MainMenu::mouseUpRight(int x, int y) {
-	WindowManager::instance().onRightButtonUp(x, y);
+	WindowManager::instance().onRightButtonUp(x, Metrics::getInstance().invertHeight(y));
 }
 //END NEWGUI
 
@@ -234,6 +236,12 @@ MenuState::MenuState(Program &program, MainMenu *mainMenu, const string &stateNa
 			degToRad(startRotation.x),
 			degToRad(startRotation.y),
 			degToRad(startRotation.z))));
+}
+
+MenuState::~MenuState() {
+	/*if (WindowManager::instance().captureWindow()) {
+		WindowManager::instance().releaseMouseCapture();
+	}*/
 }
 
 }}//end namespace

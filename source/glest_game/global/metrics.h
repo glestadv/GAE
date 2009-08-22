@@ -61,6 +61,9 @@ public:
 	int toVirtualX(int w) const		{return w * virtualW / screenW;}
 	int toVirtualY(int h) const		{return h * virtualH / screenH;}
 
+	// move to inverse cartesian plane and make positive
+	int invertHeight(int h) const   { return abs(h - getScreenH());}
+
 	bool isInDisplay(int x, int y) const{
 		return
 			x > displayX &&
