@@ -8,6 +8,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game", "glest_game\game.vcp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libglest", "shared_lib\libglest.vcproj", "{A29E0F89-0584-4E22-A163-7A676E17E9E1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glgooey", "glgooey\glgooey.vcproj", "{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -32,6 +34,14 @@ Global
 		{A29E0F89-0584-4E22-A163-7A676E17E9E1}.Release|Win32.Build.0 = Release|Win32
 		{A29E0F89-0584-4E22-A163-7A676E17E9E1}.Release+SSE2|Win32.ActiveCfg = Release+SSE2|Win32
 		{A29E0F89-0584-4E22-A163-7A676E17E9E1}.Release+SSE2|Win32.Build.0 = Release+SSE2|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Debug|Win32.Build.0 = Debug|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Debug+opt|Win32.ActiveCfg = Debug|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Debug+opt|Win32.Build.0 = Debug|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Release|Win32.ActiveCfg = Release|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Release|Win32.Build.0 = Release|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Release+SSE2|Win32.ActiveCfg = Release|Win32
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC}.Release+SSE2|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

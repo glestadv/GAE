@@ -122,6 +122,12 @@ void MainMenu::render() {
 	state->render();
 
 	//NEWGUI : must be here not in update, not sure why
+	// - think of WindowManager::update() as 'render()' :)
+	//  our update() mathods update 'world state', in the case of the menus
+	//  the camera position, rain drops, anim fram for mouse, etc
+	//  we do all our drawing in render() methods (like this one)
+	//  glgooey uses render() methods for all its classes, but they are 'triggered'
+	//  by WindowManager::update().
 	Gooey::WindowManager::instance().update();
 
 	renderer.renderMouse2d(mouseX, mouseY, mouse2dAnim);
