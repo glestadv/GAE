@@ -31,6 +31,230 @@
 namespace Glest{ namespace Game{
 
 using namespace Shared::Util;
+using namespace Gooey;
+
+class PlayerSlot : public Gooey::Panel {
+	// Texts
+	Gooey::StaticText txtPlayer;
+
+	// Combo boxes
+	Gooey::ComboBox cmbControl;
+	Gooey::ComboBox cmbFaction;
+	Gooey::SpinBox spinnerTeam;
+
+	/*
+	//GraphicLabel labelPlayers[GameConstants::maxPlayers];
+	//GraphicLabel labelNetStatus[GameConstants::maxPlayers];
+	*/
+	static int humanIndex1, humanIndex2;
+
+	void initComboBox(Gooey::ComboBox *cmb) {
+		cmb->setSize(Core::Vector2(156, 32));
+
+		this->addChildWindow(cmb);
+	}
+	
+public:
+	PlayerSlot() 
+		: Panel(Core::Rectangle(50, 50, 490, 100), 0, "")
+		, txtPlayer(0, "Player")
+		, cmbControl(0, Core::Rectangle(0, 0, 0, 0)) 
+		, cmbFaction(0, Core::Rectangle(0, 0, 0, 0))
+		, spinnerTeam(0,1) {
+
+			this->addChildWindow(&txtPlayer);
+
+			initComboBox( &cmbControl );
+			cmbControl.addString("human");
+
+			initComboBox( &cmbFaction );
+			cmbFaction.addString("magic");
+
+			this->addChildWindow(&spinnerTeam);
+
+			this->arrangeChildren();
+	}
+
+public:
+	// Events
+	// - controlSelected
+
+};
+
+class GUITemp : public Gooey::Panel {
+private:
+	/* Buttons
+	//GraphicButton buttonReturn;
+	//GraphicButton buttonPlayNow;
+	*/
+	Gooey::Button btnReturn;
+	Gooey::Button btnPlayNow;
+
+	/* File Locations */
+	vector<string> mapFiles;
+	vector<string> techTreeFiles;
+	vector<string> tilesetFiles;
+	vector<string> factionFiles;
+
+	vector<PlayerSlot*> playerSlots;
+	
+
+	/* ComboBoxes */
+	Gooey::ComboBox cmbMap;
+	Gooey::ComboBox cmbTechTree;
+	Gooey::ComboBox cmbTileset;
+	
+
+	/* CheckBoxes
+	Gooey::CheckBox chkRandomize;
+	*/
+
+	/* Label Slot Headings
+	Gooey::StaticText txtControlHeading;
+	Gooey::StaticText txtFactionHeading;
+	Gooey::StaticText txtTeamHeading;
+	*/
+
+	/* StaticText */
+	Gooey::StaticText txtMap;
+	Gooey::StaticText txtTechTree;
+	Gooey::StaticText txtTileset;
+	/*
+	Gooey::StaticText txtNetwork;
+	Gooey::StaticText txtRandomize;
+
+	Gooey::StaticText txtMapInfo; //WARN: might not be multi-line
+	*/
+
+	//MapInfo mapInfo;
+	//GraphicMessageBox *msgBox;
+
+	/* NEW DESIGN IDEAS
+	- Show image of map
+	- increase amount of possible players
+
+	*/
+
+	void GUITemp::initButton(Button *btn, const std::string &text) {
+		// size, text, appearance, slot, add to panel
+		btn->setSize(Core::Vector2(256, 32));
+		btn->setText(text);
+		btn->loadAppearance("data/gui/default/buttons.xml", "standard");
+		//b->pressed.connect(this, &MenuStateRoot::buttonPressed);
+		this->addChildWindow(btn);
+	}
+
+public:
+	GUITemp() 
+		: Panel(Core::Rectangle(0, 0, 500, 500), 0, "")
+		, cmbMap(0, Core::Rectangle(0, 0, 0, 0))
+		, cmbTechTree(0, Core::Rectangle(0, 0, 0, 0))
+		, cmbTileset(0, Core::Rectangle(0, 0, 0, 0)) 
+		, btnReturn(0, "")
+		, btnPlayNow(0, "")
+		, txtMap(0, "Map")
+		, txtTechTree(0, "Tech Tree") 
+		, txtTileset(0, "Tileset") {
+		/*
+	labelMap.setText(lang.get("Map"));
+	labelTileset.setText(lang.get("Tileset"));
+	labelTechTree.setText(lang.get("TechTree"));
+	//headings
+	labelControl.setText(lang.get("Control"));
+    labelFaction.setText(lang.get("Faction"));
+    labelTeam.setText(lang.get("Team"));		  
+	*/
+			Lang &lang = Lang::getInstance();
+
+			// combo boxes
+			this->addChildWindow(&txtMap);
+			initFileComboBox(&cmbMap, "maps/*.gbm", mapFiles, "There are no maps", true);
+			this->addChildWindow(&txtTechTree);
+			initFileComboBox(&cmbTechTree, "tilesets/*.", tilesetFiles, "There are no tile sets");
+			this->addChildWindow(&txtTileset);
+			initFileComboBox(&cmbTileset, "techs/*.", techTreeFiles, "There are no tech trees");
+
+			// buttons
+			initButton(&btnReturn, lang.get("Return"));
+			initButton(&btnPlayNow, lang.get("PlayNow"));
+
+			// create player slots
+			for(int i = 0; i < GameConstants::maxPlayers; ++i) {
+				playerSlots.push_back( new PlayerSlot() );
+			}
+
+			vector<PlayerSlot*>::iterator iter;
+			for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
+				this->addChildWindow( *(iter) );
+			}
+
+			// arrange the panel's children according to the default flow layouter
+			this->arrangeChildren();
+
+	/*
+	labelControl.init(300, 550, GraphicListBox::defW, GraphicListBox::defH, true);
+    labelFaction.init(500, 550, GraphicListBox::defW, GraphicListBox::defH, true);
+    labelTeam.init(700, 550, 60, GraphicListBox::defH, true);
+	*/
+
+			  
+	}
+
+	~GUITemp() {
+		vector<PlayerSlot*>::iterator iter;
+
+		/*for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
+				delete *(iter); //???
+		}*/
+	}
+
+    void initFileComboBox(
+			Gooey::ComboBox *cmb, 
+			const std::string &path, 
+			vector<std::string> &files, 
+			const std::string &errorMsg, 
+			bool cutExtension = false) {
+		vector<string> results;
+
+		// size
+		cmb->setSize(Core::Vector2(256, 32));
+
+		//TODO: add style
+
+		// fetch raw file results
+		findAll(path, results, cutExtension);
+		if (results.size() == 0) {
+			throw runtime_error(errorMsg);
+		}
+
+		// add options to combo box
+		for (int i = 0; i < results.size(); ++i) {
+			cmb->addString( formatString( results[i] ) );
+		}
+
+		this->addChildWindow(cmb);
+
+		files = results;
+	}
+
+public:
+	// Events
+	// - button press
+	// -- start game
+	// -- return
+	// - reload factions
+	// - reload player slots
+
+	/*
+	bool handleReturnClick(const CEGUI::EventArgs& e);
+	bool handlePlayClick(const CEGUI::EventArgs& e);
+	bool handleMapSelected(const CEGUI::EventArgs& e);
+	bool handleTechSelected(const CEGUI::EventArgs& e);
+	*/
+
+};
+
+Panel *guiTemp = NULL;
 
 // =====================================================
 // 	class MenuStateNewGame
@@ -38,6 +262,10 @@ using namespace Shared::Util;
 
 MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots) :
 		MenuStateStartGameBase(program, mainMenu, "new-game") {
+
+			guiTemp = new GUITemp();
+
+			WindowManager::instance().addWindow(guiTemp);
 
 	Lang &lang= Lang::getInstance();
 	NetworkManager &networkManager= NetworkManager::getInstance();
