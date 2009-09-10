@@ -146,7 +146,7 @@ private:
 
 public:
 	GUITemp() 
-		: Panel(Core::Rectangle(0, 0, 500, 500), 0, "")
+		: Panel(VRectangle(0, 0, 500, 500), 0, "")
 		, cmbMap(0, Core::Rectangle(0, 0, 0, 0))
 		, cmbTechTree(0, Core::Rectangle(0, 0, 0, 0))
 		, cmbTileset(0, Core::Rectangle(0, 0, 0, 0)) 
@@ -244,6 +244,10 @@ public:
 	// -- return
 	// - reload factions
 	// - reload player slots
+
+	void reloadFactions() {
+
+	}
 
 	/*
 	bool handleReturnClick(const CEGUI::EventArgs& e);

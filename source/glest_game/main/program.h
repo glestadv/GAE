@@ -21,6 +21,7 @@
 #include "components.h"
 #include "keymap.h"
 
+#include "glgooey/WindowManager.h"
 /*
 using Shared::Graphics::Context;
 using Shared::Platform::WindowGl;
@@ -127,9 +128,11 @@ public:
 		switch(mouseButton) {
 		case mbLeft:
 			programState->mouseDownLeft(vx, vy);
+			Gooey::WindowManager::instance().onLeftButtonDown(x, y);
 			break;
 		case mbRight:
 			programState->mouseDownRight(vx, vy);
+			Gooey::WindowManager::instance().onRightButtonDown(x, y);
 			break;
 		case mbCenter:
 			programState->mouseDownCenter(vx, vy);
@@ -147,9 +150,11 @@ public:
 		switch(mouseButton) {
 		case mbLeft:
 			programState->mouseUpLeft(vx, vy);
+			Gooey::WindowManager::instance().onLeftButtonUp(x, y);
 			break;
 		case mbRight:
 			programState->mouseUpRight(vx, vy);
+			Gooey::WindowManager::instance().onRightButtonUp(x, y);
 			break;
 		case mbCenter:
 			programState->mouseUpCenter(vx, vy);
@@ -163,6 +168,8 @@ public:
 		const Metrics &metrics= Metrics::getInstance();
 		int vx = metrics.toVirtualX(x);
 		int vy = metrics.toVirtualY(getH() - y);
+
+		Gooey::WindowManager::instance().onMouseMove(x, y);
 
 		programState->mouseMove(vx, vy, ms);
 	}
@@ -197,9 +204,18 @@ public:
 
 	// FIXME: using both left & right alt/control/shift at the same time will cause these to be
 	// incorrect on some platforms (not sure that anybody cares though).
-	virtual void eventKeyDown(const Key &key)	{programState->keyDown(key);}
-	virtual void eventKeyUp(const Key &key)		{programState->keyUp(key);}
-	virtual void eventKeyPress(char c)			{programState->keyPress(c);}
+	virtual void eventKeyDown(const Key &key) {
+		Gooey::WindowManager::instance().onKeyDown( key.getCode() );
+		programState->keyDown(key);
+	}
+	virtual void eventKeyUp(const Key &key) {
+		Gooey::WindowManager::instance().onKeyUp( key.getCode() );
+		programState->keyUp(key);
+	}
+	virtual void eventKeyPress(char c) {
+		Gooey::WindowManager::instance().onChar(c);
+		programState->keyPress(c);
+	}
 
 	virtual void eventActivate(bool active) {
 		if (!active) {

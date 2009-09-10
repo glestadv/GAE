@@ -34,9 +34,12 @@
 #include "glgooey/ListBox.h"
 #include "glgooey/TimeManager.h"
 #include "glgooey/PropertyScheme.h"
+#include "glgooey/SpinBox.h"
 //END NEWGUI
 
 namespace Glest{ namespace Game{
+
+Gooey::Core::Rectangle VRectangle(float x1, float y1, float x2, float y2);
 
 //misc consts
 struct MapInfo {

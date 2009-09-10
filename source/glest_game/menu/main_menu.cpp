@@ -30,6 +30,9 @@
 
 #include "leak_dumper.h"
 
+//temp
+#include "menu_state_new_game.h"
+
 
 using namespace Shared::Sound;
 using namespace Shared::Platform;
@@ -41,6 +44,18 @@ using namespace Shared::Xml;
 using namespace Gooey;
 
 namespace Glest { namespace Game {
+
+// Wrapper for virtual coordinated rectangle
+Core::Rectangle VRectangle(float x1, float y1, float x2, float y2) {
+	const Metrics &m = Metrics::getInstance();
+	const float aspect = m.getAspectRatio();
+
+	Core::Rectangle rect = Core::Rectangle(aspect * x1, aspect * y1, aspect *x2, aspect * y2);
+	//Core::Rectangle rect = Core::Rectangle(m.toVirtualX(x1), m.toVirtualY(y1), m.toVirtualX(x2), m.toVirtualY(y2));
+	//Core::Rectangle rect = Core::Rectangle(x1, y1, x2, y2);
+
+	return rect;
+}
 
 // =====================================================
 //  class MainMenu
@@ -95,7 +110,8 @@ void MainMenu::init() {
 	Metrics m = Metrics::getInstance();
 	WindowManager::instance().applicationResized(m.getScreenW(), m.getScreenH()); //needed otherwise doesn't display
 
-	setState(new MenuStateRoot(program, this)); //moved from constructor so that the glgooey is setup when the menu state is constructed
+	//setState(new MenuStateRoot(program, this)); //moved from constructor so that the glgooey is setup when the menu state is constructed
+	setState(new MenuStateNewGame(program, this));
 	//END NEWGUI
 }
 
@@ -165,30 +181,24 @@ void MainMenu::mouseMove(int x, int y, const MouseState &ms) {
 	mouseX = x;
 	mouseY = y;
 	state->mouseMove(x, y, ms);
-
-	WindowManager::instance().onMouseMove(x, Metrics::getInstance().invertHeight(y));
 }
 
 //returns if exiting
 void MainMenu::mouseDownLeft(int x, int y) {
 	state->mouseClick(x, y, mbLeft);
-
-	WindowManager::instance().onLeftButtonDown(x, Metrics::getInstance().invertHeight(y));
 }
 
 void MainMenu::mouseDownRight(int x, int y) {
 	state->mouseClick(x, y, mbRight);
-
-	WindowManager::instance().onRightButtonDown(x, Metrics::getInstance().invertHeight(y));
 }
 
 //NEWGUI
 void MainMenu::mouseUpLeft(int x, int y) {
-	WindowManager::instance().onLeftButtonUp(x, Metrics::getInstance().invertHeight(y));
+	//WindowManager::instance().onLeftButtonUp(x, Metrics::getInstance().invertHeight(y));
 }
 
 void MainMenu::mouseUpRight(int x, int y) {
-	WindowManager::instance().onRightButtonUp(x, Metrics::getInstance().invertHeight(y));
+	//WindowManager::instance().onRightButtonUp(x, Metrics::getInstance().invertHeight(y));
 }
 //END NEWGUI
 

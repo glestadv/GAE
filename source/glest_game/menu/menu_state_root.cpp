@@ -39,7 +39,7 @@ namespace Glest{ namespace Game{
 
 MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu)
 		: MenuState(program, mainMenu, "root")
-		, Panel(Core::Rectangle(250, 250, 500, 500 /*800, 600*/), 0, "")
+		, Panel(/*Core::*/VRectangle(250, 250, 500, 500 /*800, 600*/), 0, "")
 		, btnNewGame(0, "")
 		, btnJoinGame(0, "")
 		, btnScenario(0, "")
