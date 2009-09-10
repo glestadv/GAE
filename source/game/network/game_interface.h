@@ -64,6 +64,9 @@ protected:
 	typedef vector<SocketTestRI> SocketTests;
 	static const int messageWaitTimeout = 30;
 
+public:
+	typedef map<int, const RemoteInterface *> ConstPeerMap;
+
 private:
 	ServerSocket socket;			/** Socket for listening and accepting new connections from either clients or peers */
 protected:
@@ -150,6 +153,8 @@ public:
 		return const_cast<RemoteInterface *>(
 			const_cast<const GameInterface*>(this)->getPeer(id));
 	}
+
+	const ConstPeerMap &getConstPeers() const	{return reinterpret_cast<const ConstPeerMap &>(peers);}
 
 	void onReceive(RemoteInterface &source, NetworkMessageHandshake &msg)	{_onReceive(source, msg);}
 	void onReceive(RemoteInterface &source, NetworkMessagePlayerInfo &msg)	{_onReceive(source, msg);}

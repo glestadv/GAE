@@ -131,6 +131,7 @@ public:
 	static LibraryManager libraryManager;
 #endif
 
+protected:
 	SOCKET sock;
 	SocketType type;
 

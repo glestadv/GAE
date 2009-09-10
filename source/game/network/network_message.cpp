@@ -898,34 +898,24 @@ NetworkMessageGameInfo::NetworkMessageGameInfo(const GameInterface &gi, const Ga
 		: NetworkMessageXmlDoc(new XmlNode("game-info"), true, NMT_GAME_INFO) {
 	XmlNode &root = getDoc().getRootNode();
 	gs.write(*root.addChild("game-settings"));
-	/*
-	players.push_back(PlayerStatusAndInfo(new NetworkPlayerStatus(gi), gi.getPlayer().clone()));
-	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-		if(gi.getPeer(i)) {
-			assert(gi.Host::getId() != i);
-			const RemoteInterface &peer = *gi.getPeer(i);
-			players.push_back(PlayerStatusAndInfo(new NetworkPlayerStatus(peer), peer.getPlayer().clone()));
-		}
+
+	XmlNode &statuses = *root.addChild("player-statuses");
+	{
+		XmlNode &player = *statuses.addChild("player");
+		player.addAttribute("id", 0);
+		NetworkPlayerStatus(gi).write(player);
+	}
+	foreach(const GameInterface::ConstPeerMap::value_type &pair, gi.getConstPeers()) {
+		XmlNode &player = *statuses.addChild("player");
+		player.addAttribute("id", pair.first);
+		NetworkPlayerStatus(*pair.second).write(player);
 	}
 
-	XmlNode &playersNode = *root.addChild("players");
-	for(int i = 0; i < players.size(); ++i) {
-		XmlNode &playerNode = *playersNode.addChild("player");
-		players[i].first->write(*playerNode.addChild("status"));
-		players[i].second->write(*playerNode.addChild("info"));
-	}
-
-	gi.getFactionControllers().write(*root.addChild("faction-controllers"));*/
 	getDoc().writeXml();
 	getDoc().compress();
 }
 
-NetworkMessageGameInfo::~NetworkMessageGameInfo() {/*
-	while(!players.empty()) {
-		delete players.back().first;
-		delete players.back().second;
-		players.pop_back();
-	}*/
+NetworkMessageGameInfo::~NetworkMessageGameInfo() {
 }
 
 shared_ptr<GameSettings> NetworkMessageGameInfo::getGameSettings() const {
@@ -933,12 +923,23 @@ shared_ptr<GameSettings> NetworkMessageGameInfo::getGameSettings() const {
 			*doc.getRootNode().getChild("game-settings")));
 }
 
-NetworkMessageGameInfo::Statuses NetworkMessageGameInfo::getPlayerStatuses() const {
-	throw runtime_error("not implemented");
+const NetworkMessageGameInfo::Statuses &NetworkMessageGameInfo::getPlayerStatuses() const {
+	if(statuses.empty()) {
+		foreach(const XmlNode *node, doc.getRootNode().getChild("player-statuses")->getChildren()) {
+			const_cast<NetworkMessageGameInfo*>(this)->statuses[node->getIntAttribute("id")]
+					= NetworkPlayerStatus(*node);
+		}
+	}
+	return statuses;
 }
 
 void NetworkMessageGameInfo::print(ObjectPrinter &op) const {
 	NetworkMessageXmlDoc::print(op.beginClass("NetworkMessageGameInfo"));
+	foreach(Statuses::value_type value, getPlayerStatuses()) {
+		stringstream str;
+		str << "id " << value.first;
+		op.print(str.str().c_str() , static_cast<Printable &>(value.second));
+	}
 	op		.endClass();
 }
 

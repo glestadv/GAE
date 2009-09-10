@@ -220,7 +220,7 @@ void MenuStateJoinGame::update() {
 			foreach(const GameSettings::Factions::value_type &f, gs.getFactions()) {
 				str << lang.get("Player") << " " << (f->getMapSlot() + 1) << " - "
 					<< lang.get("Team") << " " << (f->getTeam().getId() + 1) << " - "
-					<< f->getTypeName() << " - "
+					<< (f->isRandomType() ? lang.get("Random") : f->getTypeName()) << " - "
 					<< lang.get(enumControlTypeDesc[f->getControlType()]) << endl;
 			}
 			labelInfo.setText(str.str());

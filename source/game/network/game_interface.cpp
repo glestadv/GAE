@@ -263,6 +263,7 @@ void GameInterface::onError(RemoteInterface &ri, GlestException &e) {
 	getLogger().add(static_cast<const Printable &>(ri.getPlayer()), false);
 	getLogger().add(e.what(), false);
 
+	ri.quit();
 	removePeer(&ri);
 }
 
@@ -795,4 +796,10 @@ void GameInterface::print(ObjectPrinter &op) const {
 			.endClass();
 }
 
+#if 0
+void GameInterface::onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
+
+	_onReceive(source, msg);
+}
+#endif
 }} // end namespace

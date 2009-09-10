@@ -46,6 +46,7 @@ namespace Game { namespace Net {
 class RemoteInterface;
 class ClientInterface;
 class ServerInterface;
+class NetworkPlayerStatus;
 
 
 /** Base class to represent a network host in a game, either local or remote. */
@@ -109,6 +110,7 @@ public:
 
 	virtual void print(ObjectPrinter &op) const = 0;
 	virtual const GameInterface &getGameInterface() const = 0;
+	virtual void updateStatus(const NetworkPlayerStatus &status);
 
 protected:
 	Mutex &getMutex()						{return mutex;}

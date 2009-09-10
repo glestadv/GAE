@@ -460,12 +460,7 @@ public:
 	typedef std::map<int, NetworkPlayerStatus> Statuses;
 
 private:
-//	typedef std::pair<NetworkPlayerStatus*, PlayerInfo*> PlayerStatusAndInfo;
-//	typedef vector<PlayerStatusAndInfo> Players;
-
-//	Players players;
-//	FactionControllers factionControllers;
-
+	Statuses statuses;	/** Used to cache statuses when getPlayerStatuses is called. */
 
 public:
 	NetworkMessageGameInfo(NetworkDataBuffer &buf);
@@ -474,11 +469,7 @@ public:
 
 	void addPlayerInfo(const Host &player);
 	shared_ptr<GameSettings> getGameSettings() const;
-	Statuses getPlayerStatuses() const;
-	/*
-	void updateFactionControllers(FactionControllers &fc) const {
-		fc.read(*getDoc().getRootNode().getChild("faction-controllers"));
-	}*/
+	const Statuses &getPlayerStatuses() const;
 
 	virtual void print(ObjectPrinter &op) const;
 };

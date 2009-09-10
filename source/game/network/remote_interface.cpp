@@ -208,7 +208,7 @@ void RemoteInterface::dispatch(NetworkMessage *msg) {
 		default: {
 				stringstream str;
 				str << "unknown message type " << msg->getType();
-				throw ProtocolException(*this, NULL, str.str().c_str(), NULL, __FILE__, __LINE__);
+				throw ProtocolException(*this, NULL, str.str(), NULL, __FILE__, __LINE__);
 			}
 		}
 	} catch(ProtocolException &e) {
@@ -246,7 +246,7 @@ bool RemoteInterface::process(NetworkMessageHandshake &msg) {
 		throw ProtocolException(*this, &msg,
 				Lang::getInstance().format("ErrorVersionMismatch",
 						getNetProtocolVersion().toString().c_str(),
-						msg.getProtocolVersion().toString().c_str()).c_str(),
+						msg.getProtocolVersion().toString().c_str()),
 				NULL, __FILE__, __LINE__);
 	}
 	handshake(msg.getGameVersion(), msg.getProtocolVersion());
@@ -505,6 +505,8 @@ bool RemoteInterface::isConnected() {
 }
 
 void RemoteInterface::updateStatus(const NetworkPlayerStatus &status, NetworkMessage &msg) {
+	Host::updateStatus(status);
+#if 0
 	switch(status.getState()) {
 		case STATE_UNCONNECTED:
 		case STATE_LISTENING:
@@ -518,11 +520,13 @@ void RemoteInterface::updateStatus(const NetworkPlayerStatus &status, NetworkMes
 		case STATE_PAUSED:
 		case STATE_QUIT:
 		case STATE_END:
-			THROW_PROTOCOL_EXCEPTION((string("handling of state ") + enumStateNames.getName(status.getState())
-					+ " not yet implemented.").c_str());
+			THROW_PROTOCOL_EXCEPTION(string() + "handling of state "
+					+ enumStateNames.getName(status.getState())
+					+ " not yet implemented.");
 		default:
 			assert(0);
 	}
+#endif
 }
 
 void RemoteInterface::updatePlayerInfo(const HumanPlayer &player, NetworkMessage &msg) {

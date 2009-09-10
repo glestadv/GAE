@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1;GAME_CONSTANTS_DEF"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"

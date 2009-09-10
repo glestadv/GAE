@@ -118,10 +118,17 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 	MutexLock lock(mutex);
 	try {
 		setGameSettings(msg.getGameSettings());
+
+		// this is a little screwy, but we want to call getPlayerStatuses() in the try block and
+		// then we call it again later to store the reference.  De-uglify this by either
+		// enclosing the entire function in this try/catch block of using a pointer instead of a reference.
+		msg.getPlayerStatuses();
 	} catch (runtime_error &e) {
-		string s = string("Failed to read game-settings from NetworkMessageGameInfo: ") + e.what();
-		THROW_PROTOCOL_EXCEPTION(s.c_str());
+		throw ProtocolException(source, &msg,
+				string("Failed to read game-settings from NetworkMessageGameInfo: ") + e.what(),
+				NULL, __FILE__, __LINE__);
 	}
+	const NetworkMessageGameInfo::Statuses &statuses = msg.getPlayerStatuses();
 
 	// Update Player information for each RemoteInterface
 	foreach(const GameSettings::PlayerMap::value_type &pair, getGameSettings()->getPlayers()) {
@@ -132,7 +139,15 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 		const HumanPlayer &p = static_cast<const HumanPlayer &>(*pair.second);
 		int id = p.getId();
 
+		if(statuses.find(id) == statuses.end()) {
+			stringstream str;
+			str << "Consistency error: did not receive status for human player (id=" << id << ").";
+			THROW_PROTOCOL_EXCEPTION(str.str());
+		}
+
 		if(id == Host::getId()) {
+			// info for this player
+
 #ifndef NO_PARINOID_NETWORK_CHECKS
 			// make sure that the server doesn't try to change things it shouldn't
 			// get local player object
@@ -149,20 +164,28 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 						"of local player information that it shouldn't." << endl
 						<< "Local player: " << getPlayer().toString() << endl
 						<< "Server sent: " << p.toString();
-				THROW_PROTOCOL_EXCEPTION(str.str().c_str());
+				THROW_PROTOCOL_EXCEPTION(str.str());
 			}
 #endif
 			setResolvedHostName(p.getNetworkInfo().getResolvedHostName());
 			getProtectedPlayer().setSpectator(p.isSpectator());
 		} else {
+			// info for a remote player (server or another peer)
+
 			RemoteInterface *peer = getPeer(id);
 			if(peer) {
 				peer->updatePlayerInfo(p, msg);
+
+				// p2p-TODO: We're skipping clients processing status updates on other clients now,
+				// but this needs to be done for peer-to-peer implementation.
+				if(peer->getRole() != NR_CLIENT) {
+					peer->updateStatus(statuses.find(id)->second, msg);
+				}
 			}
 			// If state is STATE_NEGOTIATED then this is the first time we've received this message.
 			// Thus, we are the client responsible for connecting with each peer.
 			if(getState() == STATE_NEGOTIATED) {
-				// TODO: Store a list of all peers (i.e., other clients to the server) and set a
+				// p2p-TODO: Store a list of all peers (i.e., other clients to the server) and set a
 				// timer for one or two seconds to allow other clients to receive the server's
 				// message.  Then attempt to connect to all of the players that I don't have a
 				// connection (which should be all of them).  This should be attempted once and
@@ -191,27 +214,8 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 }
 
 void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
-	const NetworkPlayerStatus &status = msg.getNetworkPlayerStatus();
-	if(&source == &server) {
-		switch(status.getState()) {
-			case STATE_LAUNCHING:
-				if(source.getState() < STATE_LAUNCHING) {
-					if(getState() == STATE_LAUNCH_READY) {
-						THROW_PROTOCOL_EXCEPTION(
-								"Server is launching, but I'm not in STATE_LAUNCH_READY!");
-					}
-				}
-				break;
-
-			case STATE_QUIT:
-				setState(STATE_QUIT);
-				break;
-
-			default:
-				break;
-		}
-	}
-	// TODO: check for and handle game parameter change
+	NetworkPlayerStatus &status = msg.getNetworkPlayerStatus();
+	_onReceive(source, status, msg);
 }
 
 void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageText &msg) {
@@ -255,6 +259,7 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkPlayerStatus &s
 			if(isServer) {
 				setState(STATE_LAUNCH_READY);
 			}
+			break;
 		case STATE_READY:
 		case STATE_PLAY:
 		case STATE_PAUSED:
@@ -264,9 +269,11 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkPlayerStatus &s
 			if(isServer) {
 				setState(STATE_QUIT);
 			}
+			break;
 		default:
 			break;
 	}
+	// TODO: check for and handle game parameter change
 }
 
 /* * True if world updates should proceed, false otherwise.  This is set to false if a key frame is
@@ -352,6 +359,13 @@ void ClientInterface::disconnectFromServer() {
 	setState(STATE_LISTENING);
 }
 
+void ClientInterface::onError(RemoteInterface &ri, GlestException &e) {
+	GameInterface::onError(ri, e);
+	if(!isConnected()) {
+		setState(STATE_UNCONNECTED);
+	}
+}
+		
 void ClientInterface::sendUpdateRequests() {
 	if(isConnected() && updateRequests.size()) {
 		NetworkMessageUpdateRequest msg;

@@ -23,6 +23,7 @@
 #include "client_interface.h"
 #include "server_interface.h"
 #include "game_util.h"
+#include "network_message.h"
 
 #include "leak_dumper.h"
 
@@ -47,14 +48,9 @@ Host::Host(NetworkRole role, int id, const uint64 &uid)
 		, paramChange(PARAM_CHANGE_NONE)
 		, gameParam(GAME_PARAM_NONE)
 		, targetFrame(0)
-		, newSpeed(GAME_SPEED_NORMAL)/*
-		, hostName()
-		, playerName()
-		, description()*/
+		, newSpeed(GAME_SPEED_NORMAL)
 		, lastFrame(0)
-		, lastKeyFrame(0)/*
-		, ipAddress()
-		, port(0)*/ {
+		, lastKeyFrame(0) {
 	memset(peerConnectionState, 0, sizeof(peerConnectionState));
 }
 
@@ -70,6 +66,15 @@ void Host::handshake(const Version &gameVersion, const Version &protocolVersion)
 	assert(state < STATE_NEGOTIATED);
 	state = STATE_NEGOTIATED;
 	setVersionInfo(gameVersion, protocolVersion);
+}
+
+void Host::updateStatus(const NetworkPlayerStatus &status) {
+	state = status.getState();
+	for(size_t i = 0; i < GameConstants::maxPlayers; ++i) {
+		peerConnectionState[i] = status.getConnections() & (1 << i);
+	}
+	//paramChange = status.getParamChange();
+	//gameParam = status.getGameParam();
 }
 
 void Host::print(ObjectPrinter &op) const {

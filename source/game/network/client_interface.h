@@ -87,6 +87,7 @@ public:
 
 	void connectToServer(const IpAddress &ipAddress, unsigned short port);
 	//void connectToPeer(const IpAddress &ipAddress, unsigned short port);
+	virtual void onError(RemoteInterface &ri, GlestException &e);
 	void disconnectFromServer();
 	//void disconnectFromPeer(int id);
 	void requestUpdate(Unit *unit)				{UnitReference ur(unit); requestUpdate(ur);}

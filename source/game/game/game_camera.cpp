@@ -15,7 +15,7 @@
 #include <cstdlib>
 
 #include "config.h"
-//#include "game_constants.h"
+#include "game_constants.h"
 #include "xml_parser.h"
 
 #include "leak_dumper.h"

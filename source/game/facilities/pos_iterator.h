@@ -27,6 +27,16 @@ struct PosData {
 	float dist;
 };
 
+
+/**
+ * PosCircularIterator is a class that attempts to iterate through a circular area on the map
+ * beginning with the nearest location and iterating to progressivly further locations so that the
+ * results are ordered by their distance from the center.  This is accomplished by pre-calculating
+ * the data in advance of the need for the iterator and then using this reference data to perform
+ * it's iterations.  This is more efficient in some cases, and less so in others.  And it also
+ * requires the overhead of PosCircularIteratorFactory, which calculates and stores this data in
+ * advance.
+ */
 class PosCircularIterator {
 protected:
 	const PosData *next;
@@ -42,7 +52,7 @@ public:
 			cycle(cycle) {
 	}
 
-	Vec2i getPosForCycle() { 
+	Vec2i getPosForCycle() {
 		int step = next->step;
 		int off = next->off;
 		switch(cycle) {
@@ -58,7 +68,7 @@ public:
 		}
 	}
 /*
-	Vec2i getPosForCycle() { 
+	Vec2i getPosForCycle() {
 		int step = cycle & 2 ? -next->step : next->step;
 		int off = cycle & 4 ? -next->off : next->off;
 		return cycle & 1 ? Vec2i(step, off) :  Vec2i(off, step);
@@ -144,7 +154,7 @@ public:
 	PosCircularIterator *getOutsideInIterator(int minDistance, int maxDistance) const {
 		return getIterator(true, maxDistance, minDistance);
 	}
-	
+
 private:
 	PosCircularIterator *getIterator(bool reversed, int maxDistance, int minDistance) const;
 	static int comparePosData(const void *p1, const void *p2);

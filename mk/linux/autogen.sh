@@ -27,8 +27,8 @@ autoconf
 
 rm -rf autom4te.cache build
 
-mkdir -p /tmp/$(whoami)/gae/0.2
-ln -s /tmp/$(whoami)/gae/0.2 build
+mkdir -p /tmp/$(whoami)/gae/0.2-network
+ln -s /tmp/$(whoami)/gae/0.2-network build
 
 # create symlinks to the source dirs
 

@@ -269,11 +269,13 @@ void ServerInterface::update() {
 void ServerInterface::broadcastGameInfo() {
 	MutexLock localLock(mutex);
 
-	NetworkMessageGameInfo msg1(*this, *getGameSettings());
+	if(getPeers().size()) {
+		NetworkMessageGameInfo msg1(*this, *getGameSettings());
 
-	foreach(const PeerMap::value_type &p, getPeers()) {
-		if(p.second->getState() >= STATE_INITIALIZED) {
-			p.second->send(msg1, true);
+		foreach(const PeerMap::value_type &p, getPeers()) {
+			if(p.second->getState() >= STATE_INITIALIZED) {
+				p.second->send(msg1, true);
+			}
 		}
 	}
 }

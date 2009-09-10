@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 
 #if defined(WIN32) || defined(WIN64)
 #	define strtoull(np,ep,b) _strtoui64(np,ep,b)
@@ -27,6 +28,7 @@
 
 using std::string;
 using std::runtime_error;
+using std::stringstream;
 using Shared::Platform::int64;
 using Shared::Platform::uint64;
 
@@ -105,26 +107,26 @@ public:
 			*b = false;
 			return true;
 		}
-	
+
 		if (s == "1" || s == "true") {
 			*b = true;
 			return true;
 		}
-	
+
 		return false;
 	}
-	
+
 	inline bool strToInt(const string &s, int *i) {
 		char *endChar;
 		*i = strtol(s.c_str(), &endChar, 10);
-	
+
 		return !*endChar;
 	}
-	
+
 	inline bool strToFloat(const string &s, float *f) {
 		char *endChar;
 		*f = static_cast<float>(strtod(s.c_str(), &endChar));
-	
+
 		return !*endChar;
 	}
 	*/
@@ -149,7 +151,7 @@ public:
 		sprintf(str, "%lld", static_cast<long long int>(i));
 		return str;
 	}
-	
+
 	static string toStr(uint64 i) {
 		char str[32];
 		sprintf(str, "%llu", static_cast<unsigned long long int>(i));
@@ -184,6 +186,14 @@ public:
 		char str[24];
 		sprintf(str, "%.2f", f);
 		return str;
+	}
+
+	// ugly (i.e., fat) catch-all
+	template<typename T>
+	static string toStr(T v) {
+		stringstream str;
+		str << v;
+		return str.str();
 	}
 
 	static int hexChar2Int(char c);
@@ -222,15 +232,18 @@ private:
 		dest = strtold(nptr, endptr);
 	}
 
-	template<typename T> static T strToX(const string &s, int base, const string &typeName) {
+	template<typename T>
+	static T strToX(const string &s, int base, const string &typeName) {
 		char *endChar;
 		T ret;
 		strto_(s.c_str(), &endChar, base, ret);
-	
+
 		if (*endChar) {
+			// make an actual function call to throw exception so we can keep the size of this
+			// inline smaller
 			throwException(typeName, s, base);
 		}
-	
+
 		return ret;
 	}
 

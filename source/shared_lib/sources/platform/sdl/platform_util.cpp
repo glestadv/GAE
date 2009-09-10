@@ -80,7 +80,7 @@ void PlatformExceptionHandler::install() {
 	//action.sa_mask
 	action.sa_flags = SA_SIGINFO | SA_NODEFER;
 	action.sa_sigaction = PlatformExceptionHandler::handler;
-#ifndef DEBUG	
+#ifndef DEBUG
 #endif
 	sigaction(SIGILL, &action, &old_sigill);
 	sigaction(SIGSEGV, &action, &old_sigsegv);
@@ -94,7 +94,7 @@ void PlatformExceptionHandler::uninstall() {
 	assert(this);
 	assert(singleton == this);
 	assert(installed);
-#ifndef DEBUG	
+#ifndef DEBUG
 #endif
 	sigaction(SIGILL, &old_sigill, NULL);
 	sigaction(SIGSEGV, &old_sigsegv, NULL);
@@ -317,7 +317,7 @@ DirectoryListing::DirectoryListing(const string &path_param)
 
 	if(glob(path.c_str(), 0, 0, &globbuf) < 0) {
 		throw PosixException(
-				("Error searching for files in directory '" + path + "'.  errno may be zero, in this case, please report as a bug.").c_str(),
+				"Error searching for files in directory '" + path + "'.  errno may be zero, in this case, please report as a bug.",
 				"glob(path.c_str(), 0, 0, &globbuf)",
 				NULL, __FILE__, __LINE__);
 	}
