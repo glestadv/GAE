@@ -1,6 +1,10 @@
 #!/bin/sh
 
-rm -f configure Jamconfig.in
+rm -f configure Jamconfig.in build shared_lib game map_editor test data docs maps scenarios techs tilesets
+
+if [ "$1" = "clean" ]; then
+	exit
+fi
 
 # Correct working directory?
 if test ! -f configure.ac ; then
