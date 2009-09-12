@@ -15,10 +15,14 @@
 //
 #include "pch.h"
 
+#include <limits>
+
 //#include "annotated_map.h"
 
 #include "map.h"
 #include "path_finder.h"
+
+#include "profiler.h"
 
 namespace Glest { namespace Game { namespace Search {
 
@@ -56,7 +60,16 @@ SearchParams::SearchParams ( Unit *u ) {
 }
 
 
-const int AnnotatedMap::maxClearanceValue = 3;
+SearchParams::SearchParams () {
+	start = dest = Vec2i(-1);
+	field = FieldWalkable;
+	size = 1; 
+	team = -1;
+	goalFunc = NULL;
+}
+
+
+const int AnnotatedMap::maxClearanceValue = 15;
 
 AnnotatedMap::AnnotatedMap ( Map *m ) {
 	cMap = m;
@@ -71,6 +84,9 @@ AnnotatedMap::~AnnotatedMap () {
 }
 
 void AnnotatedMap::initMapMetrics ( Map *map ) {
+	//
+	// TODO: Start at bottom-right... scan right-to-left, bottom-to-top
+	//
 	for ( int i=0; i < map->getH(); ++i ) {
 		for ( int j=0; j < map->getW(); ++j ) {
 			Vec2i pos( j, i );
@@ -86,6 +102,7 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
 	assert ( cMap->isInside ( pos ) );
 	assert ( cMap->isInside ( pos.x + size - 1, pos.y + size - 1 ) );
 
+	PROFILE_LVL2_START("Updating Map Metrics");
 	// first, re-evaluate the cells occupied (or formerly occupied)
 	for ( int i=0; i < size; ++i ) {
 		for ( int j=0; j < size; ++j ) {
@@ -217,6 +234,7 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size, bool add
 		AboveList = newAboveList;
 		shell++;
 	}// end while
+	PROFILE_LVL2_STOP("Updating Map Metrics");
 }
 
 //TODO
@@ -344,6 +362,7 @@ bool AnnotatedMap::canOccupy ( const Vec2i &pos, int size, Field field ) const {
 void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field field ) {
 	assert ( cMap->isInside ( pos ) );
 	assert ( cMap->isInside ( pos.x + size - 1, pos.y + size - 1 ) );
+	PROFILE_LVL2_START("Local Annotations");
 	const Vec2i *offsets1 = NULL, *offsets2 = NULL;
 	int numOffsets1, numOffsets2;
 	if ( size == 1 ) {
@@ -363,6 +382,8 @@ void AnnotatedMap::annotateLocal ( const Vec2i &pos, const int size, const Field
 
 	localAnnotateCells ( pos, size, field, offsets1, numOffsets1 );
 	localAnnotateCells ( pos, size, field, offsets2, numOffsets2 );
+
+	PROFILE_LVL2_STOP("Local Annotations");
 }
 
 
@@ -406,18 +427,19 @@ void AnnotatedMap::localAnnotateCells ( const Vec2i &pos, const int size, const 
 }
 
 void AnnotatedMap::clearLocalAnnotations ( Field field ) {
+	PROFILE_LVL2_START("Local Annotations");
 	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it ) {
 		assert ( it->second <= maxClearanceValue );
 		assert ( cMap->isInside ( it->first ) );
 		metrics[it->first].set ( field, it->second );
 	}
 	localAnnt.clear ();
+	PROFILE_LVL2_STOP("Local Annotations");
 }
 
 bool AnnotatedMap::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
-#	ifdef PATHFINDER_TIMING
-		aNodePool->startTimer ();
-#	endif
+	PROFILE_LVL2_START("Searching");
+
 	bool pathFound = false, nodeLimitReached = false;
 	AStarNode *minNode = NULL;
 	const Vec2i *Directions = OffsetsSize1Dist1;
@@ -426,15 +448,20 @@ bool AnnotatedMap::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
 	while ( ! nodeLimitReached ) {
 		minNode = aNodePool->getBestCandidate ();
 		if ( ! minNode ) break; // done, failed
+		PROFILE_LVL2_START("Checking Goal");
 		if ( minNode->pos == params.dest || ! minNode->exploredCell 
 		||  ( params.goalFunc && params.goalFunc (minNode->pos ) ) ) { // done, success
-			pathFound = true; 
+			pathFound = true;
+			PROFILE_LVL2_STOP("Checking Goal");
 			break; 
 		}
+		PROFILE_LVL2_STOP("Checking Goal");
 		for ( int i = 0; i < 8 && ! nodeLimitReached; ++i ) {  // for each neighbour
+			PROFILE_LVL2_START("Checking Move Legality");
 			Vec2i sucPos = minNode->pos + Directions[i];
 			if ( ! cMap->isInside ( sucPos ) 
 			||	 ! canOccupy (sucPos, params.size, params.field )) {
+				PROFILE_LVL2_STOP("Checking Move Legality");
 				continue;
 			}
 			bool diag = false;
@@ -445,29 +472,38 @@ bool AnnotatedMap::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
 				getDiags ( minNode->pos, sucPos, params.size, diag1, diag2 );
 				if ( !canOccupy ( diag1, 1, params.field ) 
 				||	 !canOccupy ( diag2, 1, params.field ) ) {
+					PROFILE_LVL2_STOP("Checking Move Legality");
 					continue; // not allowed
 				}
 			}
+			PROFILE_LVL2_STOP("Checking Move Legality");
 			// Assumes heuristic is admissable, or that you don't care if it isn't
 			if ( aNodePool->isOpen ( sucPos ) ) {
+				PROFILE_LVL2_START("Updating Open Nodes");
 				aNodePool->updateOpenNode ( sucPos, minNode, diag ? 1.4 : 1.0 );
+				PROFILE_LVL2_STOP("Updating Open Nodes");
 			}
 			else if ( ! aNodePool->isClosed ( sucPos ) ) {
+				PROFILE_LVL2_START("Adding New Open Nodes");
 				bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (params.team);
+				PROFILE_LVL2_START("Heuristic");
 				float h = heuristic ( sucPos, params.dest );
+				PROFILE_LVL2_STOP("Heuristic");
 				float d = minNode->distToHere + (diag?1.4:1.0);
+				PROFILE_LVL2_START("Add to Node Pool");
 				if ( ! aNodePool->addToOpen ( minNode, sucPos, h, d, exp ) ) {
 					nodeLimitReached = true;
 				}
+				PROFILE_LVL2_STOP("Add to Node Pool");
+				PROFILE_LVL2_STOP("Adding New Open Nodes");
 			}
 		} // end for each neighbour of minNode
 	} // end while ( ! nodeLimitReached )
-#	ifdef PATHFINDER_TIMING
-		statsAStar->AddEntry ( aNodePool->stopTimer () );
-#	endif
 	if ( ! pathFound && ! nodeLimitReached ) {
+		PROFILE_LVL2_STOP("Searching");
 		return false;
 	}
+	PROFILE_LVL2_START("Post Processing");
 	if ( nodeLimitReached ) {
 		// get node closest to goal
 		minNode = aNodePool->getBestHNode ();
@@ -491,6 +527,8 @@ bool AnnotatedMap::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
 	}
 	if ( path.size () < 2 ) {
 		path.clear ();
+		PROFILE_LVL2_STOP("Post Processing");
+		PROFILE_LVL2_STOP("Searching");
 		return true; //tsArrived
 	}
 
@@ -503,28 +541,35 @@ bool AnnotatedMap::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
 			pf->PathSet.clear(); pf->LocalAnnotations.clear ();
 			if ( pf->debug_texture_action == PathFinder::ShowOpenClosedSets ) {
 				list<Vec2i> *alist = aNodePool->getOpenNodes ();
-				for ( VLIt it = alist->begin(); it != alist->end(); ++it )
-				pf->OpenSet.insert ( *it );
+				for ( VLIt it = alist->begin(); it != alist->end(); ++it ) {
+					pf->OpenSet.insert ( *it );
+				}
 				delete alist;
 				alist = aNodePool->getClosedNodes ();
-				for ( VLIt it = alist->begin(); it != alist->end(); ++it )
-				pf->ClosedSet.insert ( *it );
+				for ( VLIt it = alist->begin(); it != alist->end(); ++it ) {
+					pf->ClosedSet.insert ( *it );
+				}
 				delete alist;
 			}
 			if ( pf->debug_texture_action == PathFinder::ShowOpenClosedSets 
 			||   pf->debug_texture_action == PathFinder::ShowPathOnly )
-				for ( VLIt it = path.begin(); it != path.end(); ++it )
+			for ( VLIt it = path.begin(); it != path.end(); ++it ) {
 					pf->PathSet.insert ( *it );
+			}
 			if ( pf->debug_texture_action == PathFinder::ShowLocalAnnotations ) {
 				pf->LocalAnnotations.clear();
-				list<pair<Vec2i,uint32>> *annt = aMap->getLocalAnnotations ();
-				for ( list<pair<Vec2i,uint32>>::iterator it = annt->begin(); it != annt->end(); ++it )
-				pf->LocalAnnotations[it->first] = it->second;
+				list<pair<Vec2i,uint32>> *annt = getLocalAnnotations ();
+				for ( list<pair<Vec2i,uint32>>::iterator it = annt->begin(); it != annt->end(); ++it ) {
+					pf->LocalAnnotations[it->first] = it->second;
+				}
 				delete annt;
 			}
 		}
 #	endif
+	path.pop_front();
 	//assert ( assertValidPath ( path ) );
+	PROFILE_LVL2_STOP("Post Processing");
+	PROFILE_LVL2_STOP("Searching");
 	return true;
 }
 
@@ -571,6 +616,75 @@ void AnnotatedMap::getDiags ( const Vec2i &s, const Vec2i &d, const int size, Ve
 void AnnotatedMap::copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path ) {
 	for ( VLConIt it = pathList.begin (); it != pathList.end(); ++it )
 		path.push_back ( *it );
+}
+
+
+float AnnotatedMap::AStarPathLength ( SearchParams &params ) {
+	if ( params.start == params.dest ) return 0.f;
+	bool pathFound = false, nodeLimitReached = false;
+	AStarNode *minNode = NULL;
+	const Vec2i *Directions = OffsetsSize1Dist1;
+	aNodePool->reset ();
+	aNodePool->addToOpen ( NULL, params.start, heuristic ( params.start, params.dest ), 0 );
+	while ( ! nodeLimitReached ) {
+		minNode = aNodePool->getBestCandidate ();
+		if ( ! minNode ) break; // done, failed
+		if ( minNode->pos == params.dest || ! minNode->exploredCell 
+		||  ( params.goalFunc && params.goalFunc (minNode->pos ) ) ) { // done, success
+			pathFound = true; 
+			break; 
+		}
+		for ( int i = 0; i < 8 && ! nodeLimitReached; ++i ) {  // for each neighbour
+			Vec2i sucPos = minNode->pos + Directions[i];
+			if ( ! cMap->isInside ( sucPos ) 
+			||	 ! canOccupy (sucPos, params.size, params.field )) {
+				continue;
+			}
+			bool diag = false;
+			if ( minNode->pos.x != sucPos.x && minNode->pos.y != sucPos.y ) {
+				// if diagonal move and either diag cell is not free...
+				diag = true;
+				Vec2i diag1, diag2;
+				getDiags ( minNode->pos, sucPos, params.size, diag1, diag2 );
+				if ( !canOccupy ( diag1, 1, params.field ) 
+				||	 !canOccupy ( diag2, 1, params.field ) ) {
+					continue; // not allowed
+				}
+			}
+			// Assumes heuristic is admissable, or that you don't care if it isn't
+			if ( aNodePool->isOpen ( sucPos ) ) {
+				aNodePool->updateOpenNode ( sucPos, minNode, diag ? 1.4 : 1.0 );
+			}
+			else if ( ! aNodePool->isClosed ( sucPos ) ) {
+				bool exp = cMap->getTile (Map::toTileCoords (sucPos))->isExplored (params.team);
+				float h = heuristic ( sucPos, params.dest );
+				float d = minNode->distToHere + ( diag ? 1.4 : 1.0 );
+				if ( ! aNodePool->addToOpen ( minNode, sucPos, h, d, exp ) ) {
+					nodeLimitReached = true;
+				}
+			}
+		} // end for each neighbour of minNode
+	} // end while ( ! nodeLimitReached )
+
+	if ( ! pathFound ) {
+		return numeric_limits<float>::infinity();
+	}
+	else {
+		float dist = 0.f;
+		Vec2i lastPos = minNode->pos;
+		minNode = minNode->prev;
+		while ( minNode ) {
+			if ( minNode->pos.x != lastPos.x || minNode->pos.y != lastPos.y ) {
+				dist += 1.42;
+			}
+			else {
+				dist += 1.0;
+			}
+			lastPos = minNode->pos;
+			minNode = minNode->prev;
+		}
+		return dist;
+	}
 }
 
 

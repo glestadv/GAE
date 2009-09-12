@@ -26,6 +26,9 @@
 #include "checksum.h"
 
 #include "leak_dumper.h"
+
+#include "profiler.h"
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
@@ -76,6 +79,8 @@ Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
 		lastUpdateFps(0),
 		renderFps(0),
 		lastRenderFps(0),
+		worldFps(0),
+		lastWorldFps(0),
 		paused(false),
 		gameOver(false),
 		renderNetworkStatus(true),
@@ -88,6 +93,7 @@ Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
 		weatherParticleSystem(NULL) {
 	assert(!singleton);
 	singleton = this;
+	PROFILE_START("GAME");
 }
 
 const char *Game::SpeedDesc[sCount] = {
@@ -101,9 +107,11 @@ const char *Game::SpeedDesc[sCount] = {
 };
 
 Game::~Game() {
-    Logger &logger= Logger::getInstance();
+	PROFILE_STOP("GAME");
+	Logger &logger= Logger::getInstance();
 	Renderer &renderer= Renderer::getInstance();
 
+	logger.setLoading ( true );
 	logger.setState(Lang::getInstance().get("Deleting"));
 	logger.add("Game", true);
 
@@ -116,7 +124,6 @@ Game::~Game() {
 	gui.end();		//selection must be cleared before deleting units
 	world.end();	//must die before selection because of referencers
 	singleton = NULL;
-   logger.setLoading ( true );
 }
 
 
@@ -156,7 +163,7 @@ void Game::load(){
 }
 
 void Game::init() {
-   Lang &lang= Lang::getInstance();
+	Lang &lang= Lang::getInstance();
 	Logger &logger= Logger::getInstance();
 	CoreData &coreData= CoreData::getInstance();
 	Renderer &renderer= Renderer::getInstance();
@@ -182,16 +189,16 @@ void Game::init() {
 	// init world, and place camera
 	commander.init(&world);
 
-   world.init(savedGame ? savedGame->getChild("world") : NULL);
+	world.init(savedGame ? savedGame->getChild("world") : NULL);
 	gui.init();
 	chatManager.init(&console, world.getThisTeamIndex());
 	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
-   scriptManager.init(&world, &gameCamera);
-	
-   if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
+	scriptManager.init(&world, &gameCamera);
+
+	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
 		gui.load(savedGame->getChild("gui"));
 	}
 
@@ -293,13 +300,14 @@ void Game::update() {
 		Renderer &renderer = Renderer::getInstance();
 
 		//AiInterface
-      for (int i = 0; i < world.getFactionCount(); ++i)
-         if ( world.getFaction(i)->getCpuControl() 
-         &&   scriptManager.getPlayerModifiers(i)->getAiEnabled() )
-            aiInterfaces[i]->update();
+		for (int i = 0; i < world.getFactionCount(); ++i)
+			if ( world.getFaction(i)->getCpuControl() 
+				&&   scriptManager.getPlayerModifiers(i)->getAiEnabled() )
+				aiInterfaces[i]->update();
 
 		//World
 		world.update();
+		worldFps ++;
 
 		try {
 			// Commander
@@ -317,6 +325,7 @@ void Game::update() {
 			weatherParticleSystem->setPos(gameCamera.getPos());
 		}
 		renderer.updateParticleManager(rsGame);
+
 	}
 
 	try {
@@ -375,9 +384,19 @@ void Game::render(){
 void Game::tick(){
 	lastUpdateFps= updateFps;
 	lastRenderFps= renderFps;
+	lastWorldFps = worldFps;
 	updateFps= 0;
 	renderFps= 0;
+	worldFps = 0;
 
+#ifdef PATHFINDER_TIMING
+	Search::newAStar.resetCounters ();
+	Search::oldAStar.resetCounters ();
+	Logger::getInstance().add ( Search::newAStar.GetTotalStats() );
+	Logger::getInstance().add ( Search::newAStar.GetStats() );
+	Logger::getInstance().add ( Search::oldAStar.GetTotalStats() );
+	Logger::getInstance().add ( Search::oldAStar.GetStats() );
+#endif
 	//Win/lose check
 	checkWinner();
 	gui.tick();
@@ -880,6 +899,7 @@ void Game::render2d(){
 			<< "PosObjWord: " << gui.getPosObjWorld().x << "," << gui.getPosObjWorld().y << endl
 			<< "Render FPS: " << lastRenderFps << endl
 			<< "Update FPS: " << lastUpdateFps << endl
+			<< "World FPS : " << lastWorldFps << endl
 			<< "GameCamera pos: " << gameCamera.getPos().x
 				<< "," << gameCamera.getPos().y
 				<< "," << gameCamera.getPos().z << endl
@@ -906,8 +926,12 @@ void Game::render2d(){
             }
             str << endl;
         }
+#ifdef PATHFINDER_TIMING
+	   str << Search::oldAStar.GetStats() << endl;
+	   str << Search::newAStar.GetStats() << endl;
+#endif
 #ifdef _GAE_DEBUG_EDITION_
-	   str << "Debug Field : " << Fields::getName ( renderer.getDebugField() ) << endl;
+		str << "Debug Field : " << Fields::getName ( renderer.getDebugField() ) << endl;
 #endif
 		renderer.renderText(
 			str.str(), coreData.getMenuFontNormal(),

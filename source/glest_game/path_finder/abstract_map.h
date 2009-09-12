@@ -13,34 +13,65 @@
 
 namespace Glest { namespace Game { namespace Search {
 
-struct MapCluster {
-	Vec2i pos;
-	float edgeCosts[8]; // edgeCosts[FieldCount][maxClearanceValue][8];
+#define CLUSTER_SIZE 16
+
+// This will actually be 'packed' using bitfields...
+struct Entrance {
+	int clearance;
+	int position;
 };
 
-// class ClusterMap
-class ClusterMap {
-private:
-	MapCluster *clusters;
-	int stride;
+struct Border {
+	// Entrances of max clearance for each field
+	Entrance transitions[FieldCount];
 
-public:
-	ClusterMap () { stride = 0; clusters = NULL; }
-	virtual ~ClusterMap () { delete [] clusters; }
-
-	void init ( int w, int h ) { 
-		assert (w>0&&h>0); stride = w; clusters = new MapCluster[w*h]; 
-	}
-	MapCluster& operator [] ( const Vec2i &pos ) const { 
-		return clusters[pos.y*stride+pos.x]; 
-	}
+	/* intra cluster edge weights
+	 for vertical borders...        for horizontal borders...
+	       2      3					       1
+	   +------+------+				   +------+		[0] = NW
+	   |      |      |				   |      |		[1] = N	
+	 1 |  C1  |  C2  | 4			 0 |  C1  | 2	[2] = NE
+	   |      |      |				   |      |		[3] = SE
+	   +------+------+				   +------+		[4] = S
+	       0      5					   |      |		[5] = SW
+	   [0] == SW					 5 |  C2  | 3
+	   [1] == W						   |      |
+	   [2] == NW					   +------+
+	   [3] == NE					       4
+	   [4] == E
+	   [5] == SE
+	*/
+	float weights [FieldCount][6];
 };
 
 class AbstractMap {
-	ClusterMap clusters;
+	
+	Border *vertBorders, *horizBorders, sentinel;
+	int w, h; // width and height, in clusters
+	AnnotatedMap *aMap;
+
 public:
 	AbstractMap ( AnnotatedMap *aMap );
+	~AbstractMap ();
 
+	// 'Initialise' a cluster (evaluates north and west borders)
+	void initCluster ( Vec2i cluster );
+
+	// Update a cluster, evaluates all borders
+	void updateCluster ( Vec2i cluster );
+
+	// compute intra-cluster path lengths
+	void evalCluster ( Vec2i cluster );
+
+	bool search ( SearchParams params, list<Vec2i> &apath );
+
+	void getBorders ( Vec2i cluster, vector<Border*> &borders, Border *exclude = NULL );
+
+	// Border getters
+	Border* getNorthBorder ( Vec2i cluster );
+	Border* getEastBorder ( Vec2i cluster );
+	Border* getSouthBorder ( Vec2i cluster );
+	Border* getWestBorder ( Vec2i cluster );	
 };
 
 }}}

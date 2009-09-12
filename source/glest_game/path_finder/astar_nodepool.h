@@ -51,6 +51,8 @@ struct PathFinderStats {
 	char buffer[512];
 	char prefix[32];
 };
+
+extern PathFinderStats oldAStar, newAStar;
 #endif
 
 // =====================================================
@@ -60,11 +62,11 @@ struct PathFinderStats {
 // =====================================================
 struct AStarNode {
 	Vec2i pos;
-	AStarNode *next;
+	AStarNode *next; // <-- do we still need this ???
 	AStarNode *prev;
 	float heuristic;
 	float distToHere;
-	bool exploredCell;
+	bool exploredCell; // <-- surely we don't need this in the node struct
 	float est () const { return distToHere + heuristic; }
 }; // 25 bytes == 28 in mem ?
 
@@ -115,8 +117,11 @@ class AStarNodePool {
 		int stride;
 		void **pArray;
 
-		void init ( int w, int h ) { stride = w; pArray = new void*[w*h]; 
-		memset ( pArray, NULL, w * h * sizeof(void*) ); }
+		void init ( int w, int h ) { 
+			stride = w; 
+			pArray = new void*[w*h]; 
+			memset ( pArray, NULL, w * h * sizeof(void*) ); 
+		}
 
 		inline void  set ( const Vec2i &pos, void *ptr ) { pArray[pos.y * stride + pos.x] = ptr; }
 		inline void* get ( const Vec2i &pos ) { return pArray[pos.y * stride + pos.x]; }

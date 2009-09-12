@@ -20,6 +20,10 @@
 
 namespace Glest { namespace Game { namespace Search {
 
+#ifdef PATHFINDER_TIMING
+	PathFinderStats oldAStar ( "Old A*" ), newAStar ( "New A*" );
+#endif
+
 bool AStarComp::operator () ( const AStarNode *one, const AStarNode *two ) const {
 	if ( one->distToHere + one->heuristic < two->distToHere + two->heuristic ) 
 		return false;
@@ -181,12 +185,12 @@ void PathFinderStats::resetCounters () {
 	search_avg_this_interval = 0.0;
 }
 char * PathFinderStats::GetStats () {
-	sprintf ( buffer, "%s Processed last interval: %d, Average (micro-seconds): %g", prefix,
+	sprintf ( buffer, "%s: Processed last interval: %d, Average (micro-seconds): %g", prefix,
 		(int)num_searches_last_interval, search_avg_last_interval );
 	return buffer;
 }
 char * PathFinderStats::GetTotalStats () {
-	sprintf ( buffer, "%s Total Searches: %d, Search Average (micro-seconds): %g, Worst: %d.", prefix,
+	sprintf ( buffer, "%s: Total Searches: %d, Search Average (micro-seconds): %g, Worst: %d.", prefix,
 		(int)num_searches, search_avg, (int)worst_search );
 	return buffer;
 }

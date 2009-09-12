@@ -172,9 +172,11 @@ bool World::loadTileset(Checksum &checksum) {
 //load tech
 bool World::loadTech(Checksum &checksum) {
 	set<string> names;
-	for (int i = 0; i < gs.getFactionCount(); ++i)
-		if(gs.getFactionTypeName(i).size())
-         names.insert ( gs.getFactionTypeName(i) );
+	for ( int i = 0; i < gs.getFactionCount(); ++i ) {
+		if ( gs.getFactionTypeName(i).size() && gs.getFactionTypeName(i) != "observer" ) {
+			names.insert ( gs.getFactionTypeName(i) );
+		}
+	}
 	return techTree.load(gs.getTechPath(), names, checksum);
 }
 
@@ -574,7 +576,7 @@ void World::update() {
 		computeFow();
 		tick();
 	}
-assertConsistiency();
+	assertConsistiency();
 	//if we're the server, send any updates needed to the client
 	if(isNetworkServer()) {
 		ServerInterface &si = *(NetworkManager::getInstance().getServerInterface());
@@ -1002,11 +1004,11 @@ void World::initFactionTypes() {
 	for(int i=0; i<factions.size(); ++i){
 		const FactionType *ft= techTree.getFactionType(gs.getFactionTypeName(i));
 		factions[i].init( ft, gs.getFactionControl(i), &techTree, i, gs.getTeam(i),
-         gs.getStartLocationIndex(i), i==thisFactionIndex, gs.getDefaultResources ());
+			gs.getStartLocationIndex(i), i==thisFactionIndex, gs.getDefaultResources ());
 
-//		stats.setTeam(i, gs.getTeam(i));
-//		stats.setFactionTypeName(i, formatString(gs.getFactionTypeName(i)));
-//		stats.setControl(i, gs.getFactionControl(i));
+		//		stats.setTeam(i, gs.getTeam(i));
+		//		stats.setFactionTypeName(i, formatString(gs.getFactionTypeName(i)));
+		//		stats.setControl(i, gs.getFactionControl(i));
 	}
 
 	thisTeamIndex= getFaction(thisFactionIndex)->getTeam();
@@ -1210,28 +1212,26 @@ void World::hackyCleanUp(Unit *unit) {
 void World::loadPFDebugTextures()
 {
    char buff[128];
-   for ( int i=0; i < 4; ++i )
+   for ( int i=0; i < 8; ++i )
    {
       sprintf ( buff, "data/core/misc_textures/g%02d.bmp", i );
       _load_tex ( i, buff );
    }
-   for ( int i=13; i < 13+4; ++i )
+   _load_tex ( 9, "data/core/misc_textures/path_start.bmp" );
+   _load_tex ( 10, "data/core/misc_textures/path_dest.bmp" );
+   _load_tex ( 11, "data/core/misc_textures/path_both.bmp" );
+   _load_tex ( 12, "data/core/misc_textures/path_return.bmp" );
+   _load_tex ( 13, "data/core/misc_textures/path.bmp" );
+
+   _load_tex ( 14, "data/core/misc_textures/path_node.bmp" );
+   _load_tex ( 15, "data/core/misc_textures/open_node.bmp" );
+   _load_tex ( 16, "data/core/misc_textures/closed_node.bmp" );
+
+   for ( int i=17; i < 17+8; ++i )
    {
-      sprintf ( buff, "data/core/misc_textures/l%02d.bmp", i-13 );
+      sprintf ( buff, "data/core/misc_textures/l%02d.bmp", i-17 );
       _load_tex ( i, buff );
    }
-
-   //_load_tex ( 4, "data/core/misc_textures/local0.bmp" );
-
-   _load_tex ( 5, "data/core/misc_textures/path_start.bmp" );
-   _load_tex ( 6, "data/core/misc_textures/path_dest.bmp" );
-   _load_tex ( 7, "data/core/misc_textures/path_both.bmp" );
-   _load_tex ( 8, "data/core/misc_textures/path_return.bmp" );
-   _load_tex ( 9, "data/core/misc_textures/path.bmp" );
-
-   _load_tex ( 10, "data/core/misc_textures/path_node.bmp" );
-   _load_tex ( 11, "data/core/misc_textures/open_node.bmp" );
-   _load_tex ( 12, "data/core/misc_textures/closed_node.bmp" );
 }
 
 #undef _load_tex

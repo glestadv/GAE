@@ -103,14 +103,6 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 	//update unit
 	if (unit->update()) {
-		// make sure attack systems are started even on laggy computers
-		/* this is causing double attacks for some reason
-		if (unit->getCurrSkill()->getClass() == scAttack) {
-			const AttackSkillType *ast = static_cast<const AttackSkillType*>(unit->getCurrSkill());
-			if (ast->getStartTime() < unit->getLastAnimProgress()) {
-				startAttackSystems(unit, ast);
-			}
-		}*/
 
 		const UnitType *ut = unit->getType();
 
@@ -350,12 +342,12 @@ void UnitUpdater::updateMove(Unit *unit) {
 	}
 
 	switch(pathFinder->findPath(unit, pos)) {
-	case TravelState::OnTheWay:
+	case SearchResult::OnTheWay:
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
 		break;
 
-	case TravelState::Blocked:
+	case SearchResult::Blocked:
 		if(unit->getPath()->isBlocked() && !command->getUnit()){
 			unit->finishCommand();
 		}
@@ -435,11 +427,11 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 
 		//if unit arrives destPos order has ended
 		switch(pathFinder->findPath(unit, pos)) {
-		case TravelState::OnTheWay:
+		case SearchResult::OnTheWay:
 			unit->setCurrSkill(act->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;
-		case TravelState::Blocked:
+		case SearchResult::Blocked:
 			if (unit->getPath()->isBlocked()) {
 				return true;
 			}
@@ -514,19 +506,19 @@ void UnitUpdater::updateBuild(Unit *unit){
 		}
 
 		switch (pathFinder->findPath(unit, waypoint)) {
-		case TravelState::OnTheWay:
+		case SearchResult::OnTheWay:
 			unit->setCurrSkill(bct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			return;
 
-		case TravelState::Blocked:
+		case SearchResult::Blocked:
 			if(unit->getPath()->isBlocked()) {
 				console->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
 			}
 			return;
 
-		case TravelState::Arrived:
+		case SearchResult::Arrived:
 			if(unit->getPos() != waypoint) {
 				console->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
@@ -688,11 +680,11 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				} 
 				else { //if not continue walking
 					switch (pathFinder->findPathToResource(unit, command->getPos(), r->getType())) {
-					case TravelState::OnTheWay:
+					case SearchResult::OnTheWay:
 						unit->setCurrSkill(hct->getMoveSkillType());
 						unit->face(unit->getNextPos());
 						break;
-					case TravelState::Arrived:
+					case SearchResult::Arrived:
 						for ( int i=0; i < 8; ++i ) { // reset target
 							Vec2i cPos = unit->getPos() + Search::OffsetsSize1Dist1[i];
 							Resource *res = map->getTile (Map::toTileCoords(cPos))->getResource();
@@ -721,7 +713,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
 				switch (pathFinder->findPathToStore(unit, store->getNearestOccupiedCell(unit->getPos()), store)) {
-				case TravelState::OnTheWay:
+				case SearchResult::OnTheWay:
 					unit->setCurrSkill(hct->getMoveLoadedSkillType());
 					unit->face(unit->getNextPos());
 					break;
@@ -856,7 +848,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 		}
 
 		switch(pathFinder->findPath(unit, targetPos)) {
-		case TravelState::Arrived:
+		case SearchResult::Arrived:
 			if(repaired && unit->getPos() != targetPos) {
 				// presume blocked
 				unit->setCurrSkill(scStop);
@@ -871,12 +863,12 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			}
 			break;
 
-		case TravelState::OnTheWay:
+		case SearchResult::OnTheWay:
 			unit->setCurrSkill(rct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;
 
-		case TravelState::Blocked:
+		case SearchResult::Blocked:
 			if(unit->getPath()->isBlocked()){
 				unit->setCurrSkill(scStop);
 				unit->finishCommand();

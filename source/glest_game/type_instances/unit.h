@@ -97,25 +97,24 @@ public:
 /// Holds the next cells of a Unit movement
 // =====================================================
 
-class UnitPath {
+class UnitPath : public list<Vec2i> {
 private:
 	static const int maxBlockCount;
 
 private:
 	int blockCount;
-	vector<Vec2i> pathQueue;
+	//vector<Vec2i> pathQueue;
 
 public:
-	UnitPath() : blockCount(0), pathQueue() {}
+	UnitPath() : blockCount(0) {}
 	bool isBlocked()				{return blockCount >= maxBlockCount;}
-	bool isEmpty()					{return pathQueue.empty();}
 
-	void clear()					{pathQueue.clear(); blockCount = 0;}
-	void incBlockCount()			{pathQueue.clear();	blockCount++;}
-	void push(const Vec2i &path)	{pathQueue.push_back(path);}
+	void clear()					{list<Vec2i>::clear(); blockCount = 0;}
+	void incBlockCount()			{blockCount++;}
+	void push(const Vec2i &path)	{push_back(path);}
 	Vec2i pop()						{
-		Vec2i p = pathQueue.front();
-		pathQueue.erase(pathQueue.begin());
+		Vec2i p = front();
+		erase(begin());
 		return p;
 	}
 	
@@ -224,7 +223,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
-   Zone getCurrZone () const  { return currField == FieldAir ? ZoneAir : ZoneSurface; }
+	Zone getCurrZone () const  { return currField == FieldAir ? ZoneAir : ZoneSurface; }
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}

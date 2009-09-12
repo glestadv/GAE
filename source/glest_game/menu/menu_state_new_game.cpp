@@ -351,13 +351,13 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings){
 	gameSettings->setDescription(formatString(mapFiles[listBoxMap.getSelectedItemIndex()]));
 	gameSettings->setMap(mapFiles[listBoxMap.getSelectedItemIndex()]);
     gameSettings->setTileset(tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
-    gameSettings->setTech(techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
+	gameSettings->setTech(techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
 	gameSettings->setDefaultVictoryConditions(true);
-   gameSettings->setDefaultResources (true);
-   gameSettings->setDefaultUnits (true);
-  
+	gameSettings->setDefaultResources (true);
+	gameSettings->setDefaultUnits (true);
 
-    for(int i=0; i<mapInfo.players; ++i){
+
+	for(int i=0; i<mapInfo.players; ++i){
 		ControlType ct= static_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());
 		if(ct!=ctClosed){
 			if(ct==ctHuman){
@@ -366,9 +366,13 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings){
 			gameSettings->setFactionControl(factionCount, ct);
 			gameSettings->setTeam(factionCount, listBoxTeams[i].getSelectedItemIndex());
 			gameSettings->setStartLocationIndex(factionCount, i);
-			if(listBoxFactions[i].getSelectedItemIndex() >= factionFiles.size()) {
+			if(listBoxFactions[i].getSelectedItemIndex() == factionFiles.size() + 1) {
 				gameSettings->setFactionTypeName(factionCount, factionFiles[rand.randRange(0, factionFiles.size() - 1)]);
-			} else {
+			} /*
+			else if ( listBoxFactions[i].getSelectedItemIndex() == factionFiles.size() + 2 ) {
+				gameSettings->setFactionTypeName ( factionCount, "observer" );
+			}*/
+			else {
 				gameSettings->setFactionTypeName(factionCount, factionFiles[listBoxFactions[i].getSelectedItemIndex()]);
 			}
 			factionCount++;
@@ -391,7 +395,7 @@ void MenuStateNewGame::reloadFactions(){
 	findAll("techs/"+techTreeFiles[listBoxTechTree.getSelectedItemIndex()]+"/factions/*.", results);
 
 	if(results.size()==0){
-        throw runtime_error("There is no factions for this tech tree");
+        throw runtime_error("There are no factions for this tech tree");
 	}
 	factionFiles.clear();
 	factionFiles= results;
@@ -401,7 +405,8 @@ void MenuStateNewGame::reloadFactions(){
 	for(int i=0; i<GameConstants::maxPlayers; ++i){
 		listBoxFactions[i].setItems(results);
 		listBoxFactions[i].pushBackItem(Lang::getInstance().get("Random"));
-		listBoxFactions[i].setSelectedItemIndex(i % results.size());
+		//listBoxFactions[i].pushBackItem(Lang::getInstance().get("Observer"));
+		listBoxFactions[i].setSelectedItemIndex(0/*i % results.size()*/);
     }
 }
 

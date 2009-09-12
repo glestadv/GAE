@@ -86,6 +86,7 @@ PathFinder* PathFinder::getInstance () {
 
 PathFinder::PathFinder() {
 	annotatedMap = NULL;
+	superMap = NULL;
 	singleton = this;
 }
 
@@ -97,7 +98,9 @@ void PathFinder::init ( Map *map ) {
 	Logger::getInstance().add("Initialising PathFinder", true);
 	this->map= map;
 	delete annotatedMap;
+	delete superMap;
 	annotatedMap = new AnnotatedMap ( map );
+	superMap = new AnnotatedSearchMap ( map );
 
 #ifdef _GAE_DEBUG_EDITION_
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
@@ -111,6 +114,7 @@ void PathFinder::init ( Map *map ) {
 
 bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const {
 	assert ( map->isInside ( pos2 ) );
+	assert ( unit->getPos().dist ( pos2 ) < 1.5 );
 	if ( unit->getPos().dist ( pos2 ) > 1.5 ) {
 		//TODO: figure out why we need this!
 		return false;
@@ -120,14 +124,14 @@ bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const {
 	const Field &field = unit->getCurrField ();
 	Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
 
-	if ( ! annotatedMap->canOccupy ( pos2, size, field ) )
+	if ( ! superMap->canOccupy ( pos2, size, field ) )
 		return false; // obstruction in field
 	if ( pos1.x != pos2.x && pos1.y != pos2.y ) {
 		// Proposed move is diagonal, check if cells either 'side' are free.
 		Vec2i diag1, diag2;
 		getDiags ( pos1, pos2, size, diag1, diag2 );
-		if ( ! annotatedMap->canOccupy (diag1, 1, field) 
-		||   ! annotatedMap->canOccupy (diag2, 1, field) ) 
+		if ( ! superMap->canOccupy (diag1, 1, field) 
+		||   ! superMap->canOccupy (diag2, 1, field) ) 
 			return false; // obstruction, can not move to pos2
 		if ( ! map->getCell (diag1)->isFree (zone)
 		||   ! map->getCell (diag2)->isFree (zone) )
@@ -155,21 +159,28 @@ bool PathFinder::storeGoalFunc ( const Vec2i &pos ) {
 	return Game::getInstance()->getWorld()->getMap()->isNextTo(pos, storeGoal);
 }
 TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (*func)(const Vec2i&)) {
-	//Logger::getInstance ().add ( "findPathToGoal() Called..." );
 	static int flipper = 0;
 	//route cache
 	UnitPath &path = *unit->getPath ();
 	if( finalPos == unit->getPos () ) {	//if arrived (where we wanted to go)
 		unit->setCurrSkill ( scStop );
-		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return TravelState::Arrived;
+		return SearchResult::Arrived;
 	}
-	else if( ! path.isEmpty () ) {	//route cache
+	else if( ! path.empty() ) {	//route cache
 		Vec2i pos = path.pop();
 		if ( isLegalMove ( unit, pos ) ) {
 			unit->setNextPos ( pos );
-			//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-			return TravelState::OnTheWay;
+			return SearchResult::OnTheWay;
+		}
+		// local repair ?
+		if ( path.size () > 15 ) {
+			if ( repairPath ( unit ) ) {
+				Vec2i pos = path.pop();
+				if ( isLegalMove ( unit, pos ) ) {
+					unit->setNextPos ( pos );
+					return SearchResult::OnTheWay;
+				}
+			}
 		}
 	}
 	//route cache miss
@@ -178,55 +189,82 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	//if arrived (as close as we can get to it)
 	if ( targetPos == unit->getPos () ) {
 		unit->setCurrSkill(scStop);
-		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return TravelState::Arrived;
+		return SearchResult::Arrived;
 	}
 
 	SearchParams params (unit);
 	if ( func ) params.goalFunc = func;
 	params.dest = targetPos;
-	list<Vec2i> pathList;
+	//list<Vec2i> pathList;
 
 	bool result;
-	annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
-	//TODO annotate target if visible ??
-	result = annotatedMap->AStarSearch ( params, pathList );
-	annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
+	if ( flipper < 100 ) {
+		PROFILE_START("PathFinder-NodePool");
+		annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
+		result = annotatedMap->AStarSearch ( params, *unit->getPath() );
+		annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
+		PROFILE_STOP("PathFinder-NodePool");
+	}
+	else {
+		PROFILE_START("PathFinder-NodeArray");
+		superMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
+		result = superMap->AStarSearch ( params, *unit->getPath() );
+		superMap->clearLocalAnnotations ( unit->getCurrField () );
+		PROFILE_STOP("PathFinder-NodeArray");
+	}
+	flipper++;
+	flipper %= 200;
+
 	if ( ! result ) {
-		unit->getPath()->incBlockCount ();
+		path.incBlockCount ();
 		unit->setCurrSkill(scStop);
-		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return TravelState::Blocked;
+		return SearchResult::Blocked;
 	}
-	else if ( pathList.size() < 2 ) { // goal might be closer than targetPos.
+	else if ( path.size() < 2 ) { // goal might be closer than targetPos.
 		unit->setCurrSkill(scStop);
-		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return TravelState::Arrived;
+		return SearchResult::Arrived;
 	}
-	else //TODO: UnitPath to inherit from list<Vec2i> and then be passed directly
-		copyToPath ( pathList, unit->getPath () ); // to the search algorithm
+	//else //TODO: UnitPath to inherit from list<Vec2i> and then be passed directly
+	//	copyToPath ( pathList, unit->getPath () ); // to the search algorithm
 
 	Vec2i pos = path.pop();
-	if ( ! isLegalMove ( unit, pos ) ) {
+	if ( ! isLegalMove ( unit, pos ) ) { // this test should never fail
 		unit->setCurrSkill(scStop);
-		unit->getPath()->incBlockCount ();
-		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return TravelState::Blocked;
+		path.incBlockCount ();
+		return SearchResult::Blocked;
 	}
 	unit->setNextPos(pos);
-	//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-	return TravelState::OnTheWay;
-}
-
-//TODO: Make UnitPath inherit from list<Vec2i> then remove all this nonsense...
-void PathFinder::copyToPath ( const list<Vec2i> pathList, UnitPath *path ) {
-	list<Vec2i>::const_iterator it = pathList.begin();
-	// skip start pos, store rest
-	for ( ++it; it != pathList.end(); ++it )
-		path->push ( *it );
+	return SearchResult::OnTheWay;
 }
 
 // ==================== PRIVATE ====================
+
+bool PathFinder::repairPath ( Unit *unit ) {
+	UnitPath &path = *unit->getPath();
+	assert (path.size() > 12 );
+	int i=8;
+	while ( i-- ) {
+		path.pop_front ();
+	}
+	Vec2i target = path.front();
+	list<Vec2i> newBit;
+	SearchParams params ( unit );
+	params.dest = target;
+	PROFILE_START("PathFinder-NodePool");
+	annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
+	bool result = annotatedMap->AStarSearch ( params, newBit );
+	annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
+	PROFILE_STOP("PathFinder-NodePool");
+	if ( result ) {
+		newBit.pop_back(); // already on path
+		for ( VLConRevIt it = newBit.rbegin(); it != newBit.rend(); ++it ) {
+			path.push_front ( *it );
+		}
+		return true;
+	}
+	path.clear();
+	return false;
+}
 
 // return finalPos if free, else a nearest free pos within maxFreeSearchRadius
 // cells, or unit's current position if none found

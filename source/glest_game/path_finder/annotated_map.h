@@ -26,11 +26,13 @@
 #include <list>
 #include <set>
 */
+
 typedef list<Vec2i>::iterator VLIt;
 typedef list<Vec2i>::const_iterator VLConIt;
 typedef list<Vec2i>::reverse_iterator VLRevIt;
 typedef list<Vec2i>::const_reverse_iterator VLConRevIt;
 
+using Shared::Platform::int64;
 
 namespace Glest { namespace Game {
 
@@ -61,7 +63,7 @@ const Vec2i AboveLeftDist2[5] = {
 // and PathFinder::canClear() (if not handled fully in computeClearance[s]).
 // finaly, add a little bit of code to Map::fieldsCompatable().
 
-// Allows for a maximum moveable unit size of 3. we can 
+// Allows for a maximum moveable unit size of 15. we can 
 // (with modifications) path groups in formation using this, 
 // maybe this is not enough.. perhaps give some fields more resolution? 
 // Will Glest even do size > 2 moveable units without serious movement related issues ???
@@ -72,30 +74,15 @@ struct CellMetrics {
 	inline uint32 get ( const Field );
 	inline void   set ( const Field, uint32 val );
 
-	bool isNearResource ( const Vec2i &pos );
-	bool isNearStore ( const Vec2i &pos );
-
 private:
-	uint32 field0 : 2; // In Use: FieldWalkable = land + shallow water 
-	uint32 field1 : 2; // In Use: FieldAir = air
-	uint32 field2 : 2; // In Use: FieldAnyWater = shallow + deep water
-	uint32 field3 : 2; // In Use: FieldDeepWater = deep water
-	uint32 field4 : 2; // In Use: FieldAmphibious = land + shallow + deep water 
-	uint32 field5 : 2; // Unused: ?
-	uint32 field6 : 2; // Unused: ?
-	uint32 field7 : 2; // Unused: ?
-	uint32 field8 : 2; // Unused: ?
-	uint32 field9 : 2; // Unused: ?
-	uint32 fielda : 2; // Unused: ?
-	uint32 fieldb : 2; // Unused: ?
-	uint32 visTeam0 : 1; // map visibility... not used yet.
-	uint32 visTeam1 : 1; //  will be used to remove calls to Tile::isExplored()
-	uint32 visTeam2 : 1; //  from search algorithms, for better cache performance.
-	uint32 visTeam3 : 1; // 
-	uint32 adjResrc1 : 1; // to be used for semi co-operative resource gathering
-	uint32 adjResrc2 : 1; // to be used for semi co-operative resource gathering
-	uint32 adjStore1 : 1; // to be used for semi co-operative resource gathering
-	uint32 adjStore2 : 1; // to be used for semi co-operative resource gathering
+	uint32 field0 : 4; // In Use: FieldWalkable = land + shallow water 
+	uint32 field1 : 4; // In Use: FieldAir = air
+	uint32 field2 : 4; // In Use: FieldAnyWater = shallow + deep water
+	uint32 field3 : 4; // In Use: FieldDeepWater = deep water
+	uint32 field4 : 4; // In Use: FieldAmphibious = land + shallow + deep water 
+	uint32 field5 : 4; // Unused: ?
+	uint32 field6 : 4; // Unused: ?
+	uint32 field7 : 4; // Unused: ?
 };
 
 // class MetricMap
@@ -128,16 +115,20 @@ struct SearchParams {
 	int size, team;
 	bool (*goalFunc)(const Vec2i&);
 	SearchParams ( Unit *u );
+	SearchParams ();
 };
 
-#if ! ( defined WIN32 || defined WIN64 )
-inline int min ( int a, int b ) { return a < b ? a : b; }
-#endif
+//#define _HEURISTIC_USE_TIE_BREAKER_
 
 __inline float heuristic ( const Vec2i &p1, const Vec2i &p2 ) {
-	int diagonal = min ( abs (p1.x-p2.x), abs (p1.y-p2.y) );
-	int straight = abs (p1.x-p2.x) + abs (p1.y-p2.y) - 2 * diagonal;
-	return 1.4 * diagonal + 1.0 * straight;
+	int dx = abs (p1.x-p2.x), dy = abs (p1.y-p2.y);
+	int diagonal = dx < dy ? dx : dy;
+	int straight = dx + dy - 2 * diagonal;
+#	ifdef _HEURISTIC_USE_TIE_BREAKER_
+		return 1.4f * (float)diagonal + 1.f * (float)straight + p1.dist(p2) / 100.f;
+#	else
+		return 1.4 * diagonal + 1.0 * straight;
+#	endif
 }
 
 // =====================================================
@@ -148,6 +139,7 @@ __inline float heuristic ( const Vec2i &p1, const Vec2i &p2 ) {
 // search function
 // =====================================================
 class AnnotatedMap {
+	friend class AbstractMap;
 public:
 	AnnotatedMap ( Map *map );
 	virtual ~AnnotatedMap ();
@@ -159,7 +151,7 @@ public:
 	void updateMapMetrics ( const Vec2i &pos, const int size, bool adding, Field field ); 
 
 	// Interface to the clearance metrics, can a unit of size occupy a cell(s) ?
-	bool canOccupy ( const Vec2i &pos, int size, Field field ) const;
+	__inline bool canOccupy ( const Vec2i &pos, int size, Field field ) const;
 
 	static const int maxClearanceValue;
 
@@ -171,6 +163,9 @@ public:
 
 	// The Classic A* [Hart, Nilsson, & Raphael, 1968]
 	bool AStarSearch ( SearchParams &params, list<Vec2i> &path );
+
+	// Perform A* search, but don't keep the path, just return it's length
+	float AStarPathLength ( SearchParams &params );
 
 	// fills d1 and d2 with the diagonal cells(coords) that need checking for a 
 	// unit of size to move from s to d, for diagonal moves.

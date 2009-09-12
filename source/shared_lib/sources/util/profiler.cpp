@@ -26,7 +26,7 @@ namespace Shared{ namespace Util{
 
 Section::Section(const string &name){
 	this->name= name;
-	milisElapsed= 0;
+	microsElapsed= 0;
 	parent= NULL;
 }
 
@@ -42,16 +42,28 @@ Section *Section::getChild(const string &name){
 }
 
 void Section::print(FILE *outStream, int tabLevel){
-
-	float percent= (parent==NULL || parent->milisElapsed==0)? 100.0f: 100.0f*milisElapsed/parent->milisElapsed;
+	float percent = ( parent == NULL || parent->microsElapsed == 0 ) 
+					? 100.0f : 100.0f * microsElapsed / parent->microsElapsed;
 	string pname= parent==NULL? "": parent->getName();
 
 	for(int i=0; i<tabLevel; ++i)
 		fprintf(outStream, "\t");
 
 	fprintf(outStream, "%s: ", name.c_str());
-	fprintf(outStream, "%d ms, ", milisElapsed);
-	fprintf(outStream, "%.1f%s\n", percent, "%");
+	fprintf(outStream, "%d us", microsElapsed );
+	unsigned int milliseconds = microsElapsed / 1000;
+	unsigned int seconds = milliseconds / 1000;
+	unsigned int minutes = seconds / 60;
+	if ( minutes ) {
+		fprintf ( outStream, " (%dmin %dsec)", minutes, seconds % 60 );
+	}
+	else if ( seconds ) {
+		fprintf ( outStream, " (%dsec %dms)", seconds, milliseconds % 1000 );
+	}
+	else if ( milliseconds ) {
+		fprintf ( outStream, " (%dms)", milliseconds );
+	}
+	fprintf(outStream, ", %.1f%s\n", percent, "%");
 
 	SectionContainer::iterator it;
 	for(it= children.begin(); it!=children.end(); ++it){

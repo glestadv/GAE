@@ -56,7 +56,7 @@ void UnitPath::read(const XmlNode *node) {
 			break;
 		}
 		p = z + 1;
-		pathQueue.push_back(Vec2i(x, y));
+		push_back(Vec2i(x, y));
 	} while(true);
 	
 	blockCount = node->getIntAttribute("blockCount");
@@ -80,8 +80,8 @@ void UnitPath::read(const XmlNode *node) {
 
 void UnitPath::write(XmlNode *node) const {
 	stringstream s;
-	for (vector<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i) {
-		if(i != pathQueue.begin()) {
+	for ( list<Vec2i>::const_iterator i = begin(); i != end(); ++i) {
+		if(i != begin()) {
 			s << ",";
 		}
 		s << i->x << "," << i->y;

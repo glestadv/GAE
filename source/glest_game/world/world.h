@@ -67,7 +67,7 @@ private:
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
-   Scenario scenario;
+	Scenario scenario;
 	Game &game;
 	const GameSettings &gs;
 
@@ -80,7 +80,7 @@ private:
 
 	Random random;
 
-   ScriptManager *scriptManager;
+	ScriptManager *scriptManager;
 
 	int thisFactionIndex;
 	int thisTeamIndex;
@@ -175,7 +175,7 @@ public:
 
 #ifdef _GAE_DEBUG_EDITION_
    void loadPFDebugTextures ();
-   Texture2D *PFDebugTextures[18];
+   Texture2D *PFDebugTextures[26];
    //int getNumPathPos () { return map.PathPositions.size (); }
 #endif
 

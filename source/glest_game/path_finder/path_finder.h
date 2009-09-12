@@ -14,8 +14,11 @@
 #define _GLEST_GAME_PATHFINDER_H_
 
 #include "annotated_map.h"
+#include "search_map.h"
 #include "abstract_map.h"
 #include "config.h"
+
+#include "profiler.h"
 
 #include <set>
 #include <map>
@@ -157,12 +160,24 @@ public:
 		return findPathToGoal ( unit, finalPos ); 
 	}
 
+	bool repairPath ( Unit *unit );
+
 	// legal move ?
 	bool isLegalMove ( Unit *unit, const Vec2i &pos ) const;
 
 	// update the annotated map at pos 
-	void updateMapMetrics ( const Vec2i &pos, const int size, bool adding, Field field )
-	{ annotatedMap->updateMapMetrics ( pos, size, adding, field ); }
+	void updateMapMetrics ( const Vec2i &pos, const int size, bool adding, Field field ) { 
+		if ( annotatedMap ) {
+			PROFILE_START("PathFinder-NodePool");
+			annotatedMap->updateMapMetrics ( pos, size, adding, field );
+			PROFILE_STOP("PathFinder-NodePool");
+		}
+		if ( superMap ) {
+			PROFILE_START("PathFinder-NodeArray");
+			superMap->updateSearchMap ( pos, size, adding );
+			PROFILE_STOP("PathFinder-NodeArray");
+		}
+	}
 
 private:
 	static const ResourceType *resourceGoal;
@@ -171,13 +186,14 @@ private:
 	PathFinder();
 
 	Vec2i computeNearestFreePos (const Unit *unit, const Vec2i &targetPos);
-	void copyToPath ( const list<Vec2i> pathList, UnitPath *path );
 	Map *map;
 	static inline void getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 );
 
 public: // should be private ... debugging...
 	AnnotatedMap *annotatedMap;
 	//GraphSearch *search;
+
+	AnnotatedSearchMap *superMap;
 
 #ifdef _GAE_DEBUG_EDITION_
 	Vec2i PathStart, PathDest;

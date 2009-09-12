@@ -12,8 +12,25 @@
 #ifndef _SHARED_UTIL_PROFILER_H_
 #define _SHARED_UTIL_PROFILER_H_
 
-//#define SL_PROFILE
+#define SL_PROFILE
 //SL_PROFILE controls if profile is enabled or not
+
+#ifdef SL_PROFILE
+#	define PROFILE_START(x) Shared::Util::profileBegin(x)
+#	define PROFILE_STOP(x)  Shared::Util::profileEnd(x)
+#else
+#	define PROFILE_START(x)
+#	define PROFILE_STOP(x)
+#endif
+
+#ifdef SL_INTENSIVE_PROFILE_PATHFINDER
+#	define PROFILE_LVL2_START(x) Shared::Util::profileBegin(x)
+#	define PROFILE_LVL2_STOP(x)  Shared::Util::profileEnd(x)
+#else
+#	define PROFILE_LVL2_START(x)
+#	define PROFILE_LVL2_STOP(x)
+#endif
+
 
 #include "platform_util.h"
 #include "timer.h"
@@ -39,7 +56,8 @@ public:
 private:
 	string name;
 	Chrono chrono;
-	int64 milisElapsed;
+	int64 microsElapsed;
+	int64 lastStart;
 	Section *parent;
 	SectionContainer children;
 
@@ -51,8 +69,8 @@ public:
 
 	void setParent(Section *parent)	{this->parent= parent;}
 
-	void start()	{chrono.start();}
-	void stop()		{milisElapsed+=chrono.getMillis();}
+	void start()	{ lastStart = Chrono::getCurMicros();}
+	void stop()		{ microsElapsed += Chrono::getCurMicros() - lastStart; } 
 
 	void addChild(Section *child)	{children.push_back(child);}
 	Section *getChild(const string &name);
@@ -96,5 +114,6 @@ inline void profileEnd(const string &sectionName){
 }
 
 }}//end namespace
+
 
 #endif 
