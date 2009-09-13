@@ -15,7 +15,10 @@
 #define SL_PROFILE
 //SL_PROFILE controls if profile is enabled or not
 
-#ifdef SL_PROFILE
+#define _PROFILE_GAME
+#define _PROFILE_PATHFINDER_LEVEL 2
+
+#if ( _PROFILE_PATHFINDER_LEVEL > 0 ) || ( defined _PROFILE_GAME )
 #	define PROFILE_START(x) Shared::Util::profileBegin(x)
 #	define PROFILE_STOP(x)  Shared::Util::profileEnd(x)
 #else
@@ -23,12 +26,20 @@
 #	define PROFILE_STOP(x)
 #endif
 
-#ifdef SL_INTENSIVE_PROFILE_PATHFINDER
+#if _PROFILE_PATHFINDER_LEVEL > 1
 #	define PROFILE_LVL2_START(x) Shared::Util::profileBegin(x)
 #	define PROFILE_LVL2_STOP(x)  Shared::Util::profileEnd(x)
 #else
 #	define PROFILE_LVL2_START(x)
 #	define PROFILE_LVL2_STOP(x)
+#endif
+
+#if _PROFILE_PATHFINDER_LEVEL > 2
+#	define PROFILE_LVL3_START(x) Shared::Util::profileBegin(x)
+#	define PROFILE_LVL3_STOP(x)  Shared::Util::profileEnd(x)
+#else
+#	define PROFILE_LVL3_START(x)
+#	define PROFILE_LVL3_STOP(x)
 #endif
 
 

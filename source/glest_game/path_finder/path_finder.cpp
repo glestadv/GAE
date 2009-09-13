@@ -100,7 +100,7 @@ void PathFinder::init ( Map *map ) {
 	delete annotatedMap;
 	delete superMap;
 	annotatedMap = new AnnotatedMap ( map );
-	superMap = new AnnotatedSearchMap ( map );
+	//superMap = new AnnotatedSearchMap ( map );
 
 #ifdef _GAE_DEBUG_EDITION_
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
@@ -114,7 +114,7 @@ void PathFinder::init ( Map *map ) {
 
 bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const {
 	assert ( map->isInside ( pos2 ) );
-	assert ( unit->getPos().dist ( pos2 ) < 1.5 );
+	//assert ( unit->getPos().dist ( pos2 ) < 1.5 );
 	if ( unit->getPos().dist ( pos2 ) > 1.5 ) {
 		//TODO: figure out why we need this!
 		return false;
@@ -124,14 +124,14 @@ bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const {
 	const Field &field = unit->getCurrField ();
 	Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
 
-	if ( ! superMap->canOccupy ( pos2, size, field ) )
+	if ( ! annotatedMap->canOccupy ( pos2, size, field ) )
 		return false; // obstruction in field
 	if ( pos1.x != pos2.x && pos1.y != pos2.y ) {
 		// Proposed move is diagonal, check if cells either 'side' are free.
 		Vec2i diag1, diag2;
 		getDiags ( pos1, pos2, size, diag1, diag2 );
-		if ( ! superMap->canOccupy (diag1, 1, field) 
-		||   ! superMap->canOccupy (diag2, 1, field) ) 
+		if ( ! annotatedMap->canOccupy (diag1, 1, field) 
+		||   ! annotatedMap->canOccupy (diag2, 1, field) ) 
 			return false; // obstruction, can not move to pos2
 		if ( ! map->getCell (diag1)->isFree (zone)
 		||   ! map->getCell (diag2)->isFree (zone) )
@@ -158,8 +158,11 @@ bool PathFinder::resourceGoalFunc ( const Vec2i &pos ) {
 bool PathFinder::storeGoalFunc ( const Vec2i &pos ) {
 	return Game::getInstance()->getWorld()->getMap()->isNextTo(pos, storeGoal);
 }
+
+static int flipper = 0;
+
 TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (*func)(const Vec2i&)) {
-	static int flipper = 0;
+	
 	//route cache
 	UnitPath &path = *unit->getPath ();
 	if( finalPos == unit->getPos () ) {	//if arrived (where we wanted to go)
@@ -198,20 +201,20 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	//list<Vec2i> pathList;
 
 	bool result;
-	if ( flipper < 100 ) {
+	/*if ( flipper < 100 )*/ {
 		PROFILE_START("PathFinder-NodePool");
-		annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
+		annotatedMap->annotateLocal ( unit, unit->getCurrField () );
 		result = annotatedMap->AStarSearch ( params, *unit->getPath() );
 		annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
 		PROFILE_STOP("PathFinder-NodePool");
-	}
+	}/*
 	else {
 		PROFILE_START("PathFinder-NodeArray");
 		superMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
 		result = superMap->AStarSearch ( params, *unit->getPath() );
 		superMap->clearLocalAnnotations ( unit->getCurrField () );
 		PROFILE_STOP("PathFinder-NodeArray");
-	}
+	}*/
 	flipper++;
 	flipper %= 200;
 
@@ -250,11 +253,24 @@ bool PathFinder::repairPath ( Unit *unit ) {
 	list<Vec2i> newBit;
 	SearchParams params ( unit );
 	params.dest = target;
-	PROFILE_START("PathFinder-NodePool");
-	annotatedMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
-	bool result = annotatedMap->AStarSearch ( params, newBit );
-	annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
-	PROFILE_STOP("PathFinder-NodePool");
+
+
+	bool result;
+	//if ( flipper < 100 ) {
+		PROFILE_START("PathFinder-NodePool");
+		annotatedMap->annotateLocal ( unit, unit->getCurrField () );
+		result = annotatedMap->AStarSearch ( params, newBit );
+		annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
+		PROFILE_STOP("PathFinder-NodePool");
+	//}
+	//else {
+	//	PROFILE_START("PathFinder-NodeArray");
+	//	superMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
+	//	result = superMap->AStarSearch ( params, newBit );
+	//	superMap->clearLocalAnnotations ( unit->getCurrField () );
+	//	PROFILE_STOP("PathFinder-NodeArray");
+	//}
+
 	if ( result ) {
 		newBit.pop_back(); // already on path
 		for ( VLConRevIt it = newBit.rbegin(); it != newBit.rend(); ++it ) {

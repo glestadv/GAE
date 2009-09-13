@@ -169,12 +169,12 @@ public:
 	void updateMapMetrics ( const Vec2i &pos, const int size, bool adding, Field field ) { 
 		if ( annotatedMap ) {
 			PROFILE_START("PathFinder-NodePool");
-			annotatedMap->updateMapMetrics ( pos, size, adding, field );
+			annotatedMap->updateMapMetrics ( pos, size );
 			PROFILE_STOP("PathFinder-NodePool");
 		}
 		if ( superMap ) {
 			PROFILE_START("PathFinder-NodeArray");
-			superMap->updateSearchMap ( pos, size, adding );
+			superMap->updateSearchMap ( pos, size );
 			PROFILE_STOP("PathFinder-NodeArray");
 		}
 	}

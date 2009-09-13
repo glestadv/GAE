@@ -71,8 +71,13 @@ struct CellMetrics {
 	CellMetrics () { memset ( this, 0, sizeof(*this) ); }
 	// can't get a reference to a bit field, so we can't overload 
 	// the [] operator, and we have to get by with these...
-	inline uint32 get ( const Field );
-	inline void   set ( const Field, uint32 val );
+	__inline uint32 get ( const Field field );
+	__inline void set ( const Field field, uint32 val );
+	__inline void setAll ( uint32 val );
+
+	bool operator != ( CellMetrics &that ) {
+		return memcmp ( this, &that, sizeof(*this) );
+	}
 
 private:
 	uint32 field0 : 4; // In Use: FieldWalkable = land + shallow water 
@@ -148,7 +153,7 @@ public:
 	void initMapMetrics ( Map *map );
 
 	// Start a 'cascading update' of the Map Metrics from a position and size
-	void updateMapMetrics ( const Vec2i &pos, const int size, bool adding, Field field ); 
+	void updateMapMetrics ( const Vec2i &pos, const int size/*, bool adding, Field field */); 
 
 	// Interface to the clearance metrics, can a unit of size occupy a cell(s) ?
 	__inline bool canOccupy ( const Vec2i &pos, int size, Field field ) const;
@@ -156,7 +161,7 @@ public:
 	static const int maxClearanceValue;
 
 	// Temporarily annotate the map for nearby units
-	void annotateLocal ( const Vec2i &pos, const int size, const Field field );
+	void annotateLocal ( const Unit *unit, const Field field );
 
 	// Clear temporary annotations
 	void clearLocalAnnotations ( Field field );
@@ -181,19 +186,26 @@ public:
 
 private:
 	// for initMetrics () and updateMapMetrics ()
-	CellMetrics computeClearances ( const Vec2i & );
+	void computeClearances ( const Vec2i & );
 	uint32 computeClearance ( const Vec2i &, Field );
 	bool canClear ( const Vec2i &pos, int clear, Field field );
 
+	// update to the left and above a area that may have changed metrics
+	// pos: top-left of area changed
+	// size: size of area changed
+	// field: field to update for a local annotation, or FieldCount to update all fields
+	void cascadingUpdate ( const Vec2i &pos, const int size, const Field field = FieldCount );
+	void annotateUnit ( const Unit *unit, const Field field );
+
 	// for annotateLocal ()
-	void localAnnotateCells ( const Vec2i &pos, const int size, const Field field, 
-		const Vec2i *offsets, const int numOffsets );
+	//void localAnnotateCells ( const Vec2i &pos, const int size, const Field field, 
+	//	const Vec2i *offsets, const int numOffsets );
 
 	int metricHeight;
 	std::map<Vec2i,uint32> localAnnt;
 	Map *cMap;
 
-	void copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path );
+	//void copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path );
 
 	AStarNodePool *aNodePool;
 	bool assertValidPath ( list<Vec2i> &path );

@@ -998,11 +998,10 @@ void Map::putUnitCells(Unit *unit, const Vec2i &pos){
 			assert(isInside(currPos));
 
 			if(!ut->hasCellMap() || ut->getCellMapCell(x, y)) {
-				if (getCell(currPos)->getUnit(field) != NULL)
-            {
-               throw runtime_error ( "Ooops..." );
-            }
-            assert(getCell(currPos)->getUnit(field) == NULL);
+				if (getCell(currPos)->getUnit(field) != NULL) {
+					throw runtime_error ( "Ooops..." );
+				}
+				assert(getCell(currPos)->getUnit(field) == NULL);
 				getCell(currPos)->setUnit(field, unit);
 			}
 		}

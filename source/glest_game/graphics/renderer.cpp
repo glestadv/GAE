@@ -1300,7 +1300,7 @@ void Renderer::renderSurfacePFDebug ()
 			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
 			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
 				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->superMap->searchMap[cPos].getClearance( debugField ); // else use cell metric for debug field
+			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
 			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
 			glBindTexture(GL_TEXTURE_2D, tex);
 			glBegin ( GL_TRIANGLE_FAN );
@@ -1326,7 +1326,7 @@ void Renderer::renderSurfacePFDebug ()
 			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
 			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
 				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->superMap->searchMap[cPos].getClearance( debugField ); // else use cell metric for debug field
+			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
 			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
 			glBindTexture(GL_TEXTURE_2D, tex);
 			glBegin ( GL_TRIANGLE_FAN );
@@ -1352,7 +1352,7 @@ void Renderer::renderSurfacePFDebug ()
 			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
 			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
 				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->superMap->searchMap[cPos].getClearance( debugField ); // else use cell metric for debug field
+			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
 			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
 			glBindTexture(GL_TEXTURE_2D, tex);
 			glBegin ( GL_TRIANGLE_FAN );
@@ -1378,7 +1378,7 @@ void Renderer::renderSurfacePFDebug ()
 			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
 			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
 				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->superMap->searchMap[cPos].getClearance( debugField ); // else use cell metric for debug field
+			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
 			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
 			glBindTexture(GL_TEXTURE_2D, tex);
 			glBegin ( GL_TRIANGLE_FAN );
