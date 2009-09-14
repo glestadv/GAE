@@ -223,10 +223,6 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 		unit->setCurrSkill(scStop);
 		return SearchResult::Blocked;
 	}
-	else if ( path.size() < 2 ) { // goal might be closer than targetPos.
-		unit->setCurrSkill(scStop);
-		return SearchResult::Arrived;
-	}
 	//else //TODO: UnitPath to inherit from list<Vec2i> and then be passed directly
 	//	copyToPath ( pathList, unit->getPath () ); // to the search algorithm
 

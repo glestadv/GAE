@@ -22,6 +22,9 @@
 #define theGameSettings (Game::getInstance()->getGameSettings())
 #define theConsole		(*Game::getInstance()->getConsole())
 
+
+#define LOG( x ) Logger::getInstance().add(x)
+
 namespace Glest{ namespace Game{
 
 // =====================================================
