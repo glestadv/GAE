@@ -40,8 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/lua;include/xml"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
+				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/lua;include/xml;include/tinyxml"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;NO_GL_ASSERTIONS;USE_PCH=1"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -70,6 +70,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				IgnoreAllDefaultLibraries="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -117,7 +118,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua"
+				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;XML_LIBRARY;USE_PCH=1"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -189,10 +190,10 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;XML_LIBRARY;USE_PCH=1"
+				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua;include/tinyxml"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;USE_PCH=1"
 				StringPooling="true"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				BufferSecurityCheck="true"
 				EnableEnhancedInstructionSet="2"
 				FloatingPointModel="2"
@@ -216,6 +217,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
+				IgnoreAllDefaultLibraries="true"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -575,11 +577,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\types.h"
+				RelativePath=".\include\tinyxml\tinyxml.h"
 				>
 			</File>
 			<File
 				RelativePath=".\include\platform\win32\types.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\platform\types.h"
 				>
 			</File>
 			<File
@@ -1248,6 +1254,18 @@
 			</File>
 			<File
 				RelativePath=".\sources\platform\timer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\tinyxml\tinyxml.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\tinyxml\tinyxmlerror.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\tinyxml\tinyxmlparser.cpp"
 				>
 			</File>
 			<File

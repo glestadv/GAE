@@ -72,9 +72,9 @@ private:
 	const GameSettings &gs;
 
 	UnitUpdater unitUpdater;
-    WaterEffects waterEffects;
+	WaterEffects waterEffects;
 	Minimap minimap;
-    Stats stats;
+	Stats stats;
 
 	Factions factions;
 
@@ -102,6 +102,8 @@ public:
 	World(Game *game);
 	~World()										{singleton = NULL;}
 	void end(); //to die before selection does
+
+	static World& getInstance () { return *singleton; }
 
 	//get
 	int getMaxPlayers() const						{return map.getMaxPlayers();}
@@ -160,9 +162,11 @@ public:
 			&& map.getTile(Map::toTileCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
 	}
 
-   //scripting interface
+	//scripting interface
 	void createUnit(const string &unitName, int factionIndex, const Vec2i &pos);
 	void givePositionCommand(int unitId, const string &commandName, const Vec2i &pos);
+	void giveTargetCommand ( int unitId, const string &commandName, int targetId );
+	void giveStopCommand ( int unitId, const string &commandName );
 	void giveProductionCommand(int unitId, const string &producedName);
 	void giveUpgradeCommand(int unitId, const string &upgradeName);
 	void giveResource(const string &resourceName, int factionIndex, int amount);
