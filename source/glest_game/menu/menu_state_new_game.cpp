@@ -33,376 +33,174 @@ namespace Glest{ namespace Game{
 using namespace Shared::Util;
 using namespace Gooey;
 
-class PlayerSlot : public Gooey::Panel {
-	// Texts
-	Gooey::StaticText txtPlayer;
+// =====================================================
+// 	class PlayerSlot
+// =====================================================
 
-	// Combo boxes
-	Gooey::ComboBox cmbControl;
-	Gooey::ComboBox cmbFaction;
-	Gooey::SpinBox spinnerTeam;
-
-	/*
-	//GraphicLabel labelPlayers[GameConstants::maxPlayers];
-	//GraphicLabel labelNetStatus[GameConstants::maxPlayers];
-	*/
-	static int humanIndex1, humanIndex2;
-
-	void initComboBox(Gooey::ComboBox *cmb) {
-		cmb->setSize(Core::Vector2(156, 32));
-
-		this->addChildWindow(cmb);
-	}
-	
-public:
-	PlayerSlot() 
-		: Panel(Core::Rectangle(50, 50, 490, 100), 0, "")
+PlayerSlot::PlayerSlot() 
+		: Panel(Core::Rectangle(50, 50, 600, 100), 0, "")
 		, txtPlayer(0, "Player")
+		, txtNetStatus(0, "net_status")
 		, cmbControl(0, Core::Rectangle(0, 0, 0, 0)) 
 		, cmbFaction(0, Core::Rectangle(0, 0, 0, 0))
 		, spinnerTeam(0,1) {
 
-			this->addChildWindow(&txtPlayer);
+	Lang &lang = Lang::getInstance();
 
-			initComboBox( &cmbControl );
-			cmbControl.addString("human");
+	this->addChildWindow(&txtPlayer);
+	txtPlayer.setSize(Core::Vector2(100,20));
 
-			initComboBox( &cmbFaction );
-			cmbFaction.addString("magic");
+	spinnerTeam.setSize(Core::Vector2(30, 30));
 
-			this->addChildWindow(&spinnerTeam);
-
-			this->arrangeChildren();
+	initComboBox(&cmbControl);
+	for(int i = 0; i < ctCount; ++i) {
+	    cmbControl.addString(lang.get(controlTypeNames[i]));
 	}
+	cmbControl.selectStringAt(0);
 
-public:
-	// Events
-	// - controlSelected
+	initComboBox(&cmbFaction);
+	cmbFaction.addString("magic");
 
-};
+	this->addChildWindow(&spinnerTeam);
+	this->addChildWindow(&txtNetStatus);
 
-class GUITemp : public Gooey::Panel {
-private:
-	/* Buttons
-	//GraphicButton buttonReturn;
-	//GraphicButton buttonPlayNow;
-	*/
-	Gooey::Button btnReturn;
-	Gooey::Button btnPlayNow;
+	this->arrangeChildren();
+}
 
-	/* File Locations */
-	vector<string> mapFiles;
-	vector<string> techTreeFiles;
-	vector<string> tilesetFiles;
-	vector<string> factionFiles;
 
-	vector<PlayerSlot*> playerSlots;
-	
+void PlayerSlot::reloadFactions(vector<std::string> factions) {
+/* TODO: figure out how to do this
+	for(int i = 0; i < GameConstants::maxPlayers; ++i){
+		listBoxFactions[i].setItems(results);
+		listBoxFactions[i].pushBackItem(Lang::getInstance().get("Random"));
+		listBoxFactions[i].setSelectedItemIndex(i % results.size());
+    }*/
+}
 
-	/* ComboBoxes */
-	Gooey::ComboBox cmbMap;
-	Gooey::ComboBox cmbTechTree;
-	Gooey::ComboBox cmbTileset;
-	
+void PlayerSlot::setControl(ControlType ct) {
+	cmbControl.selectStringAt(ct);
+}
 
-	/* CheckBoxes
-	Gooey::CheckBox chkRandomize;
-	*/
+ControlType PlayerSlot::getControl() {
+	return static_cast<ControlType>( cmbControl.selectedIndex() );
+}
 
-	/* Label Slot Headings
-	Gooey::StaticText txtControlHeading;
-	Gooey::StaticText txtFactionHeading;
-	Gooey::StaticText txtTeamHeading;
-	*/
+int PlayerSlot::getTeam() {
+	return spinnerTeam.value();
+}
 
-	/* StaticText */
-	Gooey::StaticText txtMap;
-	Gooey::StaticText txtTechTree;
-	Gooey::StaticText txtTileset;
-	/*
-	Gooey::StaticText txtNetwork;
-	Gooey::StaticText txtRandomize;
-
-	Gooey::StaticText txtMapInfo; //WARN: might not be multi-line
-	*/
-
-	//MapInfo mapInfo;
-	//GraphicMessageBox *msgBox;
-
-	/* NEW DESIGN IDEAS
-	- Show image of map
-	- increase amount of possible players
-
-	*/
-
-	void GUITemp::initButton(Button *btn, const std::string &text) {
-		// size, text, appearance, slot, add to panel
-		btn->setSize(Core::Vector2(256, 32));
-		btn->setText(text);
-		btn->loadAppearance("data/gui/default/buttons.xml", "standard");
-		//b->pressed.connect(this, &MenuStateRoot::buttonPressed);
-		this->addChildWindow(btn);
-	}
-
-public:
-	GUITemp() 
-		: Panel(VRectangle(0, 0, 500, 500), 0, "")
-		, cmbMap(0, Core::Rectangle(0, 0, 0, 0))
-		, cmbTechTree(0, Core::Rectangle(0, 0, 0, 0))
-		, cmbTileset(0, Core::Rectangle(0, 0, 0, 0)) 
-		, btnReturn(0, "")
-		, btnPlayNow(0, "")
-		, txtMap(0, "Map")
-		, txtTechTree(0, "Tech Tree") 
-		, txtTileset(0, "Tileset") {
-		/*
-	labelMap.setText(lang.get("Map"));
-	labelTileset.setText(lang.get("Tileset"));
-	labelTechTree.setText(lang.get("TechTree"));
-	//headings
-	labelControl.setText(lang.get("Control"));
-    labelFaction.setText(lang.get("Faction"));
-    labelTeam.setText(lang.get("Team"));		  
-	*/
-			Lang &lang = Lang::getInstance();
-
-			// combo boxes
-			this->addChildWindow(&txtMap);
-			initFileComboBox(&cmbMap, "maps/*.gbm", mapFiles, "There are no maps", true);
-			this->addChildWindow(&txtTechTree);
-			initFileComboBox(&cmbTechTree, "tilesets/*.", tilesetFiles, "There are no tile sets");
-			this->addChildWindow(&txtTileset);
-			initFileComboBox(&cmbTileset, "techs/*.", techTreeFiles, "There are no tech trees");
-
-			// buttons
-			initButton(&btnReturn, lang.get("Return"));
-			initButton(&btnPlayNow, lang.get("PlayNow"));
-
-			// create player slots
-			for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-				playerSlots.push_back( new PlayerSlot() );
-			}
-
-			vector<PlayerSlot*>::iterator iter;
-			for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
-				this->addChildWindow( *(iter) );
-			}
-
-			// arrange the panel's children according to the default flow layouter
-			this->arrangeChildren();
-
-	/*
-	labelControl.init(300, 550, GraphicListBox::defW, GraphicListBox::defH, true);
-    labelFaction.init(500, 550, GraphicListBox::defW, GraphicListBox::defH, true);
-    labelTeam.init(700, 550, 60, GraphicListBox::defH, true);
-	*/
-
-			  
-	}
-
-	~GUITemp() {
-		vector<PlayerSlot*>::iterator iter;
-
-		/*for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
-				delete *(iter); //???
-		}*/
-	}
-
-    void initFileComboBox(
-			Gooey::ComboBox *cmb, 
-			const std::string &path, 
-			vector<std::string> &files, 
-			const std::string &errorMsg, 
-			bool cutExtension = false) {
-		vector<string> results;
-
-		// size
-		cmb->setSize(Core::Vector2(256, 32));
-
-		//TODO: add style
-
-		// fetch raw file results
-		findAll(path, results, cutExtension);
-		if (results.size() == 0) {
-			throw runtime_error(errorMsg);
-		}
-
-		// add options to combo box
-		for (int i = 0; i < results.size(); ++i) {
-			cmb->addString( formatString( results[i] ) );
-		}
-
-		this->addChildWindow(cmb);
-
-		files = results;
-	}
-
-public:
-	// Events
-	// - button press
-	// -- start game
-	// -- return
-	// - reload factions
-	// - reload player slots
-
-	void reloadFactions() {
-
-	}
-
-	/*
-	bool handleReturnClick(const CEGUI::EventArgs& e);
-	bool handlePlayClick(const CEGUI::EventArgs& e);
-	bool handleMapSelected(const CEGUI::EventArgs& e);
-	bool handleTechSelected(const CEGUI::EventArgs& e);
-	*/
-
-};
-
-Panel *guiTemp = NULL;
+int PlayerSlot::getFactionIndex() {
+	return cmbFaction.selectedIndex();
+}
 
 // =====================================================
 // 	class MenuStateNewGame
 // =====================================================
 
-MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots) :
-		MenuStateStartGameBase(program, mainMenu, "new-game") {
+MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots) 
+		: MenuStateStartGameBase(program, mainMenu, "new-game")
+		, Panel(VRectangle(0, 0, 500, 500), 0, "")
+		// combo boxes
+		, cmbMap(0, Core::Rectangle(0, 0, 0, 0))
+		, cmbTechTree(0, Core::Rectangle(0, 0, 0, 0))
+		, cmbTileset(0, Core::Rectangle(0, 0, 0, 0))
+		// check boxes
+		, chkRandomize(0, "Randomize")
+		// headings
+		, txtControlHeading(0, "control_heading")
+		, txtFactionHeading(0, "faction_heading")
+		, txtTeamHeading(0, "team_heading")
+		// buttons
+		, btnReturn(0, "")
+		, btnPlayNow(0, "")
+		// texts
+		, txtMap(0, "map")
+		, txtTechTree(0, "tech_tree") 
+		, txtTileset(0, "Tileset")
+		, txtNetwork(0, "network_info")
+		, txtRandomize(0, "Randomize")
+		, txtMapInfo(0, "map_info") {
+	
+	Lang &lang = Lang::getInstance();
+	NetworkManager &networkManager = NetworkManager::getInstance();
 
-			guiTemp = new GUITemp();
+	txtMap.setText(lang.get("Map"));
+	txtMap.setSize(Core::Vector2(100,20));
+	txtTileset.setText(lang.get("Tileset"));
+	txtTileset.setSize(Core::Vector2(100,20));
+	txtTechTree.setText(lang.get("TechTree"));
+	txtTechTree.setSize(Core::Vector2(100,20));
 
-			WindowManager::instance().addWindow(guiTemp);
+	// combo boxes and associated label
+	this->addChildWindow(&txtMap);
+	initFileComboBox(&cmbMap, "maps/*.gbm", mapFiles, "There are no maps", true);
+	this->addChildWindow(&txtTechTree);
+	initFileComboBox(&cmbTechTree, "tilesets/*.", tilesetFiles, "There are no tile sets");
+	this->addChildWindow(&txtTileset);
+	initFileComboBox(&cmbTileset, "techs/*.", techTreeFiles, "There are no tech trees");
 
-	Lang &lang= Lang::getInstance();
-	NetworkManager &networkManager= NetworkManager::getInstance();
+	//headings
+	txtControlHeading.setText(lang.get("Control"));
+	txtControlHeading.setSize(Core::Vector2(100,20));
+	this->addChildWindow(&txtControlHeading);
+    txtFactionHeading.setText(lang.get("Faction"));
+	txtFactionHeading.setSize(Core::Vector2(100,20));
+	this->addChildWindow(&txtFactionHeading);
+    txtTeamHeading.setText(lang.get("Team"));
+	txtTeamHeading.setSize(Core::Vector2(100,20));
+	this->addChildWindow(&txtTeamHeading);
 
-	vector<string> results, teamItems, controlItems;
-
-	//create
-	buttonReturn.init(350, 200, 125);
-	buttonPlayNow.init(525, 200, 125);
-
-    //map listBox
-    findAll("maps/*.gbm", results, true);
-	if(results.size()==0){
-        throw runtime_error("There are no maps");
-	}
-	mapFiles= results;
-	for(int i= 0; i<results.size(); ++i){
-		results[i]= formatString(results[i]);
-	}
-    listBoxMap.init(200, 320, 150);
-    listBoxMap.setItems(results);
-	labelMap.init(200, 350);
-	labelMapInfo.init(200, 290, 200, 40);
-
-    //tileset listBox
-    findAll("tilesets/*.", results);
-	if(results.size()==0){
-        throw runtime_error("There are no tile sets");
-	}
-    tilesetFiles= results;
-	for(int i= 0; i<results.size(); ++i){
-		results[i]= formatString(results[i]);
-	}
-	listBoxTileset.init(400, 320, 150);
-    listBoxTileset.setItems(results);
-	labelTileset.init(400, 350);
-
-    //tech Tree listBox
-    findAll("techs/*.", results);
-	if(results.size()==0){
-        throw runtime_error("There are no tech trees");
-	}
-    techTreeFiles= results;
-	for(int i= 0; i<results.size(); ++i){
-		results[i]= formatString(results[i]);
-	}
-	listBoxTechTree.init(600, 320, 150);
-    listBoxTechTree.setItems(results);
-	labelTechTree.init(600, 350);
-
-	//list boxes
-    for(int i=0; i<GameConstants::maxPlayers; ++i){
-		labelPlayers[i].init(200, 500-i*30);
-        listBoxControls[i].init(300, 500-i*30);
-        listBoxFactions[i].init(500, 500-i*30);
-		listBoxTeams[i].init(700, 500-i*30, 60);
-		labelNetStatus[i].init(800, 500-i*30, 60);
-    }
-
-	labelControl.init(300, 550, GraphicListBox::defW, GraphicListBox::defH, true);
-    labelFaction.init(500, 550, GraphicListBox::defW, GraphicListBox::defH, true);
-    labelTeam.init(700, 550, 60, GraphicListBox::defH, true);
-
-	//texts
-	buttonReturn.setText(lang.get("Return"));
-	buttonPlayNow.setText(lang.get("PlayNow"));
-
-	for(int i = 0; i < ctCount; ++i) {
-	    controlItems.push_back(lang.get(controlTypeNames[i]));
-	}
-	teamItems.push_back("1");
-	teamItems.push_back("2");
-	teamItems.push_back("3");
-	teamItems.push_back("4");
-
-	reloadFactions();
-
-	findAll("techs/"+techTreeFiles[listBoxTechTree.getSelectedItemIndex()]+"/factions/*.", results);
-	if(results.size()==0){
-        throw runtime_error("There are no factions for this tech tree");
+	// create player slots
+	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
+		playerSlots.push_back( new PlayerSlot() );
 	}
 
-	for(int i=0; i<GameConstants::maxPlayers; ++i){
-		labelPlayers[i].setText(lang.get("Player")+" "+intToStr(i));
-        listBoxTeams[i].setItems(teamItems);
-		listBoxTeams[i].setSelectedItemIndex(i);
-		listBoxControls[i].setItems(controlItems);
-		labelNetStatus[i].setText("");
-    }
+	playerSlots[0]->setControl(ctHuman);
 
-	labelMap.setText(lang.get("Map"));
-	labelTileset.setText(lang.get("Tileset"));
-	labelTechTree.setText(lang.get("TechTree"));
-	labelControl.setText(lang.get("Control"));
-    labelFaction.setText(lang.get("Faction"));
-    labelTeam.setText(lang.get("Team"));
-
-	loadMapInfo("maps/"+mapFiles[listBoxMap.getSelectedItemIndex()]+".gbm", &mapInfo);
-
-	labelMapInfo.setText(mapInfo.desc);
-
-	//initialize network interface
-	networkManager.init(nrServer);
-	labelNetwork.init(50, 50);
-	try {
-		labelNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIp() + ":" + intToStr(GameConstants::serverPort));
-	} catch(const exception &e) {
-		labelNetwork.setText(lang.get("Address") + ": ? " + e.what());
+	// add player slots to window
+	vector<PlayerSlot*>::iterator iter;
+	for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
+		this->addChildWindow( *(iter) );
 	}
+
+	//TODO: add cmbMap items so it doesn't crash
+	//loadMapInfo("maps/"+mapFiles[cmbMap.selectedIndex()]+".gbm", &mapInfo);
+
+	txtMapInfo.setText(mapInfo.desc);
+
+	updateControllers();
+	updateNetworkSlots();
 
 	//init controllers
-	listBoxControls[0].setSelectedItemIndex(ctHuman);
 	if(openNetworkSlots){
-		for(int i= 1; i<mapInfo.players; ++i){
-			listBoxControls[i].setSelectedItemIndex(ctNetwork);
+		for(int i = 1; i < mapInfo.players; ++i){
+			playerSlots[i]->setControl(ctNetwork);
 		}
 	}
 	else{
-		listBoxControls[1].setSelectedItemIndex(ctCpu);
+		playerSlots[1]->setControl(ctCpu);
 	}
-	updateControlers();
-	updateNetworkSlots();
 
-	labelRandomize.init(200, 500 - GameConstants::maxPlayers * 30);
-	labelRandomize.setText(lang.get("RandomizeLocations"));
-	listBoxRandomize.init(332, 500 - GameConstants::maxPlayers * 30, 75);
-	listBoxRandomize.pushBackItem(lang.get("No"));
-	listBoxRandomize.pushBackItem(lang.get("Yes"));
-	listBoxRandomize.setSelectedItemIndex(Config::getInstance().getGsRandStartLocs() ? 1 : 0);
+	Config::getInstance().getGsRandStartLocs() ? chkRandomize.enableChecked() : chkRandomize.disableChecked();
+	this->addChildWindow( &chkRandomize );
 
-	//msgBox = NULL;
+	//initialize network interface
+	networkManager.init(nrServer);
+	try {
+		txtNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIp() + ":" + intToStr(GameConstants::serverPort));
+	} catch(const exception &e) {
+		txtNetwork.setText(lang.get("Address") + ": ? " + e.what());
+	}
+
+	// buttons
+	initButton(&btnReturn, lang.get("Return"));
+	initButton(&btnPlayNow, lang.get("PlayNow"));
+
+	// arrange the panel's children according to the default flow layouter
+	this->arrangeChildren();
+
+	WindowManager::instance().addWindow(this);
 }
-
 
 void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton){
 
@@ -417,35 +215,8 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton){
 			msgBox = NULL;
 		}
 	}
-	else if(buttonReturn.mouseClick(x,y)){
-		soundRenderer.playFx(coreData.getClickSoundA());
-		mainMenu->setState(new MenuStateRoot(program, mainMenu));
-    }
-	else if(buttonPlayNow.mouseClick(x,y)){
-		if(isUnconnectedSlots()) {
-			buttonPlayNow.mouseMove(1, 1);
-			msgBox = new GraphicMessageBox();
-			msgBox->init(Lang::getInstance().get("WaitingForConnections"), Lang::getInstance().get("Ok"));
-		} else {
-			GameSettings gameSettings;
-
-			Config::getInstance().save();
-			soundRenderer.playFx(coreData.getClickSoundC());
-			loadGameSettings(&gameSettings);
-			serverInterface->launchGame(&gameSettings);
-			program.setState(new Game(program, gameSettings));
-		}
-	}
-	else if(listBoxMap.mouseClick(x, y)){
-		loadMapInfo("maps/"+mapFiles[listBoxMap.getSelectedItemIndex()]+".gbm", &mapInfo);
-		labelMapInfo.setText(mapInfo.desc);
-		updateControlers();
-	}
-	else if(listBoxTileset.mouseClick(x, y)){
-	}
-	else if(listBoxTechTree.mouseClick(x, y)){
-		reloadFactions();
-	}
+	/*
+	
 	else if(listBoxRandomize.mouseClick(x, y)){
 		Config::getInstance().setGsRandStartLocs(listBoxRandomize.getSelectedItemIndex());
 	}
@@ -485,62 +256,15 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton){
 			else if(listBoxTeams[i].mouseClick(x, y)){
 			}
 		}
-	}
+	}*/
 }
 
-void MenuStateNewGame::mouseMove(int x, int y, const MouseState &ms){
+void MenuStateNewGame::mouseMove(int x, int y, const MouseState &ms) {
 
-	if (msgBox != NULL){
-		msgBox->mouseMove(x,y);
-		return;
-	}
-
-	buttonReturn.mouseMove(x, y);
-	buttonPlayNow.mouseMove(x, y);
-
-	for(int i=0; i<GameConstants::maxPlayers; ++i){
-        listBoxControls[i].mouseMove(x, y);
-        listBoxFactions[i].mouseMove(x, y);
-		listBoxTeams[i].mouseMove(x, y);
-    }
-	listBoxMap.mouseMove(x, y);
-	listBoxTileset.mouseMove(x, y);
-	listBoxTechTree.mouseMove(x, y);
-	listBoxRandomize.mouseMove(x, y);
 }
 
-void MenuStateNewGame::render(){
-
+void MenuStateNewGame::render() {
 	Renderer &renderer= Renderer::getInstance();
-
-	int i;
-
-	renderer.renderButton(&buttonReturn);
-	renderer.renderButton(&buttonPlayNow);
-
-	for(i=0; i<GameConstants::maxPlayers; ++i){
-		renderer.renderLabel(&labelPlayers[i]);
-        renderer.renderListBox(&listBoxControls[i]);
-		if(listBoxControls[i].getSelectedItemIndex()!=ctClosed){
-			renderer.renderListBox(&listBoxFactions[i]);
-			renderer.renderListBox(&listBoxTeams[i]);
-			renderer.renderLabel(&labelNetStatus[i]);
-		}
-    }
-	renderer.renderLabel(&labelNetwork);
-	renderer.renderLabel(&labelMap);
-	renderer.renderLabel(&labelTileset);
-	renderer.renderLabel(&labelTechTree);
-	renderer.renderLabel(&labelControl);
-	renderer.renderLabel(&labelFaction);
-	renderer.renderLabel(&labelTeam);
-	renderer.renderLabel(&labelMapInfo);
-	renderer.renderLabel(&labelRandomize);
-
-	renderer.renderListBox(&listBoxMap);
-	renderer.renderListBox(&listBoxTileset);
-	renderer.renderListBox(&listBoxTechTree);
-	renderer.renderListBox(&listBoxRandomize);
 
 	if(msgBox != NULL){
 		renderer.renderMessageBox(msgBox);
@@ -554,6 +278,7 @@ void MenuStateNewGame::update() {
 		AutoTest::getInstance().updateNewGame(program, mainMenu);
 	}
 	*/
+	/*TODO: move to PlayerSlot?
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
 	Lang& lang = Lang::getInstance();
 
@@ -571,7 +296,7 @@ void MenuStateNewGame::update() {
 		} else {
 			labelNetStatus[i].setText("");
 		}
-	}
+	}*/
 }
 
 void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings){
@@ -580,64 +305,88 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings){
 
 	int factionCount= 0;
 
-	gameSettings->setDescription(formatString(mapFiles[listBoxMap.getSelectedItemIndex()]));
-	gameSettings->setMap(mapFiles[listBoxMap.getSelectedItemIndex()]);
-    gameSettings->setTileset(tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
-    gameSettings->setTech(techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
+	gameSettings->setDescription(formatString(mapFiles[cmbMap.selectedIndex()]));
+	gameSettings->setMap(mapFiles[cmbMap.selectedIndex()]);
+    gameSettings->setTileset(tilesetFiles[cmbTileset.selectedIndex()]);
+    gameSettings->setTech(techTreeFiles[cmbTechTree.selectedIndex()]);
 	gameSettings->setDefaultVictoryConditions(true);
-   gameSettings->setDefaultResources (true);
-   gameSettings->setDefaultUnits (true);
-  
+	gameSettings->setDefaultResources(true);
+	gameSettings->setDefaultUnits(true);
 
-    for(int i=0; i<mapInfo.players; ++i){
-		ControlType ct= static_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());
-		if(ct!=ctClosed){
-			if(ct==ctHuman){
+    for(int i = 0; i < mapInfo.players; ++i){
+		ControlType ct = playerSlots[i]->getControl();
+		if (ct != ctClosed) {
+			if (ct == ctHuman) {
 				gameSettings->setThisFactionIndex(factionCount);
 			}
 			gameSettings->setFactionControl(factionCount, ct);
-			gameSettings->setTeam(factionCount, listBoxTeams[i].getSelectedItemIndex());
+			gameSettings->setTeam(factionCount, playerSlots[i]->getTeam());
 			gameSettings->setStartLocationIndex(factionCount, i);
-			if(listBoxFactions[i].getSelectedItemIndex() >= factionFiles.size()) {
+			if (playerSlots[i]->getFactionIndex() >= factionFiles.size()) {
 				gameSettings->setFactionTypeName(factionCount, factionFiles[rand.randRange(0, factionFiles.size() - 1)]);
 			} else {
-				gameSettings->setFactionTypeName(factionCount, factionFiles[listBoxFactions[i].getSelectedItemIndex()]);
+				gameSettings->setFactionTypeName(factionCount, factionFiles[playerSlots[i]->getFactionIndex()]);
 			}
 			factionCount++;
 		}
     }
 	gameSettings->setFactionCount(factionCount);
 
-	if(listBoxRandomize.getSelectedItemIndex()) {
+	if( chkRandomize.isChecked() ) {
 		gameSettings->randomizeLocs(mapInfo.players);
 	}
 }
 
-// ============ PRIVATE ===========================
+MenuStateNewGame::~MenuStateNewGame() {
+	vector<PlayerSlot*>::iterator iter;
 
-
-void MenuStateNewGame::reloadFactions(){
-
-	vector<string> results;
-
-	findAll("techs/"+techTreeFiles[listBoxTechTree.getSelectedItemIndex()]+"/factions/*.", results);
-
-	if(results.size()==0){
-        throw runtime_error("There is no factions for this tech tree");
-	}
-	factionFiles.clear();
-	factionFiles= results;
-   	for(int i= 0; i<results.size(); ++i){
-		results[i]= formatString(results[i]);
-	}
-	for(int i=0; i<GameConstants::maxPlayers; ++i){
-		listBoxFactions[i].setItems(results);
-		listBoxFactions[i].pushBackItem(Lang::getInstance().get("Random"));
-		listBoxFactions[i].setSelectedItemIndex(i % results.size());
-    }
+	/*for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
+			delete *(iter); //???
+	}*/
 }
 
-void MenuStateNewGame::updateControlers(){
+// ============ PRIVATE ===========================
+
+void MenuStateNewGame::initButton(Button *btn, const std::string &text) {
+	// size, text, appearance, slot, add to panel
+	btn->setSize(Core::Vector2(256, 32));
+	btn->setText(text);
+	btn->loadAppearance("data/gui/default/buttons.xml", "standard");
+	//b->pressed.connect(this, &MenuStateRoot::buttonPressed);
+	this->addChildWindow(btn);
+}
+
+void MenuStateNewGame::initFileComboBox(
+		Gooey::ComboBox *cmb, 
+		const std::string &path, 
+		vector<std::string> &files, 
+		const std::string &errorMsg, 
+		bool cutExtension) {
+	vector<string> results;
+
+	// size
+	cmb->setSize(Core::Vector2(256, 32));
+
+	//TODO: add style
+
+	// fetch raw file results
+	findAll(path, results, cutExtension);
+	if (results.size() == 0) {
+		throw runtime_error(errorMsg);
+	}
+
+	// add options to combo box
+	for (int i = 0; i < results.size(); ++i) {
+		cmb->addString( formatString( results[i] ) );
+	}
+
+	this->addChildWindow(cmb);
+
+	files = results;
+}
+
+void MenuStateNewGame::updateControllers() {
+	/*TODO: replace with new gui components
 	bool humanPlayer= false;
 
 	for(int i= 0; i<mapInfo.players; ++i){
@@ -653,12 +402,45 @@ void MenuStateNewGame::updateControlers(){
 	for(int i= mapInfo.players; i<GameConstants::maxPlayers; ++i){
 		listBoxControls[i].setSelectedItemIndex(ctClosed);
 	}
+	
+//---------------
+//from mouse click?
+	for(int i=0; i<mapInfo.players; ++i){
+		//ensure thet only 1 human player is present
+		if(listBoxControls[i].mouseClick(x, y)){
+
+			//look for human players
+			int humanIndex1= -1;
+			int humanIndex2= -1;
+			for(int j=0; j<GameConstants::maxPlayers; ++j){
+				ControlType ct= static_cast<ControlType>(listBoxControls[j].getSelectedItemIndex());
+				if(ct==ctHuman){
+					if(humanIndex1==-1){
+						humanIndex1= j;
+					}
+					else{
+						humanIndex2= j;
+					}
+				}
+			}
+
+			//no human
+			if(humanIndex1==-1 && humanIndex2==-1){
+				listBoxControls[i].setSelectedItemIndex(ctHuman);
+			}
+
+			//2 humans
+			if(humanIndex1!=-1 && humanIndex2!=-1){
+				listBoxControls[humanIndex1==i? humanIndex2: humanIndex1].setSelectedItemIndex(ctClosed);
+			}
+			updateNetworkSlots();
+			*/
 }
 
-bool MenuStateNewGame::isUnconnectedSlots(){
-	ServerInterface* serverInterface= NetworkManager::getInstance().getServerInterface();
-	for(int i= 0; i<mapInfo.players; ++i){
-		if(listBoxControls[i].getSelectedItemIndex()==ctNetwork){
+bool MenuStateNewGame::isUnconnectedSlots() {
+	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
+	for(int i = 0; i < mapInfo.players; ++i){
+		if(playerSlots[i]->getControl() == ctNetwork){
 			if(!serverInterface->getSlot(i)->isConnected()){
 				return true;
 			}
@@ -667,17 +449,70 @@ bool MenuStateNewGame::isUnconnectedSlots(){
 	return false;
 }
 
-void MenuStateNewGame::updateNetworkSlots(){
-	ServerInterface* serverInterface= NetworkManager::getInstance().getServerInterface();
-
+void MenuStateNewGame::updateNetworkSlots() {
+/*	ServerInterface* serverInterface= NetworkManager::getInstance().getServerInterface();
 
 	for(int i= 0; i<GameConstants::maxPlayers; ++i){
-		if(serverInterface->getSlot(i)==NULL && listBoxControls[i].getSelectedItemIndex()==ctNetwork){
+		if(serverInterface->getSlot(i) == NULL && playerSlots[i]->getControl() == ctNetwork){
 			serverInterface->addSlot(i);
 		}
-		if(serverInterface->getSlot(i) != NULL && listBoxControls[i].getSelectedItemIndex()!=ctNetwork){
+		if(serverInterface->getSlot(i) != NULL && playerSlots[i]->getControl() != ctNetwork){
 			serverInterface->removeSlot(i);
 		}
+	}
+	*/
+}
+
+void MenuStateNewGame::buttonClicked() {
+	CoreData &coreData = CoreData::getInstance();
+	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	ServerInterface *serverInterface = NetworkManager::getInstance().getServerInterface();
+
+	if ( btnReturn.state() == Button::State::down ) {
+		soundRenderer.playFx(coreData.getClickSoundA());
+		mainMenu->setState(new MenuStateRoot(program, mainMenu));
+    } else if( btnPlayNow.state() == Button::State::down ) {
+		if ( isUnconnectedSlots() ) {
+			//btnPlayNow.mouseMove(1, 1);
+			msgBox = new GraphicMessageBox();
+			msgBox->init(Lang::getInstance().get("WaitingForConnections"), Lang::getInstance().get("Ok"));
+		} else {
+			GameSettings gameSettings;
+
+			Config::getInstance().save();
+			soundRenderer.playFx(coreData.getClickSoundC());
+			loadGameSettings(&gameSettings);
+			serverInterface->launchGame(&gameSettings);
+			program.setState(new Game(program, gameSettings));
+		}
+	}
+}
+
+void MenuStateNewGame::mapSelected() {
+	loadMapInfo("maps/"+mapFiles[cmbMap.selectedIndex()]+".gbm", &mapInfo);
+	txtMapInfo.setText(mapInfo.desc);
+	updateControllers();
+}
+
+void MenuStateNewGame::techSelected() {
+	vector<string> results;
+
+	findAll("techs/" + techTreeFiles[cmbTechTree.selectedIndex()] + "/factions/*.", results);
+
+	if (results.size() == 0) {
+        throw runtime_error("There is no factions for this tech tree");
+	}
+	factionFiles.clear();
+	factionFiles = results;
+   	for(int i = 0; i < results.size(); ++i){
+		results[i] = formatString(results[i]);
+	}
+
+	// apply new factions to player slots
+	vector<PlayerSlot*>::iterator iter;
+	for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
+		PlayerSlot *ps = *(iter);
+		ps->reloadFactions(results);
 	}
 }
 
