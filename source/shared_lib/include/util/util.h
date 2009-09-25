@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest Shared Library (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa,
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa,
 //				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -46,7 +46,6 @@ namespace Shared { namespace Xml {
 using std::string;
 using std::vector;
 using std::ostream;
-using std::ostream;
 using std::runtime_error;
 using Shared::Platform::NetworkDataBuffer;
 using Shared::Platform::NetSerializable;
@@ -56,7 +55,7 @@ using boost::shared_ptr;
 
 namespace Shared { namespace Util {
 
-const string sharedLibVersionString= "v0.4.1-gae";
+const string sharedLibVersionString= "v0.4.1-network-wip";
 /** A macro for defining C style enums that similtaneously stores their names. */
 #define STRINGY_ENUM(name, countValue, ...)								\
 	enum name {__VA_ARGS__, countValue};								\
@@ -207,17 +206,20 @@ const Version &getGaeSharedLibVersion();
 void findAll(const string &path, vector<string> &results, bool cutExtension = false);
 
 //string fcs
-string lastDir(const string &s);
-
-inline string lastFile(const string &s){
-	return lastDir(s);
-}
-
-string cutLastFile(const string &s);
+string cleanPath(const string &s);
+string dirname(const string &s);
+string basename(const string &s);
 string cutLastExt(const string &s);
 string ext(const string &s);
 string replaceBy(const string &s, char c1, char c2);
-string toLower(const string &s);
+
+#if defined(WIN32) || defined(WIN64)
+inline string intToHex ( int addr ) {
+	static char hexBuffer[32];
+	sprintf ( hexBuffer, "%.8X", addr );
+	return string( hexBuffer );
+}
+#endif
 
 inline void copyStringToBuffer(char *buffer, int bufferSize, const string& s) {
 	strncpy(buffer, s.c_str(), bufferSize - 1);
