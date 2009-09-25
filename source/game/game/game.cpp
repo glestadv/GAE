@@ -25,11 +25,9 @@
 #include "network_manager.h"
 #include "checksum.h"
 #include "platform_exception.h"
+#include "lang_features.h"
 
 #include "leak_dumper.h"
-#ifdef _MSC_VER
-#	define snprintf _snprintf
-#endif
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;

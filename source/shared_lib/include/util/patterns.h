@@ -18,11 +18,7 @@
 #define _SHARED_UTIL_PATTERNS_H_
 
 #include "types.h"
-#if defined (WIN32) || defined(WIN64)
-#	define DELETE_FUNC
-#else
-#  include "lang_features.h"
-#endif
+#include "lang_features.h"
 
 using Shared::Platform::int64;
 

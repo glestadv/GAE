@@ -29,7 +29,7 @@ namespace Shared { namespace Util {
 // =====================================================
 // class Properties
 // =====================================================
-	
+
 Properties::Properties() {}
 
 void Properties::load(const string &path, bool trim) {
@@ -49,6 +49,8 @@ void Properties::load(const string &path, bool trim) {
 	propertyMap.clear();
 	while (!fileStream.eof()) {
 		fileStream.getline(lineBuffer, maxLine);
+
+		lineBuffer[maxLine-1] = '\0';
 
 		if (lineBuffer[0] == ';' || lineBuffer[0] == '#') {
 			continue;
@@ -103,6 +105,11 @@ void Properties::save(const string &path) {
 	}
 
 	fileStream.close();
+}
+
+void Properties::clear(){
+	propertyMap.clear();
+	propertyVector.clear();
 }
 
 const string *Properties::_getString(const string &key, bool required) const {

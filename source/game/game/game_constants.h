@@ -20,12 +20,8 @@ using Shared::Util::EnumNames;
 #ifdef GAME_CONSTANTS_DEF
 #	define STRINGY_ENUM_NAMES(name, count, ...) EnumNames name(#__VA_ARGS__, count, true, false)
 #else
-#	define STRINGY_ENUM_NAMES(name, count, ...) extern Shared::Util::EnumNames name
+#	define STRINGY_ENUM_NAMES(name, count, ...) extern EnumNames name
 #endif
-
-#define STRINGY_ENUM(name, countValue, ...)								\
-	enum name {__VA_ARGS__, countValue};								\
-	STRINGY_ENUM_NAMES(enum ## name ## Names, countValue, __VA_ARGS__)
 
 namespace Game { namespace Net {
 

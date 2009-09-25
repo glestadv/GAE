@@ -15,13 +15,9 @@
 #include "lang.h"
 #include "config.h"
 #include "program.h"
-//#include "game_constants.h"
+#include "lang_features.h"
 
 #include "leak_dumper.h"
-
-#if defined(WIN32) || defined(WIN64)
-	#define snprintf _snprintf
-#endif
 
 namespace Game {
 

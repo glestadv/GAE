@@ -15,10 +15,6 @@
 #include <cmath>
 #include "simd.h"
 
-#if defined(WIN32) || defined(WIN64)
-extern float roundf(float f);
-#endif
-
 namespace Shared { namespace Graphics {
 
 template<typename T> class Vec2;
@@ -77,6 +73,11 @@ public:
 	bool operator !=(const Vec2<T> &v) const {
 		return x != v.x || y != v.y;
 	}
+
+   bool operator < ( const Vec2<T> &v ) const
+   {
+      return x < v.x || ( x == v.x && y < v.y );
+   }
 
 	Vec2<T> operator +(const Vec2<T> &v) const {
 		return Vec2(x + v.x, y + v.y);

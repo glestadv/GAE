@@ -22,7 +22,7 @@
 
 using std::range_error;
 
-// Forward declaring class from the game project is kinda hacky, but I want to control template
+// Forward declaring class from the game project is hacky, but I want to control template
 // instantiation for Socket::wait and haven't found a better way to do it :(
 namespace Game { namespace Net {
 class RemoteInterface;

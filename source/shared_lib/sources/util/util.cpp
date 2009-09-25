@@ -445,6 +445,17 @@ string replaceBy(const string &s, char c1, char c2){
 	return rs;
 }
 
+// ==================== misc ====================
+
+bool fileExists(const string &path){
+	FILE* file= fopen(path.c_str(), "rb");
+	if(file!=NULL){
+		fclose(file);
+		return true;
+	}
+	return false;
+}
+
 string toLower(const string &s) {
 	size_t size = s.size();
 	string rs;

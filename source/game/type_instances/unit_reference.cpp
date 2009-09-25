@@ -10,6 +10,9 @@
 // ==============================================================
 
 #include "pch.h"
+
+#include <limits.h>
+
 #include "unit_reference.h"
 #include "world.h"
 

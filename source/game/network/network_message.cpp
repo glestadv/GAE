@@ -14,6 +14,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <limits.h>
 
 #include "types.h"
 #include "util.h"

@@ -56,7 +56,7 @@ void ServerInterface::accept() {
 
 	if(s) {
 		MutexLock lock(mutex);
-		if(!getPeers().size() >= GameConstants::maxPlayers) {
+		if(getPeers().size() < GameConstants::maxPlayers) {
 			// TODO: We should send a "server full" message.
 			s->close();
 			delete s;

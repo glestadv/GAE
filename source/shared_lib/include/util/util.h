@@ -56,10 +56,17 @@ using boost::shared_ptr;
 
 namespace Shared { namespace Util {
 
+const string sharedLibVersionString= "v0.4.1-gae";
+/** A macro for defining C style enums that similtaneously stores their names. */
+#define STRINGY_ENUM(name, countValue, ...)								\
+	enum name {__VA_ARGS__, countValue};								\
+	STRINGY_ENUM_NAMES(enum ## name ## Names, countValue, __VA_ARGS__)
+
 // =====================================================
 //	class EnumNames
 // =====================================================
 
+/** A utility class to provide a text description for enum values. */
 class EnumNames : Uncopyable {
 #ifdef NO_ENUM_NAMES
 public:
@@ -73,6 +80,8 @@ private:
 	bool copyStrings;
 
 public:
+	/** Primary ctor. As it turns out, not specifying copyStrings as true on most modern system will
+	 * result in some form of access violation (due to attempting to write to read-only memory. */
 	EnumNames(const char *valueList, size_t count, bool copyStrings, bool lazy);
     ~EnumNames();
     const char *getName(unsigned i) const {
@@ -250,6 +259,8 @@ inline int round(double d) {
 }
 
 //misc
+bool fileExists(const string &path);
+
 template<typename T>
 void deleteValues(T beginIt, T endIt) {
 	for (T it = beginIt; it != endIt; ++it) {

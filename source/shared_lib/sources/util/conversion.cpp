@@ -2,6 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -37,7 +38,7 @@ const string Conversion::str_float		= "float";
 const string Conversion::str_longdouble	= "long double";
 
 // this function is outlined because we don't need this extra code inlined everywhere
-void Conversion::throwException(const string &typeName, const string &s, int base) {
+__cold void Conversion::throwException(const string &typeName, const string &s, int base) {
 	std::stringstream str;
 	str << "Error converting from string to " << typeName << " (base = " << base << "), found: " << s;
 	throw runtime_error(str.str());

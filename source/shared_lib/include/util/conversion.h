@@ -18,13 +18,8 @@
 #include <cstdlib>
 #include <sstream>
 
-#if defined(WIN32) || defined(WIN64)
-#	define strtoull(np,ep,b) _strtoui64(np,ep,b)
-#	define strtof(np,ep) ((float)strtod(np,ep))
-#	define strtold(np,ep) ((long double)strtod(np,ep))
-#endif
-
 #include "types.h"
+#include "lang_features.h"
 
 using std::string;
 using std::runtime_error;
@@ -247,7 +242,7 @@ private:
 		return ret;
 	}
 
-	static void throwException(const string &typeName, const string &s, int base);
+	__cold static void throwException(const string &typeName, const string &s, int base);
 };
 
 inline string intToStr(int i) {return Conversion::toStr(i);}

@@ -15,6 +15,7 @@
 #include "map.h"
 
 #include <cassert>
+#include <limits.h>
 
 #include "world.h"
 #include "tileset.h"
