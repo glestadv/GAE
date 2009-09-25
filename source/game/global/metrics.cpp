@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -32,7 +32,7 @@ Metrics::Metrics() {
 	screenH = config.getDisplayHeight();
 
 	minimapX = 10;
-	minimapY = 600;
+	minimapY = 750 - 128 - 30 + 16;
 	minimapW = 128;
 	minimapH = 128;
 

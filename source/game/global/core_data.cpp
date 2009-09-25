@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -10,6 +10,7 @@
 // ==============================================================
 
 #include "pch.h"
+
 #include "core_data.h"
 
 #include "logger.h"
@@ -139,8 +140,8 @@ void CoreData::load() {
 }
 
 int CoreData::computeFontSize(int size) {
-	int screenW = Config::getInstance().getDisplayWidth();
-	int rs = size * screenW / 1000;
+	int screenH = Config::getInstance().getDisplayHeight();
+	int rs = size * screenH / 1000;
 	if (rs < 12) {
 		rs = 12;
 	}
