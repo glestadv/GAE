@@ -27,6 +27,7 @@ SHARED_DIRS =
 	sound
 	sound/openal
 	xml
+	lua
 ;
 
 for i in $(SHARED_DIRS)  {
@@ -41,7 +42,7 @@ for i in shared_lib/include shared_lib/include/$(SHARED_DIRS)  {
 }
 
 Library glestlib : $(SHARED_SOURCES) : : $(SHARED_PCH) ;
-ExternalLibs glestlib : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL Z ;
+ExternalLibs glestlib : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL LUA Z ;
 IncludeDir glestlib : $(SHARED_PCH_INCLUDE) $(SHARED_INCLUDE_DIRS) ;
 
 
@@ -59,6 +60,7 @@ GAME_DIRS =
 	main
 	menu
 	network
+	path_finder
 	sound
 	type_instances
 	types
@@ -74,7 +76,7 @@ for i in $(GAME_DIRS) {
 if $(BUILD_UNIT_TESTS) != "yes" {
 	Application glestadv : $(GAME_SOURCES) : : $(GAME_PCH) ;
 	LinkWith glestadv : glestlib ;
-	ExternalLibs glestadv : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL Z ;
+ExternalLibs glestadv : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL LUA Z ;
 	IncludeDir glestadv : $(GAME_PCH_INCLUDE) $(GAME_DIRS) $(SHARED_INCLUDE_DIRS) ;
 
 #### Test ####
