@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest Shared Library (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -418,7 +418,7 @@ void Model::save(const string &path){
 			throw runtime_error("Error opening 3d model file");
 		}
 
-		string dir= cutLastFile(path);
+		string dir= dirname(path);
 
 		//read header
 		ModelHeaderOld modelHeader;
@@ -458,7 +458,7 @@ void Model::loadG3d(const string &path, float scale) {
 			throw runtime_error("Error opening 3d model file");
 		}
 
-		string dir = cutLastFile(path);
+		string dir= dirname(path);
 
 		//file header
 		FileHeader fileHeader;
@@ -539,7 +539,7 @@ void Model::saveS3d(const string &path){
 	modelHeader.version= 3;
 	modelHeader.meshCount= meshCount;
 
-	string dir= cutLastFile(path);
+	string dir= dirname(path);
 
 	fwrite(&modelHeader, sizeof(ModelHeader), 1, f);
 	for(int i=0; i<meshCount; ++i){
