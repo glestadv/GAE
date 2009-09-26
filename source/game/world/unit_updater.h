@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -25,6 +25,9 @@ namespace Game {
 
 class Unit;
 class Map;
+class ScriptManager;
+class ParticleDamager;
+namespace Search { class PathFinder; }
 
 // =====================================================
 //	class UnitUpdater
@@ -34,11 +37,10 @@ class Map;
 ///	such as responding to an attack
 // =====================================================
 
-class ParticleDamager;
-
 class UnitUpdater{
 private:
 	friend class ParticleDamager;
+   friend class World;
 
 private:
 	static const int maxResSearchRadius= 10;
@@ -58,7 +60,8 @@ private:
 	Map *map;
 	World *world;
 	Console *console;
-	PathFinder pathFinder;
+   ScriptManager *scriptManager;
+   Search::PathFinder *pathFinder;
 	Random random;
 
 public:

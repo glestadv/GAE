@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -224,6 +224,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
+	Zone getCurrZone() const					{return currField == FieldAir ? ZoneAir : ZoneSurface;}
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}
@@ -271,7 +272,8 @@ public:
 	const int64 &getLastUpdated() const			{return lastUpdated;}
 	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
 	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
-	
+   bool isMobile () { return type->isMobile(); }
+
 
 	void addPet(Unit *u)						{pets.push_back(u);}
 	void petDied(Unit *u)						{pets.remove(u);}

@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -82,11 +82,11 @@ private:
 	static ResourceTypes neededResources;
 
 public:
-	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction);
+	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction, bool giveResources);
 	/*
     void init(const FactionType *factionType, ControlType control, TechTree *techTree,
 			int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction,
-			bool autoRepairEnabled, bool autoReturnEnabled);*/
+			bool autoRepairEnabled, bool autoReturnEnabled, bool giveResources);*/
 	void end();
 
     //get
@@ -122,6 +122,7 @@ public:
 	void applyStaticProduction(const ProducibleType *p);
 	void deApplyCosts(const ProducibleType *p);
 	void deApplyStaticCosts(const ProducibleType *p);
+   void deApplyStaticConsumption(const ProducibleType *p);
 	void applyCostsOnInterval();
 	bool checkCosts(const ProducibleType *pt);
 
