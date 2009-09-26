@@ -61,7 +61,7 @@ void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 
 	Lang &lang = Lang::getInstance();
 
-	try {
+	//try {
 		FILE *f = fopen(file.c_str(), "rb");
 
 		if(!f) {
@@ -76,9 +76,10 @@ void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 		mapInfo->desc = lang.get("MaxPlayers") + ": " + intToStr(mapInfo->players) + "\n";
 		mapInfo->desc += lang.get("Size") + ": " + intToStr(mapInfo->size.x) + " x " + intToStr(mapInfo->size.y);
 		fclose(f);
+		/*
 	} catch (exception e) {
 		throw runtime_error("Error loading map file: " + file + '\n' + e.what());
-	}
+	}*/
 }
 
 void MenuStateStartGameBase::updateNetworkSlots() {

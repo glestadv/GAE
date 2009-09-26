@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -38,8 +38,15 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 
 	Renderer &renderer = Renderer::getInstance();
 
+	const XmlNode *blendModeNode = particleSystemNode->getChild("blend-mode", 0, false);
+	if(blendModeNode) {
+		srcBlendMode = Particle::stringToBlendMode(blendModeNode->getRestrictedAttribute("src"));
+		destBlendMode = Particle::stringToBlendMode(blendModeNode->getRestrictedAttribute("dest"));
+	}
+
 	//texture
 	const XmlNode *textureNode = particleSystemNode->getChild("texture");
+    //texture enabled
 	if (textureNode->getAttribute("value")->getBoolValue()) {
 		Texture2D *texture = renderer.newTexture2D(rsGame);
 		if (textureNode->getAttribute("luminance")->getBoolValue()) {
@@ -56,6 +63,7 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 
 	//model
 	const XmlNode *modelNode = particleSystemNode->getChild("model");
+    //model enabled
 	if (modelNode->getAttribute("value")->getBoolValue()) {
 		string path = modelNode->getAttribute("path")->getRestrictedValue();
 		model = renderer.newModel(rsGame);

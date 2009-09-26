@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -77,6 +77,13 @@ void Intro::update(){
 	if(timer>introTime * Config::getInstance().getGsWorldUpdateFps() / 1000){
 		program.setState(new MainMenu(program));
 	}
+
+	//TOOD: add AutoTest to config
+	/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateIntro(program);
+	}
+	*/
 }
 
 void Intro::render(){

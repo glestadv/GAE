@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Martiño Figueroa
+//	Copyright (C) 2001-2005 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under 
 //	the terms of the GNU General Public License as published 
@@ -37,7 +37,11 @@ private:
 	GraphicLabel labelInfo;
 	GraphicLabel labelScenario;
 	GraphicListBox listBoxScenario;
-    
+
+	GraphicLabel labelCategory;
+	GraphicListBox listBoxCategory;
+    vector<string> categories;
+
 	vector<string> scenarioFiles;
 
     ScenarioInfo scenarioInfo;
@@ -50,9 +54,15 @@ public:
     void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
+	void update();
+
+	void launchGame();
+	void setScenario(int i);
+	int getScenarioCount() const	{ return listBoxScenario.getItemCount(); }
 
 private:
     void loadScenarioInfo(string file, ScenarioInfo &si);
+	void updateScenarioList(const string category);
     void loadGameSettings(const ScenarioInfo &si, GameSettings &gs);
 	Difficulty computeDifficulty(const ScenarioInfo &si);
     ControlType strToControllerType(const string &str);

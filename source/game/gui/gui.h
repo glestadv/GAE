@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -108,6 +108,7 @@ public:
 	static const int imageCount = 16;
 	static const int invalidPos = -1;
 	static const int doubleClickSelectionRadius = 20;
+	static const int invalidGroupIndex= -1;
 
 	typedef vector<Vec2i> BuildPositions;
 
@@ -150,6 +151,7 @@ private:
 	bool selectingPos;
 	bool selectingMeetingPoint;
 	bool needSelectionUpdate;
+	int currentGroup;
 	
 	static Gui* currentGui;
 
@@ -203,6 +205,10 @@ public:
 		computeDisplay();
 	}
 
+	void onSelectionUpdated(){
+		currentGroup= invalidGroupIndex;
+	}
+
 	void mouseDownLeft(int x, int y);
 	void mouseDownRight(int x, int y);
 	void mouseUpLeft(int x, int y);
@@ -223,9 +229,8 @@ public:
 	}
 
 	//misc
-	void switchToNextDisplayColor() {
-		display.switchColor();
-	}
+
+	void switchToNextDisplayColor() {display.switchColor();}
 
 	void onSelectionChanged() {
 		selection.update();

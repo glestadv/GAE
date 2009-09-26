@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Martiño Figueroa
+//	Copyright (C) 2001-2005 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -335,6 +335,12 @@ void MenuStateNewGame::update() {
 	bool gsChangeMade = false;
 	GameSettings &gs = *si.getGameSettings();
 	shared_ptr<MutexLock> localLock = gs.getLock();
+	//TOOD: add AutoTest to config
+	/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateNewGame(program, mainMenu);
+	}
+	*/
 	Lang& lang = Lang::getInstance();
 
 	for (int i = 0; i < mapInfo.players; ++i) {
@@ -400,11 +406,16 @@ void MenuStateNewGame::updateGameSettings() {
 	//gs.clear();
 	gs.readLocalConfig();
 	gs.setDescription(formatString(mapFiles[listBoxMap.getSelectedItemIndex()]));
-	gs.setMapPath("maps/" + mapFiles[listBoxMap.getSelectedItemIndex()] + ".gbm");
+	gs.setMapPath(mapFiles[listBoxMap.getSelectedItemIndex()]);
 	gs.setMapSlots(mapInfo.players);
-	gs.setTilesetPath("tilesets/" + tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
-	gs.setTechPath("techs/" + techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
+	gs.setTilesetPath(tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
+	gs.setTechPath(techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
+	gs.setScenarioPath("");
 	gs.setRandStartLocs(listBoxRandomize.getSelectedItemIndex());
+	gs.setDefaultVictoryConditions(true);
+	gs.setDefaultResources(true);
+	gs.setDefaultUnits(true);
+
 	gs.setCommandDelay(10);
 
 	si.unslotAllClients();

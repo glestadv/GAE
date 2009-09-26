@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -112,6 +112,7 @@ Gui::Gui(Game &game) : game(game), input(game.getInput()) {
 	draggingMinimap = false;
 	needSelectionUpdate = false;
 	currentGui = this;
+	currentGroup= invalidGroupIndex;
 }
 
 void Gui::init() {
@@ -248,7 +249,7 @@ void Gui::mouseDownLeft(int x, int y) {
 		}
 		resetState();
 
-		//begin drag-drop selection & update selection for single-click
+	//begin drag-drop selection & update selection for single-click
 	} else {
 		selectionQuad.setPosDown(Vec2i(x, y));
 		calculateNearest(units, gameCamera->getPos());
@@ -413,11 +414,18 @@ void Gui::groupKey(int groupIndex) {
 	if (input.isCtrlDown()) {
 		selection.assignGroup(groupIndex);
 	} else {
+		if(currentGroup == groupIndex){
+			centerCameraOnSelection();
+		}
+
 		selection.recallGroup(groupIndex);
+
+		currentGroup= groupIndex;
 	}
 }
 
 void Gui::hotKey(UserCommand cmd) {
+	int f = 0;
 	switch (cmd) {
 	// goto selection
 	case ucCameraGotoSelection:
@@ -512,7 +520,13 @@ void Gui::hotKey(UserCommand cmd) {
 	case ucPatrol:
 		//clickCommonCommand(ccPatrol);
 		break;
-
+#ifdef _GAE_DEBUG_EDITION_
+	case ucSwitchDebugField:
+		f = (int)Renderer::getInstance().getDebugField ();
+		f ++; f %= FieldCount;
+		Renderer::getInstance().setDebugField ( (Field)f );
+		break;
+#endif
 	default:
 		break;
 	}
@@ -878,11 +892,15 @@ void Gui::computeDisplay() {
 
 	// ================ PART 1 ================
 
+	int thisTeam = Game::getInstance()->getWorld()->getThisTeamIndex();
 	//title, text and progress bar
 	if (selection.getCount() == 1) {
 		display.setTitle(selection.getFrontUnit()->getFullName());
-		display.setText(selection.getFrontUnit()->getDesc());
-		display.setProgressBar(selection.getFrontUnit()->getProductionPercent());
+		//FIXME maybe do a 'partial' getDesc() showing HP of enemy unit
+		if ( selection.getFrontUnit()->getFaction()->getTeam() == thisTeam ) {
+			display.setText(selection.getFrontUnit()->getDesc());
+			display.setProgressBar(selection.getFrontUnit()->getProductionPercent());
+		}
 	}
 
 	//portraits
@@ -896,7 +914,8 @@ void Gui::computeDisplay() {
 		display.setDownSelectedPos(activePos);
 	}
 
-	if (selection.isComandable()) {
+	if (selection.isComandable() 
+	&& selection.getFrontUnit()->getFaction()->getTeam() == thisTeam ) {
 		if (!selectingBuilding) {
 
 			//cancel button
