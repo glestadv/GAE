@@ -20,6 +20,8 @@ namespace Glest{ namespace Game{
 // 	class PlayerSlot
 // ===============================
 
+class MenuStateNewGame;
+
 class PlayerSlot : public Gooey::Panel {
 	// Texts
 	Gooey::StaticText txtPlayer;
@@ -34,7 +36,10 @@ class PlayerSlot : public Gooey::Panel {
 	//GraphicLabel labelPlayers[GameConstants::maxPlayers];
 	//GraphicLabel labelNetStatus[GameConstants::maxPlayers];
 	*/
-	static int humanIndex1, humanIndex2;
+	int slotIndex;
+	static int nextIndex;
+
+	MenuStateNewGame *menuState;
 
 	void initComboBox(Gooey::ComboBox *cmb) {
 		cmb->setSize(Gooey::Core::Vector2(156, 32));
@@ -43,10 +48,11 @@ class PlayerSlot : public Gooey::Panel {
 	}
 
 public:
-	PlayerSlot();
+	PlayerSlot(MenuStateNewGame *menuState);
 
-	void setControl(ControlType ct);
-	ControlType getControl();
+	void controlSelected(const std::string &selectedText); /** wrapper for MenuStateNewGame::updateSlotControl */
+	void setControlType(ControlType ct);
+	ControlType getControlType();
 	int getTeam();
 	int getFactionIndex();
 	void reloadFactions(vector<std::string> factions);
@@ -112,12 +118,12 @@ public:
 	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
 	void update();
+	void updateSlotControl(int slotIndex);
 
 private:
     void loadGameSettings(GameSettings *gameSettings);
 	//void loadMapInfo(string file, MapInfo *mapInfo);
 	//void reloadFactions();
-	void updateControllers();
 	bool isUnconnectedSlots();
 	void updateNetworkSlots();
 
@@ -126,7 +132,7 @@ private:
 		Gooey::ComboBox *cmb, 
 		const std::string &path, 
 		vector<std::string> &files, 
-		const std::string &errorMsg, 
+		const std::string &errorMsg,
 		bool cutExtension = false);
 
 	// Events
@@ -137,7 +143,7 @@ private:
 
 	void buttonClicked();
 	void mapSelected();
-	void techSelected();
+	void techSelected(const std::string &selectedText);
 };
 
 }}//end namespace

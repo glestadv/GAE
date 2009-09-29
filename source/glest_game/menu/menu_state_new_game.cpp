@@ -28,6 +28,8 @@
 
 #include "leak_dumper.h"
 
+#include "glgooey/ComplexGridLayouter.h"
+
 namespace Glest{ namespace Game{
 
 using namespace Shared::Util;
@@ -37,13 +39,18 @@ using namespace Gooey;
 // 	class PlayerSlot
 // =====================================================
 
-PlayerSlot::PlayerSlot() 
-		: Panel(Core::Rectangle(50, 50, 600, 100), 0, "")
+int PlayerSlot::nextIndex = 0;
+
+PlayerSlot::PlayerSlot(MenuStateNewGame *menuState) 
+		: Panel(Core::Rectangle(50, 50, 700, 100), 0, "")
 		, txtPlayer(0, "Player")
 		, txtNetStatus(0, "net_status")
 		, cmbControl(0, Core::Rectangle(0, 0, 0, 0)) 
 		, cmbFaction(0, Core::Rectangle(0, 0, 0, 0))
-		, spinnerTeam(0,1) {
+		, spinnerTeam(0,1)
+		, menuState(menuState) {
+
+	slotIndex = PlayerSlot::nextIndex++; // Q: can this be in the member initilizer list?
 
 	Lang &lang = Lang::getInstance();
 
@@ -57,6 +64,8 @@ PlayerSlot::PlayerSlot()
 	    cmbControl.addString(lang.get(controlTypeNames[i]));
 	}
 	cmbControl.selectStringAt(0);
+	// needs to be here otherwise it will fire the event when the other slots are yet to be created
+	cmbControl.selectionChanged.connect(this, &PlayerSlot::controlSelected);
 
 	initComboBox(&cmbFaction);
 	cmbFaction.addString("magic");
@@ -67,22 +76,27 @@ PlayerSlot::PlayerSlot()
 	this->arrangeChildren();
 }
 
-
-void PlayerSlot::reloadFactions(vector<std::string> factions) {
-/* TODO: figure out how to do this
-	for(int i = 0; i < GameConstants::maxPlayers; ++i){
-		listBoxFactions[i].setItems(results);
-		listBoxFactions[i].pushBackItem(Lang::getInstance().get("Random"));
-		listBoxFactions[i].setSelectedItemIndex(i % results.size());
-    }*/
+void PlayerSlot::controlSelected(const std::string &selectedText) {
+	menuState->updateSlotControl(slotIndex);
 }
 
-void PlayerSlot::setControl(ControlType ct) {
+void PlayerSlot::reloadFactions(vector<std::string> factions) {
+	cmbFaction.removeAllStrings();	
+	
+	// add the new factions
+	vector<std::string>::const_iterator iter;
+	for (iter = factions.begin(); iter != factions.end(); ++iter) {
+		cmbFaction.addString(*iter);
+	}
+	cmbFaction.selectStringAt(slotIndex % factions.size());
+}
+
+void PlayerSlot::setControlType(ControlType ct) {
 	cmbControl.selectStringAt(ct);
 }
 
-ControlType PlayerSlot::getControl() {
-	return static_cast<ControlType>( cmbControl.selectedIndex() );
+ControlType PlayerSlot::getControlType() {
+	return static_cast<ControlType>(cmbControl.selectedIndex());
 }
 
 int PlayerSlot::getTeam() {
@@ -134,10 +148,11 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	// combo boxes and associated label
 	this->addChildWindow(&txtMap);
 	initFileComboBox(&cmbMap, "maps/*.gbm", mapFiles, "There are no maps", true);
-	this->addChildWindow(&txtTechTree);
-	initFileComboBox(&cmbTechTree, "tilesets/*.", tilesetFiles, "There are no tile sets");
 	this->addChildWindow(&txtTileset);
-	initFileComboBox(&cmbTileset, "techs/*.", techTreeFiles, "There are no tech trees");
+	initFileComboBox(&cmbTileset, "tilesets/*.", tilesetFiles, "There are no tile sets");
+	this->addChildWindow(&txtTechTree);
+	initFileComboBox(&cmbTechTree, "techs/*.", techTreeFiles, "There are no tech trees");
+	cmbTechTree.selectionChanged.connect(this, &MenuStateNewGame::techSelected);
 
 	//headings
 	txtControlHeading.setText(lang.get("Control"));
@@ -151,16 +166,16 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	this->addChildWindow(&txtTeamHeading);
 
 	// create player slots
-	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-		playerSlots.push_back( new PlayerSlot() );
+	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
+		playerSlots.push_back(new PlayerSlot(this));
 	}
 
-	playerSlots[0]->setControl(ctHuman);
+	playerSlots[0]->setControlType(ctHuman);
 
 	// add player slots to window
 	vector<PlayerSlot*>::iterator iter;
-	for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
-		this->addChildWindow( *(iter) );
+	for (iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
+		this->addChildWindow(*iter);
 	}
 
 	//TODO: add cmbMap items so it doesn't crash
@@ -168,23 +183,21 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 
 	txtMapInfo.setText(mapInfo.desc);
 
-	updateControllers();
-	updateNetworkSlots();
+	updateSlotControl(0);
 
-	//init controllers
-	if(openNetworkSlots){
+	// init controllers
+	if (openNetworkSlots) {
 		for(int i = 1; i < mapInfo.players; ++i){
-			playerSlots[i]->setControl(ctNetwork);
+			playerSlots[i]->setControlType(ctNetwork);
 		}
-	}
-	else{
-		playerSlots[1]->setControl(ctCpu);
+	} else {
+		playerSlots[1]->setControlType(ctCpu);
 	}
 
 	Config::getInstance().getGsRandStartLocs() ? chkRandomize.enableChecked() : chkRandomize.disableChecked();
-	this->addChildWindow( &chkRandomize );
+	this->addChildWindow(&chkRandomize);
 
-	//initialize network interface
+	// initialize network interface
 	networkManager.init(nrServer);
 	try {
 		txtNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIp() + ":" + intToStr(GameConstants::serverPort));
@@ -196,7 +209,6 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	initButton(&btnReturn, lang.get("Return"));
 	initButton(&btnPlayNow, lang.get("PlayNow"));
 
-	// arrange the panel's children according to the default flow layouter
 	this->arrangeChildren();
 
 	WindowManager::instance().addWindow(this);
@@ -206,7 +218,6 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton){
 
 	CoreData &coreData= CoreData::getInstance();
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
-	ServerInterface* serverInterface= NetworkManager::getInstance().getServerInterface();
 
 	if(msgBox) {
 		if(msgBox->mouseClick(x,y)) {
@@ -215,48 +226,6 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton){
 			msgBox = NULL;
 		}
 	}
-	/*
-	
-	else if(listBoxRandomize.mouseClick(x, y)){
-		Config::getInstance().setGsRandStartLocs(listBoxRandomize.getSelectedItemIndex());
-	}
-	else{
-		for(int i=0; i<mapInfo.players; ++i){
-			//ensure thet only 1 human player is present
-			if(listBoxControls[i].mouseClick(x, y)){
-
-				//look for human players
-				int humanIndex1= -1;
-				int humanIndex2= -1;
-				for(int j=0; j<GameConstants::maxPlayers; ++j){
-					ControlType ct= static_cast<ControlType>(listBoxControls[j].getSelectedItemIndex());
-					if(ct==ctHuman){
-						if(humanIndex1==-1){
-							humanIndex1= j;
-						}
-						else{
-							humanIndex2= j;
-						}
-					}
-				}
-
-				//no human
-				if(humanIndex1==-1 && humanIndex2==-1){
-					listBoxControls[i].setSelectedItemIndex(ctHuman);
-				}
-
-				//2 humans
-				if(humanIndex1!=-1 && humanIndex2!=-1){
-					listBoxControls[humanIndex1==i? humanIndex2: humanIndex1].setSelectedItemIndex(ctClosed);
-				}
-				updateNetworkSlots();
-			}
-			else if(listBoxFactions[i].mouseClick(x, y)){
-			}
-			else if(listBoxTeams[i].mouseClick(x, y)){
-			}
-		}
-	}*/
 }
 
 void MenuStateNewGame::mouseMove(int x, int y, const MouseState &ms) {
@@ -314,7 +283,7 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings){
 	gameSettings->setDefaultUnits(true);
 
     for(int i = 0; i < mapInfo.players; ++i){
-		ControlType ct = playerSlots[i]->getControl();
+		ControlType ct = playerSlots[i]->getControlType();
 		if (ct != ctClosed) {
 			if (ct == ctHuman) {
 				gameSettings->setThisFactionIndex(factionCount);
@@ -341,7 +310,7 @@ MenuStateNewGame::~MenuStateNewGame() {
 	vector<PlayerSlot*>::iterator iter;
 
 	/*for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
-			delete *(iter); //???
+			delete *iter; //???
 	}*/
 }
 
@@ -352,15 +321,15 @@ void MenuStateNewGame::initButton(Button *btn, const std::string &text) {
 	btn->setSize(Core::Vector2(256, 32));
 	btn->setText(text);
 	btn->loadAppearance("data/gui/default/buttons.xml", "standard");
-	//b->pressed.connect(this, &MenuStateRoot::buttonPressed);
+	btn->pressed.connect(this, &MenuStateNewGame::buttonClicked);
 	this->addChildWindow(btn);
 }
 
 void MenuStateNewGame::initFileComboBox(
-		Gooey::ComboBox *cmb, 
-		const std::string &path, 
-		vector<std::string> &files, 
-		const std::string &errorMsg, 
+		Gooey::ComboBox *cmb,
+		const std::string &path,
+		vector<std::string> &files,
+		const std::string &errorMsg,
 		bool cutExtension) {
 	vector<string> results;
 
@@ -385,62 +354,38 @@ void MenuStateNewGame::initFileComboBox(
 	files = results;
 }
 
-void MenuStateNewGame::updateControllers() {
-	/*TODO: replace with new gui components
-	bool humanPlayer= false;
-
-	for(int i= 0; i<mapInfo.players; ++i){
-		if(listBoxControls[i].getSelectedItemIndex() == ctHuman){
-			humanPlayer= true;
+void MenuStateNewGame::updateSlotControl(int slotIndex) {
+	// look for human players
+	int humanIndex1 = -1;
+	int humanIndex2 = -1;
+	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
+		ControlType ct = playerSlots[i]->getControlType();
+		if (ct == ctHuman) {
+			if (humanIndex1 == -1) {
+				humanIndex1 = i;
+			} else {
+				humanIndex2 = i;
+			}
 		}
 	}
 
-	if(!humanPlayer){
-		listBoxControls[0].setSelectedItemIndex(ctHuman);
+	// no human
+	if (humanIndex1 == -1 && humanIndex2 == -1) {
+		playerSlots[slotIndex]->setControlType(ctHuman);
 	}
 
-	for(int i= mapInfo.players; i<GameConstants::maxPlayers; ++i){
-		listBoxControls[i].setSelectedItemIndex(ctClosed);
+	// 2 humans
+	if (humanIndex1 != -1 && humanIndex2 != -1) {
+		playerSlots[humanIndex1 == slotIndex ? humanIndex2 : humanIndex1]->setControlType(ctClosed);
 	}
-	
-//---------------
-//from mouse click?
-	for(int i=0; i<mapInfo.players; ++i){
-		//ensure thet only 1 human player is present
-		if(listBoxControls[i].mouseClick(x, y)){
 
-			//look for human players
-			int humanIndex1= -1;
-			int humanIndex2= -1;
-			for(int j=0; j<GameConstants::maxPlayers; ++j){
-				ControlType ct= static_cast<ControlType>(listBoxControls[j].getSelectedItemIndex());
-				if(ct==ctHuman){
-					if(humanIndex1==-1){
-						humanIndex1= j;
-					}
-					else{
-						humanIndex2= j;
-					}
-				}
-			}
-
-			//no human
-			if(humanIndex1==-1 && humanIndex2==-1){
-				listBoxControls[i].setSelectedItemIndex(ctHuman);
-			}
-
-			//2 humans
-			if(humanIndex1!=-1 && humanIndex2!=-1){
-				listBoxControls[humanIndex1==i? humanIndex2: humanIndex1].setSelectedItemIndex(ctClosed);
-			}
-			updateNetworkSlots();
-			*/
+	updateNetworkSlots();
 }
 
 bool MenuStateNewGame::isUnconnectedSlots() {
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
 	for(int i = 0; i < mapInfo.players; ++i){
-		if(playerSlots[i]->getControl() == ctNetwork){
+		if(playerSlots[i]->getControlType() == ctNetwork){
 			if(!serverInterface->getSlot(i)->isConnected()){
 				return true;
 			}
@@ -450,13 +395,13 @@ bool MenuStateNewGame::isUnconnectedSlots() {
 }
 
 void MenuStateNewGame::updateNetworkSlots() {
-/*	ServerInterface* serverInterface= NetworkManager::getInstance().getServerInterface();
+/*	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
 
-	for(int i= 0; i<GameConstants::maxPlayers; ++i){
-		if(serverInterface->getSlot(i) == NULL && playerSlots[i]->getControl() == ctNetwork){
+	for(int i = 0; i < GameConstants::maxPlayers; ++i){
+		if(serverInterface->getSlot(i) == NULL && playerSlots[i]->getControlType() == ctNetwork){
 			serverInterface->addSlot(i);
 		}
-		if(serverInterface->getSlot(i) != NULL && playerSlots[i]->getControl() != ctNetwork){
+		if(serverInterface->getSlot(i) != NULL && playerSlots[i]->getControlType() != ctNetwork){
 			serverInterface->removeSlot(i);
 		}
 	}
@@ -491,10 +436,10 @@ void MenuStateNewGame::buttonClicked() {
 void MenuStateNewGame::mapSelected() {
 	loadMapInfo("maps/"+mapFiles[cmbMap.selectedIndex()]+".gbm", &mapInfo);
 	txtMapInfo.setText(mapInfo.desc);
-	updateControllers();
+	updateSlotControl(0);
 }
 
-void MenuStateNewGame::techSelected() {
+void MenuStateNewGame::techSelected(const std::string &selectedText) {
 	vector<string> results;
 
 	findAll("techs/" + techTreeFiles[cmbTechTree.selectedIndex()] + "/factions/*.", results);
@@ -511,8 +456,7 @@ void MenuStateNewGame::techSelected() {
 	// apply new factions to player slots
 	vector<PlayerSlot*>::iterator iter;
 	for(iter = playerSlots.begin(); iter != playerSlots.end(); ++iter) {
-		PlayerSlot *ps = *(iter);
-		ps->reloadFactions(results);
+		(*iter)->reloadFactions(results);
 	}
 }
 
