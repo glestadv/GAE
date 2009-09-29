@@ -95,7 +95,7 @@ void World::save(XmlNode *node) const {
 
 void World::init(const XmlNode *worldNode) {
 
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
 	loadPFDebugTextures();
 #  endif
 	initFactionTypes();
@@ -1180,7 +1180,7 @@ void World::hackyCleanUp(Unit *unit) {
 }
 
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 #define _load_tex(i,f) \
    PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
    PFDebugTextures[i]->setMipmap(false);\

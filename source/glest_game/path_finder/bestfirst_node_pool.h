@@ -106,7 +106,7 @@ public:
 	// returns the lowest h-node of this search
 	BFSNode* getLowestH () { return leastH; }
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	list<Vec2i>* getOpenNodes ();
 	list<Vec2i>* getClosedNodes ();
 #endif

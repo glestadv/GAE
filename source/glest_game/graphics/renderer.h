@@ -27,26 +27,11 @@
 #include "font_manager.h"
 #include "camera.h"
 
+#include <set>
+
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Texture2D;
-using Shared::Graphics::Texture3D;
-using Shared::Graphics::ModelRenderer;
-using Shared::Graphics::TextRenderer2D;
-using Shared::Graphics::ParticleRenderer;
-using Shared::Graphics::ParticleManager;
-using Shared::Graphics::ModelManager;
-using Shared::Graphics::TextureManager;
-using Shared::Graphics::FontManager;
-using Shared::Graphics::Font2D;
-using Shared::Graphics::Matrix4f;
-using Shared::Graphics::Vec2i;
-using Shared::Graphics::Quad2i;
-using Shared::Graphics::Vec3f;
-using Shared::Graphics::Model;
-using Shared::Graphics::ParticleSystem;
-using Shared::Graphics::Pixmap2D;
-using Shared::Graphics::Camera;
+using namespace Shared::Graphics;
 
 //non shared classes
 class Config;
@@ -63,6 +48,13 @@ enum ResourceScope{
 
 	rsCount
 };
+
+#if DEBUG_OVERLAYS
+class CellOverlayCallback {
+public:
+	virtual Vec4f cellOverlayCallback( Vec2i &cell ) = 0;
+};
+#endif
 
 // ===========================================================
 // 	class Renderer
@@ -240,12 +232,36 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_OVERLAYS
+	set<CellOverlayCallback*> cellCallbacks;
+	void addCellOverlay( CellOverlayCallback* cb ) { cellCallbacks.insert( cb ); }
+	void remCellOverlay( CellOverlayCallback* cb ) { 
+		set<CellOverlayCallback*>::iterator it = cellCallbacks.find( cb );	
+		if ( it != cellCallbacks.end() ) {
+			cellCallbacks.erase( it ); 
+		}
+	}
+	void deleteAllOverlays () {
+		set<CellOverlayCallback*>::iterator it = cellCallbacks.begin();	
+		for ( ; it != cellCallbacks.end(); ++it ) {
+			delete *it;
+		}
+		cellCallbacks.clear();
+	}
+	void renderCellOverlays();
+	void renderOverlay( CellOverlayCallback* );
+#endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	static bool captureQuad;
+	static set<Vec2i> capturedQuad;
+#endif
+#if DEBUG_SEARCH_TEXTURES
 	Field debugField;
 	void setDebugField ( Field f ) { debugField = f; }
 	Field getDebugField () { return debugField; }
     void renderSurfacePFDebug ();
 #endif
+	
 	//computing
     bool computePosition(const Vec2i &screenPos, Vec2i &worldPos);
 	void computeSelected(Selection::UnitContainer &units, const Vec2i &posDown, const Vec2i &posUp);
@@ -308,6 +324,22 @@ private:
 	//static
     static Texture2D::Filter strToTextureFilter(const string &s);
 };
+
+#if DEBUG_RENDERER_VISIBLEQUAD
+#	if ! ( DEBUG_OVERLAYS )
+#		error DEBUG_RENDERER_VISIBLEQUAD requires DEBUG_OVERLAYS
+#	endif
+class VisibleQuadOverlayCallBack : public CellOverlayCallback {
+public:
+	virtual Vec4f cellOverlayCallback( Vec2i &cell ) {
+		Vec4f colour( 0.f, 1.f, 0.f, 0.f );
+		if ( Renderer::capturedQuad.find( cell ) != Renderer::capturedQuad.end() ) {
+			colour.w = 0.5f;
+		}
+		return colour;
+	}
+};
+#endif
 
 }} //end namespace
 

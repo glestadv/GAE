@@ -55,7 +55,7 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 
    labelMaxPathNodes.init ( 500, 560 );
    labelPFAlgorithm.init ( 500, 530 );
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
       labelPFTexturesOn.init ( 500, 500 );
       labelPFTextureMode.init ( 500, 470 );
 #  endif
@@ -74,7 +74,7 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 
    listBoxMaxPathNodes.init ( 650, 560, 80 );
    listBoxPFAlgorithm.init ( 650, 530, 180 );
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
       listBoxPFTexturesOn.init ( 650, 500, 180 );
       listBoxPFTextureMode.init ( 650, 470, 180 );
 #  endif
@@ -94,7 +94,7 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 
    labelMaxPathNodes.setText ( lang.get("MaxPathNodes") );
    labelPFAlgorithm.setText ( "SearchAlgorithm" );
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
       labelPFTexturesOn.setText ( "DebugTextures" );
       labelPFTextureMode.setText ( "TextureMode" );
 #  endif
@@ -155,7 +155,7 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
    listBoxPFAlgorithm.pushBackItem ( "Greedy Best First" );
    listBoxPFAlgorithm.setSelectedItemIndex ( config.getPathFinderUseAStar() ? 0 : 1 );
 
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
       listBoxPFTexturesOn.pushBackItem ( "On" );
       listBoxPFTexturesOn.pushBackItem ( "Off" );
       listBoxPFTexturesOn.setSelectedItemIndex ( config.getMiscDebugTextures() ? 0 : 1 );
@@ -235,7 +235,7 @@ void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
       config.setPathFinderUseAStar( listBoxPFAlgorithm.getSelectedItemIndex () ? false : true );
       saveConfig ();
    }
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
    else if ( listBoxPFTexturesOn.mouseClick ( x,y ) )
    {
       config.setMiscDebugTextures ( listBoxPFTexturesOn.getSelectedItemIndex () == 0 ? true : false );
@@ -264,7 +264,7 @@ void MenuStateOptions::mouseMove(int x, int y, const MouseState &ms){
 	listBoxLights.mouseMove(x, y);
    listBoxMaxPathNodes.mouseMove (x, y);
    listBoxPFAlgorithm.mouseMove (x, y);
-#  ifdef _GAE_DEBUG_EDITION_      
+#  if DEBUG_SEARCH_TEXTURES      
       listBoxPFTexturesOn.mouseMove (x, y);
       listBoxPFTextureMode.mouseMove (x, y);
 #  endif
@@ -286,7 +286,7 @@ void MenuStateOptions::render(){
 	renderer.renderListBox(&listBoxVolumeMusic);
    renderer.renderListBox ( &listBoxMaxPathNodes );
    renderer.renderListBox ( &listBoxPFAlgorithm );
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
       renderer.renderListBox ( &listBoxPFTexturesOn );
       renderer.renderListBox ( &listBoxPFTextureMode );
 #  endif
@@ -300,7 +300,7 @@ void MenuStateOptions::render(){
 	renderer.renderLabel(&labelVolumeMusic);
    renderer.renderLabel( & labelMaxPathNodes );
    renderer.renderLabel( & labelPFAlgorithm );
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
       renderer.renderLabel( & labelPFTexturesOn );
       renderer.renderLabel( & labelPFTextureMode );
 #  endif

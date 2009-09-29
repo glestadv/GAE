@@ -139,7 +139,7 @@ bool GraphSearch::GreedySearch ( SearchParams &params, list<Vec2i> &path) {
 		path.push_back ( currNode->pos );
 		currNode = currNode->next;
 	}
-#	ifdef _GAE_DEBUG_EDITION_
+#	if DEBUG_SEARCH_TEXTURES
 	if ( Config::getInstance().getMiscDebugTextures() ) {
 		PathFinder *pf = PathFinder::getInstance();
 		pf->PathStart = path.front();
@@ -252,7 +252,7 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
 		return true; //tsArrived
 	}
 
-#	ifdef _GAE_DEBUG_EDITION_
+#	if DEBUG_SEARCH_TEXTURES
 		if ( Config::getInstance().getMiscDebugTextures() ) {
 			PathFinder *pf = PathFinder::getInstance();
 			pf->PathStart = path.front();

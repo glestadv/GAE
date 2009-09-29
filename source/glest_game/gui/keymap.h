@@ -83,8 +83,14 @@ enum UserCommand {
 	ucGuard,
 	ucFollow,
 	ucPatrol,
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_OVERLAYS
+	ucTurnOffOverlays,
+#endif
+#if DEBUG_SEARCH_TEXTURES
 	ucSwitchDebugField,
+#endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	ucVisibleQuadCapture,
 #endif
 	ucCount
 };

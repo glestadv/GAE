@@ -522,11 +522,19 @@ void Gui::hotKey(UserCommand cmd) {
 	case ucPatrol:
 		//clickCommonCommand(ccPatrol);
 		break;
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	case ucSwitchDebugField:
 		f = (int)Renderer::getInstance().getDebugField ();
 		f ++; f %= FieldCount;
 		Renderer::getInstance().setDebugField ( (Field)f );
+		break;
+#endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	case ucVisibleQuadCapture:
+		Renderer::captureQuad = true;
+		break;
+	case ucTurnOffOverlays:
+		Renderer::capturedQuad.clear();
 		break;
 #endif
 	default:
@@ -1214,7 +1222,7 @@ void Gui::computeBuildPositions(const Vec2i &end) {
 		count = abs(offset.x / size) + 1;
 		offsetAdjusted.x = (offset.x / size) * size;
 		float mulit = (float)offset.x / (float)offsetAdjusted.x;
-		offsetAdjusted.y = (float)offset.y * mulit;
+		offsetAdjusted.y = ((int)(float)offset.y * mulit);
 	} else {
 		count = abs(offset.y / size) + 1;
 		offsetAdjusted.y = (offset.y / size) * size;

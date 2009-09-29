@@ -165,7 +165,7 @@ public:
 	void startTimer () { startTime = Chrono::getCurMicros (); }
 	int64 stopTimer () { return Chrono::getCurMicros () - startTime; }
 #endif
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	virtual list<Vec2i>* getOpenNodes ();
 	virtual list<Vec2i>* getClosedNodes ();
 	list<Vec2i> listedNodes;

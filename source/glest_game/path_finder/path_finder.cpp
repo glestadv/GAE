@@ -104,7 +104,7 @@ void PathFinder::init ( Map *map ) {
 	delete annotatedMap;
 	annotatedMap = new AnnotatedMap ( map );
 	search->init ( map, annotatedMap, Config::getInstance().getPathFinderUseAStar() );
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
 		int foo = Config::getInstance ().getMiscDebugTextureMode ();
 		debug_texture_action = foo == 0 ? PathFinder::ShowPathOnly

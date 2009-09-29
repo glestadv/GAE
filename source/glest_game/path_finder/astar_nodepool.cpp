@@ -59,7 +59,7 @@ void AStarNodePool::reset () {
 	leastH = NULL;
 	markerArray.newSearch ();
 	openHeap.clear ();
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
 	listedNodes.clear ();
 #  endif
 }
@@ -74,7 +74,7 @@ bool AStarNodePool::addToOpen ( AStarNode* prev, const Vec2i &pos, float h, floa
 	if ( numNodes == tmpMaxNodes ) {
 		return false;
 	}
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
 	listedNodes.push_back ( pos );
 #  endif
 	stock[numNodes].next = NULL;
@@ -141,7 +141,7 @@ AStarNode* AStarNodePool::getBestCandidate () {
 	return ret;
 }
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 
 list<Vec2i>* AStarNodePool::getOpenNodes () {
 	list<Vec2i> *ret = new list<Vec2i> ();
@@ -161,55 +161,6 @@ list<Vec2i>* AStarNodePool::getClosedNodes () {
 	return ret;
 }
 
-#endif // defined ( _GAE_DEBUG_EDITION_ )
-
-#ifdef PATHFINDER_TIMING
-
-PathFinderStats::PathFinderStats ( char *name ) {
-	assert ( strlen ( name ) < 31 );
-	if ( name ) strcpy ( prefix, name );
-	else strcpy ( prefix, "??? : " );
-	num_searches = num_searches_last_interval = 
-		worst_search = calls_rejected = num_searches_this_interval = 0;
-	search_avg = search_avg_last_interval = search_avg_this_interval = 0.0;
-}
-
-void PathFinderStats::resetCounters () {
-	num_searches_last_interval = num_searches_this_interval;
-	search_avg_last_interval = search_avg_this_interval;
-	num_searches_this_interval = 0;
-	search_avg_this_interval = 0.0;
-}
-char * PathFinderStats::GetStats () {
-	sprintf ( buffer, "%s Processed last interval: %d, Average (micro-seconds): %g", prefix,
-		(int)num_searches_last_interval, search_avg_last_interval );
-	return buffer;
-}
-char * PathFinderStats::GetTotalStats () {
-	sprintf ( buffer, "%s Total Searches: %d, Search Average (micro-seconds): %g, Worst: %d.", prefix,
-		(int)num_searches, search_avg, (int)worst_search );
-	return buffer;
-}
-void PathFinderStats::AddEntry ( int64 ticks ) {
-	if ( num_searches_this_interval ) {
-		search_avg_this_interval = ( search_avg_this_interval * (double)num_searches_this_interval 
-			+ (double)ticks ) / (double)( num_searches_this_interval + 1 );
-	}
-	else {
-		search_avg_this_interval = (double)ticks;
-	}
-	num_searches_this_interval++;
-	if ( num_searches ) {
-		search_avg  = ( (double)num_searches * search_avg + (double)ticks ) / (double)( num_searches + 1 );
-	}
-	else {
-		search_avg = (double)ticks;
-	}
-	num_searches++;
-
-	if ( ticks > worst_search ) worst_search = ticks;
-}
-#endif // defined ( PATHFINDER_TIMING )
-
+#endif // defined ( DEBUG_SEARCH_TEXTURES )
 
 }}}

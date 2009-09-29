@@ -28,12 +28,16 @@
 
 #include "leak_dumper.h"
 
-
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
 
 namespace Glest { namespace Game{
+
+#if DEBUG_RENDERER_VISIBLEQUAD
+	bool Renderer::captureQuad = false;
+	set<Vec2i> Renderer::capturedQuad;
+#endif
 
 // =====================================================
 // 	class MeshCallbackTeamColor
@@ -167,8 +171,11 @@ Renderer::Renderer(){
 	perspFov = config.getRenderFov();
 	perspNearPlane = config.getRenderDistanceMin();
 	perspFarPlane = config.getRenderDistanceMax();
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	debugField = FieldWalkable;
+#endif
+#if DEBUG_OVERLAYS
+	addCellOverlay( new VisibleQuadOverlayCallBack() );
 #endif
 }
 
@@ -1132,13 +1139,22 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 // ==================== complex rendering ====================
 
 void Renderer::renderSurface(){
-#  if defined _GAE_DEBUG_EDITION_
-   if ( Config::getInstance().getMiscDebugTextures() )
-   {
-      renderSurfacePFDebug ();
-      return;
-   }
-#  endif
+#	if DEBUG_SEARCH_TEXTURES
+		if ( Config::getInstance().getMiscDebugTextures() ) {
+			renderSurfacePFDebug ();
+			return;
+		}
+#	endif
+#	if DEBUG_RENDERER_VISIBLEQUAD
+		if ( captureQuad ) {
+			capturedQuad.clear();
+			PosQuadIterator vqi(visibleQuad);
+			while(vqi.next()){
+				capturedQuad.insert( vqi.getPos() );
+			}
+			captureQuad = false;
+		}
+#	endif
 
 	int lastTex=-1;
 	int currTex;
@@ -1240,9 +1256,147 @@ void Renderer::renderSurface(){
 	//assert
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
+#	if DEBUG_OVERLAYS
+		renderCellOverlays();
+#	endif
 }
 
-#ifdef _GAE_DEBUG_EDITION_
+
+#if DEBUG_OVERLAYS
+
+void Renderer::renderCellOverlays() {
+	set<CellOverlayCallback*>::iterator it = cellCallbacks.begin();
+	for ( ; it != cellCallbacks.end(); ++it ) {
+		renderOverlay( *it );
+	}
+}
+
+void Renderer::renderOverlay( CellOverlayCallback *cb ) {
+	World &theWorld = *Game::getInstance()->getWorld();
+	Map &theMap = *theWorld.getMap();
+	const Rect2i mapBounds( 0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1 );
+	float coordStep = theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
+
+	glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT );
+
+	glEnable( GL_BLEND );
+	glEnable( GL_COLOR_MATERIAL ); 
+	glDisable( GL_ALPHA_TEST );
+	glActiveTexture( baseTexUnit );
+	glDisable( GL_TEXTURE_2D );
+
+	Vec4f colour;
+	Quad2i scaledQuad = visibleQuad / Map::cellScale;
+
+	PosQuadIterator pqi( scaledQuad );
+	while ( pqi.next() ){
+		const Vec2i &pos = pqi.getPos();
+		int cx, cy;
+		cx = pos.x * 2;
+		cy = pos.y * 2;
+		if ( mapBounds.isInside( pos ) ) {
+
+			Tile *tc00= theMap.getTile( pos.x, pos.y );
+			Tile *tc10= theMap.getTile( pos.x+1, pos.y );
+			Tile *tc01= theMap.getTile( pos.x, pos.y+1 );
+			Tile *tc11= theMap.getTile( pos.x+1, pos.y+1 );
+
+			Vec3f tl = tc00->getVertex(); tl.y += 0.25f;
+			Vec3f tr = tc10->getVertex(); tr.y += 0.25f;
+			Vec3f bl = tc01->getVertex(); bl.y += 0.25f;
+			Vec3f br = tc11->getVertex(); br.y += 0.25f;
+
+			Vec3f tc = tl + (tr - tl) / 2;
+			Vec3f ml = tl + (bl - tl) / 2;
+			Vec3f mr = tr + (br - tr) / 2;
+			Vec3f mc = ml + (mr - ml) / 2;
+			Vec3f bc = bl + (br - bl) / 2;
+
+			// cx,cy
+			Vec2i cPos( cx, cy );
+			colour = cb->cellOverlayCallback( cPos );
+
+			glBegin ( GL_TRIANGLE_FAN );
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(tl.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(tc.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(mc.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(ml.ptr());                        
+			glEnd ();
+
+			cPos = Vec2i( cx+1, cy );
+			colour = cb->cellOverlayCallback( cPos );
+
+			glBegin ( GL_TRIANGLE_FAN );
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(tc.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(tr.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(mr.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(mc.ptr());                        
+			glEnd ();
+
+			cPos = Vec2i( cx, cy + 1 );
+			colour = cb->cellOverlayCallback( cPos );
+
+			glBegin ( GL_TRIANGLE_FAN );
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(ml.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(mc.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(bc.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(bl.ptr());                        
+			glEnd ();
+
+			cPos = Vec2i( cx + 1, cy + 1 );
+			colour = cb->cellOverlayCallback( cPos );
+
+			glBegin ( GL_TRIANGLE_FAN );
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(mc.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(mr.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(br.ptr());
+			glNormal3fv(tc00->getNormal().ptr());
+			glColor4fv( colour.ptr() );
+			glVertex3fv(bc.ptr());                        
+			glEnd ();
+		}
+	}
+	glEnd();
+
+	//Restore
+	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
+	glPopAttrib();
+}
+
+
+#endif
+
+#if DEBUG_SEARCH_TEXTURES
 void Renderer::renderSurfacePFDebug ()
 {
 	int lastTex=-1;

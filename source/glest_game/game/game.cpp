@@ -908,7 +908,7 @@ void Game::render2d(){
             }
             str << endl;
         }
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	   str << "Debug Field : " << Fields::getName ( renderer.getDebugField() ) << endl;
 #endif
 		renderer.renderText(
