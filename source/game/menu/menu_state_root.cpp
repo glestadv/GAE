@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2005 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -126,13 +126,6 @@ void MenuStateRoot::render(){
 	renderer.renderButton(&buttonAbout);
 	renderer.renderButton(&buttonExit);
 	renderer.renderLabel(&labelVersion);
-}
-
-void MenuStateRoot::update(){
-	//TOOD: add AutoTest to config
-	/*if(Config::getInstance().getBool("AutoTest")){
-		AutoTest::getInstance().updateRoot(program, mainMenu);
-	}*/
 }
 
 } // end namespace

@@ -1,8 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
-//				  2008-2009 Daniel Santos(daniel.santos@pobox.com)
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -42,7 +41,6 @@ class Logger : Uncopyable {
 private:
 	static const int logLineCount;
 
-private:
 	typedef deque<string> Strings;
 	class FileHandler {
 	private:
@@ -60,15 +58,11 @@ private:
 
 private:
 	string fileName;
-	//string sectionName;
+	string sectionName;
 	string state;
 	Strings logLines;
 	stringstream ss;
 	ObjectPrinter op;
-	string subtitle;
-	string current;
-	bool loadingGame;
-	static char errorBuf[];
 
 private:
 	Logger(const char *fileName);
@@ -89,26 +83,19 @@ public:
 		return logger;
 	}
 
-	static Logger &getErrorLog() {
-		static Logger logger( "glestadv-error.log" );
-		return logger;
-	}
-
-	void addXmlError( const string &path, const char *error );
-
 	//void setFile(const string &fileName) {this->fileName= fileName;}
-	void setState( const string &state );
-	void setSubtitle( const string &v )		{subtitle = v;}
-	void setLoading( bool v )				{loadingGame = v;}
+	void setState(const string &state);
 
 	void add(const string &str, bool renderScreen = false);
 	void add(const Printable &, bool renderScreen = false);
 	void add(const string &str, const Printable &p, bool renderScreen = false);
 	void printf(const char* pattern, ...);
 	void renderLoadingScreen();
-   void setLoading ( bool loading ) { loadingGame = loading; }
 
 	void clear();
+
+private:
+	
 };
 
 #if defined(WIN32) | defined(WIN64)

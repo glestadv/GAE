@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -91,8 +91,10 @@ void AmbientSounds::load(const string &dir, const XmlNode *xmlNode){
 // =====================================================
 
 void Tileset::load(const string &dir, Checksums &checksums) {
+
 	random.init(time(NULL));
-	string path= dir + "/" + basename(dir) + ".xml";
+
+	string path= dir + "/" + lastDir(dir) + ".xml";
 
 	checksums.addFile(path, true);
 

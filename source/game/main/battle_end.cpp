@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -43,14 +43,6 @@ BattleEnd::BattleEnd(Program &program, const shared_ptr<GameSettings> &gs, const
 
 BattleEnd::~BattleEnd() {
 	SoundRenderer::getInstance().playMusic(CoreData::getInstance().getMenuMusic());
-}
-
-void BattleEnd::update(){
-	//TOOD: add AutoTest to config
-	/*
-	if(Config::getInstance().getBool("AutoTest")){
-		AutoTest::getInstance().updateBattleEnd(program);
-	}*/
 }
 
 void BattleEnd::render() {

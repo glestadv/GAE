@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -286,7 +286,7 @@ bool Ai::findPosForBuilding(const UnitType* building, const Vec2i &searchPos, Ve
 		for (int i = searchPos.x - currRadius; i < searchPos.x + currRadius; ++i) {
 			for (int j = searchPos.y - currRadius; j < searchPos.y + currRadius; ++j) {
 				outPos = Vec2i(i, j);
-				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, FieldWalkable)) {
+				if (aiInterface->isFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, fLand)) {
 					return true;
 				}
 			}
@@ -485,7 +485,7 @@ void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
 
     for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
         const Unit *unit= aiInterface->getMyUnit(i);
-		const AttackCommandType *act = unit->getType()->getFirstAttackCommand(field == FieldAir ? ZoneAir : ZoneSurface);
+		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field);
 		bool isWarrior= !unit->getType()->hasCommandClass(ccHarvest) && !unit->getType()->hasCommandClass(ccProduce);
 		bool alreadyAttacking= unit->getCurrSkill()->getClass()==scAttack;
 		if(!alreadyAttacking && act!=NULL && (ultraAttack || isWarrior)){

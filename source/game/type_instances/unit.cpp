@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -131,14 +131,11 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(FieldWalkable)) currField = FieldWalkable;
-	else if(type->getField(FieldAir)) currField = FieldAir;
-
-	if ( type->getField (FieldAmphibious) ) currField = FieldAmphibious;
-	else if ( type->getField (FieldAnyWater) ) currField = FieldAnyWater;
-	else if ( type->getField (FieldDeepWater) ) currField = FieldDeepWater;
-
-	targetField = FieldWalkable;		// init just to keep it pretty in memory
+	if(type->getField(fAir)) currField = fAir;
+//	if(getType()->getField(fWater)) currField = fWater;
+//	if(getType()->getField(fSubterranean)) currField = fSubterranean;
+	if(type->getField(fLand)) currField = fLand;
+	targetField = fLand;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -849,8 +846,7 @@ void Unit::born(){
 void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	assert(hp <= 0);
 	hp = 0;
-
-   World::getCurrWorld()->hackyCleanUp(this);
+	World::getCurrWorld()->hackyCleanUp(this);
 
 	if(fire != NULL) {
 		fire->fade();
@@ -867,16 +863,15 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	}
 	setCurrSkill(scDie);
 
-	//no longer needs static resources
-	if(isBeingBuilt())
-		faction->deApplyStaticConsumption(type);
-	else
-		faction->deApplyStaticCosts(type);
-
 	notifyObservers(UnitObserver::eKill);
 
 	//clear commands
 	clearCommands();
+
+	//no longer needs static resources
+	if(!isBeingBuilt()) {
+		faction->deApplyStaticCosts(type);
+	}
 
 	//kill or free pets
 	killPets();
@@ -899,12 +894,12 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
 	const CommandType *commandType = NULL;
-	Tile *sc = map->getTile(Map::toTileCoords(pos));
+	SurfaceCell *sc = map->getSurfaceCell(Map::toSurfCoords(pos));
 
 	if (targetUnit) {
 		//attack enemies
 		if (!isAlly(targetUnit)) {
-			commandType = type->getFirstAttackCommand(targetUnit->getCurrZone());
+			commandType = type->getFirstAttackCommand(targetUnit->getCurrField());
 
 		//repair allies
 		} else {
@@ -1024,11 +1019,12 @@ bool Unit::doRegen(int hpRegeneration, int epRegeneration) {
 	}
 
 	//hp regen/degen
-	if(hpRegeneration > 0)
+	if(hpRegeneration > 0) {
 		repair(hpRegeneration);
-	else if(hpRegeneration < 0) {
-		if(decHp(-hpRegeneration))
+	} else if(hpRegeneration < 0) {
+		if(decHp(-hpRegeneration)) {
 			return true;
+		}
 	}
 
 	//ep regen/degen
@@ -1319,26 +1315,10 @@ void Unit::incKills() {
 bool Unit::morph(const MorphCommandType *mct) {
 	const UnitType *morphUnitType = mct->getMorphUnit();
 
-	// redo field
-	Field newField;
-	if ( morphUnitType->getField( FieldWalkable ) ) {
-		newField = FieldWalkable;
-	} else if ( morphUnitType->getField( FieldAir ) ) {
-		newField = FieldAir;
-	}
-	if ( morphUnitType->getField( FieldAmphibious ) ) {
-		newField = FieldAmphibious;
-	} else if ( morphUnitType->getField( FieldAnyWater ) ) {
-		newField = FieldAnyWater;
-	} else if ( morphUnitType->getField( FieldDeepWater ) ) {
-		newField = FieldDeepWater;
-	}
-
-	if (map->areFreeCellsOrHasUnit(pos, morphUnitType->getSize(), newField, this)) {
+	if (map->isFreeCellsOrHasUnit(pos, morphUnitType->getSize(), currField, this)) {
 		map->clearUnitCells(this, pos);
 		faction->deApplyStaticCosts(type);
 		type = morphUnitType;
-		currField = newField;
 		computeTotalUpgrade();
 		map->putUnitCells(this, pos);
 		faction->applyDiscount(morphUnitType, mct->getDiscount());
@@ -1440,7 +1420,7 @@ void Unit::effectExpired(Effect *e){
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
-	if (currField == FieldAir) {
+	if (currField == fAir) {
 		height += World::airHeight;
 	}
 

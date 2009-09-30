@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -138,7 +138,7 @@ int AiInterface::onSightUnitCount(){
 	Map *map= world->getMap();
 	for(int i=0; i<world->getFactionCount(); ++i){
 		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			Tile *sc= map->getTile(Map::toTileCoords(world->getFaction(i)->getUnit(j)->getPos()));
+			SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(world->getFaction(i)->getUnit(j)->getPos()));
 			if(sc->isVisible(teamIndex)){
 				count++;
 			}
@@ -163,7 +163,7 @@ const Unit *AiInterface::getOnSightUnit(int unitIndex){
 	for(int i=0; i<world->getFactionCount(); ++i){
         for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
             Unit *u= world->getFaction(i)->getUnit(j);
-            if(map->getTile(Map::toTileCoords(u->getPos()))->isVisible(teamIndex)){
+            if(map->getSurfaceCell(Map::toSurfCoords(u->getPos()))->isVisible(teamIndex)){
 				if(count==unitIndex){
 					return u;
 				}
@@ -194,11 +194,11 @@ bool AiInterface::getNearestSightedResource(const ResourceType *rt, const Vec2i 
 
 	for(int i=0; i<map->getW(); ++i){
 		for(int j=0; j<map->getH(); ++j){
-			Vec2i surfPos= Map::toTileCoords(Vec2i(i, j));
+			Vec2i surfPos= Map::toSurfCoords(Vec2i(i, j));
 
 			//if explored cell
-			if(map->getTile(surfPos)->isExplored(teamIndex)){
-				Resource *r= map->getTile(surfPos)->getResource();
+			if(map->getSurfaceCell(surfPos)->isExplored(teamIndex)){
+				Resource *r= map->getSurfaceCell(surfPos)->getResource();
 
 				//if resource cell
 				if(r!=NULL && r->getType()==rt){
@@ -230,8 +230,8 @@ bool AiInterface::checkCosts(const ProducibleType *pt){
 	return world->getFaction(factionIndex)->checkCosts(pt);
 }
 
-bool AiInterface::areFreeCells(const Vec2i &pos, int size, Field field){
-    return world->getMap()->areFreeCells(pos, size, field);
+bool AiInterface::isFreeCells(const Vec2i &pos, int size, Field field){
+    return world->getMap()->isFreeCells(pos, size, field);
 }
 
 } // end namespace

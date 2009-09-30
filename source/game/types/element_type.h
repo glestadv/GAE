@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -95,7 +95,7 @@ public:
 			IdNamePair(id, name), image(image) {}
 	virtual ~DisplayableType() {};
 
-	virtual bool load(const XmlNode *baseNode, const string &dir);
+	virtual void load(const XmlNode *baseNode, const string &dir);
 
 	//get
 	const Texture2D *getImage() const	{return image;}
@@ -132,7 +132,7 @@ public:
 
     //other
     virtual string getReqDesc() const;
-	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
 };
 
 // =====================================================
@@ -174,7 +174,7 @@ public:
 
     //varios
     void checkCostStrings(TechTree *techTree);
-	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType);
+	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType);
 
 	virtual string getReqDesc() const;
 };

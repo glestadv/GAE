@@ -31,8 +31,7 @@ using namespace Shared::Xml;
 
 namespace Game {
 
-const char *Zones::names[] = {"prop", "land"/*<- == "surface"*/, "air", /*, "subsurface"*/};
-const char *Fields::names[] = {"land"/*<- == "walkable"*/, "air", "any_water", "deep_water", "amphibious" };
+const char *Fields::names[] = {"land", "air"/*, "water", "subterranean"*/};
 const char *UnitProperties::names[] = {"burnable", "rotated_climb", "wall"};
 
 // ===============================
@@ -156,85 +155,49 @@ void UnitStatsBase::applyMultipliers(const EnhancementTypeBase &e) {
 }
 
 // legacy load for Unit class
-bool UnitStatsBase::load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType) {
-	bool loadOk = true;
-   //maxHp
-   try { maxHp = baseNode->getChildIntValue("max-hp"); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+void UnitStatsBase::load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType) {
+	//maxHp
+	maxHp = baseNode->getChildIntValue("max-hp");
+
 	//hpRegeneration
-   try { hpRegeneration = baseNode->getChild("max-hp")->getIntAttribute("regeneration"); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	hpRegeneration = baseNode->getChild("max-hp")->getIntAttribute("regeneration");
+
 	//maxEp
-   try { maxEp = baseNode->getChildIntValue("max-ep"); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
-   try {
-	   //epRegeneration
-	   if (maxEp) {
-		   epRegeneration = baseNode->getChild("max-ep")->getIntAttribute("regeneration");
-	   } 
-      else {
-		   XmlAttribute *epRegenAttr = baseNode->getChild("max-ep")->getAttribute("regeneration", false);
-		   epRegeneration = epRegenAttr ? epRegenAttr->getIntValue() : 0;
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	maxEp = baseNode->getChildIntValue("max-ep");
+
+	//epRegeneration
+	if (maxEp) {
+		epRegeneration = baseNode->getChild("max-ep")->getIntAttribute("regeneration");
+	} else {
+		XmlAttribute *epRegenAttr = baseNode->getChild("max-ep")->getAttribute("regeneration", false);
+		epRegeneration = epRegenAttr ? epRegenAttr->getIntValue() : 0;
+	}
+
 	//sight
-   try { sight = baseNode->getChildIntValue("sight"); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	sight = baseNode->getChildIntValue("sight");
+
 	//armor
-   try { armor = baseNode->getChildIntValue("armor"); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	armor = baseNode->getChildIntValue("armor");
+
 	//armor type string
-   try {
-      string armorTypeName = baseNode->getChildRestrictedValue("armor-type");
-      armorType = techTree->getArmorType(armorTypeName);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	string armorTypeName = baseNode->getChildRestrictedValue("armor-type");
+	armorType = techTree->getArmorType(armorTypeName);
+
 	//light & lightColor
-   try {
-	   const XmlNode *lightNode = baseNode->getChild("light");
-	   light = lightNode->getAttribute("enabled")->getBoolValue();
-	   if (light)
-		   lightColor = lightNode->getColor3Value();
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	const XmlNode *lightNode = baseNode->getChild("light");
+	light = lightNode->getAttribute("enabled")->getBoolValue();
+	if (light) {
+		lightColor = lightNode->getColor3Value();/*
+		lightColor.x = lightNode->getAttribute("red")->getFloatValue(0.f, 1.f);
+		lightColor.y = lightNode->getAttribute("green")->getFloatValue(0.f, 1.f);
+		lightColor.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);*/
+	}
+
 	//size
-   try { size = baseNode->getChildIntValue("size"); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	size = baseNode->getChildIntValue("size");
+
 	//height
-   try { height = baseNode->getChildIntValue("height"); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
-   return loadOk;
+	height = baseNode->getChildIntValue("height");
 }
 
 void UnitStatsBase::save(XmlNode *node) {
@@ -452,34 +415,24 @@ void EnhancementTypeBase::initMultiplier(const XmlNode *node, const string &dir)
 	}
 }
 
-bool EnhancementTypeBase::load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft) {
+void EnhancementTypeBase::load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft) {
 	const XmlNode *node;
-   bool loadOk = true;
+
 	//static modifiers
-   try {
-      node = baseNode->getChild("static-modifiers", 0, false);
-	   if(node) {
-		   for (int i = 0; i < node->getChildCount(); ++i) {
-			   initStaticModifier(node->getChild(i), dir);
-		   }
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
+	node = baseNode->getChild("static-modifiers", 0, false);
+	if(node) {
+		for (int i = 0; i < node->getChildCount(); ++i) {
+			initStaticModifier(node->getChild(i), dir);
+		}
+	}
+
 	//multipliers
-   try {
-	   node = baseNode->getChild("multipliers", 0, false);
-	   if(node)
-		   for (int i = 0; i < node->getChildCount(); ++i)
-			   initMultiplier(node->getChild(i), dir);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
-   return loadOk;
+	node = baseNode->getChild("multipliers", 0, false);
+	if(node) {
+		for (int i = 0; i < node->getChildCount(); ++i) {
+			initMultiplier(node->getChild(i), dir);
+		}
+	}
 }
 
 

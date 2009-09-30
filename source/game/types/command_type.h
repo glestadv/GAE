@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -84,7 +84,7 @@ private:
 	vector<const AttackSkillType*> types;
 	vector<AttackSkillPreferences> associatedPrefs;
 	int maxRange;
-	Zones zones;
+	Fields fields;
 	AttackSkillPreferences allPrefs;
 
 public:
@@ -92,7 +92,7 @@ public:
 	int getMaxRange() const									{return maxRange;}
 // const vector<const AttackSkillType*> &getTypes() const	{return types;}
 	void getDesc(string &str, const Unit *unit) const;
-	bool getZone(Zone zone) const						{return zones.get(zone);}
+	bool getField(Field field) const						{return fields.get(field);}
 	bool hasPreference(AttackSkillPreference pref) const	{return allPrefs.get(pref);}
 	const AttackSkillType *getPreferredAttack(const Unit *unit, const Unit *target, int rangeToTarget) const;
 	const AttackSkillType *getSkillForPref(AttackSkillPreference pref, int rangeToTarget) const {
@@ -135,7 +135,7 @@ public:
 	CommandType(const char* name, CommandClass cc, Clicks clicks, bool queuable = false);
 
 	virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void setUnitTypeAndIndex(const UnitType *unitType, int unitTypeIndex);
 	virtual void getDesc(string &str, const Unit *unit) const = 0;
 	virtual string toString() const						{return Lang::getInstance().get(name);}
@@ -167,7 +167,7 @@ protected:
 public:
 	MoveBaseCommandType(const char* name, CommandClass commandTypeClass, Clicks clicks) :
 			CommandType(name, commandTypeClass, clicks) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const	{moveSkillType->getDesc(str, unit);}
 	const MoveSkillType *getMoveSkillType() const				{return moveSkillType;}
 };
@@ -183,7 +183,7 @@ protected:
 public:
 	StopBaseCommandType(const char* name, CommandClass commandTypeClass, Clicks clicks) :
 			CommandType(name, commandTypeClass, clicks) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const	{stopSkillType->getDesc(str, unit);}
 	const StopSkillType *getStopSkillType() const				{return stopSkillType;}
 };
@@ -215,7 +215,7 @@ protected:
 	AttackSkillTypes attackSkillTypes;
 
 public:
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType *ut);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType *ut);
 	virtual void getDesc(string &str, const Unit *unit) const {attackSkillTypes.getDesc(str, unit);}
 
 // const AttackSkillType *getAttackSkillType() const	{return attackSkillTypes.begin()->first;}
@@ -232,7 +232,7 @@ class AttackCommandType: public MoveBaseCommandType, public AttackCommandTypeBas
 public:
 	AttackCommandType(const char* name = "Attack", CommandClass commandTypeClass = ccAttack, Clicks clicks = cTwo) :
 			MoveBaseCommandType(name, commandTypeClass, clicks) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const {
 		AttackCommandTypeBase::getDesc(str, unit);
 		MoveBaseCommandType::getDesc(str, unit);
@@ -246,7 +246,7 @@ public:
 class AttackStoppedCommandType: public StopBaseCommandType, public AttackCommandTypeBase {
 public:
 	AttackStoppedCommandType() : StopBaseCommandType("AttackStopped", ccAttackStopped, cOne) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const {
 		AttackCommandTypeBase::getDesc(str, unit);
 	}
@@ -267,7 +267,7 @@ private:
 public:
 	BuildCommandType() : MoveBaseCommandType("Build", ccBuild, cTwo) {}
 	~BuildCommandType();
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const {
 		buildSkillType->getDesc(str, unit);
 	}
@@ -296,7 +296,7 @@ private:
 
 public:
 	HarvestCommandType() : MoveBaseCommandType("Harvest", ccHarvest, cTwo) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 
 	//get
@@ -323,7 +323,7 @@ private:
 public:
 	RepairCommandType() : MoveBaseCommandType("Repair", ccRepair, cTwo) {}
 	~RepairCommandType();
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 
 	//get
@@ -343,7 +343,7 @@ private:
 
 public:
 	ProduceCommandType() : CommandType("Produce", ccProduce, cOne, true) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 
 	virtual string getReqDesc() const;
@@ -366,7 +366,7 @@ private:
 
 public:
 	UpgradeCommandType() : CommandType("Upgrade", ccUpgrade, cOne, true) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual string getReqDesc() const;
 	virtual const ProducibleType *getProduced() const;
 	virtual void getDesc(string &str, const Unit *unit) const {
@@ -391,7 +391,7 @@ private:
 
 public:
 	MorphCommandType() : CommandType("Morph", ccMorph, cOne) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 	virtual string getReqDesc() const;
 	virtual const ProducibleType *getProduced() const;
@@ -413,7 +413,7 @@ private:
 
 public:
 	CastSpellCommandType() : MoveBaseCommandType("CastSpell", ccCastSpell, cTwo) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 	const CastSpellSkillType * getCastSpellSkillType() const	{return castSpellSkillType;}
 };
@@ -429,7 +429,7 @@ private:
 public:
 	GuardCommandType(const char* name = "Guard", CommandClass commandTypeClass = ccGuard, Clicks clicks = cTwo) :
 			AttackCommandType(name, commandTypeClass, clicks) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	int getMaxDistance() const {return maxDistance;}
 };
 
@@ -451,7 +451,7 @@ class SetMeetingPointCommandType: public CommandType {
 public:
 	SetMeetingPointCommandType() :
 			CommandType("SetMeetingPoint", ccSetMeetingPoint, cTwo) {}
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {return true;}
+	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
 };
 

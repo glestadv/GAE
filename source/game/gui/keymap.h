@@ -20,9 +20,10 @@
 using Shared::Util::Properties;
 using namespace Shared::Platform;
 using Shared::Platform::Key;
-using Shared::Platform::KeyCode;
 
-namespace Glest { namespace Game {
+namespace Game {
+
+using Shared::Platform::KeyCode;
 
 // =====================================================
 // 	class Keymap
@@ -84,9 +85,7 @@ enum UserCommand {
 	ucGuard,
 	ucFollow,
 	ucPatrol,
-#ifdef _GAE_DEBUG_EDITION_
-	ucSwitchDebugField,
-#endif
+
 	ucCount
 };
 

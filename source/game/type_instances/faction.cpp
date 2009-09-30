@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -37,7 +37,7 @@ namespace Game {
 Faction::ResourceTypes Faction::neededResources;
 
 Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction)
-		: IdNamePair(gsFaction.getId(), gsFaction.getName(), bool giveResources)
+		: IdNamePair(gsFaction.getId(), gsFaction.getName())
 		, upgradeManager()
 		, resources()
 		, store()
@@ -74,8 +74,7 @@ Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction,
 	store.resize(tt.getResourceTypeCount());
 	for (int i = 0; i < tt.getResourceTypeCount(); ++i) {
 		const ResourceType *rt = tt.getResourceType(i);
-		int resourceAmount= giveResources? factionType->getStartingResourceAmount(rt): 0;
-		resources[i].init(rt, resourceAmount);
+		resources[i].init(rt, factionType->getStartingResourceAmount(rt));
 		store[i].init(rt, 0);
 	}
 
@@ -405,21 +404,6 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 			incResourceAmount(rt, cost);
 		}
 	}
-}
-
-//deapply static costs, but not negative costs, for when building gets killed
-void Faction::deApplyStaticConsumption(const ProducibleType *p){
-   
-    //decrease resources
-	for(int i=0; i<p->getCostCount(); ++i){
-		const ResourceType *rt= p->getCost(i)->getType();
-		if(rt->getClass()==rcStatic){
-            int cost= p->getCost(i)->getAmount();
-			if(cost>0){
-				incResourceAmount(rt, cost);
-			}
-        }    
-    }
 }
 
 //apply resource on interval (cosumable resouces)

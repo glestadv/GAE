@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -48,7 +48,7 @@ public:
 		effectStrength = 0.1f;
 	}
 
-	virtual bool load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
 	int getKills() const			{return kills;}
 };
 
@@ -119,7 +119,7 @@ public:
     UnitType();
     virtual ~UnitType();
 	void preLoad(const string &dir);
-    bool load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums);
+    void load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums);
 
 	//get
 	bool getMultiSelect() const							{return multiSelect;}
@@ -136,11 +136,7 @@ public:
 	bool isMultiBuild() const							{return multiBuild;}
 	float getHalfSize() const							{return halfSize;}
 	float getHalfHeight() const							{return halfHeight;}
-   bool isMobile () const
-   {
-      const SkillType *st = getFirstStOfClass(scMove);
-      return st && st->getSpeed() > 0 ? true: false;
-   }
+
 	//cellmap
 	bool *cellMap;
 
@@ -158,7 +154,7 @@ public:
 	const CommandType *getFirstCtOfClass(CommandClass commandClass) const {return firstCommandTypeOfClass[commandClass];}
 	const SkillType *getFirstStOfClass(SkillClass skillClass) const {return firstSkillTypeOfClass[skillClass];}
     const HarvestCommandType *getFirstHarvestCommand(const ResourceType *resourceType) const;
-	const AttackCommandType *getFirstAttackCommand(Zone zone) const;
+	const AttackCommandType *getFirstAttackCommand(Field field) const;
 	const RepairCommandType *getFirstRepairCommand(const UnitType *repaired) const;
 
 	//has

@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -57,7 +57,7 @@ public:
 
 	void addStdMessage(const string &s);
 	void addStdMessage(const string &s, const string &param1, const string &param2 = "", const string &param3 = "");
-	void addLine(string line, bool playSound = false);
+	void addLine(string line);
 	void update();
 	bool isEmpty();
 };

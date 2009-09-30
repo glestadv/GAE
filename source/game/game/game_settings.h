@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -116,7 +116,6 @@ private:
 	string tilesetPath;
 	string techPath;
 	int thisFactionId;
-	string scenarioPath;
 
 	// game settings
 	bool autoRepairAllowed;
@@ -130,10 +129,6 @@ private:
 	float speedSlowest;
 	int worldUpdateFps;
 	int commandDelay;
-
-   bool defaultUnits;
-   bool defaultResources;
-   bool defaultVictoryConditions;
 
 public:
 	GameSettings();
@@ -169,11 +164,9 @@ public:
 	int getMapSlots() const					{return mapSlots;}
 	const string &getTilesetPath() const	{return tilesetPath;}
 	const string &getTechPath() const		{return techPath;}
-	const string &getScenarioPath() const	{return scenarioPath;}
 	int getThisFactionId() const			{return thisFactionId;}
 
 	bool getAutoRepairAllowed() const		{return autoRepairAllowed;}
-
 	bool getAutoReturnAllowed() const		{return autoReturnAllowed;}
 	float getDayTime() const				{return dayTime;}
 	bool getFogOfWarEnabled() const			{return fogOfWarEnabled;}
@@ -182,9 +175,6 @@ public:
 	float getSpeedSlowest() const			{return speedSlowest;}
 	int getWorldUpdateFps() const			{return worldUpdateFps;}
 	int getCommandDelay() const				{return commandDelay;}
-	bool getDefaultUnits() const			{return defaultUnits;}
-	bool getDefaultResources() const		{return defaultResources;}
-	bool getDefaultVictoryConditions() const{return defaultVictoryConditions;}
 
 	//set
 	void setDescription(const string& v)	{description = v;}
@@ -193,8 +183,6 @@ public:
 	void setTilesetPath(const string& v)	{tilesetPath = v;}
 	void setTechPath(const string& v)		{techPath = v;}
 	void setThisFactionId(int v) 			{thisFactionId = v;}
-	void setScenario(const string& v)		{scenario = v;}
-	void setScenarioDir(const string& v)	{scenarioDir = v;}
 
 	void setAutoRepairAllowed(bool v)		{autoRepairAllowed = v;}
 	void setAutoReturnAllowed(bool v)		{autoReturnAllowed = v;}
@@ -202,9 +190,6 @@ public:
 	void setFogOfWarEnabled(bool v)			{fogOfWarEnabled = v;}
 	void setRandStartLocs(bool v)			{randStartLocs = v;}
 	void setSpeedFastest(float v)			{speedFastest = v;}
-	void setDefaultUnits(bool v) 			{defaultUnits = v;}
-	void setDefaultResources(bool v) 		{defaultResources = v;}
-	void setDefaultVictoryConditions(bool v){defaultVictoryConditions = v;}
 	void setSpeedSlowest(float v)			{speedSlowest = v;}
 	void setWorldUpdateFps(int v)			{worldUpdateFps = v;}
 	void setCommandDelay(int v)				{commandDelay = v;}

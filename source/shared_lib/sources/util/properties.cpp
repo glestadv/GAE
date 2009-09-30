@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest Shared Library (www.glest.org)
 //
-//	Copyright (C) 2001-2007 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2007 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -16,7 +16,6 @@
 #include <stdexcept>
 #include <cstring>
 #include <sstream>
-#include <locale>
 
 #include "conversion.h"
 
@@ -34,7 +33,6 @@ namespace Shared { namespace Util {
 Properties::Properties() {}
 
 void Properties::load(const string &path, bool trim) {
-	locale loc;
 	ifstream fileStream;
 	char lineBuffer[maxLine];
 	string line, key, value;
@@ -74,16 +72,16 @@ void Properties::load(const string &path, bool trim) {
 		key = line.substr(0, pos);
 		value = line.substr(pos + 1);
 		if(trim) {
-			while (!key.empty() && isspace( key[0], loc )) {
+			while(!key.empty() && isspace(key[0])) {
 				key.erase(0, 1);
 			}
-			while (!key.empty() && isspace( key[key.size() - 1], loc )) {
+			while(!key.empty() && isspace(key[key.size() - 1])) {
 				key.erase(key.size() - 1);
 			}
-			while (!value.empty() && isspace( value[0], loc )) {
+			while(!value.empty() && isspace(value[0])) {
 				value.erase(0, 1);
 			}
-			while (!value.empty() && isspace( value[value.size() - 1], loc )) {
+			while(!value.empty() && isspace(value[value.size() - 1])) {
 				value.erase(value.size() - 1);
 			}
 		}

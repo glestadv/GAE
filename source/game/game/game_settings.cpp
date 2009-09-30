@@ -14,7 +14,6 @@
 
 #include "game_settings.h"
 #include "random.h"
-#include "timer.h"
 #include "config.h"
 #include "network_manager.h"
 #include "timer.h"
@@ -158,7 +157,6 @@ GameSettings::GameSettings(const XmlNode &node)
 		, mapSlots(node.getChildIntValue("mapSlots"))
 		, tilesetPath(node.getChildStringValue("tilesetPath"))
 		, techPath(node.getChildStringValue("techPath"))
-		, scenarioPath(node.getChildStringValue("scenarioPath"))
 		, thisFactionId(node.getChildIntValue("thisFactionId"))
 		, autoRepairAllowed(node.getChildBoolValue("autoRepairAllowed"))
 		, autoReturnAllowed(node.getChildBoolValue("autoReturnAllowed"))
@@ -330,7 +328,6 @@ void GameSettings::write(XmlNode &node) const {
 	node.addChild("mapSlots", mapSlots);
 	node.addChild("tilesetPath", tilesetPath);
 	node.addChild("techPath", techPath);
-	node.addChild("scenarioPath", scenarioPath);
 	node.addChild("thisFactionId", thisFactionId);
 
 	node.addChild("autoRepairAllowed", autoRepairAllowed);

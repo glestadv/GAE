@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -169,9 +169,6 @@ Renderer::Renderer(){
 	perspFov = config.getRenderFov();
 	perspNearPlane = config.getRenderDistanceMin();
 	perspFarPlane = config.getRenderDistanceMax();
-#ifdef _GAE_DEBUG_EDITION_
-	debugField = FieldWalkable;
-#endif
 }
 
 Renderer::~Renderer(){
@@ -539,7 +536,7 @@ void Renderer::renderMouse3d(){
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
 				//choose color
-				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), FieldWalkable, units)) {
+				if(map->isFreeCellsOrHasUnit(*i, building->getSize(), fLand, units)) {
 					color= Vec4f(1.f, 1.f, 1.f, 0.5f);
 				} else {
 					color= Vec4f(1.f, 0.f, 0.f, 0.5f);
@@ -641,6 +638,7 @@ void Renderer::renderConsole(const Console *console){
 			CoreData::getInstance().getConsoleFont(),
 			20, i*20+20);
 	}
+
 	glPopAttrib();
 }
 
@@ -668,6 +666,7 @@ void Renderer::renderChatManager(const ChatManager *chatManager){
 void Renderer::renderResourceStatus(){
 
 	const Metrics &metrics= Metrics::getInstance();
+	const Gui *gui= game->getGui();
 	const World *world= game->getWorld();
 	const Faction *thisFaction= world->getFaction(world->getThisFactionIndex());
 	int subfaction = thisFaction->getSubfaction();
@@ -936,42 +935,13 @@ void Renderer::renderMessageBox(const GraphicMessageBox *messageBox){
 	//background
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
 	glEnable(GL_BLEND);
-	glColor4f( 0.f, 0.f, 0.f, 0.5f );
+	glColor4f(0.5f, 0.5f, 0.5f, 0.2f) ;
 
-	glBegin(GL_TRIANGLE_STRIP);
-		glVertex2i(messageBox->getX(), messageBox->getY()+9*messageBox->getH()/10);
-		glVertex2i(messageBox->getX(), messageBox->getY());
-		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + 9*messageBox->getH()/10);
-		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY());
-	glEnd();
-	glColor4f(0.0f, 0.0f, 0.0f, 0.8f) ;   
 	glBegin(GL_TRIANGLE_STRIP);
 		glVertex2i(messageBox->getX(), messageBox->getY()+messageBox->getH());
-		glVertex2i(messageBox->getX(), messageBox->getY()+9*messageBox->getH()/10);
-		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + messageBox->getH());
-		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY()+9*messageBox->getH()/10);
-	glEnd();
- 
-	glBegin(GL_LINE_LOOP);
-		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
 		glVertex2i(messageBox->getX(), messageBox->getY());
-		
-		glColor4f(0.0f, 0.0f, 0.0f, 0.25f) ;   
-		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY());
-		
-		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
-		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY() + messageBox->getH());
-		
-		glColor4f(0.25f, 0.25f, 0.25f, 0.25f) ;   
-		glVertex2i(messageBox->getX(), messageBox->getY() + messageBox->getH());
-	glEnd();
-
-	glBegin(GL_LINE_STRIP);
-		glColor4f(1.0f, 1.0f, 1.0f, 0.25f) ;   
-		glVertex2i(messageBox->getX(), messageBox->getY() + 90*messageBox->getH()/100);
-		
-		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
-		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY() + 90*messageBox->getH()/100);
+		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + messageBox->getH());
+		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY());
 	glEnd();
 
 	glPopAttrib();
@@ -983,16 +953,11 @@ void Renderer::renderMessageBox(const GraphicMessageBox *messageBox){
 	}
 
 	//text
-	renderText(
-		messageBox->getText(), messageBox->getFont(), Vec3f(1.0f, 1.0f, 1.0f), 
-		messageBox->getX()+15, messageBox->getY()+7*messageBox->getH()/10, 
-		false );
-
-	renderText(
-		messageBox->getHeader(), messageBox->getFont(),Vec3f(1.0f, 1.0f, 1.0f), 
-		messageBox->getX()+15, messageBox->getY()+93*messageBox->getH()/100, 
-		false );
-
+	GraphicLabel label;
+	label.init(messageBox->getX(), messageBox->getY()+messageBox->getH()/2, messageBox->getW(), messageBox->getH()/2, true);
+	label.setText(messageBox->getText());
+	label.setFont(messageBox->getFont());
+	renderLabel(&label);
 }
 
 void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
@@ -1110,19 +1075,12 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 // ==================== complex rendering ====================
 
 void Renderer::renderSurface() {
-#  if defined _GAE_DEBUG_EDITION_
-   if ( Config::getInstance().getMiscDebugTextures() )
-   {
-      renderSurfacePFDebug ();
-      return;
-   }
-#  endif
 
 	int lastTex=-1;
 	int currTex;
 	const World *world= game->getWorld();
 	const Map *map= world->getMap();
-	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
+	const Rect2i mapBounds(0, 0, map->getSurfaceW()-1, map->getSurfaceH()-1);
 	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
 
 	assertGl();
@@ -1166,16 +1124,16 @@ void Renderer::renderSurface() {
 
 		if(mapBounds.isInside(pos)){
 
-			Tile *tc00= map->getTile(pos.x, pos.y);
-			Tile *tc10= map->getTile(pos.x+1, pos.y);
-			Tile *tc01= map->getTile(pos.x, pos.y+1);
-			Tile *tc11= map->getTile(pos.x+1, pos.y+1);
+			SurfaceCell *tc00= map->getSurfaceCell(pos.x, pos.y);
+			SurfaceCell *tc10= map->getSurfaceCell(pos.x+1, pos.y);
+			SurfaceCell *tc01= map->getSurfaceCell(pos.x, pos.y+1);
+			SurfaceCell *tc11= map->getSurfaceCell(pos.x+1, pos.y+1);
 
 			triangleCount+= 2;
 			pointCount+= 4;
 
 			//set texture
-			currTex= static_cast<const Texture2DGl*>(tc00->getTileTexture())->getHandle();
+			currTex= static_cast<const Texture2DGl*>(tc00->getSurfaceTexture())->getHandle();
 			if(currTex!=lastTex){
 				lastTex=currTex;
 				glBindTexture(GL_TEXTURE_2D, lastTex);
@@ -1220,174 +1178,6 @@ void Renderer::renderSurface() {
 	assertGl();
 }
 
-#ifdef _GAE_DEBUG_EDITION_
-void Renderer::renderSurfacePFDebug ()
-{
-	int lastTex=-1;
-	int currTex;
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
-	const Search::PathFinder *pf = Search::PathFinder::getInstance ();
-	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
-	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
-
-	assertGl();
-
-	glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT);
-
-	glEnable(GL_BLEND);
-	glEnable(GL_COLOR_MATERIAL); 
-	glDisable(GL_ALPHA_TEST);
-	glActiveTexture(baseTexUnit);
-
-	Quad2i scaledQuad= visibleQuad/Map::cellScale;
-
-	PosQuadIterator pqi(scaledQuad);
-	while(pqi.next()){
-		const Vec2i &pos= pqi.getPos();
-		int cx, cy;
-		cx = pos.x * 2;
-		cy = pos.y * 2;
-		if(mapBounds.isInside(pos)){
-
-			Tile *tc00= map->getTile(pos.x, pos.y);
-			Tile *tc10= map->getTile(pos.x+1, pos.y);
-			Tile *tc01= map->getTile(pos.x, pos.y+1);
-			Tile *tc11= map->getTile(pos.x+1, pos.y+1);
-
-			Vec3f tl = tc00->getVertex ();
-			Vec3f tr = tc10->getVertex ();
-			Vec3f bl = tc01->getVertex ();
-			Vec3f br = tc11->getVertex ();
-
-			Vec3f tc = tl + (tr - tl) / 2;
-			Vec3f ml = tl + (bl - tl) / 2;
-			Vec3f mr = tr + (br - tr) / 2;
-			Vec3f mc = ml + (mr - ml) / 2;
-			Vec3f bc = bl + (br - bl) / 2;
-
-         // cx,cy
-         uint32 tex = 0;
-         uint32 met;
-
-         Vec2i cPos ( cx, cy );
-         if ( pf->PathStart == cPos ) met = 5;
-         else if ( pf->PathDest == cPos ) met = 6;
-         else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 10; // on path
-         else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 11; // open nodes
-         else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 12; // closed nodes
-         else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-            met = 13 + pf->LocalAnnotations.find(cPos)->second;
-         else met = pf->annotatedMap->metrics[cPos].get ( debugField );
-         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-         glBindTexture(GL_TEXTURE_2D, tex);
-         glBegin ( GL_TRIANGLE_FAN );
-            glTexCoord2f ( 0.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(tl.ptr());
-            glTexCoord2f ( 1.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(tc.ptr());
-            glTexCoord2f ( 1.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(mc.ptr());
-            glTexCoord2f ( 0.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(ml.ptr());                        
-         glEnd ();
-
-         cPos = Vec2i( cx+1, cy );
-         if ( pf->PathStart == cPos ) met = 5;
-         else if ( pf->PathDest == cPos ) met = 6;
-         else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 10; // on path
-         else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 11; // open nodes
-         else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 12; // closed nodes
-         else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-            met = 13 + pf->LocalAnnotations.find(cPos)->second;
-         else met = pf->annotatedMap->metrics[cPos].get ( debugField );
-         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-         glBindTexture(GL_TEXTURE_2D, tex);
-         glBegin ( GL_TRIANGLE_FAN );
-            glTexCoord2f ( 0.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(tc.ptr());
-            glTexCoord2f ( 1.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(tr.ptr());
-            glTexCoord2f ( 1.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(mr.ptr());
-            glTexCoord2f ( 0.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(mc.ptr());                        
-         glEnd ();
-
-         cPos = Vec2i( cx, cy + 1 );
-         if ( pf->PathStart == cPos ) met = 5;
-         else if ( pf->PathDest == cPos ) met = 6;
-         else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 10; // on path
-         else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 11; // open nodes
-         else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 12; // closed nodes
-         else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-            met = 13 + pf->LocalAnnotations.find(cPos)->second;
-         else met = pf->annotatedMap->metrics[cPos].get ( debugField );
-         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-         glBindTexture(GL_TEXTURE_2D, tex);
-         glBegin ( GL_TRIANGLE_FAN );
-            glTexCoord2f ( 0.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(ml.ptr());
-            glTexCoord2f ( 1.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(mc.ptr());
-            glTexCoord2f ( 1.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(bc.ptr());
-            glTexCoord2f ( 0.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(bl.ptr());                        
-         glEnd ();
-
-         cPos = Vec2i( cx + 1, cy + 1 );
-         if ( pf->PathStart == cPos ) met = 5;
-         else if ( pf->PathDest == cPos ) met = 6;
-         else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 10; // on path
-         else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 11; // open nodes
-         else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 12; // closed nodes
-         else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-            met = 13 + pf->LocalAnnotations.find(cPos)->second;
-         else met = pf->annotatedMap->metrics[cPos].get ( debugField );
-         tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-         glBindTexture(GL_TEXTURE_2D, tex);
-         glBegin ( GL_TRIANGLE_FAN );
-            glTexCoord2f ( 0.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(mc.ptr());
-            glTexCoord2f ( 1.f, 1.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(mr.ptr());
-            glTexCoord2f ( 1.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(br.ptr());
-            glTexCoord2f ( 0.f, 0.f );
-            glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(bc.ptr());                        
-         glEnd ();
-		}
-	}
-	glEnd();
-
-	//Restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
-	glPopAttrib();
-
-	//assert
-	glGetError();	//remove when first mtex problem solved
-	assertGl();
-}
-#endif
-
-
 void Renderer::renderObjects(){
 	const World *world= game->getWorld();
 	const Map *map= world->getMap();
@@ -1422,17 +1212,12 @@ void Renderer::renderObjects(){
 
 		if(map->isInside(pos)){
 
-			Tile *sc= map->getTile(Map::toTileCoords(pos));
+			SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(pos));
 			Object *o= sc->getObject();
 			if(o && sc->isExplored(thisTeamIndex)){
 
 				const Model *objModel= sc->getObject()->getModel();
 				Vec3f v= o->getPos();
-            
-            // QUICK-FIX: Objects/Resources drawn out of place...
-            // Why do we need this ??? are the tileset objects / techtree resources defined out of position ??
-            v.x += Map::mapScale / 2; // == 1
-            v.z += Map::mapScale / 2;
 
 				//ambient and diffuse color is taken from cell color
 				float fowFactor= fowTex->getPixmap()->getPixelf(pos.x/Map::cellScale, pos.y/Map::cellScale);
@@ -1508,7 +1293,7 @@ void Renderer::renderWater(){
 
 	Rect2i boundingRect= visibleQuad.computeBoundingRect();
 	Rect2i scaledRect= boundingRect/Map::cellScale;
-	scaledRect.clamp(0, 0, map->getTileW()-1, map->getTileH()-1);
+	scaledRect.clamp(0, 0, map->getSurfaceW()-1, map->getSurfaceH()-1);
 
 	float waterLevel= world->getMap()->getWaterLevel();
     for(int j=scaledRect.p[0].y; j<scaledRect.p[1].y; ++j){
@@ -1516,8 +1301,8 @@ void Renderer::renderWater(){
 
 		for(int i=scaledRect.p[0].x; i<=scaledRect.p[1].x; ++i){
 
-			Tile *tc0= map->getTile(i, j);
-            Tile *tc1= map->getTile(i, j+1);
+			SurfaceCell *tc0= map->getSurfaceCell(i, j);
+            SurfaceCell *tc1= map->getSurfaceCell(i, j+1);
 
 			int thisTeamIndex= world->getThisTeamIndex();
 			if(tc0->getNearSubmerged() && (tc0->isExplored(thisTeamIndex) || tc1->isExplored(thisTeamIndex))){
@@ -1667,20 +1452,6 @@ void Renderer::renderUnits(){
 
 			//translate
 			Vec3f currVec= unit->getCurrVectorFlat();
-			
-			//TODO: floating units should maintain their 'y' coord properly...
-			// Quick fix: float boats
-			const Field f = unit->getCurrField ();
-			const Map *map = world->getMap ();
-			if ( f == FieldAmphibious ) {
-				SurfaceType st = map->getCell(unit->getPos())->getType();
-				if ( st == SurfaceTypeDeepWater || st == SurfaceTypeFordable ) {
-					currVec.y = map->getWaterLevel ();
-				}
-			}
-			if ( f == FieldDeepWater || f == FieldAnyWater ) {
-				currVec.y = map->getWaterLevel ();
-			}
 
 			// let dead units start sinking before they go away
 			if(framesUntilDead <= 200 && !ut->isOfClass(ucBuilding)) {
@@ -1904,7 +1675,7 @@ void Renderer::renderWaterEffects(){
 
 			//render only if visible
 			Vec2i intPos= Vec2i(static_cast<int>(ws->getPos().x), static_cast<int>(ws->getPos().y));
-			if(map->getTile(Map::toTileCoords(intPos))->isVisible(world->getThisTeamIndex())){
+			if(map->getSurfaceCell(Map::toSurfCoords(intPos))->isVisible(world->getThisTeamIndex())){
 
 				float scale= ws->getAnim();
 
@@ -2800,7 +2571,7 @@ void Renderer::renderObjectsFast(){
 
 		if(map->isInside(pos)){
 
-			Tile *sc= map->getTile(Map::toTileCoords(pos));
+			SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(pos));
 			Object *o= sc->getObject();
 			if(sc->isExplored(thisTeamIndex) && o!=NULL){
 

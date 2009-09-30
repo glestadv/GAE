@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -81,7 +81,7 @@ public:
 	bool reqsOk(const RequirableType *rt);
 	bool reqsOk(const CommandType *ct);
     bool checkCosts(const ProducibleType *pt);
-	bool areFreeCells(const Vec2i &pos, int size, Field field);
+	bool isFreeCells(const Vec2i &pos, int size, Field field);
 	bool isUltra() const {return world->getFaction(factionIndex)->getCpuUltraControl();}
 
 private:

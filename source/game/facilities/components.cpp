@@ -1,8 +1,8 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa,
-//				  2008 Jaagup Repï¿½n <jrepan@gmail.com>
+//	Copyright (C) 2001-2008 Martiño Figueroa,
+//				  2008 Jaagup Repän <jrepan@gmail.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -40,10 +40,7 @@ float GraphicComponent::fade = 0.f;
 const float GraphicComponent::animSpeed = 0.02f;
 const float GraphicComponent::fadeSpeed = 0.01f;
 
-GraphicComponent::GraphicComponent() : x(0), y(0), w(0), h(0), text(), font(NULL) 
-{ 
-   enabled = true;
-}
+GraphicComponent::GraphicComponent() : x(0), y(0), w(0), h(0), text(), font(NULL) {}
 
 void GraphicComponent::init(int x, int y, int w, int h) {
 	this->x = x;
@@ -51,7 +48,6 @@ void GraphicComponent::init(int x, int y, int w, int h) {
 	this->w = w;
 	this->h = h;
 	font = CoreData::getInstance().getMenuFontNormal();
-   enabled = true;
 }
 
 bool GraphicComponent::mouseMove(int x, int y) {
@@ -190,25 +186,36 @@ bool GraphicListBox::mouseClick(int x, int y) {
 // class GraphicMessageBox
 // =====================================================
 
-GraphicMessageBox::GraphicMessageBox() 
-: GraphicComponent(), button1(), button2(), buttonCount(0) {}
+GraphicMessageBox::GraphicMessageBox() : GraphicComponent(), button1(), button2(), buttonCount(0) {}
 
-const int GraphicMessageBox::defH = 240;
-const int GraphicMessageBox::defW = 350;
+const int GraphicMessageBox::defH = 150;
+const int GraphicMessageBox::defW = 300;
+// bunch of sloppy crap...
+void GraphicMessageBox::init(const string &text, const string &button1Str) {
+	init();
+	GraphicComponent::setText(text);
+	layout();
+	buttonCount = 1;
+
+	button1.init(x + (w - GraphicButton::defW) / 2, y + 25);
+	button1.setText(button1Str);
+}
 
 void GraphicMessageBox::init(const string &text, const string &button1Str, const string &button2Str) {
-	font = CoreData::getInstance().getMenuFontNormal();
+	init();
 	GraphicComponent::setText(text);
-	
-	//init and position the button(s)
-	buttonCount = (button2Str == "") ? 1 : 2;
 	layout();
+	buttonCount = 2;
 
+	button1.init(x + (w - GraphicButton::defW) / 4, y + 25);
 	button1.setText(button1Str);
 
-	if (buttonCount == 2) {
-		button2.setText(button2Str);
-	}
+	button2.init(x + 3 * (w - GraphicButton::defW) / 4, y + 25);
+	button2.setText(button2Str);
+}
+
+void GraphicMessageBox::init() {
+	font = CoreData::getInstance().getMenuFontNormal();
 }
 
 void GraphicMessageBox::layout() {

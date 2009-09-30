@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2005 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -46,7 +46,7 @@ MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool 
 	Config &config = Config::getInstance();
 	NetworkManager &networkManager = NetworkManager::getInstance();
 
-	servers.load(serverFileName);
+	servers.load(serverFileName, true);
 
 	//buttons
 	buttonReturn.init(325, 270, 125);

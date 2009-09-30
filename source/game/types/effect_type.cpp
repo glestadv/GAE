@@ -13,7 +13,6 @@
 #include "effect_type.h"
 #include "renderer.h"
 #include "tech_tree.h"
-#include "logger.h"
 
 #include "leak_dumper.h"
 
@@ -66,147 +65,98 @@ EffectType::EffectType() : lightColor(0.0f) {
 	damageType = NULL;
 }
 
-bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTree *tt, const FactionType *ft) {
+void EffectType::load(const XmlNode *effectNode, const string &dir, const TechTree *tt, const FactionType *ft) {
 	string tmp;
 	const XmlAttribute *attr;
 	const XmlNode *node;
 
-   bool loadOk = true;
 	//name
-   try { name = effectNode->getAttribute("name")->getRestrictedValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	name = effectNode->getAttribute("name")->getRestrictedValue();
+
 	//bigtime hack
 	id = ((TechTree*)tt)->addEffectType(this);
 
 	//bias
-   try {
-	   tmp = effectNode->getAttribute("bias")->getRestrictedValue();
-	   if (tmp == "detrimental") 
-		   bias = ebDetrimental;
-	   else if (tmp == "neutral")
-		   bias = ebNeutral;
-	   else if (tmp == "benificial")
-		   bias = ebBenificial;
-	   else
-         throw runtime_error("Not a valid value for bias: " + tmp + ": " + dir);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	tmp = effectNode->getAttribute("bias")->getRestrictedValue();
+	if (tmp == "detrimental") {
+		bias = ebDetrimental;
+	} else if (tmp == "neutral") {
+		bias = ebNeutral;
+	} else if (tmp == "benificial") {
+		bias = ebBenificial;
+	} else {
+		throw runtime_error("Not a valid value for bias: " + tmp + ": " + dir);
+	}
 
 	//stacking
-   try {
-	   tmp = effectNode->getAttribute("stacking")->getRestrictedValue();
-	   if(tmp == "stack")
-		   stacking = esStack;
-	   else if(tmp == "extend")
-		   stacking = esExtend;
-	   else if(tmp == "overwrite")
-		   stacking = esOverwrite;
-	   else if(tmp == "reject")
-		   stacking = esReject;
-	   else
-		   throw runtime_error("Not a valid value for stacking: " + tmp + ": " + dir);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	tmp = effectNode->getAttribute("stacking")->getRestrictedValue();
+	if(tmp == "stack") {
+		stacking = esStack;
+	} else if(tmp == "extend") {
+		stacking = esExtend;
+	} else if(tmp == "overwrite") {
+		stacking = esOverwrite;
+	} else if(tmp == "reject") {
+		stacking = esReject;
+	} else {
+		throw runtime_error("Not a valid value for stacking: " + tmp + ": " + dir);
+	}
 
 	//target (default all)
-   try {
-	   attr = effectNode->getAttribute("target", false);
-	   if(attr) {
-		   tmp = attr->getRestrictedValue();
+	attr = effectNode->getAttribute("target", false);
+	if(attr) {
+		tmp = attr->getRestrictedValue();
 
-		   if(tmp == "ally")
-			   flags.set(etfAlly, true);
-		   else if(tmp == "foe")
-			   flags.set(etfFoe, true);
-         else if(tmp == "pet") {
-			   flags.set(etfAlly, true);
-			   flags.set(eftPetsOnly, true);
-         }
-		   else if(tmp == "all") {
-            flags.set(etfAlly, true);
-			   flags.set(etfFoe, true);
-         }
-		   else
-			   throw runtime_error("Not a valid value for units-effected: " + tmp + ": " + dir);
-	   } 
-      else {
-		   //default value
-		   flags.set(etfAlly, true);
-		   flags.set(etfFoe, true);
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+		if(tmp == "ally") {
+			flags.set(etfAlly, true);
+		} else if(tmp == "foe") {
+			flags.set(etfFoe, true);
+		} else if(tmp == "pet") {
+			flags.set(etfAlly, true);
+			flags.set(eftPetsOnly, true);
+		} else if(tmp == "all") {
+			flags.set(etfAlly, true);
+			flags.set(etfFoe, true);
+		} else {
+			throw runtime_error("Not a valid value for units-effected: " + tmp + ": " + dir);
+		}
+	} else {
+		//default value
+		flags.set(etfAlly, true);
+		flags.set(etfFoe, true);
+	}
 
 	//chance (default 100%)
-   try {
-	   attr = effectNode->getAttribute("chance", false);
-	   if(attr)
-		   chance = attr->getFloatValue();
-	   else
-		   chance = 100.0f;
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   
-   //duration
-   try { duration = effectNode->getAttribute("duration")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	attr = effectNode->getAttribute("chance", false);
+	if(attr) {
+		chance = attr->getFloatValue();
+	} else {
+		chance = 100.0f;
+	}
+
+	//duration
+	duration = effectNode->getAttribute("duration")->getIntValue();
 
 	//damageType (default NULL)
-   try {
-	   attr = effectNode->getAttribute("damage-type", false);
-	   if(attr) {
-		   damageType = tt->getAttackType(attr->getRestrictedValue());
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	attr = effectNode->getAttribute("damage-type", false);
+	if(attr) {
+		damageType = tt->getAttackType(attr->getRestrictedValue());
+	}
 
-   //display (default true)
-   try {
-	   attr = effectNode->getAttribute("display", false);
-	   if(attr) {
-		   display = attr->getBoolValue();
-	   } else {
-		   display = true;
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	//display (default true)
+	attr = effectNode->getAttribute("display", false);
+	if(attr) {
+		display = attr->getBoolValue();
+	} else {
+		display = true;
+	}
 
 	//image (default NULL)
-   try {
-	   attr = effectNode->getAttribute("image", false);
-	   if(attr && !(attr->getRestrictedValue() == "")) {
-		   image = Renderer::getInstance().newTexture2D(rsGame);
-		   image->load(dir + "/" + attr->getRestrictedValue());
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	attr = effectNode->getAttribute("image", false);
+	if(attr && !(attr->getRestrictedValue() == "")) {
+		image = Renderer::getInstance().newTexture2D(rsGame);
+		image->load(dir + "/" + attr->getRestrictedValue());
+	}
 
 	//flags
 	const XmlNode *flagsNode = effectNode->getChild("flags", 0, false);
@@ -217,73 +167,53 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 	EnhancementTypeBase::load(effectNode, dir, tt, ft);
 
 	//light & lightColor
-   try {
-      const XmlNode *lightNode = effectNode->getChild("light", 0, false);
-	   if(lightNode) {
-		   light = lightNode->getAttribute("enabled")->getBoolValue();
+	const XmlNode *lightNode = effectNode->getChild("light", 0, false);
+	if(lightNode) {
+		light = lightNode->getAttribute("enabled")->getBoolValue();
 
-		   if(light) {
-			lightColor = lightNode->getColor3Value();
-		   }
-	   } 
-      else
-		   light = false;
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+		if(light) {
+			lightColor = lightNode->getColor3Value();/*
+			lightColor.x = lightNode->getAttribute("red")->getFloatValue(0.f, 1.f);
+			lightColor.y = lightNode->getAttribute("green")->getFloatValue(0.f, 1.f);
+			lightColor.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);*/
+		}
+	} else {
+		light = false;
+	}
+
 	//particle
-   try {
-	   const XmlNode *particleNode = effectNode->getChild("particle", 0, false);
-	   if(particleNode && particleNode->getAttribute("value")->getBoolValue()) {
-		   string path = particleNode->getAttribute("path")->getRestrictedValue();
-//	   	particleSystemType = new ParticleSystemType();
-//	   	particleSystemType->load(effectNode,  dir + "/" + path);
-   	}
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	const XmlNode *particleNode = effectNode->getChild("particle", 0, false);
+	if(particleNode && particleNode->getAttribute("value")->getBoolValue()) {
+		string path = particleNode->getAttribute("path")->getRestrictedValue();
+//		particleSystemType = new ParticleSystemType();
+//		particleSystemType->load(effectNode,  dir + "/" + path);
+	}
 
 	//sound
-   try { 
-      const XmlNode *soundNode = effectNode->getChild("sound", 0, false);
-	   if(soundNode && soundNode->getAttribute("enabled")->getBoolValue()) {
-		   soundStartTime = soundNode->getAttribute("start-time")->getFloatValue();
-		   loopSound = soundNode->getAttribute("loop")->getBoolValue();
-		   string path = soundNode->getAttribute("path")->getRestrictedValue();
-		   sound = new StaticSound();
-		   sound->load(dir + "/" + path);
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	const XmlNode *soundNode = effectNode->getChild("sound", 0, false);
+	if(soundNode && soundNode->getAttribute("enabled")->getBoolValue()) {
+		soundStartTime = soundNode->getAttribute("start-time")->getFloatValue();
+		loopSound = soundNode->getAttribute("loop")->getBoolValue();
+		string path = soundNode->getAttribute("path")->getRestrictedValue();
+		sound = new StaticSound();
+		sound->load(dir + "/" + path);
+	}
 
 	//recourse
-   try {
-	   const XmlNode *recourseEffectsNode = effectNode->getChild("recourse-effects", 0, false);
-	   if(recourseEffectsNode) {
-		   recourse.resize(recourseEffectsNode->getChildCount());
-		   for(int i = 0; i < recourseEffectsNode->getChildCount(); ++i) {
-			   const XmlNode *recourseEffectNode = recourseEffectsNode->getChild("effect", i);
-			   EffectType *effectType = new EffectType();
-			   effectType->load(recourseEffectNode, dir, tt, ft);
-			   recourse[i] = effectType;
-		   }
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	const XmlNode *recourseEffectsNode = effectNode->getChild("recourse-effects", 0, false);
+	if(recourseEffectsNode) {
+		recourse.resize(recourseEffectsNode->getChildCount());
+		for(int i = 0; i < recourseEffectsNode->getChildCount(); ++i) {
+			const XmlNode *recourseEffectNode = recourseEffectsNode->getChild("effect", i);
+			EffectType *effectType = new EffectType();
+			effectType->load(recourseEffectNode, dir, tt, ft);
+			recourse[i] = effectType;
+		}
+	}
+
 	if(hpRegeneration >= 0 && damageType) {
 		damageType = NULL;
 	}
-   return loadOk;
 }
 
 void EffectType::getDesc(string &str) const {
@@ -330,16 +260,11 @@ void EffectType::getDesc(string &str) const {
 //  class Emanation
 // =====================================================
 
-bool Emanation::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {
+void Emanation::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {
 	EffectType::load(n, dir, tt, ft);
 
 	//radius
-   try { radius = n->getAttribute("radius")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().add ( dir, e.what () );
-      return false;
-   }
-   return true;
+	radius = n->getAttribute("radius")->getIntValue();
 }
 
 } // end namespace

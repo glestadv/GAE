@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -57,50 +57,79 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 
 	for (int j = 0; j < map->getH(); j++) {
 		for (int i = 0; i < map->getW(); i++) {
-			if (i * cellSize + x > -cellSize
-					&& i * cellSize + x < clientW
-					&& clientH - cellSize - j * cellSize + y > -cellSize
-					&& clientH - cellSize - j * cellSize + y < clientH) {
+			if (i*cellSize + x > -cellSize && i*cellSize + x < clientW && clientH - cellSize - j*cellSize + y > -cellSize && clientH - cellSize - j*cellSize + y < clientH) {
 
 				//surface
 				alt = map->getHeight(i, j) / 20.f;
 				Vec3f surfColor;
 				switch (map->getSurface(i, j)) {
-				case 1: surfColor = Vec3f(0.0, 0.8f * alt, 0.f); break;
-				case 2: surfColor = Vec3f(0.4f * alt, 0.6f * alt, 0.f); break;
-				case 3: surfColor = Vec3f(0.6f * alt, 0.3f * alt, 0.f); break;
-				case 4: surfColor = Vec3f(0.7f * alt, 0.7f * alt, 0.7f * alt); break;
-				case 5: surfColor = Vec3f(1.0f * alt, 0.f, 0.f); break;
+				case 1:
+					surfColor = Vec3f(0.0, 0.8f * alt, 0.f);
+					break;
+				case 2:
+					surfColor = Vec3f(0.4f * alt, 0.6f * alt, 0.f);
+					break;
+				case 3:
+					surfColor = Vec3f(0.6f * alt, 0.3f * alt, 0.f);
+					break;
+				case 4:
+					surfColor = Vec3f(0.7f * alt, 0.7f * alt, 0.7f * alt);
+					break;
+				case 5:
+					surfColor = Vec3f(1.0f * alt, 0.f, 0.f);
+					break;
 				}
 
 				glColor3fv(surfColor.ptr());
 
 				glBegin(GL_TRIANGLE_STRIP);
-				glVertex2i(i * cellSize, clientH - j * cellSize - cellSize);
-				glVertex2i(i * cellSize, clientH - j * cellSize);
-				glVertex2i(i * cellSize + cellSize, clientH - j * cellSize - cellSize);
-				glVertex2i(i * cellSize + cellSize, clientH - j * cellSize);
+				glVertex2i(i*cellSize, clientH - j*cellSize - cellSize);
+				glVertex2i(i*cellSize, clientH - j*cellSize);
+				glVertex2i(i*cellSize + cellSize, clientH - j*cellSize - cellSize);
+				glVertex2i(i*cellSize + cellSize, clientH - j*cellSize);
 				glEnd();
 
 				//objects
 				switch (map->getObject(i, j)) {
-				case 0: glColor3f(0.f, 0.f, 0.f); break;
-				case 1: glColor3f(1.f, 0.f, 0.f); break;
-				case 2: glColor3f(1.f, 1.f, 1.f); break;
-				case 3: glColor3f(0.5f, 0.5f, 1.f); break;
-				case 4: glColor3f(0.f, 0.f, 1.f); break;
-				case 5: glColor3f(0.5f, 0.5f, 0.5f); break;
-				case 6: glColor3f(1.f, 0.8f, 0.5f); break;
-				case 7: glColor3f(0.f, 1.f, 1.f); break;
-				case 8: glColor3f(0.7f, 0.1f, 0.3f); break;
-				case 9: glColor3f(0.5f, 1.f, 0.1f); break;
-				case 10: glColor3f(1.f, 0.2f, 0.8f); break;
+				case 0:
+					glColor3f(0.f, 0.f, 0.f);
+					break;
+				case 1:
+					glColor3f(1.f, 0.f, 0.f);
+					break;
+				case 2:
+					glColor3f(1.f, 1.f, 1.f);
+					break;
+				case 3:
+					glColor3f(0.5f, 0.5f, 1.f);
+					break;
+				case 4:
+					glColor3f(0.f, 0.f, 1.f);
+					break;
+				case 5:
+					glColor3f(0.5f, 0.5f, 0.5f);
+					break;
+				case 6:
+					glColor3f(1.f, 0.8f, 0.5f);
+					break;
+				case 7:
+					glColor3f(0.f, 1.f, 1.f);
+					break;
+				case 8:
+					glColor3f(0.7f, 0.1f, 0.3f);
+					break;
+				case 9:
+					glColor3f(0.5f, 1.f, 0.1f);
+					break;
+				case 10:
+					glColor3f(1.f, 0.2f, 0.8f);
+					break;
 				}
 
 				if (map->getObject(i, j) != 0) {
 					glPointSize(cellSize / 2.f);
 					glBegin(GL_POINTS);
-					glVertex2i(i * cellSize + cellSize / 2, clientH - j * cellSize - cellSize / 2);
+					glVertex2i(i*cellSize + cellSize / 2, clientH - j*cellSize - cellSize / 2);
 					glEnd();
 				}
 
@@ -112,15 +141,15 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 					//left
 					if (i > 0 && map->getHeight(i - 1, j) > map->getHeight(i, j)) {
 						glBegin(GL_LINES);
-						glVertex2i(i * cellSize, clientH - (j + 1) * cellSize);
-						glVertex2i(i * cellSize, clientH - j * cellSize);
+						glVertex2i(i*cellSize, clientH - (j + 1)*cellSize);
+						glVertex2i(i*cellSize, clientH - j*cellSize);
 						glEnd();
 					}
 					//down
 					if (j > 0 && map->getHeight(i, j - 1) > map->getHeight(i, j)) {
 						glBegin(GL_LINES);
-						glVertex2i(i * cellSize, clientH - j * cellSize);
-						glVertex2i((i + 1) * cellSize, clientH - j * cellSize);
+						glVertex2i(i*cellSize, clientH - j*cellSize);
+						glVertex2i((i + 1)*cellSize, clientH - j*cellSize);
 						glEnd();
 					}
 
@@ -128,33 +157,43 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 					//left
 					if (i > 0 && map->getHeight(i - 1, j) < map->getHeight(i, j)) {
 						glBegin(GL_LINES);
-						glVertex2i(i * cellSize, clientH - (j + 1) * cellSize);
-						glVertex2i(i * cellSize, clientH - j * cellSize);
+						glVertex2i(i*cellSize, clientH - (j + 1)*cellSize);
+						glVertex2i(i*cellSize, clientH - j*cellSize);
 						glEnd();
 					}
 					if (j > 0 && map->getHeight(i, j - 1) < map->getHeight(i, j)) {
 						glBegin(GL_LINES);
-						glVertex2i(i * cellSize, clientH - j * cellSize);
-						glVertex2i((i + 1) * cellSize, clientH - j * cellSize);
+						glVertex2i(i*cellSize, clientH - j*cellSize);
+						glVertex2i((i + 1)*cellSize, clientH - j*cellSize);
 						glEnd();
 					}
 				}
 
 				//resources
 				switch (map->getResource(i, j)) {
-				case 1: glColor3f(1.f, 1.f, 0.f); break;
-				case 2: glColor3f(0.5f, 0.5f, 0.5f); break;
-				case 3: glColor3f(1.f, 0.f, 0.f); break;
-				case 4: glColor3f(0.f, 0.f, 1.f); break;
-				case 5: glColor3f(0.5f, 0.5f, 1.f); break;
+				case 1:
+					glColor3f(1.f, 1.f, 0.f);
+					break;
+				case 2:
+					glColor3f(0.5f, 0.5f, 0.5f);
+					break;
+				case 3:
+					glColor3f(1.f, 0.f, 0.f);
+					break;
+				case 4:
+					glColor3f(0.f, 0.f, 1.f);
+					break;
+				case 5:
+					glColor3f(0.5f, 0.5f, 1.f);
+					break;
 				}
 
 				if (map->getResource(i, j) != 0) {
 					glBegin(GL_LINES);
-					glVertex2i(i * cellSize, clientH - j * cellSize - cellSize);
-					glVertex2i(i * cellSize + cellSize, clientH - j * cellSize);
-					glVertex2i(i * cellSize, clientH - j * cellSize);
-					glVertex2i(i * cellSize + cellSize, clientH - j * cellSize - cellSize);
+					glVertex2i(i*cellSize, clientH - j*cellSize - cellSize);
+					glVertex2i(i*cellSize + cellSize, clientH - j*cellSize);
+					glVertex2i(i*cellSize, clientH - j*cellSize);
+					glVertex2i(i*cellSize + cellSize, clientH - j*cellSize - cellSize);
 					glEnd();
 				}
 			}
@@ -165,16 +204,24 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 	glLineWidth(3);
 	for (int i = 0; i < map->getMaxFactions(); i++) {
 		switch (i) {
-		case 0: glColor3f(1.f, 1.f, 0.f); break;
-		case 1: glColor3f(0.5f, 0.5f, 0.5f); break;
-		case 2: glColor3f(1.f, 0.f, 0.f); break;
-		case 3: glColor3f(0.f, 0.f, 1.f); break;
+		case 0:
+			glColor3f(1.f, 1.f, 0.f);
+			break;
+		case 1:
+			glColor3f(0.5f, 0.5f, 0.5f);
+			break;
+		case 2:
+			glColor3f(1.f, 0.f, 0.f);
+			break;
+		case 3:
+			glColor3f(0.f, 0.f, 1.f);
+			break;
 		}
 		glBegin(GL_LINES);
-		glVertex2i((map->getStartLocationX(i) - 1) * cellSize, clientH - (map->getStartLocationY(i) - 1) * cellSize);
-		glVertex2i((map->getStartLocationX(i) + 1) * cellSize + cellSize, clientH - (map->getStartLocationY(i) + 1) * cellSize - cellSize);
-		glVertex2i((map->getStartLocationX(i) - 1) * cellSize, clientH - (map->getStartLocationY(i) + 1) * cellSize - cellSize);
-		glVertex2i((map->getStartLocationX(i) + 1) * cellSize + cellSize, clientH - (map->getStartLocationY(i) - 1) * cellSize);
+		glVertex2i((map->getStartLocationX(i) - 1)*cellSize, clientH - (map->getStartLocationY(i) - 1)*cellSize);
+		glVertex2i((map->getStartLocationX(i) + 1)*cellSize + cellSize, clientH - (map->getStartLocationY(i) + 1)*cellSize - cellSize);
+		glVertex2i((map->getStartLocationX(i) - 1)*cellSize, clientH - (map->getStartLocationY(i) + 1)*cellSize - cellSize);
+		glVertex2i((map->getStartLocationX(i) + 1)*cellSize + cellSize, clientH - (map->getStartLocationY(i) - 1)*cellSize);
 		glEnd();
 	}
 

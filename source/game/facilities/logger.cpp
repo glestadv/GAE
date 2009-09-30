@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -22,6 +22,7 @@
 #include "lang.h"
 
 #include "leak_dumper.h"
+
 
 using namespace std;
 using namespace Shared::Graphics;
@@ -54,15 +55,10 @@ void Logger::add(const string &str,  bool renderScreen) {
 	FileHandler f(fileName);
 	fprintf(f.getHandle(), "%s: %s\n", Chrono::getTimestamp().c_str(), str.c_str());
 
-	if (loadingGame) {
-		logLines.push_back(str);
-		if(logLines.size() > logLineCount) {
-			logLines.pop_front();
-		}
-	} else {
-		current = str;
+	logLines.push_back(str);
+	if (logLines.size() > logLineCount) {
+		logLines.pop_front();
 	}
-
 	if (renderScreen) {
 		renderLoadingScreen();
 	}
@@ -118,14 +114,6 @@ void Logger::clear() {
     fclose(f);
 }
 
-void Logger::addXmlError ( const string &path, const char *error )
-{
-   static char buffer[2048];
-   sprintf ( buffer, "XML Error in %s:\n %s", path.c_str(), error );
-   add ( buffer );
-}
-
-
 // ==================== PRIVATE ====================
 
 void Logger::renderLoadingScreen() {
@@ -143,28 +131,20 @@ void Logger::renderLoadingScreen() {
 
 	renderer.renderText(
 		state, coreData.getMenuFontBig(), Vec3f(1.f),
-		metrics.getVirtualW()/4, 75*metrics.getVirtualH()/100, false);
-	if ( loadingGame )
-	{
-		int offset= 0;
-		Font2D *font= coreData.getMenuFontNormal();
-		for(Strings::reverse_iterator it= logLines.rbegin(); it!=logLines.rend(); ++it){
-			float alpha= offset==0? 1.0f: 0.8f-0.8f*static_cast<float>(offset)/logLines.size();
-			renderer.renderText(
-				*it, font, alpha ,
-				metrics.getVirtualW()/4,
-				70*metrics.getVirtualH()/100 - offset*(font->getSize()+4),
-				false);
-			++offset;
-		}
-	}
-	else
-	{
+		metrics.getVirtualW()/4, 70*metrics.getVirtualH()/100, false);
+
+	int offset= 0;
+	Font2D *font= coreData.getMenuFontNormal();
+	for(Strings::reverse_iterator it= logLines.rbegin(); it!=logLines.rend(); ++it){
+		float alpha= offset==0? 1.0f: 0.8f-0.8f*static_cast<float>(offset)/logLines.size();
 		renderer.renderText(
-			current, coreData.getMenuFontNormal(), 1.0f, 
-			metrics.getVirtualW()/4, 
-			62*metrics.getVirtualH()/100, false);
+			*it, font, alpha ,
+			metrics.getVirtualW()/4,
+			65*metrics.getVirtualH()/100 - offset*(font->getSize()+4),
+			false);
+		++offset;
 	}
+
 	renderer.swapBuffers();
 }
 

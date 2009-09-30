@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -13,7 +13,6 @@
 #define _GAME_TECHTREE_H_
 
 #include <map>
-#include <set>
 #include "util.h"
 #include "resource_type.h"
 #include "faction_type.h"
@@ -59,7 +58,7 @@ private:
 	DamageMultiplierTable damageMultiplierTable;
 
 public:
-    bool load(const string &dir, const set<string> &factionNames, Checksums &checksums);
+    void load(const string &dir, const vector<string> &factionNames, Checksums &checksums);
     ~TechTree();
 
     // get count

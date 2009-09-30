@@ -33,64 +33,28 @@ class FactionType;
 class EnhancementTypeBase;
 
 // ===============================
-// 	enum Field, Zone and SurfaceType
+// 	enum Field & class Fields
 // ===============================
 
-// Adding a new field ???
-// see instructions at the top of annotated_map.h
+enum Field{
+     fLand,
+     fAir,
+//     fWater,
+//     fSubterranean,
 
-enum Zone // Zone of unit _occupance_
-{  // used for attack fields, actual occupance is indirectly 
-   // specified by the unit's current Field
-   ZoneSurfaceProp,
-   ZoneSurface,
-   ZoneAir,
-   //ZoneSubSurface,
-   ZoneCount
+     fCount
 };
 
-enum SurfaceType // for each cell's surface zone,
-{  // is computed in Map::setCellTypes ()
-   // FIXME: may change... need hook in Map::prepareTerrain()
-   SurfaceTypeLand, 
-   SurfaceTypeFordable, 
-   SurfaceTypeDeepWater, 
-   SurfaceTypeCount
-};
-
-enum Field // Zones of Movement
-{
-   FieldWalkable, // ZoneSurface + ( SurfaceTypeLand || SurfaceTypeFordable )
-   FieldAir,      // ZoneAir
-   FieldAnyWater, // ZoneSurface + ( SurfaceTypeFordable || SurfaceTypeDeepWater )
-   FieldDeepWater, // ZoneSurface + SurfaceTypeDeepWater
-   FieldAmphibious, // ZoneSurface + SuraceType*
-   FieldCount
-};
-
-/** Fields of travel, and indirectly zone of occupance */
-class Fields : public XmlBasedFlags<Field, FieldCount> {
+/** Fields of attack, travel or residence (air, land, etc.) */
+class Fields : public XmlBasedFlags<Field, fCount> {
 private:
-	static const char *names[FieldCount];
+	static const char *names[fCount];
 
 public:
 	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Field, FieldCount>::load(node, dir, tt, ft, "field", names);
-	}
-	static const char* getName ( Field f ) { return names[f]; }
-};
-
-/** Zones of attack (air, surface, etc.) */
-class Zones : public XmlBasedFlags<Zone, ZoneCount> {
-private:
-	static const char *names[ZoneCount];
-
-public:
-	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Zone, ZoneCount>::load(node, dir, tt, ft, "field", names);
+		XmlBasedFlags<Field, fCount>::load(node, dir, tt, ft, "field", names);
 	}
 };
-
 
 // ==============================================================
 // 	enum Property & class UnitProperties
@@ -218,7 +182,7 @@ public:
 	 * is exactly what XmlNode object the UnitType load() method supplies to
 	 * this method.
 	 */
-	bool load(const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	void load(const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft);
 
 	virtual void save(XmlNode *node);
 
@@ -330,7 +294,7 @@ public:
 	 * Initializes this object from the specified XmlNode object.
 	 * TODO: explain better.
 	 */
-	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
 
 	virtual void save(XmlNode *node) const;
 

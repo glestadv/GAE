@@ -17,7 +17,7 @@ rule UseAutoconf
 
     #very-clean
     Clean very-clean         : glestadv.log gae-crash.txt glestadv-server.log
-                               glestadv-client.log glestadv-error.log;
+                               glestadv-client.log ;
     CleanDir very-clean      : savegames screens incoming build ;
     Depends very-clean       : maintainer-clean ;
                                                                                 
