@@ -1,11 +1,12 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -26,8 +27,15 @@ using Shared::Util::Properties;
 
 class Lang {
 private:
-	string name;
-	Properties langStrings;
+	string locale;		/**< Should have this format: language[_territory][.encoding][@script] */
+#if 0
+	string language;
+	string territory;
+	string encoding;
+	script script;
+#endif
+	Properties strings;
+	Properties scenarioStrings;
 
 private:
 	Lang() {}
@@ -37,10 +45,19 @@ public:
 		static Lang lang;
 		return lang;
 	}
+	const string &getLocale() const			{return locale;}
+#if 0
+	const string &getLanguage() const		{return language;}
+	const string &getTerritory() const		{return territory;}
+	const string &getEncoding() const		{return encoding;}
+	const string &getScript() const			{return script;}
+#endif
 
-	void load(string file)				{langStrings.load(file, true);}
-	string getName() const				{return name;}
-	string get(const string &s) const	{return langStrings.getString(s, "???" + s + "???");}
+	void setLocale(const string &locale);
+	void loadScenarioStrings(const string &scenarioDir, const string &scenarioName);
+	const string &getLocale() const						{return locale;}
+	string get(const string &s) const;
+	string getScenarioString(const string &s) const;
 	string format(const string &s, ...) const;
 };
 

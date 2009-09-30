@@ -188,6 +188,9 @@ const Keymap::UserCommandInfo Keymap::commandInfo[ucCount] = {
 	{"Guard",					keyG,		0,			0,			0},
 	{"Follow",					0,			0,			0,			0},
 	{"Patrol",					0,			0,			0,			0}
+#ifdef _GAE_DEBUG_EDITION_
+	,{"SwitchDebugField",		keyKPMinus,	0,			0,			0}
+#endif
 };
 #pragma pack(pop)
 
@@ -222,7 +225,7 @@ void Keymap::reinit() {
 
 void Keymap::load(const char *path) {
 	Properties p;
-	p.load(path, true);
+	p.load(path);
  	const Properties::PropertyMap &pm = p.getPropertyMap();
 	Properties::PropertyMap::const_iterator it;
 	for(int i = ucNone; i != ucCount; ++i) {

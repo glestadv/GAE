@@ -85,7 +85,9 @@ enum UserCommand {
 	ucGuard,
 	ucFollow,
 	ucPatrol,
-
+#ifdef _GAE_DEBUG_EDITION_
+	ucSwitchDebugField,
+#endif
 	ucCount
 };
 

@@ -30,16 +30,22 @@ struct MapInfo {
 	string desc;
 };
 
-struct ScenarioInfo
-{
+struct ScenarioInfo {
 	int difficulty;
     ControlType factionControls[GameConstants::maxFactions];
     int teams[GameConstants::maxFactions];
     string factionTypeNames[GameConstants::maxFactions];
+	string playerNames[GameConstants::maxPlayers];
+	float resourceMultipliers[GameConstants::maxPlayers];
 
     string mapName;
     string tilesetName;
     string techTreeName;
+    string scenarioName;
+
+	bool defaultUnits;
+	bool defaultResources;
+	bool defaultVictoryConditions;
 
     string desc;
 };
@@ -101,7 +107,7 @@ protected:
 	Camera camera;
 
 private:
-	MenuState(const MenuState &);
+	//MenuState(const MenuState &);
 	const MenuState &operator =(const MenuState &);
 
 public:

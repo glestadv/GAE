@@ -112,6 +112,7 @@ Gui::Gui(Game &game) : game(game), input(game.getInput()) {
 	draggingMinimap = false;
 	needSelectionUpdate = false;
 	currentGui = this;
+	currentGroup= invalidGroupIndex;
 }
 
 void Gui::init() {
@@ -240,15 +241,15 @@ void Gui::mouseDownLeft(int x, int y) {
 		//give standard orders
 		giveTwoClickOrders(worldPos, (Unit *)targetUnit);
 
-		//set meeting point
+	//set meeting point
 	} else if (selectingMeetingPoint) {
 		if (selection.isComandable()) {
 			commander->tryGiveCommand(selection, CommandFlags(CP_QUEUE, input.isShiftDown()), NULL,
-									  ccSetMeetingPoint, worldPos);
+					ccSetMeetingPoint, worldPos);
 		}
 		resetState();
 
-		//begin drag-drop selection & update selection for single-click
+	//begin drag-drop selection & update selection for single-click
 	} else {
 		selectionQuad.setPosDown(Vec2i(x, y));
 		calculateNearest(units, gameCamera->getPos());
@@ -413,11 +414,18 @@ void Gui::groupKey(int groupIndex) {
 	if (input.isCtrlDown()) {
 		selection.assignGroup(groupIndex);
 	} else {
+		if(currentGroup == groupIndex) {
+			centerCameraOnSelection();
+		}
+
 		selection.recallGroup(groupIndex);
+
+		currentGroup= groupIndex;
 	}
 }
 
 void Gui::hotKey(UserCommand cmd) {
+	int f = 0;
 	switch (cmd) {
 	// goto selection
 	case ucCameraGotoSelection:
@@ -512,7 +520,13 @@ void Gui::hotKey(UserCommand cmd) {
 	case ucPatrol:
 		//clickCommonCommand(ccPatrol);
 		break;
-
+#ifdef _GAE_DEBUG_EDITION_
+	case ucSwitchDebugField:
+		f = (int)Renderer::getInstance().getDebugField ();
+		f ++; f %= FieldCount;
+		Renderer::getInstance().setDebugField ( (Field)f );
+		break;
+#endif
 	default:
 		break;
 	}
@@ -563,7 +577,7 @@ void Gui::giveDefaultOrders(const Vec2i &targetPos, Unit *targetUnit) {
 
 	//give order
 	CommandResult result = commander->tryGiveCommand(selection,
-						   CommandFlags(CP_QUEUE, input.isShiftDown()), NULL, ccNull, targetPos, targetUnit);
+			CommandFlags(CP_QUEUE, input.isShiftDown()), NULL, ccNull, targetPos, targetUnit);
 
 	//graphical result
 	addOrdersResultToConsole(activeCommandClass, result);
@@ -878,11 +892,17 @@ void Gui::computeDisplay() {
 
 	// ================ PART 1 ================
 
+	int thisTeam = Game::getInstance()->getWorld()->getThisTeamIndex();
 	//title, text and progress bar
 	if (selection.getCount() == 1) {
-		display.setTitle(selection.getFrontUnit()->getFullName());
-		display.setText(selection.getFrontUnit()->getDesc());
-		display.setProgressBar(selection.getFrontUnit()->getProductionPercent());
+		const Unit *unit = selection.getFrontUnit();
+		bool friendly = unit->getFaction()->getTeam() == thisTeam;
+
+		display.setTitle(unit->getFullName());
+		display.setText(unit->getDesc(friendly));
+		if (friendly) {
+			display.setProgressBar(selection.getFrontUnit()->getProductionPercent());
+		}
 	}
 
 	//portraits
@@ -896,7 +916,8 @@ void Gui::computeDisplay() {
 		display.setDownSelectedPos(activePos);
 	}
 
-	if (selection.isComandable()) {
+	if (selection.isComandable() 
+	&& selection.getFrontUnit()->getFaction()->getTeam() == thisTeam ) {
 		if (!selectingBuilding) {
 
 			//cancel button

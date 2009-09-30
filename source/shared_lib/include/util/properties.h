@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest Shared Library (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -58,7 +58,7 @@ public:
 		float f;
 		double d;
 	} value;
-	
+
 public:
 //	template < T> Variant(T value) : {setValue(value);}
 	virtual ~Variant();
@@ -112,7 +112,7 @@ public:
 	unsigned int getUintValue(const Key &key) const		{return getValue(key).getUintValue();}
 	float getFloatValue(const Key &key) const			{return getValue(key).getFloatValue();}
 	double getDoubleValue(const Key &key) const			{return getValue(key).getDoubleValue();}
-	
+
 private:
 	const Variant &getValue(const Key &key) const {
 		Map it = _map.find(key);
@@ -149,10 +149,10 @@ public:
 	void clear();
 	void load(const string &path, bool trim = true);
 	void save(const string &path);
-
-	int getPropertyCount()	{return propertyVector.size();}
-	string getKey(int i)	{return propertyVector[i].first;}
-	string getString(int i)	{return propertyVector[i].second;}
+/*
+	int getPropertyCount()		{return propertyVector.size();}
+	string getKey(int i)		{return propertyVector[i].first;}
+	string getString(int i)		{return propertyVector[i].second;}*/
 
 	const PropertyMap &getPropertyMap() const								{return propertyMap;}
 	bool getBool(const string &key) const									{return _getBool(key);}
@@ -167,6 +167,10 @@ public:
 	float getFloat(const string &key, float def, float min, float max) const{return _getFloat(key, &def, &min, &max);}
 	const string &getString(const string &key) const						{return _getString(key);}
 	const string &getString(const string &key, const string &def) const		{return _getString(key, &def);}
+	const string *getStringOrNull(const string &key) const {
+		PropertyMap::const_iterator i = propertyMap.find(key);
+		return i == PropertyMap::end ? NULL : *i;
+	}
 
 	void setInt(const string &key, int value)		{setString(key, Conversion::toStr(value));}
 	void setBool(const string &key, bool value)		{setString(key, Conversion::toStr(value));}
@@ -175,7 +179,7 @@ public:
 		propertyMap.erase(key);
 		propertyMap.insert(PropertyPair(key, value));
 	}
-	
+
 	string toString() const;
 
 private:

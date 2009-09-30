@@ -42,9 +42,12 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 		, dirty(true) {
 
 	Lang &lang = Lang::getInstance();
+	Config &config = Config::getInstance();
 	NetworkManager &networkManager = NetworkManager::getInstance();
-
-	vector<string> results, teamItems, controlItems;
+	vector<string> results;
+	vector<string> teamItems;
+	vector<string> controlItems;
+	int match = 0;
 
 	//create
 	buttonReturn.init(350, 200, 125);
@@ -57,37 +60,51 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	}
 	mapFiles = results;
 	for (int i = 0; i < results.size(); ++i) {
+		if(results[i] == config.getUiLastMap()) {
+			match = i;
+		}
 		results[i] = formatString(results[i]);
 	}
 	listBoxMap.init(200, 320, 150);
 	listBoxMap.setItems(results);
+	listBoxMap.setSelectedItemIndex(match);
 	labelMap.init(200, 350);
 	labelMapInfo.init(200, 290, 200, 40);
 
 	//tileset listBox
+	match = 0;
 	findAll("tilesets/*.", results);
 	if (results.size() == 0) {
 		throw runtime_error("There are no tile sets");
 	}
 	tilesetFiles = results;
 	for (int i = 0; i < results.size(); ++i) {
+		if(results[i] == config.getUiLastTileset()) {
+			match = i;
+		}
 		results[i] = formatString(results[i]);
 	}
 	listBoxTileset.init(400, 320, 150);
 	listBoxTileset.setItems(results);
+	listBoxTileset.setSelectedItemIndex(match);
 	labelTileset.init(400, 350);
 
 	//tech Tree listBox
+	match = 0;
 	findAll("techs/*.", results);
 	if (results.size() == 0) {
 		throw runtime_error("There are no tech trees");
 	}
 	techTreeFiles = results;
 	for (int i = 0; i < results.size(); ++i) {
+		if(results[i] == config.getUiLastTechTree()) {
+			match = i;
+		}
 		results[i] = formatString(results[i]);
 	}
 	listBoxTechTree.init(600, 320, 150);
 	listBoxTechTree.setItems(results);
+	listBoxTechTree.setSelectedItemIndex(match);
 	labelTechTree.init(600, 350);
 
 	//list boxes
@@ -188,6 +205,7 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 		}
 	} else if (buttonReturn.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundA());
+		config.save();
 		serverInterface->quit();
 		mainMenu->setState(new MenuStateRoot(program, mainMenu));
 		// this becomes invalid after the above function call
@@ -199,7 +217,7 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 			msgBox = new GraphicMessageBox();
 			msgBox->init(lang.get("WaitingForConnections"), lang.get("Ok"));
 		} else {
-			Config::getInstance().save();
+			config.save();
 			shared_ptr<GameSettings> gs = serverInterface->getGameSettings();
 			{
 				shared_ptr<MutexLock> localLock = gs->getLock();
@@ -212,17 +230,23 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 			return;
 		}
 	} else if (listBoxMap.mouseClick(x, y)) {
-		loadMapInfo("maps/" + mapFiles[listBoxMap.getSelectedItemIndex()] + ".gbm", &mapInfo);
+	string mapBaseName = mapFiles[listBoxMap.getSelectedItemIndex()];
+string mapFile = "maps/" + mapBaseName + ".gbm";
+loadMapInfo(mapFile, &mapInfo);
+
 		labelMapInfo.setText(mapInfo.desc);
 		updateControlers();
 		dirty = true;
+		config.setUiLastMap(mapBaseName);
 	} else if (listBoxTileset.mouseClick(x, y)) {
 		dirty = true;
+		config.setUiLastTileset(tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
 	} else if (listBoxTechTree.mouseClick(x, y)) {
 		reloadFactions();
 		dirty = true;
+		config.setUiLastTechTree(techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
 	} else if (listBoxRandomize.mouseClick(x, y)) {
-		Config::getInstance().setGsRandStartLocs(listBoxRandomize.getSelectedItemIndex());
+		config.setUiLastRandStartLocs(listBoxRandomize.getSelectedItemIndex());
 		dirty = true;
 	} else {
 		for (int i = 0; i < mapInfo.players; ++i) {
@@ -335,6 +359,12 @@ void MenuStateNewGame::update() {
 	bool gsChangeMade = false;
 	GameSettings &gs = *si.getGameSettings();
 	shared_ptr<MutexLock> localLock = gs.getLock();
+	//TOOD: add AutoTest to config
+	/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateNewGame(program, mainMenu);
+	}
+	*/
 	Lang& lang = Lang::getInstance();
 
 	for (int i = 0; i < mapInfo.players; ++i) {
@@ -405,6 +435,10 @@ void MenuStateNewGame::updateGameSettings() {
 	gs.setTilesetPath("tilesets/" + tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
 	gs.setTechPath("techs/" + techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
 	gs.setRandStartLocs(listBoxRandomize.getSelectedItemIndex());
+	gs.setScenarioPath("");
+	gs.setDefaultVictoryConditions(true);
+	gs.setDefaultResources(true);
+	gs.setDefaultUnits(true);
 	gs.setCommandDelay(10);
 
 	si.unslotAllClients();

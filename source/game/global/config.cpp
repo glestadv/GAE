@@ -2,7 +2,7 @@
 //	This file is part of Glest (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
-//				  2008 Daniel Santos <daniel.santos@pobox.com>
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -28,7 +28,9 @@ namespace Game {
 
 Config::Config(const char* fileName) : fileName(fileName) {
 	Properties *p = new Properties();
-	p->load(fileName, true);	
+	if(Shared::Util::fileExists(fileName)) {
+		p->load(fileName, true);
+	}
 
 	cameraFov = p->getFloat("CameraFov", 45.f, 0.f, 360.f);
 	cameraInvertXAxis = p->getBool("CameraInvertXAxis", true);
@@ -54,8 +56,9 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	miscCatchExceptions = p->getBool("MiscCatchExceptions", true);
 	miscDebugKeys = p->getBool("MiscDebugKeys", false);
 	miscDebugMode = p->getBool("MiscDebugMode", false);
+	miscDebugTextureMode = p->getInt("MiscDebugTextureMode", 0);
+	miscDebugTextures = p->getBool("MiscDebugTextures", false);
 	miscFirstTime = p->getBool("MiscFirstTime", true);
-	miscLowMemory = p->getBool("MiscLowMemory", false);
 	netAutoRepairAllowed = p->getBool("NetAutoRepairAllowed", true);
 	netAutoReturnAllowed = p->getBool("NetAutoReturnAllowed", false);
 	netChangeSpeedAllowed = p->getBool("NetChangeSpeedAllowed", false);
@@ -67,6 +70,8 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	netPlayerName = p->getString("NetPlayerName", "Player");
 	netServerIp = p->getString("NetServerIp", "192.168.1.1");
 	netServerPort = p->getInt("NetServerPort", 61357, 0, 65535);
+	pathFinderMaxNodes = p->getInt("PathFinderMaxNodes", 1024);
+	pathFinderUseAStar = p->getBool("PathFinderUseAStar", false);
 	renderCheckGlCaps = p->getBool("RenderCheckGlCaps", true);
 	renderColorBits = p->getInt("RenderColorBits", 32);
 	renderDepthBits = p->getInt("RenderDepthBits", isWindows()?32:16);
@@ -99,7 +104,13 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	uiConsoleTimeout = p->getInt("UiConsoleTimeout", 20);
 	uiEnableCommandMinimap = p->getBool("UiEnableCommandMinimap", true);
 	uiFocusArrows = p->getBool("UiFocusArrows", true);
-	uiLang = p->getString("UiLang", "english.lng");
+	uiLastMap = p->getString("UiLastMap", "four_rivers");
+	uiLastRandStartLocs = p->getBool("UiLastRandStartLocs", false);
+	uiLastScenario = p->getString("UiLastScenario", "glest_classic/anarchy");
+	uiLastScenarioCatagory = p->getString("UiLastScenarioCatagory", "glest_classic");
+	uiLastTechTree = p->getString("UiLastTechTree", "magitech");
+	uiLastTileset = p->getString("UiLastTileset", "forest");
+	uiLocale = p->getString("UiLocale", "en");
 	uiPhotoMode = p->getBool("UiPhotoMode", false);
 	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
 
@@ -133,8 +144,9 @@ void Config::save(const char *path) {
 	p->setBool("MiscCatchExceptions", miscCatchExceptions);
 	p->setBool("MiscDebugKeys", miscDebugKeys);
 	p->setBool("MiscDebugMode", miscDebugMode);
+	p->setInt("MiscDebugTextureMode", miscDebugTextureMode);
+	p->setBool("MiscDebugTextures", miscDebugTextures);
 	p->setBool("MiscFirstTime", miscFirstTime);
-	p->setBool("MiscLowMemory", miscLowMemory);
 	p->setBool("NetAutoRepairAllowed", netAutoRepairAllowed);
 	p->setBool("NetAutoReturnAllowed", netAutoReturnAllowed);
 	p->setBool("NetChangeSpeedAllowed", netChangeSpeedAllowed);
@@ -146,6 +158,8 @@ void Config::save(const char *path) {
 	p->setString("NetPlayerName", netPlayerName);
 	p->setString("NetServerIp", netServerIp);
 	p->setInt("NetServerPort", netServerPort);
+	p->setInt("PathFinderMaxNodes", pathFinderMaxNodes);
+	p->setBool("PathFinderUseAStar", pathFinderUseAStar);
 	p->setBool("RenderCheckGlCaps", renderCheckGlCaps);
 	p->setInt("RenderColorBits", renderColorBits);
 	p->setInt("RenderDepthBits", renderDepthBits);
@@ -178,7 +192,13 @@ void Config::save(const char *path) {
 	p->setInt("UiConsoleTimeout", uiConsoleTimeout);
 	p->setBool("UiEnableCommandMinimap", uiEnableCommandMinimap);
 	p->setBool("UiFocusArrows", uiFocusArrows);
-	p->setString("UiLang", uiLang);
+	p->setString("UiLastMap", uiLastMap);
+	p->setBool("UiLastRandStartLocs", uiLastRandStartLocs);
+	p->setString("UiLastScenario", uiLastScenario);
+	p->setString("UiLastScenarioCatagory", uiLastScenarioCatagory);
+	p->setString("UiLastTechTree", uiLastTechTree);
+	p->setString("UiLastTileset", uiLastTileset);
+	p->setString("UiLocale", uiLocale);
 	p->setBool("UiPhotoMode", uiPhotoMode);
 	p->setFloat("UiScrollSpeed", uiScrollSpeed);
 

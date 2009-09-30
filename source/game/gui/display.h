@@ -18,7 +18,6 @@
 #include "util.h"
 #include "command_type.h"
 #include "game_util.h"
-#include "network_status.h"
 #include "metrics.h"
 
 using std::string;
@@ -94,9 +93,7 @@ public:
 	//misc
 	void clear();
 	int computeDownIndex(int x, int y);
-	void switchColor() {
-		currentColor = (currentColor + 1) % colorCount;
-	}
+	void switchColor() {currentColor = (currentColor + 1) % colorCount;}
 
 	int computeDownX(int index) const {
 		return (index % cellSideCount) * imageSize;

@@ -1,8 +1,8 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
-//				  2008 Daniel Santos <daniel.santos@pobox.com>
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -11,25 +11,62 @@
 // ==============================================================
 
 #include "pch.h"
+#include <clocale>
 
 #include "lang.h"
-
-#include <stdarg.h>
+#include "logger.h"
+#include "util.h"
 
 #include "leak_dumper.h"
 
 
 using namespace std;
+using namespace Shared::Util;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 //  class Lang
 // =====================================================
 
+void Lang::setLocale(const string &locale) {
+	this->locale = locale;
+	strings.clear();
+	setlocale(LC_CTYPE, locale.c_str());
+	string path = "gae/data/lang/" + locale + ".lng";
+	strings.load(path);
+}
+
+void Lang::loadScenarioStrings(const string &scenarioDir, const string &scenarioName) {
+	string path = scenarioDir + "/" + scenarioName + "_" + locale + ".lng";
+
+	scenarioStrings.clear();
+
+	//try to load the current locale first
+	if (fileExists(path)) {
+		scenarioStrings.load(path);
+	} else {
+		//try english otherwise
+		string path = scenarioDir + "/" + scenarioName + "/" + scenarioName + "_en.lng";
+		if (fileExists(path)) {
+			scenarioStrings.load(path);
+		}
+	}
+}
+
+string get(const string &s) const {
+	string *ret = strings.getStringOrNull(s);
+	return ret ? *ret : string("???" + s + "???");
+}
+
+string getScenarioString(const string &s) const {
+	string *ret = scenarioStrings.getStringOrNull(s);
+	return ret ? *ret : string("???" + s + "???");
+}
+
 string Lang::format(const string &s, ...) const {
 	va_list ap;
-	const string &fmt = get(s);
+	const string fmt = get(s);
 	size_t bufsize = fmt.size() + 2048;
 	char *buf = new char[bufsize];
 
@@ -42,4 +79,4 @@ string Lang::format(const string &s, ...) const {
 	return ret;
 }
 
-} // end namespace
+}}//end namespace

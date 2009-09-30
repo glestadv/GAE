@@ -31,7 +31,7 @@ private:
 public:
 	BattleEnd(Program &program, const shared_ptr<GameSettings> &gs, const Stats &stats);
 	~BattleEnd();
-	virtual void update() {}
+	virtual void update();
 	virtual void render();
 	virtual void keyDown(const Key &key);
 	virtual void mouseDownLeft(int x, int y);
