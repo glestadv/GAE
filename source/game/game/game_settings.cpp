@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2008 Daniel Santos
+//	Copyright (C) 2008-2009 Daniel Santos
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -36,12 +36,14 @@ GameSettings::Faction::Faction(
 		const Team &team,
 		const string &typeName,
 		bool randomType,
-		int mapSlot)
+		int mapSlot,
+		float resourceMultiplier)
 		: IdNamePair(id, name)
 		, team(team)
 		, typeName(typeName)
 		, randomType(randomType)
-		, mapSlot(mapSlot) {
+		, mapSlot(mapSlot)
+		, resourceMultiplier(resourceMultiplier) {
 }
 
 GameSettings::Faction::Faction(const XmlNode &node, const GameSettings &gs)
@@ -49,7 +51,8 @@ GameSettings::Faction::Faction(const XmlNode &node, const GameSettings &gs)
 		, team(gs.getTeamOrThrow(node.getChildIntValue("teamId")))
 		, typeName(node.getChildStringValue("typeName"))
 		, randomType(node.getChildBoolValue("randomType"))
-		, mapSlot(node.getChildIntValue("mapSlot")) {
+		, mapSlot(node.getChildIntValue("mapSlot"))
+		, resourceMultiplier(node.getChildFloatValue("resourceMultiplier")) {
 	foreach(const XmlNode *n, node.getChild("players")->getChildren()) {
 		players.push_back(const_cast<Player *>(&gs.getPlayerOrThrow(n->getIntAttribute("id"))));
 	}
@@ -61,6 +64,7 @@ void GameSettings::Faction::write(XmlNode &node) const {
 	node.addChild("typeName", typeName);
 	node.addChild("randomType", randomType);
 	node.addChild("mapSlot", mapSlot);
+	node.addChild("resourceMultiplier", resourceMultiplier);
 
 	XmlNode &playersNode = *node.addChild("players");
 	foreach(const Player *p, players) {
@@ -157,6 +161,7 @@ GameSettings::GameSettings(const XmlNode &node)
 		, mapSlots(node.getChildIntValue("mapSlots"))
 		, tilesetPath(node.getChildStringValue("tilesetPath"))
 		, techPath(node.getChildStringValue("techPath"))
+		, scenarioPath(node.getChildStringValue("scenarioPath"))
 		, thisFactionId(node.getChildIntValue("thisFactionId"))
 		, autoRepairAllowed(node.getChildBoolValue("autoRepairAllowed"))
 		, autoReturnAllowed(node.getChildBoolValue("autoReturnAllowed"))
@@ -328,6 +333,7 @@ void GameSettings::write(XmlNode &node) const {
 	node.addChild("mapSlots", mapSlots);
 	node.addChild("tilesetPath", tilesetPath);
 	node.addChild("techPath", techPath);
+	node.addChild("scenarioPath", scenarioPath);
 	node.addChild("thisFactionId", thisFactionId);
 
 	node.addChild("autoRepairAllowed", autoRepairAllowed);

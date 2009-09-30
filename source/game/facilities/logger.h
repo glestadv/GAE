@@ -32,7 +32,7 @@ using Shared::Util::ObjectPrinter;
 namespace Game {
 
 // =====================================================
-// class Logger
+//	class Logger
 //
 /// Interface to write log files
 // =====================================================
@@ -58,14 +58,21 @@ private:
 
 private:
 	string fileName;
-	string sectionName;
+	//string sectionName;
 	string state;
 	Strings logLines;
 	stringstream ss;
 	ObjectPrinter op;
+	string subtitle;
+	string current;
+	bool loadingGame;
+	static char errorBuf[];
 
 private:
-	Logger(const char *fileName);
+	Logger(const char *fileName)
+			: fileName(fileName)
+			, loadingGame(true) {
+	}
 
 public:
 	static Logger &getInstance() {
@@ -83,21 +90,27 @@ public:
 		return logger;
 	}
 
-	//void setFile(const string &fileName) {this->fileName= fileName;}
+	static Logger &getErrorLog() {
+		static Logger logger("glestadv-error.log");
+		return logger;
+	}
+
+	void addXmlError(const string &path, const char *error);
+
+	//void setFile(const string &v)			{fileName= v;}
 	void setState(const string &state);
+	void setSubtitle(const string &v)		{subtitle = v;}
+	void setLoading(bool v)					{loadingGame = v;}
 
 	void add(const string &str, bool renderScreen = false);
 	void add(const Printable &, bool renderScreen = false);
 	void add(const string &str, const Printable &p, bool renderScreen = false);
 	void printf(const char* pattern, ...);
 	void renderLoadingScreen();
-
 	void clear();
-
-private:
-	
 };
 
+// TODO: implement for Windows
 #if defined(WIN32) | defined(WIN64)
 
 class Timer {
@@ -107,7 +120,7 @@ public:
 
 	void print(const char* msg) {}
 
-	struct timeval getDiff() {}
+	struct timeval getDiff() {return struct timeval();}
 };
 
 #else
@@ -120,8 +133,10 @@ class Timer {
 	FILE *outfile;
 
 public:
-	Timer(int threshold, const char* msg, FILE *outfile = stderr) :
-			threshold(threshold), msg(msg), outfile(outfile) {
+	Timer(int threshold, const char* msg, FILE *outfile = stderr)
+			: threshold(threshold)
+			, msg(msg)
+			, outfile(outfile) {
 		tz.tz_minuteswest = 0;
 		tz.tz_dsttime = 0;
 		gettimeofday(&start, &tz);

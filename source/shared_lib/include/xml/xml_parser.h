@@ -2,7 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa,
-//				  2008 Daniel Santos <daniel.santos@pobox.com>
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -15,31 +15,27 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+#include <sstream>
 
-#include <xercesc/util/XercesDefs.hpp>
+#define TIXML_USE_STL
+#include "tinyxml.h"
+//#include <xercesc/util/XercesDefs.hpp>
 #include "vec.h"
 #include "conversion.h"
 
 using std::string;
 using std::vector;
+using std::stringstream;
+using std::auto_ptr;	// This isn't as good as shared_ptr from tr1 or boost, but it's better
+						// than what we've been doing with toString()
 using namespace Shared::Graphics;
 using namespace Shared::Util;
-
-namespace XERCES_CPP_NAMESPACE {
-	class DOMImplementation;
-	class DOMDocument;
-	class DOMNode;
-	class DOMElement;
-}
-
-using XERCES_CPP_NAMESPACE::DOMImplementation;
-//using XERCES_CPP_NAMESPACE::DOMDocument;
-using XERCES_CPP_NAMESPACE::DOMNode;
-using XERCES_CPP_NAMESPACE::DOMElement;
 
 namespace Shared { namespace Xml {
 
 const int strSize = 256;
+extern const string defaultIndent;
 
 class XmlIo;
 class XmlTree;
@@ -52,51 +48,23 @@ typedef vector<const XmlAttribute*> XmlAttributes;
 // =====================================================
 // 	class XmlIo
 //
-///	Wrapper for Xerces C++
+///	Wrapper for TinyXML
 // =====================================================
 
 class XmlIo {
 private:
 	static bool initialized;
-	DOMImplementation *implementation;
 
 private:
-	XmlIo();
+	XmlIo() {}
+	~XmlIo() {}
 
 public:
 	static XmlIo &getInstance();
-	~XmlIo();
 	XmlNode *load(const string &path);
 	void save(const string &path, const XmlNode *node);
 	XmlNode *parseString(const char *doc, size_t size = (size_t)-1);
-	/** WARNING: return value must be freed by calling XmlIo::getInstance().releaseString(). */
-	char *toString(const XmlNode *node, bool pretty);
-	void releaseString(char **domAllocatedString);
 };
-
-// =====================================================
-//	class XmlTree
-// =====================================================
-
-class XmlTree{
-private:
-	XmlNode *rootNode;
-
-private:
-	XmlTree(XmlTree&);
-	void operator =(XmlTree&);
-
-public:
-	XmlTree();
-	~XmlTree();
-
-	void init(const string &name);
-	void load(const string &path);
-	void save(const string &path);
-
-	XmlNode *getRootNode() const	{return rootNode;}
-};
-
 
 // =====================================================
 //	class XmlAttribute
@@ -112,13 +80,15 @@ private:
 	void operator =(XmlAttribute&);
 
 public:
-	XmlAttribute(DOMNode *attribute);
-	XmlAttribute(const char *name, const char *value) : name(name), value(value){}
-	XmlAttribute(const string &name, const string &value) : name(name), value(value){}
+	XmlAttribute(TiXmlAttribute *attribute);
+	XmlAttribute(const char *name, const char *value) : name(name), value(value) {}
+	XmlAttribute(const string &name, const string &value) : name(name), value(value) {}
 
 public:
 	const string &getName() const						{return name;}
 	const string &getValue() const						{return value;}
+	string toString() const								{return name + "=\"" + value + "\""; }
+	void toString(stringstream &str) const				{str << name << "=\"" << value << "\"";}
 
 	bool getBoolValue() const;
 	int getIntValue() const								{return Conversion::strToInt(value);}
@@ -136,18 +106,22 @@ public:
 // =====================================================
 
 class XmlNode {
+public:
+	typedef vector<XmlNode*> Nodes;
+	typedef vector<XmlAttribute*> Attributes;
+
 private:
 	string name;
+	Nodes children;
+	Attributes attributes;
 	string text;
-	vector<XmlNode*> children;
-	vector<XmlAttribute*> attributes;
 
 private:
 	XmlNode(XmlNode&);
 	void operator =(XmlNode&);
 
 public:
-	XmlNode(DOMNode *node);
+	XmlNode(TiXmlNode *node);
 	XmlNode(const string &name);
 	~XmlNode();
 
@@ -350,8 +324,8 @@ public:
 		return child;
 	}
 
-	void populateElement(DOMElement *node, XERCES_CPP_NAMESPACE::DOMDocument *document) const;
-	DOMElement *buildElement(XERCES_CPP_NAMESPACE::DOMDocument *document) const;
+	void populateElement(TiXmlElement *node) const;
+	//DOMElement *buildElement(XERCES_CPP_NAMESPACE::DOMDocument *document) const;
 
 	int getOptionalIntValue(const char* name, int defaultValue = 0) const {
 		const XmlNode *node = getChild(name, 0, false);
@@ -373,11 +347,10 @@ public:
 		return !node ? string(defaultValue) : node->getAttribute("value")->getRestrictedValue();
 	}
 
-	// FIXME: This should be managed by some type of smart pointer.
-	/** WARNING: return value must be freed by calling XmlIo::getInstance().releaseString(). */
-	char *toString(bool pretty) const {
-		return XmlIo::getInstance().toString(this, pretty);
-	}
+	auto_ptr<string> toString(bool pretty = false, const string &indentSingle = defaultIndent) const;
+
+	void toStringSimple(stringstream &str) const;
+	void toStringPretty(stringstream &str, string &indent, const string &indentSingle) const;
 
 private:
 	string getTreeString() const;
@@ -387,6 +360,34 @@ class XmlWritable {
 public:
 	virtual ~XmlWritable() {}
 	virtual void write(XmlNode &node) const = 0;
+};
+
+// =====================================================
+//	class XmlTree
+// =====================================================
+
+class XmlTree {
+private:
+	XmlNode *rootNode;
+
+private:
+	XmlTree(const XmlTree &);
+	void operator =(const XmlTree &);
+
+public:
+	XmlTree() : rootNode(NULL)		{}
+	XmlTree(const string &name) : rootNode(new XmlNode(name)) {}
+	~XmlTree()						{delete rootNode;}
+
+	void init(const string &name)	{rootNode = new XmlNode(name);}
+	void load(const string &path)	{rootNode = XmlIo::getInstance().load(path);}
+	void save(const string &path)	{XmlIo::getInstance().save(path, rootNode);}
+	void parse(const string &xml)	{rootNode = XmlIo::getInstance().parseString(xml.c_str());}
+
+	auto_ptr<string> toString(bool pretty = false, const string &indentSingle = defaultIndent) const {
+		return rootNode->toString(pretty, indentSingle);
+	}
+	XmlNode *getRootNode() const	{return rootNode;}
 };
 
 }}//end namespace

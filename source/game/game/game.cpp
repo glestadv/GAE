@@ -74,7 +74,6 @@ Game::Game(Program &program, const shared_ptr<GameSettings> &gs, XmlNode *savedG
 		speed(GAME_SPEED_NORMAL),
 		fUpdateLoops(1.f),
 		lastUpdateLoopsFraction(0.f),
-		exitMessageBox(NULL),
 		saveBox(NULL),
 		lastMousePos(0),
 		weatherParticleSystem(NULL) {
@@ -96,14 +95,12 @@ Game::~Game() {
 	if (saveBox) {
 		delete saveBox;
 	}
-	if (exitMessageBox) {
-		delete exitMessageBox;
-	}
 	deleteValues(aiInterfaces.begin(), aiInterfaces.end());
 
-	gui.end();  //selection must be cleared before deleting units
-	world.end(); //must die before selection because of referencers
+	gui.end();		//selection must be cleared before deleting units
+	world.end();	//must die before selection because of referencers
 	singleton = NULL;
+	logger.setLoading ( true );
 }
 
 
@@ -111,15 +108,37 @@ Game::~Game() {
 
 void Game::load() {
 	Logger::getInstance().setState(Lang::getInstance().get("Loading"));
+	Logger &logger= Logger::getInstance();
+	string mapName= gameSettings.getMapPath();
+	string tilesetName= gameSettings.getTilesetPath();
+	string techName= gameSettings.getTechPath();
+	string scenarioPath= gameSettings.getScenarioPath();
+	string scenarioName= basename(scenarioPath);
+
+
+	logger.setState(Lang::getInstance().get("Loading"));
+
+	if(scenarioName.empty())
+		logger.setSubtitle(formatString(mapName)+" - "+formatString(tilesetName)+" - "+formatString(techName));
+	else
+		logger.setSubtitle(formatString(scenarioName));
 
 	//tileset
-	world.loadTileset(checksums);
+	if ( ! world.loadTileset(checksums) )
+		throw runtime_error ( "The tileset could not be loaded. See glestadv-error.log" );
 
 	//tech, load before map because of resources
-	world.loadTech(checksums);
+	if ( ! world.loadTech(checksums) )
+		throw runtime_error ( "The techtree could not be loaded. See glestadv-error.log" );
 
 	//map
 	world.loadMap(checksums);
+
+	//scenario
+	if(!scenarioName.empty()){
+		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
+		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksum);
+	}
 }
 
 void Game::init() {
@@ -131,6 +150,10 @@ void Game::init() {
 	NetworkManager &networkManager = NetworkManager::getInstance();
 
 	logger.setState(lang.get("Initializing"));
+
+	//mesage box
+	mainMessageBox.init("", lang.get("Yes"), lang.get("No"));
+	mainMessageBox.setEnabled(false);
 
 #ifndef DEBUG
 	//check fog of war
@@ -152,6 +175,8 @@ void Game::init() {
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
+	ScriptManager::init();
+
 	if (savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
 		gui.load(savedGame->getChild("gui"));
 	}
@@ -160,7 +185,7 @@ void Game::init() {
 	aiInterfaces.resize(world.getFactionCount());
 	for (int i = 0; i < world.getFactionCount(); ++i) {
 		Faction *faction = world.getFaction(i);
-		if (faction->getCpuControl()) {
+		if(faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled()){
 			aiInterfaces[i] = new AiInterface(*this, i, faction->getTeam());
 			logger.add("Creating AI for faction " + Conversion::toStr(i), true);
 		} else {
@@ -257,6 +282,7 @@ void Game::init() {
 		delete savedGame;
 		savedGame = NULL;
 	}
+	logger.setLoading ( false );
 }
 
 
@@ -302,7 +328,8 @@ void Game::update() {
 			
 			//AiInterface
 			for (int i = 0; i < world.getFactionCount(); ++i) {
-				if (world.getFaction(i)->getCpuControl()) {
+				if (world.getFaction(i)->getCpuControl()
+			&&   ScriptManager::getPlayerModifiers(i)->getAiEnabled() ) {
 					aiInterfaces[i]->update();
 				}
 			}
@@ -337,8 +364,16 @@ void Game::update() {
 
 	//check for quiting status
 	if (NetworkManager::getInstance().getGameInterface()->getState() >= STATE_QUIT) {
-		program.setState(new BattleEnd(program, gs, world.getStats()));
+		quitGame();
 	}
+
+	//TODO: add AutoTest to config
+	//update auto test
+	/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateGame(this);
+	}
+	*/
 }
 //SocketException &e) {
 void Game::autoSaveAndPrompt(string msg, string remotePlayerName, int slot) {
@@ -356,10 +391,8 @@ void Game::autoSaveAndPrompt(string msg, string remotePlayerName, int slot) {
 	snprintf(buf, sizeof(buf) - 1, lang.get("YourGameWasSaved").c_str(), saveName.c_str());
 	errmsg << msg << endl << buf << endl << lang.get("ExitGame?");
 
-	if (exitMessageBox) {
-		delete exitMessageBox;
-		exitMessageBox = NULL;
-	}
+	mainMessageBox.init ( errmsg.str(), lang.get("Ok") );
+	mainMessageBox.setEnabled ( true );
 	showExitMessageBox(errmsg.str(), false);
 }
 
@@ -396,21 +429,32 @@ void Game::mouseDownLeft(int x, int y) {
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	Vec2i mmCell;
 
-	//exit message box
-	if (exitMessageBox) {
-		int button;
-		if (exitMessageBox->mouseClick(x, y, button)) {
+	const Metrics &metrics= Metrics::getInstance();
+	bool messageBoxClick= false;
+
+	//script message box, only if the exit box is not enabled
+	if(!mainMessageBox.getEnabled() && ScriptManager::getMessageBox()->getEnabled()){
+		int button= 1;
+		if(ScriptManager::getMessageBox()->mouseClick(x, y, button)){
+			ScriptManager::onMessageBoxOk();
+			messageBoxClick= true;
+		}
+	}
+
+	//exit message box, has to be the last thing to do in this function
+	if(mainMessageBox.getEnabled()){
+		int button= 1;
+		if(mainMessageBox.mouseClick(x, y, button)){
 			if (button == 1) {
 				networkManager.getGameInterface()->quit();
-				program.setState(new BattleEnd(program, gs, world.getStats()));
+				quitGame();
 			} else {
 				//close message box
-				delete exitMessageBox;
-				exitMessageBox = NULL;
+				mainMessageBox.setEnabled(false);
 			}
 		}
 
-		//save box
+	//save box
 	} else if (saveBox) {
 		int button;
 		if (saveBox->mouseClick(x, y, button)) {
@@ -427,27 +471,9 @@ void Game::mouseDownLeft(int x, int y) {
 	}
 }
 
-void Game::mouseDownRight(int x, int y) {
-	gui.mouseDownRight(x, y);
-}
-
-void Game::mouseUpLeft(int x, int y) {
-	gui.mouseUpLeft(x, y);
-}
-
-void Game::mouseUpRight(int x, int y) {
-	gui.mouseUpRight(x, y);
-}
-
-void Game::mouseDownCenter(int x, int y) {
-	gameCamera.stop();
-}
-
-void Game::mouseUpCenter(int x, int y) {
-}
-
-void Game::mouseDoubleClickLeft(int x, int y) {
-	if (!(exitMessageBox  && exitMessageBox->isInBounds(x, y))
+void Game::mouseDoubleClickLeft(int x, int y)
+{
+	if (!(mainMessageBox.getEnabled()  && mainMessageBox.isInBounds(x, y))
 			&& !(saveBox && saveBox->isInBounds(x, y))) {
 		gui.mouseDoubleClickLeft(x, y);
 	}
@@ -488,8 +514,10 @@ void Game::mouseMove(int x, int y, const MouseState &ms) {
 			gameCamera.setMoveX(0);
 		}
 
-		if (exitMessageBox) {
-			exitMessageBox->mouseMove(x, y);
+		if (mainMessageBox.getEnabled()) {
+			mainMessageBox.mouseMove(x, y);
+		} else if (ScriptManager::getMessageBox()->getEnabled()) {
+			ScriptManager::getMessageBox()->mouseMove(x, y);
 		} else if (saveBox) {
 			saveBox->mouseMove(x, y);
 		} else {
@@ -532,16 +560,16 @@ void Game::keyDown(const Key &key) {
 
 	if (saveBox && saveBox->getEntry()->isActivated()) {
 		switch (key.getCode()) {
-		case keyReturn:
-			saveGame(saveBox->getEntry()->getText());
-			//intentional fall-through
-		case keyEscape:
-			delete saveBox;
-			saveBox = NULL;
-			break;
+			case keyReturn:
+				saveGame(saveBox->getEntry()->getText());
+				//intentional fall-through
+			case keyEscape:
+				delete saveBox;
+				saveBox = NULL;
+				break;
 
-		default:
-			saveBox->keyDown(key);
+			default:
+				saveBox->keyDown(key);
 		};
 
 		return;
@@ -574,9 +602,12 @@ void Game::keyDown(const Key &key) {
 	} else if (cmd == ucSaveScreenshot) {
 		Shared::Platform::mkdir("screens", true);
 		int i;
+		const int MAX_SCREENSHOTS = 100;
 
-		for (i = 0; i < 100; ++i) {
-			string path = "screens/screen" + Conversion::toStr(i) + ".tga";
+		// Find a filename from 'screen(0 to MAX_SCREENHOTS).tga' and save the screenshot in one that doesn't
+		//  already exist.
+		for (i = 0; i < MAX_SCREENSHOTS; ++i) {
+			string path = "screens/screen" + intToStr(i) + ".tga";
 
 			FILE *f = fopen(path.c_str(), "rb");
 			if (!f) {
@@ -587,7 +618,7 @@ void Game::keyDown(const Key &key) {
 			}
 		}
 
-		if (i == 101) {
+		if (i > MAX_SCREENSHOTS) {
 			console.addLine(lang.get("ScreenshotDirectoryFull"));
 		}
 
@@ -623,10 +654,10 @@ void Game::keyDown(const Key &key) {
 		// on
 		if (cmd == ucPauseOn) {
 			paused = true;
-			// off
+		// off
 		} else if (cmd == ucPauseOff) {
 			paused = false;
-			// toggle
+		// toggle
 		} else if (cmd == ucPauseToggle) {
 			paused = !paused;
 		}
@@ -659,7 +690,7 @@ void Game::keyDown(const Key &key) {
 	//exit
 	if (cmd == ucMenuQuit) {
 		if (!gui.cancelPending()) {
-			showExitMessageBox(lang.get("ExitGame?"), true);
+			showMessageBox(lang.get("ExitGame?"), "Quit...", true);
 		}
 
 	//save
@@ -680,27 +711,27 @@ void Game::keyDown(const Key &key) {
 	} else {
 		switch (cmd) {
 			//rotate camera left
-		case ucCameraRotateLeft:
-			gameCamera.setRotate(-1);
-			break;
+			case ucCameraRotateLeft:
+				gameCamera.setRotate(-1);
+				break;
 
 			//rotate camera right
-		case ucCameraRotateRight:
-			gameCamera.setRotate(1);
-			break;
+			case ucCameraRotateRight:
+				gameCamera.setRotate(1);
+				break;
 
 			//camera up
-		case ucCameraPitchUp:
-			gameCamera.setMoveY(1);
-			break;
+			case ucCameraPitchUp:
+				gameCamera.setMoveY(1);
+				break;
 
 			//camera down
-		case ucCameraPitchDown:
-			gameCamera.setMoveY(-1);
-			break;
+			case ucCameraPitchDown:
+				gameCamera.setMoveY(-1);
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 	}
 	/*
@@ -715,28 +746,28 @@ void Game::keyDown(const Key &key) {
 void Game::keyUp(const Key &key) {
 	if (!chatManager.getEditEnabled()) {
 		switch (keymap.getCommand(key)) {
-		case ucCameraRotateLeft:
-		case ucCameraRotateRight:
-			gameCamera.setRotate(0);
-			break;
+			case ucCameraRotateLeft:
+			case ucCameraRotateRight:
+				gameCamera.setRotate(0);
+				break;
 
-		case ucCameraPitchUp:
-		case ucCameraPitchDown:
-			gameCamera.setMoveY(0);
-			break;
+			case ucCameraPitchUp:
+			case ucCameraPitchDown:
+				gameCamera.setMoveY(0);
+				break;
 
-		case ucCameraPosUp:
-		case ucCameraPosDown:
-			gameCamera.setMoveZ(0);
-			break;
+			case ucCameraPosUp:
+			case ucCameraPosDown:
+				gameCamera.setMoveZ(0);
+				break;
 
-		case ucCameraPosLeft:
-		case ucCameraPosRight:
-			gameCamera.setMoveX(0);
-			break;
+			case ucCameraPosLeft:
+			case ucCameraPosRight:
+				gameCamera.setMoveX(0);
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 	}
 }
@@ -745,16 +776,16 @@ void Game::keyPress(char c) {
 	if (saveBox) {
 		if (saveBox->getEntry()->isActivated()) {
 			switch (c) {
-			case '/':
-			case '\\':
-			case ':':
-			case ';':
-			case ',':
-			case '\'':
-			case '"':
-				break;
-			default:
-				saveBox->keyPress(c);
+				case '/':
+				case '\\':
+				case ':':
+				case ';':
+				case ',':
+				case '\'':
+				case '"':
+					break;
+				default:
+					saveBox->keyPress(c);
 			}
 		} else {
 			// hacky... :(
@@ -763,6 +794,10 @@ void Game::keyPress(char c) {
 	} else {
 		chatManager.keyPress(c);
 	}
+}
+
+void Game::quitGame(){
+	program.setState(new BattleEnd(program, world.getStats()));
 }
 
 // ==================== PRIVATE ====================
@@ -829,8 +864,20 @@ void Game::render2d() {
 	renderer.renderSelectionQuad();
 
 	//exit message box
-	if (exitMessageBox) {
-		renderer.renderMessageBox(exitMessageBox);
+	if(mainMessageBox.getEnabled()){
+		renderer.renderMessageBox(&mainMessageBox);
+	}
+
+	//script message box
+	if(!mainMessageBox.getEnabled() && ScriptManager::getMessageBoxEnabled()){
+		renderer.renderMessageBox(ScriptManager::getMessageBox());
+	}
+
+	//script display text
+	if(!ScriptManager::getDisplayText().empty() && !ScriptManager::getMessageBoxEnabled()){
+		renderer.renderText(
+			ScriptManager::getDisplayText(), coreData.getMenuFontNormal(),
+			gui.getDisplay()->getColor(), 200, 680, false);
 	}
 
 	//save box
@@ -874,15 +921,17 @@ void Game::render2d() {
 			}
 			str << endl;
 		}
-
-		Renderer::getInstance().renderText(
+#ifdef _GAE_DEBUG_EDITION_
+		str << "Debug Field : " << Fields::getName ( renderer.getDebugField() ) << endl;
+#endif
+		renderer.renderText(
 			str.str(), coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 10, 500, false);
 	}
 
 	//network status
 	if (renderNetworkStatus && networkManager.isNetworkGame()) {
-		Renderer::getInstance().renderText(
+		renderer.renderText(
 			networkManager.getGameInterface()->getStatus(),
 			coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 750, 75, false);
@@ -901,48 +950,72 @@ void Game::render2d() {
 
 // ==================== misc ====================
 
+
 void Game::checkWinner() {
 	if (!gameOver) {
-		Lang &lang = Lang::getInstance();
-
-		//lose
-		bool lose = false;
-		if (!hasBuilding(world.getThisFaction())) {
-			lose = true;
-			for (int i = 0; i < world.getFactionCount(); ++i) {
-				if (!world.getFaction(i)->isAlly(world.getThisFaction())) {
-					world.getStats().setVictorious(i);
-				}
-			}
-
-			gameOver = true;
-			showExitMessageBox(lang.get("YouLose") + ", " + lang.get("ExitGame?"), false);
-		}
-
-		//win
-		if (!lose) {
-			bool win = true;
-			for (int i = 0; i < world.getFactionCount(); ++i) {
-				if (i != world.getThisFactionIndex()) {
-					if (hasBuilding(world.getFaction(i)) && !world.getFaction(i)->isAlly(world.getThisFaction())) {
-						win = false;
-					}
-				}
-			}
-
-			//if win
-			if (win) {
-				for (int i = 0; i < world.getFactionCount(); ++i) {
-					if (world.getFaction(i)->isAlly(world.getThisFaction())) {
-						world.getStats().setVictorious(i);
-					}
-				}
-				gameOver = true;
-				showExitMessageBox(lang.get("YouWin") + ", " + lang.get("ExitGame?"), false);
-			}
+		if(gameSettings.getDefaultVictoryConditions()) {
+			checkWinnerStandard();
+		} else {
+			checkWinnerScripted();
 		}
 	}
 }
+
+void Game::checkWinnerStandard(){
+	//lose
+	bool lose= false;
+	if(!hasBuilding(world.getThisFaction())){
+		lose= true;
+		for(int i=0; i<world.getFactionCount(); ++i){
+			if(!world.getFaction(i)->isAlly(world.getThisFaction())){
+				world.getStats().setVictorious(i);
+			}
+		}
+		gameOver= true;
+		showLoseMessageBox();
+	}
+
+	//win
+	if(!lose){
+		bool win= true;
+		for(int i=0; i<world.getFactionCount(); ++i){
+			if(i!=world.getThisFactionIndex()){
+				if(hasBuilding(world.getFaction(i)) && !world.getFaction(i)->isAlly(world.getThisFaction())){
+					win= false;
+				}
+			}
+		}
+
+		//if win
+		if(win){
+			for(int i=0; i< world.getFactionCount(); ++i){
+				if(world.getFaction(i)->isAlly(world.getThisFaction())){
+					world.getStats().setVictorious(i);
+				}
+			}
+			gameOver= true;
+			showWinMessageBox();
+		}
+	}
+}
+
+void Game::checkWinnerScripted(){
+	if(ScriptManager::getGameOver()){
+		gameOver= true;
+		for(int i= 0; i<world.getFactionCount(); ++i){
+			if(ScriptManager::getPlayerModifiers(i)->getWinner()){
+				world.getStats().setVictorious(i);
+			}
+		}
+		if(ScriptManager::getPlayerModifiers(world.getThisFactionIndex())->getWinner()){
+			showWinMessageBox();
+		}
+		else{
+			showLoseMessageBox();
+		}
+	}
+}
+
 
 bool Game::hasBuilding(const Faction *faction) {
 	for (int i = 0; i < faction->getUnitCount(); ++i) {
@@ -961,10 +1034,10 @@ void Game::updateSpeed() {
 		fUpdateLoops = 1.0f;
 	} else if (speed > GAME_SPEED_NORMAL) {
 		fUpdateLoops = 1.0f + (float)(speed - GAME_SPEED_NORMAL) / (float)(GAME_SPEED_FASTEST - GAME_SPEED_NORMAL)
-					   * (Config::getInstance().getGsSpeedFastest() - 1.0f);
+			* (Config::getInstance().getGsSpeedFastest() - 1.0f);
 	} else {
 		fUpdateLoops = Config::getInstance().getGsSpeedSlowest() + (float)(speed) / (float)(GAME_SPEED_NORMAL)
-					   * (1.0f - Config::getInstance().getGsSpeedSlowest());
+			* (1.0f - Config::getInstance().getGsSpeedSlowest());
 	}
 }
 
@@ -988,7 +1061,7 @@ void Game::resetSpeed() {
 }
 
 int Game::getUpdateLoops() {
-	if (paused || (!NetworkManager::getInstance().isNetworkGame() && (saveBox || exitMessageBox))) {
+	if (paused || (!NetworkManager::getInstance().isNetworkGame() && (saveBox || mainMessageBox.getEnabled()))) {
 		return 0;
 	} else {
 		int updateLoops = (int)(fUpdateLoops + lastUpdateLoopsFraction);
@@ -997,18 +1070,27 @@ int Game::getUpdateLoops() {
 	}
 }
 
-void Game::showExitMessageBox(const string &text, bool toggle) {
+void Game::showLoseMessageBox() {
 	Lang &lang = Lang::getInstance();
+	showMessageBox(lang.get("YouLose") + ", " + lang.get("ExitGame?"), lang.get("BattleOver"), false);
+}
 
-	if (exitMessageBox && toggle) {
-		delete exitMessageBox;
-		exitMessageBox = NULL;
-		return;
+void Game::showWinMessageBox() {
+	Lang &lang = Lang::getInstance();
+	showMessageBox(lang.get("YouWin") + ", " + lang.get("ExitGame?"), lang.get("BattleOver"), false);
+}
+
+void Game::showMessageBox(const string &text, const string &header, bool toggle) {
+	if (!toggle) {
+		mainMessageBox.setEnabled(false);
 	}
 
-	if (!exitMessageBox) {
-		exitMessageBox = new GraphicMessageBox();
-		exitMessageBox->init(text, lang.get("Yes"), lang.get("No"));
+	if (!mainMessageBox.getEnabled()) {
+		mainMessageBox.setText(text);
+		mainMessageBox.setHeader(header);
+		mainMessageBox.setEnabled(true);
+	} else {
+		mainMessageBox.setEnabled(false);
 	}
 }
 

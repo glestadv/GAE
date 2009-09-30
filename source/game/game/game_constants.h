@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa,
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008-2009 Daniel Santos<daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -12,6 +12,16 @@
 
 #ifndef _GAME_GAMECONSTANTS_H_
 #define _GAME_GAMECONSTANTS_H_
+
+//TODO
+// Rationialise singletons, make return all references if plausible,
+// if not, make them ALL return pointers
+//
+#define theWorld		(World::getInstance())
+#define theGame			(*Game::getInstance())
+#define theCamera		(*Game::getInstance()->getGameCamera())
+#define theGameSettings (Game::getInstance()->getGameSettings())
+#define theConsole		(*Game::getInstance()->getConsole())
 
 #include "util.h"
 

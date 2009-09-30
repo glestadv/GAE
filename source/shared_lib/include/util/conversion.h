@@ -2,6 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -44,7 +45,6 @@ private:
 	static const string str_false;
 	static const string str_one;
 	static const string str_true;
-
 	static const string str_bool;
 	static const string str_int;
 	static const string str_uint;
@@ -53,6 +53,7 @@ private:
 	static const string str_double;
 	static const string str_float;
 	static const string str_longdouble;
+
 private:
 	Conversion();
 
@@ -242,7 +243,7 @@ private:
 		return ret;
 	}
 
-	__cold static void throwException(const string &typeName, const string &s, int base);
+	static __cold __noreturn void throwException(const string &typeName, const string &s, int base);
 };
 
 inline string intToStr(int i) {return Conversion::toStr(i);}

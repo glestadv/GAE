@@ -28,6 +28,9 @@ const string gaeMailString				= "daniel.santos@pobox.com";
 const Version glestVersion				(3, 1, 2, 0, false);
 const Version gaeVersion				(0, 2, 12, 0, true);
 const Version netProtocolVersion		(0, 2, 12, 0, true);
+string getCrashDumpFileName(){
+	return "gae" + gaeVersionString + ".dmp";
+}
 
 const string &getGlestMailString()		{return glestMailString;}
 const string &getGaeMailString()		{return gaeMailString;}
@@ -49,7 +52,7 @@ string getAboutString1(int i) {
 
 string getAboutString2(int i) {
 	switch(i){
-	case 0: return "Web: http://glest.codemonger.org, http://www.glest.org";
+	case 0: return "Web: http://glest.codemonger.org, http://glest.org";
 	case 1: return "Mail: " + gaeMailString + ", " + glestMailString;
 	case 2: return "Irc: irc://irc.freenode.net/glest";
 	}

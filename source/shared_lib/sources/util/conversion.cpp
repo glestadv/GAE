@@ -12,12 +12,6 @@
 
 #include "pch.h"
 #include "conversion.h"
-
-#include <stdexcept>
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>
-
 #include "leak_dumper.h"
 
 using namespace std;
@@ -38,7 +32,7 @@ const string Conversion::str_float		= "float";
 const string Conversion::str_longdouble	= "long double";
 
 // this function is outlined because we don't need this extra code inlined everywhere
-__cold void Conversion::throwException(const string &typeName, const string &s, int base) {
+__cold __noreturn void Conversion::throwException(const string &typeName, const string &s, int base) {
 	std::stringstream str;
 	str << "Error converting from string to " << typeName << " (base = " << base << "), found: " << s;
 	throw runtime_error(str.str());

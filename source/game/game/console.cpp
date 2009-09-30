@@ -17,6 +17,9 @@
 #include "program.h"
 #include "lang_features.h"
 
+#include "sound_renderer.h"
+#include "core_data.h"
+
 #include "leak_dumper.h"
 
 namespace Game {
@@ -46,7 +49,9 @@ void Console::addStdMessage(const string &s, const string &param1, const string 
 	delete[] buf;
 }
 
-void Console::addLine(string line){
+void Console::addLine(string line, bool playSound){
+   if ( playSound )
+      SoundRenderer::getInstance().playFx(CoreData::getInstance().getClickSoundA());
 	lines.insert(lines.begin(), StringTimePair(line, timeElapsed));
 	if(lines.size()>maxLines){
 		lines.pop_back();

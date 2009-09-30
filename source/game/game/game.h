@@ -21,6 +21,7 @@
 #include "ai_interface.h"
 #include "program.h"
 #include "chat_manager.h"
+#include "script_manager.h"
 #include "game_settings.h"
 #include "config.h"
 #include "keymap.h"
@@ -77,13 +78,14 @@ private:
 	GameSpeed speed;
 	float fUpdateLoops;
 	float lastUpdateLoopsFraction;
-	GraphicMessageBox *exitMessageBox;
+	GraphicMessageBox mainMessageBox;
+
 	GraphicTextEntryBox *saveBox;
 	Vec2i lastMousePos;
 
 	//misc ptr
 	ParticleSystem *weatherParticleSystem;
-	
+
 public:
 	Game(Program &program, const shared_ptr<GameSettings> &gs, XmlNode *savedGame = NULL);
     ~Game();
@@ -113,24 +115,28 @@ public:
 	virtual void render();
 	virtual void tick();
 
+
     //Event managing
     virtual void keyDown(const Key &key);
     virtual void keyUp(const Key &key);
     virtual void keyPress(char c);
     virtual void mouseDownLeft(int x, int y);
-    virtual void mouseDownRight(int x, int y);
-    virtual void mouseUpLeft(int x, int y);
-    virtual void mouseUpRight(int x, int y);
-	virtual void mouseDownCenter(int x, int y);
-	virtual void mouseUpCenter(int x, int y);
+    virtual void mouseDownRight(int x, int y)			{gui.mouseDownRight(x, y);}
+    virtual void mouseUpLeft(int x, int y)				{gui.mouseUpLeft(x, y);}
+    virtual void mouseUpRight(int x, int y)				{gui.mouseUpRight(x, y);}
+    virtual void mouseDownCenter(int x, int y)			{gameCamera.stop();}
+    virtual void mouseUpCenter(int x, int y)			{}
     virtual void mouseDoubleClickLeft(int x, int y);
 	virtual void eventMouseWheel(int x, int y, int zDelta);
     virtual void mouseMove(int x, int y, const MouseState &mouseState);
 
-	void setCameraCell(int x, int y)	{
+	void setCameraCell(int x, int y) {
 		gameCamera.setPos(Vec2f(static_cast<float>(x), static_cast<float>(y)));
 	}
 	void autoSaveAndPrompt(string msg, string remotePlayerName, int slot = -1);
+	void quitGame();
+	void pause()							{paused = true;}
+	void resume()							{paused = false;}
 
 private:
 	//render
@@ -140,12 +146,19 @@ private:
 	//misc
 	void _init();
 	void checkWinner();
+	void checkWinnerStandard();
+	void checkWinnerScripted();
 	bool hasBuilding(const Faction *faction);
 	void incSpeed();
 	void decSpeed();
 	void resetSpeed();
 	void updateSpeed();
 	int getUpdateLoops();
+
+	void showLoseMessageBox();
+	void showWinMessageBox();
+	void showMessageBox(const string &text, const string &header, bool toggle);
+
 	void showExitMessageBox(const string &text, bool toggle);
 	string controllerTypeToStr(ControlType ct);
 	Unit *findUnit(int id);

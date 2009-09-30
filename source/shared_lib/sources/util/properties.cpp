@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <sstream>
+#include <locale>
 
 #include "conversion.h"
 
@@ -33,6 +34,7 @@ namespace Shared { namespace Util {
 Properties::Properties() {}
 
 void Properties::load(const string &path, bool trim) {
+	locale loc;
 	ifstream fileStream;
 	char lineBuffer[maxLine];
 	string line, key, value;
@@ -56,6 +58,8 @@ void Properties::load(const string &path, bool trim) {
 			continue;
 		}
 
+		// FIXME: Is this neccisary? I thought ifstream was supposed to do this for us unless you
+		// pass ios_base::binary when opening the file (i.e., the default file mode is "text").
 		// gracefully handle win32 \r\n line endings
 		size_t len = strlen(lineBuffer);
 		if (len > 0 && lineBuffer[len - 1] == '\r') {
@@ -72,16 +76,16 @@ void Properties::load(const string &path, bool trim) {
 		key = line.substr(0, pos);
 		value = line.substr(pos + 1);
 		if(trim) {
-			while(!key.empty() && isspace(key[0])) {
+			while (!key.empty() && isspace( key[0], loc )) {
 				key.erase(0, 1);
 			}
-			while(!key.empty() && isspace(key[key.size() - 1])) {
+			while (!key.empty() && isspace( key[key.size() - 1], loc )) {
 				key.erase(key.size() - 1);
 			}
-			while(!value.empty() && isspace(value[0])) {
+			while (!value.empty() && isspace( value[0], loc )) {
 				value.erase(0, 1);
 			}
-			while(!value.empty() && isspace(value[value.size() - 1])) {
+			while (!value.empty() && isspace( value[value.size() - 1], loc )) {
 				value.erase(value.size() - 1);
 			}
 		}

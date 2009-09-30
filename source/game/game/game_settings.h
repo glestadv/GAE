@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -58,6 +58,7 @@ public:
 		string typeName;
 		bool randomType;
 		int mapSlot;
+		float resourceMultiplier;
 		Players players;
 
 	public:
@@ -66,7 +67,8 @@ public:
 				const Team &team,
 				const string &typeName,
 				bool randomType,
-				int mapSlot);
+				int mapSlot,
+				float resourceMultiplier);
 		Faction(const XmlNode &node, const GameSettings &gs);
 
 		// getters
@@ -74,6 +76,7 @@ public:
 		const string &getTypeName() const		{return typeName;}
 		bool isRandomType() const				{return randomType;}
 		int getMapSlot() const					{return mapSlot;}
+		float getResourceMultiplier() const		{return resourceMultiplier;}
 		Player *getPrimaryPlayer()				{return players.empty() ? NULL : players.front();}
 		const Player *getPrimaryPlayer() const	{return players.empty() ? NULL : players.front();}
 		Players &getPlayers()					{return players;}
@@ -115,7 +118,9 @@ private:
 	int mapSlots;
 	string tilesetPath;
 	string techPath;
+	string scenarioPath;
 	int thisFactionId;
+	float resourceMultipliers [GameConstants::maxPlayers];
 
 	// game settings
 	bool autoRepairAllowed;
@@ -164,6 +169,7 @@ public:
 	int getMapSlots() const					{return mapSlots;}
 	const string &getTilesetPath() const	{return tilesetPath;}
 	const string &getTechPath() const		{return techPath;}
+	const string &getScenarioPath() const	{return scenarioPath;}
 	int getThisFactionId() const			{return thisFactionId;}
 
 	bool getAutoRepairAllowed() const		{return autoRepairAllowed;}
@@ -182,6 +188,7 @@ public:
 	void setMapSlots(int v)					{mapSlots = v;}
 	void setTilesetPath(const string& v)	{tilesetPath = v;}
 	void setTechPath(const string& v)		{techPath = v;}
+	void setScenarioPath(const string& v)	{scenarioPath = v;}
 	void setThisFactionId(int v) 			{thisFactionId = v;}
 
 	void setAutoRepairAllowed(bool v)		{autoRepairAllowed = v;}

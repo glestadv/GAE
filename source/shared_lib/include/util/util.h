@@ -207,17 +207,32 @@ const Version &getGaeSharedLibVersion();
 void findAll(const string &path, vector<string> &results, bool cutExtension = false);
 
 //string fcs
-string lastDir(const string &s);
-
-inline string lastFile(const string &s){
-	return lastDir(s);
-}
-
-string cutLastFile(const string &s);
+string cleanPath(const string &s);
+string dirname(const string &s);
+string basename(const string &s);
 string cutLastExt(const string &s);
 string ext(const string &s);
 string replaceBy(const string &s, char c1, char c2);
 string toLower(const string &s);
+#if defined(WIN32) || defined(WIN64)
+inline string intToHex ( int addr ) {
+	static char hexBuffer[32];
+	sprintf ( hexBuffer, "%.8X", addr );
+	return string( hexBuffer );
+}
+#endif
+
+inline string toLower(const string &s){
+	size_t size = s.size();
+	string rs;
+	rs.resize(size);
+
+	for(size_t i = 0; i < size; ++i) {
+		rs[i] = tolower(s[i]);
+	}
+
+	return rs;
+}
 
 inline void copyStringToBuffer(char *buffer, int bufferSize, const string& s) {
 	strncpy(buffer, s.c_str(), bufferSize - 1);
