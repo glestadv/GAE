@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include;include;include/glgooey/services;../../../deps/include/freetype2"
+				AdditionalIncludeDirectories="../../../deps/include;include;include/glgooey/services;../../../deps/include/freetype2;../shared_lib/include/tinyxml"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS"
 				StringPooling="true"
 				MinimalRebuild="true"

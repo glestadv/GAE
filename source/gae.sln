@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game", "glest_game\game.vcproj", "{6C6978EF-B3B5-4827-B543-BFECD0A6BCCF}"
 	ProjectSection(ProjectDependencies) = postProject
+		{77CA7E79-6FE1-4EBD-BC3B-9515254738CC} = {77CA7E79-6FE1-4EBD-BC3B-9515254738CC}
 		{A29E0F89-0584-4E22-A163-7A676E17E9E1} = {A29E0F89-0584-4E22-A163-7A676E17E9E1}
 	EndProjectSection
 EndProject
