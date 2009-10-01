@@ -24,9 +24,11 @@
 #include "game_settings.h"
 #include "network_message.h"
 #include "path_finder.h"
+#include "cartographer.h"
 
-//DEBUG remove me some time...
-#include "renderer.h"
+#if DEBUG_SEARCH_TEXTURES
+#	include "debug_renderer.h"
+#endif
 
 #include "leak_dumper.h"
 
@@ -95,8 +97,8 @@ void World::save(XmlNode *node) const {
 
 void World::init(const XmlNode *worldNode) {
 
-#  ifdef _GAE_DEBUG_EDITION_
-	loadPFDebugTextures ();
+#  if DEBUG_SEARCH_TEXTURES
+	PathFinderTextureCallBack::loadPFDebugTextures ();
 #  endif
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
@@ -105,7 +107,7 @@ void World::init(const XmlNode *worldNode) {
 	initSplattedTextures();
 
 	unitUpdater.init(game); // must be done after initMap()
-
+	
 	//minimap must be init after sum computation
 	initMinimap();
 
@@ -115,6 +117,8 @@ void World::init(const XmlNode *worldNode) {
 		initUnits();
 
 	initExplorationState();
+	
+	//thePathManager.cartographer->updateResourceMaps();
 
 	if(worldNode) {
 		NetworkDataBuffer buf;
@@ -518,7 +522,7 @@ void World::updateEarthquakes(float seconds) {
 }
 
 void World::update() {
-
+	PROFILE_START( "World Update" );
 	++frameCount;
 
 	// check ScriptTimers
@@ -595,31 +599,31 @@ void World::update() {
 
 		si.sendUpdates();
 	}
-
+	PROFILE_STOP( "World Update" );
 }
 
 void World::doKill(Unit *killer, Unit *killed) {
-   scriptManager->onUnitDied ( killed );
+	scriptManager->onUnitDied( killed );
 	int kills = 1 + killed->getPets().size();
-	for (int i = 0; i < kills; i++) {
-		stats.kill(killer->getFactionIndex(), killed->getFactionIndex());
-		if (killer->isAlive() && killer->getTeam() != killed->getTeam() ) {
+	for ( int i = 0; i < kills; i++ ) {
+		stats.kill( killer->getFactionIndex(), killed->getFactionIndex() );
+		if ( killer->isAlive() && killer->getTeam() != killed->getTeam() ) {
 			killer->incKills();
 		}
 	}
 
-	if(killed->getCurrSkill()->getClass() != scDie) {
-	   killed->kill();
+	if ( killed->getCurrSkill()->getClass() != scDie ) {
+		killed->kill();
 	}
-   if ( !killed->isMobile() )
-      unitUpdater.pathFinder->updateMapMetrics ( killed->getPos (), killed->getSize (), false, FieldWalkable );
+	if ( !killed->isMobile() ) {
+		unitUpdater.pathManager->updateMapMetrics( killed->getPos(), killed->getSize(), false, FieldWalkable );
+	}
 }
 
 void World::tick() {
 	if(!fogOfWarSmoothing){
 		minimap.updateFowTex(1.f);
-	}
-	
+	}	
 	//apply hack cleanup
 	doHackyCleanUp();
 
@@ -740,7 +744,7 @@ void World::moveUnitCells(Unit *unit) {
 	*/
 	//}
 
-   assert ( unitUpdater.pathFinder->isLegalMove ( unit, newPos ) );
+   assert ( unitUpdater.pathManager->isLegalMove ( unit, newPos ) );
 	map.clearUnitCells(unit, unit->getPos());
 	map.putUnitCells(unit, newPos);
 
@@ -787,8 +791,8 @@ void World::createUnit(const string &unitName, int factionIndex, const Vec2i &po
 			unit->create(true);
 			unit->born();
 			if ( !unit->isMobile() ) {
-				Search::PathFinder *pf = Search::PathFinder::getInstance();
-				pf->updateMapMetrics ( unit->getPos(), unit->getSize(), true, FieldWalkable );
+				Search::PathManager *pm = Search::PathManager::getInstance();
+				pm->updateMapMetrics ( unit->getPos(), unit->getSize(), true, FieldWalkable );
 			}
 			scriptManager->onUnitCreated(unit);
 		}
@@ -1173,19 +1177,18 @@ void World::initUnits() {
 
 				} else {
 					throw runtime_error("Unit cant be placed, this error is caused because there "
-							"is no enough place to put the units near its start location, make a "
-							"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
+						"is no enough place to put the units near its start location, make a "
+						"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
 				}
-            //if ( !unit->isMobile() )
-            //   unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(),
-            //                unit->getSize(), true, unit->getCurrField () );
-				if(unit->getType()->hasSkillClass(scBeBuilt))
-            {
-               map.flatternTerrain(unit);
-               unitUpdater.pathFinder->updateMapMetrics ( unit->getPos(),
-                            unit->getSize(), true, unit->getCurrField () );
+				//if ( !unit->isMobile() )
+				//   unitUpdater.pathManager->updateMapMetrics ( unit->getPos(),
+				//                unit->getSize(), true, unit->getCurrField () );
+				if(unit->getType()->hasSkillClass(scBeBuilt)) {
+					map.flatternTerrain(unit);
+					unitUpdater.pathManager->updateMapMetrics ( unit->getPos(),
+						unit->getSize(), true, unit->getCurrField () );
 				}
-         }
+			}
 		}
 	}
 	map.computeNormals();
@@ -1333,41 +1336,5 @@ void World::hackyCleanUp(Unit *unit) {
 	}
 	newlydead.push_back(unit);
 }
-
-
-#ifdef _GAE_DEBUG_EDITION_
-#define _load_tex(i,f) \
-   PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
-   PFDebugTextures[i]->setMipmap(false);\
-   PFDebugTextures[i]->getPixmap()->load(f);
-
-void World::loadPFDebugTextures()
-{
-   char buff[128];
-   for ( int i=0; i < 8; ++i )
-   {
-      sprintf ( buff, "data/core/misc_textures/g%02d.bmp", i );
-      _load_tex ( i, buff );
-   }
-   _load_tex ( 9, "data/core/misc_textures/path_start.bmp" );
-   _load_tex ( 10, "data/core/misc_textures/path_dest.bmp" );
-   _load_tex ( 11, "data/core/misc_textures/path_both.bmp" );
-   _load_tex ( 12, "data/core/misc_textures/path_return.bmp" );
-   _load_tex ( 13, "data/core/misc_textures/path.bmp" );
-
-   _load_tex ( 14, "data/core/misc_textures/path_node.bmp" );
-   _load_tex ( 15, "data/core/misc_textures/open_node.bmp" );
-   _load_tex ( 16, "data/core/misc_textures/closed_node.bmp" );
-
-   for ( int i=17; i < 17+8; ++i )
-   {
-      sprintf ( buff, "data/core/misc_textures/l%02d.bmp", i-17 );
-      _load_tex ( i, buff );
-   }
-}
-
-#undef _load_tex
-#endif
-
 
 }}//end namespace

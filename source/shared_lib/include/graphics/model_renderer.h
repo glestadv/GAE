@@ -50,6 +50,9 @@ public:
 	virtual void begin(bool renderNormals, bool renderTextures, bool renderColors, MeshCallback *meshCallback= NULL)=0;
 	virtual void end()=0;
 	virtual void render(const Model *model)=0;
+
+	virtual void renderMesh( const Model *model, int mesh )=0;
+
 	virtual void renderNormalsOnly(const Model *model)=0;
 };
 

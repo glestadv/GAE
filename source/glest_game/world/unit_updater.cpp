@@ -64,9 +64,9 @@ void UnitUpdater::init(Game &game) {
 	this->world = game.getWorld();
 	this->map = world->getMap();
 	this->console = game.getConsole();
-	pathFinder = Search::PathFinder::getInstance();
-	pathFinder->init(map);
-	gameSettings = game.getGameSettings ();
+	pathManager = Search::PathManager::getInstance();
+	pathManager->init();
+	gameSettings = game.getGameSettings();
 }
 
 // ==================== progress skills ====================
@@ -341,7 +341,7 @@ void UnitUpdater::updateMove(Unit *unit) {
 		pos = command->getPos();
 	}
 
-	switch(pathFinder->findPath(unit, pos)) {
+	switch(pathManager->findPath(unit, pos)) {
 	case SearchResult::OnTheWay:
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
@@ -426,7 +426,7 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		}
 
 		//if unit arrives destPos order has ended
-		switch(pathFinder->findPath(unit, pos)) {
+		switch(pathManager->findPath(unit, pos)) {
 		case SearchResult::OnTheWay:
 			unit->setCurrSkill(act->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -505,7 +505,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 			return;
 		}
 
-		switch (pathFinder->findPath(unit, waypoint)) {
+		switch (pathManager->findPath(unit, waypoint)) {
 		case SearchResult::OnTheWay:
 			unit->setCurrSkill(bct->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -573,7 +573,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 				}
 			}
          if ( !builtUnit->isMobile() )
-            pathFinder->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
+            pathManager->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
 
 			//play start sound
 			if(unit->getFactionIndex()==world->getThisFactionIndex()){
@@ -679,12 +679,13 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
 				} 
 				else { //if not continue walking
-					switch (pathFinder->findPathToResource(unit, command->getPos(), r->getType())) {
+					switch (pathManager->findPathToLocation( unit, command->getPos()/*, r->getType()*/)) {
 					case SearchResult::OnTheWay:
 						unit->setCurrSkill(hct->getMoveSkillType());
 						unit->face(unit->getNextPos());
 						break;
 					case SearchResult::Arrived:
+						/*
 						for ( int i=0; i < 8; ++i ) { // reset target
 							Vec2i cPos = unit->getPos() + Search::OffsetsSize1Dist1[i];
 							Resource *res = map->getTile (Map::toTileCoords(cPos))->getResource();
@@ -692,7 +693,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 								command->setPos ( cPos );
 								break;
 							}
-						}
+						}*/
 						//command->setPos ( 
 					default:
 						break;
@@ -712,7 +713,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			//if loaded, return to store
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
-				switch (pathFinder->findPathToStore(unit, store->getNearestOccupiedCell(unit->getPos()), store)) {
+				switch (pathManager->findPathToLocation( unit, store->getNearestOccupiedCell(unit->getPos())/*, store*/)) {
 				case SearchResult::OnTheWay:
 					unit->setCurrSkill(hct->getMoveLoadedSkillType());
 					unit->face(unit->getNextPos());
@@ -766,7 +767,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					// let the pathfinder know
 					Vec2i rPos = r->getPos ();
 					sc->deleteResource();
-					pathFinder->updateMapMetrics ( rPos, 2, false, FieldWalkable );
+					pathManager->updateMapMetrics ( rPos, 2, false, FieldWalkable );
 					unit->setCurrSkill(hct->getStopLoadedSkillType());
 				}
               
@@ -850,7 +851,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			targetPos = command->getPos();
 		}
 
-		switch(pathFinder->findPath(unit, targetPos)) {
+		switch(pathManager->findPath(unit, targetPos)) {
 		case SearchResult::Arrived:
 			if(repaired && unit->getPos() != targetPos) {
 				// presume blocked
@@ -1095,7 +1096,7 @@ void UnitUpdater::updateMorph(Unit *unit){
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
 				if ( mapUpdate ) {
 					bool adding = !mct->getMorphUnit()->isMobile ();
-					pathFinder->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, FieldWalkable );
+					pathManager->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, FieldWalkable );
 				}
 
 				if(isNetworkServer()) {

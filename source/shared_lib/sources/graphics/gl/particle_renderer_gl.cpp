@@ -18,7 +18,7 @@
 #include "math_util.h"
 
 #include "leak_dumper.h"
-
+#include "profiler.h"
 
 namespace Shared{ namespace Graphics{ namespace Gl{
 
@@ -93,9 +93,11 @@ void ParticleRendererGl::renderSystem(ParticleSystem *ps){
 
 	// set state
 	if(ps->getTexture()!=NULL){
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(ps->getTexture())->getHandle());
 	}
 	else{
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	glDisable(GL_ALPHA_TEST);

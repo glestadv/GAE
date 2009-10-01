@@ -931,6 +931,7 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 /** @return true when the current skill has completed a cycle */
 bool Unit::update() {
 	assert(progress <= 1.f);
+	PROFILE_START( "Unit Update" );
 
 	//highlight
 	if(highlight > 0.f) {
@@ -987,25 +988,27 @@ bool Unit::update() {
 		animProgress = currSkill->getClass() == scDie ? 1.f : 0.f;
 	}
 
+	bool ret = false;
 	//checks
 	if(progress >= 1.f) {
 		lastRotation = targetRotation;
 
 		if(currSkill->getClass() != scDie) {
 			progress = 0.f;
-			return true;
-		} else {
+			ret = true;
+		} 
+		else {
 			progress = 1.f;
 			deadCount++;
 
 			if (deadCount >= maxDeadCount) {
 				toBeUndertaken = true;
-				return false;
+				ret =  false;
 			}
 		}
 	}
-
-	return false;
+	PROFILE_STOP( "Unit Update" );
+	return ret;
 }
 
 /**

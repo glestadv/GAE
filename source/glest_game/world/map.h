@@ -4,7 +4,7 @@
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008 Jaagup Repän <jrepan@gmail.com>,
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
-//            2009 James McCulloch <silnarm@gmail.com>
+//				  2009 James McCulloch <silnarm at gmail>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -64,6 +64,7 @@ private:
    Unit *units[ZoneCount];	//units on this cell
    float height;
    SurfaceType surfaceType;
+   
    Cell(Cell&);
    void operator=(Cell&);
 
@@ -75,10 +76,10 @@ public:
 	}
 
 	// get
-	Unit *getUnit (Zone zone) const		{return units[zone];}
-	Unit *getUnit ( Field field ) {return getUnit(field==FieldAir?ZoneAir:ZoneSurface);}
-	float getHeight () const				{return height;}
-	SurfaceType getType () const { return surfaceType; }
+	Unit *getUnit( Zone zone ) const		{return units[zone];}
+	Unit *getUnit( Field field ) {return getUnit( field==FieldAir?ZoneAir:ZoneSurface );}
+	float getHeight() const				{return height;}
+	SurfaceType getType() const { return surfaceType; }
 
 	bool isSubmerged () const { return surfaceType != SurfaceTypeLand; }
 	bool isDeepSubmerged () const { return surfaceType == SurfaceTypeDeepWater; }
@@ -165,7 +166,7 @@ public:
 	void alterVertex(const Vec3f &offset)			{vertex += offset;}
 	void updateObjectVertex() {
 		if(object) {
-			object->setPos(vertex); // should be centered ???
+			object->setPos(vertex); // should be centered ??? YES!!! It should, do so here, remove hack from Renderer
 		}
 	}
 

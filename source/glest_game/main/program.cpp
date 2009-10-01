@@ -92,10 +92,10 @@ Program *Program::singleton = NULL;
 // ===================== PUBLIC ========================
 
 Program::Program(Config &config, int argc, char** argv) :
-		renderTimer(config.getRenderFpsMax(), 1),
+		renderTimer((float)config.getRenderFpsMax(), 1),
 		tickTimer(1.f, maxTimes, -1),
-		updateTimer(config.getGsWorldUpdateFps(), maxTimes, 2),
-		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10),
+		updateTimer((float)config.getGsWorldUpdateFps(), maxTimes, 2),
+		updateCameraTimer((float)GameConstants::cameraFps, maxTimes, 10),
 		programState(NULL),
 		crashed(false),
 		keymap(getInput(), "keymap.ini") {

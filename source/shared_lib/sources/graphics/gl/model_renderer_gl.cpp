@@ -18,7 +18,7 @@
 #include "interpolation.h"
 
 #include "leak_dumper.h"
-
+#include "profiler.h"
 
 using namespace Shared::Platform;
 
@@ -50,6 +50,7 @@ void ModelRendererGl::begin(bool renderNormals, bool renderTextures, bool render
 
 	rendering = true;
 	lastTexture = 0;
+	PROFILE_CHILD_CALL("Bind Texture");
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//push attribs
@@ -58,6 +59,7 @@ void ModelRendererGl::begin(bool renderNormals, bool renderTextures, bool render
 
 	//init opengl
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	PROFILE_CHILD_CALL("Bind Texture");
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFrontFace(GL_CCW);
 	glEnable(GL_NORMALIZE);
@@ -86,7 +88,7 @@ void ModelRendererGl::renderMesh(const Mesh *mesh) {
 
 	//set cull face
 	if (mesh->getTwoSided()){
-		glDisable(GL_CULL_FACE);
+		glDisable(GL_CULL_FACE); // expensive ???
 	} else {
 		glEnable(GL_CULL_FACE);
 	}
@@ -100,13 +102,15 @@ void ModelRendererGl::renderMesh(const Mesh *mesh) {
 	//texture state
 	const Texture2DGl *texture = static_cast<const Texture2DGl*>(mesh->getTexture(mtDiffuse));
 	if (texture != NULL && renderTextures) {
-		if (lastTexture != texture->getHandle()) {
+		if (lastTexture != texture->getHandle()) { 
 			assert(glIsTexture(texture->getHandle()));
+			PROFILE_CHILD_CALL("Bind New Texture");
 			glBindTexture(GL_TEXTURE_2D, texture->getHandle());
 			lastTexture = texture->getHandle();
 		}
 	} else {
-		glBindTexture(GL_TEXTURE_2D, 0);
+		PROFILE_CHILD_CALL("Bind Texture 0");
+		glBindTexture(GL_TEXTURE_2D, 0); // expensive... ???
 		lastTexture = 0;
 	}
 
@@ -146,7 +150,6 @@ void ModelRendererGl::renderMesh(const Mesh *mesh) {
 			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 			glTexCoordPointer(2, GL_FLOAT, 0, mesh->getTexCoords());
 		}
-
 		glActiveTexture(GL_TEXTURE0);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glTexCoordPointer(2, GL_FLOAT, 0, mesh->getTexCoords());

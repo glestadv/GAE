@@ -28,6 +28,9 @@
 #include "leak_dumper.h"
 
 #include "profiler.h"
+#if DEBUG_SEARCH_TEXTURES
+#	include "debug_renderer.h"
+#endif
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -106,7 +109,7 @@ const char *Game::SpeedDesc[sCount] = {
 };
 
 Game::~Game() {
-	PROFILE_STOP("GAME");
+	PROFILE_STOP("Game");
 	Logger &logger= Logger::getInstance();
 	Renderer &renderer= Renderer::getInstance();
 
@@ -130,6 +133,7 @@ Game::~Game() {
 // ==================== init and load ====================
 
 void Game::load(){
+	PROFILE_START("Loading Game");
 	Logger::getInstance().setState(Lang::getInstance().get("Loading"));
 	Logger &logger= Logger::getInstance();
 	string mapName= gameSettings.getMap();
@@ -160,9 +164,11 @@ void Game::load(){
 		Lang::getInstance().loadScenarioStrings(gameSettings.getScenarioDir(), scenarioName);
 		world.loadScenario(Scenario::getScenarioPath(gameSettings.getScenarioDir(), scenarioName), &checksum);
 	}
+	PROFILE_STOP("Loading Game");
 }
 
 void Game::init() {
+	PROFILE_START("Initialising Game");
 	Lang &lang= Lang::getInstance();
 	Logger &logger= Logger::getInstance();
 	CoreData &coreData= CoreData::getInstance();
@@ -275,7 +281,8 @@ void Game::init() {
 		savedGame = NULL;
 	}
 	logger.setLoading ( false );
-	PROFILE_START("GAME");
+	PROFILE_STOP("Initialising Game");
+	PROFILE_START("Game");
 }
 
 
@@ -300,6 +307,7 @@ void Game::update() {
 	for (int i = 0; i < updateLoops; ++i) {
 		Renderer &renderer = Renderer::getInstance();
 
+		PROFILE_START( "Artificial Intelligence" );
 		//AiInterface
 		for (int i = 0; i < world.getFactionCount(); ++i) {
 			if ( world.getFaction(i)->getCpuControl() 
@@ -307,6 +315,7 @@ void Game::update() {
 				aiInterfaces[i]->update();
 			}
 		}
+		PROFILE_STOP( "Artificial Intelligence" );
 
 		//World
 		world.update();
@@ -376,10 +385,12 @@ void Game::updateCamera(){
 
 //render
 void Game::render(){
+	PROFILE_START( "Render" );
 	renderFps++;
 	render3d();
 	render2d();
 	Renderer::getInstance().swapBuffers();
+	PROFILE_STOP( "Render" );
 }
 
 // ==================== tick ====================
@@ -392,14 +403,6 @@ void Game::tick(){
 	renderFps= 0;
 	worldFps = 0;
 
-#ifdef PATHFINDER_TIMING
-	Search::newAStar.resetCounters ();
-	Search::oldAStar.resetCounters ();
-	Logger::getInstance().add ( Search::newAStar.GetTotalStats() );
-	Logger::getInstance().add ( Search::newAStar.GetStats() );
-	Logger::getInstance().add ( Search::oldAStar.GetTotalStats() );
-	Logger::getInstance().add ( Search::oldAStar.GetStats() );
-#endif
 	//Win/lose check
 	checkWinner();
 	gui.tick();
@@ -827,29 +830,40 @@ void Game::render3d(){
 	renderer.clearBuffers();
 
 	//surface
+	PROFILE_START( "surface" );
 	renderer.renderSurface();
+	PROFILE_STOP( "surface" );
 
 	//selection circles
 	renderer.renderSelectionEffects();
 
 	//units
+	PROFILE_START( "units" );
 	renderer.renderUnits();
+	PROFILE_STOP( "units" );
 
 	//objects
+	PROFILE_START( "objects" );
 	renderer.renderObjects();
+	PROFILE_STOP( "objects" );
 
 	//water
+	PROFILE_START( "water" );
 	renderer.renderWater();
 	renderer.renderWaterEffects();
+	PROFILE_STOP( "water" );
 
 	//particles
+	PROFILE_START( "particles" );
 	renderer.renderParticleManager(rsGame);
+	PROFILE_STOP( "particles" );
 
 	//mouse 3d
 	renderer.renderMouse3d();
 }
 
 void Game::render2d(){
+	PROFILE_START( "2D" );
 	Renderer &renderer= Renderer::getInstance();
 	Config &config= Config::getInstance();
 	CoreData &coreData= CoreData::getInstance();
@@ -928,13 +942,11 @@ void Game::render2d(){
 			}
 			str << endl;
 		}
-#ifdef PATHFINDER_TIMING
-	   str << Search::oldAStar.GetStats() << endl;
-	   str << Search::newAStar.GetStats() << endl;
-#endif
-#ifdef _GAE_DEBUG_EDITION_
-		str << "Debug Field : " << Fields::getName ( renderer.getDebugField() ) << endl;
-#endif
+
+#		if DEBUG_SEARCH_TEXTURES
+			str << "Debug Field : " << Fields::getName ( PathFinderTextureCallBack::debugField ) << endl;
+#		endif
+
 		renderer.renderText(
 			str.str(), coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 10, 500, false);
@@ -956,6 +968,7 @@ void Game::render2d(){
 
 	//2d mouse
 	renderer.renderMouse2d(mouseX, mouseY, mouse2d, gui.isSelectingPos()? 1.f: 0.f);
+	PROFILE_STOP( "2D" );
 }
 
 

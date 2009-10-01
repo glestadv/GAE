@@ -13,7 +13,6 @@
 #define _GLEST_GAME_UNITUPDATER_H_
 
 #include "gui.h"
-#include "path_finder.h"
 #include "particle.h"
 #include "random.h"
 #include "network_manager.h"
@@ -27,7 +26,7 @@ class Unit;
 class Map;
 class ScriptManager;
 class ParticleDamager;
-namespace Search { class PathFinder; }
+namespace Search { class PathManager; }
 
 // =====================================================
 //	class UnitUpdater
@@ -61,7 +60,7 @@ private:
 	World *world;
 	Console *console;
 	ScriptManager *scriptManager;
-	Search::PathFinder *pathFinder;
+	Search::PathManager *pathManager;
 	Random random;
 	GameSettings gameSettings;
 

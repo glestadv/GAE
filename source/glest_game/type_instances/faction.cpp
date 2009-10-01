@@ -24,12 +24,16 @@
 #include "renderer.h"
 #include "tech_tree.h"
 #include "world.h"
+#include "search_engine.h" // current home of InfluenceMap
 
 #include "leak_dumper.h"
 
 using namespace Shared::Util;
 
 namespace Glest { namespace Game {
+
+using Search::InfluenceMap;
+
 
 // =====================================================
 //  class Faction
@@ -57,7 +61,6 @@ void Faction::init(const FactionType *factionType, ControlType control, TechTree
 		resources[i].init(rt, resourceAmount);
 		store[i].init(rt, 0);
 	}
-
 	texture = Renderer::getInstance().newTexture2D(rsGame);
 	texture->load("data/core/faction_textures/faction" + intToStr(id) + ".tga");
 }

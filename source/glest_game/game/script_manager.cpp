@@ -17,7 +17,7 @@
 #include "lang.h"
 #include "game_camera.h"
 #include "game.h"
-
+#include "profiler.h"
 #include "leak_dumper.h"
 
 using namespace Shared::Platform;
@@ -182,12 +182,15 @@ void ScriptManager::onMessageBoxOk(){
 }
 
 void ScriptManager::onResourceHarvested(){
+	PROFILE_START( "Lua" );
 	if ( definedEvents.find( "resourceHarvested" ) != definedEvents.end() ) {
 		luaScript.luaCall("resourceHarvested");
 	}
+	PROFILE_STOP( "Lua" );
 }
 
 void ScriptManager::onUnitCreated(const Unit* unit){
+	PROFILE_START( "Lua" );
 	lastCreatedUnitName= unit->getType()->getName();
 	lastCreatedUnitId= unit->getId();
 	if ( definedEvents.find( "unitCreated" ) != definedEvents.end() ) {
@@ -196,17 +199,21 @@ void ScriptManager::onUnitCreated(const Unit* unit){
 	if ( definedEvents.find( "unitCreatedOfType_"+unit->getType()->getName() ) != definedEvents.end() ) {
 		luaScript.luaCall("unitCreatedOfType_"+unit->getType()->getName());
 	}
+	PROFILE_STOP( "Lua" );
 }
 
 void ScriptManager::onUnitDied(const Unit* unit){
+	PROFILE_START( "Lua" );
 	lastDeadUnitName= unit->getType()->getName();
 	lastDeadUnitId= unit->getId();
 	if ( definedEvents.find( "unitDied" ) != definedEvents.end() ) {
 		luaScript.luaCall("unitDied");
 	}
+	PROFILE_STOP( "Lua" );
 }
 
 void ScriptManager::onTimer() {
+	PROFILE_START( "Lua" );
 	// when a timer is ready, call the corresponding lua function
 	// and remove the timer, or reset to repeat.
 
@@ -234,6 +241,7 @@ void ScriptManager::onTimer() {
 		timers.push_back ( *it );
 	}
 	newTimerQueue.clear();
+	PROFILE_STOP( "Lua" );
 }
 
 // =============== util ===============

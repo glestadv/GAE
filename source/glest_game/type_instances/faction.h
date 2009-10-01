@@ -24,6 +24,8 @@
 #include "element_type.h"
 #include "vec.h"
 
+//#include "pathfinder.h"
+
 using std::map;
 using std::vector;
 
@@ -40,6 +42,9 @@ class CommandType;
 class UnitType;
 class Game;
 class World;
+
+namespace Search { class InfluenceMap; }
+using Search::InfluenceMap;
 
 // =====================================================
 // 	class Faction
@@ -71,7 +76,7 @@ private:
 	int startLocationIndex;
 
 	bool thisFaction;
-	int subfaction;			// the current subfaction index starting at zero
+	int subfaction; // the current subfaction index starting at zero
 	time_t lastAttackNotice;
 	time_t lastEnemyNotice;
 	Vec3f lastEventLoc;
@@ -79,11 +84,11 @@ private:
 	static ResourceTypes neededResources;
 
 public:
-    void init(const FactionType *factionType, ControlType control, TechTree *techTree,
-         int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources);
+	void init(const FactionType *factionType, ControlType control, TechTree *techTree, int factionIndex, 
+			int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources);
 	void end();
 
-    //get
+	//get
 	const Resource *getResource(const ResourceType *rt) const;
 	const Resource *getResource(int i) const			{assert(i < resources.size()); return &resources[i];}
 	int getStoreAmount(const ResourceType *rt) const;
@@ -115,7 +120,7 @@ public:
 	void applyStaticProduction(const ProducibleType *p);
 	void deApplyCosts(const ProducibleType *p);
 	void deApplyStaticCosts(const ProducibleType *p);
-   void deApplyStaticConsumption(const ProducibleType *p);
+	void deApplyStaticConsumption(const ProducibleType *p);
 	void applyCostsOnInterval();
 	bool checkCosts(const ProducibleType *pt);
 

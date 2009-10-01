@@ -27,6 +27,12 @@
 #include "font_manager.h"
 #include "camera.h"
 
+#if DEBUG_RENDERING_ENABLED
+#	include "debug_renderer.h"
+#endif
+
+#include "profiler.h"
+
 namespace Glest{ namespace Game{
 
 using namespace Shared::Graphics;
@@ -38,6 +44,10 @@ class MainMenu;
 class Console;
 class MenuBackground;
 class ChatManager;
+
+#ifdef DEBUG_SEARCH_OVERLAYS
+	namespace Search { class InfluenceMap; }
+#endif
 
 enum ResourceScope{
 	rsGlobal,
@@ -223,12 +233,21 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
-#ifdef _GAE_DEBUG_EDITION_
-	Field debugField;
-	void setDebugField ( Field f ) { debugField = f; }
-	Field getDebugField () { return debugField; }
-    void renderSurfacePFDebug ();
+#if DEBUG_RENDERING_ENABLED
+	DebugRenderer debugRenderer;
 #endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	bool captureQuad;
+	void clearCapturedQuad () { VisibleQuadColourCallback::quadSet.clear(); }
+#endif
+#if DEBUG_SEARCH_OVERLAYS
+	void renderGoldInfluence();
+	void renderInfluenceOverlay ( Vec3f clr, float scale, InfluenceMap *iMap );
+
+#endif
+
+	void renderDebugOverlay ();
+
 	//computing
     bool computePosition(const Vec2i &screenPos, Vec2i &worldPos);
 	void computeSelected(Selection::UnitContainer &units, const Vec2i &posDown, const Vec2i &posUp);

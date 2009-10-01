@@ -230,6 +230,7 @@ void Mesh::load(const string &dir, FILE *f, TextureManager *textureManager){
 	specularPower= meshHeader.specularPower;
 	opacity= meshHeader.opacity;
 
+	int maps = 0;
 	//maps
 	uint32 flag= 1;
 	for(int i=0; i<meshTextureCount; ++i){
@@ -248,8 +249,13 @@ void Mesh::load(const string &dir, FILE *f, TextureManager *textureManager){
 				}
 				textures[i]->load(mapFullPath);
 			}
+			maps++;
+
 		}
 		flag*= 2;
+	}
+	if ( maps > 1 ) {
+		printf ( "mesh in %d has more than one texture.", dir.c_str() );
 	}
 
 	//read data
@@ -475,6 +481,28 @@ void Model::loadG3d(const string &path){
 				meshes[i].load(dir, f, textureManager);
 				meshes[i].buildInterpolationData();
 			}
+			const Texture2D *ptr;
+			int numTex = 0;
+			if ( meshCount > 1 ) {
+				set<const Texture2D*> tex;
+				for(uint32 i=0; i<meshCount; ++i){
+					ptr = meshes[i].getTexture( mtDiffuse );
+					if ( tex.find( ptr ) == tex.end() ) {
+						tex.insert ( ptr );
+						numTex ++;
+					}
+				}
+				string fName = lastDir ( path );
+				
+				if ( numTex >= 2 ) {
+					printf( "%s has %d meshes, using %d texture%s.\n", fName.c_str(), meshCount, numTex, numTex==1?"":"s" );
+					for ( set<const Texture2D*>::iterator it = tex.begin(); it != tex.end(); ++it ) {
+						if ( *it ) {
+							printf( "\t%s [%d,%d]\n", (*it)->getPath().c_str(), (*it)->getPixmap()->getW(), (*it)->getPixmap()->getH() );
+						}
+					}
+				}
+			}
 		}
 		//version 3
 		else if(fileHeader.version==3){
@@ -485,10 +513,31 @@ void Model::loadG3d(const string &path){
 				meshes[i].loadV3(dir, f, textureManager);
 				meshes[i].buildInterpolationData();
 			}
+			const Texture2D *ptr;
+			int numTex = 0;
+			if ( meshCount > 1 ) {
+				set<const Texture2D*> tex;
+				for(uint32 i=0; i<meshCount; ++i){
+					ptr = meshes[i].getTexture( mtDiffuse );
+					if ( tex.find( ptr ) == tex.end() ) {
+						tex.insert ( ptr );
+						numTex ++;
+					}
+				}
+				string fName = lastDir ( path );
+				if ( numTex >= 2 ) {
+					printf( "%s has %d meshes, using %d texture%s.\n", fName.c_str(), meshCount, numTex, numTex==1?"":"s" );
+					for ( set<const Texture2D*>::iterator it = tex.begin(); it != tex.end(); ++it ) {
+						if ( *it ) {
+							printf( "\t%s [%d,%d]\n", (*it)->getPath().c_str(), (*it)->getPixmap()->getW(), (*it)->getPixmap()->getH() );
+						}
+					}
+				}
+			}
 		}
 		//version 2
 		else if(fileHeader.version==2){
-
+			
 			fread(&meshCount, sizeof(meshCount), 1, f);
 			meshes= new Mesh[meshCount];
 			for(uint32 i=0; i<meshCount; ++i){

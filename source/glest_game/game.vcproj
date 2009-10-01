@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;../shared_lib/include/tinyxml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;_GAE_DEBUG_EDITION_"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=1;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=0"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
-				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zdll.lib lua5.1_d.lib"
+				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zlib.lib lua5.1.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../../deps/lib;&quot;../../build/$(ConfigurationName)/libglest&quot;"
 				IgnoreAllDefaultLibraries="false"
@@ -226,7 +226,7 @@
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;../shared_lib/include/tinyxml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_PCH=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=1;DEBUG_SEARCH_TEXTURES=0"
 				StringPooling="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="0"
@@ -254,7 +254,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
-				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zdll.lib lua5.1.lib"
+				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zlib.lib lua5.1.lib"
 				Version="3.1.0-beta-something"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../deps/lib;&quot;../../build/$(ConfigurationName)/libglest&quot;"
@@ -385,10 +385,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\path_finder\abstract_map.h"
-				>
-			</File>
-			<File
 				RelativePath=".\ai\ai.h"
 				>
 			</File>
@@ -414,6 +410,10 @@
 			</File>
 			<File
 				RelativePath=".\main\battle_end.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\cartographer.h"
 				>
 			</File>
 			<File
@@ -458,6 +458,10 @@
 			</File>
 			<File
 				RelativePath=".\types\damage_multiplier.h"
+				>
+			</File>
+			<File
+				RelativePath=".\graphics\debug_renderer.h"
 				>
 			</File>
 			<File
@@ -514,6 +518,10 @@
 			</File>
 			<File
 				RelativePath=".\gui\gui.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\influence_map.h"
 				>
 			</File>
 			<File
@@ -613,6 +621,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\path_finder\node_map.h"
+				>
+			</File>
+			<File
 				RelativePath=".\type_instances\object.h"
 				>
 			</File>
@@ -665,7 +677,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\search_map.h"
+				RelativePath=".\path_finder\search_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\search_functions.inl"
 				>
 			</File>
 			<File
@@ -757,10 +773,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\path_finder\abstract_map.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\ai\ai.cpp"
 				>
 			</File>
@@ -833,6 +845,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\graphics\debug_renderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\gui\display.cpp"
 				>
 			</File>
@@ -878,6 +894,10 @@
 			</File>
 			<File
 				RelativePath=".\gui\gui.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\influence_map.cpp"
 				>
 			</File>
 			<File
@@ -977,6 +997,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\path_finder\node_map.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\type_instances\object.cpp"
 				>
 			</File>
@@ -1006,6 +1030,27 @@
 			<File
 				RelativePath=".\path_finder\path_finder.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						BasicRuntimeChecks="0"
+						SmallerTypeCheck="false"
+						UsePrecompiledHeader="0"
+						DebugInformationFormat="3"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\pch.cpp"
@@ -1087,8 +1132,29 @@
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\search_map.cpp"
+				RelativePath=".\path_finder\search_engine.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						BasicRuntimeChecks="0"
+						SmallerTypeCheck="false"
+						UsePrecompiledHeader="0"
+						DebugInformationFormat="3"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\gui\selection.cpp"

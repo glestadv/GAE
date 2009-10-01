@@ -21,11 +21,7 @@
 #include "unit_stats_base.h"
 #include "astar_nodepool.h"
 #include "map.h"
-/*
-#include <vector>
-#include <list>
-#include <set>
-*/
+#include "world.h"
 
 typedef list<Vec2i>::iterator VLIt;
 typedef list<Vec2i>::const_iterator VLConIt;
@@ -35,59 +31,50 @@ typedef list<Vec2i>::const_reverse_iterator VLConRevIt;
 using Shared::Platform::int64;
 
 namespace Glest { namespace Game {
-
 class Map;
-
 namespace Search {
 
-const Vec2i AboveLeftDist1[3] =  {
-	Vec2i ( -1,  0 ),
-	Vec2i ( -1, -1 ),
-	Vec2i (  0, -1 )
-};
-
-const Vec2i AboveLeftDist2[5] = {
-	Vec2i ( -2,  0 ),
-	Vec2i ( -2, -1 ),
-	Vec2i ( -2, -2 ),
-	Vec2i ( -1, -2 ),
-	Vec2i (  0, -2 )
-};
-
-// Adding a new field?
-// add the new Field (enum defined in units_stats_base.h)
-// add the 'xml' name to the Fields::names array (in units_stats_base.cpp)
-// add a comment below, claiming the first unused metric field.
-// add a case to the switches in CellMetrics::get() & CellMetrics::set()
-// add code to PathFinder::computeClearance(), PathFinder::computeClearances() 
-// and PathFinder::canClear() (if not handled fully in computeClearance[s]).
-// finaly, add a little bit of code to Map::fieldsCompatable().
-
-// Allows for a maximum moveable unit size of 15. we can 
-// (with modifications) path groups in formation using this, 
-// maybe this is not enough.. perhaps give some fields more resolution? 
-// Will Glest even do size > 2 moveable units without serious movement related issues ???
 struct CellMetrics {
-	CellMetrics () { memset ( this, 0, sizeof(*this) ); }
-	// can't get a reference to a bit field, so we can't overload 
-	// the [] operator, and we have to get by with these...
-	__inline uint32 get ( const Field field );
-	__inline void set ( const Field field, uint32 val );
-	__inline void setAll ( uint32 val );
+	CellMetrics() { memset ( this, 0, sizeof(*this) ); }
+	
+	uint16 get( const Field field ) {
+		switch ( field ) {
+			case FieldWalkable: return field0;
+			case FieldAir: return field1;
+			case FieldAnyWater: return field2;
+			case FieldDeepWater: return field3;
+			case FieldAmphibious: return field4;
+			default: throw runtime_error ( "Unknown Field passed to CellMetrics::get()" );
+		}
+	}
+	
+	void set( const Field field, uint16 val ) {
+		switch ( field ) {
+			case FieldWalkable: field0 = val; return;
+			case FieldAir: field1 = val; return;
+			case FieldAnyWater: field2 = val; return;
+			case FieldDeepWater: field3 = val; return;
+			case FieldAmphibious: field4 = val; return;
+			default: throw runtime_error ( "Unknown Field passed to CellMetrics::set()" );
+		}
+	}
+	
+	void setAll( uint16 val ) {
+		field0 = field1 = field2 = field3 = field4 = val;
+	}
 
-	bool operator != ( CellMetrics &that ) {
-		return memcmp ( this, &that, sizeof(*this) );
+	bool operator!=( CellMetrics &that ) {
+		return memcmp( this, &that, sizeof(*this) );
 	}
 
 private:
-	uint32 field0 : 4; // In Use: FieldWalkable = land + shallow water 
-	uint32 field1 : 4; // In Use: FieldAir = air
-	uint32 field2 : 4; // In Use: FieldAnyWater = shallow + deep water
-	uint32 field3 : 4; // In Use: FieldDeepWater = deep water
-	uint32 field4 : 4; // In Use: FieldAmphibious = land + shallow + deep water 
-	uint32 field5 : 4; // Unused: ?
-	uint32 field6 : 4; // Unused: ?
-	uint32 field7 : 4; // Unused: ?
+	uint16 field0 : 3; // In Use: FieldWalkable = land + shallow water 
+	uint16 field1 : 3; // In Use: FieldAir = air
+	uint16 field2 : 3; // In Use: FieldAnyWater = shallow + deep water
+	uint16 field3 : 3; // In Use: FieldDeepWater = deep water
+	uint16 field4 : 3; // In Use: FieldAmphibious = land + shallow + deep water 
+
+	uint16 _pad_bit : 1;
 };
 
 // class MetricMap
@@ -98,10 +85,10 @@ private:
 	int stride;
 
 public:
-	MetricMap () { stride = 0; metrics = NULL; }
+	MetricMap() { stride = 0; metrics = NULL; }
 	virtual ~MetricMap () { delete [] metrics; }
 
-	void init ( int w, int h ) { 
+	void init( int w, int h ) { 
 		assert (w>0&&h>0); stride = w; metrics = new CellMetrics[w*h]; 
 	}
 	CellMetrics& operator [] ( const Vec2i &pos ) const { 
@@ -114,27 +101,14 @@ public:
 //
 // Parameters for a single search
 // =====================================================
-struct SearchParams {
+/*struct SearchParams {
 	Vec2i start, dest;
 	Field field;
-	int size, team;
-	bool (*goalFunc)(const Vec2i&);
-	SearchParams ( Unit *u );
-	SearchParams ();
-};
+	int size, team, player;
 
-//#define _HEURISTIC_USE_TIE_BREAKER_
-
-__inline float heuristic ( const Vec2i &p1, const Vec2i &p2 ) {
-	int dx = abs (p1.x-p2.x), dy = abs (p1.y-p2.y);
-	int diagonal = dx < dy ? dx : dy;
-	int straight = dx + dy - 2 * diagonal;
-#	ifdef _HEURISTIC_USE_TIE_BREAKER_
-		return 1.4f * (float)diagonal + 1.f * (float)straight + p1.dist(p2) / 100.f;
-#	else
-		return 1.4 * diagonal + 1.0 * straight;
-#	endif
-}
+	SearchParams( Unit *u );
+	SearchParams();
+};*/
 
 // =====================================================
 // class AnnotatedMap
@@ -146,71 +120,50 @@ __inline float heuristic ( const Vec2i &p1, const Vec2i &p2 ) {
 class AnnotatedMap {
 	friend class AbstractMap;
 public:
-	AnnotatedMap ( Map *map );
-	virtual ~AnnotatedMap ();
+	AnnotatedMap();
+	virtual ~AnnotatedMap();
+
+	static const int maxClearanceValue = 7;
 
 	// Initialise the Map Metrics
-	void initMapMetrics ( Map *map );
+	void initMapMetrics();
 
 	// Start a 'cascading update' of the Map Metrics from a position and size
-	void updateMapMetrics ( const Vec2i &pos, const int size/*, bool adding, Field field */); 
+	void updateMapMetrics( const Vec2i &pos, const int size ); 
 
 	// Interface to the clearance metrics, can a unit of size occupy a cell(s) ?
-	__inline bool canOccupy ( const Vec2i &pos, int size, Field field ) const;
-
-	static const int maxClearanceValue;
-
+	bool canOccupy( const Vec2i &pos, int size, Field field ) const {
+		assert( theMap.isInside( pos ) );
+		return metrics[pos].get( field ) >= size ? true : false;
+	}
 	// Temporarily annotate the map for nearby units
-	void annotateLocal ( const Unit *unit, const Field field );
+	void annotateLocal( const Unit *unit, const Field field );
 
 	// Clear temporary annotations
-	void clearLocalAnnotations ( Field field );
+	void clearLocalAnnotations( Field field );
 
-	// The Classic A* [Hart, Nilsson, & Raphael, 1968]
-	bool AStarSearch ( SearchParams &params, list<Vec2i> &path );
-
-	// Perform A* search, but don't keep the path, just return it's length
-	float AStarPathLength ( SearchParams &params );
-
-	// fills d1 and d2 with the diagonal cells(coords) that need checking for a 
-	// unit of size to move from s to d, for diagonal moves.
-	// WARNING: ASSUMES ( s.x != d.x && s.y != d.y ) ie. the move IS diagonal
-	// if this condition is not true, results are undefined
-	static inline void getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 );
-
-	int getWidth () { return cMap->getW(); }
-	int getHeight () { return cMap->getH(); }
-#  ifdef _GAE_DEBUG_EDITION_
-	list<std::pair<Vec2i,uint32>>* getLocalAnnotations ();
+#  ifdef DEBUG_SEARCH_TEXTURES
+	list<std::pair<Vec2i,uint32>>* getLocalAnnotations();
 #  endif
 
 private:
-	// for initMetrics () and updateMapMetrics ()
-	void computeClearances ( const Vec2i & );
-	uint32 computeClearance ( const Vec2i &, Field );
-	bool canClear ( const Vec2i &pos, int clear, Field field );
+	// for initMetrics() and updateMapMetrics ()
+	void computeClearances( const Vec2i & );
+	uint32 computeClearance( const Vec2i &, Field );
+	bool canClear( const Vec2i &pos, int clear, Field field );
 
 	// update to the left and above a area that may have changed metrics
 	// pos: top-left of area changed
 	// size: size of area changed
 	// field: field to update for a local annotation, or FieldCount to update all fields
-	void cascadingUpdate ( const Vec2i &pos, const int size, const Field field = FieldCount );
-	void annotateUnit ( const Unit *unit, const Field field );
+	void cascadingUpdate( const Vec2i &pos, const int size, const Field field = FieldCount );
 
-	// for annotateLocal ()
-	//void localAnnotateCells ( const Vec2i &pos, const int size, const Field field, 
-	//	const Vec2i *offsets, const int numOffsets );
+	void annotateUnit( const Unit *unit, const Field field );
 
 	int metricHeight;
 	std::map<Vec2i,uint32> localAnnt;
-	Map *cMap;
 
-	//void copyToPath ( const list<Vec2i> &pathList, list<Vec2i> &path );
-
-	AStarNodePool *aNodePool;
-	bool assertValidPath ( list<Vec2i> &path );
-
-#ifdef _GAE_DEBUG_EDITION_
+#ifdef DEBUG_SEARCH_TEXTURES
 public:
 #endif
 	MetricMap metrics;

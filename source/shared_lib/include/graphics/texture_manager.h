@@ -27,6 +27,7 @@ namespace Shared{ namespace Graphics{
 //manages textures, creation on request and deletion on destruction
 class TextureManager{
 protected:
+	// use set
 	typedef vector<Texture*> TextureContainer;
 	
 protected:

@@ -188,8 +188,12 @@ const Keymap::UserCommandInfo Keymap::commandInfo[ucCount] = {
 	{"Guard",					keyG,		0,			0,			0},
 	{"Follow",					0,			0,			0,			0},
 	{"Patrol",					0,			0,			0,			0}
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	,{"SwitchDebugField",		keyKPMinus,	0,			0,			0}
+#endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	,{"VisibleQuadCapture",		keyKPPeriod,	0,			0,			0}
+	,{"VisibleQuadClear",		keyKP0,	0,			0,			0}
 #endif
 };
 #pragma pack(pop)

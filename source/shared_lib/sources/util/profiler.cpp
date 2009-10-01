@@ -27,6 +27,7 @@ namespace Shared{ namespace Util{
 Section::Section(const string &name){
 	this->name= name;
 	microsElapsed= 0;
+	calls = 0;
 	parent= NULL;
 }
 
@@ -50,20 +51,27 @@ void Section::print(FILE *outStream, int tabLevel){
 		fprintf(outStream, "\t");
 
 	fprintf(outStream, "%s: ", name.c_str());
-	fprintf(outStream, "%d us", microsElapsed );
-	unsigned int milliseconds = microsElapsed / 1000;
-	unsigned int seconds = milliseconds / 1000;
-	unsigned int minutes = seconds / 60;
-	if ( minutes ) {
-		fprintf ( outStream, " (%dmin %dsec)", minutes, seconds % 60 );
+
+	if ( microsElapsed ) {
+		fprintf(outStream, "%d us", microsElapsed );
+		unsigned int milliseconds = microsElapsed / 1000;
+		unsigned int seconds = milliseconds / 1000;
+		unsigned int minutes = seconds / 60;
+		if ( minutes ) {
+			fprintf ( outStream, " (%dmin %dsec)", minutes, seconds % 60 );
+		}
+		else if ( seconds ) {
+			fprintf ( outStream, " (%dsec %dms)", seconds, milliseconds % 1000 );
+		}
+		else if ( milliseconds ) {
+			fprintf ( outStream, " (%dms)", milliseconds );
+		}
+		fprintf(outStream, ", %.1f%%", percent );
 	}
-	else if ( seconds ) {
-		fprintf ( outStream, " (%dsec %dms)", seconds, milliseconds % 1000 );
+	if ( calls ) {
+		fprintf(outStream, ", %u calls", calls );
 	}
-	else if ( milliseconds ) {
-		fprintf ( outStream, " (%dms)", milliseconds );
-	}
-	fprintf(outStream, ", %.1f%s\n", percent, "%");
+	fprintf( outStream, "\n" );
 
 	SectionContainer::iterator it;
 	for(it= children.begin(); it!=children.end(); ++it){
@@ -100,7 +108,17 @@ Profiler &Profiler::getInstance(){
 	return profiler;
 }
 
-void Profiler::sectionBegin(const string &name){
+void Profiler::addChildCall( const string &name ) {
+	Section *childSection= currSection->getChild(name);
+	if(childSection==NULL){
+		childSection= new Section(name);
+		currSection->addChild(childSection);
+		childSection->setParent(currSection);
+	}
+	childSection->incCalls();
+}
+
+void Profiler::sectionBegin(const string &name ){
 	Section *childSection= currSection->getChild(name);
 	if(childSection==NULL){
 		childSection= new Section(name);

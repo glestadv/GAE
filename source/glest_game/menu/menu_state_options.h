@@ -48,7 +48,7 @@ private:
    GraphicListBox listBoxMaxPathNodes;
    GraphicLabel labelPFAlgorithm;
    GraphicListBox listBoxPFAlgorithm;
-#  ifdef _GAE_DEBUG_EDITION_
+#  if DEBUG_SEARCH_TEXTURES
       GraphicLabel labelPFTexturesOn;
       GraphicLabel labelPFTextureMode;
       GraphicListBox listBoxPFTexturesOn;

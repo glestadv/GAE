@@ -13,11 +13,11 @@
 #ifndef _GLEST_GAME_PATHFINDER_H_
 #define _GLEST_GAME_PATHFINDER_H_
 
+#include "game_constants.h"
+#include "influence_map.h"
 #include "annotated_map.h"
-#include "search_map.h"
-#include "abstract_map.h"
 #include "config.h"
-
+#include "search_engine.h"
 #include "profiler.h"
 
 #include <set>
@@ -25,99 +25,22 @@
 
 using std::vector;
 using std::list;
+using std::map;
 
 using Shared::Graphics::Vec2i;
 using Shared::Platform::uint32;
-using Shared::Platform::int64;
 
-namespace Glest{ namespace Game{
-
-class Map;
-class Unit;
-class UnitPath;
+namespace Glest { namespace Game {
 
 namespace Search {
+
+class Cartographer;
 
 // Some 'globals' (oh no!!! run for cover...)
 
 const int maxFreeSearchRadius = 10;
 //const int pathFindRefresh = 10; // now unused
-const int pathFindNodesMax = Config::getInstance ().getPathFinderMaxNodes ();
-
-const int numOffsetsSize1Dist1 = 8;
-const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = 
-{
-	Vec2i (  0, -1 ), // n
-	Vec2i (  1, -1 ), // ne
-	Vec2i (  0,  1 ), // e
-	Vec2i (  1,  1 ), // se
-	Vec2i (  1,  0 ), // s
-	Vec2i ( -1,  1 ), // sw
-	Vec2i ( -1,  0 ), // w
-	Vec2i ( -1, -1 )  // nw
-};
-
-const int numOffsetsSize1Dist2 = 16;
-const Vec2i OffsetsSize1Dist2 [numOffsetsSize1Dist2] =
-{
-	Vec2i (  0, -2 ), // n
-	Vec2i (  1, -2 ), // nne
-	Vec2i (  2, -2 ), // ne
-	Vec2i (  2, -1 ), // ene
-	Vec2i (  2,  0 ), // e
-	Vec2i (  2,  1 ), // ese
-	Vec2i (  2,  2 ), // se
-	Vec2i (  1,  2 ), // sse
-	Vec2i (  0,  2 ), // s
-	Vec2i ( -1,  2 ), // ssw
-	Vec2i ( -2,  2 ), // sw
-	Vec2i ( -2,  1 ), // wsw
-	Vec2i ( -2,  0 ), // w
-	Vec2i ( -2, -1 ), // wnw
-	Vec2i ( -2, -2 ), // nw
-	Vec2i ( -1, -2 ), // nnw
-};
-
-const int numOffsetsSize2Dist1 = 12;
-const Vec2i OffsetsSize2Dist1 [numOffsetsSize2Dist1] = 
-{
-	Vec2i (  0, -1 ), // n
-	Vec2i (  1, -1 ), // n
-	Vec2i (  2, -1 ), // ne
-	Vec2i (  2,  0 ), // e
-	Vec2i (  2,  1 ), // e
-	Vec2i (  2,  2 ), // se
-	Vec2i (  1,  2 ), // s
-	Vec2i (  0,  2 ), // s
-	Vec2i ( -1,  2 ), // sw
-	Vec2i ( -1,  1 ), // w
-	Vec2i ( -1,  0 ), // w
-	Vec2i ( -1, -1 )  // nw
-};
-const int numOffsetsSize2Dist2 = 20;
-const Vec2i OffsetsSize2Dist2 [numOffsetsSize2Dist2] = 
-{
-	Vec2i (  0, -2 ), // n
-	Vec2i (  1, -2 ), // n
-	Vec2i (  2, -2 ), // nne
-	Vec2i (  3, -2 ), // ne
-	Vec2i (  3, -1 ), // ene
-	Vec2i (  3,  0 ), // e
-	Vec2i (  3,  1 ), // e
-	Vec2i (  3,  2 ), // ese
-	Vec2i (  3,  3 ), // se
-	Vec2i (  2,  3 ), // sse
-	Vec2i (  1,  3 ), // s
-	Vec2i (  0,  3 ), // s
-	Vec2i ( -1,  3 ), // ssw
-	Vec2i ( -2,  3 ), // sw
-	Vec2i ( -2,  2 ), // wsw
-	Vec2i ( -2,  1 ), // w
-	Vec2i ( -2,  0 ), // w
-	Vec2i ( -2, -1 ), // wnw
-	Vec2i ( -2, -2 ), // nw
-	Vec2i ( -1, -2 ), // nnw
-};
+const int pathFindNodesMax = 4096;//Config::getInstance().getPathFinderMaxNodes ();
 
 struct SearchResult {
 	enum State { Arrived, OnTheWay, Blocked };
@@ -127,82 +50,54 @@ typedef SearchResult::State TravelState;
 //enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
 
 // =====================================================
-// 	class PathFinder
+// 	class PathManager
 //
-//	Finds paths for units using 
+//	Finds paths for units using the SearchEngine class
+//
+//  Manages annotated maps for each team, and shared node
+//  storage.  Performs group path calculations effeciently
+//  using a reserved A*.
+//  Generally tries to hide the horrible details of the 
+//  templated SearchEngine::aStar() function.
 // 
 // =====================================================
-class PathFinder {
+class PathManager {	
 public:
-	static PathFinder* getInstance ();
-	~PathFinder();
-	void init(Map *map);
+	static PathManager* getInstance();
+	~PathManager();
+	void init();
 
-	static void setResourceGoal ( const ResourceType *resType ) {resourceGoal = resType;}
-	static bool resourceGoalFunc ( const Vec2i &pos );
+	static AnnotatedMap *annotatedMap; //MOVE ME
+	Cartographer *cartographer;
 
-	static void setStoreGoal ( const Unit *store ) { storeGoal = store; }
-	static bool storeGoalFunc ( const Vec2i &pos );
-
-	TravelState findPathToGoal ( Unit *unit, const Vec2i &targetPos, bool (*func)(const Vec2i&)=NULL );
-
-	TravelState findPathToResource ( Unit *unit, const Vec2i &targetPos, const ResourceType *resType ) { 
-		setResourceGoal ( resType ); 
-		return findPathToGoal ( unit, targetPos, &resourceGoalFunc ); 
+	TravelState findPathToLocation( Unit *unit, const Vec2i &finalPos );
+	TravelState findPath( Unit *unit, const Vec2i &finalPos ) { 
+		return findPathToLocation( unit, finalPos ); 
 	}
 
-	TravelState findPathToStore ( Unit *unit, const Vec2i &targetPos, const Unit *store ) { 
-		setStoreGoal ( store ); 
-		return findPathToGoal ( unit, targetPos, &storeGoalFunc ); 
-	}
-
-	TravelState findPath(Unit *unit, const Vec2i &finalPos) { 
-		return findPathToGoal ( unit, finalPos ); 
-	}
-
-	bool repairPath ( Unit *unit );
+	bool repairPath( Unit *unit );
 
 	// legal move ?
-	bool isLegalMove ( Unit *unit, const Vec2i &pos ) const;
+	bool isLegalMove( Unit *unit, const Vec2i &pos ) const;
 
 	// update the annotated map at pos 
-	void updateMapMetrics ( const Vec2i &pos, const int size, bool adding, Field field ) { 
-		if ( annotatedMap ) {
-			PROFILE_START("PathFinder-NodePool");
-			annotatedMap->updateMapMetrics ( pos, size );
-			PROFILE_STOP("PathFinder-NodePool");
-		}
-		if ( superMap ) {
-			PROFILE_START("PathFinder-NodeArray");
-			superMap->updateSearchMap ( pos, size );
-			PROFILE_STOP("PathFinder-NodeArray");
-		}
+	void updateMapMetrics( const Vec2i &pos, const int size, bool adding, Field field ) { 
+		PROFILE_START("AnnotatedMap::updateMapMetrics()");
+		annotatedMap->updateMapMetrics( pos, size );
+		PROFILE_STOP("AnnotatedMap::updateMapMetrics()");
 	}
 
 private:
-	static const ResourceType *resourceGoal;
-	static const Unit *storeGoal;
-	static PathFinder *singleton;
-	PathFinder();
+	static PathManager *singleton;
+	PathManager();
 
-	Vec2i computeNearestFreePos (const Unit *unit, const Vec2i &targetPos);
-	Map *map;
-	static inline void getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 );
+	Vec2i computeNearestFreePos(const Unit *unit, const Vec2i &targetPos);
 
-public: // should be private ... debugging...
-	AnnotatedMap *annotatedMap;
-	//GraphSearch *search;
-
-	AnnotatedSearchMap *superMap;
-
-#ifdef _GAE_DEBUG_EDITION_
-	Vec2i PathStart, PathDest;
-	std::set<Vec2i> OpenSet, ClosedSet, PathSet;
-	std::map<Vec2i,uint32> LocalAnnotations;
+#ifdef DEBUG_SEARCH_TEXTURES
+public:
 	enum { ShowPathOnly, ShowOpenClosedSets, ShowLocalAnnotations } debug_texture_action;
 #endif
-
-}; // class PathFinder
+}; // class PathManager
 
 }}}//end namespace
 

@@ -62,6 +62,10 @@ public:
 		//assertions
 		assertGl();
 	}
+
+	virtual void renderMesh( const Model *model, int mesh ) {
+		renderMesh( model->getMesh( mesh ) );
+	}
 	
 	virtual void renderNormalsOnly(const Model *model) {
 		//assertions

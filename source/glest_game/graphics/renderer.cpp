@@ -28,13 +28,15 @@
 
 #include "leak_dumper.h"
 
-
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
 
 namespace Glest { namespace Game{
 
+namespace RenderStats {
+	static int binds = 0;
+}
 // =====================================================
 // 	class MeshCallbackTeamColor
 // =====================================================
@@ -50,6 +52,7 @@ public:
 
 void MeshCallbackTeamColor::execute(const Mesh *mesh){
 
+	PROFILE_START( "Team Colour callback" );
 	//team color
 	if(mesh->getCustomTexture() && teamTexture!=NULL){
 		//texture 0
@@ -77,6 +80,8 @@ void MeshCallbackTeamColor::execute(const Mesh *mesh){
 		glMultiTexCoord2f(GL_TEXTURE1, 0.f, 0.f);
 		glEnable(GL_TEXTURE_2D);
 
+		// CHECK IT FIRST !!!
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(teamTexture)->getHandle());
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 
@@ -101,6 +106,7 @@ void MeshCallbackTeamColor::execute(const Mesh *mesh){
 		glActiveTexture(GL_TEXTURE0);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
+	PROFILE_STOP( "Team Colour callback" );
 }
 
 // ===========================================================
@@ -167,8 +173,11 @@ Renderer::Renderer(){
 	perspFov = config.getRenderFov();
 	perspNearPlane = config.getRenderDistanceMin();
 	perspFarPlane = config.getRenderDistanceMax();
-#ifdef _GAE_DEBUG_EDITION_
-	debugField = FieldWalkable;
+#if DEBUG_SEARCH_TEXTURES
+	PathFinderTextureCallBack::debugField = FieldWalkable;
+#endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	captureQuad = false;
 #endif
 }
 
@@ -556,7 +565,7 @@ void Renderer::renderMouse3d(){
 				glEnable(GL_COLOR_MATERIAL);
 				glDepthMask(GL_FALSE);
 
-				Vec3f pos3f= Vec3f((*i).x, map->getCell(*i)->getHeight(), (*i).y);
+				Vec3f pos3f= Vec3f( (float)(*i).x, map->getCell(*i)->getHeight(), (float)(*i).y );
 
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
@@ -590,7 +599,7 @@ void Renderer::renderMouse3d(){
 			glDepthMask(GL_FALSE);
 
 			Vec2i pos= mouse3d->getPos();
-			Vec3f pos3f= Vec3f(pos.x, map->getCell(pos)->getHeight(), pos.y);
+			Vec3f pos3f= Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
 
 			//standard mouse
 			glDisable(GL_TEXTURE_2D);
@@ -820,7 +829,7 @@ void Renderer::renderTextShadow(const string &text, const Font2D *font, int x, i
 
 	textRenderer->begin(font);
 	glColor3f(0.0f, 0.0f, 0.0f);
-	textRenderer->render(text, pos.x-1.0f, pos.y-1.0f);
+	textRenderer->render( text, pos.x-1, pos.y-1);
 	glColor3f(1.0f, 1.0f, 1.0f);
 	textRenderer->render(text, pos.x, pos.y);
 	textRenderer->end();
@@ -877,16 +886,16 @@ void Renderer::renderButton(const GraphicButton *button){
 
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2f(0.f, 0.f);
-		glVertex2f(x, y);
+		glVertex2f( (float)x, (float)y );
 
 		glTexCoord2f(0.f, 1.f);
-		glVertex2f(x, y+h);
+		glVertex2f( (float)x, (float)(y+h) );
 
 		glTexCoord2f(1.f, 0.f);
-		glVertex2f(x+w, y);
+		glVertex2f( (float)(x+w), (float)y );
 
 		glTexCoord2f(1.f, 1.f);
-		glVertex2f(x+w, y+h);
+		glVertex2f( (float)(x+w), (float)(y+h) );
 
 	glEnd();
 
@@ -904,34 +913,32 @@ void Renderer::renderButton(const GraphicButton *button){
 		glBegin(GL_TRIANGLE_FAN);
 
 		glColor4fv(color2.ptr());
-		glVertex2f(x+w/2, y+h/2);
+		glVertex2f( (float)(x+w/2), (float)(y+h/2) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y-lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y+h+lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glEnd();
 	}
 
 	Vec2i textPos= Vec2i(x+w/2, y+h/2);
 
-	renderText(
-		button->getText(), button->getFont(), GraphicButton::getFade(),
-		x+w/2, y+h/2, true);
+	renderText( button->getText(), button->getFont(), GraphicButton::getFade(), x+w/2, y+h/2, true);
 
     glPopAttrib();
 }
@@ -1040,16 +1047,16 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2f(0.f, 0.f);
-		glVertex2f(x, y);
+		glVertex2f( (float)x, (float)y );
 
 		glTexCoord2f(0.f, 1.f);
-		glVertex2f(x, y+h);
+		glVertex2f( (float)x, (float)(y+h) );
 
 		glTexCoord2f(1.f, 0.f);
-		glVertex2f(x+w, y);
+		glVertex2f( (float)(x+w), (float)y);
 
 		glTexCoord2f(1.f, 1.f);
-		glVertex2f(x+w, y+h);
+		glVertex2f( (float)(x+w), (float)(y+h) );
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
@@ -1066,25 +1073,25 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 		glBegin(GL_TRIANGLE_FAN);
 
 		glColor4fv(color2.ptr());
-		glVertex2f(x+w/2, y+h/2);
+		glVertex2f( (float)(x+w/2), (float)(y+h/2) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y-lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)( x+w+lightSize ), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y+h+lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glEnd();
 	}
@@ -1131,14 +1138,12 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 
 // ==================== complex rendering ====================
 
-void Renderer::renderSurface(){
-#  if defined _GAE_DEBUG_EDITION_
-   if ( Config::getInstance().getMiscDebugTextures() )
-   {
-      renderSurfacePFDebug ();
-      return;
-   }
-#  endif
+void Renderer::renderSurface() {
+#	if DEBUG_SEARCH_TEXTURES
+		if ( Config::getInstance().getMiscDebugTextures() ) {
+			debugRenderer.renderPFDebug( visibleQuad );
+		} else {
+#	endif
 
 	int lastTex=-1;
 	int currTex;
@@ -1160,6 +1165,7 @@ void Renderer::renderSurface(){
 	//fog of war tex unit
 	glActiveTexture(fowTexUnit);
 	glEnable(GL_TEXTURE_2D);
+	PROFILE_CHILD_CALL("Bind Texture");
 	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(fowTex)->getHandle());
 	glTexSubImage2D(
 		GL_TEXTURE_2D, 0, 0, 0,
@@ -1171,6 +1177,7 @@ void Renderer::renderSurface(){
 		glActiveTexture(shadowTexUnit);
 		glEnable(GL_TEXTURE_2D);
 
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
 		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
@@ -1179,7 +1186,19 @@ void Renderer::renderSurface(){
 
 	glActiveTexture(baseTexUnit);
 
-	Quad2i scaledQuad= visibleQuad/Map::cellScale;
+	Quad2i scaledQuad = visibleQuad/Map::cellScale;
+
+	#if DEBUG_RENDERER_VISIBLEQUAD
+		if ( captureQuad ) {
+			VisibleQuadColourCallback::quadSet.clear();
+			PosQuadIterator vqi(visibleQuad);
+			while(vqi.next()){
+				const Vec2i &pos= vqi.getPos();
+				VisibleQuadColourCallback::quadSet.insert( pos );
+			}
+			captureQuad = false;
+		}
+	#endif
 
 	PosQuadIterator pqi(scaledQuad);
 	while(pqi.next()){
@@ -1200,6 +1219,7 @@ void Renderer::renderSurface(){
 			currTex= static_cast<const Texture2DGl*>(tc00->getTileTexture())->getHandle();
 			if(currTex!=lastTex){
 				lastTex=currTex;
+				PROFILE_CHILD_CALL("Bind Texture");
 				glBindTexture(GL_TEXTURE_2D, lastTex);
 			}
 
@@ -1231,7 +1251,7 @@ void Renderer::renderSurface(){
 			glEnd();
 		}
 	}
-	glEnd();
+	//glEnd();
 
 	//Restore
 	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
@@ -1240,175 +1260,16 @@ void Renderer::renderSurface(){
 	//assert
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
-}
-
-#ifdef _GAE_DEBUG_EDITION_
-void Renderer::renderSurfacePFDebug ()
-{
-	int lastTex=-1;
-	int currTex;
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
-	const Search::PathFinder *pf = Search::PathFinder::getInstance ();
-	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
-	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
-
-	assertGl();
-
-	glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT);
-
-	glEnable(GL_BLEND);
-	glEnable(GL_COLOR_MATERIAL); 
-	glDisable(GL_ALPHA_TEST);
-	glActiveTexture(baseTexUnit);
-
-	Quad2i scaledQuad= visibleQuad/Map::cellScale;
-
-	PosQuadIterator pqi(scaledQuad);
-	while(pqi.next()){
-		const Vec2i &pos= pqi.getPos();
-		int cx, cy;
-		cx = pos.x * 2;
-		cy = pos.y * 2;
-		if(mapBounds.isInside(pos)){
-
-			Tile *tc00= map->getTile(pos.x, pos.y);
-			Tile *tc10= map->getTile(pos.x+1, pos.y);
-			Tile *tc01= map->getTile(pos.x, pos.y+1);
-			Tile *tc11= map->getTile(pos.x+1, pos.y+1);
-
-			Vec3f tl = tc00->getVertex ();
-			Vec3f tr = tc10->getVertex ();
-			Vec3f bl = tc01->getVertex ();
-			Vec3f br = tc11->getVertex ();
-
-			Vec3f tc = tl + (tr - tl) / 2;
-			Vec3f ml = tl + (bl - tl) / 2;
-			Vec3f mr = tr + (br - tr) / 2;
-			Vec3f mc = ml + (mr - ml) / 2;
-			Vec3f bc = bl + (br - bl) / 2;
-
-			// cx,cy
-			uint32 tex = 0;
-			uint32 met;
-
-			Vec2i cPos ( cx, cy );
-			if ( pf->PathStart == cPos ) met = 9;
-			else if ( pf->PathDest == cPos ) met = 10;
-			else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 14; // on path
-			else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 15; // open nodes
-			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
-			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
-			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-			glBindTexture(GL_TEXTURE_2D, tex);
-			glBegin ( GL_TRIANGLE_FAN );
-			glTexCoord2f ( 0.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(tl.ptr());
-			glTexCoord2f ( 1.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(tc.ptr());
-			glTexCoord2f ( 1.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(mc.ptr());
-			glTexCoord2f ( 0.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(ml.ptr());                        
-			glEnd ();
-
-			cPos = Vec2i( cx+1, cy );
-			if ( pf->PathStart == cPos ) met = 9;
-			else if ( pf->PathDest == cPos ) met = 10;
-			else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 14; // on path
-			else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 15; // open nodes
-			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
-			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
-			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-			glBindTexture(GL_TEXTURE_2D, tex);
-			glBegin ( GL_TRIANGLE_FAN );
-			glTexCoord2f ( 0.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(tc.ptr());
-			glTexCoord2f ( 1.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(tr.ptr());
-			glTexCoord2f ( 1.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(mr.ptr());
-			glTexCoord2f ( 0.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(mc.ptr());                        
-			glEnd ();
-
-			cPos = Vec2i( cx, cy + 1 );
-			if ( pf->PathStart == cPos ) met = 9;
-			else if ( pf->PathDest == cPos ) met = 10;
-			else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 14; // on path
-			else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 15; // open nodes
-			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
-			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
-			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-			glBindTexture(GL_TEXTURE_2D, tex);
-			glBegin ( GL_TRIANGLE_FAN );
-			glTexCoord2f ( 0.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(ml.ptr());
-			glTexCoord2f ( 1.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(mc.ptr());
-			glTexCoord2f ( 1.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(bc.ptr());
-			glTexCoord2f ( 0.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(bl.ptr());                        
-			glEnd ();
-
-			cPos = Vec2i( cx + 1, cy + 1 );
-			if ( pf->PathStart == cPos ) met = 9;
-			else if ( pf->PathDest == cPos ) met = 10;
-			else if ( pf->PathSet.find ( cPos ) != pf->PathSet.end() ) met = 14; // on path
-			else if ( pf->OpenSet.find ( cPos ) != pf->OpenSet.end() ) met = 15; // open nodes
-			else if ( pf->ClosedSet.find ( cPos ) != pf->ClosedSet.end() ) met = 16; // closed nodes
-			else if ( pf->LocalAnnotations.find ( cPos ) != pf->LocalAnnotations.end() ) // local annotation
-				met = 17 + pf->LocalAnnotations.find(cPos)->second;
-			else met = pf->annotatedMap->metrics[cPos].get( debugField ); // else use cell metric for debug field
-			tex = static_cast<const Texture2DGl*>(world->PFDebugTextures[met])->getHandle ();
-			glBindTexture(GL_TEXTURE_2D, tex);
-			glBegin ( GL_TRIANGLE_FAN );
-			glTexCoord2f ( 0.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(mc.ptr());
-			glTexCoord2f ( 1.f, 1.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(mr.ptr());
-			glTexCoord2f ( 1.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(br.ptr());
-			glTexCoord2f ( 0.f, 0.f );
-			glNormal3fv(tc00->getNormal().ptr());
-			glVertex3fv(bc.ptr());                        
-			glEnd ();
-		}
+#	if DEBUG_SEARCH_TEXTURES
 	}
-	glEnd();
-
-	//Restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
-	glPopAttrib();
-
-	//assert
-	glGetError();	//remove when first mtex problem solved
-	assertGl();
+#	endif
+#	if DEBUG_SEARCH_OVERLAYS
+		renderGoldInfluence();
+#	endif
+#	if DEBUG_RENDERER_VISIBLEQUAD
+		debugRenderer.renderCapturedQuad( visibleQuad );
+#	endif
 }
-#endif
-
 
 void Renderer::renderObjects(){
 	const World *world= game->getWorld();
@@ -1416,7 +1277,7 @@ void Renderer::renderObjects(){
 
     assertGl();
 	const Texture2D *fowTex= world->getMinimap()->getFowTexture();
-	Vec3f baseFogColor= world->getTileset()->getFogColor()*computeLightColor(world->getTimeFlow()->getTime());
+	Vec3f baseFogColor= world->getTileset()->getFogColor() * computeLightColor( world->getTimeFlow()->getTime() );
 
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_FOG_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
 
@@ -1424,6 +1285,7 @@ void Renderer::renderObjects(){
 		glActiveTexture(shadowTexUnit);
 		glEnable(GL_TEXTURE_2D);
 
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
 		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
@@ -1438,52 +1300,70 @@ void Renderer::renderObjects(){
 	modelRenderer->begin(true, true, false);
 	int thisTeamIndex= world->getThisTeamIndex();
 
+	vector<Vec2i> toRender;
 	PosQuadIterator pqi(visibleQuad, Map::cellScale);
 	while(pqi.next()){
 		const Vec2i &pos= pqi.getPos();
-
 		if(map->isInside(pos)){
-
-			Tile *sc= map->getTile(Map::toTileCoords(pos));
-			Object *o= sc->getObject();
-			if(o && sc->isExplored(thisTeamIndex)){
-
-				const Model *objModel= sc->getObject()->getModel();
-				Vec3f v= o->getPos();
-            
-            // QUICK-FIX: Objects/Resources drawn out of place...
-            // Why do we need this ??? are the tileset objects / techtree resources defined out of position ??
-            v.x += Map::mapScale / 2; // == 1
-            v.z += Map::mapScale / 2;
-
-				//ambient and diffuse color is taken from cell color
-				float fowFactor= fowTex->getPixmap()->getPixelf(pos.x/Map::cellScale, pos.y/Map::cellScale);
-				Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
-				glColor4fv(color.ptr());
-				// FIXME: I was tired when I edited this code and it could be as broken as our
-				// economy.
-				Vec4f color2 = color * ambFactor;
-				glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color2.ptr());
-				color2 = Vec4f(baseFogColor) * fowFactor;
-				glFogfv(GL_FOG_COLOR, color2.ptr());
-
-				glMatrixMode(GL_MODELVIEW);
-				glPushMatrix();
-				glTranslatef(v.x, v.y, v.z);
-				glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
-
-				objModel->updateInterpolationData(0.f, true);
-				modelRenderer->render(objModel);
-
-				triangleCount+= objModel->getTriangleCount();
-				pointCount+= objModel->getVertexCount();
-
-				glPopMatrix();
-
+			Tile *t= map->getTile(Map::toTileCoords(pos));
+			Object *o= t->getObject();
+			if(o && t->isExplored(thisTeamIndex)){
+				toRender.push_back ( pos );
 			}
 		}
 	}
+	std::map<const void*, vector<Vec2i>> renderTable;
+	for ( vector<Vec2i>::const_iterator it = toRender.begin(); it != toRender.end(); ++it ) {
+		Object *o = map->getTile( Map::toTileCoords( *it ) )->getObject();
+		assert( o && o->getModel() );
+		renderTable[o->getModel()].push_back( *it );
+	}
 
+	//
+	// Objects/Resources may have multiple meshes, may use diff tex, problem.
+	//
+
+	std::map<const void*, vector<Vec2i>>::const_iterator vIt = renderTable.begin();
+	for ( ; vIt != renderTable.end(); ++vIt ) {
+		vector<Vec2i>::const_iterator pIt = vIt->second.begin();
+		for ( ; pIt != vIt->second.end(); ++ pIt ) {
+			const Vec2i &pos = *pIt;
+			const Tile *t = map->getTile( Map::toTileCoords(pos) );
+			Object *o = t->getObject();
+			const Model *objModel= o->getModel();
+			Vec3f v= o->getPos();
+
+			// QUICK-FIX: Objects/Resources drawn out of place...
+			// Why do we need this ??? are the tileset objects / techtree resources defined out of position ??
+			v.x += Map::mapScale / 2; // == 1
+			v.z += Map::mapScale / 2;
+			//ambient and diffuse color is taken from cell color
+			float fowFactor= fowTex->getPixmap()->getPixelf(pos.x/Map::cellScale, pos.y/Map::cellScale);
+			Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
+			glColor4fv(color.ptr());
+			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (color*ambFactor).ptr());
+			glFogfv(GL_FOG_COLOR, (baseFogColor*fowFactor).ptr());
+
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			glTranslatef(v.x, v.y, v.z);
+			glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
+
+			PROFILE_START( "Interpolating" );
+			objModel->updateInterpolationData(0.f, true);
+			PROFILE_STOP( "Interpolating" );
+
+			PROFILE_START( "Rendering" );
+			modelRenderer->render(objModel);
+			PROFILE_STOP( "Rendering" );
+
+			triangleCount+= objModel->getTriangleCount();
+			pointCount+= objModel->getVertexCount();
+
+			glPopMatrix();
+
+		}
+	}
 	modelRenderer->end();
 
 	//restore
@@ -1511,11 +1391,13 @@ void Renderer::renderWater(){
 	if(textures3D){
 		Texture3D *waterTex= world->getTileset()->getWaterTex();
 		glEnable(GL_TEXTURE_3D);
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_3D, static_cast<Texture3DGl*>(waterTex)->getHandle());
 	}
 	else{
 		glEnable(GL_COLOR_MATERIAL);
 		glColor4f(0.5f, 0.5f, 1.0f, 0.5f);
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_3D, 0);
 	}
 
@@ -1525,6 +1407,7 @@ void Renderer::renderWater(){
 	const Texture2D *fowTex= world->getMinimap()->getFowTexture();
 	glActiveTexture(fowTexUnit);
 	glEnable(GL_TEXTURE_2D);
+	PROFILE_CHILD_CALL("Bind Texture");
     glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(fowTex)->getHandle());
     glActiveTexture(baseTexUnit);
 
@@ -1556,7 +1439,7 @@ void Renderer::renderWater(){
 					GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 					computeWaterColor(waterLevel, tc1->getHeight()).ptr());
 				glMultiTexCoord2fv(GL_TEXTURE1, tc1->getFowTexCoord().ptr());
-                glTexCoord3f(i, 1.f, waterAnim);
+                glTexCoord3f( (float)i, 1.f, waterAnim );
 				glVertex3f(
 					static_cast<float>(i)*Map::mapScale,
 					waterLevel,
@@ -1567,7 +1450,7 @@ void Renderer::renderWater(){
 					GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 					computeWaterColor(waterLevel, tc0->getHeight()).ptr());
 				glMultiTexCoord2fv(GL_TEXTURE1, tc0->getFowTexCoord().ptr());
-                glTexCoord3f(i, 0.f, waterAnim);
+                glTexCoord3f( (float)i, 0.f, waterAnim );
                 glVertex3f(
 					static_cast<float>(i)*Map::mapScale,
 					waterLevel,
@@ -1584,7 +1467,7 @@ void Renderer::renderWater(){
 						GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 						computeWaterColor(waterLevel, tc1->getHeight()).ptr());
 					glMultiTexCoord2fv(GL_TEXTURE1, tc1->getFowTexCoord().ptr());
-					glTexCoord3f(i, 1.f, waterAnim);
+					glTexCoord3f( (float)i, 1.f, waterAnim );
 					glVertex3f(
 						static_cast<float>(i)*Map::mapScale,
 						waterLevel,
@@ -1595,7 +1478,7 @@ void Renderer::renderWater(){
 						GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 						computeWaterColor(waterLevel, tc0->getHeight()).ptr());
 					glMultiTexCoord2fv(GL_TEXTURE1, tc0->getFowTexCoord().ptr());
-					glTexCoord3f(i, 0.f, waterAnim);
+					glTexCoord3f( (float)i, 0.f, waterAnim );
 					glVertex3f(
 						static_cast<float>(i)*Map::mapScale,
 						waterLevel,
@@ -1667,6 +1550,7 @@ void Renderer::renderUnits(){
 		glActiveTexture(shadowTexUnit);
 		glEnable(GL_TEXTURE_2D);
 
+		PROFILE_CHILD_CALL("Bind Texture");
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
 		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
@@ -1675,6 +1559,21 @@ void Renderer::renderUnits(){
 	glActiveTexture(baseTexUnit);
 
 	modelRenderer->begin(true, true, true, &meshCallbackTeamColor);
+
+	// vector<Unit*> toRender; // iterate, if model is to be rendered, push_back Unit
+	/*
+	for(int i=0; i<world->getFactionCount(); ++i){
+		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
+			unit = world->getFaction(i)->getUnit(j);
+			if ( world->toRenderUnit( unit, visibleQuad ) ) {
+				toRender.push_back( unit );
+			}
+		}
+	}
+	*/
+	// map<FactionType*,map<UnitType*,map<int,vector<Unit*>>>> renderTable;
+	// // iterate over toRender, put unit in renderTable
+	// 
 
 	for(int i=0; i<world->getFactionCount(); ++i){
 		meshCallbackTeamColor.setTeamTexture(world->getFaction(i)->getTexture());
@@ -1747,9 +1646,12 @@ void Renderer::renderUnits(){
 
 			//render
 			const Model *model= unit->getCurrentModel();
+			PROFILE_START( "Interpolating" );
 			model->updateInterpolationData(unit->getAnimProgress(), unit->isAlive());
+			PROFILE_STOP( "Interpolating" );
+			PROFILE_START( "Rendering" );
 			modelRenderer->render(model);
-
+			PROFILE_STOP( "Rendering" );
 			triangleCount+= model->getTriangleCount();
 			pointCount+= model->getVertexCount();
 
@@ -1860,7 +1762,7 @@ void Renderer::renderSelectionEffects(){
 				}
 				else{
 					Vec2i pos= c->getPos();
-					arrowTarget= Vec3f(pos.x, map->getCell(pos)->getHeight(), pos.y);
+					arrowTarget= Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
 				}
 
 				renderArrow(unit->getCurrVectorFlat(), arrowTarget, arrowColor, 0.3f);
@@ -1870,7 +1772,7 @@ void Renderer::renderSelectionEffects(){
 		//meeting point arrow
 		if(unit->getType()->hasMeetingPoint()){
 			Vec2i pos= unit->getMeetingPos();
-			Vec3f arrowTarget= Vec3f(pos.x, map->getCell(pos)->getHeight(), pos.y);
+			Vec3f arrowTarget= Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
 			renderArrow(unit->getCurrVectorFlat(), arrowTarget, Vec3f(0.f, 0.f, 1.f), 0.3f);
 		}
 
@@ -1919,6 +1821,7 @@ void Renderer::renderWaterEffects(){
 	glNormal3f(0.f, 1.f, 0.f);
 
 	//splashes
+	PROFILE_CHILD_CALL("Bind Texture");
 	glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
 	for(int i=0; i<we->getWaterSplashCount(); ++i){
 		const WaterSplash *ws= we->getWaterSplash(i);
@@ -1978,6 +1881,7 @@ void Renderer::renderMinimap(){
 
 	glActiveTexture(fowTexUnit);
 	glEnable(GL_TEXTURE_2D);
+	PROFILE_CHILD_CALL("Bind Texture");
 	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(minimap->getFowTexture())->getHandle());
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 
@@ -1991,6 +1895,7 @@ void Renderer::renderMinimap(){
 	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
 
 	glActiveTexture(baseTexUnit);
+	PROFILE_CHILD_CALL("Bind Texture");
 	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(minimap->getTexture())->getHandle());
 
 	glColor4f(0.5f, 0.5f, 0.5f, 0.1f);
@@ -2233,9 +2138,9 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 			glBegin(GL_TRIANGLE_STRIP);
 			for(int j=1; j<waterTesselation; ++j){
 				glTexCoord2i(1, 2 % j);
-				glVertex3f(-waterSize+i*waterQuadSize, waterHeight, -waterSize+j*waterQuadSize);
+				glVertex3f( (float)(-waterSize+i*waterQuadSize), waterHeight, (float)(-waterSize+j*waterQuadSize) );
 				glTexCoord2i(0, 2 % j);
-				glVertex3f(-waterSize+(i+1)*waterQuadSize, waterHeight, -waterSize+j*waterQuadSize);
+				glVertex3f( (float)(-waterSize+(i+1)*waterQuadSize), waterHeight, (float)(-waterSize+j*waterQuadSize) );
 			}
 			glEnd();
 		}
@@ -2433,7 +2338,7 @@ void Renderer::renderShadowsToTexture() {
 				glRotatef(90, 0, 1, 0);
 				Vec3f pos = game->getGameCamera()->getPos();
 
-				glTranslatef(static_cast<int>(-pos.x), 0, static_cast<int>(-pos.z));
+				glTranslatef( (float)(static_cast<int>(-pos.x)), 0, (float)(static_cast<int>(-pos.z)) );
 
 			} else {
 				//non directional light
@@ -3266,6 +3171,7 @@ void Renderer::renderTile(const Vec2i &pos){
 }
 
 void Renderer::renderQuad(int x, int y, int w, int h, const Texture2D *texture){
+	PROFILE_CHILD_CALL("Bind Texture");
 	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(texture)->getHandle());
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2i(0, 1);

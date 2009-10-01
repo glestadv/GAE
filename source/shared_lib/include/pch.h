@@ -58,6 +58,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 #include <deque>
 #include <string>
 #include <cassert>

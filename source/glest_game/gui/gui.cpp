@@ -30,6 +30,9 @@
 
 #include "leak_dumper.h"
 
+#if DEBUG_SEARCH_TEXTURES
+#	include "debug_renderer.h"
+#endif
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;
@@ -522,11 +525,19 @@ void Gui::hotKey(UserCommand cmd) {
 	case ucPatrol:
 		//clickCommonCommand(ccPatrol);
 		break;
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_SEARCH_TEXTURES
 	case ucSwitchDebugField:
-		f = (int)Renderer::getInstance().getDebugField ();
+		f = (int)PathFinderTextureCallBack::debugField;
 		f ++; f %= FieldCount;
-		Renderer::getInstance().setDebugField ( (Field)f );
+		PathFinderTextureCallBack::debugField = (Field)f;
+		break;
+#endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	case ucVisibleQuadCapture:
+		theRenderer.captureQuad = true;
+		break;
+	case ucVisibleQuadClear:
+		theRenderer.clearCapturedQuad();
 		break;
 #endif
 	default:

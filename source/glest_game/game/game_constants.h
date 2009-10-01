@@ -12,16 +12,20 @@
 #ifndef _GLEST_GAME_GAMECONSTANTS_H_
 #define _GLEST_GAME_GAMECONSTANTS_H_
 
-//TODO
-// Rationialise singletons, make return all references if plausible,
-// if not, make them ALL return pointers
-//
-#define theWorld		(World::getInstance())
-#define theGame			(*Game::getInstance())
-#define theCamera		(*Game::getInstance()->getGameCamera())
-#define theGameSettings (Game::getInstance()->getGameSettings())
-#define theConsole		(*Game::getInstance()->getConsole())
-
+// The 'Globals'
+#define theGame				(*Game::getInstance())
+#define theWorld			(World::getInstance())
+#define theMap				(*World::getInstance().getMap())
+#define theCamera			(*Game::getInstance()->getGameCamera())
+#define theGameSettings		(Game::getInstance()->getGameSettings())
+#define theGui				(*Gui::getCurrentGui())
+#define theConsole			(*Game::getInstance()->getConsole())
+#define theConfig			(Config::getInstance())
+#define thePathManager		(*Search::PathManager::getInstance())
+#define theRenderer			(Renderer::getInstance())
+#define theNetworkManager	(NetworkManager::getInstance())
+#define theSoundRenderer	(SoundRenderer::getInstance())
+#define theLogger			(Logger::getInstance())
 
 #define LOG( x ) Logger::getInstance().add(x)
 

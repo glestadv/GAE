@@ -12,14 +12,11 @@
 
 // Does not use pre-compiled header because it's optimized in debug build.
 
-// Currently DOES use precompiled header, because it's no longer optimized in debug
-// because debugging optimized code is not much fun :-)
+//#include "pch.h"
 
-// Actually, no need for this one to be optimized anymore, when path finding is stable again, 
-// graph_search.cpp should get this treatment, that's where the 'hard work' is done now.
+#include <algorithm>
 
-#include "pch.h"
-
+#include "game_constants.h"
 #include "path_finder.h"
 
 #include "config.h"
@@ -28,6 +25,7 @@
 #include "unit.h"
 #include "unit_type.h"
 #include "world.h"
+#include "cartographer.h"
 
 #include "leak_dumper.h"
 
@@ -38,117 +36,159 @@ using namespace Shared::Util;
 namespace Glest{ namespace Game{ namespace Search {
 
 
+Cartographer::Cartographer() {
+	int w = theMap.getW(), h = theMap.getH();
+	//masterMap = new AnnotatedMap();
+
+	// find and catalog all resources...
+	for ( int x=0; x < theMap.getTileW() - 1; ++x ) {
+		for ( int y=0; y < theMap.getTileH() - 1; ++y ) {
+			const Resource * const r = theMap.getTile( x,y )->getResource();
+			if ( r ) {
+				resourceLocations[r->getType()].push_back( Vec2i(x,y) );
+			}
+		}
+	}
+	// build resource influence maps for each team
+	for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
+		const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
+		if ( rt->getClass() == rcTech || rt->getClass() == rcTileset ) {
+			for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
+				int team = theWorld.getFaction( j )->getTeam();
+				if ( teamResourceMaps[team].find( rt ) == teamResourceMaps[team].end() ) {
+					teamResourceMaps[team][rt] = new InfluenceMap();
+				}
+			}
+		}
+	}
+}
+void Cartographer::updateResourceMaps() {
+	set< int > seen;
+	for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
+		int team = theWorld.getFaction( j )->getTeam();
+		if ( seen.find( team ) != seen.end() ) {
+			continue;
+		}
+		seen.insert( team );
+		for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
+			const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
+			if ( rt->getClass() == rcTech || rt->getClass() == rcTileset ) {
+				initResourceMap( team, rt, teamResourceMaps[team][rt] );
+			}
+		}
+	}
+}
+
+void Cartographer::initResourceMap( int team, const ResourceType *rt, InfluenceMap *iMap ) {
+	vector<Vec2i> knownResources;
+	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
+	for ( ; it != resourceLocations[rt].end(); ++it ) {
+		if ( theMap.getTile( *it )->isExplored( team ) ) {
+			knownResources.push_back( *it );
+		}
+	}
+	iMap->clear();
+	theSearchEngine.reset();
+	for ( it = knownResources.begin(); it != knownResources.end(); ++it ) {
+		Vec2i pos = *it * Map::cellScale;
+		theSearchEngine.setOpen( pos, 0.f );
+		theSearchEngine.setOpen( pos + Vec2i( 0,1 ), 0.f );
+		theSearchEngine.setOpen( pos + Vec2i( 1,0 ), 0.f );
+		theSearchEngine.setOpen( pos + Vec2i( 1,1 ), 0.f );
+	}
+	theSearchEngine.buildDistanceMap( iMap, 20.f );
+	
+	//if ( team == theWorld.getThisTeamIndex() && rt->getName() == "gold" ) {
+	//	iMap->log();
+	//}
+}
+
 // =====================================================
 // 	class PathFinder
 // =====================================================
 
 // ===================== PUBLIC ========================
 
-//FIXME I was duplicated from GraphSearch because the search functions
-// absolutely _need_ this inlined, and then it can't be used here without 
-// having been defined... find a better solution :-)
-void PathFinder::getDiags ( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 ) {
-	assert ( s.x != d.x && s.y != d.y );
-	if ( size == 1 ) {
-		d1.x = s.x; d1.y = d.y;
-		d2.x = d.x; d2.y = s.y;
-		return;
-	}
-	if ( d.x > s.x ) {  // travelling east
-		if ( d.y > s.y ) {  // se
-			d1.x = d.x + size - 1;	d1.y = s.y;
-			d2.x = s.x;				d2.y = d.y + size - 1;
-		}
-		else {  // ne
-			d1.x = s.x;				d1.y = d.y;
-			d2.x = d.x + size - 1;	d2.y = s.y - size + 1;
-		}
-	}
-	else {  // travelling west
-		if ( d.y > s.y ) {  // sw
-			d1.x = d.x;				d1.y = s.y;
-			d2.x = s.x + size - 1;	d2.y = d.y + size - 1;
-		}
-		else {  // nw
-			d1.x = d.x;				d1.y = s.y - size + 1;
-			d2.x = s.x + size - 1;	d2.y = d.y;
-		}
-	}
-}
+PathManager* PathManager::singleton = NULL;
+AnnotatedMap *PathManager::annotatedMap = NULL;
 
-PathFinder* PathFinder::singleton = NULL;
-
-PathFinder* PathFinder::getInstance () {
+PathManager* PathManager::getInstance() {
 	if ( ! singleton )
-		singleton = new PathFinder ();
+		singleton = new PathManager();
 	return singleton;
 }
 
-PathFinder::PathFinder() {
+PathManager::PathManager() {
+	assert( !singleton );
 	annotatedMap = NULL;
-	superMap = NULL;
+	//superMap = NULL;
+	cartographer = NULL;
 	singleton = this;
 }
 
-PathFinder::~PathFinder () {
+PathManager::~PathManager() {
 	delete annotatedMap;
+	//delete superMap;
+	singleton = NULL;
 }
 
-void PathFinder::init ( Map *map ) {
-	Logger::getInstance().add("Initialising PathFinder", true);
-	this->map= map;
+void PathManager::init() {
+	theLogger.add( "Initialising PathFinder", true );
 	delete annotatedMap;
-	delete superMap;
-	annotatedMap = new AnnotatedMap ( map );
-	//superMap = new AnnotatedSearchMap ( map );
+	//delete superMap;
+	annotatedMap = new AnnotatedMap();
+	//superMap = new AnnotatedSearchMap( map );
 
-#ifdef _GAE_DEBUG_EDITION_
+	theSearchEngine.init();
+	//cartographer = new Cartographer();
+
+#ifdef DEBUG_SEARCH_TEXTURES
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
-		int foo = Config::getInstance ().getMiscDebugTextureMode ();
-		debug_texture_action = foo == 0 ? PathFinder::ShowPathOnly
-							 : foo == 1 ? PathFinder::ShowOpenClosedSets
-										: PathFinder::ShowLocalAnnotations;
+		int foo = theConfig.getMiscDebugTextureMode ();
+		debug_texture_action = foo == 0 ? PathManager::ShowPathOnly
+							 : foo == 1 ? PathManager::ShowOpenClosedSets
+										: PathManager::ShowLocalAnnotations;
 	}
 #endif
 }
 
-bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const {
-	assert ( map->isInside ( pos2 ) );
-	//assert ( unit->getPos().dist ( pos2 ) < 1.5 );
-	if ( unit->getPos().dist ( pos2 ) > 1.5 ) {
+bool PathManager::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
+	assert( theMap.isInside( pos2 ) );
+	//assert( unit->getPos().dist( pos2 ) < 1.5 );
+	if ( unit->getPos().dist( pos2 ) > 1.5 ) {
 		//TODO: figure out why we need this!
 		return false;
 	}
-	const Vec2i &pos1 = unit->getPos ();
-	const int &size = unit->getSize ();
-	const Field &field = unit->getCurrField ();
+	const Vec2i &pos1 = unit->getPos();
+	const int &size = unit->getSize();
+	const Field &field = unit->getCurrField();
 	Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
 
-	if ( ! annotatedMap->canOccupy ( pos2, size, field ) )
+	if ( ! annotatedMap->canOccupy( pos2, size, field ) )
 		return false; // obstruction in field
 	if ( pos1.x != pos2.x && pos1.y != pos2.y ) {
 		// Proposed move is diagonal, check if cells either 'side' are free.
 		Vec2i diag1, diag2;
-		getDiags ( pos1, pos2, size, diag1, diag2 );
-		if ( ! annotatedMap->canOccupy (diag1, 1, field) 
-		||   ! annotatedMap->canOccupy (diag2, 1, field) ) 
+		getDiags( pos1, pos2, size, diag1, diag2 );
+		if ( ! annotatedMap->canOccupy( diag1, 1, field ) 
+		||   ! annotatedMap->canOccupy( diag2, 1, field ) ) 
 			return false; // obstruction, can not move to pos2
-		if ( ! map->getCell (diag1)->isFree (zone)
-		||   ! map->getCell (diag2)->isFree (zone) )
+		if ( ! theMap.getCell( diag1 )->isFree( zone )
+		||   ! theMap.getCell( diag2 )->isFree( zone ) )
 			return false; // other unit in the way
 	}
-	for ( int i = pos2.x; i < unit->getSize () + pos2.x; ++i )
-		for ( int j = pos2.y; j < unit->getSize () + pos2.y; ++j )
-			if ( map->getCell (i,j)->getUnit (zone) != unit
-			&&   ! map->isFreeCell (Vec2i(i,j), field) )
+	for ( int i = pos2.x; i < unit->getSize() + pos2.x; ++i )
+		for ( int j = pos2.y; j < unit->getSize() + pos2.y; ++j )
+			if ( theMap.getCell( i,j )->getUnit( zone ) != unit
+			&&   ! theMap.isFreeCell( Vec2i( i, j ), field ) )
 				return false; // blocked by another unit
 	// pos2 is free, and nothing is in the way
 	return true;
 }
 
-const ResourceType* PathFinder::resourceGoal = NULL;
-const Unit* PathFinder::storeGoal = NULL;
-
+//const ResourceType* PathFinder::resourceGoal = NULL;
+//const Unit* PathFinder::storeGoal = NULL;
+/*
 bool PathFinder::resourceGoalFunc ( const Vec2i &pos ) {
 	//FIXME need to take unit size into account...
 	Vec2i tmp;
@@ -158,119 +198,76 @@ bool PathFinder::resourceGoalFunc ( const Vec2i &pos ) {
 bool PathFinder::storeGoalFunc ( const Vec2i &pos ) {
 	return Game::getInstance()->getWorld()->getMap()->isNextTo(pos, storeGoal);
 }
-
+*/
 static int flipper = 0;
 
-TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (*func)(const Vec2i&)) {
-	
-	//route cache
-	UnitPath &path = *unit->getPath ();
-	if( finalPos == unit->getPos () ) {	//if arrived (where we wanted to go)
-		unit->setCurrSkill ( scStop );
-		return SearchResult::Arrived;
-	}
+#define DONE()		{ unit->setCurrSkill( scStop ); return SearchResult::Arrived; }
+#define BLOCKED()	{ unit->setCurrSkill( scStop ); path.incBlockCount(); return SearchResult::Blocked;	}
+#define TRYMOVE()	{ pos = path.pop(); if ( isLegalMove( unit, pos ) ) { \
+											unit->setNextPos( pos ); \
+											return SearchResult::OnTheWay; \
+										} }
+
+TravelState PathManager::findPathToLocation( Unit *unit, const Vec2i &finalPos ) {
+	UnitPath &path = *unit->getPath();
+	Vec2i pos;
+	//if arrived (where we wanted to go)
+	if( finalPos == unit->getPos() ) DONE()
 	else if( ! path.empty() ) {	//route cache
-		Vec2i pos = path.pop();
-		if ( isLegalMove ( unit, pos ) ) {
-			unit->setNextPos ( pos );
-			return SearchResult::OnTheWay;
-		}
-		// local repair ?
-		if ( path.size () > 15 ) {
-			if ( repairPath ( unit ) ) {
-				Vec2i pos = path.pop();
-				if ( isLegalMove ( unit, pos ) ) {
-					unit->setNextPos ( pos );
-					return SearchResult::OnTheWay;
-				}
-			}
-		}
+		TRYMOVE()
+		if ( path.size() > 15  && repairPath( unit ) ) TRYMOVE()
 	}
-	//route cache miss
-	const Vec2i targetPos = computeNearestFreePos ( unit, finalPos );
-
+	//route cache miss and either no repair performed or repair failed
+	const Vec2i &target = computeNearestFreePos( unit, finalPos ); // set target for PosGoal Function
 	//if arrived (as close as we can get to it)
-	if ( targetPos == unit->getPos () ) {
-		unit->setCurrSkill(scStop);
-		return SearchResult::Arrived;
+	if ( target == unit->getPos() ) DONE()
+	path.clear();
+	
+	// do a 'limited search'
+	
+	annotatedMap->annotateLocal( unit, unit->getCurrField() ); // annotate map
+	// reset nodepool and add start to open
+	theSearchEngine.setNodeLimit( theConfig.getPathFinderMaxNodes() );
+	theSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) ); 
+	int result = theSearchEngine.pathToPos( annotatedMap, unit, target ); // perform search
+	annotatedMap->clearLocalAnnotations( unit->getCurrField() ); // clear annotations
+	if ( result == AStarResult::Failed ) BLOCKED()
+	if ( result == AStarResult::Partial ) {
+		// Queue for 'complete' search...
 	}
-
-	SearchParams params (unit);
-	if ( func ) params.goalFunc = func;
-	params.dest = targetPos;
-	//list<Vec2i> pathList;
-
-	bool result;
-	/*if ( flipper < 100 )*/ {
-		PROFILE_START("PathFinder-NodePool");
-		annotatedMap->annotateLocal ( unit, unit->getCurrField () );
-		result = annotatedMap->AStarSearch ( params, *unit->getPath() );
-		annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
-		PROFILE_STOP("PathFinder-NodePool");
-	}/*
-	else {
-		PROFILE_START("PathFinder-NodeArray");
-		superMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
-		result = superMap->AStarSearch ( params, *unit->getPath() );
-		superMap->clearLocalAnnotations ( unit->getCurrField () );
-		PROFILE_STOP("PathFinder-NodeArray");
-	}*/
-	flipper++;
-	flipper %= 200;
-
-	if ( ! result ) {
-		path.incBlockCount ();
-		unit->setCurrSkill(scStop);
-		return SearchResult::Blocked;
+	// Partail or Complete... extract path...
+	pos = theSearchEngine.getGoalPos();
+	while ( pos.x >= 0 ) {
+		path.push_front( pos );
+		pos = theSearchEngine.getPreviousPos( pos );
 	}
-	//else //TODO: UnitPath to inherit from list<Vec2i> and then be passed directly
-	//	copyToPath ( pathList, unit->getPath () ); // to the search algorithm
-
-	Vec2i pos = path.pop();
-	if ( ! isLegalMove ( unit, pos ) ) { // this test should never fail
-		unit->setCurrSkill(scStop);
-		path.incBlockCount ();
-		return SearchResult::Blocked;
-	}
-	unit->setNextPos(pos);
-	return SearchResult::OnTheWay;
+	if ( path.empty() ) DONE()
+	path.pop();
+	TRYMOVE() // should always succeed
+	BLOCKED()
 }
 
-// ==================== PRIVATE ====================
-
-bool PathFinder::repairPath ( Unit *unit ) {
+bool PathManager::repairPath( Unit *unit ) {
 	UnitPath &path = *unit->getPath();
-	assert (path.size() > 12 );
+	assert(path.size() > 12 );
 	int i=8;
 	while ( i-- ) {
-		path.pop_front ();
+		path.pop_front();
 	}
-	Vec2i target = path.front();
-	list<Vec2i> newBit;
-	SearchParams params ( unit );
-	params.dest = target;
+	annotatedMap->annotateLocal( unit, unit->getCurrField () );
+	// reset nodepool and add start to open
+	theSearchEngine.setNodeLimit( 256 );
+	theSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) );
+	int result = theSearchEngine.pathToPos( annotatedMap, unit, path.front() ); // perform search
+	annotatedMap->clearLocalAnnotations( unit->getCurrField () );
 
-
-	bool result;
-	//if ( flipper < 100 ) {
-		PROFILE_START("PathFinder-NodePool");
-		annotatedMap->annotateLocal ( unit, unit->getCurrField () );
-		result = annotatedMap->AStarSearch ( params, newBit );
-		annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
-		PROFILE_STOP("PathFinder-NodePool");
-	//}
-	//else {
-	//	PROFILE_START("PathFinder-NodeArray");
-	//	superMap->annotateLocal ( unit->getPos (), unit->getSize (), unit->getCurrField () );
-	//	result = superMap->AStarSearch ( params, newBit );
-	//	superMap->clearLocalAnnotations ( unit->getCurrField () );
-	//	PROFILE_STOP("PathFinder-NodeArray");
-	//}
-
-	if ( result ) {
-		newBit.pop_back(); // already on path
-		for ( VLConRevIt it = newBit.rbegin(); it != newBit.rend(); ++it ) {
-			path.push_front ( *it );
+	if ( result == AStarResult::Complete ) {
+		Vec2i pos = theSearchEngine.getGoalPos();
+		// skip target (is on the 'front' of the path already...
+		pos = theSearchEngine.getPreviousPos( pos );
+		while ( pos.x >= 0 ) {
+			path.push_front( pos );
+			pos = theSearchEngine.getPreviousPos( pos );
 		}
 		return true;
 	}
@@ -278,39 +275,50 @@ bool PathFinder::repairPath ( Unit *unit ) {
 	return false;
 }
 
+// ==================== PRIVATE ====================
+
 // return finalPos if free, else a nearest free pos within maxFreeSearchRadius
 // cells, or unit's current position if none found
-Vec2i PathFinder::computeNearestFreePos (const Unit *unit, const Vec2i &finalPos) {
+//
+// Move me to Cartographer, as findFreePos(), rewrite using a Dijkstra Search
+//
+Vec2i PathManager::computeNearestFreePos( const Unit *unit, const Vec2i &finalPos ) {
 	//unit data
 	Vec2i unitPos= unit->getPos();
 	int size= unit->getType()->getSize();
-	Field field = unit->getCurrField();// == FieldAir ? ZoneAir : ZoneSurface;
+	Field field = unit->getCurrField();
 	int teamIndex= unit->getTeam();
 
 	//if finalPos is free return it
-	
-	if(map->areAproxFreeCells(finalPos, size, field, teamIndex)){
+	if ( theMap.areAproxFreeCells( finalPos, size, field, teamIndex ) ) {
 		return finalPos;
 	}
 
 	//find nearest pos
-	Vec2i nearestPos= unitPos;
-	float nearestDist= unitPos.dist(finalPos);
-	for(int i= -maxFreeSearchRadius; i<=maxFreeSearchRadius; ++i){
-		for(int j= -maxFreeSearchRadius; j<=maxFreeSearchRadius; ++j){
-			Vec2i currPos= finalPos + Vec2i(i, j);
-			if(map->areAproxFreeCells(currPos, size, field, teamIndex)){
-				float dist= currPos.dist(finalPos);
+
+	// REPLACE ME!
+	//
+	// Use the new super-dooper SearchEngine, do a Dijkstra search from target, 
+	// with a GoalFunc that returns true if the cell is unoccupid (and clearnce > unit.size).
+	// Now that's efficient... ;-)
+
+	Vec2i nearestPos = unitPos;
+	float nearestDist = unitPos.dist( finalPos );
+	for ( int i = -maxFreeSearchRadius; i <= maxFreeSearchRadius; ++i ) {
+		for ( int j = -maxFreeSearchRadius; j <= maxFreeSearchRadius; ++j ) {
+			Vec2i currPos = finalPos + Vec2i( i, j );
+			if ( theMap.areAproxFreeCells( currPos, size, field, teamIndex ) ){
+				float dist = currPos.dist( finalPos );
 
 				//if nearer from finalPos
 				if ( dist < nearestDist ) {
-					nearestPos= currPos;
-					nearestDist= dist;
+					nearestPos = currPos;
+					nearestDist = dist;
 				}
 				//if the distance is the same compare distance to unit
 				else if ( dist == nearestDist ) {
-					if ( currPos.dist(unitPos) < nearestPos.dist(unitPos) )
-						nearestPos= currPos;
+					if ( currPos.dist( unitPos ) < nearestPos.dist( unitPos ) )
+						nearestPos = currPos;
 				}
 			}
 		}
@@ -433,14 +441,16 @@ void World::assertConsistiency() {}
 #endif
 
 void World::doHackyCleanUp() {
-	for(Units::const_iterator u = newlydead.begin(); u != newlydead.end(); ++u) {
+	for ( Units::const_iterator u = newlydead.begin(); u != newlydead.end(); ++u ) {
 		Unit &unit = **u;
-		for ( int i=0; i < unit.getSize(); ++i )
+		for ( int i=0; i < unit.getSize(); ++i ) {
 			for ( int j=0; j < unit.getSize(); ++j ) {
-				Cell *cell = map.getCell ( unit.getPos() + Vec2i(i,j) );
-				if(cell->getUnit(unit.getCurrZone()) == &unit)
-					cell->setUnit(unit.getCurrZone(), NULL);
+				Cell *cell = map.getCell( unit.getPos() + Vec2i( i,j ) );
+				if ( cell->getUnit( unit.getCurrZone() ) == &unit ) {
+					cell->setUnit( unit.getCurrZone(), NULL );
+				}
 			}
+		}
 	}
 	newlydead.clear();
 }
