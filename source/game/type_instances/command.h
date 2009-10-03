@@ -59,15 +59,15 @@ public:
 	static const Vec2i invalidPos;
 
 private:
-	CommandArchetype archetype;	/** Archetype */
+	CommandArchetype archetype;	/**< Archetype */
     const CommandType *type;
 	CommandFlags flags;
-    Vec2i pos;					/** map position */
-    Vec2i pos2;					/** Secondary map position -- for patrol command, the position traveling away from initially. */
-	UnitReference unitRef;		/** Target unit, used to move and attack optionally */
-	UnitReference unitRef2;		/** for patrol command, the unit traveling away from. */
-	const UnitType *unitType;	/** used for build  */
-	Unit *commandedUnit;		/** (transient) Unit being commanded */
+    Vec2i pos;					/**< map position */
+    Vec2i pos2;					/**< Secondary map position -- for patrol command, the position traveling away from initially. */
+	UnitReference unitRef;		/**< Target unit, used to move and attack optionally */
+	UnitReference unitRef2;		/**< for patrol command, the unit traveling away from. */
+	const UnitType *unitType;	/**< used for build  */
+	Unit *commandedUnit;		/**< (transient) Unit being commanded */
 
 public:
     //constructor

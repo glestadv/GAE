@@ -26,6 +26,6 @@ public:
 	virtual Vec3f getCurrVectorFlat() const = 0;
 };
 
-}}//end namespace
+}} // end namespace
 
 #endif

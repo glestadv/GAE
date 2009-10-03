@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2005 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -23,7 +23,7 @@
 using namespace Shared::Platform;
 using namespace Shared::Lua;
 
-namespace Glest { namespace Game {
+namespace Game {
 
 // =====================================================
 //	class ScriptTimer
@@ -734,4 +734,4 @@ int ScriptManager::getUnitCountOfType(LuaHandle* luaHandle) {
 	return luaArguments.getReturnCount();
 }
 
-}}//end namespace
+} // end namespace

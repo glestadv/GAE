@@ -60,7 +60,7 @@ public:
 	const Version &getGameVersion() const		{return gameVersion;}
 	const Version &getProtocolVersion() const	{return protocolVersion;}
 	const uint64 &getUid() const				{return uid;}
-	
+
 	bool hasIpAndPort() const					{return !ipAddress.isZero();}
 	bool hasLocalHostName() const				{return !localHostName.empty();}
 	bool hasResolvedHostName() const			{return !resolvedHostName.empty();}

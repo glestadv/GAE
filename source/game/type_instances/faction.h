@@ -82,7 +82,7 @@ private:
 	static ResourceTypes neededResources;
 
 public:
-	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction);
+	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction, bool giveResources);
 	/*
     void init(const FactionType *factionType, ControlType control, TechTree *techTree,
 			int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction,
@@ -122,6 +122,7 @@ public:
 	void applyStaticProduction(const ProducibleType *p);
 	void deApplyCosts(const ProducibleType *p);
 	void deApplyStaticCosts(const ProducibleType *p);
+   void deApplyStaticConsumption(const ProducibleType *p);
 	void applyCostsOnInterval();
 	bool checkCosts(const ProducibleType *pt);
 

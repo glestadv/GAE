@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2005 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -14,13 +14,13 @@
 
 #include "main_menu.h"
 
-namespace Glest{ namespace Game{
+namespace Game {
 
 // ===============================
-// 	class MenuStateCustomGame  
+// 	class MenuStateCustomGame
 // ===============================
 
-class MenuStateCustomGame: public MenuState{
+class MenuStateCustomGame: public MenuState {
 private:
 	GraphicButton buttonReturn;
 	GraphicButton buttonPlayNow;
@@ -46,7 +46,7 @@ private:
 	MapInfo mapInfo;
 
 public:
-	MenuStateCustomGame(Program *program, MainMenu *mainMenu, bool openNetworkSlots= false);
+	MenuStateCustomGame(Program *program, MainMenu *mainMenu, bool openNetworkSlots = false);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState *mouseState);
@@ -54,7 +54,7 @@ public:
 	void update();
 
 private:
-    void loadGameSettings(GameSettings *gameSettings);
+	void loadGameSettings(GameSettings *gameSettings);
 	void loadMapInfo(string file, MapInfo *mapInfo);
 	void reloadFactions();
 	void updateControlers();
@@ -62,6 +62,6 @@ private:
 	void updateNetworkSlots();
 };
 
-}}//end namespace
+} // end namespace
 
 #endif

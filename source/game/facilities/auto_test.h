@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2009 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -18,7 +18,7 @@
 
 using Shared::Util::Random;
 
-namespace Glest { namespace Game {
+namespace Game {
 
 class Program;
 class MainMenu;
@@ -26,7 +26,7 @@ class MenuStateScenario;
 class Game;
 
 // =====================================================
-//	class AutoTest  
+//	class AutoTest
 //
 /// Interface to write log files
 // =====================================================
@@ -52,6 +52,6 @@ public:
 	void updateBattleEnd(Program &program);
 };
 
-}}//end namespace
+}//end namespace
 
 #endif

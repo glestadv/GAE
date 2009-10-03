@@ -36,7 +36,7 @@ namespace Game {
 // =====================================================
 Faction::ResourceTypes Faction::neededResources;
 
-Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction)
+Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction, bool giveResources)
 		: IdNamePair(gsFaction.getId(), gsFaction.getName())
 		, upgradeManager()
 		, resources()
@@ -74,7 +74,8 @@ Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction,
 	store.resize(tt.getResourceTypeCount());
 	for (int i = 0; i < tt.getResourceTypeCount(); ++i) {
 		const ResourceType *rt = tt.getResourceType(i);
-		resources[i].init(rt, factionType->getStartingResourceAmount(rt));
+		int resourceAmount= giveResources? factionType->getStartingResourceAmount(rt): 0;
+		resources[i].init(rt, resourceAmount);
 		store[i].init(rt, 0);
 	}
 
@@ -404,6 +405,21 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 			incResourceAmount(rt, cost);
 		}
 	}
+}
+
+//deapply static costs, but not negative costs, for when building gets killed
+void Faction::deApplyStaticConsumption(const ProducibleType *p){
+   
+    //decrease resources
+	for(int i=0; i<p->getCostCount(); ++i){
+		const ResourceType *rt= p->getCost(i)->getType();
+		if(rt->getClass()==rcStatic){
+            int cost= p->getCost(i)->getAmount();
+			if(cost>0){
+				incResourceAmount(rt, cost);
+			}
+        }    
+    }
 }
 
 //apply resource on interval (cosumable resouces)

@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2005 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -37,7 +37,11 @@ private:
 	GraphicLabel labelInfo;
 	GraphicLabel labelScenario;
 	GraphicListBox listBoxScenario;
-    
+
+	GraphicLabel labelCategory;
+	GraphicListBox listBoxCategory;
+    vector<string> categories;
+
 	vector<string> scenarioFiles;
 
     ScenarioInfo scenarioInfo;
@@ -50,8 +54,14 @@ public:
     void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);
 	void render();
+	void update();
+
+	void launchGame();
+	void setScenario(int i);
+	int getScenarioCount() const	{ return listBoxScenario.getItemCount(); }
 
 private:
+	void updateScenarioList(const string &category, bool selectDefault = false);
     void loadScenarioInfo(string file, ScenarioInfo &si);
     void loadGameSettings(const ScenarioInfo &si, GameSettings &gs);
 	Difficulty computeDifficulty(const ScenarioInfo &si);

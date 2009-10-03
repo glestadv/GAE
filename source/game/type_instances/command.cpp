@@ -71,7 +71,7 @@ Command::Command(const CommandType *type, CommandFlags flags, Unit* unit, Unit *
 		pos = unit->getCenteredPos();
 	}
 
-	if(unit && !isAuto()) {
+	if(unit && !isAuto() && unit->getFaction()->isThisFaction()) {
 		unit->resetHighlight();
 		//pos = unit->getCellPos();
 	}
@@ -119,7 +119,7 @@ Command::Command(NetworkDataBuffer &buf) :
 void Command::save(XmlNode *node) const {
 	node->addChild("archetype", archetype);
 	node->addChild("type", type->getName());
-	node->addChild("flags", flags.flags);
+	node->addChild("flags", (int)flags.flags);
 	node->addChild("pos", pos);
 	node->addChild("pos2", pos2);
 	unitRef.save(node->addChild("unitRef"));
