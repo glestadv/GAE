@@ -13,6 +13,7 @@
 #define _GAME_TECHTREE_H_
 
 #include <map>
+#include <set>
 #include "util.h"
 #include "resource_type.h"
 #include "faction_type.h"
@@ -58,7 +59,7 @@ private:
 	DamageMultiplierTable damageMultiplierTable;
 
 public:
-    void load(const string &dir, const vector<string> &factionNames, Checksums &checksums);
+    bool load(const string &dir, const set<string> &factionNames, Checksums &checksums);
     ~TechTree();
 
     // get count

@@ -31,8 +31,25 @@ using namespace Shared::Xml;
 
 namespace Game {
 
-const char *Fields::names[] = {"land", "air"/*, "water", "subterranean"*/};
-const char *UnitProperties::names[] = {"burnable", "rotated_climb", "wall"};
+const char *Zones::names[] = {
+	"prop",
+	"land" /*<- == "surface"*/,
+	"air", /*, "subsurface"*/
+};
+
+const char *Fields::names[] = {
+	"land"/*<- == "walkable"*/,
+	"air",
+	"any_water",
+	"deep_water",
+	"amphibious"
+};
+
+const char *UnitProperties::names[] = {
+	"burnable",
+	"rotated_climb",
+	"wall"
+};
 
 // ===============================
 //  class UnitStatsBase
@@ -70,51 +87,51 @@ void UnitStatsBase::reset() {
 	repairSpeed = 0;
 	harvestSpeed = 0;
 
-	for(int i = 0; i < damageMultiplierCount; ++i) {
+	for (int i = 0; i < damageMultiplierCount; ++i) {
 		damageMultipliers[i] = 0.f;
 	}
 }
 
 void UnitStatsBase::setValues(const UnitStatsBase &o) {
-	maxHp = o.maxHp;
-	hpRegeneration = o.hpRegeneration;
-	maxEp = o.maxEp;
-	epRegeneration = o.epRegeneration;
-	fields.flags = o.fields.flags;
+	maxHp			= o.maxHp;
+	hpRegeneration	= o.hpRegeneration;
+	maxEp			= o.maxEp;
+	epRegeneration	= o.epRegeneration;
+	fields.flags	= o.fields.flags;
 	properties.flags = o.properties.flags;
-	sight = o.sight;
-	armor = o.armor;
-	armorType = o.armorType;
-	light = o.light;
-	lightColor = o.lightColor;
-	size = o.size;
-	height = o.height;
+	sight			= o.sight;
+	armor			= o.armor;
+	armorType		= o.armorType;
+	light			= o.light;
+	lightColor		= o.lightColor;
+	size			= o.size;
+	height			= o.height;
 
-	attackStrength = o.attackStrength;
-	effectStrength = o.effectStrength;
-	attackPctStolen = o.attackPctStolen;
-	attackRange = o.attackRange;
-	moveSpeed = o.moveSpeed;
-	attackSpeed = o.attackSpeed;
-	prodSpeed = o.prodSpeed;
-	repairSpeed = o.repairSpeed;
-	harvestSpeed = o.harvestSpeed;
+	attackStrength	= o.attackStrength;
+	effectStrength	= o.effectStrength;
+	attackPctStolen	= o.attackPctStolen;
+	attackRange		= o.attackRange;
+	moveSpeed		= o.moveSpeed;
+	attackSpeed		= o.attackSpeed;
+	prodSpeed		= o.prodSpeed;
+	repairSpeed		= o.repairSpeed;
+	harvestSpeed	= o.harvestSpeed;
 
-	for(int i = 0; i < damageMultiplierCount; ++i) {
+	for (int i = 0; i < damageMultiplierCount; ++i) {
 		damageMultipliers[i] = o.damageMultipliers[i];
 	}
 
 }
 
 void UnitStatsBase::addStatic(const EnhancementTypeBase &e, float strength) {
-	maxHp += (int)round(e.getMaxHp() * strength);
-	hpRegeneration += (int)round(e.getHpRegeneration() * strength);
-	maxEp += (int)round(e.getMaxEp() * strength);
-	epRegeneration += (int)round(e.getEpRegeneration() * strength);
-	fields.flags = (fields.flags | e.getFields().flags) & ~(e.getRemovedFields().flags);
+	maxHp			+= lroundf(e.getMaxHp() * strength);
+	hpRegeneration	+= lroundf(e.getHpRegeneration() * strength);
+	maxEp			+= lroundf(e.getMaxEp() * strength);
+	epRegeneration	+= lroundf(e.getEpRegeneration() * strength);
+	fields.flags	= (fields.flags | e.getFields().flags) & ~(e.getRemovedFields().flags);
 	properties.flags = (properties.flags | e.getProperties().flags) & ~(e.getRemovedProperties().flags);
-	sight += (int)round(e.getSight() * strength);
-	armor += (int)round(e.getArmor() * strength);
+	sight			+= lroundf(e.getSight() * strength);
+	armor			+= lroundf(e.getArmor() * strength);
 	if (e.getArmorType() != NULL) {			//if non-null, overwrite previous
 		armorType = e.getArmorType();
 	}
@@ -122,82 +139,121 @@ void UnitStatsBase::addStatic(const EnhancementTypeBase &e, float strength) {
 	if (e.getLight()) {						//if non-null, overwrite previous
 		lightColor = e.getLightColor();
 	}
-	size += e.getSize();
-	height += e.getHeight();
+	size			+= e.getSize();
+	height			+= e.getHeight();
 
-	attackStrength += (int)round(e.getAttackStrength() * strength);
-	effectStrength += e.getEffectStrength() * strength;
-	attackPctStolen += e.getAttackPctStolen() * strength;
-	attackRange += (int)round(e.getAttackRange() * strength);
-	moveSpeed += (int)round(e.getMoveSpeed() * strength);
-	attackSpeed += (int)round(e.getAttackSpeed() * strength);
-	prodSpeed += (int)round(e.getProdSpeed() * strength);
-	repairSpeed += (int)round(e.getRepairSpeed() * strength);
-	harvestSpeed += (int)round(e.getHarvestSpeed() * strength);
+	attackStrength	+= lroundf(e.getAttackStrength() * strength);
+	effectStrength	+= e.getEffectStrength() * strength;
+	attackPctStolen	+= e.getAttackPctStolen() * strength;
+	attackRange		+= lroundf(e.getAttackRange() * strength);
+	moveSpeed		+= lroundf(e.getMoveSpeed() * strength);
+	attackSpeed		+= lroundf(e.getAttackSpeed() * strength);
+	prodSpeed		+= lroundf(e.getProdSpeed() * strength);
+	repairSpeed		+= lroundf(e.getRepairSpeed() * strength);
+	harvestSpeed	+= lroundf(e.getHarvestSpeed() * strength);
 }
 
 void UnitStatsBase::applyMultipliers(const EnhancementTypeBase &e) {
-	maxHp = (int)round(maxHp * e.getMaxHpMult());
-	hpRegeneration = (int)round(hpRegeneration * e.getHpRegenerationMult());
-	maxEp = (int)round(maxEp * e.getMaxEpMult());
-	epRegeneration = (int)round(epRegeneration * e.getEpRegenerationMult());
-	sight = (int)round(sight * e.getSightMult());
-	armor = (int)round(armor * e.getArmorMult());
-	attackStrength = (int)round(attackStrength * e.getAttackStrengthMult());
-	effectStrength = effectStrength * e.getEffectStrengthMult();
-	attackPctStolen = attackPctStolen * e.getAttackPctStolenMult();
-	attackRange = (int)round(attackRange * e.getAttackRangeMult());
-	moveSpeed = (int)round(moveSpeed * e.getMoveSpeedMult());
-	attackSpeed = (int)round(attackSpeed * e.getAttackSpeedMult());
-	prodSpeed = (int)round(prodSpeed * e.getProdSpeedMult());
-	repairSpeed = (int)round(repairSpeed * e.getRepairSpeedMult());
-	harvestSpeed = (int)round(harvestSpeed * e.getHarvestSpeedMult());
+	maxHp			= lroundf(maxHp * e.getMaxHpMult());
+	hpRegeneration	= lroundf(hpRegeneration * e.getHpRegenerationMult());
+	maxEp			= lroundf(maxEp * e.getMaxEpMult());
+	epRegeneration	= lroundf(epRegeneration * e.getEpRegenerationMult());
+	sight			= lroundf(sight * e.getSightMult());
+	armor			= lroundf(armor * e.getArmorMult());
+	attackStrength	= lroundf(attackStrength * e.getAttackStrengthMult());
+	effectStrength	= effectStrength * e.getEffectStrengthMult();
+	attackPctStolen	= attackPctStolen * e.getAttackPctStolenMult();
+	attackRange		= lroundf(attackRange * e.getAttackRangeMult());
+	moveSpeed		= lroundf(moveSpeed * e.getMoveSpeedMult());
+	attackSpeed		= lroundf(attackSpeed * e.getAttackSpeedMult());
+	prodSpeed		= lroundf(prodSpeed * e.getProdSpeedMult());
+	repairSpeed		= lroundf(repairSpeed * e.getRepairSpeedMult());
+	harvestSpeed	= lroundf(harvestSpeed * e.getHarvestSpeedMult());
 }
 
 // legacy load for Unit class
-void UnitStatsBase::load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType) {
+bool UnitStatsBase::load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType) {
+	bool loadOk = true;
 	//maxHp
-	maxHp = baseNode->getChildIntValue("max-hp");
-
+	try {
+		maxHp = baseNode->getChildIntValue("max-hp");
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
 	//hpRegeneration
-	hpRegeneration = baseNode->getChild("max-hp")->getIntAttribute("regeneration");
-
+	try {
+		hpRegeneration = baseNode->getChild("max-hp")->getIntAttribute("regeneration");
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
 	//maxEp
-	maxEp = baseNode->getChildIntValue("max-ep");
-
-	//epRegeneration
-	if (maxEp) {
-		epRegeneration = baseNode->getChild("max-ep")->getIntAttribute("regeneration");
-	} else {
-		XmlAttribute *epRegenAttr = baseNode->getChild("max-ep")->getAttribute("regeneration", false);
-		epRegeneration = epRegenAttr ? epRegenAttr->getIntValue() : 0;
+	try {
+		maxEp = baseNode->getChildIntValue("max-ep");
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
 	}
-
+	try {
+		//epRegeneration
+		if (maxEp) {
+			epRegeneration = baseNode->getChild("max-ep")->getIntAttribute("regeneration");
+		} else {
+			XmlAttribute *epRegenAttr = baseNode->getChild("max-ep")->getAttribute("regeneration", false);
+			epRegeneration = epRegenAttr ? epRegenAttr->getIntValue() : 0;
+		}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
 	//sight
-	sight = baseNode->getChildIntValue("sight");
-
-	//armor
-	armor = baseNode->getChildIntValue("armor");
-
-	//armor type string
-	string armorTypeName = baseNode->getChildRestrictedValue("armor-type");
-	armorType = techTree->getArmorType(armorTypeName);
-
-	//light & lightColor
-	const XmlNode *lightNode = baseNode->getChild("light");
-	light = lightNode->getAttribute("enabled")->getBoolValue();
-	if (light) {
-		lightColor = lightNode->getColor3Value();/*
-		lightColor.x = lightNode->getAttribute("red")->getFloatValue(0.f, 1.f);
-		lightColor.y = lightNode->getAttribute("green")->getFloatValue(0.f, 1.f);
-		lightColor.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);*/
+	try {
+		sight = baseNode->getChildIntValue("sight");
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
 	}
-
+	//armor
+	try {
+		armor = baseNode->getChildIntValue("armor");
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
+	//armor type string
+	try {
+		string armorTypeName = baseNode->getChildRestrictedValue("armor-type");
+		armorType = techTree->getArmorType(armorTypeName);
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
+	//light & lightColor
+	try {
+		const XmlNode *lightNode = baseNode->getChild("light");
+		light = lightNode->getAttribute("enabled")->getBoolValue();
+		if (light)
+			lightColor = lightNode->getColor3Value();
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
 	//size
-	size = baseNode->getChildIntValue("size");
-
+	try {
+		size = baseNode->getChildIntValue("size");
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
 	//height
-	height = baseNode->getChildIntValue("height");
+	try {
+		height = baseNode->getChildIntValue("height");
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
+	}
+	return loadOk;
 }
 
 void UnitStatsBase::save(XmlNode *node) {
@@ -234,23 +290,23 @@ void UnitStatsBase::save(XmlNode *node) {
 void EnhancementTypeBase::reset() {
 	UnitStatsBase::reset();
 
-	maxHpMult = 1.0f;
-	hpRegenerationMult = 1.0f;
-	maxEpMult = 1.0f;
-	epRegenerationMult = 1.0f;
-	sightMult = 1.0f;
-	armorMult = 1.0f;
-	attackStrengthMult = 1.0f;
-	effectStrengthMult = 1.0f;
-	attackPctStolenMult = 1.0f;
-	attackRangeMult = 1.0f;
-	moveSpeedMult = 1.0f;
-	attackSpeedMult = 1.0f;
-	prodSpeedMult = 1.0f;
-	repairSpeedMult = 1.0f;
-	harvestSpeedMult = 1.0f;
+	maxHpMult			= 1.0f;
+	hpRegenerationMult	= 1.0f;
+	maxEpMult			= 1.0f;
+	epRegenerationMult	= 1.0f;
+	sightMult			= 1.0f;
+	armorMult			= 1.0f;
+	attackStrengthMult	= 1.0f;
+	effectStrengthMult	= 1.0f;
+	attackPctStolenMult	= 1.0f;
+	attackRangeMult		= 1.0f;
+	moveSpeedMult		= 1.0f;
+	attackSpeedMult		= 1.0f;
+	prodSpeedMult		= 1.0f;
+	repairSpeedMult		= 1.0f;
+	harvestSpeedMult	= 1.0f;
 
-	antiFields.flags = 0;
+	antiFields.flags	= 0;
 	antiProperties.flags = 0;
 }
 
@@ -273,26 +329,26 @@ void EnhancementTypeBase::save(XmlNode *node) const {
 	m->addChild("harvest-speed", harvestSpeedMult);
 }
 
-void EnhancementTypeBase::addMultipliers(const EnhancementTypeBase &e, float strength){
-	maxHpMult += (e.getMaxHpMult() - 1.0f) * strength;
-	hpRegenerationMult += (e.getHpRegenerationMult() - 1.0f) * strength;
-	maxEpMult += (e.getMaxEpMult() - 1.0f) * strength;
-	epRegenerationMult += (e.getEpRegenerationMult() - 1.0f) * strength;
-	sightMult += (e.getSightMult() - 1.0f) * strength;
-	armorMult += (e.getArmorMult() - 1.0f) * strength;
-	attackStrengthMult += (e.getAttackStrengthMult() - 1.0f) * strength;
-	effectStrengthMult += (e.getEffectStrengthMult() - 1.0f) * strength;
-	attackPctStolenMult += (e.getAttackPctStolenMult() - 1.0f) * strength;
-	attackRangeMult += (e.getAttackRangeMult() - 1.0f) * strength;
-	moveSpeedMult += (e.getMoveSpeedMult() - 1.0f) * strength;
-	attackSpeedMult += (e.getAttackSpeedMult() - 1.0f) * strength;
-	prodSpeedMult += (e.getProdSpeedMult() - 1.0f) * strength;
-	repairSpeedMult += (e.getRepairSpeedMult() - 1.0f) * strength;
-	harvestSpeedMult += (e.getHarvestSpeedMult() - 1.0f) * strength;
+void EnhancementTypeBase::addMultipliers(const EnhancementTypeBase &e, float strength) {
+	maxHpMult			+=  strength * (e.getMaxHpMult() - 1.0f);
+	hpRegenerationMult	+=  strength * (e.getHpRegenerationMult() - 1.0f);
+	maxEpMult			+=  strength * (e.getMaxEpMult() - 1.0f);
+	epRegenerationMult	+=  strength * (e.getEpRegenerationMult() - 1.0f);
+	sightMult			+=  strength * (e.getSightMult() - 1.0f);
+	armorMult			+=  strength * (e.getArmorMult() - 1.0f);
+	attackStrengthMult	+=  strength * (e.getAttackStrengthMult() - 1.0f);
+	effectStrengthMult	+=  strength * (e.getEffectStrengthMult() - 1.0f);
+	attackPctStolenMult	+=  strength * (e.getAttackPctStolenMult() - 1.0f);
+	attackRangeMult		+=  strength * (e.getAttackRangeMult() - 1.0f);
+	moveSpeedMult		+=  strength * (e.getMoveSpeedMult() - 1.0f);
+	attackSpeedMult		+=  strength * (e.getAttackSpeedMult() - 1.0f);
+	prodSpeedMult		+=  strength * (e.getProdSpeedMult() - 1.0f);
+	repairSpeedMult		+=  strength * (e.getRepairSpeedMult() - 1.0f);
+	harvestSpeedMult	+=  strength * (e.getHarvestSpeedMult() - 1.0f);
 }
 
 /*inline */void EnhancementTypeBase::formatModifier(string &str, const char *pre, const char* label,
-		int value, float multiplier) {
+        int value, float multiplier) {
 	Lang &lang = Lang::getInstance();
 
 	if (value) {
@@ -304,7 +360,7 @@ void EnhancementTypeBase::addMultipliers(const EnhancementTypeBase &e, float str
 	}
 
 	if (multiplier != 1.0f) {
-		if(value) {
+		if (value) {
 			str += ", ";
 		} else {
 			str += pre + lang.get(label) + ": ";
@@ -415,24 +471,33 @@ void EnhancementTypeBase::initMultiplier(const XmlNode *node, const string &dir)
 	}
 }
 
-void EnhancementTypeBase::load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft) {
+bool EnhancementTypeBase::load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft) {
 	const XmlNode *node;
-
+	bool loadOk = true;
 	//static modifiers
-	node = baseNode->getChild("static-modifiers", 0, false);
-	if(node) {
-		for (int i = 0; i < node->getChildCount(); ++i) {
-			initStaticModifier(node->getChild(i), dir);
+	try {
+		node = baseNode->getChild("static-modifiers", 0, false);
+		if (node) {
+			for (int i = 0; i < node->getChildCount(); ++i) {
+				initStaticModifier(node->getChild(i), dir);
+			}
 		}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
 	}
-
 	//multipliers
-	node = baseNode->getChild("multipliers", 0, false);
-	if(node) {
-		for (int i = 0; i < node->getChildCount(); ++i) {
-			initMultiplier(node->getChild(i), dir);
-		}
+	try {
+		node = baseNode->getChild("multipliers", 0, false);
+		if (node)
+			for (int i = 0; i < node->getChildCount(); ++i) {
+				initMultiplier(node->getChild(i), dir);
+			}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what());
+		loadOk = false;
 	}
+	return loadOk;
 }
 
 

@@ -48,11 +48,11 @@ public:
 		effectStrength = 0.1f;
 	}
 
-	virtual void load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
 	int getKills() const			{return kills;}
 };
 
-/*
+#if 0
 class PetRule {
 private:
 	const UnitType *type;
@@ -62,9 +62,10 @@ public:
 	PetRule();
 	virtual void load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
 };
-*/
+#endif
 
-enum UnitClass{
+
+enum UnitClass {
 	ucWarrior,
 	ucWorker,
 	ucBuilding
@@ -79,9 +80,9 @@ enum UnitClass{
 
 class UnitType: public ProducibleType, public UnitStatsBase {
 private:
-    typedef vector<SkillType*> SkillTypes;
-    typedef vector<CommandType*> CommandTypes;
-    typedef vector<Resource> StoredResources;
+	typedef vector<SkillType*> SkillTypes;
+	typedef vector<CommandType*> CommandTypes;
+	typedef vector<Resource> StoredResources;
 	typedef vector<Level> Levels;
 	typedef vector<ParticleSystemType*> particleSystemTypes;
 //	typedef vector<PetRule*> PetRules;
@@ -89,16 +90,16 @@ private:
 private:
 	//basic
 	bool multiBuild;
-    bool multiSelect;
+	bool multiSelect;
 
 	//sounds
-    SoundContainer selectionSounds;
-    SoundContainer commandSounds;
+	SoundContainer selectionSounds;
+	SoundContainer commandSounds;
 
 	//info
-    SkillTypes skillTypes;
-    CommandTypes commandTypes;
-    StoredResources storedResources;
+	SkillTypes skillTypes;
+	CommandTypes commandTypes;
+	StoredResources storedResources;
 	Levels levels;
 //	PetRules petRules;
 	Emanations emanations;
@@ -107,19 +108,19 @@ private:
 	bool meetingPoint;
 	Texture2D *meetingPointImage;
 
-    //OPTIMIZATIONS:
+	//OPTIMIZATIONS:
 	//store first command type and skill type of each class
 	const CommandType *firstCommandTypeOfClass[ccCount];
-    const SkillType *firstSkillTypeOfClass[scCount];
+	const SkillType *firstSkillTypeOfClass[scCount];
 	float halfSize;
 	float halfHeight;
 
 public:
 	//creation and loading
-    UnitType();
-    virtual ~UnitType();
+	UnitType();
+	virtual ~UnitType();
 	void preLoad(const string &dir);
-    void load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums);
+	bool load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums);
 
 	//get
 	bool getMultiSelect() const							{return multiSelect;}
@@ -136,7 +137,10 @@ public:
 	bool isMultiBuild() const							{return multiBuild;}
 	float getHalfSize() const							{return halfSize;}
 	float getHalfHeight() const							{return halfHeight;}
-
+	bool isMobile() const {
+		const SkillType *st = getFirstStOfClass(scMove);
+		return st && st->getSpeed() > 0 ? true : false;
+	}
 	//cellmap
 	bool *cellMap;
 
@@ -153,16 +157,16 @@ public:
 
 	const CommandType *getFirstCtOfClass(CommandClass commandClass) const {return firstCommandTypeOfClass[commandClass];}
 	const SkillType *getFirstStOfClass(SkillClass skillClass) const {return firstSkillTypeOfClass[skillClass];}
-    const HarvestCommandType *getFirstHarvestCommand(const ResourceType *resourceType) const;
-	const AttackCommandType *getFirstAttackCommand(Field field) const;
+	const HarvestCommandType *getFirstHarvestCommand(const ResourceType *resourceType) const;
+	const AttackCommandType *getFirstAttackCommand(Zone zone) const;
 	const RepairCommandType *getFirstRepairCommand(const UnitType *repaired) const;
 
 	//has
-    bool hasCommandType(const CommandType *commandType) const;
+	bool hasCommandType(const CommandType *commandType) const;
 	bool hasCommandClass(CommandClass commandClass) const;
-    bool hasSkillType(const SkillType *skillType) const;
-    bool hasSkillClass(SkillClass skillClass) const;
-	bool hasCellMap() const								{return cellMap!=NULL;}
+	bool hasSkillType(const SkillType *skillType) const;
+	bool hasSkillClass(SkillClass skillClass) const;
+	bool hasCellMap() const								{return cellMap != NULL;}
 
 	//is
 	bool isOfClass(UnitClass uc) const;
@@ -171,8 +175,8 @@ public:
 	const CommandType* findCommandTypeById(int id) const;
 
 private:
-    void computeFirstStOfClass();
-    void computeFirstCtOfClass();
+	void computeFirstStOfClass();
+	void computeFirstCtOfClass();
 };
 
 

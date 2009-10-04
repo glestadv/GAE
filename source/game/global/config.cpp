@@ -77,8 +77,8 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	renderDepthBits = p->getInt("RenderDepthBits", isWindows()?32:16);
 	renderDistanceMax = p->getFloat("RenderDistanceMax", 64.f, 1.f, 65536.f);
 	renderDistanceMin = p->getFloat("RenderDistanceMin", 1.f, 0.0f, 65536.f);
-	renderFilter = p->getString("RenderFilter", "Bilinear");
 	renderFilterMaxAnisotropy = p->getInt("RenderFilterMaxAnisotropy", 1);
+	renderFilter = p->getString("RenderFilter", "Bilinear");
 	renderFogOfWarSmoothing = p->getBool("RenderFogOfWarSmoothing", 1);
 	renderFogOfWarSmoothingFrameSkip = p->getInt("RenderFogOfWarSmoothingFrameSkip", 3);
 	renderFontConsole = p->getString("RenderFontConsole", getDefaultFontStr());
@@ -90,8 +90,8 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	renderLightsMax = p->getInt("RenderLightsMax", 1, 0, 8);
 	renderShadowAlpha = p->getFloat("RenderShadowAlpha", 0.2f, 0.f, 1.f);
 	renderShadowFrameSkip = p->getInt("RenderShadowFrameSkip", 2);
-	renderShadowTextureSize = p->getInt("RenderShadowTextureSize", 512);
 	renderShadows = p->getString("RenderShadows", "Projected");
+	renderShadowTextureSize = p->getInt("RenderShadowTextureSize", 512);
 	renderStencilBits = p->getInt("RenderStencilBits", 0);
 	renderTextures3D = p->getBool("RenderTextures3D", 1);
 	soundFactory = p->getString("SoundFactory", isWindows()?"DirectSound8":"OpenAL");
@@ -106,12 +106,13 @@ Config::Config(const char* fileName) : fileName(fileName) {
 	uiFocusArrows = p->getBool("UiFocusArrows", true);
 	uiLastMap = p->getString("UiLastMap", "four_rivers");
 	uiLastRandStartLocs = p->getBool("UiLastRandStartLocs", false);
-	uiLastScenario = p->getString("UiLastScenario", "glest_classic/anarchy");
 	uiLastScenarioCatagory = p->getString("UiLastScenarioCatagory", "glest_classic");
+	uiLastScenario = p->getString("UiLastScenario", "glest_classic/anarchy");
 	uiLastTechTree = p->getString("UiLastTechTree", "magitech");
 	uiLastTileset = p->getString("UiLastTileset", "forest");
 	uiLocale = p->getString("UiLocale", "en");
 	uiPhotoMode = p->getBool("UiPhotoMode", false);
+	uiRandomStartLocations = p->getBool("UiRandomStartLocations", false);
 	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
 
 	delete p;
@@ -165,8 +166,8 @@ void Config::save(const char *path) {
 	p->setInt("RenderDepthBits", renderDepthBits);
 	p->setFloat("RenderDistanceMax", renderDistanceMax);
 	p->setFloat("RenderDistanceMin", renderDistanceMin);
-	p->setString("RenderFilter", renderFilter);
 	p->setInt("RenderFilterMaxAnisotropy", renderFilterMaxAnisotropy);
+	p->setString("RenderFilter", renderFilter);
 	p->setBool("RenderFogOfWarSmoothing", renderFogOfWarSmoothing);
 	p->setInt("RenderFogOfWarSmoothingFrameSkip", renderFogOfWarSmoothingFrameSkip);
 	p->setString("RenderFontConsole", renderFontConsole);
@@ -178,8 +179,8 @@ void Config::save(const char *path) {
 	p->setInt("RenderLightsMax", renderLightsMax);
 	p->setFloat("RenderShadowAlpha", renderShadowAlpha);
 	p->setInt("RenderShadowFrameSkip", renderShadowFrameSkip);
-	p->setInt("RenderShadowTextureSize", renderShadowTextureSize);
 	p->setString("RenderShadows", renderShadows);
+	p->setInt("RenderShadowTextureSize", renderShadowTextureSize);
 	p->setInt("RenderStencilBits", renderStencilBits);
 	p->setBool("RenderTextures3D", renderTextures3D);
 	p->setString("SoundFactory", soundFactory);
@@ -194,12 +195,13 @@ void Config::save(const char *path) {
 	p->setBool("UiFocusArrows", uiFocusArrows);
 	p->setString("UiLastMap", uiLastMap);
 	p->setBool("UiLastRandStartLocs", uiLastRandStartLocs);
-	p->setString("UiLastScenario", uiLastScenario);
 	p->setString("UiLastScenarioCatagory", uiLastScenarioCatagory);
+	p->setString("UiLastScenario", uiLastScenario);
 	p->setString("UiLastTechTree", uiLastTechTree);
 	p->setString("UiLastTileset", uiLastTileset);
 	p->setString("UiLocale", uiLocale);
 	p->setBool("UiPhotoMode", uiPhotoMode);
+	p->setBool("UiRandomStartLocations", uiRandomStartLocations);
 	p->setFloat("UiScrollSpeed", uiScrollSpeed);
 
 	p->save(path);

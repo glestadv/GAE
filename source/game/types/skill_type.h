@@ -122,8 +122,8 @@ public:
 	void descRange(string &str, const Unit *unit, const char* rangeDesc) const;
 
 	void descEpCost(string &str, const Unit *unit) const {
-		if(epCost){
-			str+= Lang::getInstance().get("EpCost") + ": " + Conversion::toStr(epCost) + "\n";
+		if (epCost) {
+			str += Lang::getInstance().get("EpCost") + ": " + Conversion::toStr(epCost) + "\n";
 		}
 	}
 
@@ -137,7 +137,8 @@ public:
 	int getAnimSpeed() const			{return animSpeed;}
 	const Model *getAnimation() const	{
 
-		return animations.front();}
+		return animations.front();
+	}
 	StaticSound *getSound() const		{return sounds.getRandSound();}
 	float getSoundStartTime() const		{return soundStartTime;}
 	int getMaxRange() const				{return maxRange;}
@@ -147,7 +148,7 @@ public:
 	//other
 	virtual string toString() const		{return Lang::getInstance().get(typeName);}
 	static string skillClassToStr(SkillClass skillClass);
-	static string fieldToStr(Field field);
+	static string fieldToStr(Zone field);
 
 	// get removing effects
 	int getEffectsRemoved() const			{return effectsRemoved;}
@@ -172,12 +173,12 @@ public:
 // 	class StopSkillType
 // ===============================
 
-class StopSkillType: public SkillType{
+class StopSkillType: public SkillType {
 public:
-	StopSkillType() : SkillType(scStop, "Stop"){}
+	StopSkillType() : SkillType(scStop, "Stop") {}
 	virtual void getDesc(string &str, const Unit *unit) const {
-		Lang &lang= Lang::getInstance();
-		str+= lang.get("ReactionSpeed")+": "+ Conversion::toStr(speed)+"\n";
+		Lang &lang = Lang::getInstance();
+		str += lang.get("ReactionSpeed") + ": " + Conversion::toStr(speed) + "\n";
 		descEpCost(str, unit);
 	}
 };
@@ -192,7 +193,7 @@ private:
 	float maxDeclination;
 
 public:
-	MoveSkillType() : SkillType(scMove, "Move"){}
+	MoveSkillType() : SkillType(scMove, "Move") {}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "WalkSpeed");
 		descEpCost(str, unit);
@@ -220,7 +221,7 @@ public:
 
 class TargetBasedSkillType: public SkillType {
 protected:
-	Fields fields;
+	Zones zones;
 
 public:
 	TargetBasedSkillType(SkillClass skillClass, const char* typeName);
@@ -229,8 +230,8 @@ public:
 	virtual void getDesc(string &str, const Unit *unit) const	{getDesc(str, unit, "Range");}
 	virtual void getDesc(string &str, const Unit *unit, const char* rangeDesc) const;
 
-	Fields getFields() const				{return fields;}
-	bool getField(Field field) const		{return fields.get(field);}
+	Zones getZones() const				{return zones;}
+	bool getZone(const Zone zone) const		{return zones.get(zone);}
 };
 
 // ===============================
@@ -264,7 +265,7 @@ public:
 // 	class BuildSkillType
 // ===============================
 
-class BuildSkillType: public SkillType{
+class BuildSkillType: public SkillType {
 public:
 	BuildSkillType() : SkillType(scBuild, "Build") {}
 	void getDesc(string &str, const Unit *unit) const {
@@ -277,7 +278,7 @@ public:
 // 	class HarvestSkillType
 // ===============================
 
-class HarvestSkillType: public SkillType{
+class HarvestSkillType: public SkillType {
 public:
 	HarvestSkillType() : SkillType(scHarvest, "Harvest") {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
@@ -313,7 +314,7 @@ public:
 // 	class ProduceSkillType
 // ===============================
 
-class ProduceSkillType: public SkillType{
+class ProduceSkillType: public SkillType {
 private:
 	bool pet;
 	int maxPets;
@@ -334,9 +335,9 @@ public:
 // 	class UpgradeSkillType
 // ===============================
 
-class UpgradeSkillType: public SkillType{
+class UpgradeSkillType: public SkillType {
 public:
-	UpgradeSkillType() : SkillType(scUpgrade, "Upgrade"){}
+	UpgradeSkillType() : SkillType(scUpgrade, "Upgrade") {}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "UpgradeSpeed");
 		descEpCost(str, unit);
@@ -348,9 +349,9 @@ public:
 // 	class BeBuiltSkillType
 // ===============================
 
-class BeBuiltSkillType: public SkillType{
+class BeBuiltSkillType: public SkillType {
 public:
-	BeBuiltSkillType() : SkillType(scBeBuilt, "Be built"){}
+	BeBuiltSkillType() : SkillType(scBeBuilt, "Be built") {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
 };
 
@@ -358,9 +359,9 @@ public:
 // 	class MorphSkillType
 // ===============================
 
-class MorphSkillType: public SkillType{
+class MorphSkillType: public SkillType {
 public:
-	MorphSkillType() : SkillType(scMorph, "Morph"){}
+	MorphSkillType() : SkillType(scMorph, "Morph") {}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "MorphSpeed");
 		descEpCost(str, unit);
@@ -371,12 +372,12 @@ public:
 // 	class DieSkillType
 // ===============================
 
-class DieSkillType: public SkillType{
+class DieSkillType: public SkillType {
 private:
 	bool fade;
 
 public:
-	DieSkillType() : SkillType(scDie, "Die"){}
+	DieSkillType() : SkillType(scDie, "Die") {}
 	bool getFade() const	{return fade;}
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
@@ -387,9 +388,9 @@ public:
 // 	class CastSpellSkillType
 // ===============================
 
-class CastSpellSkillType: public TargetBasedSkillType{
+class CastSpellSkillType: public TargetBasedSkillType {
 public:
-	CastSpellSkillType() : TargetBasedSkillType(scCastSpell, "Cast spell"){}
+	CastSpellSkillType() : TargetBasedSkillType(scCastSpell, "Cast spell") {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
 };
 
@@ -442,7 +443,7 @@ public:
 // 	class SkillFactory
 // ===============================
 
-class SkillTypeFactory: public MultiFactory<SkillType>{
+class SkillTypeFactory: public MultiFactory<SkillType> {
 private:
 	SkillTypeFactory();
 public:

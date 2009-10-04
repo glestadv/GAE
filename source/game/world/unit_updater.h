@@ -21,29 +21,32 @@
 using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 class Unit;
 class Map;
-
-// =====================================================
-//	class UnitUpdater
-//
-///	Updates all units in the game, even the player
-///	controlled units, performs basic actions only
-///	such as responding to an attack
-// =====================================================
-
+class ScriptManager;
 class ParticleDamager;
+namespace Search { class PathFinder; }
 
-class UnitUpdater{
+// =====================================================
+// class UnitUpdater
+//
+/// Updates all units in the game, even the player
+/// controlled units, performs basic actions only
+/// such as responding to an attack
+// =====================================================
+
+class UnitUpdater {
 private:
 	friend class ParticleDamager;
+	friend class World;
 
 private:
-	static const int maxResSearchRadius= 10;
-	static const int harvestDistance= 5;
-	static const int ultraResourceFactor= 3;
+	static const int maxResSearchRadius = 10;
+	static const int harvestDistance = 5;
+//	static const int ultraResourceFactor= 3;
+
 	/**
 	 * When a unit who can repair, but not attack is faced with a hostile, this is the percentage
 	 * of the radius that we search from the center of the intersection point for a friendly that
@@ -54,38 +57,41 @@ private:
 
 private:
 	const GameCamera *gameCamera;
-	Gui *gui;
+	Gui &gui;
+	World &world;
 	Map *map;
-	World *world;
-	Console *console;
-	PathFinder pathFinder;
+	Console &console;
+	ScriptManager *scriptManager;
+	Search::PathFinder *pathFinder;
 	Random random;
+	GameSettings &gameSettings;
 
 public:
-    void init(Game &game);
+	UnitUpdater(Game &game);
+	void init(Game &game);
 
 	//update skills
-    void updateUnit(Unit *unit);
+	void updateUnit(Unit *unit);
 
-    //update commands
-    void updateUnitCommand(Unit *unit);
-    void updateStop(Unit *unit);
-    void updateMove(Unit *unit);
-    void updateAttack(Unit *unit);
-    void updateAttackStopped(Unit *unit);
-    void updateBuild(Unit *unit);
-    void updateHarvest(Unit *unit);
-    void updateRepair(Unit *unit);
-    void updateProduce(Unit *unit);
-    void updateUpgrade(Unit *unit);
+	//update commands
+	void updateUnitCommand(Unit *unit);
+	void updateStop(Unit *unit);
+	void updateMove(Unit *unit);
+	void updateAttack(Unit *unit);
+	void updateAttackStopped(Unit *unit);
+	void updateBuild(Unit *unit);
+	void updateHarvest(Unit *unit);
+	void updateRepair(Unit *unit);
+	void updateProduce(Unit *unit);
+	void updateUpgrade(Unit *unit);
 	void updateMorph(Unit *unit);
 	void updateCastSpell(Unit *unit);
 	void updateGuard(Unit *unit);
 	void updatePatrol(Unit *unit);
 
 private:
-    //attack
-    void hit(Unit *attacker);
+	//attack
+	void hit(Unit *attacker);
 	void hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked = NULL);
 	void damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance);
 	void startAttackSystems(Unit *unit, const AttackSkillType* ast);
@@ -100,10 +106,10 @@ private:
 	Command *doAutoAttack(Unit *unit);
 	Command *doAutoRepair(Unit *unit);
 	Command *doAutoFlee(Unit *unit);
-    bool searchForResource(Unit *unit, const HarvestCommandType *hct);
-    bool attackerOnSight(const Unit *unit, Unit **enemyPtr);
-    bool attackableOnSight(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
-    bool attackableOnRange(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
+	bool searchForResource(Unit *unit, const HarvestCommandType *hct);
+	bool attackerOnSight(const Unit *unit, Unit **enemyPtr);
+	bool attackableOnSight(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
+	bool attackableOnRange(const Unit *unit, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
 	bool unitOnRange(const Unit *unit, int range, Unit **enemyPtr, const AttackSkillTypes *asts, const AttackSkillType **past);
 	bool repairableOnRange(
 			const Unit *unit,
@@ -146,8 +152,8 @@ private:
 
 	bool isLocal()							{return NetworkManager::getInstance().isLocal();}
 	bool isNetworkGame()					{return NetworkManager::getInstance().isNetworkGame();}
-	bool isNetworkServer() 					{return NetworkManager::getInstance().isNetworkServer();}
-	bool isNetworkClient() 					{return NetworkManager::getInstance().isNetworkClient();}
+	bool isNetworkServer()					{return NetworkManager::getInstance().isNetworkServer();}
+	bool isNetworkClient()					{return NetworkManager::getInstance().isNetworkClient();}
 	ServerInterface *getServerInterface()	{return NetworkManager::getInstance().getServerInterface();}
 };
 
@@ -155,7 +161,7 @@ private:
 //	class ParticleDamager
 // =====================================================
 
-class ParticleDamager: public ParticleObserver{
+class ParticleDamager: public ParticleObserver {
 public:
 	UnitReference attackerRef;
 	const AttackSkillType* ast;

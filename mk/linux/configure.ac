@@ -4,7 +4,7 @@
 #----------------------------------------------------------------------------
 AC_PREREQ([2.54])
 
-AC_INIT([gae], [0.2.12-wip], [http://bugs.codemonger.org])
+AC_INIT([gae], [0.2-network-rewrite], [http://bugs.codemonger.org])
 AC_CONFIG_SRCDIR([mk/jam/build.jam])
 AC_CONFIG_AUX_DIR([mk/autoconf])
 
@@ -85,16 +85,6 @@ else
 fi
 ])
 
-AC_LANG_PUSH([C++])
-NP_FINDLIB([XERCES], [xerces], [xerces],
-		NP_LANG_PROGRAM([#include <xercesc/util/PlatformUtils.hpp>
-XERCES_CPP_NAMESPACE_USE;], [XMLPlatformUtils::Initialize();]),
-		[], [-lxerces-c -lpthread],
-		[],
-		[AC_MSG_ERROR([Please install xerces-c])],
-		[], [])
-AC_LANG_POP([C++])
-
 NP_FINDLIB([OPENAL], [OpenAL], [OpenAL],
 		NP_LANG_PROGRAM([#include <AL/al.h>],
 			[alcOpenDevice(0);]),
@@ -102,6 +92,8 @@ NP_FINDLIB([OPENAL], [OpenAL], [OpenAL],
 		[],
 		[AC_MSG_ERROR([Please intall OpenAL])],
 		[], [])
+
+CHECK_LUA([], [AC_MSG_ERROR([Please install lua 5.1])])
 
 AX_CHECK_GL
 if test "$no_gl" = "yes"; then
@@ -117,8 +109,6 @@ XIPH_PATH_OGG(, [AC_MSG_ERROR([Please install ogg/vorbis])])
 
 CHECK_ZLIB
 AM_CONDITIONAL([ZLIB], [test "x$have_zlib" = "xyes"])
-
-#CHECK_LUA()
 
 AM_OPTIONS_WXCONFIG
 AM_PATH_WXCONFIG([2.6.0], [WX_AVAILABLE="yes"], [WX_AVAILABLE="no"], [std,gl], [--unicode=yes])

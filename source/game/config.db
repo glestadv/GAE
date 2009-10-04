@@ -15,7 +15,6 @@ displayHeight				int		768
 displayRefreshFrequency		int		75
 displayWidth				int		1024
 displayWindowed				bool	true
-gsDayTime					float	1000.f
 gsAutoRepairEnabled			bool	true
 gsAutoReturnEnabled			bool	false
 gsDayTime					float	1000.f
@@ -86,4 +85,5 @@ uiLastTileset				string	"forest"
 uiLastTechTree				string	"magitech"
 uiLocale					string	"en"
 uiPhotoMode					bool	false
+uiRandomStartLocations		bool	false
 uiScrollSpeed				float	1.5f

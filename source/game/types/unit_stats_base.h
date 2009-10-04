@@ -33,34 +33,69 @@ class FactionType;
 class EnhancementTypeBase;
 
 // ===============================
-// 	enum Field & class Fields
+// 	enum Field & Zone, and SurfaceType
 // ===============================
 
-enum Field{
-     fLand,
-     fAir,
-//     fWater,
-//     fSubterranean,
+// Adding a new field ???
+// see instructions at the top of annotated_map.h
 
-     fCount
+enum Zone // Zone of unit _occupance_
+{  // used for attack fields, actual occupance is indirectly
+	// specified by the unit's current Field
+	ZoneSurfaceProp,
+	ZoneSurface,
+	ZoneAir,
+	//ZoneSubSurface,
+	ZoneCount
 };
 
-/** Fields of attack, travel or residence (air, land, etc.) */
-class Fields : public XmlBasedFlags<Field, fCount> {
+enum SurfaceType // for each cell's surface zone,
+{	// is computed in Map::setCellTypes ()
+	// FIXME: may change... need hook in Map::prepareTerrain()
+	SurfaceTypeLand,
+	SurfaceTypeFordable,
+	SurfaceTypeDeepWater,
+	SurfaceTypeCount
+};
+
+enum Field {			// Zones of Movement
+	FieldWalkable,		// ZoneSurface + ( SurfaceTypeLand || SurfaceTypeFordable )
+	FieldAir,			// ZoneAir
+	FieldAnyWater,		// ZoneSurface + ( SurfaceTypeFordable || SurfaceTypeDeepWater )
+	FieldDeepWater,		// ZoneSurface + SurfaceTypeDeepWater
+	FieldAmphibious,	// ZoneSurface + SuraceType*
+	FieldCount
+};
+
+/** Fields of travel, and indirectly zone of occupance */
+class Fields : public XmlBasedFlags<Field, FieldCount> {
 private:
-	static const char *names[fCount];
+	static const char *names[FieldCount];
 
 public:
 	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Field, fCount>::load(node, dir, tt, ft, "field", names);
+		XmlBasedFlags<Field, FieldCount>::load(node, dir, tt, ft, "field", names);
+	}
+	static const char* getName(Field f) { return names[f]; }
+};
+
+/** Zones of attack (air, surface, etc.) */
+class Zones : public XmlBasedFlags<Zone, ZoneCount> {
+private:
+	static const char *names[ZoneCount];
+
+public:
+	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
+		XmlBasedFlags<Zone, ZoneCount>::load(node, dir, tt, ft, "field", names);
 	}
 };
+
 
 // ==============================================================
 // 	enum Property & class UnitProperties
 // ==============================================================
 
-enum Property{
+enum Property {
 	pBurnable,
 	pRotatedClimb,
 	pWall,
@@ -69,7 +104,7 @@ enum Property{
 };
 
 /** Properties that can be applied to a unit. */
-class UnitProperties : public XmlBasedFlags<Property, pCount>{
+class UnitProperties : public XmlBasedFlags<Property, pCount> {
 private:
 	static const char *names[pCount];
 
@@ -90,7 +125,7 @@ class UnitStatsBase {
 protected:
 	int maxHp;
 	int hpRegeneration;
-    int maxEp;
+	int maxEp;
 	int epRegeneration;
 
 	/**
@@ -104,15 +139,15 @@ protected:
 	 * properties that are added.
 	 */
 	UnitProperties properties;
-    int sight;
+	int sight;
 	int armor;
 	const ArmorType *armorType;
 	bool light;
-    Vec3f lightColor;
+	Vec3f lightColor;
 
-    /** size in cells squared (i.e., size x size) */
-    int size;
-    int height;
+	/** size in cells squared (i.e., size x size) */
+	int size;
+	int height;
 
 	int attackStrength;
 	float effectStrength;
@@ -182,7 +217,7 @@ public:
 	 * is exactly what XmlNode object the UnitType load() method supplies to
 	 * this method.
 	 */
-	void load(const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	bool load(const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft);
 
 	virtual void save(XmlNode *node);
 
@@ -212,12 +247,12 @@ public:
 // 	class EnhancementTypeBase
 // ===============================
 
-/** An extension of UnitStatsBase, which contains values suitable for an
- * addition/subtraction alteration to a Unit's stats, that also has a multiplier
- * for each of those stats.  This is the base class for both UpgradeType and
- * EffectType.
+/**
+ * An extension of UnitStatsBase, which contains values suitable for an addition/subtraction
+ * alteration to a Unit's stats, that also has a multiplier for each of those stats.  This is the
+ * base class for both UpgradeType and EffectType.
  */
-class EnhancementTypeBase : public UnitStatsBase{
+class EnhancementTypeBase : public UnitStatsBase {
 protected:
 	float maxHpMult;
 	float hpRegenerationMult;
@@ -294,7 +329,7 @@ public:
 	 * Initializes this object from the specified XmlNode object.
 	 * TODO: explain better.
 	 */
-	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
 
 	virtual void save(XmlNode *node) const;
 
@@ -306,8 +341,8 @@ public:
 	 * descriptions.
 	 */
 	static void describeModifier(string &str, int value) {
-		if(value != 0) {
-			if(value > 0) {
+		if (value != 0) {
+			if (value > 0) {
 				str += "+";
 			}
 			str += Conversion::toStr(value);

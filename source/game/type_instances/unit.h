@@ -118,7 +118,7 @@ public:
 		pathQueue.erase(pathQueue.begin());
 		return p;
 	}
-	
+
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
 };
@@ -169,14 +169,14 @@ private:
 	Field targetField;
 	const Level *level;
 
-	Vec2i pos;				/** Current position */
-	Vec2i lastPos;			/** The last position before current */
-	Vec2i nextPos;			/** Position unit is moving into next. */
-	Vec2i targetPos;		/** Position of the target, or the cell of the target we care about. */
+	Vec2i pos;				/**< Current position */
+	Vec2i lastPos;			/**< The last position before current */
+	Vec2i nextPos;			/**< Position unit is moving into next. */
+	Vec2i targetPos;		/**< Position of the target, or the cell of the target we care about. */
 	Vec3f targetVec;
 	Vec2i meetingPos;
-	bool faceTarget;		/** If true and target is set, we continue to face target. */
-	bool useNearestOccupiedCell;	/** If true, targetPos is set to target->getNearestOccupiedCell() */
+	bool faceTarget;		/**< If true and target is set, we continue to face target. */
+	bool useNearestOccupiedCell;	/**< If true, targetPos is set to target->getNearestOccupiedCell() */
 
 	float lastRotation;		//in degrees
 	float targetRotation;
@@ -209,8 +209,8 @@ private:
 	Observers observers;
 	Pets pets;
 	UnitReference master;
-	
-	
+
+
 	int64 lastCommandUpdate;	// microseconds
 	int64 lastUpdated;			// microseconds
 	int64 lastCommanded;		// milliseconds
@@ -224,6 +224,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
+	Zone getCurrZone() const					{return currField == FieldAir ? ZoneAir : ZoneSurface;}
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}
@@ -271,7 +272,8 @@ public:
 	const int64 &getLastUpdated() const			{return lastUpdated;}
 	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
 	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
-	
+   bool isMobile () { return type->isMobile(); }
+
 
 	void addPet(Unit *u)						{pets.push_back(u);}
 	void petDied(Unit *u)						{pets.remove(u);}
@@ -367,7 +369,7 @@ public:
 	// this is a heavy use function so it's inlined even though it isn't exactly small
 	Vec3f getCurrVectorFlat() const {
 		Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
-	
+
 		if (currSkill->getClass() == scMove) {
 			v = Vec3f(static_cast<float>(lastPos.x), computeHeight(lastPos),
 					  static_cast<float>(lastPos.y)).lerp(progress, v);
@@ -375,7 +377,7 @@ public:
 
 		v.x += type->getHalfSize();
 		v.z += type->getHalfSize();
-	
+
 		return v;
 	}
 
@@ -413,7 +415,7 @@ public:
 	//other
 	void resetHighlight()								{highlight= 1.f;}
 	const CommandType *computeCommandType(const Vec2i &pos, const Unit *targetUnit= NULL) const;
-	string getDesc() const;
+	string getDesc(bool full) const;
 	bool computeEp();
 	bool repair(int amount = 0, float multiplier = 1.0f);
 	bool decHp(int i);

@@ -48,7 +48,7 @@ private:
 	bool display;
 
 public:
-    void load(const string &dir, int id, Checksums &checksums);
+    bool load(const string &dir, int id, Checksums &checksums);
 
     //get
 	int getClass() const			{return resourceClass;}

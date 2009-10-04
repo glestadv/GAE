@@ -131,11 +131,14 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(fAir)) currField = fAir;
-//	if(getType()->getField(fWater)) currField = fWater;
-//	if(getType()->getField(fSubterranean)) currField = fSubterranean;
-	if(type->getField(fLand)) currField = fLand;
-	targetField = fLand;		// init just to keep it pretty in memory
+	if(type->getField(FieldWalkable)) currField = FieldWalkable;
+	else if(type->getField(FieldAir)) currField = FieldAir;
+
+	if ( type->getField (FieldAmphibious) ) currField = FieldAmphibious;
+	else if ( type->getField (FieldAnyWater) ) currField = FieldAnyWater;
+	else if ( type->getField (FieldDeepWater) ) currField = FieldDeepWater;
+
+	targetField = FieldWalkable;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -863,15 +866,16 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	}
 	setCurrSkill(scDie);
 
+	//no longer needs static resources
+	if(isBeingBuilt())
+		faction->deApplyStaticConsumption(type);
+	else
+		faction->deApplyStaticCosts(type);
+
 	notifyObservers(UnitObserver::eKill);
 
 	//clear commands
 	clearCommands();
-
-	//no longer needs static resources
-	if(!isBeingBuilt()) {
-		faction->deApplyStaticCosts(type);
-	}
 
 	//kill or free pets
 	killPets();
@@ -894,12 +898,12 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
 	const CommandType *commandType = NULL;
-	SurfaceCell *sc = map->getSurfaceCell(Map::toSurfCoords(pos));
+	Tile *sc = map->getTile(Map::toTileCoords(pos));
 
 	if (targetUnit) {
 		//attack enemies
 		if (!isAlly(targetUnit)) {
-			commandType = type->getFirstAttackCommand(targetUnit->getCurrField());
+			commandType = type->getFirstAttackCommand(targetUnit->getCurrZone());
 
 		//repair allies
 		} else {
@@ -1188,8 +1192,8 @@ int Unit::killPets() {
 }
 
 
-string Unit::getDesc() const {
-	Lang &lang= Lang::getInstance();
+string Unit::getDesc(bool full) const {
+	Lang &lang = Lang::getInstance();
 	stringstream str;
 	int armorBonus = getArmor() - type->getArmor();
 	int sightBonus = getSight() - type->getSight();
@@ -1199,22 +1203,31 @@ string Unit::getDesc() const {
 
 	//hp
 	str << endl << lang.get("Hp") << ": " << hp << "/" << getMaxHp();
-	if(getHpRegeneration()!=0){
+	if (getHpRegeneration() != 0) {
 		str << " (" << lang.get("Regeneration") << ": " << getHpRegeneration() << ")";
 	}
 
 	//ep
-	if(getMaxEp()!=0){
+	if (getMaxEp() != 0) {
 		str << endl << lang.get("Ep") << ": " << ep << "/" << getMaxEp();
-		if(getEpRegeneration()!=0){
+		if (getEpRegeneration() != 0) {
 			str << " (" << lang.get("Regeneration") << ": " << getEpRegeneration() << ")";
 		}
 	}
 
+	if (!full) {
+		// Show only current command being executed and effects
+		if (!commands.empty()) {
+			str += "\n" + commands.front()->getType()->getName();
+		}
+		effects.getDesc(str);
+		return str;
+	}
+
 	//armor
 	str << endl << lang.get("Armor") << ": " << type->getArmor();
-	if(armorBonus) {
-		if(armorBonus > 0) {
+	if (armorBonus) {
+		if (armorBonus > 0) {
 			str << "+";
 		}
 		str << armorBonus;
@@ -1223,8 +1236,8 @@ string Unit::getDesc() const {
 
 	//sight
 	str << "\n" << lang.get("Sight") << ": " << type->getSight();
-	if(sightBonus) {
-		if(sightBonus > 0) {
+	if (sightBonus) {
+		if (sightBonus > 0) {
 			str << "+";
 		}
 		str << sightBonus;
@@ -1242,14 +1255,14 @@ string Unit::getDesc() const {
 	//str+= "\nskl: "+scToStr(currSkill->getClass());
 
 	//load
-	if(loadCount) {
+	if (loadCount) {
 		str << "\n" << lang.get("Load") << ": " << loadCount << "  " << loadType->getName();
 	}
 
 	//consumable production
-	for(int i=0; i<type->getCostCount(); ++i){
-		const Resource *r= getType()->getCost(i);
-		if(r->getType()->getClass()==rcConsumable){
+	for (int i = 0; i < type->getCostCount(); ++i) {
+		const Resource *r = getType()->getCost(i);
+		if (r->getType()->getClass() == rcConsumable) {
 			str << endl;
 			str << lang.get(r->getAmount() < 0 ? "Produce" : "Consume") << ": ";
 			str << abs(r->getAmount()) << " " << r->getType()->getName();
@@ -1257,16 +1270,16 @@ string Unit::getDesc() const {
 	}
 
 	//command info
-	if(!commands.empty()) {
+	if (!commands.empty()) {
 		str << endl << commands.front()->getType()->getName();
-		if(commands.size() > 1) {
+		if (commands.size() > 1) {
 			str << endl << lang.get("OrdersOnQueue") << ": " << commands.size();
 		}
 	} else {
 		//can store
-		if(type->getStoredResourceCount()>0) {
-			for(int i=0; i<type->getStoredResourceCount(); ++i){
-				const Resource *r= type->getStoredResource(i);
+		if (type->getStoredResourceCount() > 0) {
+			for (int i = 0; i < type->getStoredResourceCount(); ++i) {
+				const Resource *r = type->getStoredResource(i);
 				str << endl << lang.get("Store") << ": ";
 				str << r->getAmount() << " " << r->getType()->getName();
 			}
@@ -1315,10 +1328,26 @@ void Unit::incKills() {
 bool Unit::morph(const MorphCommandType *mct) {
 	const UnitType *morphUnitType = mct->getMorphUnit();
 
-	if (map->isFreeCellsOrHasUnit(pos, morphUnitType->getSize(), currField, this)) {
+	// redo field
+	Field newField;
+	if ( morphUnitType->getField( FieldWalkable ) ) {
+		newField = FieldWalkable;
+	} else if ( morphUnitType->getField( FieldAir ) ) {
+		newField = FieldAir;
+	}
+	if ( morphUnitType->getField( FieldAmphibious ) ) {
+		newField = FieldAmphibious;
+	} else if ( morphUnitType->getField( FieldAnyWater ) ) {
+		newField = FieldAnyWater;
+	} else if ( morphUnitType->getField( FieldDeepWater ) ) {
+		newField = FieldDeepWater;
+	}
+
+	if (map->areFreeCellsOrHasUnit(pos, morphUnitType->getSize(), newField, this)) {
 		map->clearUnitCells(this, pos);
 		faction->deApplyStaticCosts(type);
 		type = morphUnitType;
+		currField = newField;
 		computeTotalUpgrade();
 		map->putUnitCells(this, pos);
 		faction->applyDiscount(morphUnitType, mct->getDiscount());
@@ -1420,7 +1449,7 @@ void Unit::effectExpired(Effect *e){
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
-	if (currField == fAir) {
+	if (currField == FieldAir) {
 		height += World::airHeight;
 	}
 
@@ -1490,7 +1519,7 @@ CommandResult Unit::checkCommand(const Command &command) const {
 
 	//if this is a pet, make sure we don't have more pets of this type than allowed.
 	if (ct->getClass() == ccProduce) {
-		const ProduceCommandType *pct = dynamic_cast<const ProduceCommandType*>(ct);
+		const ProduceCommandType *pct = reinterpret_cast<const ProduceCommandType*>(ct);
 		const ProduceSkillType *pst = pct->getProduceSkillType();
 		if(pst->isPet()) {
 			const UnitType *ut = pct->getProducedUnit();
@@ -1498,7 +1527,7 @@ CommandResult Unit::checkCommand(const Command &command) const {
 			for(Commands::const_iterator i = commands.begin(); i != commands.end(); ++i) {
 				const CommandType *ct2 = (*i)->getType();
 				if(*i != &command && ct2->getClass() == ccProduce) {
-					const ProduceCommandType* pct2 = dynamic_cast<const ProduceCommandType*>(ct2);
+					const ProduceCommandType* pct2 = reinterpret_cast<const ProduceCommandType*>(ct2);
 					if(pct2->getProducedUnit() == ut) {
 						++totalPets;
 					}
