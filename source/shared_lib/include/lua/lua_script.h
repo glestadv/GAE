@@ -20,6 +20,7 @@
 using std::string;
 
 using Shared::Graphics::Vec2i;
+using Shared::Graphics::Vec4i;
 using namespace Shared::Util;
 
 namespace Shared{ namespace Lua{
@@ -83,6 +84,7 @@ public:
 	int getInt(int argumentIndex) const;
 	string getString(int argumentIndex) const;
 	Vec2i getVec2i(int argumentIndex) const;
+	Vec4i getVec4i(int argumentIndex) const;
 	int getReturnCount() const					{return returnCount;}
 	int getArgumentCount () const { return args; }
 

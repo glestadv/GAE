@@ -15,6 +15,8 @@
 #include <string>
 #include <queue>
 #include <set>
+#include <map>
+#include <limits>
 
 #include "lua_script.h"
 #include "vec.h"
@@ -23,20 +25,20 @@
 #include "components.h"
 #include "game_constants.h"
 
-using std::string;
-using std::queue;
-using std::set;
+using namespace std;
 using Shared::Graphics::Vec2i;
+using Shared::Graphics::Vec4i;
 using Shared::Platform::Chrono;
 using namespace Shared::Lua;
 
-namespace Glest{ namespace Game{
+namespace Glest{ namespace Game { 
 
 class World;
 class Unit;
 class GameCamera;
 class GameSettings;
 class Game;
+class UnitType;
 
 
 // =====================================================
@@ -70,6 +72,112 @@ private:
 	int64 targetTime, interval;
 };
 
+struct Region {
+	virtual bool isInside(const Vec2i &pos) const = 0;
+};
+
+struct Rect : public Region {
+	int x, y, w, h; // top-left coords + width and height
+
+	Rect() : x(0), y(0), w(0), h(0) { }
+	Rect(const int v) : x(v), y(v), w(v), h(v) { }
+	Rect(const Vec4i &v) : x(v.x), y(v.y), w(v.z), h(v.w) { }
+	Rect(const int x, const int y, const int w, const int h) : x(x), y(y), w(w), h(h) { }
+
+	virtual bool isInside(const Vec2i &pos) const {
+		return pos.x >= x && pos.y >= y && pos.x < x + w && pos.y < y + h;
+	}
+};
+
+struct Circle : public Region {
+	int x, y; // centre
+	float radius;
+
+	Circle() : x(-1), y(-1), radius(numeric_limits<float>::quiet_NaN()) { }
+	Circle(const Vec2i &pos, const float radius) : x(pos.x), y(pos.y), radius(radius) { }
+	Circle(const int x, const int y, const float r) : x(x), y(y), radius(r) { }
+
+	virtual bool isInside(const Vec2i &pos) const {
+		return pos.dist(Vec2i(x,y)) <= radius;
+	}
+};
+
+struct CompoundRegion : public Region {
+	vector<Region*> regions;
+
+	CompoundRegion() { }
+	CompoundRegion(Region *ptr) { regions.push_back(ptr); }
+
+	template<typename InIter>
+	void addRegions(InIter start, InIter end) {
+		copy(start,end,regions.end())
+	}
+
+	virtual bool isInside(const Vec2i &pos) const {
+		for ( vector<Region*>::const_iterator it = regions.begin(); it != regions.end(); ++it ) {
+			if ( (*it)->isInside(pos) ) {
+				return false;
+			}
+		}
+		return false;
+	}
+};
+
+// =====================================================
+//	class LocationEventManager
+// =====================================================
+
+class LocationEventManager {
+	// named regions
+	map<string,Region*> regions;
+	
+	// named events, maps to region
+	map<string,string>  events;
+
+	// maps to event name
+	multimap<int, string> unitIdTriggers;
+	multimap<int, string> factionIndexTriggers;
+	multimap<int, string> teamIndexTriggers;
+	//map<int, multimap<const UnitType*, string>> factionUnitTypeTriggers;
+
+public:
+	LocationEventManager() { reset(); }
+
+	void reset() {
+		regions.clear();
+		events.clear();
+		unitIdTriggers.clear();
+		factionIndexTriggers.clear();
+		teamIndexTriggers.clear();
+		//factionUnitTypeTriggers.clear();
+	}
+
+	bool registerRegion(const string &name, const Rect &rect) {
+		if ( regions.find(name) != regions.end() ) {
+			return false;
+		}
+		Region *region = new Rect(rect);
+		regions[name] = region;
+		return true;
+	}
+
+	bool registerEvent(const string &name, const string &region) {
+		if ( events.find(name) != events.end() || regions.find(region) == regions.end() ) {
+			return false;
+		}
+		events[name] = region;
+		return true;
+	}
+
+	// must be called any time a unit is 'put' in cells (created, moved, 
+	void unitMoved(Unit *unit);
+	
+	void addUnitIdTrigger(int unitId, const string &event) {
+		unitIdTriggers.insert(pair<int,string>(unitId,event));
+	}
+};
+
+
 // =====================================================
 //	class ScriptManagerMessage
 // =====================================================
@@ -87,7 +195,7 @@ public:
 
 class PlayerModifiers{
 public:
-	PlayerModifiers();
+	PlayerModifiers() : winner(false), aiEnabled(true) { }
 
 	void disableAi()			{aiEnabled= false;}
 	void setAsWinner()			{winner= true;}
@@ -105,8 +213,6 @@ private:
 // =====================================================
 
 class ScriptManager{
-
-	//friend class World; // Lua Debugging, using setDisplayTest()
 
 private:
 	typedef queue<ScriptManagerMessage> MessageQueue;
@@ -137,6 +243,7 @@ private:
 
 	static set<string> definedEvents;
 
+	static LocationEventManager locationEventManager;
 	//static ScriptManager* thisScriptManager;
 
 	static const int messageWrapCount;
@@ -158,6 +265,9 @@ public:
 	static void onUnitCreated(const Unit* unit);
 	static void onUnitDied(const Unit* unit);
 	static void onTimer();
+	static void onTrigger(const string &name);
+
+	static void unitMoved(Unit *unit) { locationEventManager.unitMoved(unit); }
 
 private:
 	static string wrapString(const string &str, int wrapCount);
@@ -172,6 +282,9 @@ private:
 	// commands
 	static int setTimer(LuaHandle* luaHandle);
 	static int stopTimer(LuaHandle* luaHandle);
+	static int registerRegion(LuaHandle* luaHandle);
+	static int registerEvent(LuaHandle* luaHandle);
+	static int setUnitTrigger(LuaHandle* luaHandle);
 	static int showMessage(LuaHandle* luaHandle);
 	static int setDisplayText(LuaHandle* luaHandle);
 	static int clearDisplayText(LuaHandle* luaHandle);
@@ -208,3 +321,4 @@ private:
 }}//end namespace
 
 #endif
+

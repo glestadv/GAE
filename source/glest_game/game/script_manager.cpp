@@ -39,20 +39,36 @@ bool ScriptTimer::ready() {
 void ScriptTimer::reset() {
 	if ( real ) {
 		targetTime = Chrono::getCurMillis () + interval * 1000;
-	}
-	else {
+	} else {
 		targetTime = theWorld.getFrameCount() + interval;
 	}
 }
 
 // =====================================================
-//	class PlayerModifiers
+//	class LocationEventManager
 // =====================================================
 
-PlayerModifiers::PlayerModifiers(){
-	winner= false;
-	aiEnabled= true;
+void LocationEventManager::unitMoved( Unit *unit ) {
+	multimap<int,string>::iterator it;
+	it = unitIdTriggers.lower_bound(unit->getId());
+	while ( it != unitIdTriggers.upper_bound(unit->getId()) ) {
+		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
+			ScriptManager::onTrigger(it->second);
+			// remove trigger ??
+			unitIdTriggers.erase(it);
+			break;
+		}
+		++it;
+	}	
+
+	// check faction index
+
+	// check team index
+
+	// check unit type for faction index
 }
+
+LocationEventManager ScriptManager::locationEventManager;
 
 // =====================================================
 //	class ScriptManager
@@ -82,13 +98,16 @@ ScriptManager::MessageQueue ScriptManager::messageQueue;
 
 void ScriptManager::init () {
 	const Scenario*	scenario = theWorld.getScenario();
-
+	assert( scenario );
 	luaScript.startUp();
 	assert ( ! luaScript.isDefined ( "startup" ) );
 
 	//register functions
 	luaScript.registerFunction(setTimer, "setTimer");
 	luaScript.registerFunction(stopTimer, "stopTimer");
+	luaScript.registerFunction(registerRegion, "registerRegion");
+	luaScript.registerFunction(registerEvent, "registerEvent");
+	luaScript.registerFunction(setUnitTrigger, "setUnitTrigger");
 	luaScript.registerFunction(showMessage, "showMessage");
 	luaScript.registerFunction(setDisplayText, "setDisplayText");
 	luaScript.registerFunction(clearDisplayText, "clearDisplayText");
@@ -148,6 +167,8 @@ void ScriptManager::init () {
 		}
 	}
 
+	locationEventManager.reset();
+
 	//setup message box
 	messageBox.init( "", Lang::getInstance().get("Ok") );
 	messageBox.setEnabled(false);
@@ -204,6 +225,10 @@ void ScriptManager::onUnitDied(const Unit* unit){
 	if ( definedEvents.find( "unitDied" ) != definedEvents.end() ) {
 		luaScript.luaCall("unitDied");
 	}
+}
+
+void ScriptManager::onTrigger(const string &name) {
+	luaScript.luaCall("trigger_" + name );
 }
 
 void ScriptManager::onTimer() {
@@ -319,7 +344,7 @@ int ScriptManager::consoleMsg (Shared::Lua::LuaHandle *luaHandle)  {
 int ScriptManager::setTimer(LuaHandle* luaHandle){
 	LuaArguments luaArguments(luaHandle);
 	if ( luaArguments.getArgumentCount () != 4 ) {
-		luaCppCallError ( "setTimer", "String, String, Number, Boolean", describeLuaStack ( luaArguments ) );
+		luaCppCallError ( "setTimer", "String,String,Number,Boolean", describeLuaStack ( luaArguments ) );
 		return luaArguments.getReturnCount();
 	}
 	try {
@@ -327,14 +352,13 @@ int ScriptManager::setTimer(LuaHandle* luaHandle){
 		int interval = luaArguments.getInt(-2);
 		bool periodic = luaArguments.getBoolean(-1);
 		if ( type == "real" ) {
-			newTimerQueue.push_back (ScriptTimer ( name, true, interval, periodic ));
-		}
-		else if ( type == "game" ) {
-			newTimerQueue.push_back (ScriptTimer ( name, false, interval, periodic ));
+			newTimerQueue.push_back(ScriptTimer ( name, true, interval, periodic ));
+		} else if ( type == "game" ) {
+			newTimerQueue.push_back(ScriptTimer ( name, false, interval, periodic ));
 		}
 	}
 	catch ( LuaError e ) {
-		luaCppCallError ( "setTimer", "String, String, Number, Boolean", describeLuaStack ( luaArguments ), e.desc() );
+		luaCppCallError ( "setTimer", "String,String,Number,Boolean", describeLuaStack ( luaArguments ), e.desc() );
 	}
 	return luaArguments.getReturnCount(); // == 0
 }
@@ -347,7 +371,7 @@ int ScriptManager::stopTimer(LuaHandle* luaHandle){
 	}
 	try { 
 		// find timer with the name and remove it
-		const string &name =  luaArguments.getString(-1);
+		const string &name = luaArguments.getString(-1);
 		vector<ScriptTimer>::iterator i;
 		for (i = timers.begin(); i != timers.end(); ++i) {
 			if (i->getName() == name) {
@@ -355,9 +379,68 @@ int ScriptManager::stopTimer(LuaHandle* luaHandle){
 				break;
 			}
 		}
-	}
-	catch ( LuaError e ) {
+	} catch ( LuaError e ) {
 		luaCppCallError ( "stopTimer", "String", describeLuaStack ( luaArguments ), e.desc() );
+	}
+	return luaArguments.getReturnCount();
+}
+
+int ScriptManager::registerRegion(LuaHandle* luaHandle) {
+	LuaArguments luaArguments(luaHandle);
+	if ( luaArguments.getArgumentCount() != 2 ) {
+		luaCppCallError ( "registerRegion", "String,Table", describeLuaStack ( luaArguments ) );
+		return luaArguments.getReturnCount();
+	}
+	try {
+		const string &name = luaArguments.getString(-2);
+		Rect rect(luaArguments.getVec4i(-1));
+		locationEventManager.registerRegion(name, rect);
+	} catch ( LuaError e ) {
+		luaCppCallError ( "registerRegion", "String,Table", describeLuaStack ( luaArguments ), e.desc() );
+	}
+	return luaArguments.getReturnCount();
+}
+
+int ScriptManager::registerEvent(LuaHandle* luaHandle) {
+	LuaArguments luaArguments(luaHandle);
+	if ( luaArguments.getArgumentCount() != 2 ) {
+		luaCppCallError ( "registerEvent", "String,String", describeLuaStack ( luaArguments ) );
+		return luaArguments.getReturnCount();
+	}
+	try {
+		const string &name = luaArguments.getString(-2);
+		const string &condition = luaArguments.getString(-1);
+		if ( condition == "attacked" ) {
+		} else if ( condition == "enemy_sighted" ) {
+		} else { // 'complex' conditions
+			size_t ePos = condition.find('=');
+			if ( ePos != string::npos ) {
+				string key = condition.substr(0, ePos);
+				string val = condition.substr(ePos+1);
+				if ( key == "hp_below" ) {
+				} else if ( key == "region" ) {
+					locationEventManager.registerEvent(name,val);
+				}
+			}
+		}
+	} catch ( LuaError e ) {
+		luaCppCallError ( "registerRegion", "String,String", describeLuaStack ( luaArguments ), e.desc() );
+	}
+	return luaArguments.getReturnCount();
+}
+
+int ScriptManager::setUnitTrigger(LuaHandle* luaHandle) {
+	LuaArguments luaArguments(luaHandle);
+	if ( luaArguments.getArgumentCount() != 2 ) {
+		luaCppCallError ( "setUnitTrigger", "Number,String", describeLuaStack ( luaArguments ) );
+		return luaArguments.getReturnCount();
+	}
+	try {
+		int id = luaArguments.getInt(-2);
+		const string &event = luaArguments.getString(-1);
+		locationEventManager.addUnitIdTrigger(id, event);
+	} catch ( LuaError e ) {
+		luaCppCallError ( "setUnitTrigger", "Number,String", describeLuaStack ( luaArguments ), e.desc() );
 	}
 	return luaArguments.getReturnCount();
 }
@@ -366,7 +449,7 @@ int ScriptManager::showMessage(LuaHandle* luaHandle){
 	LuaArguments luaArguments(luaHandle);
 	Lang &lang= Lang::getInstance();
 	if ( luaArguments.getArgumentCount() != 2 ) {
-		luaCppCallError ( "showMessage", "String, String", describeLuaStack ( luaArguments ) );
+		luaCppCallError ( "showMessage", "String,String", describeLuaStack ( luaArguments ) );
 		return luaArguments.getReturnCount();
 	}
 	try {
@@ -379,7 +462,7 @@ int ScriptManager::showMessage(LuaHandle* luaHandle){
 		//thisScriptManager->showMessage();
 	}
 	catch ( LuaError e ) {
-		luaCppCallError ( "showMessage", "String, String", describeLuaStack ( luaArguments ), e.desc() );
+		luaCppCallError ( "showMessage", "String,String", describeLuaStack ( luaArguments ), e.desc() );
 	}
 	return luaArguments.getReturnCount();
 }
@@ -428,14 +511,14 @@ int ScriptManager::setCameraPosition(LuaHandle* luaHandle){
 int ScriptManager::createUnit(LuaHandle* luaHandle){
 	LuaArguments luaArguments(luaHandle);
 	if ( luaArguments.getArgumentCount() != 3 ) {
-		luaCppCallError ( "createUnit", "String, Number, Table", describeLuaStack ( luaArguments ) );
+		luaCppCallError ( "createUnit", "String,Number,Table", describeLuaStack ( luaArguments ) );
 		return luaArguments.getReturnCount();
 	}
 	try {
 		theWorld.createUnit ( luaArguments.getString(-3),luaArguments.getInt(-2),luaArguments.getVec2i(-1) );
 	}
 	catch ( LuaError e ) {
-		luaCppCallError ( "createUnit", "String, Number, Table", describeLuaStack ( luaArguments ), e.desc() );
+		luaCppCallError ( "createUnit", "String,Number,Table", describeLuaStack ( luaArguments ), e.desc() );
 	}
 	return luaArguments.getReturnCount();
 }
@@ -443,14 +526,14 @@ int ScriptManager::createUnit(LuaHandle* luaHandle){
 int ScriptManager::giveResource(LuaHandle* luaHandle){
 	LuaArguments luaArguments(luaHandle);
 	if ( luaArguments.getArgumentCount() != 3 ) {
-		luaCppCallError ( "giveResource", "String, Number, Number", describeLuaStack ( luaArguments ) );
+		luaCppCallError ( "giveResource", "String,Number,Number", describeLuaStack ( luaArguments ) );
 		return luaArguments.getReturnCount();
 	}
 	try {
 		theWorld.giveResource(luaArguments.getString(-3), luaArguments.getInt(-2), luaArguments.getInt(-1));
 	}
 	catch ( LuaError e ) {
-		luaCppCallError ( "giveResource", "String, Number, Number", describeLuaStack ( luaArguments ), e.desc() );
+		luaCppCallError ( "giveResource", "String,Number,Number", describeLuaStack ( luaArguments ), e.desc() );
 	}
 	return luaArguments.getReturnCount();
 }

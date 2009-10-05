@@ -43,7 +43,7 @@ void LuaScript::close () {
 
 void LuaScript::startUp () {
 	close();
-	luaState= luaL_newstate();
+	luaState = luaL_newstate();
 	luaL_openlibs(luaState);
 	if(luaState==NULL){
 		throw runtime_error("Can not allocate lua state");
@@ -69,10 +69,10 @@ void LuaScript::loadCode(const string &code, const string &name){
 		throw runtime_error("Error initializing lua: " + errorToString(errorCode));
 	}
 }
-bool LuaScript::isDefined ( const string &name ) {
+bool LuaScript::isDefined( const string &name ) {
 	bool defined = false;
 	lua_getglobal( luaState, name.c_str() );
-	if ( lua_isfunction ( luaState, -1 ) ) {
+	if ( lua_isfunction( luaState, -1 ) ) {
 		defined = true;
 	}
 	lua_pop( luaState, 1 );
@@ -84,7 +84,7 @@ bool LuaScript::luaCall(const string& functionName) {
 	lua_getglobal(luaState, functionName.c_str());
 	argumentCount= 0;
 	if ( lua_pcall(luaState, argumentCount, 0, 0) ) {
-		return false;
+		return false; // error
 	}
 	return true;
 }
@@ -169,15 +169,43 @@ Vec2i LuaArguments::getVec2i(int argumentIndex) const{
 			+ intToStr ( luaL_getn(luaState, argumentIndex) ) + " elements.\n";
 		throw LuaError ( emsg );
 	}
-	//
-	// TODO: Don't just rawget, check if they are actually numbers first...
-	//
 	lua_rawgeti(luaState, argumentIndex, 1);
 	v.x= luaL_checkint(luaState, argumentIndex);
 	lua_pop(luaState, 1);
 
 	lua_rawgeti(luaState, argumentIndex, 2);
 	v.y= luaL_checkint(luaState, argumentIndex);
+	lua_pop(luaState, 1);
+
+	return v;
+}
+
+Vec4i LuaArguments::getVec4i( int ndx ) const {
+	Vec4i v;
+	if ( ! lua_istable(luaState, ndx) ) {
+		string emsg = "Argument " + intToStr(-ndx) + " expected Table, got " + getType(ndx) + ".\n";
+		throw LuaError ( emsg );
+	}
+	if ( luaL_getn(luaState, ndx) != 4 ) {
+		string emsg = "Argument " + intToStr(-ndx) + " expected Table with four elements, got Table with " 
+			+ intToStr ( luaL_getn(luaState, ndx) ) + " elements.\n";
+		throw LuaError ( emsg );
+	}
+
+	lua_rawgeti(luaState, ndx, 1);
+	v.x= luaL_checkint(luaState, ndx);
+	lua_pop(luaState, 1);
+
+	lua_rawgeti(luaState, ndx, 2);
+	v.y= luaL_checkint(luaState, ndx);
+	lua_pop(luaState, 1);
+
+	lua_rawgeti(luaState, ndx, 3);
+	v.z= luaL_checkint(luaState, ndx);
+	lua_pop(luaState, 1);
+
+	lua_rawgeti(luaState, ndx, 4);
+	v.w= luaL_checkint(luaState, ndx);
 	lua_pop(luaState, 1);
 
 	return v;

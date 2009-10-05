@@ -690,31 +690,31 @@ const UnitType* World::findUnitTypeById(const FactionType* factionType, int id){
 
 //looks for a place for a unit around a start lociacion, returns true if succeded
 bool World::placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spaciated){
-    bool freeSpace;
+	bool freeSpace;
 	int size= unit->getType()->getSize();
 	Field currField= unit->getCurrField();
 
-    for(int r=1; r<radius; r++){
-        for(int i=-r; i<r; ++i){
-            for(int j=-r; j<r; ++j){
-                Vec2i pos= Vec2i(i,j)+startLoc;
+	for(int r=1; r<radius; r++){
+		for(int i=-r; i<r; ++i){
+			for(int j=-r; j<r; ++j){
+				Vec2i pos= Vec2i(i,j)+startLoc;
 				if(spaciated){
-                    const int spacing= 2;
+					const int spacing= 2;
 					freeSpace= map.areFreeCells(pos-Vec2i(spacing), size+spacing*2, currField);
 				}
 				else{
-                    freeSpace= map.areFreeCells(pos, size, currField);
+					freeSpace= map.areFreeCells(pos, size, currField);
 				}
 
-                if(freeSpace){
-                    unit->setPos(pos);
+				if(freeSpace){
+					unit->setPos(pos);
 					unit->setMeetingPos(pos - Vec2i(1));
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 //clears a unit old position from map and places new position
@@ -738,14 +738,13 @@ void World::moveUnitCells(Unit *unit) {
 	*/
 	//}
 
-   assert ( unitUpdater.pathFinder->isLegalMove ( unit, newPos ) );
+	assert( unitUpdater.pathFinder->isLegalMove( unit, newPos ) );
 	map.clearUnitCells(unit, unit->getPos());
 	map.putUnitCells(unit, newPos);
 
 	//water splash
 	if(tileset.getWaterEffects() && unit->getCurrField()==FieldWalkable){
-      if ( map.getCell(unit->getLastPos())->isSubmerged () )
-      {
+		if ( map.getCell(unit->getLastPos())->isSubmerged() ) {
 			for(int i=0; i<3; ++i){
 				waterEffects.addWaterSplash(
 					Vec2f(unit->getLastPos().x+random.randRange(-0.4f, 0.4f), unit->getLastPos().y+random.randRange(-0.4f, 0.4f)));
@@ -756,18 +755,18 @@ void World::moveUnitCells(Unit *unit) {
 
 //returns the nearest unit that can store a type of resource given a position and a faction
 Unit *World::nearestStore(const Vec2i &pos, int factionIndex, const ResourceType *rt){
-    float currDist= infinity;
-    Unit *currUnit= NULL;
+	float currDist= infinity;
+	Unit *currUnit= NULL;
 
-    for(int i=0; i<getFaction(factionIndex)->getUnitCount(); ++i){
+	for(int i=0; i<getFaction(factionIndex)->getUnitCount(); ++i){
 		Unit *u= getFaction(factionIndex)->getUnit(i);
 		float tmpDist= u->getPos().dist(pos);
-        if(tmpDist<currDist && u->getType()->getStore(rt)>0 && u->isOperative()){
-            currDist= tmpDist;
-            currUnit= u;
-        }
-    }
-    return currUnit;
+		if(tmpDist<currDist && u->getType()->getStore(rt)>0 && u->isOperative()){
+			currDist= tmpDist;
+			currUnit= u;
+		}
+	}
+	return currUnit;
 }
 
 //
