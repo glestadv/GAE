@@ -172,8 +172,14 @@ public:
 	// must be called any time a unit is 'put' in cells (created, moved, 
 	void unitMoved(Unit *unit);
 	
-	void addUnitIdTrigger(int unitId, const string &event) {
-		unitIdTriggers.insert(pair<int,string>(unitId,event));
+	void addUnitIdTrigger(int unitId, const string &eventName) {
+		unitIdTriggers.insert(pair<int,string>(unitId,eventName));
+	}
+	void addFactionTrigger(int ndx, const string &eventName ) {
+		factionIndexTriggers.insert(pair<int,string>(ndx, eventName));
+	}
+	void addTeamTrigger(int ndx, const string &eventName ) {
+		teamIndexTriggers.insert(pair<int,string>(ndx,eventName));
 	}
 };
 
@@ -285,6 +291,8 @@ private:
 	static int registerRegion(LuaHandle* luaHandle);
 	static int registerEvent(LuaHandle* luaHandle);
 	static int setUnitTrigger(LuaHandle* luaHandle);
+	static int setFactionTrigger(LuaHandle* luaHandle);
+	static int setTeamTrigger(LuaHandle* luaHandle);
 	static int showMessage(LuaHandle* luaHandle);
 	static int setDisplayText(LuaHandle* luaHandle);
 	static int clearDisplayText(LuaHandle* luaHandle);

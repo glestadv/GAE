@@ -31,7 +31,7 @@ namespace Glest{ namespace Game{
 
 bool ScriptTimer::ready() {
 	if ( real ) {
-		return Chrono::getCurMillis () >= targetTime;
+		return Chrono::getCurMillis() >= targetTime;
 	}
 	return theWorld.getFrameCount() >= targetTime;
 }
@@ -50,21 +50,40 @@ void ScriptTimer::reset() {
 
 void LocationEventManager::unitMoved( Unit *unit ) {
 	multimap<int,string>::iterator it;
+	
+	// check id
 	it = unitIdTriggers.lower_bound(unit->getId());
 	while ( it != unitIdTriggers.upper_bound(unit->getId()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
 			ScriptManager::onTrigger(it->second);
 			// remove trigger ??
-			unitIdTriggers.erase(it);
-			break;
+			it = unitIdTriggers.erase(it);
+		} else {
+			++it;
 		}
-		++it;
-	}	
-
+	}
 	// check faction index
-
+	it = factionIndexTriggers.lower_bound(unit->getFactionIndex());
+	while ( it != factionIndexTriggers.upper_bound(unit->getFactionIndex()) ) {
+		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
+			ScriptManager::onTrigger(it->second);
+			// remove ?
+			it = factionIndexTriggers.erase(it);
+		} else {
+			++it;
+		}
+	}
 	// check team index
-
+	it = teamIndexTriggers.lower_bound(unit->getTeam());
+	while ( it != teamIndexTriggers.upper_bound(unit->getTeam()) ) {
+		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
+			ScriptManager::onTrigger(it->second);
+			// remove ?
+			it = teamIndexTriggers.erase(it);
+		} else {
+			++it;
+		}
+	}
 	// check unit type for faction index
 }
 
@@ -108,6 +127,8 @@ void ScriptManager::init () {
 	luaScript.registerFunction(registerRegion, "registerRegion");
 	luaScript.registerFunction(registerEvent, "registerEvent");
 	luaScript.registerFunction(setUnitTrigger, "setUnitTrigger");
+	luaScript.registerFunction(setFactionTrigger, "setFactionTrigger");
+	luaScript.registerFunction(setTeamTrigger, "setTeamTrigger");
 	luaScript.registerFunction(showMessage, "showMessage");
 	luaScript.registerFunction(setDisplayText, "setDisplayText");
 	luaScript.registerFunction(clearDisplayText, "clearDisplayText");
@@ -441,6 +462,38 @@ int ScriptManager::setUnitTrigger(LuaHandle* luaHandle) {
 		locationEventManager.addUnitIdTrigger(id, event);
 	} catch ( LuaError e ) {
 		luaCppCallError ( "setUnitTrigger", "Number,String", describeLuaStack ( luaArguments ), e.desc() );
+	}
+	return luaArguments.getReturnCount();
+}
+
+int ScriptManager::setFactionTrigger(LuaHandle* luaHandle) {
+	LuaArguments luaArguments(luaHandle);
+	if ( luaArguments.getArgumentCount() != 2 ) {
+		luaCppCallError ( "setFactionTrigger", "Number,String", describeLuaStack ( luaArguments ) );
+		return luaArguments.getReturnCount();
+	}
+	try {
+		int factionIndex = luaArguments.getInt(-2);
+		const string &event = luaArguments.getString(-1);
+		locationEventManager.addFactionTrigger(factionIndex, event);
+	} catch ( LuaError e ) {
+		luaCppCallError ( "setFactionTrigger", "Number,String", describeLuaStack ( luaArguments ), e.desc() );
+	}
+	return luaArguments.getReturnCount();
+}
+
+int ScriptManager::setTeamTrigger(LuaHandle* luaHandle) {
+	LuaArguments luaArguments(luaHandle);
+	if ( luaArguments.getArgumentCount() != 2 ) {
+		luaCppCallError ( "setTeamTrigger", "Number,String", describeLuaStack ( luaArguments ) );
+		return luaArguments.getReturnCount();
+	}
+	try {
+		int teamIndex = luaArguments.getInt(-2);
+		const string &event = luaArguments.getString(-1);
+		locationEventManager.addTeamTrigger(teamIndex, event);
+	} catch ( LuaError e ) {
+		luaCppCallError ( "setTeamTrigger", "Number,String", describeLuaStack ( luaArguments ), e.desc() );
 	}
 	return luaArguments.getReturnCount();
 }
