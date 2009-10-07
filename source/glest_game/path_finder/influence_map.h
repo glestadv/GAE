@@ -14,6 +14,7 @@
 #define _GAME_SEARCH_INLUENCE_MAP_H_
 
 #include "vec.h"
+#include <algorithm>
 
 using Shared::Graphics::Vec2i;
 

@@ -24,7 +24,7 @@
 #include "renderer.h"
 #include "tech_tree.h"
 #include "world.h"
-#include "search_engine.h" // current home of InfluenceMap
+#include "influence_map.h"
 
 #include "leak_dumper.h"
 

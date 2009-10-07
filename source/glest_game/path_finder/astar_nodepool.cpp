@@ -40,14 +40,14 @@ void AStarNodePool::reset() {
 	leastH = NULL;
 	markerArray.newSearch();
 	openHeap.clear();
-#  ifdef DEBUG_SEARCH_TEXTURES
+#  if DEBUG_SEARCH_TEXTURES
 	listedNodes.clear();
 #  endif
 }
 
 void AStarNodePool::setMaxNodes( const int max ) {
-	assert( max >= 50 && max <= pathFindNodesMax ); // reasonable number ?
-	assert( !numNodes ); // can't do this after we've started using it.
+	//assert( max >= 50 && max <= pathFindNodesMax ); // reasonable number ?
+	//assert( !numNodes ); // can't do this after we've started using it.
 	tmpMaxNodes = max;
 }
 
@@ -55,7 +55,7 @@ bool AStarNodePool::addToOpen( AStarNode *prev, const Vec2i &pos, float h, float
 	if ( numNodes == tmpMaxNodes ) {
 		return false;
 	}
-#  ifdef DEBUG_SEARCH_TEXTURES
+#  if DEBUG_SEARCH_TEXTURES
 	listedNodes.push_back ( pos );
 #  endif
 //	stock[numNodes].next = NULL;
@@ -97,21 +97,6 @@ void AStarNodePool::updateOpenNode ( const Vec2i &pos, AStarNode *neighbour, flo
 	}
 }
 
-#ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
-
-void AStarNodePool::updateClosedNode ( const Vec2i &pos, AStarNode *neighbour, float cost ) {
-	AStarNode *posNode = closed[pos];
-	if ( neighbour->distToHere + cost < posNode->distToHere ) {
-		posNode->distToHere = neighbour->distToHere + cost;
-		posNode->prev = neighbour;
-		addOpenNode ( posNode );
-		map<Vec2i,AStarNode*>::iterator it = closed.find ( posNode->pos );
-		closed.erase ( it );
-	}
-}
-
-#endif
-
 AStarNode* AStarNodePool::getBestCandidateNode () {
 	if ( openHeap.empty() ) return NULL;
 	pop_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
@@ -121,7 +106,7 @@ AStarNode* AStarNodePool::getBestCandidateNode () {
 	return ret;
 }
 
-#ifdef DEBUG_SEARCH_TEXTURES
+#if DEBUG_SEARCH_TEXTURES
 
 list<Vec2i>* AStarNodePool::getOpenNodes () {
 	list<Vec2i> *ret = new list<Vec2i> ();
@@ -141,6 +126,6 @@ list<Vec2i>* AStarNodePool::getClosedNodes () {
 	return ret;
 }
 
-#endif // defined ( DEBUG_SEARCH_TEXTURES )
+#endif // DEBUG_SEARCH_TEXTURES
 
 }}}

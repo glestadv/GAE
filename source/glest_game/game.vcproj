@@ -40,15 +40,17 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				InlineFunctionExpansion="2"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;../shared_lib/include/tinyxml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=1;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=0;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=0"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				SmallerTypeCheck="true"
 				RuntimeLibrary="3"
 				EnableFunctionLevelLinking="true"
-				EnableEnhancedInstructionSet="0"
+				EnableEnhancedInstructionSet="2"
 				FloatingPointModel="2"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="2"
@@ -56,7 +58,7 @@
 				BrowseInformation="1"
 				WarningLevel="2"
 				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4250; 4355"
 			/>
 			<Tool
@@ -72,11 +74,12 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
 				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zlib.lib lua5.1.lib"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../deps/lib;&quot;../../build/$(ConfigurationName)/libglest&quot;"
 				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				SubSystem="1"
+				LinkTimeCodeGeneration="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -787,10 +790,64 @@
 			<File
 				RelativePath=".\path_finder\annotated_map.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						InlineFunctionExpansion="0"
+						EnableIntrinsicFunctions="false"
+						FavorSizeOrSpeed="0"
+						BasicRuntimeChecks="3"
+						SmallerTypeCheck="true"
+						UsePrecompiledHeader="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						WholeProgramOptimization="true"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\path_finder\astar_nodepool.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						InlineFunctionExpansion="0"
+						EnableIntrinsicFunctions="false"
+						FavorSizeOrSpeed="0"
+						BasicRuntimeChecks="3"
+						SmallerTypeCheck="true"
+						UsePrecompiledHeader="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						WholeProgramOptimization="true"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\facilities\auto_test.cpp"
@@ -899,6 +956,33 @@
 			<File
 				RelativePath=".\path_finder\influence_map.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						InlineFunctionExpansion="0"
+						EnableIntrinsicFunctions="false"
+						FavorSizeOrSpeed="0"
+						BasicRuntimeChecks="3"
+						SmallerTypeCheck="true"
+						UsePrecompiledHeader="2"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						WholeProgramOptimization="true"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\main\intro.cpp"
@@ -999,6 +1083,35 @@
 			<File
 				RelativePath=".\path_finder\node_map.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						BasicRuntimeChecks="0"
+						SmallerTypeCheck="false"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						WholeProgramOptimization="true"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\type_instances\object.cpp"
@@ -1037,6 +1150,10 @@
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						WholeProgramOptimization="true"
 						BasicRuntimeChecks="0"
 						SmallerTypeCheck="false"
 						UsePrecompiledHeader="0"
@@ -1130,31 +1247,6 @@
 			<File
 				RelativePath=".\game\script_manager.cpp"
 				>
-			</File>
-			<File
-				RelativePath=".\path_finder\search_engine.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release+SSE2|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\gui\selection.cpp"

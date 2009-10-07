@@ -15,6 +15,8 @@
 #include <io.h>
 #include <cassert>
 
+#include <shlobj.h>
+
 #include "util.h"
 #include "conversion.h"
 
@@ -113,7 +115,11 @@ size_t getFileSize(const string &path) {
 	return ret;
 }
 
-
+string getUserDirectory () {
+	static char path[MAX_PATH];
+	SHGetFolderPath( NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, path );
+	return string(path);
+}
 
 bool changeVideoMode(int resW, int resH, int colorBits, int refreshFrequency) {
 	DEVMODE devMode;

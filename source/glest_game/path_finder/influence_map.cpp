@@ -37,7 +37,7 @@ InfluenceMap::InfluenceMap()
 	// is this safe?
 	memset( iMap, 0, sizeof(float) * width * height );
 	// let's see...
-	assert( assertFloatZeroIsAllZeroBits() );
+	//assert( assertFloatZeroIsAllZeroBits() );
 }
 
 InfluenceMap::InfluenceMap( int x, int y, int w, int h ) 
@@ -64,7 +64,7 @@ bool InfluenceMap::isInside( const Vec2i &pos ) const {
 }
 
 float InfluenceMap::getInfluence( const Vec2i &pos ) const {
-	assert( theMap.isInside( pos ) );
+	//assert( theMap.isInside( pos ) );
 	const int x = pos.x - xOffset;
 	const int y = pos.y - yOffset;
 	if ( x < 0 || x >= width || y < 0 || y >= height ) {
@@ -74,7 +74,7 @@ float InfluenceMap::getInfluence( const Vec2i &pos ) const {
 }
 
 void InfluenceMap::setInfluence( const Vec2i &pos, float infl ) {
-	assert( theMap.isInside( pos ) );
+	//assert( theMap.isInside( pos ) );
 	const int x = pos.x - xOffset;
 	const int y = pos.y - yOffset;
 	if ( x < 0 || x >= width || y < 0 || y >= height ) {

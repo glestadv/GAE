@@ -14,6 +14,10 @@
 #ifndef _GLEST_GAME_SEARCH_ENGINE_
 #define _GLEST_GAME_SEARCH_ENGINE_
 
+#ifdef _SHARED_PCH_H_
+#	error search_engine.h included from file using pre-compiled header
+#endif
+
 #define SQRT2 1.41421356f
 
 #include <limits>
@@ -24,9 +28,8 @@
 #include "map.h"
 #include "annotated_map.h"
 #include "astar_nodepool.h"
+#include "node_map.h"
 #include "influence_map.h"
-
-#define theSearchEngine npSearchEngine
 
 namespace Glest { namespace Game { namespace Search {
 
@@ -125,7 +128,7 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 //
 //TODO: More templating... generalise the node storage
 //template< class NodeStorage, class Domain = Vec2i >
-template< class NodeStorage >
+template< typename NodeStorage >
 class SearchEngine {
 private:
 	NodeStorage *nodePool;
@@ -133,17 +136,22 @@ private:
 	// The goal pos (the 'result') from the last A* search
 	Vec2i goalPos;
 	int expandLimit, nodeLimit;
+	int expanded;
 
 public:
-	SearchEngine() { nodePool = NULL;}
+	SearchEngine() : expandLimit(-1), nodeLimit(-1), expanded(-1) { nodePool = NULL;}
 	void init()  {
 		delete nodePool;
 		nodePool = new NodeStorage();
 		nodeLimit = -1;
 		expandLimit = -1;
+		expanded = -1;
 	}
-	void reset() { nodePool->reset(); 	if ( nodeLimit > 0 ) { nodePool->setMaxNodes( nodeLimit ); } }
-	void setOpen( Vec2i &pos, float h ) { nodePool->addToOpen( NULL, pos, h, 0.f, true ); }
+	void reset() { nodePool->reset(); if ( nodeLimit > 0 ) { nodePool->setMaxNodes( nodeLimit ); } }
+	void setOpen( Vec2i &pos, float h ) { 
+		nodePool->setOpen( pos, Vec2i(-1), h, 0.f );
+		//nodePool->addToOpen( NULL, pos, h, 0.f, true ); 
+	}
 	
 	// reset and add pos to open
 	void setStart( Vec2i &pos, float h ) {
@@ -151,7 +159,8 @@ public:
 		if ( nodeLimit > 0 ) {
 			nodePool->setMaxNodes( nodeLimit );
 		}
-		nodePool->addToOpen( NULL, pos, h, 0.f, true );
+		nodePool->setOpen( pos, Vec2i(-1), h, 0.f );
+		//nodePool->addToOpen( NULL, pos, h, 0.f, true );
 	}
 
 //	NODE_STRUCT* getGoal() { return goalNode; }
@@ -163,6 +172,8 @@ public:
 
 	// set an 'expanded nodes' limit, for a resumable serch
 	void setTimeLimit( int limit ) { expandLimit = limit; }
+
+	int getExpandedLastRun() { return expanded; }
 
 	int pathToPos( const AnnotatedMap *map, const Unit *unit, const Vec2i &target ) {
 		PosGoal::target = target;
@@ -189,9 +200,9 @@ public:
 	}
 
 	// A* Algorithm (Just the loop, does not do any setup or post-processing)
-	template< class GoalFunc, class CostFunc, class Heuristic >
+	template< typename GoalFunc, typename CostFunc, typename Heuristic >
 	int aStar() {
-		int expandedThisRun = 0;
+		expanded = 0;
 		
 		Vec2i minPos(-1);
 		while ( true ) {
@@ -222,9 +233,9 @@ public:
 						return AStarResult::Partial;
 					}
 				}
-			} // for each neighbour
-			expandedThisRun++;
-			if ( expandedThisRun == expandLimit ) {
+			} 
+			expanded++;
+			if ( expanded == expandLimit ) {
 				goalPos = Vec2i(-1);
 				return AStarResult::InProgress;
 			}

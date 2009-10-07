@@ -17,27 +17,61 @@
 #include "influence_map.h"
 #include "annotated_map.h"
 #include "config.h"
-#include "search_engine.h"
 
 namespace Glest{ namespace Game{
 
 namespace Search {
 
-#pragma pack(push, 2)
-struct ExplorationState {
-	uint16 visCounter : 15; // max 32767 units per _team_
-	uint16 dirty	  :  1;
-};
-#pragma pack(pop)
-
 class ExplorationMap {
+#	pragma pack(push, 2)
+		struct ExplorationState {
+			uint16 visCounter : 14; // max 16384 units per _team_
+			uint16 dirty	  :  1; // ?? no, is at 'cell' scale, use AnnotatedMap cell _pad_bit
+			uint16 explored	  :  1;
+		};
+#	pragma pack(pop)
+
 	ExplorationState *state;
 public:
 	ExplorationMap() {
-		state = new ExplorationState[theMap.getW()*theMap.getH()];
-		memset( state, 0, sizeof(ExplorationState)*theMap.getW()*theMap.getH() );
+		state = new ExplorationState[theMap.getTileW()*theMap.getTileH()];
+		memset( state, 0, sizeof(ExplorationState)*theMap.getTileW()*theMap.getTileH() );
 	}
 };
+
+template<int bits=2> struct PatchMap {
+#	pragma pack(push, 1)
+		struct PatchSection {
+			static const int sectionSize = 8 / bits;
+			uint8 get( int ndx ) {
+				assert( ndx < sectionSize );
+				const int shift = 8 - (ndx + 1) * bits;
+				return( (byte >> shift) & 3 );
+			}
+		private:
+			uint8 byte : bits;
+		};
+#	pragma pack(pop)
+
+	PatchMap( int x, int y, int w, int h ) 
+			: offsetX(x)
+			, offsetY(y)
+			, width(w)
+			, height(h) {
+		assert( x >= 0 && y >= 0 && x + w <= theMap.getW() && y + h <= theMap.getH() );
+		// height and width must be (positive, non zero) multiples of 8
+		assert( w && w & 3 == 0 && h && h & 3 == 0 );
+		
+	}
+	uint8 getValue( const int x, const int y ) const {
+
+	}
+
+private:
+	int sectionStride;
+	int offsetX, offsetY, width, height;
+};
+
 
 //
 // Cartographer: 'Map' Manager
@@ -55,6 +89,27 @@ public:
 	Cartographer();
 	void updateResourceMaps();
 
+	// 
+	// only redo if changed TILE...
+	// 
+
+	// call after Map::clearUnitCells()
+	void clearUnitVisibility( Unit *unit );
+	// call after Map::putUnitCells()
+	void applyUnitVisibility( Unit *unit );
+
+	void resourceDepleted( Resource *r );
+
+	// update the annotated map at pos 
+	void updateMapMetrics( const Vec2i &pos, const int size, bool adding, Field field ) { 
+		PROFILE_START("AnnotatedMap::updateMapMetrics()");
+		masterMap->updateMapMetrics( pos, size );
+		PROFILE_STOP("AnnotatedMap::updateMapMetrics()");
+
+		// who can see it ? update their maps too.
+		// set cells as dirty for those that can't see it
+	}
+
 	InfluenceMap* getResourceMap( int team, const ResourceType* rt ) {
 		return teamResourceMaps[team][rt];
 	}
@@ -65,9 +120,9 @@ public:
 		return teamResourceMaps[unit->getTeam()][rt];
 	}
 
-	AnnotatedMap* getAnnotatedMap( int team ) { return teamMaps[team]; }
+	AnnotatedMap* getAnnotatedMap( int team )		  { return teamMaps[team]; }
 	AnnotatedMap* getAnnotatedMap( Faction *faction ) { return getAnnotatedMap( faction->getTeam() ); }
-	AnnotatedMap* getAnnotatedMap( Unit *unit ) { return getAnnotatedMap( unit->getTeam() ); }
+	AnnotatedMap* getAnnotatedMap( Unit *unit )		  { return getAnnotatedMap( unit->getTeam() );	  }
 };
 
 class Surveyor {

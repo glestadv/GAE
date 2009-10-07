@@ -15,8 +15,6 @@
 #ifndef _GLEST_GAME_PATHFINDER_ASTAR_NODEPOOL_H_
 #define _GLEST_GAME_PATHFINDER_ASTAR_NODEPOOL_H_
 
-#define LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
-
 #include "vec.h"
 #include "timer.h"
 #include "unit_stats_base.h"
@@ -135,11 +133,11 @@ public:
 	//bool isClosed ( const Vec2i &pos )	{ return nodeMap[pos].mark == searchCounter + 1; }
 
 	bool setOpen ( const Vec2i &pos, const Vec2i &prev, float h, float d ) {
-		assert( prev.x < 0 || isClosed( prev ) );
+		//assert( prev.x < 0 || isClosed( prev ) );
 		return addToOpen( prev.x < 0 ? NULL : pointerArray.get( prev ), pos, h, d );
 	}
 	void updateOpen ( const Vec2i &pos, const Vec2i &prev, const float cost ) {
-		assert( isClosed( prev ) );
+		//assert( isClosed( prev ) );
 		updateOpenNode( pos, pointerArray.get( prev ), cost );
 	}
 	Vec2i getBestCandidate()	{ 
@@ -153,7 +151,7 @@ public:
 	float getEstimateFor( const Vec2i &pos )	{ return pointerArray.get( pos )->est();		}
 	Vec2i getBestTo( const Vec2i &pos )			{ 
 		AStarNode *ptr = pointerArray.get( pos );
-		assert ( ptr );
+		//assert ( ptr );
 		return ptr->prev ? ptr->prev->pos : Vec2i(-1);	
 	}
 
@@ -182,15 +180,10 @@ public:
 	// needed for canPathOut()
 	bool isListed ( const Vec2i &pos ) { return markerArray.isListed ( pos ); }
 
-#ifndef LOW_LEVEL_SEARCH_ADMISSABLE_HEURISTIC
-	// conditionally update a node (known to be closed) and re-open if updated
-	void updateClosedNode ( const Vec2i &pos, AStarNode *neighbour, float cost );
-#endif
-
-#ifdef DEBUG_SEARCH_TEXTURES
+#if DEBUG_SEARCH_TEXTURES
 	// interface to support debugging textures
-	virtual list<Vec2i>* getOpenNodes ();
-	virtual list<Vec2i>* getClosedNodes ();
+	list<Vec2i>* getOpenNodes ();
+	list<Vec2i>* getClosedNodes ();
 	list<Vec2i> listedNodes;
 #endif
 

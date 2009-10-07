@@ -50,9 +50,10 @@ public:
    }
 };
 
-#endif
+#endif // DEBUG_SEARCH_TEXTURES
 
 #if DEBUG_SEARCH_OVERLAYS
+
 class ResourceInfluenceColourCallback {
 public:
 	static InfluenceMap *iMap;
@@ -64,9 +65,11 @@ public:
 		return Vec4f(colour);
 	}
 };
-#endif
+
+#endif // DEBUG_SEARCH_OVERLAYS
 
 #if DEBUG_RENDERER_VISIBLEQUAD
+
 class VisibleQuadColourCallback {
 public:
 	static set<Vec2i> quadSet;
@@ -81,6 +84,7 @@ public:
 		return Vec4f(colour);
 	}
 };
+
 #endif // DEBUG_RENDERER_VISIBLEQUAD
 
 

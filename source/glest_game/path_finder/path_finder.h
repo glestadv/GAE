@@ -17,7 +17,6 @@
 #include "influence_map.h"
 #include "annotated_map.h"
 #include "config.h"
-#include "search_engine.h"
 #include "profiler.h"
 
 #include <set>
@@ -40,7 +39,7 @@ class Cartographer;
 
 const int maxFreeSearchRadius = 10;
 //const int pathFindRefresh = 10; // now unused
-const int pathFindNodesMax = 4096;//Config::getInstance().getPathFinderMaxNodes ();
+const int pathFindNodesMax = 2048;//Config::getInstance().getPathFinderMaxNodes ();
 
 struct SearchResult {
 	enum State { Arrived, OnTheWay, Blocked };

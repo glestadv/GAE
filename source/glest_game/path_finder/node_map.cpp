@@ -9,10 +9,14 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#include "pch.h"
+//opt
+//#include "pch.h"
+
+#include <algorithm>
 
 #include "node_map.h"
 #include "game_constants.h"
+#include "annotated_map.h" // iterator typedefs
 
 namespace Glest { namespace Game { namespace Search {
 

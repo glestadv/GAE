@@ -83,6 +83,8 @@ inline void freeDirIterator(DirIterator &di) {
 void mkdir(const string &path, bool ignoreDirExists = false);
 size_t getFileSize(const string &path);
 
+string getUserDirectory ();
+
 bool changeVideoMode(int resH, int resW, int colorBits, int refreshFrequency);
 void restoreVideoMode();
 

@@ -16,6 +16,7 @@
 #include "pch.h"
 
 #include <limits>
+#include <algorithm>
 
 //#include "annotated_map.h"
 

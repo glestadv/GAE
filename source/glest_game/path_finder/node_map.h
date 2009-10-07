@@ -14,10 +14,8 @@
 #define _GLEST_GAME_ASTAR_NODE_MAP_H_
 
 #include "vec.h"
-#include "search_engine.h"
-//#include "unit_stats_base.h"
-//#include "astar_nodepool.h"
-//#include "map.h"
+#include "world.h"
+#include "game_constants.h"
 
 using Shared::Graphics::Vec2i;
 using Shared::Platform::uint16;
@@ -37,7 +35,7 @@ struct PackedPos {
 	PackedPos( int x, int y ) : x(x), y(y) {} 
 	PackedPos( Vec2i pos ) { *this = pos; }
 	PackedPos& operator=( Vec2i pos ) { 
-		assert ( pos.x <= MAX_MAP_COORD && pos.y <= MAX_MAP_COORD ); 
+		assert( pos.x <= MAX_MAP_COORD && pos.y <= MAX_MAP_COORD ); 
 		if ( pos.x < 0 || pos.y < 0 ) {
 			x = MAX_MAP_COORD; y = MAX_MAP_COORD; // invalid
 		} else {
@@ -46,9 +44,9 @@ struct PackedPos {
 		}
 		return *this; 
 	}
-	operator Vec2i () { return Vec2i( x, y ); }
+	operator Vec2i() { return Vec2i( x, y ); }
 	bool operator==( PackedPos &that ) { return x == that.x && y == that.y; }
-	bool valid () { return !(( x == MAX_MAP_COORD ) && ( y == MAX_MAP_COORD )); }
+	bool valid() { return !(( x == MAX_MAP_COORD ) && ( y == MAX_MAP_COORD )); }
 
 	// max == MAX_MAP_COORD,
 	// MAX_MAP_COORD,MAX_MAP_COORD is considered 'invalid', this is ok still on a 
@@ -60,9 +58,9 @@ struct PackedPos {
 
 struct NodeMapCell {
 	// node status for this search, 
-	// mark <  SearchEngine::searchCounter     => unvisited
-	// mark == SearchEngine::searchCounter     => open
-	// mark == SearchEngine::searchCounter + 1 => closed
+	// mark <  NodeMap::searchCounter     => unvisited
+	// mark == NodeMap::searchCounter     => open
+	// mark == NodeMap::searchCounter + 1 => closed
 	uint32 mark;
 
 	PackedPos prevNode; // best route to here is from, valid only if this node is closed
@@ -70,7 +68,7 @@ struct NodeMapCell {
 	float heuristic;
 	float distToHere;
 
-	NodeMapCell ()	{ memset ( this, 0, sizeof(*this) ); }
+	NodeMapCell ()	{ memset( this, 0, sizeof(*this) ); }
 
 	float estimate ()	{ return heuristic + distToHere; }
 };
@@ -86,7 +84,7 @@ public:
 	~NodeMapCellArray() { delete [] array; }
 
 	NodeMapCell& operator[] ( const Vec2i &pos )		{ return array[pos.y * stride + pos.x]; }
-	NodeMapCell& operator[] ( const PackedPos &pos )	{ return array[pos.y * stride + pos.x]; }
+	NodeMapCell& operator[] ( const PackedPos pos )	{ return array[pos.y * stride + pos.x]; }
 };
 
 class NodeMap {
@@ -96,7 +94,7 @@ public:
 	// NodeStorage template interface
 	//
 	void reset();
-	void setNodeLimit( int limit )	{ assert( nodeLimit > 0 ); nodeLimit = limit; }
+	void setMaxNodes( int limit )	{ assert( limit > 0 ); nodeLimit = limit; }
 	
 	bool isOpen ( const Vec2i &pos )	{ return nodeMap[pos].mark == searchCounter; }
 	bool isClosed ( const Vec2i &pos )	{ return nodeMap[pos].mark == searchCounter + 1; }

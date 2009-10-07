@@ -118,7 +118,7 @@ void World::init(const XmlNode *worldNode) {
 
 	initExplorationState();
 	
-	//thePathManager.cartographer->updateResourceMaps();
+	thePathManager.cartographer->updateResourceMaps();
 
 	if(worldNode) {
 		NetworkDataBuffer buf;

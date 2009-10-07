@@ -12,12 +12,12 @@
 
 // Does not use pre-compiled header because it's optimized in debug build.
 
-//#include "pch.h"
-
 #include <algorithm>
 
 #include "game_constants.h"
 #include "path_finder.h"
+
+#include "search_engine.h"
 
 #include "config.h"
 #include "map.h"
@@ -35,10 +35,27 @@ using namespace Shared::Util;
 
 namespace Glest{ namespace Game{ namespace Search {
 
+SearchEngine<AStarNodePool> npSearchEngine;
+SearchEngine<NodeMap> nmSearchEngine;
+
+Vec2i				PosGoal::target( -1 );
+Vec2i		 		RangeGoal::target( -1 );
+float				RangeGoal::range( 0.f );
+Field				FreeCellGoal::field( FieldWalkable );
+const InfluenceMap*	InfluenceGoal::iMap = NULL;
+float				InfluenceGoal::threshold = 0.f;
+Vec2i				DiagonalDistance::target( -1 );
+Vec2i				OverEstimate::target( -1 );
+float				InfluenceBuilderGoal::cutOff = 0.f;
+InfluenceMap*		InfluenceBuilderGoal::iMap = NULL;
+const Unit*			MoveCost::unit = NULL;
+const AnnotatedMap*	MoveCost::map = NULL;
 
 Cartographer::Cartographer() {
 	int w = theMap.getW(), h = theMap.getH();
 	//masterMap = new AnnotatedMap();
+
+	// team maps
 
 	// find and catalog all resources...
 	for ( int x=0; x < theMap.getTileW() - 1; ++x ) {
@@ -80,6 +97,11 @@ void Cartographer::updateResourceMaps() {
 }
 
 void Cartographer::initResourceMap( int team, const ResourceType *rt, InfluenceMap *iMap ) {
+	//DEBUG
+	static char buf[1024];
+	sprintf( buf, "Initialising %s influence map for team %d", rt->getName().c_str(), team );
+	theLogger.add( buf );
+	int64 time = Chrono::getCurMillis();
 	vector<Vec2i> knownResources;
 	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
 	for ( ; it != resourceLocations[rt].end(); ++it ) {
@@ -88,16 +110,19 @@ void Cartographer::initResourceMap( int team, const ResourceType *rt, InfluenceM
 		}
 	}
 	iMap->clear();
-	theSearchEngine.reset();
+	nmSearchEngine.reset();
 	for ( it = knownResources.begin(); it != knownResources.end(); ++it ) {
 		Vec2i pos = *it * Map::cellScale;
-		theSearchEngine.setOpen( pos, 0.f );
-		theSearchEngine.setOpen( pos + Vec2i( 0,1 ), 0.f );
-		theSearchEngine.setOpen( pos + Vec2i( 1,0 ), 0.f );
-		theSearchEngine.setOpen( pos + Vec2i( 1,1 ), 0.f );
+		nmSearchEngine.setOpen( pos, 0.f );
+		nmSearchEngine.setOpen( pos + Vec2i( 0,1 ), 0.f );
+		nmSearchEngine.setOpen( pos + Vec2i( 1,0 ), 0.f );
+		nmSearchEngine.setOpen( pos + Vec2i( 1,1 ), 0.f );
 	}
-	theSearchEngine.buildDistanceMap( iMap, 20.f );
-	
+	nmSearchEngine.buildDistanceMap( iMap, 20.f );
+
+	time = Chrono::getCurMillis() - time;
+	sprintf( buf, "Used %d nodes, took %dms\n", nmSearchEngine.getExpandedLastRun(), time );
+	theLogger.add( buf );
 	//if ( team == theWorld.getThisTeamIndex() && rt->getName() == "gold" ) {
 	//	iMap->log();
 	//}
@@ -139,8 +164,10 @@ void PathManager::init() {
 	annotatedMap = new AnnotatedMap();
 	//superMap = new AnnotatedSearchMap( map );
 
-	theSearchEngine.init();
-	//cartographer = new Cartographer();
+	npSearchEngine.init();
+	nmSearchEngine.init();
+	
+	cartographer = new Cartographer();
 
 #ifdef DEBUG_SEARCH_TEXTURES
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
@@ -227,19 +254,19 @@ TravelState PathManager::findPathToLocation( Unit *unit, const Vec2i &finalPos )
 	
 	annotatedMap->annotateLocal( unit, unit->getCurrField() ); // annotate map
 	// reset nodepool and add start to open
-	theSearchEngine.setNodeLimit( theConfig.getPathFinderMaxNodes() );
-	theSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) ); 
-	int result = theSearchEngine.pathToPos( annotatedMap, unit, target ); // perform search
+	npSearchEngine.setNodeLimit( theConfig.getPathFinderMaxNodes() );
+	npSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) ); 
+	int result = npSearchEngine.pathToPos( annotatedMap, unit, target ); // perform search
 	annotatedMap->clearLocalAnnotations( unit->getCurrField() ); // clear annotations
 	if ( result == AStarResult::Failed ) BLOCKED()
 	if ( result == AStarResult::Partial ) {
 		// Queue for 'complete' search...
 	}
 	// Partail or Complete... extract path...
-	pos = theSearchEngine.getGoalPos();
+	pos = npSearchEngine.getGoalPos();
 	while ( pos.x >= 0 ) {
 		path.push_front( pos );
-		pos = theSearchEngine.getPreviousPos( pos );
+		pos = npSearchEngine.getPreviousPos( pos );
 	}
 	if ( path.empty() ) DONE()
 	path.pop();
@@ -256,18 +283,18 @@ bool PathManager::repairPath( Unit *unit ) {
 	}
 	annotatedMap->annotateLocal( unit, unit->getCurrField () );
 	// reset nodepool and add start to open
-	theSearchEngine.setNodeLimit( 256 );
-	theSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) );
-	int result = theSearchEngine.pathToPos( annotatedMap, unit, path.front() ); // perform search
+	npSearchEngine.setNodeLimit( 256 );
+	npSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) );
+	int result = npSearchEngine.pathToPos( annotatedMap, unit, path.front() ); // perform search
 	annotatedMap->clearLocalAnnotations( unit->getCurrField () );
 
 	if ( result == AStarResult::Complete ) {
-		Vec2i pos = theSearchEngine.getGoalPos();
+		Vec2i pos = npSearchEngine.getGoalPos();
 		// skip target (is on the 'front' of the path already...
-		pos = theSearchEngine.getPreviousPos( pos );
+		pos = npSearchEngine.getPreviousPos( pos );
 		while ( pos.x >= 0 ) {
 			path.push_front( pos );
-			pos = theSearchEngine.getPreviousPos( pos );
+			pos = npSearchEngine.getPreviousPos( pos );
 		}
 		return true;
 	}
