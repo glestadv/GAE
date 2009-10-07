@@ -45,7 +45,7 @@ private:
 	class FileHandler {
 	private:
 		FILE *f;
-		
+
 	public:
 		FileHandler(const string &path) : f(fopen(path.c_str(), "at+")) {
 			if(!f) {
@@ -69,10 +69,7 @@ private:
 	static char errorBuf[];
 
 private:
-	Logger(const char *fileName)
-			: fileName(fileName)
-			, loadingGame(true) {
-	}
+	Logger(const char *fileName);
 
 public:
 	static Logger &getInstance() {

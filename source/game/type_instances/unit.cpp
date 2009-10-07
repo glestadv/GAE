@@ -1218,10 +1218,10 @@ string Unit::getDesc(bool full) const {
 	if (!full) {
 		// Show only current command being executed and effects
 		if (!commands.empty()) {
-			str += "\n" + commands.front()->getType()->getName();
+			str << "\n" << commands.front()->getType()->getName();
 		}
 		effects.getDesc(str);
-		return str;
+		return str.str();
 	}
 
 	//armor

@@ -55,7 +55,7 @@ namespace Game { namespace Net {
  * interact with more than one remote hosts whom are in either of the roles of server, client or
  * peer (client to client).
  */
-class GameInterface : public Host, Thread { // LocalPlayerInterface?
+class GameInterface : public Host, private Thread { // LocalPlayerInterface?
 protected:
 	typedef queue<Command *> Commands;
 	typedef map<int, Commands> CommandQueue;
@@ -68,28 +68,26 @@ public:
 	typedef map<int, const RemoteInterface *> ConstPeerMap;
 
 private:
-	ServerSocket socket;			/** Socket for listening and accepting new connections from either clients or peers */
+	ServerSocket socket;			/**< Socket for listening and accepting new connections from either clients or peers */
 protected:
-	CommandQueue requestedCommands;	/** Commands requested locally */
-	CommandQueue futureCommands;	/** Commands (incoming and local) queued up for future execution */
-	Commands pendingCommands;		/** Commands (ready to be executed) */
+	CommandQueue requestedCommands;	/**< Commands requested locally */
+	CommandQueue futureCommands;	/**< Commands (incoming and local) queued up for future execution */
+	Commands pendingCommands;		/**< Commands (ready to be executed) */
 private:
-	ChatMessages chatMessages;		/** Incoming chat messages */
-	PeerMap peers;					/** Remote peers indexed by their id */
-	unsigned int broadcastTargets;	/** The current target(s) for network operations. */
+	ChatMessages chatMessages;		/**< Incoming chat messages */
+	PeerMap peers;					/**< Remote peers indexed by their id */
+	unsigned int broadcastTargets;	/**< The current target(s) for network operations. */
 
 	// transient object pointers
 	FileReceiver *fileReceiver;
 	string savedGameFileName;
-	shared_ptr<GameSettings> gameSettings;		/** Settings for this game */
+	shared_ptr<GameSettings> gameSettings;	/**< Settings for this game */
 	bool gameSettingsChanged;
 	GlestException *exception;
 
 	SocketTests socketTests;
-	bool peerMapChanged;			/** True if peerMap has changed and socketTests needs
-									 *  re-initialization. */
-	bool connectionsChanged;		/** True if new connections have been established or somebody
-									 *  dropped. */
+	bool peerMapChanged;			/**< True if peerMap has changed and socketTests needs re-initialization. */
+	bool connectionsChanged;		/**< True if new connections have been established or somebody dropped. */
 	size_t commandDelay;
 
 public:

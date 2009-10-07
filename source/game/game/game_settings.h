@@ -31,6 +31,7 @@ using Shared::Xml::XmlNodes;
 using Shared::Util::Uncopyable;
 using Shared::Platform::Mutex;
 using Shared::Platform::MutexLock;
+using Shared::Platform::LockableAdapter;
 
 namespace Game {
 
@@ -38,7 +39,7 @@ namespace Game {
 //	class GameSettings
 // =====================================================
 
-class GameSettings : public XmlWritable, Uncopyable {
+class GameSettings : public XmlWritable, public LockableAdapter, Uncopyable {
 public:
 	//typedef vector<const Player *> Players;
 	typedef map<int, shared_ptr<Player> > PlayerMap;
@@ -106,7 +107,6 @@ public:
 	typedef vector<shared_ptr<GameSettings::Faction> > Factions;
 
 private:
-	Mutex mutex;
 	bool valid;
 
 	PlayerMap players;
@@ -135,6 +135,10 @@ private:
 	int worldUpdateFps;
 	int commandDelay;
 
+	bool defaultUnits;
+	bool defaultResources;
+	bool defaultVictoryConditions;
+
 public:
 	GameSettings();
 	GameSettings(const XmlNode &node);
@@ -149,7 +153,8 @@ public:
 			const Team &team,
 			const string &typeName,
 			bool randomType,
-			int mapSlot);
+			int mapSlot,
+			float resourceMultiplier);
 	void addPlayerToFaction(const GameSettings::Faction &f, const Player &p);
 	void addSpectator(const HumanPlayer &p);
 	void removePlayerFromFaction(const GameSettings::Faction &f, const Player &p);
@@ -182,6 +187,10 @@ public:
 	int getWorldUpdateFps() const			{return worldUpdateFps;}
 	int getCommandDelay() const				{return commandDelay;}
 
+	bool getDefaultUnits() const			{return defaultUnits;}
+	bool getDefaultResources() const		{return defaultResources;}
+	bool getDefaultVictoryConditions() const{return defaultVictoryConditions;}
+
 	//set
 	void setDescription(const string& v)	{description = v;}
 	void setMapPath(const string& v)		{mapPath = v;}
@@ -200,6 +209,10 @@ public:
 	void setSpeedSlowest(float v)			{speedSlowest = v;}
 	void setWorldUpdateFps(int v)			{worldUpdateFps = v;}
 	void setCommandDelay(int v)				{commandDelay = v;}
+
+	void setDefaultUnits(bool v) 			{defaultUnits = v;}
+	void setDefaultResources(bool v) 		{defaultResources = v;}
+	void setDefaultVictoryConditions(bool v){defaultVictoryConditions = v;}
 
 	const Player *getPlayer(int id) const {
 		PlayerMap::const_iterator i = players.find(id);
@@ -243,7 +256,6 @@ public:
 	//misc
 	void clear();
 	void doRandomization(const vector<string> &factionTypes);
-	shared_ptr<MutexLock> getLock();
 
 private:
 	Player *copyAndStorePlayer(const Player &p);

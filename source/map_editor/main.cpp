@@ -27,7 +27,7 @@ const string MainWindow::versionString = "v1.5.0";
 const string MainWindow::winHeader = "Glest Map Editor " + versionString + " - Built: " + __DATE__;
 
 // ===============================================
-// class Global functions
+//	class Global functions
 // ===============================================
 
 wxString ToUnicode(const char* str) {

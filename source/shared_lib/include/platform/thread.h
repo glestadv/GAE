@@ -14,6 +14,8 @@
 #ifndef _SHARED_PLATFORM_THREAD_H_
 #define _SHARED_PLATFORM_THREAD_H_
 
+#include <boost/shared_ptr.hpp>
+
 #if defined(USE_PTHREADS)
 #	include "noimpl.h"
 // we should be using pthreads in favor of SDL when possible (IMHO), but we aren't
@@ -37,6 +39,8 @@
 #endif
 
 #include "patterns.h"
+
+using boost::shared_ptr;
 
 namespace Shared { namespace Platform {
 
@@ -80,7 +84,7 @@ public:
 
 protected:
 	virtual void execute() = 0;
-	
+
 private:
 	static ThreadFuncReturnType beginExecution(void *param);
 };
@@ -117,7 +121,7 @@ public:
  * MutexLock over explicitly calling Mutex.p() and .v() is that you can never
  * forget to unlock the mutex.  Even if an exception is thrown, the stack unwind
  * will cause the mutex to be unlocked.
- * 
+ *
  * Note: Do NOT extend this class unless you modify the destructor to virutal (and then delete this
  * notation :).
  */
@@ -179,6 +183,28 @@ private:
 	void wait(Mutex &mutex);
 	bool wait(Mutex &mutex, size_t max);
 #endif
+};
+
+class Lockable {
+public:
+	Lockable() {}
+	virtual ~Lockable() {}
+
+	virtual shared_ptr<MutexLock> getLock() = 0;
+};
+
+class LockableAdapter : public Lockable {
+private:
+	Mutex mutex;
+
+public:
+	LockableAdapter() {}
+	virtual ~LockableAdapter() {}
+
+	shared_ptr<MutexLock> getLock()		{return shared_ptr<MutexLock>(new MutexLock(mutex));}
+
+protected:
+	Mutex &getMutex()					{return mutex;}
 };
 
 }} //end namespace

@@ -25,7 +25,7 @@
 #include "game.h"
 
 #include "leak_dumper.h"
-
+#if 0
 namespace namespace Game {
 
 using namespace Shared::Util;
@@ -35,10 +35,9 @@ using namespace Shared::Util;
 // =====================================================
 
 MenuStateCustomGame::MenuStateCustomGame(Program *program, MainMenu *mainMenu, bool openNetworkSlots):
-	MenuState(*program, mainMenu, "new-game")
-{
-	Lang &lang= Lang::getInstance();
-	NetworkManager &networkManager= NetworkManager::getInstance();
+		MenuState(*program, mainMenu, "new-game") {
+	Lang &lang = Lang::getInstance();
+	NetworkManager &networkManager = NetworkManager::getInstance();
 
 	vector<string> results, teamItems, controlItems;
 
@@ -46,66 +45,66 @@ MenuStateCustomGame::MenuStateCustomGame(Program *program, MainMenu *mainMenu, b
 	buttonReturn.init(350, 200, 125);
 	buttonPlayNow.init(525, 200, 125);
 
-    //map listBox
-    findAll("maps/*.gbm", results, true);
-	if(results.size()==0){
-        throw runtime_error("There is no maps");
+	//map listBox
+	findAll("maps/*.gbm", results, true);
+	if (results.size() == 0) {
+		throw runtime_error("There is no maps");
 	}
-	mapFiles= results;
-	for(int i= 0; i<results.size(); ++i){
-		results[i]= formatString(results[i]);
+	mapFiles = results;
+	for (int i = 0; i < results.size(); ++i) {
+		results[i] = formatString(results[i]);
 	}
-    listBoxMap.init(200, 320, 150);
-    listBoxMap.setItems(results);
+	listBoxMap.init(200, 320, 150);
+	listBoxMap.setItems(results);
 	labelMap.init(200, 350);
 	labelMapInfo.init(200, 290, 200, 40);
 
-    //tileset listBox
-    findAll("tilesets/*.", results);
-	if(results.size()==0){
-        throw runtime_error("There is no tile set");
+	//tileset listBox
+	findAll("tilesets/*.", results);
+	if (results.size() == 0) {
+		throw runtime_error("There is no tile set");
 	}
-    tilesetFiles= results;
-	for(int i= 0; i<results.size(); ++i){
-		results[i]= formatString(results[i]);
+	tilesetFiles = results;
+	for (int i = 0; i < results.size(); ++i) {
+		results[i] = formatString(results[i]);
 	}
 	listBoxTileset.init(400, 320, 150);
-    listBoxTileset.setItems(results);
+	listBoxTileset.setItems(results);
 	labelTileset.init(400, 350);
 
-    //tech Tree listBox
-    findAll("techs/*.", results);
-	if(results.size()==0){
-        throw runtime_error("There is no tech tree");
+	//tech Tree listBox
+	findAll("techs/*.", results);
+	if (results.size() == 0) {
+		throw runtime_error("There is no tech tree");
 	}
-    techTreeFiles= results;
-	for(int i= 0; i<results.size(); ++i){
-		results[i]= formatString(results[i]);
+	techTreeFiles = results;
+	for (int i = 0; i < results.size(); ++i) {
+		results[i] = formatString(results[i]);
 	}
 	listBoxTechTree.init(600, 320, 150);
-    listBoxTechTree.setItems(results);
+	listBoxTechTree.setItems(results);
 	labelTechTree.init(600, 350);
 
 	//list boxes
-    for(int i=0; i<GameConstants::maxPlayers; ++i){
-		labelPlayers[i].init(200, 500-i*30);
-        listBoxControls[i].init(300, 500-i*30);
-        listBoxFactions[i].init(500, 500-i*30);
-		listBoxTeams[i].init(700, 500-i*30, 60);
-		labelNetStatus[i].init(800, 500-i*30, 60);
-    }
+	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
+		labelPlayers[i].init(200, 500 - i*30);
+		listBoxControls[i].init(300, 500 - i*30);
+		listBoxFactions[i].init(500, 500 - i*30);
+		listBoxTeams[i].init(700, 500 - i*30, 60);
+		labelNetStatus[i].init(800, 500 - i*30, 60);
+	}
 
 	labelControl.init(300, 550, GraphicListBox::defW, GraphicListBox::defH, true);
-    labelFaction.init(500, 550, GraphicListBox::defW, GraphicListBox::defH, true);
-    labelTeam.init(700, 550, 60, GraphicListBox::defH, true);
+	labelFaction.init(500, 550, GraphicListBox::defW, GraphicListBox::defH, true);
+	labelTeam.init(700, 550, 60, GraphicListBox::defH, true);
 
 	//texts
 	buttonReturn.setText(lang.get("Return"));
 	buttonPlayNow.setText(lang.get("PlayNow"));
 
-    controlItems.push_back(lang.get("Closed"));
+	controlItems.push_back(lang.get("Closed"));
 	controlItems.push_back(lang.get("Cpu"));
-    controlItems.push_back(lang.get("CpuUltra"));
+	controlItems.push_back(lang.get("CpuUltra"));
 	controlItems.push_back(lang.get("Network"));
 	controlItems.push_back(lang.get("Human"));
 	teamItems.push_back("1");
@@ -115,42 +114,41 @@ MenuStateCustomGame::MenuStateCustomGame(Program *program, MainMenu *mainMenu, b
 
 	reloadFactions();
 
-	findAll("techs/"+techTreeFiles[listBoxTechTree.getSelectedItemIndex()]+"/factions/*.", results);
-	if(results.size()==0){
-        throw runtime_error("There is no factions for this tech tree");
+	findAll("techs/" + techTreeFiles[listBoxTechTree.getSelectedItemIndex()] + "/factions/*.", results);
+	if (results.size() == 0) {
+		throw runtime_error("There is no factions for this tech tree");
 	}
 
-	for(int i=0; i<GameConstants::maxPlayers; ++i){
-		labelPlayers[i].setText(lang.get("Player")+" "+intToStr(i));
-        listBoxTeams[i].setItems(teamItems);
+	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
+		labelPlayers[i].setText(lang.get("Player") + " " + intToStr(i));
+		listBoxTeams[i].setItems(teamItems);
 		listBoxTeams[i].setSelectedItemIndex(i);
 		listBoxControls[i].setItems(controlItems);
 		labelNetStatus[i].setText("");
-    }
+	}
 
 	labelMap.setText(lang.get("Map"));
 	labelTileset.setText(lang.get("Tileset"));
 	labelTechTree.setText(lang.get("TechTree"));
 	labelControl.setText(lang.get("Control"));
-    labelFaction.setText(lang.get("Faction"));
-    labelTeam.setText(lang.get("Team"));
+	labelFaction.setText(lang.get("Faction"));
+	labelTeam.setText(lang.get("Team"));
 
 	loadMapInfo(Map::getMapPath(mapFiles[listBoxMap.getSelectedItemIndex()]), &mapInfo);
 
 	labelMapInfo.setText(mapInfo.desc);
 
 	//initialize network interface
-	networkManager.init(nrServer);
+	networkManager.init(NR_SERVER);
 
 	//init controllers
-	listBoxControls[0].setSelectedItemIndex(ctHuman);
-	if(openNetworkSlots){
-		for(int i= 1; i<mapInfo.players; ++i){
-			listBoxControls[i].setSelectedItemIndex(ctNetwork);
+	listBoxControls[0].setSelectedItemIndex(CT_HUMAN);
+	if (openNetworkSlots) {
+		for (int i = 1; i < mapInfo.players; ++i) {
+			listBoxControls[i].setSelectedItemIndex(CT_NETWORK);
 		}
-	}
-	else{
-		listBoxControls[1].setSelectedItemIndex(ctCpu);
+	} else {
+		listBoxControls[1].setSelectedItemIndex(CT_CPU);
 	}
 	updateControlers();
 	updateNetworkSlots();
@@ -195,7 +193,7 @@ void MenuStateCustomGame::mouseClick(int x, int y, MouseButton mouseButton){
 				int humanIndex2= -1;
 				for(int j=0; j<GameConstants::maxPlayers; ++j){
 					ControlType ct= static_cast<ControlType>(listBoxControls[j].getSelectedItemIndex());
-					if(ct==ctHuman){
+					if(ct==CT_HUMAN){
 						if(humanIndex1==-1){
 							humanIndex1= j;
 						}
@@ -207,12 +205,12 @@ void MenuStateCustomGame::mouseClick(int x, int y, MouseButton mouseButton){
 
 				//no human
 				if(humanIndex1==-1 && humanIndex2==-1){
-					listBoxControls[i].setSelectedItemIndex(ctHuman);
+					listBoxControls[i].setSelectedItemIndex(CT_HUMAN);
 				}
 
 				//2 humans
 				if(humanIndex1!=-1 && humanIndex2!=-1){
-					listBoxControls[humanIndex1==i? humanIndex2: humanIndex1].setSelectedItemIndex(ctClosed);
+					listBoxControls[humanIndex1==i? humanIndex2: humanIndex1].setSelectedItemIndex(CT_CLOSED);
 				}
 				updateNetworkSlots();
 			}
@@ -251,7 +249,7 @@ void MenuStateCustomGame::render(){
 	for(i=0; i<GameConstants::maxPlayers; ++i){
 		renderer.renderLabel(&labelPlayers[i]);
         renderer.renderListBox(&listBoxControls[i]);
-		if(listBoxControls[i].getSelectedItemIndex()!=ctClosed){
+		if(listBoxControls[i].getSelectedItemIndex()!=CT_CLOSED){
 			renderer.renderListBox(&listBoxFactions[i]);
 			renderer.renderListBox(&listBoxTeams[i]);
 			renderer.renderLabel(&labelNetStatus[i]);
@@ -270,25 +268,22 @@ void MenuStateCustomGame::render(){
 	renderer.renderListBox(&listBoxTechTree);
 }
 
-void MenuStateCustomGame::update(){
-	ServerInterface* serverInterface= NetworkManager::getInstance().getServerInterface();
-	Lang& lang= Lang::getInstance();
+void MenuStateCustomGame::update() {
+	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
+	Lang& lang = Lang::getInstance();
 
-	for(int i= 0; i<mapInfo.players; ++i){
-		if(listBoxControls[i].getSelectedItemIndex()==ctNetwork){
-			ConnectionSlot* connectionSlot= serverInterface->getSlot(i);
+	for (int i = 0; i < mapInfo.players; ++i) {
+		if (listBoxControls[i].getSelectedItemIndex() == CT_NETWORK) {
+			ConnectionSlot* connectionSlot = serverInterface->getSlot(i);
 
-			assert(connectionSlot!=NULL);
+			assert(connectionSlot != NULL);
 
-			if(connectionSlot->isConnected()){
+			if (connectionSlot->isConnected()) {
 				labelNetStatus[i].setText(connectionSlot->getName());
-			}
-			else
-			{
+			} else {
 				labelNetStatus[i].setText(lang.get("NotConnected"));
 			}
-		}
-		else{
+		} else {
 			labelNetStatus[i].setText("");
 		}
 	}
@@ -309,8 +304,8 @@ void MenuStateCustomGame::loadGameSettings(GameSettings *gameSettings){
 
     for(int i=0; i<mapInfo.players; ++i){
 		ControlType ct= static_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());
-		if(ct!=ctClosed){
-			if(ct==ctHuman){
+		if(ct!=CT_CLOSED){
+			if(ct==CT_HUMAN){
 				gameSettings->setThisFactionIndex(factionCount);
 			}
 			gameSettings->setFactionControl(factionCount, ct);
@@ -384,17 +379,17 @@ void MenuStateCustomGame::updateControlers(){
 	bool humanPlayer= false;
 
 	for(int i= 0; i<mapInfo.players; ++i){
-		if(listBoxControls[i].getSelectedItemIndex() == ctHuman){
+		if(listBoxControls[i].getSelectedItemIndex() == CT_HUMAN){
 			humanPlayer= true;
 		}
 	}
 
 	if(!humanPlayer){
-		listBoxControls[0].setSelectedItemIndex(ctHuman);
+		listBoxControls[0].setSelectedItemIndex(CT_HUMAN);
 	}
 
 	for(int i= mapInfo.players; i<GameConstants::maxPlayers; ++i){
-		listBoxControls[i].setSelectedItemIndex(ctClosed);
+		listBoxControls[i].setSelectedItemIndex(CT_CLOSED);
 	}
 }
 
@@ -403,7 +398,7 @@ void MenuStateCustomGame::closeUnusedSlots(){
 	for(int i= 0; i<mapInfo.players; ++i){
 		if(listBoxControls[i].getSelectedItemIndex()==ctNetwork){
 			if(!serverInterface->getSlot(i)->isConnected()){
-				listBoxControls[i].setSelectedItemIndex(ctClosed);
+				listBoxControls[i].setSelectedItemIndex(CT_CLOSED);
 			}
 		}
 	}
@@ -424,3 +419,4 @@ void MenuStateCustomGame::updateNetworkSlots(){
 }
 
 } // end namespace
+#endif

@@ -19,7 +19,7 @@ using namespace Shared::Util;
 namespace MapEditor {
 
 // ===============================================
-// class Program
+//	class Program
 // ===============================================
 
 Program::Program(int w, int h) {

@@ -576,7 +576,7 @@ int ScriptManager::getPlayerName(LuaHandle* luaHandle) {
 		return luaArguments.getReturnCount();
 	}
 	try {
-		string playerName = theGameSettings.getPlayerName(luaArguments.getInt(-1));
+		string playerName = theGameSettings.getFaction(luaArguments.getInt(-1))->getName();
 		luaArguments.returnString(playerName);
 	} catch (LuaError e) {
 		luaCppCallError("getPlayerName", "Number", describeLuaStack(luaArguments), e.desc());
@@ -593,7 +593,7 @@ int ScriptManager::getFactionTypeName(LuaHandle* luaHandle) {
 		return luaArguments.getReturnCount();
 	}
 	try {
-		string factionTypeName = theGameSettings.getFactionTypeName(luaArguments.getInt(-1));
+		string factionTypeName = theGameSettings.getFaction(luaArguments.getInt(-1))->getTypeName();
 		luaArguments.returnString(factionTypeName);
 	} catch (LuaError e) {
 		luaCppCallError("getFactionTypeName", "Number", describeLuaStack(luaArguments), e.desc());

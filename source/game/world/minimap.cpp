@@ -13,7 +13,7 @@
 #include "minimap.h"
 
 #include <cassert>
-#include <limits>
+#include <limits.h>
 
 #include "world.h"
 #include "vec.h"

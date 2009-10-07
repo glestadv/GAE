@@ -63,7 +63,7 @@ void ClientInterface::accept() {
 }
 
 void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageHandshake &msg) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	if(&source == &server) {
 		assert(getState() < STATE_NEGOTIATED);
 		setState(STATE_NEGOTIATED);
@@ -115,13 +115,14 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 		THROW_PROTOCOL_EXCEPTION("naughty peer tried to send NetworkMessageGameInfo");
 	}
 #endif
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	try {
 		setGameSettings(msg.getGameSettings());
 
 		// this is a little screwy, but we want to call getPlayerStatuses() in the try block and
 		// then we call it again later to store the reference.  De-uglify this by either
-		// enclosing the entire function in this try/catch block of using a pointer instead of a reference.
+		// enclosing the entire function in this try/catch block or using a pointer instead of a
+		// reference.
 		msg.getPlayerStatuses();
 	} catch (runtime_error &e) {
 		throw ProtocolException(source, &msg,
@@ -280,7 +281,7 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkPlayerStatus &s
  * due but not yet recieved.
  *//*
 bool ClientInterface::isReady() {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 	return ready;
 }
 */
@@ -290,7 +291,7 @@ bool ClientInterface::isReady() {
  * network.
  */
 void ClientInterface::requestCommand(Command *command) {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 	if(!command->isAuto() && command->getCommandedUnit()->getFaction()->isThisFaction()) {
 		copyCommandToNetwork(command);
 	}
@@ -298,7 +299,7 @@ void ClientInterface::requestCommand(Command *command) {
 }
 
 void ClientInterface::beginUpdate(int frame, bool isKeyFrame) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	GameInterface::beginUpdate(frame, isKeyFrame);
 }
 
@@ -345,7 +346,7 @@ void ClientInterface::endUpdate() {
 }
 
 void ClientInterface::connectToServer(const IpAddress &ipAddress, unsigned short port) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	assert(getState() <= STATE_LISTENING);
 	server.connect(ipAddress, port);
 	setState(STATE_CONNECTED);
@@ -353,7 +354,7 @@ void ClientInterface::connectToServer(const IpAddress &ipAddress, unsigned short
 }
 
 void ClientInterface::disconnectFromServer() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	server.quit();
 	removePeer(&server);
 	setState(STATE_LISTENING);
@@ -365,7 +366,7 @@ void ClientInterface::onError(RemoteInterface &ri, GlestException &e) {
 		setState(STATE_UNCONNECTED);
 	}
 }
-		
+
 void ClientInterface::sendUpdateRequests() {
 	if(isConnected() && updateRequests.size()) {
 		NetworkMessageUpdateRequest msg;

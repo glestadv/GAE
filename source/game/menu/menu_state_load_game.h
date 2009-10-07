@@ -16,6 +16,13 @@
 #include "menu_state_start_game_base.h"
 #include "thread.h"
 
+/**
+ * @file
+ * Theory: Saved games can potentially take a long time to load.  Forcing the GUI's thread to wait
+ * is unreasonable, as it will tie up the main thread.  Thus, this menu spawns a background loader
+ * thread using objects of the class SavedGamePreviewLoader.
+ */
+
 namespace Game {
 
 class MenuStateLoadGame;
@@ -30,31 +37,27 @@ class MenuStateLoadGame;
  * saved game they want to load.
  */
 class SavedGamePreviewLoader : public Thread {
+private:
 	MenuStateLoadGame &menu;
-	string *fileName;		//only modify with mutex locked
+	shared_ptr<string> fileName;		// read and modify with mutex locked
 	bool seeJaneRun;
 	Mutex mutex;
 
 public:
-	SavedGamePreviewLoader(MenuStateLoadGame &menu) : menu(menu) {
-		fileName = NULL;
-		seeJaneRun = true;
-		start();
-	}
+	/** Primary constructor.  Creation of this object will automatically start the worker thread. */
+	SavedGamePreviewLoader(MenuStateLoadGame &menu);
 
 	/** Tells this SavedGamePreviewLoader to stop executing and prepare to be deleted. */
-	void goAway() {
-		MutexLock lock(mutex);
-		seeJaneRun = false;
-	}
+	void goAway();
 
-	/** Sets the name of the file to generate a preview for. */
-	void setFileName(const string &fileName) {
-		MutexLock lock(mutex);
-		if(!this->fileName) {
-			this->fileName = new string(fileName);
-		}
-	}
+	/**
+	 * Instructs the SavedGamePreviewLoader to load the specified saved game file in its background
+	 * worker thread.  When the load is completed, the setGameInfo() method of the MenuStateLoadGame
+	 * object will be called, unless a subsequent call to load() is made prior to completion of
+	 * loading the original saved game file (in which case, the original saved game info is
+	 * discarded and never reported).
+	 */
+	void load(const string &fileName);
 
 protected:
 	/** Main thread loop (called by Thread). */
@@ -62,7 +65,7 @@ protected:
 
 private:
 	/** Called only by private thread: Called to load a preview of the specified saved game file. */
-	void loadPreview(string *fileName);
+	void _loadInternal(const shared_ptr<string> &fileName);
 };
 
 
@@ -86,7 +89,7 @@ private:
 	//GraphicLabel labelNetStatus[GameConstants::maxPlayers];
 	ControlType controlTypes[GameConstants::maxPlayers];
 	string fileName;
-	const XmlNode *savedGame;
+	shared_ptr<const XmlNode> savedGame;
 	// Note: gs is defined in base class, but in MenuStateLoadGame, should only be read or modified
 	// with mutex locked
 	// <== only modify with mutex locked
@@ -110,8 +113,8 @@ public:
 	void update();
 
 	/** returns the name of the new file name if the user moved along since the load started. */
-	string *setGameInfo(const string &fileName, const XmlNode *root, const string &err);
-	
+	void setGameInfo(const string &fileName, shared_ptr<const XmlNode> &root, const string &err);
+
 protected:
 	void updateGameSettings() {}
 

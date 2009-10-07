@@ -55,7 +55,7 @@ void ServerInterface::accept() {
 	ClientSocket *s = getServerSocket().accept();
 
 	if(s) {
-		MutexLock lock(mutex);
+		MutexLock lock(getMutex());
 		if(getPeers().size() < GameConstants::maxPlayers) {
 			// TODO: We should send a "server full" message.
 			s->close();
@@ -111,7 +111,7 @@ void ServerInterface::unslotAllClients() {
 }
 
 void ServerInterface::requestCommand(Command *command) {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 
 	if(command->isAuto()) {
 		minorUnitUpdate(command->getCommandedUnit());
@@ -133,7 +133,7 @@ void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessageHandshak
 }
 
 void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 
 	setConnectionsChanged();
 //	getGameSettings()->addSpectator(source.getPlayer());
@@ -202,7 +202,7 @@ void ServerInterface::beginUpdate(int frame, bool isKeyFrame) {
 }
 
 void ServerInterface::endUpdate() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	for(CommandQueue::iterator i = requestedCommands.begin(); i != requestedCommands.end(); ++i) {
 		// this shouldn't actually happen, but if it does, we'll just erase it, invalidating the
 		// iterator and recurse
@@ -258,7 +258,7 @@ void ServerInterface::print(ObjectPrinter &op) const {
 }
 
 void ServerInterface::update() {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 
 	if(isGameSettingsChanged()) {
 		broadcastGameInfo();
@@ -267,7 +267,7 @@ void ServerInterface::update() {
 }
 
 void ServerInterface::broadcastGameInfo() {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 
 	if(getPeers().size()) {
 		NetworkMessageGameInfo msg1(*this, *getGameSettings());

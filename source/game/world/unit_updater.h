@@ -21,7 +21,7 @@
 using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
 
-namespace Glest { namespace Game {
+namespace Game {
 
 class Unit;
 class Map;
@@ -64,7 +64,7 @@ private:
 	ScriptManager *scriptManager;
 	Search::PathFinder *pathFinder;
 	Random random;
-	GameSettings &gameSettings;
+	const GameSettings &gameSettings;
 
 public:
 	UnitUpdater(Game &game);

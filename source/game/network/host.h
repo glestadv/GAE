@@ -50,12 +50,11 @@ class NetworkPlayerStatus;
 
 
 /** Base class to represent a network host in a game, either local or remote. */
-class Host : public NetworkInfo, Uncopyable {
+class Host : public NetworkInfo, public LockableAdapter, private Uncopyable {
 public:
 	static const int READY_WAIT_TIMEOUT = 60000;	//1 minute
 
 protected:
-	Mutex mutex;
 	Condition cond;
 
 private:
@@ -113,7 +112,6 @@ public:
 	virtual void updateStatus(const NetworkPlayerStatus &status);
 
 protected:
-	Mutex &getMutex()						{return mutex;}
 	Condition &getCond()					{return cond;}
 	HumanPlayer &getProtectedPlayer()		{return player;}
 	void init(State initialState, unsigned short port, const IpAddress &ipAddress);

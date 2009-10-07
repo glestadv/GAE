@@ -55,7 +55,6 @@ public:
 
 	void setLocale(const string &locale);
 	void loadScenarioStrings(const string &scenarioDir, const string &scenarioName);
-	const string &getLocale() const						{return locale;}
 	string get(const string &s) const;
 	string getScenarioString(const string &s) const;
 	string format(const string &s, ...) const;

@@ -140,7 +140,6 @@ protected:
 	char *data;
 	XmlNode *rootNode;
 	bool cleanupNode;
-	bool domAllocated;
 
 private:
 	NetworkWriteableXmlDoc(const NetworkWriteableXmlDoc &) DELETE_FUNC;

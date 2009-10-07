@@ -40,7 +40,6 @@ namespace Game { namespace Net {
 
 Host::Host(NetworkRole role, int id, const uint64 &uid)
 		: NetworkInfo(uid)
-		, mutex()
 		, cond()
 		, player(id, "", false, false, true, this)
 		, role(role)

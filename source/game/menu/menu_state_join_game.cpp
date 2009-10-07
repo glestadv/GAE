@@ -211,7 +211,10 @@ void MenuStateJoinGame::update() {
 			statusStr = lang.get("Connected") + ": "
 					+ clientInterface->getRemoteServerInterface().getStatusStr();
 
-			const GameSettings &gs = *clientInterface->getGameSettings();
+			// keep a local shared_ptr in case the network interface replaces it (in another thread)
+			// before we're finished reading from it.
+			const shared_ptr<GameSettings> &gssp = clientInterface->getGameSettings();
+			const GameSettings &gs = *gssp;
 			stringstream str;
 
 			str << lang.get("Map") << ": " << gs.getMapPath() << endl

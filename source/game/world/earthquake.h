@@ -11,15 +11,16 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MAP_H_
-#define _GAME_MAP_H_
+#ifndef _GAME_EARTHQUAKE_H_
+#define _GAME_EARTHQUAKE_H_
 
 #include <cassert>
 #include <map>
 
 #include "vec.h"
-//#include "math_util.h"
-//#include "command_type.h"
+#include "math_util.h"
+#include "command_type.h"
+#include "unit_reference.h"
 //#include "logger.h"
 //#include "object.h"
 //#include "game_constants.h"
@@ -27,6 +28,18 @@
 //#include "exceptions.h"
 //#include "pos_iterator.h"
 #include "patterns.h"
+
+namespace Shared { namespace Sound {
+	class StaticSound;
+}}
+using namespace Shared::Graphics;
+using Shared::Sound::StaticSound;
+using Game::AttackType;
+
+
+namespace Game {
+
+class Map;
 
 class EarthquakeType : private Uncopyable {
 private:
@@ -105,7 +118,7 @@ public:
 	const Vec2i getEpicenter() const		{return epicenter;}
 	void update(float slice);
 	void getDamageReport(DamageReport &results, float slice);
-	bool isDone();
+	bool isDone()							{return progress >= 1.f + radius / speed / duration;}
 	void resetSurface();
 
 private:
@@ -113,3 +126,7 @@ private:
 	float temporalPressure(float time, float &tm);
 	void calculateEffectiveValues(float &effectiveTime, float &effectiveMagnitude, const Vec2i &surfacePos, float time);
 };
+
+} // end namespace
+
+#endif // _GAME_EARTHQUAKE_H_

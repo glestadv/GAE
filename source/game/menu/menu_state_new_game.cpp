@@ -192,6 +192,7 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 
 
 void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
+	Config &config = Config::getInstance();
 	Lang &lang = Lang::getInstance();
 	CoreData &coreData = CoreData::getInstance();
 	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
@@ -218,10 +219,11 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 			msgBox->init(lang.get("WaitingForConnections"), lang.get("Ok"));
 		} else {
 			config.save();
-			shared_ptr<GameSettings> gs = serverInterface->getGameSettings();
+			shared_ptr<GameSettings> gs;
 			{
-				shared_ptr<MutexLock> localLock = gs->getLock();
+				shared_ptr<MutexLock> localLock = serverInterface->getLock();
 				updateGameSettings();
+				gs = serverInterface->getGameSettings();
 				gs->doRandomization(factionFiles);
 			}
 			serverInterface->launchGame();
@@ -229,10 +231,11 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 			// this becomes invalid after the above function call
 			return;
 		}
+
 	} else if (listBoxMap.mouseClick(x, y)) {
-	string mapBaseName = mapFiles[listBoxMap.getSelectedItemIndex()];
-string mapFile = "maps/" + mapBaseName + ".gbm";
-loadMapInfo(mapFile, &mapInfo);
+		string mapBaseName = mapFiles[listBoxMap.getSelectedItemIndex()];
+		string mapFile = "maps/" + mapBaseName + ".gbm";
+		loadMapInfo(mapFile, &mapInfo);
 
 		labelMapInfo.setText(mapInfo.desc);
 		updateControlers();
@@ -419,8 +422,8 @@ void MenuStateNewGame::update() {
  */
 void MenuStateNewGame::updateGameSettings() {
 	ServerInterface &si = *NetworkManager::getInstance().getServerInterface();
-	shared_ptr<GameSettings> gssp(new GameSettings());
-	GameSettings &gs = *gssp.get(); //*si.getGameSettings();
+	gs = shared_ptr<GameSettings>(new GameSettings());
+
 	//shared_ptr<MutexLock> localLock = gs.getLock();
 	const Config &config = Config::getInstance();
 	int factionCount = 0;
@@ -428,23 +431,23 @@ void MenuStateNewGame::updateGameSettings() {
 	bool autoReturnAllowed = config.getNetAutoReturnAllowed();
 
 	//gs.clear();
-	gs.readLocalConfig();
-	gs.setDescription(formatString(mapFiles[listBoxMap.getSelectedItemIndex()]));
-	gs.setMapPath("maps/" + mapFiles[listBoxMap.getSelectedItemIndex()] + ".gbm");
-	gs.setMapSlots(mapInfo.players);
-	gs.setTilesetPath("tilesets/" + tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
-	gs.setTechPath("techs/" + techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
-	gs.setRandStartLocs(listBoxRandomize.getSelectedItemIndex());
-	gs.setScenarioPath("");
-	gs.setDefaultVictoryConditions(true);
-	gs.setDefaultResources(true);
-	gs.setDefaultUnits(true);
-	gs.setCommandDelay(10);
+	gs->readLocalConfig();
+	gs->setDescription(formatString(mapFiles[listBoxMap.getSelectedItemIndex()]));
+	gs->setMapPath("maps/" + mapFiles[listBoxMap.getSelectedItemIndex()] + ".gbm");
+	gs->setMapSlots(mapInfo.players);
+	gs->setTilesetPath("tilesets/" + tilesetFiles[listBoxTileset.getSelectedItemIndex()]);
+	gs->setTechPath("techs/" + techTreeFiles[listBoxTechTree.getSelectedItemIndex()]);
+	gs->setRandStartLocs(listBoxRandomize.getSelectedItemIndex());
+	gs->setScenarioPath("");
+	gs->setDefaultVictoryConditions(true);
+	gs->setDefaultResources(true);
+	gs->setDefaultUnits(true);
+	gs->setCommandDelay(10);
 
 	si.unslotAllClients();
 
 	for (int i = 0; i < mapInfo.players; ++i) {
-		gs.addTeam("");
+		gs->addTeam("");
 	}
 
 	for (int i = 0; i < mapInfo.players; ++i) {
@@ -452,30 +455,32 @@ void MenuStateNewGame::updateGameSettings() {
 		if (ct == CT_CLOSED) {
 			continue;
 		}
-		const GameSettings::Team &team = gs.getTeamOrThrow(listBoxTeams[i].getSelectedItemIndex());
+		const GameSettings::Team &team = gs->getTeamOrThrow(listBoxTeams[i].getSelectedItemIndex());
 		int typeIndex = listBoxFactions[i].getSelectedItemIndex();
 		bool isTypeRandom = typeIndex >= factionFiles.size();
 		string typeName = isTypeRandom ? "" : factionFiles[typeIndex];
-		const GameSettings::Faction &f = gs.addFaction(
+		const GameSettings::Faction &f = gs->addFaction(
 				"Faction " + Conversion::toStr(i),
 				team,
 				typeName,
 				isTypeRandom,
-				i);
+				i,
+				ct == CT_CPU_ULTRA ? 3.0f : 1.0f);
 		if (ct == CT_HUMAN) {
-			gs.addPlayerToFaction(f, si.getPlayer());
-			gs.setThisFactionId(f.getId());
+			gs->addPlayerToFaction(f, si.getPlayer());
+			gs->setThisFactionId(f.getId());
 		} else if (ct == CT_NETWORK) {
 		} else {
 			AiPlayer aiPlayer(10000 + factionCount, "AI Player",
 					config.getGsAutoRepairEnabled() && autoRepairAllowed,
 					config.getGsAutoReturnEnabled() && autoReturnAllowed,
 					ct == CT_CPU_ULTRA);
-			gs.addPlayerToFaction(f, aiPlayer);
+			gs->addPlayerToFaction(f, aiPlayer);
 		}
 		factionCount++;
 	}
-	si.setGameSettings(gssp);
+
+	si.setGameSettings(gs);
 }
 
 // ============ PRIVATE ===========================

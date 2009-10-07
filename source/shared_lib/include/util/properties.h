@@ -169,7 +169,7 @@ public:
 	const string &getString(const string &key, const string &def) const		{return _getString(key, &def);}
 	const string *getStringOrNull(const string &key) const {
 		PropertyMap::const_iterator i = propertyMap.find(key);
-		return i == PropertyMap::end ? NULL : *i;
+		return i == propertyMap.end() ? NULL : &(i->second);
 	}
 
 	void setInt(const string &key, int value)		{setString(key, Conversion::toStr(value));}

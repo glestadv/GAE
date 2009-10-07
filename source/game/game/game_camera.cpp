@@ -182,20 +182,20 @@ Quad2i GameCamera::computeVisibleQuad() const{
 	float dist = pos.y > 20.f ? pos.y * 1.2f : 20.f;
 	float farDist = 90.f * (pos.y > 20.f ? pos.y / 15.f : 1.f);
 	float fov = Config::getInstance().getCameraFov();
-	
+
 	Vec2f v(sinf(degToRad(180 - hAng)), cosf(degToRad(180 - hAng)));
 	Vec2f v1(sinf(degToRad(180 - hAng - fov)), cosf(degToRad(180 - hAng - fov)));
 	Vec2f v2(sinf(degToRad(180 - hAng + fov)), cosf(degToRad(180 - hAng + fov)));
 	v.normalize();
 	v1.normalize();
 	v2.normalize();
-	
+
 	Vec2f p = Vec2f(pos.x, pos.z) - v * dist;
 	Vec2i p1(static_cast<int>(p.x + v1.x * nearDist), static_cast<int>(p.y + v1.y * nearDist));
 	Vec2i p2(static_cast<int>(p.x + v1.x * farDist), static_cast<int>(p.y + v1.y * farDist));
 	Vec2i p3(static_cast<int>(p.x + v2.x * nearDist), static_cast<int>(p.y + v2.y * nearDist));
 	Vec2i p4(static_cast<int>(p.x + v2.x * farDist), static_cast<int>(p.y + v2.y * farDist));
-	
+
 	if (hAng >= 135 && hAng <= 225) {
 		return Quad2i(p1, p2, p3, p4);
 	}
@@ -275,18 +275,8 @@ void GameCamera::clampPosXZ(float x1, float x2, float z1, float z2){
 }
 
 void GameCamera::clampPosXYZ(float x1, float x2, float y1, float y2, float z1, float z2){
-	if(pos.x < x1)		pos.x = x1;
-	if(destPos.x < x1)	destPos.x = x1;
-	if(pos.y < y1)		pos.y = y1;
-	if(destPos.y < y1)	destPos.y = y1;
-	if(pos.z < z1)		pos.z = z1;
-	if(destPos.z < z1)	destPos.z = z1;
-	if(pos.x > x2)		pos.x = x2;
-	if(destPos.x > x2)	destPos.x = x2;
-	if(pos.y > y2)		pos.y = y2;
-	if(destPos.y > y2)	destPos.y = y2;
-	if(pos.z > z2)		pos.z = z2;
-	if(destPos.z > z2)	destPos.z = z2;
+	pos.clamp(x1, y1, z1, x2, y2, z2);
+	destPos.clamp(x1, y1, z1, x2, y2, z2);
 }
 
 void GameCamera::rotateHV(float h, float v){

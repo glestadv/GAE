@@ -221,8 +221,9 @@ const GameSettings::Faction &GameSettings::addFaction(
 		const Team &team,
 		const string &typeName,
 		bool randomType,
-		int mapSlot) {
-	factions.push_back(shared_ptr<Faction>(new Faction(factions.size(), name, team, typeName, randomType, mapSlot)));
+		int mapSlot,
+		float resourceMultiplier) {
+	factions.push_back(shared_ptr<Faction>(new Faction(factions.size(), name, team, typeName, randomType, mapSlot, resourceMultiplier)));
 	return *factions.back();
 }
 
@@ -397,10 +398,6 @@ Player *GameSettings::copyAndStorePlayer(const Player &p) {
 		players[id] = shared_ptr<Player>(pp);
 	}
 	return pp;
-}
-
-shared_ptr<MutexLock> GameSettings::getLock() {
-	return shared_ptr<MutexLock>(new MutexLock(mutex));
 }
 
 } // end namespace

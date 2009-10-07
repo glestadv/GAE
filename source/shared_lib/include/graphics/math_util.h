@@ -87,14 +87,13 @@ public:
 		for (int i = 0; i < 2; ++i) {
 			if (p[i].x < minX) {
 				p[i].x = minX;
-			}
-			if (p[i].y < minY) {
-				p[i].y = minY;
-			}
-			if (p[i].x > maxX) {
+			} else if (p[i].x > maxX) {
 				p[i].x = maxX;
 			}
-			if (p[i].y > maxY) {
+
+			if (p[i].y < minY) {
+				p[i].y = minY;
+			} else if (p[i].y > maxY) {
 				p[i].y = maxY;
 			}
 		}
@@ -186,14 +185,12 @@ public:
 		for (int i = 0; i < 4; ++i) {
 			if (p[i].x < minX) {
 				p[i].x = minX;
+			} else if (p[i].x > maxX) {
+				p[i].x = maxX;
 			}
 			if (p[i].y < minY) {
 				p[i].y = minY;
-			}
-			if (p[i].x > maxX) {
-				p[i].x = maxX;
-			}
-			if (p[i].y > maxY) {
+			} else  if (p[i].y > maxY) {
 				p[i].y = maxY;
 			}
 		}

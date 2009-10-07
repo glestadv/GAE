@@ -60,7 +60,7 @@ public:
 
 protected:
 	void updateGameSettings();
-	
+
 private:
 	void reloadFactions();
 	void updateControlers();

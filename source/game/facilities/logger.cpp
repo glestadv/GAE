@@ -12,9 +12,9 @@
 
 #include "pch.h"
 #include "logger.h"
-	
+
 #include <stdarg.h>
-		
+
 #include "util.h"
 #include "renderer.h"
 #include "core_data.h"
@@ -37,12 +37,13 @@ const int Logger::logLineCount= 15;
 // ===================== PUBLIC ========================
 
 Logger::Logger(const char *fileName)
-	: fileName(fileName)
-	, sectionName()
-	, state()
-	, logLines()
-	, ss()
-	, op(ss) {
+		: fileName(fileName)
+//		, sectionName()
+		, state()
+		, logLines()
+		, ss()
+		, op(ss)
+		, loadingGame(true){
 }
 
 void Logger::setState(const string &state) {
@@ -156,8 +157,8 @@ void Logger::renderLoadingScreen() {
 	else
 	{
 		renderer.renderText(
-			current, coreData.getMenuFontNormal(), 1.0f, 
-			metrics.getVirtualW()/4, 
+			current, coreData.getMenuFontNormal(), 1.0f,
+			metrics.getVirtualW()/4,
 			62*metrics.getVirtualH()/100, false);
 	}
 	renderer.swapBuffers();

@@ -63,18 +63,22 @@ class Earthquake;
  */
 class Cell : Uncopyable {
 private:
-	Unit *units[ZoneCount];	/** Units residing in each field of this cell. */
-	float height;			/** Altitude (of ground) of this cell. */
+	Unit *units[ZoneCount];		/**< Units residing in each zone of this cell. */
+	float height;				/**< Altitude (of ground) of this cell. */
 	SurfaceType surfaceType;
 
 public:
+	/**
+	 * Default ctor.  It's usually better to outline stuff like this, but when these are created,
+	 * they are created in large quantities, so it's probably much better to have this ctor inlined.
+	 */
 	Cell() : height(0), surfaceType(SurfaceTypeLand) {
 		memset(units, 0, sizeof(units));
 	}
 
 	// get
 	Unit *getUnit(Zone zone) const	{return units[zone];}
-	Unit *getUnit(Field field)		{return getUnit(field == FieldAir ? ZoneAir : ZoneSurface);}
+	Unit *getUnit(Field field) const{return getUnit(field == FieldAir ? ZoneAir : ZoneSurface);}
 	float getHeight() const			{return height;}
 	SurfaceType getType() const		{return surfaceType;}
 
@@ -87,9 +91,9 @@ public:
 	void setType(SurfaceType type)			{surfaceType = type;}
 
 	//misc
-	/** @returns true if the field in the cell is not occupied. */
-	bool isFree(Field field) const		{
-		Unit *resident = getUnit(field);
+	/** @returns true if the zone in the cell is not occupied. */
+	bool isFree(Zone zone) const {
+		const Unit *resident = getUnit(zone);
 		return !resident || resident->isPutrefacting();
 	}
 };
@@ -100,13 +104,14 @@ public:
 //	A heightmap cell, each Tile is composed by more than one Cell
 // =====================================================
 
-class Tile{
+class Tile {
 private:
 	//geometry
 	Vec3f vertex;
 	Vec3f normal;
 	Vec3f color;
 	Vec3f originalVertex;
+	float waterLevel;
 
 	//tex coords
 	Vec2f fowTexCoord;		//tex coords for TEXTURE1 when multitexturing and fogOfWar
@@ -114,14 +119,14 @@ private:
 
 	//surface
 	int tileType;
-    const Texture2D *tileTexture;
+	const Texture2D *tileTexture;
 
 	//object & resource
 	Object *object;
 
 	//visibility
 	bool visible[GameConstants::maxFactions];
-    bool explored[GameConstants::maxFactions];
+	bool explored[GameConstants::maxFactions];
 
 	//cache
 	bool nearSubmerged;
@@ -133,40 +138,45 @@ public:
 	//get
 	const Vec3f &getVertex() const				{return vertex;}
 	float getHeight() const						{return vertex.y;}
-	const Vec3f &getColor() const				{return color;}
 	const Vec3f &getNormal() const				{return normal;}
+	const Vec3f &getColor() const				{return color;}
+	const Vec3f &getOriginalVertex() const		{return originalVertex;}
+	float getWaterLevel() const					{return waterLevel;}
 	int getTileType() const						{return tileType;}
 	const Texture2D *getTileTexture() const		{return tileTexture;}
 	Object *getObject() const					{return object;}
-	Resource *getResource() const				{return !object ? NULL: object->getResource();}
+	Resource *getResource() const				{return !object ? NULL : object->getResource();}
 	const Vec2f &getFowTexCoord() const			{return fowTexCoord;}
 	const Vec2f &getSurfTexCoord() const		{return surfTexCoord;}
 	bool getNearSubmerged() const				{return nearSubmerged;}
+	bool getSubmerged() const					{return vertex.y < waterLevel;}
+	bool getDeepSubmerged(float heightFactor) const	{return vertex.y < waterLevel - (1.5f / heightFactor);}
 
 	bool isVisible(int teamIndex) const			{return visible[teamIndex];}
 	bool isExplored(int teamIndex) const		{return explored[teamIndex];}
 
 	//set
-	void setVertex(const Vec3f &vertex)				{originalVertex = this->vertex = vertex;}
-	void setHeight(float height)					{originalVertex.y = vertex.y = height;}
-	void setNormal(const Vec3f &normal)				{this->normal= normal;}
-	void setColor(const Vec3f &color)				{this->color= color;}
-	void setTileType(int tileType)					{this->tileType= tileType;}
-	void setTileTexture(const Texture2D *st)		{this->tileTexture= st;}
-	void setObject(Object *object)					{this->object= object;}
-	void setFowTexCoord(const Vec2f &ftc)			{this->fowTexCoord= ftc;}
-	void setTileTexCoord(const Vec2f &stc)			{this->surfTexCoord= stc;}
-	void setExplored(int teamIndex, bool explored)	{this->explored[teamIndex]= explored;}
-	void setVisible(int teamIndex, bool visible)	{this->visible[teamIndex]= visible;}
-	void setNearSubmerged(bool nearSubmerged)		{this->nearSubmerged= nearSubmerged;}
+	void setVertex(const Vec3f &v)				{originalVertex = vertex = v;}
+	void setHeight(float v)						{originalVertex.y = vertex.y = v;}
+	void setNormal(const Vec3f &v)				{normal = v;}
+	void setColor(const Vec3f &v)				{color = v;}
+	void setWaterLevel(float v)					{waterLevel = v;}
+	void setTileType(int v)						{tileType = v;}
+	void setTileTexture(const Texture2D *v)		{tileTexture = v;}
+	void setObject(Object *v)					{object = v;}
+	void setFowTexCoord(const Vec2f &v)			{fowTexCoord = v;}
+	void setTileTexCoord(const Vec2f &v)		{surfTexCoord = v;}
+	void setExplored(int teamIndex, bool v)		{explored[teamIndex] = v;}
+	void setVisible(int teamIndex, bool v)		{visible[teamIndex] = v;}
+	void setNearSubmerged(bool v)				{nearSubmerged = v;}
 
 	//misc
 	void deleteResource();
-	bool isFree() const								{return object==NULL || object->getWalkable();}
+	bool isFree() const								{return object == NULL || object->getWalkable();}
 	void resetVertex()								{vertex = originalVertex;}
 	void alterVertex(const Vec3f &offset)			{vertex += offset;}
 	void updateObjectVertex() {
-		if(object) {
+		if (object) {
 			object->setPos(vertex); // should be centered ???
 		}
 	}
@@ -187,8 +197,8 @@ public:
 
 class Map : Uncopyable {
 public:
-	static const int cellScale;	//number of cells per tile
-	static const int mapScale;	//horizontal scale of surface
+	static const int cellScale = 2;	//number of cells per tile
+	static const int mapScale = 2;	//horizontal scale of surface
 	typedef vector<Earthquake*> Earthquakes;
 
 private:
@@ -215,10 +225,10 @@ public:
 	void load(const string &path, TechTree *techTree, Tileset *tileset);
 
 	//get
-	Cell *getCell(int x, int y) const					{assert(isInside(x, y)); return &cells[y * w + x];}
-	Cell *getCell(const Vec2i &pos) const				{return getCell(pos.x, pos.y);}
-	SurfaceCell *getSurfaceCell(int sx, int sy) const	{assert(isInsideSurface(sx, sy)); return &surfaceCells[sy*surfaceW+sx];}
-	SurfaceCell *getSurfaceCell(const Vec2i &sPos) const{return getSurfaceCell(sPos.x, sPos.y);}
+	Cell *getCell(int x, int y) const		{assert(isInside(x, y)); return &cells[y * w + x];}
+	Cell *getCell(const Vec2i &pos) const	{return getCell(pos.x, pos.y);}
+	Tile *getTile(int sx, int sy) const		{assert(isInsideTile(sx, sy)); return &tiles[sy * tileW + sx];}
+	Tile *getTile(const Vec2i &sPos) const	{return getTile(sPos.x, sPos.y);}
 
 	int getW() const									{return w;}
 	int getH() const									{return h;}
@@ -230,9 +240,9 @@ public:
 	Vec2i getStartLocation(int loactionIndex) const		{return startLocations[loactionIndex];}
 
 	// these should be in their respective cell classes...
-	bool getSubmerged(const Tile *sc) const				{return sc->getHeight()<waterLevel;}
+	//bool getSubmerged(const Tile *sc) const				{return sc->getSubmerged();}
 	//bool getSubmerged(const Cell *c) const				{return c->getHeight()<waterLevel;}
-	bool getDeepSubmerged(const Tile *sc) const			{return sc->getHeight()<waterLevel-(1.5f/heightFactor);}
+	bool getDeepSubmerged(const Tile *sc) const			{return sc->getDeepSubmerged(heightFactor);}
 	//bool getDeepSubmerged(const Cell *c) const			{return c->getHeight()<waterLevel-(1.5f/heightFactor);}
 	//float getSurfaceHeight(const Vec2i &pos) const;
 
@@ -297,16 +307,7 @@ public:
 	//misc
 	bool isNextTo(const Vec2i &pos, const Unit *unit) const;
 	void clampPos(Vec2i &pos) const{
-		if (pos.x < 0) {
-			pos.x = 0;
-		} else if (pos.x >= w) {
-			pos.x = w - 1;
-		}
-		if (pos.y < 0) {
-			pos.y = 0;
-		} else if (pos.y >= h) {
-			pos.y = h - 1;
-		}
+		pos.clamp(0, 0, w - 1, h - 1);
 	}
 
 	void prepareTerrain(const Unit *unit);
@@ -333,7 +334,7 @@ public:
 	#endif
 
 	//static
-	static Vec2i toSurfCoords(Vec2i unitPos)		{return unitPos / cellScale;}
+	static Vec2i toTileCoords(Vec2i unitPos)		{return unitPos/cellScale;}
 	static Vec2i toUnitCoords(Vec2i surfPos)		{return surfPos * cellScale;}
 	static string getMapPath(const string &mapName)	{return "maps/"+mapName+".gbm";}
 

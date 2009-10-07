@@ -54,13 +54,13 @@ void Lang::loadScenarioStrings(const string &scenarioDir, const string &scenario
 	}
 }
 
-string get(const string &s) const {
-	string *ret = strings.getStringOrNull(s);
+string Lang::get(const string &s) const {
+	const string *ret = strings.getStringOrNull(s);
 	return ret ? *ret : string("???" + s + "???");
 }
 
-string getScenarioString(const string &s) const {
-	string *ret = scenarioStrings.getStringOrNull(s);
+string Lang::getScenarioString(const string &s) const {
+	const string *ret = scenarioStrings.getStringOrNull(s);
 	return ret ? *ret : string("???" + s + "???");
 }
 

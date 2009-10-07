@@ -55,34 +55,34 @@ public:
 private:
 	typedef vector<Resource> Resources;
 	typedef vector<Resource> Store;
-	
+
 	UpgradeManager upgradeManager;
-	
+
 	Resources resources;
 	Store store;
 	Units units;
 	UnitMap unitMap;
-	
+
 	ControlType control;
-	
+
 	Texture2D *texture;
 	const FactionType *factionType;
-	
+
 	int teamIndex;
 	int startLocationIndex;
 	const Players &players;
 //	PlayerInfo playerInfo;
-	
+
 	bool thisFaction;
 	int subfaction;			// the current subfaction index starting at zero
 	time_t lastAttackNotice;
 	time_t lastEnemyNotice;
 	Vec3f lastEventLoc;
-	
+
 	static ResourceTypes neededResources;
 
 public:
-	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction, bool giveResources);
+	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction);
 	/*
     void init(const FactionType *factionType, ControlType control, TechTree *techTree,
 			int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction,

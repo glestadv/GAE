@@ -71,15 +71,15 @@ GameInterface::GameInterface(NetworkRole role, unsigned short port, int id)
 }
 
 GameInterface::~GameInterface() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	if(getState() < STATE_QUIT) {
 		setState(STATE_QUIT);
 	}
 
 	cond.signal();
-	mutex.v();
+	getMutex().v();
 	join();	// nothing else happens until the thread terminates
-	mutex.p();
+	getMutex().p();
 
 	if(fileReceiver) {
 		delete fileReceiver;
@@ -144,7 +144,7 @@ void GameInterface::updateLocalStatus() {
  * RemoteInterface's update() function, then RemoteInterface will call our onError() function.
  */
 void GameInterface::execute() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 
 	int64 waitTime;
 	int64 now;
@@ -185,7 +185,7 @@ void GameInterface::execute() {
 
 		// Sleep and/or wait for I/O
 		if(waitTime > 0) {
-			mutex.v();
+			getMutex().v();
 			// Force a one millisecond wait time to allow I/O operations to queue up a bit.  This
 			// should slightly reduce CPU usage and make this thread a more viable candidate for
 			// elevated priority.
@@ -199,7 +199,7 @@ void GameInterface::execute() {
 			// client clicks disconnect from the lobby (and probably in other conditions) we can
 			// end up with the socket object deleted, bad ouch!  So this is crappy for thread
 			// friendliess, but will prevent it for now.
-			mutex.p();
+			getMutex().p();
 
 			// do this again since it could have changed when the mutex was unlocked (above)
 			if(peerMapChanged) {
@@ -256,7 +256,7 @@ void GameInterface::onError(RemoteInterface &ri, GlestException &e) {
 	cerr << e.what();
 	getLogger().add(e.what(), false);
 	if(!exception) {
-		MutexLock localLock(mutex);
+		MutexLock localLock(getMutex());
 		exception = e.clone();
 	}
 	getLogger().add("Network error processing connection for:", false);
@@ -268,7 +268,7 @@ void GameInterface::onError(RemoteInterface &ri, GlestException &e) {
 }
 
 void GameInterface::broadcastMessage(NetworkMessage &msg, bool flush) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	for (PeerMap::const_iterator i = peers.begin(); i != peers.end(); ++i) {
 		RemoteInterface &client = *i->second;
 		client.send(msg, flush);
@@ -315,14 +315,14 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 }
 */
 void GameInterface::end() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	setState(STATE_QUIT);
 	// FIXME make sure thread wakes up so we can join on it
 	cond.signal();
 }
 
 void GameInterface::quit() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	setState(STATE_QUIT);
 	NetworkMessageStatus quitMsg(*this);
 	broadcastMessage(quitMsg, true);
@@ -331,12 +331,12 @@ void GameInterface::quit() {
 
 void GameInterface::copyCommandToNetwork(Command *command) {
 	// always call with mutex locked
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	requestedCommands[getLastFrame() + getGameSettings()->getCommandDelay()].push(new Command(*command));
 }
 
 void GameInterface::beginUpdate(int frame, bool isKeyFrame) {/*
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	lastFrame = frame;
 
 	if(isKeyFrame) {
@@ -370,13 +370,13 @@ const RemoteInterface &GameInterface::getPeerOrThrow(int id) const throw (range_
 }
 
 void GameInterface::setGameSettings(const shared_ptr<GameSettings> &v) {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 	gameSettings = v;
 	gameSettingsChanged = true;
 }
 
 void GameInterface::changeFaction(bool isAdd, int factionId, int playerId) throw (range_error) {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 	const GameSettings::Faction &f = gameSettings->getFactionOrThrow(factionId);
 	HumanPlayer &humanPlayer = getPeerOrThrow(playerId).getProtectedPlayer();
 	if(isAdd) {
@@ -392,17 +392,17 @@ void GameInterface::changeFaction(bool isAdd, int factionId, int playerId) throw
 }
 
 void GameInterface::setGameSettingsChanged(bool v) {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 	gameSettingsChanged = v;
 }
 
 void GameInterface::resetConnectionsChanged() {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 	connectionsChanged = false;
 }
 
 void GameInterface::setConnectionsChanged() {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 	connectionsChanged = true;
 }
 
@@ -417,7 +417,7 @@ void onReceive(RemoteInterface &source, NetworkPlayerStatus &status, NetworkMess
  * @return true if the should be deleted, false otherwise
  *//*
 bool GameInterface::process(RemoteInterface &source, NetworkMessage *msg) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 
 	switch(msg->getType()) {
 
@@ -577,12 +577,12 @@ bool GameInterface::process(RemoteInterface &source, NetworkMessageCommandList &
 
 */
 void GameInterface::sendTextMessage(const string &text, int teamIndex) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 //	outQ.push(new NetworkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex));
 }
 
 void GameInterface::addRemovePeer(bool isAdd, RemoteInterface *peer) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	shared_ptr<MutexLock> gsLock = gameSettings->getLock();
 	int id = peer->getId();
 	const Player *gsPlayer = gameSettings->getPlayer(id);
@@ -641,7 +641,7 @@ bool GameInterface::isLocalHumanPlayer(const Player &p) const {
 
 /*
 void GameInterface::setPeerId(RemoteInterface *peer, int newId) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	// may only set a peer ID if it's -1 (i.e., un-initialized)
 	assert(peer->getId() == -1);
 	assert(newId >= 0 || newId < GameConstants::maxPlayers);

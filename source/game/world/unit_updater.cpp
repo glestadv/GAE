@@ -29,12 +29,14 @@
 #include "object.h"
 #include "faction.h"
 #include "network_manager.h"
+#include "path_finder.h"
+#include "earthquake.h"
 
 #include "leak_dumper.h"
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;
-using namespace Glest::Game::Search;
+using namespace Game::Search;
 
 namespace Game {
 
@@ -742,7 +744,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					//
 					// Just do this all players ???
 					if (unit->getFaction()->getCpuUltraControl()) {
-						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
+						resourceAmount = (int)(resourceAmount * gameSettings.getFaction(unit->getFactionIndex())->getResourceMultiplier());
 						//resourceAmount *= ultraResourceFactor; // Pull from GameSettings
 					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);

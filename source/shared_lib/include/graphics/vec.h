@@ -140,11 +140,29 @@ public:
 		x /= m;
 		y /= m;
 	}
-	
+
 	static void lerpArray(Vec2 *dest, const Vec2 *srcA, const Vec2 *srcB, float t, size_t size) {
 		for(int i = 0; i < size; ++i) {
 			dest[i] = srcB[i].lerp(t, srcA[i]);
 		}
+	}
+
+	void clamp(T minX, T minY, T maxX, T maxY) {
+		if (x < minX) {
+			x = minX;
+		} else if (x > maxX) {
+			x = maxX;
+		}
+
+		if (y < minY) {
+			y = minY;
+		} else if (y > maxY) {
+			y = maxY;
+		}
+	}
+
+	void clamp(const Vec2<T> &min, const Vec2<T> &max) {
+		clamp(min.x, min.y, max.x, max.y);
 	}
 };
 
@@ -311,6 +329,30 @@ public:
 		}
 	}
 
+	void clamp(T minX, T minY, T minZ, T maxX, T maxY, T maxZ) {
+		if (x < minX) {
+			x = minX;
+		} else if (x > maxX) {
+			x = maxX;
+		}
+
+		if (y < minY) {
+			y = minY;
+		} else if (y > maxY) {
+			y = maxY;
+		}
+
+		if (z < minZ) {
+			z = minZ;
+		} else if (z > maxZ) {
+			z = maxZ;
+		}
+	}
+
+	void clamp(const Vec3<T> &min, const Vec3<T> &max) {
+		clamp(min.x, min.y, min.z, max.x, max.y, max.z);
+	}
+
 #ifdef ALIGN_12BYTE_VECTORS
 	static void* operator new(size_t size)		{return _mm_malloc(size, 16);}
 	static void* operator new[](size_t size)	{return _mm_malloc(size, 16);}
@@ -457,6 +499,36 @@ public:
 		}
 	}
 
+	void clamp(T minX, T minY, T minZ, T minW, T maxX, T maxY, T maxZ, T maxW) {
+		if (x < minX) {
+			x = minX;
+		} else if (x > maxX) {
+			x = maxX;
+		}
+
+		if (y < minY) {
+			y = minY;
+		} else if (y > maxY) {
+			y = maxY;
+		}
+
+		if (z < minZ) {
+			z = minZ;
+		} else if (z > maxZ) {
+			z = maxZ;
+		}
+
+		if (w < minW) {
+			w = minW;
+		} else if (w > maxW) {
+			w = maxW;
+		}
+	}
+
+	void clamp(const Vec4<T> &min, const Vec4<T> &max) {
+		clamp(min.x, min.y, min.z, min.w, max.x, max.y, max.z, max.w);
+	}
+
 #ifdef ALIGN_VECTORS
 	static void* operator new(size_t size)		{return _mm_malloc(size, 16);}
 	static void* operator new[](size_t size)	{return _mm_malloc(size, 16);}
@@ -528,7 +600,7 @@ public:
 	float y;
 	float z;
 	float w;
-	
+
 	/** Default constructor with no initialization. */
 	SSE2Vec4f() {}
 
@@ -706,7 +778,7 @@ public:
 		this->y = y;
 		this->z = z;
 	}
-	
+
 
 	template<typename S> explicit Vec3f(Vec4<S> v) : Vec3<S>(v) {}
 
@@ -755,7 +827,7 @@ public:
 		SSE2Vec4f::operator_div(dest, v);
 		return dest;
 	}
-	
+
 
 
 	bool operator ==(const Vec3f &v) const {
@@ -927,7 +999,7 @@ public:
 	bool operator !=(const Vec4f &v) const {
 		return x != v.x || y != v.y || z != v.z || w != v.w;
 	}
-	
+
 	Vec4f operator -() const {
 		return Vec4f(-x, -y, -z, -w);
 	}

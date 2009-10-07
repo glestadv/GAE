@@ -106,7 +106,7 @@ void MenuStateScenario::mouseClick(int x, int y, MouseButton mouseButton) {
 		const string &catagory = categories[listBoxCategory.getSelectedItemIndex()];
 		const string &scenario = scenarioFiles[listBoxScenario.getSelectedItemIndex()];
 
-		loadScenarioInfo(scenario, &scenarioInfo);
+		loadScenarioInfo(scenario, scenarioInfo);
 		labelInfo.setText(scenarioInfo.desc);
 		config.setUiLastScenario(catagory + "/" + scenario);
 	} else if (listBoxCategory.mouseClick(x, y)) {
@@ -156,14 +156,14 @@ void MenuStateScenario::launchGame() {
 	msgBox = new GraphicMessageBox();
 	msgBox->init(Lang::getInstance().get("Broken"), Lang::getInstance().get("Ok"));
 	*/
-	GameSettings gameSettings;
-	loadGameSettings(&scenarioInfo, &gameSettings);
+	shared_ptr<GameSettings> gameSettings = shared_ptr<GameSettings>(new GameSettings());
+	loadGameSettings(scenarioInfo, *gameSettings);
 	program.setState(new Game(program, gameSettings));
 }
 
 void MenuStateScenario::setScenario(int i) {
 	listBoxScenario.setSelectedItemIndex(i);
-	loadScenarioInfo(scenarioFiles[listBoxScenario.getSelectedItemIndex()], &scenarioInfo);
+	loadScenarioInfo(scenarioFiles[listBoxScenario.getSelectedItemIndex()], scenarioInfo);
 }
 
 void MenuStateScenario::updateScenarioList(const string &category, bool selectDefault) {
@@ -192,12 +192,12 @@ void MenuStateScenario::updateScenarioList(const string &category, bool selectDe
 	}
 
 	//update scenario info
-	loadScenarioInfo(scenarioFiles[listBoxScenario.getSelectedItemIndex()], &scenarioInfo);
+	loadScenarioInfo(scenarioFiles[listBoxScenario.getSelectedItemIndex()], scenarioInfo);
 	labelInfo.setText(scenarioInfo.desc);
 }
 
 
-void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo &si) {
+void MenuStateScenario::loadScenarioInfo(const string &file, ScenarioInfo &si) {
 	Lang &lang = Lang::getInstance();
 	XmlTree xmlTree;
 
@@ -224,19 +224,19 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo &si) {
 			XmlAttribute *nameAttrib = playerNode->getAttribute("name", false);
 			XmlAttribute *resMultAttrib = playerNode->getAttribute("resource-multiplier", false);
 			if (nameAttrib) {
-				scenarioInfo->playerNames[i] = nameAttrib->getValue();
-			} else if (factionControl == ctHuman) {
-				scenarioInfo->playerNames[i] = Config::getInstance().getNetPlayerName();
+				si.playerNames[i] = nameAttrib->getValue();
+				} else if (factionControl == CT_HUMAN) {
+				si.playerNames[i] = Config::getInstance().getNetPlayerName();
 			} else {
-				scenarioInfo->playerNames[i] = "CPU Player";
+				si.playerNames[i] = "CPU Player";
 			}
 			if (resMultAttrib) {
-				scenarioInfo->resourceMultipliers[i] = resMultAttrib->getFloatValue();
+				si.resourceMultipliers[i] = resMultAttrib->getFloatValue();
 			} else {
-				if (factionControl == ctCpuUltra) {
-					scenarioInfo->resourceMultipliers[i] = 3.f;
+				if (factionControl == CT_CPU_ULTRA) {
+					si.resourceMultipliers[i] = 3.f;
 				} else {
-					scenarioInfo->resourceMultipliers[i] = 1.f;
+					si.resourceMultipliers[i] = 1.f;
 				}
 			}
 			if (teamIndex < 1 || teamIndex > GameConstants::maxPlayers) {
@@ -277,9 +277,11 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo &si) {
 
 void MenuStateScenario::loadGameSettings(const ScenarioInfo &si, GameSettings &gs) {
 	NetworkManager &netman = NetworkManager::getInstance();
+	GameInterface &gameInterface = *netman.getGameInterface();
 	const Config &config = Config::getInstance();
 	bool autoRepair = config.getGsAutoRepairEnabled();
 	bool autoReturn = config.getGsAutoReturnEnabled();
+	int factionCount = 0;
 
 	gs.setDescription(formatString(scenarioFiles[listBoxScenario.getSelectedItemIndex()]));
 	gs.setMapPath("maps/" + si.mapName + ".gbm");
@@ -308,16 +310,16 @@ void MenuStateScenario::loadGameSettings(const ScenarioInfo &si, GameSettings &g
 		}
 		/* FIXME: broken.  Shouldn't we consolidate this functionality into MenuStateStartGame? */
 		const GameSettings::Faction &newFaction = gs.addFaction(
-				i,
 				/* ct == CT_HUMAN ? Config::getInstance().getNetPlayerName() : */ si.playerNames[i],
-				gs.getTeam(si.teams[i] - 1),
+				*gs.getTeam(si.teams[i] - 1),
 				si.factionTypeNames[i],
 				false,
-				factionCount);
+				factionCount,
+				si.resourceMultipliers[i]);
 		if(ct == CT_HUMAN) {
-			gs.setThisFactionIndex(factionCount);
-			netman.setId(factionCount);
-			gs.addPlayerToFaction(newFaction, netman.getGameInterface().getPlayer());
+			gs.setThisFactionId(factionCount);
+			gameInterface.setId(factionCount);
+			gs.addPlayerToFaction(newFaction, gameInterface.getPlayer());
 		} else {
 			AiPlayer ai = AiPlayer(
 					factionCount,

@@ -20,6 +20,7 @@
 #include "metrics.h"
 #include "components.h"
 #include "keymap.h"
+#include "patterns.h"
 
 /*
 using Shared::Graphics::Context;
@@ -43,7 +44,7 @@ class MainWindow;
 /// Intro, MainMenu, Game, BattleEnd (State Design pattern)
 // =====================================================
 
-class ProgramState {
+class ProgramState : private Uncopyable {
 protected:
 	Program &program;
 
@@ -111,7 +112,7 @@ private:
 private:
 	Program(const Program &);
 	const Program &operator =(const Program &);
-	
+
 public:
     Program(Config &config, int argc, char** argv);
     ~Program();

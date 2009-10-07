@@ -28,15 +28,13 @@ const string gaeMailString				= "daniel.santos@pobox.com";
 const Version glestVersion				(3, 1, 2, 0, false);
 const Version gaeVersion				(0, 2, 12, 0, true);
 const Version netProtocolVersion		(0, 2, 12, 0, true);
-string getCrashDumpFileName(){
-	return "gae" + gaeVersionString + ".dmp";
-}
 
 const string &getGlestMailString()		{return glestMailString;}
 const string &getGaeMailString()		{return gaeMailString;}
 const Version &getGlestVersion()		{return glestVersion;}
 const Version &getGaeVersion()			{return gaeVersion;}
 const Version &getNetProtocolVersion()	{return netProtocolVersion;}
+string getCrashDumpFileName()			{return "gae" + getGaeVersion().toString() + ".dmp";}
 
 string getAboutString1(int i) {
 	switch(i) {

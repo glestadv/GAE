@@ -17,6 +17,7 @@
 #include <vector>
 #include <memory>
 #include <sstream>
+#include <boost/shared_ptr.hpp>
 
 #define TIXML_USE_STL
 #include "tinyxml.h"
@@ -27,8 +28,8 @@
 using std::string;
 using std::vector;
 using std::stringstream;
-using std::auto_ptr;	// This isn't as good as shared_ptr from tr1 or boost, but it's better
-						// than what we've been doing with toString()
+using boost::shared_ptr;
+
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
@@ -347,7 +348,7 @@ public:
 		return !node ? string(defaultValue) : node->getAttribute("value")->getRestrictedValue();
 	}
 
-	auto_ptr<string> toString(bool pretty = false, const string &indentSingle = defaultIndent) const;
+	shared_ptr<string> toString(bool pretty = false, const string &indentSingle = defaultIndent) const;
 
 	void toStringSimple(stringstream &str) const;
 	void toStringPretty(stringstream &str, string &indent, const string &indentSingle) const;
@@ -384,7 +385,7 @@ public:
 	void save(const string &path)	{XmlIo::getInstance().save(path, rootNode);}
 	void parse(const string &xml)	{rootNode = XmlIo::getInstance().parseString(xml.c_str());}
 
-	auto_ptr<string> toString(bool pretty = false, const string &indentSingle = defaultIndent) const {
+	shared_ptr<string> toString(bool pretty = false, const string &indentSingle = defaultIndent) const {
 		return rootNode->toString(pretty, indentSingle);
 	}
 	XmlNode *getRootNode() const	{return rootNode;}

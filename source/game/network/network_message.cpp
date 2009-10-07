@@ -226,8 +226,7 @@ NetworkWriteableXmlDoc::NetworkWriteableXmlDoc()
 		, compressedSize(0)
 		, data(NULL)
 		, rootNode(NULL)
-		, cleanupNode(false)
-		, domAllocated(false) {
+		, cleanupNode(false) {
 }
 
 NetworkWriteableXmlDoc::NetworkWriteableXmlDoc(XmlNode *rootNode, bool adoptNode, bool txCompressed)
@@ -237,8 +236,7 @@ NetworkWriteableXmlDoc::NetworkWriteableXmlDoc(XmlNode *rootNode, bool adoptNode
 		, compressedSize(0)
 		, data(NULL)
 		, rootNode(rootNode)
-		, cleanupNode(adoptNode)
-		, domAllocated(false) {
+		, cleanupNode(adoptNode) {
 }
 
 NetworkWriteableXmlDoc::~NetworkWriteableXmlDoc() {
@@ -248,13 +246,7 @@ NetworkWriteableXmlDoc::~NetworkWriteableXmlDoc() {
 
 void NetworkWriteableXmlDoc::freeData() {
 	if(data) {
-		if(domAllocated) {
-			XmlIo::getInstance().releaseString(&data);
-			domAllocated = false;
-		} else {
-			free(data);
-		}
-		data = NULL;
+		free(data);
 	}
 }
 
@@ -281,9 +273,10 @@ void NetworkWriteableXmlDoc::parse(bool freeTextBuffer) {
 void NetworkWriteableXmlDoc::writeXml() {
 	assert(!data);
 	assert(rootNode);
-	data = rootNode->toString(Config::getInstance().getMiscDebugMode());
-	size = strlen(data) + 1;
-	domAllocated = true;
+	shared_ptr<string> strData = rootNode->toString(Config::getInstance().getMiscDebugMode());
+	size = strData->length() + 1;
+	data = strncpy(static_cast<char *>(malloc(size)), strData->c_str(), size);
+	data[size - 1] = 0;	// just in case
 }
 
 void NetworkWriteableXmlDoc::compress() {
@@ -358,7 +351,6 @@ void NetworkWriteableXmlDoc::read(NetworkDataBuffer &buf) {
 
 	memcpy(data, buf.data(), dataSize);
 	buf.pop(dataSize);
-	domAllocated = false;
 
 #if 0
 	if(!compressed) {
@@ -470,9 +462,8 @@ void NetworkWriteableXmlDoc::print(ObjectPrinter &op) const {
 			.print("compressedSize", compressedSize)
 			.print("data", (void *)data)
 			.print("rootNode", (void *)rootNode)
-			.print("cleanupNode", cleanupNode)
-			.print("domAllocated", domAllocated);
-	if(data && !compressed) {
+			.print("cleanupNode", cleanupNode);
+	if (data && !compressed) {
 		op.getOstream()
 			<< "================ XML Begin ================>" << endl
 			<< data << endl

@@ -108,36 +108,39 @@ Game::~Game() {
 
 void Game::load() {
 	Logger::getInstance().setState(Lang::getInstance().get("Loading"));
-	Logger &logger= Logger::getInstance();
-	string mapName= gameSettings.getMapPath();
-	string tilesetName= gameSettings.getTilesetPath();
-	string techName= gameSettings.getTechPath();
-	string scenarioPath= gameSettings.getScenarioPath();
-	string scenarioName= basename(scenarioPath);
+	Logger &logger = Logger::getInstance();
+	string mapName = gs->getMapPath();
+	string tilesetName = gs->getTilesetPath();
+	string techName = gs->getTechPath();
+	string scenarioPath = gs->getScenarioPath();
+	string scenarioName = basename(scenarioPath);
 
 
 	logger.setState(Lang::getInstance().get("Loading"));
 
-	if(scenarioName.empty())
-		logger.setSubtitle(formatString(mapName)+" - "+formatString(tilesetName)+" - "+formatString(techName));
-	else
+	if (scenarioName.empty()) {
+		logger.setSubtitle(formatString(mapName) + " - " + formatString(tilesetName) + " - " + formatString(techName));
+	} else {
 		logger.setSubtitle(formatString(scenarioName));
+	}
 
 	//tileset
-	if ( ! world.loadTileset(checksums) )
-		throw runtime_error ( "The tileset could not be loaded. See glestadv-error.log" );
+	if (! world.loadTileset(checksums)) {
+		throw runtime_error("The tileset could not be loaded. See glestadv-error.log");
+	}
 
 	//tech, load before map because of resources
-	if ( ! world.loadTech(checksums) )
-		throw runtime_error ( "The techtree could not be loaded. See glestadv-error.log" );
+	if (! world.loadTech(checksums)) {
+		throw runtime_error("The techtree could not be loaded. See glestadv-error.log");
+	}
 
 	//map
 	world.loadMap(checksums);
 
 	//scenario
-	if(!scenarioName.empty()){
+	if (!scenarioName.empty()) {
 		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
-		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksum);
+		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksums);
 	}
 }
 
@@ -185,7 +188,7 @@ void Game::init() {
 	aiInterfaces.resize(world.getFactionCount());
 	for (int i = 0; i < world.getFactionCount(); ++i) {
 		Faction *faction = world.getFaction(i);
-		if(faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled()){
+		if(faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled()) {
 			aiInterfaces[i] = new AiInterface(*this, i, faction->getTeam());
 			logger.add("Creating AI for faction " + Conversion::toStr(i), true);
 		} else {
@@ -250,7 +253,7 @@ void Game::init() {
 			stringstream str;
 
 			lang.format("FilesDiffer", config.
-			
+
 			for(const_iterator i = this->begin(); i != this->end(); ++i) {
 				assert(i->second >= 0 && i->second < COMPARE_RESULT_COUNT);
 				str << lang.format(compareResultDescr[i->second], i->first.c_str()) << endl;
@@ -303,7 +306,7 @@ void Game::update() {
 
 	//console
 	console.update();
-	
+
 	if(!netman.isNetworkGame()) {
 		updateWorld = true;
 	} else {
@@ -319,13 +322,13 @@ void Game::update() {
 
 	if(updateWorld) {
 		// b) Updates depandant on speed
-	
+
 		int updateLoops = getUpdateLoops();
-	
+
 		//update
 		for (int i = 0; i < updateLoops; ++i) {
 			Renderer &renderer = Renderer::getInstance();
-			
+
 			//AiInterface
 			for (int i = 0; i < world.getFactionCount(); ++i) {
 				if (world.getFaction(i)->getCpuControl()
@@ -333,16 +336,16 @@ void Game::update() {
 					aiInterfaces[i]->update();
 				}
 			}
-	
+
 			//World
 			world.update();
-	
+
 			//Commander
 			commander.getNetworkData();
-	
+
 			//Gui
 			gui.update();
-	
+
 			//Particle systems
 			if (weatherParticleSystem != NULL) {
 				weatherParticleSystem->setPos(gameCamera.getPos());
@@ -391,9 +394,8 @@ void Game::autoSaveAndPrompt(string msg, string remotePlayerName, int slot) {
 	snprintf(buf, sizeof(buf) - 1, lang.get("YourGameWasSaved").c_str(), saveName.c_str());
 	errmsg << msg << endl << buf << endl << lang.get("ExitGame?");
 
-	mainMessageBox.init ( errmsg.str(), lang.get("Ok") );
-	mainMessageBox.setEnabled ( true );
-	showExitMessageBox(errmsg.str(), false);
+	mainMessageBox.init(errmsg.str(), lang.get("Ok"));
+	mainMessageBox.setEnabled(true);
 }
 
 void Game::updateCamera() {
@@ -796,8 +798,8 @@ void Game::keyPress(char c) {
 	}
 }
 
-void Game::quitGame(){
-	program.setState(new BattleEnd(program, world.getStats()));
+void Game::quitGame() {
+	program.setState(new BattleEnd(program, gs, world.getStats()));
 }
 
 // ==================== PRIVATE ====================
@@ -953,7 +955,7 @@ void Game::render2d() {
 
 void Game::checkWinner() {
 	if (!gameOver) {
-		if(gameSettings.getDefaultVictoryConditions()) {
+		if(gs->getDefaultVictoryConditions()) {
 			checkWinnerStandard();
 		} else {
 			checkWinnerScripted();

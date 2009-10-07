@@ -33,7 +33,7 @@ namespace Game {
 // 	class TechTree
 // =====================================================
 
-bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum &checksum) {
+bool TechTree::load(const string &dir, const set<string> &factionNames, Checksums &checksums) {
 
 	string str;
 	vector<string> filenames;

@@ -104,7 +104,7 @@ RemoteInterface::~RemoteInterface() {
  */
 void RemoteInterface::update(const int64 &now) {
 	try {
-		MutexLock lock(mutex);
+		MutexLock lock(getMutex());
 		if(!socket) {
 			return;
 		}
@@ -269,7 +269,7 @@ bool RemoteInterface::process(NetworkMessagePing &msg) {
 }
 
 bool RemoteInterface::process(NetworkMessagePlayerInfo &msg) {
-	MutexLock localLock(mutex);
+	MutexLock localLock(getMutex());
 
 	// only valid after handshake
 	if(getState() != STATE_NEGOTIATED) {
@@ -342,14 +342,14 @@ bool RemoteInterface::process(NetworkMessageUpdateRequest &msg) {
 
 
 void RemoteInterface::beginUpdate(int frame, bool isKeyFrame) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 }
 
 void RemoteInterface::endUpdate() {
 }
 
 void RemoteInterface::send(NetworkMessage &msg, bool flush) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	size_t startBufSize = txbuf.size();
 	msg.writeMsg(txbuf);
 	stats.addDataSent(txbuf.size() - startBufSize);
@@ -370,7 +370,7 @@ void RemoteInterface::send(NetworkMessage &msg, bool flush) {
  *		   but may block the current thread.
  */
 bool RemoteInterface::flush() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	if(txbuf.size()) {
 		txbuf.pop(socket->send(txbuf.data(), txbuf.size()));
 		return !txbuf.size();
@@ -411,7 +411,7 @@ bool RemoteInterface::flush() {
 //}
 /*
 bool RemoteInterface::receive() {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	int bytesReceived;
 	NetworkMessage *m;
 
@@ -598,7 +598,7 @@ GameNetworkInterface::~GameNetworkInterface(){
 }
 
 void GameNetworkInterface::sendTextMessage(const string &text, int teamIndex) {
-	MutexLock lock(mutex);
+	MutexLock lock(getMutex());
 	NetworkMessageText networkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex);
 	send(&networkMessageText);
 }
@@ -610,7 +610,7 @@ string GameNetworkInterface::getStatus() const {
 void GameNetworkInterface::execute() {
 	while(!quit) {
 		update();
-		//cond.wait(mutex, 20);
+		//cond.wait(getMutex(), 20);
 	}
 }
 */

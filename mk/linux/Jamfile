@@ -114,10 +114,10 @@ if $(WX_AVAILABLE) = "yes" {
 		MAP_EDITOR_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
 	}
 
-	Application map_editor : $(MAP_EDITOR_SOURCES) ;
-	LinkWith map_editor : glestlib ;
-	ExternalLibs map_editor : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL WX ;
-	IncludeDir map_editor : $(SHARED_PCH_INCLUDE) $(MAP_EDITOR_DIRS) $(SHARED_INCLUDE_DIRS) ;
+	Application editor : $(MAP_EDITOR_SOURCES) ;
+	LinkWith editor : glestlib ;
+	ExternalLibs editor : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL WX ;
+	IncludeDir editor : $(SHARED_PCH_INCLUDE) $(MAP_EDITOR_DIRS) $(SHARED_INCLUDE_DIRS) ;
 }
 
 

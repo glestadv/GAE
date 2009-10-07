@@ -25,6 +25,7 @@
 #include "network_message.h"
 #include "path_finder.h"
 #include "lang_features.h"
+#include "earthquake.h"
 
 //DEBUG remove me some time...
 #include "renderer.h"
@@ -201,8 +202,8 @@ bool World::loadMap(Checksums &checksums) {
 	return true;
 }
 
-bool World::loadScenario(const string &path, Checksum *checksum) {
-	checksum->addFile(path, true);
+bool World::loadScenario(const string &path, Checksums *checksums) {
+	checksums->addFile(path, true);
 	scenario.load(path);
 	return true;
 }
@@ -337,11 +338,11 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		if (!morphed && type != unit->getType()->getName()) {
 			XmlNode pre("fucked-up-unit");
 			unit->save(&pre);
-			Logger::getClientLog().add(string("fuck, fuck!  Unit is different type without morph.  "
-					"Killing unit and requesting update because I don't know what else to do.\n")
-					+ pre.toString(true));
+			Logger::getClientLog().add("fuck, fuck!  Unit is different type without morph.  "
+					"Killing unit and requesting update because I don't know what else to do.\n"
+					+ *pre.toString(true));
 			if (!Config::getInstance().getMiscDebugMode()) {
-				Logger::getClientLog().add(string("Update recieved:\n ") + n->toString(true));
+				Logger::getClientLog().add(string("Update recieved:\n ") + *n->toString(true));
 			}
 			NetworkManager::getInstance().getClientInterface()->requestFullUpdate(unitRef);
 			unit->kill();
@@ -352,64 +353,65 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		}
 	}
 
-#if defined(DEBUG_NETWORK_LEVEL) && DEBUG_NETWORK_LEVEL > 0 {
-	XmlNode post("unit");
-	bool diffFound = false;
-	unit->save(&post);
-	assert(pre.getChildCount() == post.getChildCount());
-	for (int i = 0; i < post.getChildCount(); ++i) {
-		char *a = pre.getChild(i)->toString(true);
-		char *b = post.getChild(i)->toString(true);
-		if (strcmp(a, b)) {
-			if (!diffFound) {
-				diffFound = true;
-				cerr << unit->getType()->getName() << " id " << unit->getId() << endl;
+#if defined(DEBUG_NETWORK_LEVEL) && DEBUG_NETWORK_LEVEL > 0
+	if (1) {
+		XmlNode post("unit");
+		bool diffFound = false;
+		unit->save(&post);
+		assert(pre.getChildCount() == post.getChildCount());
+		for (int i = 0; i < post.getChildCount(); ++i) {
+			char *a = pre.getChild(i)->toString(true);
+			char *b = post.getChild(i)->toString(true);
+			if (strcmp(a, b)) {
+				if (!diffFound) {
+					diffFound = true;
+					cerr << unit->getType()->getName() << " id " << unit->getId() << endl;
+				}
+				cerr << "----" << endl << a << endl << "++++" << endl << b << endl;
 			}
-			cerr << "----" << endl << a << endl << "++++" << endl << b << endl;
+			delete [] a;
+			delete [] b;
 		}
-		delete [] a;
-		delete [] b;
+		if (diffFound) {
+			cerr << "========================" << endl;
+		}
 	}
-	if (diffFound) {
-		cerr << "========================" << endl;
-	}
-}
 #endif
 
 
-if (Config::getInstance().getMiscDebugMode()) {
-	logUnit(unit, morphed ? "morphed" : "update", &lastPos, &lastHp);
-}
-
-// were they alive or not killed before?
-if (lastHp || lastSkill->getClass() != scDie) {
-	// are they alive now?
-	if (unit->getHp()) {
-		moveAndEvict(unit, evicted, (wasEvicted || morphed) ? NULL : &lastPos);
-	} else {
-		if (!unit->getHp()) {
-			assert(lastSkill->getClass() != scDie);
-			// we kill them here so their cells are freed and we don't have to relocate them if
-			// there's another unit (in this update) where they used to be.
-			unit->kill(lastPos, !(wasEvicted || morphed));
-		}
+	if (Config::getInstance().getMiscDebugMode()) {
+		logUnit(unit, morphed ? "morphed" : "update", &lastPos, &lastHp);
 	}
-} else {
-	// make sure they are still dead
-	if (unit->getHp()) {
-		// doh! we gotta bring em back
-		moveAndEvict(unit, evicted, NULL);
 
-		// remove them from hacky cleanup list
-		for (Units::iterator i = newlydead.begin(); i != newlydead.end(); ++i) {
-			if (*i == unit) {
-				newlydead.erase(i);
-				break;
+	// were they alive or not killed before?
+	if (lastHp || lastSkill->getClass() != scDie) {
+		// are they alive now?
+		if (unit->getHp()) {
+			moveAndEvict(unit, evicted, (wasEvicted || morphed) ? NULL : &lastPos);
+		} else {
+			if (!unit->getHp()) {
+				assert(lastSkill->getClass() != scDie);
+				// we kill them here so their cells are freed and we don't have to relocate them if
+				// there's another unit (in this update) where they used to be.
+				unit->kill(lastPos, !(wasEvicted || morphed));
+			}
+		}
+	} else {
+		// make sure they are still dead
+		if (unit->getHp()) {
+			// doh! we gotta bring em back
+			moveAndEvict(unit, evicted, NULL);
+
+			// remove them from hacky cleanup list
+			for (Units::iterator i = newlydead.begin(); i != newlydead.end(); ++i) {
+				if (*i == unit) {
+					newlydead.erase(i);
+					break;
+				}
 			}
 		}
 	}
-}
-map.assertUnitCells(unit);
+	map.assertUnitCells(unit);
 }
 
 //placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spaciated)
@@ -803,11 +805,11 @@ Unit *World::nearestStore(const Vec2i &pos, int factionIndex, const ResourceType
 
 void World::createUnit(const string &unitName, int factionIndex, const Vec2i &pos) {
 	if (factionIndex < factions.size()) {
-		Faction* faction = &factions[factionIndex];
-		const FactionType* ft = faction->getType();
+		Faction& faction = *factions[factionIndex];
+		const FactionType* ft = faction.getType();
 		const UnitType* ut = ft->getUnitType(unitName);
 
-		Unit* unit = new Unit(getNextUnitId(), pos, ut, faction, &map);
+		Unit* unit = new Unit(getNextUnitId(), pos, ut, &faction, &map);
 		if (placeUnit(pos, generationArea, unit, true)) {
 			unit->create(true);
 			unit->born();
@@ -826,9 +828,9 @@ void World::createUnit(const string &unitName, int factionIndex, const Vec2i &po
 
 void World::giveResource(const string &resourceName, int factionIndex, int amount) {
 	if (factionIndex < factions.size()) {
-		Faction* faction = &factions[factionIndex];
+		Faction& faction = *factions[factionIndex];
 		const ResourceType* rt = techTree.getResourceType(resourceName);
-		faction->incResourceAmount(rt, amount);
+		faction.incResourceAmount(rt, amount);
 	} else {
 		throw runtime_error("Invalid faction index in giveResource: " + intToStr(factionIndex));
 	}
@@ -1008,9 +1010,9 @@ void World::giveUpgradeCommand(int unitId, const string &upgradeName) {
 
 int World::getResourceAmount(const string &resourceName, int factionIndex) {
 	if (factionIndex < factions.size()) {
-		Faction* faction = &factions[factionIndex];
+		Faction& faction = *factions[factionIndex];
 		const ResourceType* rt = techTree.getResourceType(resourceName);
-		return faction->getResource(rt)->getAmount();
+		return faction.getResource(rt)->getAmount();
 	} else {
 		throw runtime_error("Invalid faction index in giveResource: " + intToStr(factionIndex));
 	}
@@ -1018,8 +1020,8 @@ int World::getResourceAmount(const string &resourceName, int factionIndex) {
 
 Vec2i World::getStartLocation(int factionIndex) {
 	if (factionIndex < factions.size()) {
-		Faction* faction = &factions[factionIndex];
-		return map.getStartLocation(faction->getStartLocationIndex());
+		Faction& faction = *factions[factionIndex];
+		return map.getStartLocation(faction.getStartLocationIndex());
 	} else {
 		throw runtime_error("Invalid faction index in getStartLocation: " + intToStr(factionIndex));
 	}
@@ -1043,11 +1045,11 @@ int World::getUnitFactionIndex(int unitId) {
 
 int World::getUnitCount(int factionIndex) {
 	if (factionIndex < factions.size()) {
-		Faction* faction = &factions[factionIndex];
+		Faction& faction = *factions[factionIndex];
 		int count = 0;
 
-		for (int i = 0; i < faction->getUnitCount(); ++i) {
-			const Unit* unit = faction->getUnit(i);
+		for (int i = 0; i < faction.getUnitCount(); ++i) {
+			const Unit* unit = faction.getUnit(i);
 			if (unit->isAlive()) {
 				++count;
 			}
@@ -1060,11 +1062,11 @@ int World::getUnitCount(int factionIndex) {
 
 int World::getUnitCountOfType(int factionIndex, const string &typeName) {
 	if (factionIndex < factions.size()) {
-		Faction* faction = &factions[factionIndex];
+		Faction& faction = *factions[factionIndex];
 		int count = 0;
 
-		for (int i = 0; i < faction->getUnitCount(); ++i) {
-			const Unit* unit = faction->getUnit(i);
+		for (int i = 0; i < faction.getUnitCount(); ++i) {
+			const Unit* unit = faction.getUnit(i);
 			if (unit->isAlive() && unit->getType()->getName() == typeName) {
 				++count;
 			}
@@ -1139,7 +1141,7 @@ void World::initFactionTypes() {
 		/*
 		const GameSettings::Faction &f = gs.getFaction(i);
 		const FactionType *ft = techTree.getFactionType(f.getTypeName());
-		factions[i].init(
+		factions[i]->init(
 			ft, f.getControlType(), &techTree, i, f.getTeam().getId(),
 			f.getMapSlot(), i == thisFactionIndex);
 		*/

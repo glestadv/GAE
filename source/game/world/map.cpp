@@ -17,7 +17,7 @@
 //#include "earthquake.h"
 
 #include <cassert>
-#include <limits>
+#include <limits.h>
 
 #include "world.h"
 #include "tileset.h"
@@ -28,6 +28,7 @@
 #include "config.h"
 #include "socket.h"
 #include "selection.h"
+#include "earthquake.h"
 
 #include "leak_dumper.h"
 
@@ -46,11 +47,6 @@ namespace Game {
 
 
 // ==================== misc ====================
-
-//returns if the cell is free
-bool Cell::isFree(Zone field) const {
-	return getUnit(field) == NULL || getUnit(field)->isPutrefacting();
-}
 
 // =====================================================
 // 	class Tile
@@ -240,9 +236,6 @@ void Tile::write(NetworkDataBuffer &buf) const {
 
 // ===================== PUBLIC ========================
 
-const int Map::cellScale = 2;
-const int Map::mapScale = 2;
-
 Map::Map()
 		: title()
 		, waterLevel(0.f)
@@ -343,6 +336,7 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 				fread(&alt, sizeof(float32), 1, f);
 				Tile *sc = getTile(x, y);
 				sc->setVertex(Vec3f((float)(x * mapScale), alt / heightFactor, (float)(y * mapScale)));
+				sc->setWaterLevel(waterLevel);
 			}
 		}
 
@@ -518,7 +512,7 @@ bool Map::isFreeCell(const Vec2i &pos, Field field) const {
    //return PathFinder::getInstance()->canOccupy ( pos, 1, field );
    // placeUnit() needs to use this... and the metrics aren't constructed at that point...
 
-	const Cell &cell = getCell(pos);
+	const Cell &cell = *getCell(pos);
 	switch (field) {
 
 		case FieldWalkable:
@@ -529,8 +523,10 @@ bool Map::isFreeCell(const Vec2i &pos, Field field) const {
 
 		case FieldDeepWater:
 			return cell.isDeepSubmerged();
+
+		default:
+			return true;
 	}
-	return true;
 }
 
 #if 0
@@ -1089,12 +1085,6 @@ bool Map::isNextTo(const Vec2i &pos, const Unit *unit) const {
 	}
 	return false;
 }
-void Map::clampPos(Vec2i &pos) const {
-	if (pos.x < 0) pos.x = 0;
-	if (pos.y < 0) pos.y = 0;
-	if (pos.x >= w) pos.x = w - 1;
-	if (pos.y >= h) pos.y = h - 1;
-}
 
 void Map::prepareTerrain(const Unit *unit) {
 	flatternTerrain(unit);
@@ -1250,17 +1240,17 @@ void Map::computeInterpolatedHeights(Rect2i range) {
 			for (int k = 0; k < cellScale; ++k) {
 				for (int l = 0; l < cellScale; ++l) {
 					if (k == 0 && l == 0) {
-						getCell(i*cellScale, j*cellScale)->setHeight(getTile(i, j)->getHeight());
+						getCell(i * cellScale, j * cellScale)->setHeight(getTile(i, j)->getHeight());
 					} else if (k != 0 && l == 0) {
-						getCell(i*cellScale + k, j*cellScale)->setHeight((
+						getCell(i * cellScale + k, j * cellScale)->setHeight((
 								getTile(i, j)->getHeight() +
 								getTile(i + 1, j)->getHeight()) / 2.f);
 					} else if (l != 0 && k == 0) {
-						getCell(i*cellScale, j*cellScale + l)->setHeight((
+						getCell(i * cellScale, j * cellScale + l)->setHeight((
 								getTile(i, j)->getHeight() +
 								getTile(i, j + 1)->getHeight()) / 2.f);
 					} else {
-						getCell(i*cellScale + k, j*cellScale + l)->setHeight((
+						getCell(i * cellScale + k, j * cellScale + l)->setHeight((
 								getTile(i, j)->getHeight() +
 								getTile(i, j + 1)->getHeight() +
 								getTile(i + 1, j)->getHeight() +
@@ -1333,7 +1323,7 @@ void Map::computeNearSubmerged() {
 			for (int xoff = -1; xoff <= 2 && !anySubmerged; ++xoff) {
 				for (int yoff = -1; yoff <= 2 && !anySubmerged; ++yoff) {
 					Vec2i pos(x + xoff, y + yoff);
-					if (isInsideTile(pos) && getSubmerged(getTile(pos))) {
+					if (isInsideTile(pos) && getTile(pos)->getSubmerged()) {
 						anySubmerged = true;
 					}
 				}

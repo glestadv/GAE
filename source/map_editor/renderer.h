@@ -17,7 +17,7 @@
 namespace MapEditor {
 
 // ===============================================
-// class Renderer
+//	class Renderer
 // ===============================================
 
 class Renderer {

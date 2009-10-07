@@ -61,7 +61,7 @@ DisplayableType::DisplayableType(const XmlNode &node, const string &dir)
 	image->load(dir + "/" + node.getChild("image")->getRestrictedAttribute("path"));
 }
 
-void DisplayableType::load(const XmlNode *baseNode, const string &dir) {
+bool DisplayableType::load(const XmlNode *baseNode, const string &dir) {
 	assert(!image);
 	try {
 		image = Renderer::getInstance().newTexture2D(rsGame);

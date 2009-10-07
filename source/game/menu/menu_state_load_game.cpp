@@ -29,38 +29,55 @@ using namespace Shared::Util;
 // =====================================================
 // 	class MenuStateLoadGame
 // =====================================================
+SavedGamePreviewLoader::SavedGamePreviewLoader(MenuStateLoadGame &menu)
+		: Thread()
+		, menu(menu)
+		, fileName()
+		, seeJaneRun(true)
+		, mutex() {
+	start();
+}
+
+
+void SavedGamePreviewLoader::goAway() {
+	MutexLock lock(mutex);
+	seeJaneRun = false;
+}
 
 void SavedGamePreviewLoader::execute() {
 	while(seeJaneRun) {
-		string *fileName;
-		{
-			MutexLock lock(mutex);
-			fileName = this->fileName;
-		}
-		if(fileName) {
-			loadPreview(fileName);
+		MutexLock lock(mutex);
+		if(fileName.get()) {
+			// Store filename in local variable and clear this->fileName
+			shared_ptr<string> localFN;
+			localFN.swap(fileName);
+			mutex.v();
+			_loadInternal(localFN);
+			mutex.p();
 		} else {
+			mutex.v();
 			sleep(25);
+			mutex.p();
 		}
 	}
 }
 
-void SavedGamePreviewLoader::loadPreview(string *fileName) {
+void SavedGamePreviewLoader::_loadInternal(const shared_ptr<string> &fileName) {
 	string err;
-	XmlNode *root = NULL;
+	shared_ptr<const XmlNode> root;
 
 	try {
-		root = XmlIo::getInstance().load(*fileName);
+		root = shared_ptr<const XmlNode> (XmlIo::getInstance().load(*fileName));
 	} catch (exception &e) {
 		err = "Can't open game " + *fileName + ": " + e.what();
 	}
 
-	fileName = menu.setGameInfo(*fileName, root, err);
-	{
-		MutexLock lock(mutex);
-		delete this->fileName;
-		this->fileName = fileName;
-	}
+	menu.setGameInfo(*fileName, root, err);
+}
+
+void SavedGamePreviewLoader::load(const string &fileName) {
+	MutexLock lock(mutex);
+	this->fileName = shared_ptr<string>(new string(fileName));
 }
 
 
@@ -71,7 +88,7 @@ void SavedGamePreviewLoader::loadPreview(string *fileName) {
 MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu) :
 		MenuStateStartGameBase(program, mainMenu, "loadgame"), loaderThread(*this) {
 	confirmMessageBox = NULL;
-	savedGame = NULL;
+	savedGame.reset();
 
 	Shared::Platform::mkdir("savegames", true);
 
@@ -214,7 +231,7 @@ void MenuStateLoadGame::render() {
 		return;
 	}
 
-	if(savedGame) {
+	if(savedGame.get()) {
 		initGameInfo();
 	}
 
@@ -269,14 +286,16 @@ void MenuStateLoadGame::update() {
 
 // ============ misc ===========================
 
-string *MenuStateLoadGame::setGameInfo(const string &fileName, const XmlNode *root,
-		const string &err) {
+void MenuStateLoadGame::setGameInfo(const string &fileName, shared_ptr<const XmlNode> &root, const string &err) {
 	MutexLock lock(mutex);
 	if(this->fileName != fileName) {
-		return new string(this->fileName);
+		savedGame.reset();
+		return;
 	}
 
-	if(!root) {
+	savedGame = root;
+
+	if(!root.get()) {
 		labelInfoHeader.setText(err);
 		for(int i=0; i<GameConstants::maxPlayers; ++i){
 			labelPlayers[i].setText("");
@@ -285,16 +304,7 @@ string *MenuStateLoadGame::setGameInfo(const string &fileName, const XmlNode *ro
 			labelTeams[i].setText("");
 			labelNetStatus[i].setText("");
 		}
-		return NULL;
 	}
-
-	if(savedGame) {
-		//oops, that shouldn't happen
-		delete root;
-	}
-	savedGame = root;
-
-	return NULL;
 }
 
 // ============ PRIVATE ===========================
@@ -368,7 +378,7 @@ void MenuStateLoadGame::selectionChanged() {
 			labelNetStatus[i].setText("");
 		}
 	}
-	loaderThread.setFileName(fileName);
+	loaderThread.load(fileName);
 }
 
 void MenuStateLoadGame::initGameInfo() {
@@ -460,12 +470,12 @@ void MenuStateLoadGame::initGameInfo() {
 		}
 		good = false;
 	}
+
 	if(good) {
 		updateNetworkSlots();
 	}
 
-	delete savedGame;
-	savedGame = NULL;
+	savedGame.reset();
 }
 
 } // end namespace

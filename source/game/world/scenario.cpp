@@ -10,6 +10,7 @@
 // ==============================================================
 
 #include "pch.h"
+#include<string>
 
 #include "scenario.h"
 
@@ -29,7 +30,7 @@ namespace Game {
 //	class Scenario
 // =====================================================
 
-Script(const string &name, const string &code)
+Script::Script(const string &name, const string &code)
 		: name(name)
 		, code(code) {
 }

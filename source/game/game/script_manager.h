@@ -30,7 +30,7 @@ using Shared::Graphics::Vec2i;
 using Shared::Platform::Chrono;
 using namespace Shared::Lua;
 
-namespace namespace Game {
+namespace Game {
 
 	class World;
 	class Unit;

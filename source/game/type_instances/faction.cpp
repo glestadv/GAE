@@ -36,7 +36,7 @@ namespace Game {
 // =====================================================
 Faction::ResourceTypes Faction::neededResources;
 
-Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction, bool giveResources)
+Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction)
 		: IdNamePair(gsFaction.getId(), gsFaction.getName())
 		, upgradeManager()
 		, resources()
@@ -54,7 +54,7 @@ Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction,
 		, lastAttackNotice(0)
 		, lastEnemyNotice(0)
 		, lastEventLoc(-1.f) {
-	
+
 
 	//const GameSettings::Faction &gsFaction = gs.getFaction(factionIndex);
 
@@ -74,13 +74,13 @@ Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction,
 	store.resize(tt.getResourceTypeCount());
 	for (int i = 0; i < tt.getResourceTypeCount(); ++i) {
 		const ResourceType *rt = tt.getResourceType(i);
-		int resourceAmount= giveResources? factionType->getStartingResourceAmount(rt): 0;
+		int resourceAmount = gs.getDefaultResources() ? factionType->getStartingResourceAmount(rt) : 0;
 		resources[i].init(rt, resourceAmount);
 		store[i].init(rt, 0);
 	}
 
 	texture->load("data/core/faction_textures/faction" + Conversion::toStr(id) + ".tga");
-}
+	}
 
 void Faction::load(const XmlNode *node, World *world, const FactionType *ft, ControlType control,
 		TechTree *tt) {
@@ -409,7 +409,7 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 
 //deapply static costs, but not negative costs, for when building gets killed
 void Faction::deApplyStaticConsumption(const ProducibleType *p){
-   
+
     //decrease resources
 	for(int i=0; i<p->getCostCount(); ++i){
 		const ResourceType *rt= p->getCost(i)->getType();
@@ -418,7 +418,7 @@ void Faction::deApplyStaticConsumption(const ProducibleType *p){
 			if(cost>0){
 				incResourceAmount(rt, cost);
 			}
-        }    
+        }
     }
 }
 

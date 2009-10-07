@@ -222,6 +222,7 @@ inline string intToHex ( int addr ) {
 }
 #endif
 
+#if 0
 inline string toLower(const string &s){
 	size_t size = s.size();
 	string rs;
@@ -233,6 +234,7 @@ inline string toLower(const string &s){
 
 	return rs;
 }
+#endif
 
 inline void copyStringToBuffer(char *buffer, int bufferSize, const string& s) {
 	strncpy(buffer, s.c_str(), bufferSize - 1);
