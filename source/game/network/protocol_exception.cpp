@@ -58,4 +58,14 @@ string ProtocolException::buildFullMsg(const RemoteInterface &sender,
 	return str.str();
 }
 
+__noreturn __cold void ProtocolException::coldThrow(
+		const RemoteInterface &sender,
+		NetworkMessage *netMsg,
+		const string &msg,
+		const GlestException *rootCause,
+		const string &fileName,
+		long lineNumber) {
+	throw ProtocolException(sender, netMsg, msg, rootCause, fileName, lineNumber);
+}
+
 }} // end namespace

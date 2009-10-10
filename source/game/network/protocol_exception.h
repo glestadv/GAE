@@ -41,6 +41,15 @@ public:
 
 	virtual string getType() const throw();
 
+	/** Convenience method to throw a Protocol exception as a cold function call. */
+	static __noreturn __cold void coldThrow(
+			const RemoteInterface &sender,
+			NetworkMessage *netMsg,
+			const string &msg,
+			const GlestException *rootCause = NULL,
+			const string &fileName = "",
+			long lineNumber = 0);
+
 private:
 	static string buildFullMsg(const RemoteInterface &sender, NetworkMessage *netMsg,
 			const string &msg);

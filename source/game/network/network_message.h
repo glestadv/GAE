@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -133,13 +133,13 @@ public:
 	static const int maxCompressedSize = 0x4000;	// 16k max, and that's probably too big
 
 protected:
-	uint32 size;
-	bool txCompressed;
-	bool compressed;
-	uint32 compressedSize;
-	char *data;
-	XmlNode *rootNode;
-	bool cleanupNode;
+	uint32 size;			/**< Size of the actual data.  If it's currently compressed, this is the uncompressed size. */
+	bool txCompressed;		/**< Rather or not to automatically compress this message prior to transmission. */
+	bool compressed;		/**< True if data points to compressed data. */
+	uint32 compressedSize;	/**< Size of data when compressed. */
+	char *data;				/**< Data of the message.  At various points, this stored as either compressed or uncompressed and is allocated with malloc(), realloc() and free(), so it's not a good candidate for shared_ptr<> */
+	XmlNode *rootNode;		/**< Root node of the XML data. */
+	bool cleanupNode;		/**< Rather or not the destructor is responsible for cleaning up the rootNode.  TODO: Convert rootNode to use a shared_ptr. */
 
 private:
 	NetworkWriteableXmlDoc(const NetworkWriteableXmlDoc &) DELETE_FUNC;

@@ -235,9 +235,12 @@ void MenuStateJoinGame::update() {
 		servers.setString(clientInterface->getDescription(), IpAddress(ipString).toString());
 
 		//launch
-		if (clientInterface->getState() == STATE_LAUNCH_READY) {
+		if (clientInterface->getState() == STATE_LAUNCHING) {
 			servers.save(serverFileName);
 			program.setState(new Game(program, clientInterface->getGameSettings(), clientInterface->getSavedGame()));
+
+			// this is now dead, so return before we blow something up :)
+			return;
 			/*
 			if (clientInterface->getSavedGameFileName() == "") {
 				program.setState(new Game(program, clientInterface->getGameSettings()));

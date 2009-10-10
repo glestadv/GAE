@@ -32,6 +32,9 @@ using namespace std;
 using namespace Shared::Platform;
 using namespace Shared::Util;
 
+#define THROW_PROTOCOL_EXCEPTION(description) \
+	ProtocolException::coldThrow(source, &msg, (description), NULL, __FILE__, __LINE__)
+
 namespace Game { namespace Net {
 
 // =====================================================
@@ -56,7 +59,7 @@ void ServerInterface::accept() {
 
 	if(s) {
 		MutexLock lock(getMutex());
-		if(getPeers().size() < GameConstants::maxPlayers) {
+		if(getPeers().size() >= GameConstants::maxPlayers) {
 			// TODO: We should send a "server full" message.
 			s->close();
 			delete s;
@@ -145,8 +148,7 @@ void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessagePlayerIn
 }
 
 void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo &msg) {
-	throw ProtocolException(source, &msg, "ServerInterface doesn't accept NetworkMessageGameInfo.",
-			NULL, __FILE__, __LINE__);
+	THROW_PROTOCOL_EXCEPTION("ServerInterface doesn't accept NetworkMessageGameInfo.");
 }
 
 void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
@@ -168,8 +170,7 @@ void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessageCommandL
 }
 
 void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessageUpdate &msg) {
-	throw ProtocolException(source, &msg, "ServerInterface doesn't accept NetworkMessageUpdate.",
-			NULL, __FILE__, __LINE__);
+	THROW_PROTOCOL_EXCEPTION("ServerInterface doesn't accept NetworkMessageUpdate.");
 }
 
 void ServerInterface::_onReceive(RemoteInterface &source, NetworkPlayerStatus &status, NetworkMessage &msg) {
@@ -185,8 +186,7 @@ void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessageUpdateRe
 		Unit *unit = UnitReference(unitNode).getUnit();
 
 		if(!unit) {
-			throw ProtocolException(source, &msg, "Client out of sync",
-					NULL, __FILE__, __LINE__);
+			THROW_PROTOCOL_EXCEPTION("Client out of sync");
 		}
 
 		if(unitNode->getAttribute("full")->getBoolValue()) {

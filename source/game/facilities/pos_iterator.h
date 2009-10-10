@@ -52,6 +52,8 @@ public:
 			cycle(cycle) {
 	}
 
+	// TODO: We need to profile both versions of getPosForCycle() and see which one is faster.
+#if 0
 	Vec2i getPosForCycle() {
 		int step = next->step;
 		int off = next->off;
@@ -67,13 +69,15 @@ public:
 			default: assert(false);
 		}
 	}
-/*
+#endif
+
 	Vec2i getPosForCycle() {
-		int step = cycle & 2 ? -next->step : next->step;
-		int off = cycle & 4 ? -next->off : next->off;
-		return cycle & 1 ? Vec2i(step, off) :  Vec2i(off, step);
+		int off  = cycle & 4 ? -next->off		: next->off;
+		int step = cycle & 2 ? -next->step		: next->step;
+		return	   cycle & 1 ? Vec2i(step, off) : Vec2i(off, step);
 	}
-*/
+
+
 	bool getNext(Vec2i &result) {
 		assert(next <= last);
 		if(next < first || cycle == (next->off ? 7 : 3)) {

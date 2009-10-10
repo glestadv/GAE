@@ -30,7 +30,7 @@ using namespace Shared::Platform;
 using namespace Shared::Util;
 
 #define THROW_PROTOCOL_EXCEPTION(description) \
-	throw ProtocolException(source, &msg, description, NULL, __FILE__, __LINE__)
+	ProtocolException::coldThrow(source, &msg, (description), NULL, __FILE__, __LINE__)
 
 namespace Game { namespace Net {
 
@@ -125,9 +125,8 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 		// reference.
 		msg.getPlayerStatuses();
 	} catch (runtime_error &e) {
-		throw ProtocolException(source, &msg,
-				string("Failed to read game-settings from NetworkMessageGameInfo: ") + e.what(),
-				NULL, __FILE__, __LINE__);
+		THROW_PROTOCOL_EXCEPTION(
+				string("Failed to read game-settings from NetworkMessageGameInfo: ") + e.what());
 	}
 	const NetworkMessageGameInfo::Statuses &statuses = msg.getPlayerStatuses();
 
@@ -179,8 +178,17 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 
 				// p2p-TODO: We're skipping clients processing status updates on other clients now,
 				// but this needs to be done for peer-to-peer implementation.
-				if(peer->getRole() != NR_CLIENT) {
+				if(peer->getRole() == NR_SERVER) {
 					peer->updateStatus(statuses.find(id)->second, msg);
+
+					// If server is launching and we're ready to launch, then change state and let
+					// the UI screen query our state and realize we need to change the ProgramState
+					// to Game.
+					if(peer->getState() == STATE_LAUNCHING && getState() < STATE_LAUNCHING) {
+						setState(STATE_LAUNCHING);
+					} else {
+						setState(STATE_LAUNCH_READY);
+					}
 				}
 			}
 			// If state is STATE_NEGOTIATED then this is the first time we've received this message.

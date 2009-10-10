@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008 Daniel Santos<daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -36,7 +36,7 @@ using Game::Config;
 using Game::Logger;
 
 #define THROW_PROTOCOL_EXCEPTION(description) \
-	throw ProtocolException(*this, &msg, description, NULL, __FILE__, __LINE__)
+	ProtocolException::coldThrow(*this, &msg, (description), NULL, __FILE__, __LINE__)
 
 namespace Game { namespace Net {
 
@@ -208,7 +208,7 @@ void RemoteInterface::dispatch(NetworkMessage *msg) {
 		default: {
 				stringstream str;
 				str << "unknown message type " << msg->getType();
-				throw ProtocolException(*this, NULL, str.str(), NULL, __FILE__, __LINE__);
+				ProtocolException::coldThrow(*this, NULL, str.str(), NULL, __FILE__, __LINE__);
 			}
 		}
 	} catch(ProtocolException &e) {
@@ -236,18 +236,14 @@ bool RemoteInterface::process(NetworkMessageHandshake &msg) {
 	bool ret;
 
 	if(getState() >= STATE_NEGOTIATED) {
-		throw ProtocolException(*this, &msg,
-				"NetworkMessageHandshake unexpected at this time.",
-				NULL, __FILE__, __LINE__);
+		THROW_PROTOCOL_EXCEPTION("NetworkMessageHandshake unexpected at this time.");
 	}
 
 	// some day, we may want more complex support of older protocol verions
 	if(getNetProtocolVersion() != msg.getProtocolVersion()) {
-		throw ProtocolException(*this, &msg,
-				Lang::getInstance().format("ErrorVersionMismatch",
-						getNetProtocolVersion().toString().c_str(),
-						msg.getProtocolVersion().toString().c_str()),
-				NULL, __FILE__, __LINE__);
+		THROW_PROTOCOL_EXCEPTION(Lang::getInstance().format("ErrorVersionMismatch",
+				getNetProtocolVersion().toString().c_str(),
+				msg.getProtocolVersion().toString().c_str()));
 	}
 	handshake(msg.getGameVersion(), msg.getProtocolVersion());
 	setState(STATE_NEGOTIATED);
@@ -273,16 +269,13 @@ bool RemoteInterface::process(NetworkMessagePlayerInfo &msg) {
 
 	// only valid after handshake
 	if(getState() != STATE_NEGOTIATED) {
-		throw ProtocolException(*this, &msg,
-				"NetworkMessagePlayerInfo unexpected at this time.",
-				NULL, __FILE__, __LINE__);
+		THROW_PROTOCOL_EXCEPTION("NetworkMessagePlayerInfo unexpected at this time.");
 	}
 
 	// only RemoteClientInterface receives this message type
 	if(getRole() != NR_CLIENT) {
-		throw ProtocolException(*this, &msg,
-				"NetworkMessagePlayerInfo should only be sent by clients to the server.",
-				NULL, __FILE__, __LINE__);
+		THROW_PROTOCOL_EXCEPTION(
+				"NetworkMessagePlayerInfo should only be sent by clients to the server.");
 	}
 
 	updatePlayerInfo(msg.getPlayer(), msg);
@@ -295,9 +288,7 @@ bool RemoteInterface::process(NetworkMessagePlayerInfo &msg) {
 bool RemoteInterface::process(NetworkMessageGameInfo &msg) {
 	// only RemoteServerInterface receives this message type
 	if(getRole() != NR_SERVER) {
-		throw ProtocolException(*this, &msg,
-				"NetworkMessageGameInfo should only be sent by the server.",
-				NULL, __FILE__, __LINE__);
+		THROW_PROTOCOL_EXCEPTION("NetworkMessageGameInfo should only be sent by the server.");
 	}
 
 	owner.onReceive(*this, msg);
@@ -534,9 +525,8 @@ void RemoteInterface::updatePlayerInfo(const HumanPlayer &player, NetworkMessage
 	if(player.getId() != getId()
 			|| player.getNetworkInfo().getUid() != getUid()
 	  		|| player.getType() != PLAYER_TYPE_HUMAN) {
-		throw ProtocolException(*this, &msg,
-				"NetworkMessagePlayerInfo received with incorrect/invalid id, uid and/or type.",
-				NULL, __FILE__, __LINE__);
+		THROW_PROTOCOL_EXCEPTION(
+				"NetworkMessagePlayerInfo received with incorrect/invalid id, uid and/or type.");
 	}
 
 	// everything else is OK, so capture their info.
