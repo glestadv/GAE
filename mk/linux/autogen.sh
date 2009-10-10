@@ -11,7 +11,7 @@ if [ -d build ]; then
 	rm -rf build
 fi
 
-rm -f configure Jamconfig.in aclocal.m4 build \
+rm -f configure Jamconfig.in build aclocal.m4 \
 	  data docs gae maps techs tilesets \
 	  configurator g3d_viewer game map_editor shared_lib test
 
@@ -28,7 +28,7 @@ svnRoot="https://glestae.svn.sourceforge.net/svnroot/glestae/"
 branchSubDir="$(
 	svn info |
 	grep '^URL: ' |
-	sed "s|^URL: ${svnRoot}||g; s|branch/||g; s|tags/|tag_|g" |
+	sed "s|^URL: ${svnRoot}||g; s|branches/||g; s|tags/|tag_|g" |
 	awk -F/ '{print $1}' || echo "build"
 )"
 buildDir="/tmp/$(whoami || echo "build")/gae/${branchSubDir}"
@@ -52,7 +52,7 @@ echo 'JAMCONFIG_READ = yes ;' >> Jamconfig.in
 echo "autoconf"
 autoconf
 
-rm -rf autom4te.cache 
+rm -rf autom4te.cache
 
 # Attempt to create build directory under /tmp file system (which should be
 # tempfs on any modern *nix system) and if that fails, just create a
