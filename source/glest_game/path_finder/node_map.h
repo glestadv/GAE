@@ -76,10 +76,14 @@ struct NodeMapCell {
 	  */
 	uint32 mark; 
 
-	PackedPos prevNode; /** best route to here is from, valid only if this node is closed */
-	PackedPos nextOpen; /** 'next' node in open list, valid only if this node is open */
-	float heuristic;	/** heuristic from this cell, valid only if node visited */
-	float distToHere;	/** cost to this cell, valid only if node visited */
+	/** best route to here is from, valid only if this node is closed */
+	PackedPos prevNode;
+	/** 'next' node in open list, valid only if this node is open */
+	PackedPos nextOpen;
+	/** heuristic from this cell, valid only if node visited */
+	float heuristic;
+	/** cost to this cell, valid only if node visited */
+	float distToHere;
 
 	/** Construct NodeMapCell */
 	NodeMapCell ()	{ memset( this, 0, sizeof(*this) ); }
@@ -139,19 +143,29 @@ public:
 	Vec2i getBestTo( const Vec2i &pos )			{ return nodeMap[pos].prevNode;		}
 
 private:
-	NodeMapCellArray nodeMap;	/** The array of nodes */
-	int stride;					/** The stride of the array */
-	int nodeLimit;				/** The current node expansion limit */
-	uint32	searchCounter,		/** A counter, with NodeMapCell::mark determines validity of nodes in current search */
-			nodeCount;			/** Number of nodes expanded this/last search */
-	PackedPos invalidPos;		/** An invalid PackedPos */
-	PackedPos bestH;			/** The lowest heuristic node seen this/last search */
-	Vec2i openTop;				/** The top of the open list is at */
+	/** The array of nodes */
+	NodeMapCellArray nodeMap;
+	/** The stride of the array */
+	int stride;
+	/** The current node expansion limit */
+	int nodeLimit;
+	/** A counter, with NodeMapCell::mark determines validity of nodes in current search */
+	uint32	searchCounter,
+		/** Number of nodes expanded this/last search */
+			nodeCount;
+	/** An invalid PackedPos */
+	PackedPos invalidPos;
+	/** The lowest heuristic node seen this/last search */
+	PackedPos bestH;
+	/** The top of the open list is at */
+	Vec2i openTop;
 
-	// debug
-	bool assertValidPath ( list<Vec2i> &path );	/** Debug */
-	bool assertOpen ();		/** Debug */
-	void logOpen ();		/** Debug */
+	/** Debug */
+	bool assertValidPath ( list<Vec2i> &path );
+	/** Debug */
+	bool assertOpen ();
+	/** Debug */
+	void logOpen ();
 
 #ifdef DEBUG_PATHFINDER_TEXTURES
 	virtual list<Vec2i>* getOpenNodes ();

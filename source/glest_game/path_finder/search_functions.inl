@@ -15,7 +15,8 @@
 class PosGoal {
 public:
 	PosGoal(const Vec2i &target) : target(target) {}
-	Vec2i target; /** search target */
+	/** search target */
+	Vec2i target; 
 	/** The goal function 
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -30,8 +31,10 @@ public:
 class RangeGoal {
 public:
 	RangeGoal(const Vec2i &target, float range) : target(target), range(range) {}
-	Vec2i target; /** search target */
-	float range;  /** range to get within */
+	/** search target */
+	Vec2i target;
+	/** range to get within */
+	float range;
 	/** The goal function 
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -46,8 +49,10 @@ public:
 class InfluenceGoal {
 public:
 	InfluenceGoal(const InfluenceMap *iMap, float threshold) : iMap(iMap), threshold(threshold) {}
-	const InfluenceMap *iMap;	/** InfluenceMap to use */
-	float threshold;			/** influence 'threshold' of goal */
+	/** InfluenceMap to use */
+	const InfluenceMap *iMap;
+	/** influence 'threshold' of goal */
+	float threshold;
 	/** The goal function 
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -62,7 +67,8 @@ public:
 class FreeCellGoal {
 public:
 	FreeCellGoal(Field field) : field(field) {}
-	Field field; /** field to find a free cell in */
+	/** field to find a free cell in */
+	Field field;
 	/** The goal function 
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -77,9 +83,12 @@ public:
 class FreePosGoal {
 public:
 	FreePosGoal(AnnotatedMap *aMap, Field field, int size) : aMap(aMap), field(field), size(size) {}
-	AnnotatedMap *aMap;	/** Annotated Map to use */
-	Field field;			/** field to find position in */
-	int size;			/** size of unit to find position for */
+	/** Annotated Map to use */
+	AnnotatedMap *aMap;
+	/** field to find position in */
+	Field field;
+	/** size of unit to find position for */
+	int size;
 	/** The goal function 
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -109,8 +118,10 @@ public:
 class DistanceBuilderGoal {
 public:
 	DistanceBuilderGoal(float cutOff, InfluenceMap *iMap) : cutOff(cutOff), iMap(iMap) {}
-	float cutOff;		/** a 'cutoff' distance, search ends after this is reached. */
-	InfluenceMap *iMap;	/** inluence map to write distance data into. */
+	/** a 'cutoff' distance, search ends after this is reached. */
+	float cutOff;
+	/** inluence map to write distance data into. */
+	InfluenceMap *iMap;
 	/** The goal function, writes ( cutOff - costSoFar ) into the influence map.
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -131,8 +142,10 @@ public:
 class InfluenceBuilderGoal {
 public:
 	InfluenceBuilderGoal(float cutOff, InfluenceMap *iMap) : cutOff(cutOff), iMap(iMap) {}
-	float cutOff;		/** WIP */
-	InfluenceMap *iMap;	/** WIP */
+	/** WIP */
+	float cutOff;
+	/** WIP */
+	InfluenceMap *iMap;
 	/** The goal function, WIP
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -153,7 +166,8 @@ public:
 class UniformCost {
 public:
 	UniformCost(float cost) : cost(cost) {}
-	float cost; /** The uniform cost to return */
+	/** The uniform cost to return */
+	float cost;
 	/** The cost function
 	  * @param p1 position 1
 	  * @param p2 position 2 ('adjacent' p1)
@@ -184,8 +198,10 @@ public:
 class MoveCost {
 public:
 	MoveCost(const Unit *unit, const AnnotatedMap *aMap) : unit(unit), aMap(aMap) {}
-	const Unit *unit;		/** unit wanting to move */
-	const AnnotatedMap *aMap; /** map to search on */
+	/** unit wanting to move */
+	const Unit *unit;
+	/** map to search on */
+	const AnnotatedMap *aMap;
 	/** The cost function
 	  * @param p1 position 1
 	  * @param p2 position 2 ('adjacent' p1)
@@ -214,7 +230,8 @@ public:
 class DiagonalDistance {
 public:
 	DiagonalDistance(const Vec2i &target) : target(target) {}
-	Vec2i target;	/** search target */
+	/** search target */
+	Vec2i target;	
 	/** The heuristic function.
 	  * @param pos the position to calculate the heuristic for
 	  * @return an estimate of the cost to target
@@ -232,7 +249,8 @@ public:
 class OverEstimate {
 public:
 	OverEstimate(const Vec2i &target) : target(target) {}
-	Vec2i target; /** search target */
+	/** search target */
+	Vec2i target;
 	/** The heuristic function.
 	  * @param pos the position to calculate the heuristic for
 	  * @return an (over) estimate of the cost to target

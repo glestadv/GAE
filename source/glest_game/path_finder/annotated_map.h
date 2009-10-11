@@ -104,7 +104,8 @@ public:
 // =====================================================
 // class AnnotatedMap
 // =====================================================
-/** <p>A compact representation of the map with clearance information for each cell.
+/** A 'search' map, annotated with clearance data and explored status
+  * <p>A compact representation of the map with clearance information for each cell.
   * The clearance values are stored for each cell & field, and represent the 
   * clearance to the south and east of the cell. That is, the maximum size unit 
   * that can be 'positioned' in this cell (with units in Glest always using the 
@@ -120,14 +121,20 @@ class AnnotatedMap {
 
 public:
 	AnnotatedMap(bool master=true);
-	virtual ~AnnotatedMap();
+	~AnnotatedMap();
 
+	/** Maximum clearance allowed. Hence, also maximum moveable unit size supported. */
 	static const int maxClearanceValue = 7;
 
 	void initMapMetrics();
 	void updateMapMetrics( const Vec2i &pos, const int size ); 
 
-	// Interface to the clearance metrics, can a unit of size occupy a cell(s) ?
+	/** Interface to the clearance metrics, can a unit of size occupy a cell(s) 
+	  * @param pos position agent wishes to occupy
+	  * @param size size of agent
+	  * @param field field agent moves in
+	  * @return true if position can be occupied, else false
+	  */
 	bool canOccupy( const Vec2i &pos, int size, Field field ) const {
 		assert( theMap.isInside( pos ) );
 		return metrics[pos].get( field ) >= size ? true : false;
@@ -147,7 +154,9 @@ private:
 	void cascadingUpdate( const Vec2i &pos, const int size, const Field field = FieldCount );
 	void annotateUnit( const Unit *unit, const Field field );
 
+	/** the original values of locations that have had local annotations applied */
 	std::map<Vec2i,uint32> localAnnt;
+	/** The metrics */
 	MetricMap metrics;
 };
 

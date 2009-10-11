@@ -355,6 +355,7 @@ void AnnotatedMap::annotateLocal( const Unit *unit, const Field field ) {
 }
 
 /** Clear all local annotations
+  * @param field the field annotations were applied to
   */
 void AnnotatedMap::clearLocalAnnotations( Field field ) {
 	PROFILE_LVL2_START("Local Annotations");

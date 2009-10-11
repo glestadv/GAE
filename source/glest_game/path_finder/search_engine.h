@@ -108,7 +108,7 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 	class NodeStorage {
 	public:
 		void reset();
-		void setNodeLimit( int limit );
+		void setMaxNode( int limit );
 		
 		bool isOpen ( const T &pos );
 		bool isClosed ( const T &pos );
@@ -150,6 +150,9 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 //
 //TODO: More templating... generalise the node storage
 //template< typename NodeStorage, typename IDomain = CellMapDomain<Vec2i>, typename DomainType = Vec2i >
+/** The home of the templated A* algorithm 
+  * @param NodeStorage templated NodeStorage, must conform to implicit interface see ...
+  */
 template< typename NodeStorage >
 class SearchEngine {
 private:
@@ -232,7 +235,7 @@ public:
 		}
 	}
 
-	// A* Algorithm (Just the loop, does not do any setup or post-processing)
+	/** A* Algorithm (Just the loop, does not do any setup or post-processing) */
 	template< typename GoalFunc, typename CostFunc, typename Heuristic >
 	int aStar(GoalFunc goalFunc, CostFunc costFunc, Heuristic heuristic) {
 		expanded = 0;

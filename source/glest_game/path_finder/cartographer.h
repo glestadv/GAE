@@ -28,21 +28,27 @@ class ExplorationMap {
 		struct ExplorationState {
 			/** Visibility counter, the number of team's units that can see this cell */
 			uint16 visCounter : 15; // max 32768 units per _team_
-			uint16 explored	  :  1; /** Explored flag */
+			/** Explored flag */
+			uint16 explored	  :  1; 
 		};
 #	pragma pack(pop)
-
-	ExplorationState *state; /** The Data */
+	/** The Data */
+	ExplorationState *state;
 public:
 	ExplorationMap() {
 		state = new ExplorationState[theMap.getTileW() * theMap.getTileH()];
 		memset( state, 0, sizeof(ExplorationState) * theMap.getTileW() * theMap.getTileH() );
 	}
 
+	/** @param pos cell coordinates @return number of units that can see this cell */
 	int  getVisCounter(const Vec2i &pos) const	{ return state[pos.y * theMap.getTileH() + pos.x].visCounter; }
+	/** @param pos cell coordinates to increase visibilty on */
 	void incVisCounter(const Vec2i &pos) const	{ state[pos.y * theMap.getTileH() + pos.x].visCounter ++;		}
+	/** @param pos cell coordinates to decrease visibilty on */
 	void decVisCounter(const Vec2i &pos) const	{ state[pos.y * theMap.getTileH() + pos.x].visCounter --;		}
+	/** @param pos cell coordinates @return true if explored. */
 	bool isExplored(const Vec2i &pos)	 const	{ return state[pos.y * theMap.getTileH() + pos.x].explored;	}
+	/** @param pos coordinates of cell to set as explored */
 	void setExplored(const Vec2i &pos)	 const	{ state[pos.y * theMap.getTileH() + pos.x].explored = 1;		}
 
 };

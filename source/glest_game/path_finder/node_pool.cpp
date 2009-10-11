@@ -97,7 +97,7 @@ void NodePool::updateOpenNode ( const Vec2i &pos, AStarNode *neighbour, float co
 	}
 }
 
-AStarNode* NodePool::getBestCandidateNode () {
+NodePool::AStarNode* NodePool::getBestCandidateNode () {
 	if ( openHeap.empty() ) return NULL;
 	pop_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
 	AStarNode *ret = openHeap.back();
