@@ -15,7 +15,7 @@
 // Header file for explicit simd support
 
 #include <types.h>
-#include <lang_features.h>
+#include "lang_features.h"
 
 #if defined(USE_SSE2_INTRINSICS)
 	// if we're using intrinsics, we have to align vectors
