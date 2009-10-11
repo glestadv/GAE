@@ -19,7 +19,7 @@
 
 #include "vec.h"
 #include "unit_stats_base.h"
-#include "astar_nodepool.h"
+#include "node_pool.h"
 #include "map.h"
 #include "world.h"
 

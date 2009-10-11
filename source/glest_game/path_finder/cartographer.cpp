@@ -35,24 +35,6 @@ namespace Glest { namespace Game { namespace Search {
 SearchEngine<NodePool>	*npSearchEngine;
 SearchEngine<NodeMap>	*nmSearchEngine;
 
-Vec2i				PosGoal::target( -1 );
-Vec2i		 		RangeGoal::target( -1 );
-float				RangeGoal::range( 0.f );
-Field				FreeCellGoal::field( FieldWalkable );
-Vec2i				DiagonalDistance::target( -1 );
-Vec2i				OverEstimate::target( -1 );
-const Unit*			MoveCost::unit = NULL;
-const AnnotatedMap*	MoveCost::map = NULL;
-
-// Cartographer?
-const InfluenceMap*	InfluenceGoal::iMap = NULL;
-float				InfluenceGoal::threshold = 0.f;
-float				InfluenceBuilderGoal::cutOff = 0.f;
-InfluenceMap*		InfluenceBuilderGoal::iMap = NULL;
-float				Cartographer::VisibilityMaintainerGoal::range = 0.f;
-ExplorationMap*		Cartographer::VisibilityMaintainerGoal::eMap;
-bool				Cartographer::VisibilityMaintainerGoal::inc;
-
 /** Construct Cartographer object. Requires game settings, factions & cell map to have been loaded.
   */
 Cartographer::Cartographer() {
@@ -185,16 +167,16 @@ void Cartographer::initResourceMap( int team, const ResourceType *rt, InfluenceM
   */
 void Cartographer::maintainUnitVisibility(Unit *unit, bool add) {
 	// set up goal function
-	VisibilityMaintainerGoal::range = (float)unit->getSight();
-	VisibilityMaintainerGoal::inc = add;
-	VisibilityMaintainerGoal::eMap = explorationMaps[unit->getTeam()];
+	VisibilityMaintainerGoal goalFunc((float)unit->getSight(), explorationMaps[unit->getTeam()], add);
 	// set up search engine
 	nmSearchEngine->setSearchSpace(SearchSpace::TILEMAP);
 	nmSearchEngine->setNodeLimit(-1);
 	nmSearchEngine->reset();
 	nmSearchEngine->setOpen(Map::toTileCoords(unit->getPos()), 0.f);
 	// zap
-	nmSearchEngine->aStar<VisibilityMaintainerGoal,DistanceCost,ZeroHeuristic>();
+	nmSearchEngine->aStar<VisibilityMaintainerGoal,DistanceCost,ZeroHeuristic>
+						 (goalFunc,DistanceCost(),ZeroHeuristic());
+
 	// reset search space
 	nmSearchEngine->setSearchSpace(SearchSpace::CELLMAP);
 }

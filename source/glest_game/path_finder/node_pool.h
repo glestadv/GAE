@@ -9,7 +9,7 @@
 //	License, or (at your option) any later version
 // ==============================================================
 //
-// File: astar_nodepool.h
+// File: node_pool.h
 //
 
 #ifndef _GLEST_GAME_PATHFINDER_ASTAR_NODEPOOL_H_

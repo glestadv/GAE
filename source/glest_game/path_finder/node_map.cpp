@@ -20,6 +20,7 @@
 
 namespace Glest { namespace Game { namespace Search {
 
+/** Construct a NodeMap */
 NodeMap::NodeMap() 
 		: openTop(-1)
 		, nodeCount(0)
@@ -31,6 +32,7 @@ NodeMap::NodeMap()
 	stride = theMap.getW();
 }
 
+/** resets the NodeMap for use */
 void NodeMap::reset() {
 	bestH = invalidPos;
 	searchCounter += 2;
@@ -39,6 +41,9 @@ void NodeMap::reset() {
 	openTop = Vec2i(-1);
 }
 
+/** get the best candidate from the open list, and close it.
+  * @return the lowest estimate node from the open list, or -1,-1 if open list empty
+  */
 Vec2i NodeMap::getBestCandidate() {
 	if ( openTop.x < 0 ) {
 		return  Vec2i(-1);	// empty
@@ -55,6 +60,13 @@ Vec2i NodeMap::getBestCandidate() {
 	return ret;
 }
 
+/** marks an unvisited position as open
+  * @param pos the position to open
+  * @param prev the best known path to pos is from
+  * @param h the heuristic for pos
+  * @param d the costSoFar for pos
+  * @return true if added, false if node limit reached
+  */
 bool NodeMap::setOpen( const Vec2i &pos, const Vec2i &prev, float h, float d ) {
 	assert ( nodeMap[pos].mark < searchCounter );
 	if ( nodeCount == nodeLimit ) {
@@ -110,29 +122,12 @@ bool NodeMap::setOpen( const Vec2i &pos, const Vec2i &prev, float h, float d ) {
 	} // while
 	return true;
 }
-
-void NodeMap::logOpen () {
-	if ( openTop == Vec2i(-1) ) {
-		LOG ( "Open list is empty." );
-		return;
-	}
-	static char buffer[4096];
-	char *ptr = buffer;
-	PackedPos p = openTop;
-	while ( p.valid () ) {
-		ptr += sprintf ( ptr, "%d,%d", p.x, p.y );
-		if ( nodeMap[p].nextOpen.valid () ) {
-			ptr += sprintf ( ptr, " => " );
-			if ( ptr - buffer > 4000 ) {
-				sprintf ( ptr, " => plus more . . ." );
-				break;
-			}
-		}
-		p = nodeMap[p].nextOpen;
-	}
-	LOG ( buffer );
-}
-
+/** conditionally update a node on the open list. Tests if a path through a new nieghbour
+  * is better than the existing known best path to pos, updates if so.
+  * @param pos the open postion to test
+  * @param prev the new path from
+  * @param d the distance to here through prev
+  */
 void NodeMap::updateOpen ( const Vec2i &pos, const Vec2i &prev, const float d ) {
 	const float dist = nodeMap[prev].distToHere + d;
 	if ( dist < nodeMap[pos].distToHere ) {
@@ -183,6 +178,28 @@ void NodeMap::updateOpen ( const Vec2i &pos, const Vec2i &prev, const float d ) 
 		}
 		throw runtime_error ( "SearchMap::updateOpen() called with non-open position" );
 	}
+}
+
+void NodeMap::logOpen () {
+	if ( openTop == Vec2i(-1) ) {
+		LOG ( "Open list is empty." );
+		return;
+	}
+	static char buffer[4096];
+	char *ptr = buffer;
+	PackedPos p = openTop;
+	while ( p.valid () ) {
+		ptr += sprintf ( ptr, "%d,%d", p.x, p.y );
+		if ( nodeMap[p].nextOpen.valid () ) {
+			ptr += sprintf ( ptr, " => " );
+			if ( ptr - buffer > 4000 ) {
+				sprintf ( ptr, " => plus more . . ." );
+				break;
+			}
+		}
+		p = nodeMap[p].nextOpen;
+	}
+	LOG ( buffer );
 }
 
 bool NodeMap::assertOpen () {

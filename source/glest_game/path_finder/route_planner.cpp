@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #include "game_constants.h"
-#include "path_finder.h"
+#include "route_planner.h"
 
 #include "search_engine.h"
 
@@ -153,7 +153,8 @@ TravelState RoutePlanner::findPathToLocation( Unit *unit, const Vec2i &finalPos 
 	aMap->annotateLocal( unit, unit->getCurrField() ); // annotate map
 	// reset nodepool and add start to open
 	npSearchEngine->setNodeLimit( theConfig.getPathFinderMaxNodes() );
-	npSearchEngine->setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) ); 
+	DiagonalDistance dd(target);
+	npSearchEngine->setStart( unit->getPos(), dd(unit->getPos()) ); 
 	int result = npSearchEngine->pathToPos( aMap, unit, target ); // perform search
 	aMap->clearLocalAnnotations( unit->getCurrField() ); // clear annotations
 	if ( result == AStarResult::FAILED ) BLOCKED()
@@ -183,7 +184,8 @@ bool RoutePlanner::repairPath( Unit *unit ) {
 	aMap->annotateLocal( unit, unit->getCurrField () );
 	// reset nodepool and add start to open
 	npSearchEngine->setNodeLimit( 256 );
-	npSearchEngine->setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) );
+
+	npSearchEngine->setStart( unit->getPos(), DiagonalDistance(path.front())( unit->getPos() ) );
 	int result = npSearchEngine->pathToPos( aMap, unit, path.front() ); // perform search
 	aMap->clearLocalAnnotations( unit->getCurrField () );
 

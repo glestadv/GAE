@@ -107,9 +107,11 @@ class Cartographer {
 	/** Custom Goal function for maintaining the exploration maps */
 	class VisibilityMaintainerGoal {
 	public:
-		static float range;				/** range of sight */
-		static ExplorationMap *eMap;	/** exploration map to adjust */
-		static bool inc;				/** true to increment, false to decrement */
+		VisibilityMaintainerGoal(float range, ExplorationMap *eMap, bool inc)
+			: range(range), eMap(eMap), inc(inc) {}
+		float range;				/** range of sight */
+		ExplorationMap *eMap;	/** exploration map to adjust */
+		bool inc;				/** true to increment, false to decrement */
 		/** The goal function 
 		  * @param pos position to test
 		  * @param costSoFar the cost of the shortest path to pos

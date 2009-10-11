@@ -27,7 +27,7 @@
 #include "game_constants.h"
 #include "map.h"
 #include "annotated_map.h"
-#include "astar_nodepool.h"
+#include "node_pool.h"
 #include "node_map.h"
 #include "influence_map.h"
 
@@ -77,7 +77,7 @@ __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d
 	struct Name { \
 		enum Enum { __VA_ARGS__ }; \
 		Name( Enum val ) : value( val ) {} \
-		operator int() { return value; } \
+		operator Enum() { return value; } \
 	private: \
 		Enum value; \
 	};
@@ -203,27 +203,23 @@ public:
 	int getExpandedLastRun() { return expanded; }
 
 	int pathToPos(const AnnotatedMap *map, const Unit *unit, const Vec2i &target){
-		PosGoal::target = target;
-		DiagonalDistance::target = target;
-		MoveCost::map = map;
-		MoveCost::unit = unit;
-		return aStar<PosGoal,MoveCost,DiagonalDistance>();
+		PosGoal goalFunc(target);
+		MoveCost costFunc (unit, map);
+		DiagonalDistance heuristic(target);
+		return aStar<PosGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
 
 	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const Vec2i &target, 
-			const InfluenceMap *resMap, float threshold){
-		InfluenceGoal::iMap = iMap;
-		InfluenceGoal::threshold = threshold;
-		DiagonalDistance::target = target; // a bit hacky... target is needed for heuristic
-		MoveCost::map = aMap;
-		MoveCost::unit = unit;
-		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>();
+			const InfluenceMap *iMap, float threshold){
+		InfluenceGoal		goalFunc(threshold, iMap);
+		MoveCost			costFunc(unit, aMap );
+		DiagonalDistance	heuristic(target); // a bit hacky... target is needed for heuristic
+		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
 
 	void buildDistanceMap(InfluenceMap *iMap, float cutOff){
-		InfluenceBuilderGoal::cutOff = cutOff;
-		InfluenceBuilderGoal::iMap = iMap;
-		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>();
+		InfluenceBuilderGoal goalFunc(cutOff, iMap);
+		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>(goalFunc,DistanceCost(),ZeroHeuristic());
 	}
 
 	void setSearchSpace(SearchSpace s){
@@ -238,7 +234,7 @@ public:
 
 	// A* Algorithm (Just the loop, does not do any setup or post-processing)
 	template< typename GoalFunc, typename CostFunc, typename Heuristic >
-	int aStar() {
+	int aStar(GoalFunc goalFunc, CostFunc costFunc, Heuristic heuristic) {
 		expanded = 0;
 		
 		Vec2i minPos(-1);
@@ -248,7 +244,7 @@ public:
 				goalPos = Vec2i(-1);
 				return AStarResult::FAILED; 
 			}
-			if ( GoalFunc()(minPos, nodeStorage->getCostTo( minPos )) ) { // success
+			if ( goalFunc(minPos, nodeStorage->getCostTo( minPos )) ) { // success
 				goalPos = minPos;
 				return AStarResult::COMPLETE;
 			}
@@ -258,7 +254,7 @@ public:
 				||	 nodeStorage->isClosed(nPos) ) {
 					continue;
 				}
-				float cost = CostFunc()( minPos, nPos );
+				float cost = costFunc( minPos, nPos );
 				if ( cost == numeric_limits<float>::infinity() ) {
 					continue;
 				}
@@ -266,7 +262,7 @@ public:
 					nodeStorage->updateOpen( nPos, minPos, cost );
 				} else {
 					const float &costToMin = nodeStorage->getCostTo( minPos );
-					if ( ! nodeStorage->setOpen( nPos, minPos, Heuristic()( nPos ), costToMin + cost ) ) {
+					if ( ! nodeStorage->setOpen( nPos, minPos, heuristic( nPos ), costToMin + cost ) ) {
 						goalPos = nodeStorage->getBestSeen();
 						return AStarResult::PARTIAL;
 					}

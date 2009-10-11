@@ -25,7 +25,7 @@
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "game.h"
-#include "path_finder.h"
+#include "route_planner.h"
 #include "object.h"
 #include "faction.h"
 #include "network_manager.h"

@@ -23,7 +23,7 @@
 #include "sound_renderer.h"
 #include "game_settings.h"
 #include "network_message.h"
-#include "path_finder.h"
+#include "route_planner.h"
 #include "cartographer.h"
 
 #if DEBUG_SEARCH_TEXTURES

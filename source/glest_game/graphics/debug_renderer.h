@@ -6,7 +6,7 @@
 #ifndef _GLEST_GAME_DEBUG_RENDERER_
 #define _GLEST_GAME_DEBUG_RENDERER_
 
-#include "path_finder.h"   
+#include "route_planner.h"   
 #include "influence_map.h"
 #include "cartographer.h"
 
@@ -114,6 +114,8 @@ public:
 };
 
 #endif
+
+
 
 class DebugRenderer {
 public:
@@ -228,6 +230,7 @@ public:
 		renderCellOverlay<TeamSightColourCallback>(visibleQuad);
 	}
 #endif
+
 private:
 	void renderCellTextured( const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
 				const Vec3f &v1, const Vec3f &v2, const Vec3f &v3  ) {
@@ -268,7 +271,6 @@ private:
 			glVertex3fv(v3.ptr());                        
 		glEnd ();
 	}
-
 };
 
 }}
