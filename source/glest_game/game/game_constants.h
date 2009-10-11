@@ -21,7 +21,7 @@
 #define theGui				(*Gui::getCurrentGui())
 #define theConsole			(*Game::getInstance()->getConsole())
 #define theConfig			(Config::getInstance())
-#define thePathManager		(*Search::PathManager::getInstance())
+#define theRoutePlanner		(*Search::RoutePlanner::getInstance())
 #define theRenderer			(Renderer::getInstance())
 #define theNetworkManager	(NetworkManager::getInstance())
 #define theSoundRenderer	(SoundRenderer::getInstance())

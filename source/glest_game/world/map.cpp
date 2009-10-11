@@ -39,6 +39,8 @@ using namespace Shared::Util;
 
 namespace Glest{ namespace Game{
 
+using Search::Cartographer;
+
 // =====================================================
 // 	class Cell
 // =====================================================

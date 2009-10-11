@@ -46,8 +46,12 @@ World *World::singleton = NULL;
 
 // ===================== PUBLIC ========================
 
-World::World(Game *game) : game(*game), gs(game->getGameSettings()), stats(game->getGameSettings()),
-			posIteratorFactory(65) {
+World::World(Game *game) 
+		: game(*game)
+		, gs(game->getGameSettings())
+		, stats(game->getGameSettings())
+		, posIteratorFactory(65)
+		, cartographer(NULL) {
 	Config &config= Config::getInstance();
 
 	fogOfWar= config.getGsFogOfWarEnabled();
@@ -60,6 +64,11 @@ World::World(Game *game) : game(*game), gs(game->getGameSettings()), stats(game-
 	assert(!singleton);
 	singleton = this;
 	alive = false;
+}
+
+World::~World() {
+	singleton = NULL;
+	delete cartographer;
 }
 
 void World::end(){
@@ -96,7 +105,6 @@ void World::save(XmlNode *node) const {
 // ========================== init ===============================================
 
 void World::init(const XmlNode *worldNode) {
-
 #  if DEBUG_SEARCH_TEXTURES
 	PathFinderTextureCallBack::loadPFDebugTextures ();
 #  endif
@@ -111,15 +119,16 @@ void World::init(const XmlNode *worldNode) {
 	//minimap must be init after sum computation
 	initMinimap();
 
+	cartographer = new Cartographer();
+	cartographer->updateResourceMaps();
+
 	if(worldNode)
 		loadSaved(worldNode);
-	else if ( game.getGameSettings ().getDefaultUnits () )
+	else if ( game.getGameSettings().getDefaultUnits() )
 		initUnits();
 
 	initExplorationState();
 	
-	thePathManager.cartographer->updateResourceMaps();
-
 	if(worldNode) {
 		NetworkDataBuffer buf;
 		NetworkManager &networkManager = NetworkManager::getInstance();
@@ -169,7 +178,7 @@ void World::initNetworkServer() {
 bool World::loadTileset(Checksum &checksum) {
 	tileset.load(game.getGameSettings().getTilesetPath(), checksum);
 	timeFlow.init(&tileset);
-   return true;
+	return true;
 }
 
 //load tech
@@ -188,13 +197,13 @@ bool World::loadMap(Checksum &checksum) {
 	const string &path = gs.getMapPath();
 	checksum.addFile(path, false);
 	map.load( path, &techTree, &tileset);
-   return true;
+	return true;
 }
 
 bool World::loadScenario(const string &path, Checksum *checksum){
 	checksum->addFile(path, true);
 	scenario.load(path);
-   return true;
+	return true;
 }
 
 //load saved game
@@ -616,7 +625,8 @@ void World::doKill(Unit *killer, Unit *killed) {
 		killed->kill();
 	}
 	if ( !killed->isMobile() ) {
-		unitUpdater.pathManager->updateMapMetrics( killed->getPos(), killed->getSize(), false, FieldWalkable );
+		// obstacle removed
+		cartographer->updateMapMetrics(killed->getPos(), killed->getSize());
 	}
 }
 
@@ -726,7 +736,12 @@ bool World::placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spacia
 //clears a unit old position from map and places new position
 void World::moveUnitCells(Unit *unit) {
 	Vec2i newPos = unit->getNextPos();
-
+	bool changingTiles = false;
+	if ( Map::toTileCoords(newPos) != Map::toTileCoords(unit->getPos()) ) {
+		changingTiles = true;
+		// remove unit's visibility
+		theWorld.getCartographer().removeUnitVisibility(unit);
+	}
 	/*if(newPos == unit->getPos()) {
 		return;
 	}*/
@@ -744,9 +759,13 @@ void World::moveUnitCells(Unit *unit) {
 	*/
 	//}
 
-   assert ( unitUpdater.pathManager->isLegalMove ( unit, newPos ) );
+	assert ( unitUpdater.pathManager->isLegalMove ( unit, newPos ) );
 	map.clearUnitCells(unit, unit->getPos());
 	map.putUnitCells(unit, newPos);
+	if ( changingTiles ) {
+		// re-apply unit's visibility
+		theWorld.getCartographer().applyUnitVisibility(unit);
+	}
 
 	//water splash
 	if(tileset.getWaterEffects() && unit->getCurrField()==FieldWalkable){
@@ -791,12 +810,11 @@ void World::createUnit(const string &unitName, int factionIndex, const Vec2i &po
 			unit->create(true);
 			unit->born();
 			if ( !unit->isMobile() ) {
-				Search::PathManager *pm = Search::PathManager::getInstance();
-				pm->updateMapMetrics ( unit->getPos(), unit->getSize(), true, FieldWalkable );
+				// new obstacle
+				cartographer->updateMapMetrics(unit->getPos(), unit->getSize());
 			}
 			scriptManager->onUnitCreated(unit);
-		}
-		else{
+		} else{
 			throw runtime_error("Unit cant be placed");    
 		}
 	}
@@ -810,8 +828,7 @@ void World::giveResource(const string &resourceName, int factionIndex, int amoun
 		Faction* faction= &factions[factionIndex];
 		const ResourceType* rt= techTree.getResourceType(resourceName);
 		faction->incResourceAmount(rt, amount);
-	}
-	else {
+	} else {
 		throw runtime_error("Invalid faction index in giveResource: " + intToStr(factionIndex));
 	}
 }
@@ -823,12 +840,9 @@ void World::givePositionCommand(int unitId, const string &commandName, const Vec
 
 		if(commandName=="move"){
 			cmdType = unit->getType()->getFirstCtOfClass ( ccMove );
-
-		}
-		else if(commandName=="attack"){
+		} else if(commandName=="attack"){
 			cmdType = unit->getType()->getFirstCtOfClass ( ccAttack );
-		}
-		else if ( commandName=="harvest" ) {
+		} else if ( commandName=="harvest" ) {
 			Resource *r = map.getTile ( Map::toTileCoords(pos) )->getResource();
 			bool found = false;
 			if ( ! unit->getType()->getFirstCtOfClass(ccHarvest) ) {
@@ -838,8 +852,7 @@ void World::givePositionCommand(int unitId, const string &commandName, const Vec
 			if ( !r ) {
 				theConsole.addLine ( "Warning: No resources found at target pos of harvest cmd" );
 				cmdType = unit->getType()->getFirstCtOfClass(ccHarvest);
-			}
-			else {
+			} else {
 				for ( int i=0; i < unit->getType()->getCommandTypeCount (); ++i ) {
 					cmdType = unit->getType()->getCommandType ( i );
 					if ( cmdType->getClass() == ccHarvest ) {
@@ -855,10 +868,8 @@ void World::givePositionCommand(int unitId, const string &commandName, const Vec
 					cmdType = unit->getType()->getFirstCtOfClass(ccHarvest);
 				}
 			}
-		}
-		else if ( commandName == "patrol" ) {
-		}
-		else{
+		} else if ( commandName == "patrol" ) {
+		} else {
 			throw runtime_error("Invalid position commmand: " + commandName);
 		}
 		
@@ -866,8 +877,7 @@ void World::givePositionCommand(int unitId, const string &commandName, const Vec
 		
 		if ( res != crSuccess ) {
 			theConsole.addLine ( "command failed" );
-		}
-		else {
+		} else {
 			theConsole.addLine ( "command succees" );
 		}
 
@@ -905,10 +915,8 @@ void World::giveTargetCommand ( int unitId, const string & cmdName, int targetId
 		}
 		theConsole.addLine ( "Error: Unit " + unit->getType()->getName() + " can not repair " + target->getType()->getName () );
 
-	}
-	else if ( cmdName == "guard" ) {
-	}
-	else {
+	} else if ( cmdName == "guard" ) {
+	} else {
 		throw runtime_error ( "Illegal Target Command : " + cmdName );
 	}
 
@@ -920,22 +928,18 @@ void World::giveStopCommand ( int unitId, const string &cmdName ) {
 		const StopCommandType *sct = (StopCommandType *)unit->getType()->getFirstCtOfClass ( ccStop );
 		if ( sct ) {
 			unit->giveCommand ( new Command ( sct, CommandFlags() ) );
-		}
-		else {
+		} else {
 			throw runtime_error ( "Error: Unit " + unit->getType()->getName() + "has no Stop Command" );
 		}
-	}
-	else if ( cmdName == "attack-stopped" ) {
+	} else if ( cmdName == "attack-stopped" ) {
 		const AttackStoppedCommandType *asct = 
 			(AttackStoppedCommandType *)unit->getType()->getFirstCtOfClass ( ccAttackStopped );
 		if ( asct ) {
 			unit->giveCommand ( new Command ( asct, CommandFlags() ) );
-		}
-		else {
+		} else {
 			theConsole.addLine ( "Error: Unit Type " + unit->getType()->getName() + " has no Attack Stopped Command." );
 		}
-	}
-	else {
+	} else {
 		throw runtime_error ( "Illegal Stop Command : " + cmdName );
 	}
 }
@@ -954,14 +958,12 @@ void World::giveProductionCommand(int unitId, const string &producedName){
 				if(pct->getProducedUnit()->getName()==producedName){
 					if ( unit->giveCommand(new Command(pct, CommandFlags())) == crSuccess ) {
 						theConsole.addLine ( "produce command success" );
-					}
-					else {
+					} else {
 						theConsole.addLine ( "produce command failed" );
 					}
 					return;
 				}
-			} // Morph Command ?
-			else if ( ct->getClass() == ccMorph ) {
+			} else if ( ct->getClass() == ccMorph ) { // Morph Command ?
 				if ( ((MorphCommandType*)ct)->getMorphUnit()->getName() == producedName ) {
 					// just record it for now, and keep looking for a Produce Command
 					mct = (MorphCommandType*)ct; 
@@ -973,12 +975,10 @@ void World::giveProductionCommand(int unitId, const string &producedName){
 		if ( mct ) {
 			if ( unit->giveCommand ( new Command (mct, CommandFlags()) ) == crSuccess ) {
 				theConsole.addLine ( "morph command success" );
-			}
-			else {
+			} else {
 				theConsole.addLine ( "morph command failed" );
 			}
-		}
-		else {
+		} else {
 			theConsole.addLine ( "Error: invalid production command" );
 		}
 	}
@@ -1009,8 +1009,7 @@ int World::getResourceAmount(const string &resourceName, int factionIndex){
 		Faction* faction= &factions[factionIndex];
 		const ResourceType* rt= techTree.getResourceType(resourceName);
 		return faction->getResource(rt)->getAmount();
-	}
-	else {
+	} else {
 		throw runtime_error("Invalid faction index in giveResource: " + intToStr(factionIndex));
 	}
 }
@@ -1019,9 +1018,7 @@ Vec2i World::getStartLocation(int factionIndex){
 	if(factionIndex<factions.size()){
 		Faction* faction= &factions[factionIndex];
 		return map.getStartLocation(faction->getStartLocationIndex());
-	}
-	else
-	{
+	} else {
 		throw runtime_error("Invalid faction index in getStartLocation: " + intToStr(factionIndex));
 	}
 }
@@ -1054,8 +1051,7 @@ int World::getUnitCount(int factionIndex){
 			}
 		}
 		return count;
-	}
-	else {
+	} else {
 		throw runtime_error("Invalid faction index in getUnitCount: " + intToStr(factionIndex));
 	}
 }
@@ -1072,9 +1068,7 @@ int World::getUnitCountOfType(int factionIndex, const string &typeName){
 			}
 		}
 		return count;
-	}
-	else
-	{
+	} else {
 		throw runtime_error("Invalid faction index in getUnitCountOfType: " + intToStr(factionIndex));
 	}
 }
@@ -1185,8 +1179,7 @@ void World::initUnits() {
 				//                unit->getSize(), true, unit->getCurrField () );
 				if(unit->getType()->hasSkillClass(scBeBuilt)) {
 					map.flatternTerrain(unit);
-					unitUpdater.pathManager->updateMapMetrics ( unit->getPos(),
-						unit->getSize(), true, unit->getCurrField () );
+					cartographer->updateMapMetrics(unit->getPos(), unit->getSize());
 				}
 			}
 		}

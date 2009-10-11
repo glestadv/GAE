@@ -65,11 +65,11 @@ public:
 };
 
 // ========================================================
-// class AStarNodePool
+// class NodePool
 //
 // A Node Manager for A* like algorithms
 // ========================================================
-class AStarNodePool {
+class NodePool {
 	// =====================================================
 	// struct DoubleMarkerArray
 	//
@@ -120,8 +120,8 @@ class AStarNodePool {
 	};
 
 public:
-	AStarNodePool ();
-	virtual ~AStarNodePool ();
+	NodePool ();
+	virtual ~NodePool ();
 
 	// NodeStorage template interface
 	//

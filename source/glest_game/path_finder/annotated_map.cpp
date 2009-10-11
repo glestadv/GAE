@@ -15,11 +15,6 @@
 //
 #include "pch.h"
 
-#include <limits>
-#include <algorithm>
-
-//#include "annotated_map.h"
-
 #include "map.h"
 #include "path_finder.h"
 
@@ -29,14 +24,23 @@
 
 namespace Glest { namespace Game { namespace Search {
 
-AnnotatedMap::AnnotatedMap() {
+/** Construct AnnotatedMap object, 'theMap' must be constructed and loaded
+  * @param master true if this is the master map, false for a foggy map (default true)
+  */
+AnnotatedMap::AnnotatedMap(bool master) {
 	metrics.init( theMap.getW(), theMap.getH() );
-	initMapMetrics();
+	if ( master ) {
+		initMapMetrics();
+	} else {
+		metrics.zero();
+	}
 }
 
 AnnotatedMap::~AnnotatedMap() {
 }
 
+/** Initialise clearance data for a master map.
+  */
 void AnnotatedMap::initMapMetrics() {
 	const int east = theMap.getW() - 1;
 	int x = east;
@@ -44,27 +48,29 @@ void AnnotatedMap::initMapMetrics() {
 
 	// set southern two rows to zero.
 	for ( ; x >= 0; --x ) {
-		metrics[Vec2i(x,y)].setAll ( 0 );
-		metrics[Vec2i(x,y-1)].setAll ( 0 );
+		metrics[Vec2i(x,y)].setAll( 0 );
+		metrics[Vec2i(x,y-1)].setAll( 0 );
 	}
 	for ( y -= 2; y >= 0; -- y) {
 		for ( x = east; x >= 0; --x ) {
-			Vec2i pos ( x, y );
+			Vec2i pos( x, y );
 			if ( x > east - 2 ) { // far east tile, not valid
-				metrics[pos].setAll ( 0 );
+				metrics[pos].setAll( 0 );
 			}
 			else {
-				computeClearances ( pos );
+				computeClearances( pos );
 			}
 		}
 	}
 }
 
-// pos: location of object added/removed
-// size: size of same object
-void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size ) {
-	assert ( theMap.isInside ( pos ) );
-	assert ( theMap.isInside ( pos.x + size - 1, pos.y + size - 1 ) );
+/** Update clearance data, when an obstactle is placed or removed from the map
+  * @param pos the cell co-ordinates of the obstacle added/removed
+  * @param size the size of the obstacle
+  */
+void AnnotatedMap::updateMapMetrics( const Vec2i &pos, const int size ) {
+	assert( theMap.isInside ( pos ) );
+	assert( theMap.isInside ( pos.x + size - 1, pos.y + size - 1 ) );
 	PROFILE_LVL2_START("Updating Map Metrics");
 
 	// first, re-evaluate the cells occupied (or formerly occupied)
@@ -72,17 +78,19 @@ void AnnotatedMap::updateMapMetrics ( const Vec2i &pos, const int size ) {
 		for ( int j = size - 1; j >= 0; --j ) {
 			Vec2i occPos = pos;
 			occPos.x += i; occPos.y += j;
-			computeClearances ( occPos );
+			computeClearances( occPos );
 		}
 	}
-	cascadingUpdate ( pos, size );
+	cascadingUpdate( pos, size );
 	PROFILE_LVL2_STOP("Updating Map Metrics");
 }
 
-//DEBUG
-static char dbgBuf [1024];
-
-void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Field field ) {
+/** Perform a 'cascading update' of clearance metrics having just changed clearances
+  * @param pos the cell co-ordinates of the obstacle added/removed
+  * @param size the size of the obstacle
+  * @param field the field to update (local annotation), or Field::COUNT to update all fields (permanent)
+  */
+void AnnotatedMap::cascadingUpdate( const Vec2i &pos, const int size,  const Field field ) {
 	list<Vec2i> *leftList, *aboveList, leftList1, leftList2, aboveList1, aboveList2;
 	leftList = &leftList1;
 	aboveList = &aboveList1;
@@ -91,10 +99,10 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 		// Check if positions are on map, (the '+i' components are along the sides of the building/object, 
 		// so we assume they are ok). If so, list them
 		if ( pos.x-1 >= 0 ) {
-			leftList->push_back ( Vec2i (pos.x-1,pos.y+i) );
+			leftList->push_back( Vec2i(pos.x-1,pos.y+i) );
 		}
 		if ( pos.y-1 >= 0 ) {
-			aboveList->push_back ( Vec2i (pos.x+i,pos.y-1) );
+			aboveList->push_back( Vec2i(pos.x+i,pos.y-1) );
 		}
 	}
 	// the cell to the nothwest...
@@ -111,11 +119,11 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 		newAboveList = aboveList == &aboveList1 ? &aboveList2 : &aboveList1;
 
 		if ( !leftList->empty() ) {
-			for ( VLIt it = leftList->begin (); it != leftList->end (); ++it ) {
+			for ( VLIt it = leftList->begin(); it != leftList->end(); ++it ) {
 				bool changed = false;
 				if ( field == FieldCount ) { // permanent annotation, update all
 					CellMetrics old = metrics[*it];
-					computeClearances ( *it );
+					computeClearances( *it );
 					if ( old != metrics[*it] ) {
 						if ( it->x - 1 >= 0 ) { // if there is a cell to the left, add it to
 							newLeftList->push_back ( Vec2i(it->x-1,it->y) ); // the new left list
@@ -123,39 +131,39 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 					}
 				}
 				else { // local annotation, only check field, store original clearances
-					uint32 old = metrics[*it].get ( field );
-					if ( old ) computeClearance ( *it, field );
-					if ( old && old > metrics[*it].get ( field ) ) {
-						if ( localAnnt.find (*it) == localAnnt.end() ) {
+					uint32 old = metrics[*it].get( field );
+					if ( old ) computeClearance( *it, field );
+					if ( old && old > metrics[*it].get( field ) ) {
+						if ( localAnnt.find(*it) == localAnnt.end() ) {
 							localAnnt[*it] = old; // was original clearance
 						}
 						if ( it->x - 1 >= 0 ) { // if there is a cell to the left, add it to
-							newLeftList->push_back ( Vec2i(it->x-1,it->y) ); // the new left list
+							newLeftList->push_back( Vec2i(it->x-1,it->y) ); // the new left list
 						}
 					}
 				}
 			}
 		}
 		if ( !aboveList->empty() ) {
-			for ( VLIt it = aboveList->begin (); it != aboveList->end (); ++it ) {
+			for ( VLIt it = aboveList->begin(); it != aboveList->end(); ++it ) {
 				if ( field == FieldCount ) {
 					CellMetrics old = metrics[*it];
-					computeClearances ( *it );
+					computeClearances( *it );
 					if ( old != metrics[*it] ) {
 						if ( it->y - 1 >= 0 ) {
-							newAboveList->push_back ( Vec2i(it->x,it->y-1) );
+							newAboveList->push_back( Vec2i(it->x,it->y-1) );
 						}
 					}
 				}
 				else {
-					uint32 old = metrics[*it].get ( field );
-					if ( old ) computeClearance ( *it, field );
-					if ( old && old > metrics[*it].get ( field ) ) {
-						if ( localAnnt.find (*it) == localAnnt.end() ) {
+					uint32 old = metrics[*it].get( field );
+					if ( old ) computeClearance( *it, field );
+					if ( old && old > metrics[*it].get( field ) ) {
+						if ( localAnnt.find(*it) == localAnnt.end() ) {
 							localAnnt[*it] = old;
 						}
 						if ( it->y - 1 >= 0 )  {
-							newAboveList->push_back ( Vec2i(it->x,it->y-1) );
+							newAboveList->push_back( Vec2i(it->x,it->y-1) );
 						}
 					}
 				}
@@ -165,11 +173,11 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 			// Deal with the corner...
 			if ( field == FieldCount ) {
 				CellMetrics old = metrics[*corner];
-				computeClearances ( *corner );
+				computeClearances( *corner );
 				if ( old != metrics[*corner] ) {
 					int x = corner->x, y  = corner->y;
 					if ( x - 1 >= 0 ) {
-						newLeftList->push_back ( Vec2i(x-1,y) );
+						newLeftList->push_back( Vec2i(x-1,y) );
 						if ( y - 1 >= 0 ) {
 							*corner = Vec2i(x-1,y-1);
 						}
@@ -181,7 +189,7 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 						corner = NULL;
 					}
 					if ( y - 1 >= 0 ) { 
-						newAboveList->push_back ( Vec2i(x,y-1) );
+						newAboveList->push_back( Vec2i(x,y-1) );
 					}
 				}
 				else { // no update
@@ -189,15 +197,15 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 				}
 			}
 			else {
-				uint32 old = metrics[*corner].get ( field );
-				if ( old ) computeClearance ( *corner, field );
-				if ( old && old > metrics[*corner].get ( field ) ) {
+				uint32 old = metrics[*corner].get( field );
+				if ( old ) computeClearance( *corner, field );
+				if ( old && old > metrics[*corner].get( field ) ) {
 					if ( localAnnt.find (*corner) == localAnnt.end() ) {
 						localAnnt[*corner] = old;
 					}
 					int x = corner->x, y  = corner->y;
 					if ( x - 1 >= 0 ) {
-						newLeftList->push_back ( Vec2i(x-1,y) );
+						newLeftList->push_back( Vec2i(x-1,y) );
 						if ( y - 1 >= 0 ) {
 							*corner = Vec2i(x-1,y-1);
 						}
@@ -209,7 +217,7 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 						corner = NULL;
 					}
 					if ( y - 1 >= 0 ) {
-						newAboveList->push_back ( Vec2i(x,y-1) );
+						newAboveList->push_back( Vec2i(x,y-1) );
 					}
 				}
 				else {
@@ -217,28 +225,32 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 				}
 			}
 		}
-		leftList->clear (); 
+		leftList->clear(); 
 		leftList = newLeftList;
-		aboveList->clear (); 
+		aboveList->clear(); 
 		aboveList = newAboveList;
 	}// end while
 }
 
-void AnnotatedMap::annotateUnit ( const Unit *unit, const Field field ) {
-	const int size = unit->getSize ();
-	const Vec2i &pos = unit->getPos ();
-	assert ( theMap.isInside ( pos ) );
-	assert ( theMap.isInside ( pos.x + size - 1, pos.y + size - 1 ) );
+/** Temporarily annotate the map, to treat unit as an obstacle
+  * @param unit the unit to treat as an obstacle
+  * @param field the field to annotate
+  */
+void AnnotatedMap::annotateUnit( const Unit *unit, const Field field ) {
+	const int size = unit->getSize();
+	const Vec2i &pos = unit->getPos();
+	assert( theMap.isInside( pos ) );
+	assert( theMap.isInside( pos.x + size - 1, pos.y + size - 1 ) );
 	// first, re-evaluate the cells occupied
 	for ( int i = size - 1; i >= 0 ; --i ) {
 		for ( int j = size - 1; j >= 0; --j ) {
 			Vec2i occPos = pos;
 			occPos.x += i; occPos.y += j;
-			if ( !unit->getType()->hasCellMap() || unit->getType()->getCellMapCell (i, j) ) {
-				if ( localAnnt.find (occPos) == localAnnt.end() ) {
-					localAnnt[occPos] = metrics[occPos].get (field);
+			if ( !unit->getType()->hasCellMap() || unit->getType()->getCellMapCell(i, j) ) {
+				if ( localAnnt.find(occPos) == localAnnt.end() ) {
+					localAnnt[occPos] = metrics[occPos].get(field);
 				}
-				metrics[occPos].set ( field, 0 );
+				metrics[occPos].set( field, 0 );
 			}
 			else {
 				uint32 old =  metrics[occPos].get( field );
@@ -250,10 +262,12 @@ void AnnotatedMap::annotateUnit ( const Unit *unit, const Field field ) {
 		}
 	}
 	// propegate changes to left and above
-	cascadingUpdate ( pos, size, field );
+	cascadingUpdate( pos, size, field );
 }
 
-// Set clearances (all fields) to 0 if cell blocked, or 'calculate' metrics
+/** Compute clearances (all fields) for a location
+  * @param pos the cell co-ordinates 
+  */
 void AnnotatedMap::computeClearances( const Vec2i &pos ) {
 	assert( theMap.isInside ( pos ) );
 	assert( pos.x <= theMap.getW() - 2 );
@@ -288,8 +302,11 @@ void AnnotatedMap::computeClearances( const Vec2i &pos ) {
 	computeClearance( pos, FieldAir );
 }
 
-// Computes clearance based on metrics to the sout and east, Does NOT check if this cell is an obstactle
-// assumes metrics of cells to the south, south-east & east are correct
+/** Computes clearance based on metrics to the sout and east, Does NOT check if this cell is an obstactle,
+  * assumes metrics of cells to the south, south-east & east are correct
+  * @param pos the co-ordinates of the cell
+  * @param field the field to update
+  */
 uint32 AnnotatedMap::computeClearance( const Vec2i &pos, Field f ) {
 	uint32 clear = metrics[Vec2i( pos.x, pos.y + 1 )].get ( f );
 	if ( clear > metrics[Vec2i( pos.x + 1, pos.y + 1 )].get ( f ) ) {
@@ -305,13 +322,17 @@ uint32 AnnotatedMap::computeClearance( const Vec2i &pos, Field f ) {
 	metrics[pos].set( f, clear );
 	return clear;
 }
-
+/** Perform 'local annotations', annotate the map to treat other mobile units in
+  * the vincinity of unit as obstacles
+  * @param unit the unit about to perform a search
+  * @param field the field that the unit is about to search in
+  */
 void AnnotatedMap::annotateLocal( const Unit *unit, const Field field ) {
 	PROFILE_LVL2_START("Local Annotations");
 	const Vec2i &pos = unit->getPos();
 	const int &size = unit->getSize();
-	assert ( theMap.isInside ( pos ) );
-	assert ( theMap.isInside ( pos.x + size - 1, pos.y + size - 1 ) );
+	assert( theMap.isInside( pos ) );
+	assert( theMap.isInside( pos.x + size - 1, pos.y + size - 1 ) );
 	const int dist = 3;
 	set<Unit*> annotate;
 
@@ -333,23 +354,25 @@ void AnnotatedMap::annotateLocal( const Unit *unit, const Field field ) {
 	PROFILE_LVL2_STOP("Local Annotations");
 }
 
-void AnnotatedMap::clearLocalAnnotations ( Field field ) {
+/** Clear all local annotations
+  */
+void AnnotatedMap::clearLocalAnnotations( Field field ) {
 	PROFILE_LVL2_START("Local Annotations");
-	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it ) {
-		assert ( it->second <= maxClearanceValue );
-		assert ( theMap.isInside ( it->first ) );
-		metrics[it->first].set ( field, it->second );
+	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin(); it != localAnnt.end(); ++ it ) {
+		assert( it->second <= maxClearanceValue );
+		assert( theMap.isInside( it->first ) );
+		metrics[it->first].set( field, it->second );
 	}
-	localAnnt.clear ();
+	localAnnt.clear();
 	PROFILE_LVL2_STOP("Local Annotations");
 }
 
-#ifdef DEBUG_SEARCH_TEXTURES
+#if DEBUG_SEARCH_TEXTURES
 
-list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations () {
-	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>> ();
-	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it )
-		ret->push_back ( pair<Vec2i,uint32> (it->first,metrics[it->first].get(FieldWalkable)) );
+list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations() {
+	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>>();
+	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end(); ++ it )
+		ret->push_back( pair<Vec2i,uint32>(it->first,metrics[it->first].get(FieldWalkable)) );
 	return ret;
 }
 

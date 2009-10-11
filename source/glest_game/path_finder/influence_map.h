@@ -31,13 +31,13 @@ public:
 	InfluenceMap();
 	InfluenceMap( int x, int y, int w, int h );
 
-	void clear () { memset( iMap, (int)0.f, sizeof(float) * width * height ); }
-	void clear ( float val ) { std::fill_n( iMap, width*height, val ); }
-	bool isInside( const Vec2i &pos ) const;
-	float getInfluence( const Vec2i &pos ) const;
-	void setInfluence( const Vec2i &pos, float infl );
+	void  clear()			{ memset( iMap, (int)0.f, sizeof(float) * width * height ); }
+	void  clear(float val)	{ std::fill_n( iMap, width*height, val ); }
 
-	void log();
+	bool  isInside(const Vec2i &pos)		const;
+	float getInfluence(const Vec2i &pos)	const;
+	void  setInfluence(const Vec2i &pos, float infl);
+	void  log();
 };
 
 

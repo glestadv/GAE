@@ -45,6 +45,8 @@ class Config;
 class Game;
 class GameSettings;
 class ScriptManager;
+namespace Search { class Cartographer; }
+using Search::Cartographer;
 
 // =====================================================
 // 	class World
@@ -81,6 +83,7 @@ private:
 	Random random;
 
 	ScriptManager *scriptManager;
+	Cartographer *cartographer;
 
 	int thisFactionIndex;
 	int thisTeamIndex;
@@ -100,7 +103,7 @@ private:
 
 public:
 	World(Game *game);
-	~World()										{singleton = NULL;}
+	~World();
 	void end(); //to die before selection does
 
 	static World& getInstance () { return *singleton; }
@@ -118,6 +121,7 @@ public:
 	const TimeFlow *getTimeFlow() const				{return &timeFlow;}
 	Tileset *getTileset() 							{return &tileset;}
 	Map *getMap() 									{return &map;}
+	Cartographer& getCartographer()					{return *cartographer;}
 	const Faction *getFaction(int i) const			{return &factions[i];}
 	Faction *getFaction(int i) 						{return &factions[i];}
 	const Minimap *getMinimap() const				{return &minimap;}

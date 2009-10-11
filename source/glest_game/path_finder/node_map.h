@@ -94,7 +94,7 @@ public:
 	// NodeStorage template interface
 	//
 	void reset();
-	void setMaxNodes( int limit )	{ assert( limit > 0 ); nodeLimit = limit; }
+	void setMaxNodes( int limit )	{ nodeLimit = limit > 0 ? limit : -1; }
 	
 	bool isOpen ( const Vec2i &pos )	{ return nodeMap[pos].mark == searchCounter; }
 	bool isClosed ( const Vec2i &pos )	{ return nodeMap[pos].mark == searchCounter + 1; }

@@ -72,7 +72,7 @@ void Renderer::renderGoldInfluence() {
 		}
 	}
 	if ( !gold ) assert( false );
-	InfluenceMap *iMap = thePathManager.cartographer->getResourceMap( theWorld.getThisTeamIndex(), gold );
+	InfluenceMap *iMap = theRoutePlanner.cartographer->getResourceMap( theWorld.getThisTeamIndex(), gold );
 	renderInfluenceOverlay( Vec3f( 0.f, 1.f, 0.f ), INFLUENCE_SCALE, iMap );
 }
 

@@ -26,7 +26,7 @@ class Unit;
 class Map;
 class ScriptManager;
 class ParticleDamager;
-namespace Search { class PathManager; }
+namespace Search { class RoutePlanner; }
 
 // =====================================================
 //	class UnitUpdater
@@ -60,7 +60,7 @@ private:
 	World *world;
 	Console *console;
 	ScriptManager *scriptManager;
-	Search::PathManager *pathManager;
+	Search::RoutePlanner *pathManager;
 	Random random;
 	GameSettings gameSettings;
 

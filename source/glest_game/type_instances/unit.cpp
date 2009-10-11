@@ -824,6 +824,7 @@ CommandResult Unit::cancelCurrCommand() {
 
 void Unit::create(bool startingUnit) {
 	faction->add(this);
+	lastPos.x = lastPos.y = -1;
 	map->putUnitCells(this, pos);
 	if(startingUnit){
 		faction->applyStaticCosts(type);
@@ -838,6 +839,7 @@ void Unit::born(){
 	recalculateStats();
 	hp= type->getMaxHp();
 	faction->checkAdvanceSubfaction(type, true);
+	theWorld.getCartographer().applyUnitVisibility(this);
 }
 
 /**
@@ -848,7 +850,8 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	assert(hp <= 0);
 	hp = 0;
 
-   World::getCurrWorld()->hackyCleanUp(this);
+	World::getCurrWorld()->hackyCleanUp(this);
+	theWorld.getCartographer().removeUnitVisibility(this);
 
 	if(fire != NULL) {
 		fire->fade();

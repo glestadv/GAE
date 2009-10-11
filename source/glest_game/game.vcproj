@@ -43,7 +43,7 @@
 				InlineFunctionExpansion="2"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;../shared_lib/include/tinyxml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=0;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=0;DEBUG_VISIBILITY_OVERLAY=1"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -229,7 +229,7 @@
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;../shared_lib/include/tinyxml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=1;DEBUG_SEARCH_TEXTURES=0"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=1;DEBUG_SEARCH_TEXTURES=0;DEBUG_VISIBILITY_OVERLAY=1"
 				StringPooling="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="0"
@@ -858,6 +858,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\path_finder\cartographer.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\game\chat_manager.cpp"
 				>
 			</File>
@@ -1088,11 +1100,11 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						OmitFramePointers="true"
+						Optimization="0"
+						InlineFunctionExpansion="0"
+						EnableIntrinsicFunctions="false"
+						FavorSizeOrSpeed="0"
+						OmitFramePointers="false"
 						BasicRuntimeChecks="0"
 						SmallerTypeCheck="false"
 						UsePrecompiledHeader="0"
@@ -1148,11 +1160,11 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						OmitFramePointers="true"
+						Optimization="0"
+						InlineFunctionExpansion="0"
+						EnableIntrinsicFunctions="false"
+						FavorSizeOrSpeed="0"
+						OmitFramePointers="false"
 						WholeProgramOptimization="true"
 						BasicRuntimeChecks="0"
 						SmallerTypeCheck="false"

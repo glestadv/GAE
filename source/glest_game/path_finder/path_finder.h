@@ -29,17 +29,10 @@ using std::map;
 using Shared::Graphics::Vec2i;
 using Shared::Platform::uint32;
 
-namespace Glest { namespace Game {
-
-namespace Search {
-
-class Cartographer;
-
-// Some 'globals' (oh no!!! run for cover...)
+namespace Glest { namespace Game { namespace Search {
 
 const int maxFreeSearchRadius = 10;
-//const int pathFindRefresh = 10; // now unused
-const int pathFindNodesMax = 2048;//Config::getInstance().getPathFinderMaxNodes ();
+const int pathFindNodesMax = 2048;
 
 struct SearchResult {
 	enum State { Arrived, OnTheWay, Blocked };
@@ -49,54 +42,40 @@ typedef SearchResult::State TravelState;
 //enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
 
 // =====================================================
-// 	class PathManager
+// 	class RoutePlanner
 //
-//	Finds paths for units using the SearchEngine class
+//	Finds paths for units using the SearchEngine
 //
-//  Manages annotated maps for each team, and shared node
-//  storage.  Performs group path calculations effeciently
-//  using a reserved A*.
+//  Performs group path calculations effeciently
+//  using a reverse A*.
 //  Generally tries to hide the horrible details of the 
-//  templated SearchEngine::aStar() function.
+//  SearchEngine<>::aStar<>() function.
 // 
 // =====================================================
-class PathManager {	
+class RoutePlanner {	
 public:
-	static PathManager* getInstance();
-	~PathManager();
+	static RoutePlanner* getInstance();
+	~RoutePlanner();
 	void init();
-
-	static AnnotatedMap *annotatedMap; //MOVE ME
-	Cartographer *cartographer;
 
 	TravelState findPathToLocation( Unit *unit, const Vec2i &finalPos );
 	TravelState findPath( Unit *unit, const Vec2i &finalPos ) { 
 		return findPathToLocation( unit, finalPos ); 
 	}
-
 	bool repairPath( Unit *unit );
-
-	// legal move ?
 	bool isLegalMove( Unit *unit, const Vec2i &pos ) const;
 
-	// update the annotated map at pos 
-	void updateMapMetrics( const Vec2i &pos, const int size, bool adding, Field field ) { 
-		PROFILE_START("AnnotatedMap::updateMapMetrics()");
-		annotatedMap->updateMapMetrics( pos, size );
-		PROFILE_STOP("AnnotatedMap::updateMapMetrics()");
-	}
-
 private:
-	static PathManager *singleton;
-	PathManager();
+	static RoutePlanner *singleton;
+	RoutePlanner();
 
 	Vec2i computeNearestFreePos(const Unit *unit, const Vec2i &targetPos);
 
-#ifdef DEBUG_SEARCH_TEXTURES
+#if DEBUG_SEARCH_TEXTURES
 public:
 	enum { ShowPathOnly, ShowOpenClosedSets, ShowLocalAnnotations } debug_texture_action;
 #endif
-}; // class PathManager
+}; // class RoutePlanner
 
 }}}//end namespace
 

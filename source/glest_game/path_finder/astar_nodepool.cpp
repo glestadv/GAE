@@ -20,7 +20,7 @@
 
 namespace Glest { namespace Game { namespace Search {
 
-AStarNodePool::AStarNodePool() {
+NodePool::NodePool() {
 	stock = new AStarNode[pathFindNodesMax];
 	numNodes = 0;
 	tmpMaxNodes = pathFindNodesMax;
@@ -30,11 +30,11 @@ AStarNodePool::AStarNodePool() {
 	pointerArray.init( theMap.getW(), theMap.getH() );
 }
 
-AStarNodePool::~AStarNodePool() {
+NodePool::~NodePool() {
 	delete [] stock;
 }
 
-void AStarNodePool::reset() {
+void NodePool::reset() {
 	numNodes = 0;
 	tmpMaxNodes = pathFindNodesMax;
 	leastH = NULL;
@@ -45,13 +45,13 @@ void AStarNodePool::reset() {
 #  endif
 }
 
-void AStarNodePool::setMaxNodes( const int max ) {
+void NodePool::setMaxNodes( const int max ) {
 	//assert( max >= 50 && max <= pathFindNodesMax ); // reasonable number ?
 	//assert( !numNodes ); // can't do this after we've started using it.
 	tmpMaxNodes = max;
 }
 
-bool AStarNodePool::addToOpen( AStarNode *prev, const Vec2i &pos, float h, float d, bool exp ) {
+bool NodePool::addToOpen( AStarNode *prev, const Vec2i &pos, float h, float d, bool exp ) {
 	if ( numNodes == tmpMaxNodes ) {
 		return false;
 	}
@@ -77,14 +77,14 @@ bool AStarNodePool::addToOpen( AStarNode *prev, const Vec2i &pos, float h, float
 	return true;
 }
 
-void AStarNodePool::addOpenNode ( AStarNode *node ) {
+void NodePool::addOpenNode ( AStarNode *node ) {
 	markerArray.setOpen ( node->pos );
 	pointerArray.set ( node->pos, node );
 	openHeap.push_back ( node );
 	push_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
 }
 
-void AStarNodePool::updateOpenNode ( const Vec2i &pos, AStarNode *neighbour, float cost ) {
+void NodePool::updateOpenNode ( const Vec2i &pos, AStarNode *neighbour, float cost ) {
 	AStarNode *posNode = (AStarNode*)pointerArray.get ( pos );
 	if ( neighbour->distToHere + cost < posNode->distToHere ) {
 		posNode->distToHere = neighbour->distToHere + cost;
@@ -97,7 +97,7 @@ void AStarNodePool::updateOpenNode ( const Vec2i &pos, AStarNode *neighbour, flo
 	}
 }
 
-AStarNode* AStarNodePool::getBestCandidateNode () {
+AStarNode* NodePool::getBestCandidateNode () {
 	if ( openHeap.empty() ) return NULL;
 	pop_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
 	AStarNode *ret = openHeap.back();
@@ -108,7 +108,7 @@ AStarNode* AStarNodePool::getBestCandidateNode () {
 
 #if DEBUG_SEARCH_TEXTURES
 
-list<Vec2i>* AStarNodePool::getOpenNodes () {
+list<Vec2i>* NodePool::getOpenNodes () {
 	list<Vec2i> *ret = new list<Vec2i> ();
 	list<Vec2i>::iterator it = listedNodes.begin();
 	for ( ; it != listedNodes.end (); ++it ) {
@@ -117,7 +117,7 @@ list<Vec2i>* AStarNodePool::getOpenNodes () {
 	return ret;
 }
 
-list<Vec2i>* AStarNodePool::getClosedNodes () {
+list<Vec2i>* NodePool::getClosedNodes () {
 	list<Vec2i> *ret = new list<Vec2i> ();
 	list<Vec2i>::iterator it = listedNodes.begin();
 	for ( ; it != listedNodes.end (); ++it ) {

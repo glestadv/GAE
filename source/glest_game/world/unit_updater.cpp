@@ -29,7 +29,7 @@
 #include "object.h"
 #include "faction.h"
 #include "network_manager.h"
-
+#include "cartographer.h"
 #include "leak_dumper.h"
 
 using namespace Shared::Graphics;
@@ -64,7 +64,7 @@ void UnitUpdater::init(Game &game) {
 	this->world = game.getWorld();
 	this->map = world->getMap();
 	this->console = game.getConsole();
-	pathManager = Search::PathManager::getInstance();
+	pathManager = Search::RoutePlanner::getInstance();
 	pathManager->init();
 	gameSettings = game.getGameSettings();
 }
@@ -572,8 +572,10 @@ void UnitUpdater::updateBuild(Unit *unit){
 					getServerInterface()->updateFactions();
 				}
 			}
-         if ( !builtUnit->isMobile() )
-            pathManager->updateMapMetrics ( builtUnit->getPos(), builtUnit->getSize(), true, FieldWalkable );
+			if ( !builtUnit->isMobile() ) {
+				// new obstacle, inform cartographer
+				theWorld.getCartographer().updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
+			}
 
 			//play start sound
 			if(unit->getFactionIndex()==world->getThisFactionIndex()){
@@ -764,13 +766,12 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 
 				//if resource exausted, then delete it and stop
 				if (r->decAmount(1)) {
-					// let the pathfinder know
-					Vec2i rPos = r->getPos ();
+					// let the cartographer know
+					Vec2i rPos = r->getPos();
 					sc->deleteResource();
-					pathManager->updateMapMetrics ( rPos, 2, false, FieldWalkable );
+					theWorld.getCartographer().updateMapMetrics(rPos, 2);
 					unit->setCurrSkill(hct->getStopLoadedSkillType());
 				}
-              
 				if (unit->getLoadCount() == hct->getMaxLoad()) {
 					unit->setCurrSkill(hct->getStopLoadedSkillType());
 					unit->getPath()->clear();
@@ -973,7 +974,6 @@ void UnitUpdater::updateProduce(Unit *unit) {
 				unit->getFaction()->checkAdvanceSubfaction(pct->getProducedUnit(), true);
 			}
 
-			//place unit creates the unit
 			if(!world->placeUnit(unit->getCenteredPos(), 10, produced)) {
 				unit->cancelCurrCommand();
 				delete produced;
@@ -1095,8 +1095,9 @@ void UnitUpdater::updateMorph(Unit *unit){
 				scriptManager->onUnitCreated ( unit );
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
 				if ( mapUpdate ) {
-					bool adding = !mct->getMorphUnit()->isMobile ();
-					pathManager->updateMapMetrics ( unit->getPos (), unit->getSize (), adding, FieldWalkable );
+					// obstacle added or removed, update annotated maps
+					bool adding = !mct->getMorphUnit()->isMobile();
+					theWorld.getCartographer().updateMapMetrics(unit->getPos(), unit->getSize());
 				}
 
 				if(isNetworkServer()) {

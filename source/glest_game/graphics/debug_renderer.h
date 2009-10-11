@@ -45,7 +45,7 @@ public:
 		else if ( closedSet.find ( cell ) != closedSet.end() ) ndx = 16; // closed nodes
 		else if ( localAnnotations.find ( cell ) != localAnnotations.end() ) // local annotation
 			ndx = 17 + localAnnotations.find(cell)->second;
-		else ndx = thePathManager.annotatedMap->metrics[cell].get( debugField ); // else use cell metric for debug field
+		else ndx = theRoutePlanner.annotatedMap->metrics[cell].get( debugField ); // else use cell metric for debug field
 		return (Texture2DGl*)PFDebugTextures[ndx];
    }
 };
@@ -87,12 +87,39 @@ public:
 
 #endif // DEBUG_RENDERER_VISIBLEQUAD
 
+#if DEBUG_VISIBILITY_OVERLAY
+
+class TeamSightColourCallback {
+public:
+	Vec4f operator()( const Vec2i &cell ) {
+		Vec4f colour(0.f);
+		Vec2i &tile = Map::toTileCoords(cell);
+		int vis = theWorld.getCartographer().getTeamVisibility(theWorld.getThisTeamIndex(), tile);
+		if ( !vis ) {
+			colour.x = 1.0f;
+			colour.w = 0.1f;
+		} else {
+			colour.z = 1.0f;
+			switch ( vis ) {
+				case 1:  colour.w = 0.05f; break;
+				case 2:  colour.w = 0.1f; break;
+				case 3:  colour.w = 0.15f; break;
+				case 4:  colour.w = 0.2f; break;
+				case 5:  colour.w = 0.25f; break;
+				default: colour.w = 0.3f;
+			}
+		}
+		return colour;
+	}
+};
+
+#endif
 
 class DebugRenderer {
 public:
 	DebugRenderer () {}
 
-	template< class CellTextureCallback >
+	template< typename CellTextureCallback >
 	void renderCellTextures ( Quad2i &visibleQuad ) {
 		const Rect2i mapBounds(0, 0, theMap.getTileW()-1, theMap.getTileH()-1);
 		float coordStep= theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
@@ -140,7 +167,7 @@ public:
 
 	} // renderCellTextures ()
 
-	template< class CellOverlayColourCallback >
+	template< typename CellOverlayColourCallback >
 	void renderCellOverlay ( Quad2i &visibleQuad ) {
 		const Rect2i mapBounds( 0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1 );
 		float coordStep = theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
@@ -196,7 +223,11 @@ public:
 		renderCellOverlay< VisibleQuadColourCallback >( visibleQuad );
 	}
 #endif
-
+#if DEBUG_VISIBILITY_OVERLAY
+	void renderTeamSightOverlay(Quad2i &visibleQuad) {
+		renderCellOverlay<TeamSightColourCallback>(visibleQuad);
+	}
+#endif
 private:
 	void renderCellTextured( const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
 				const Vec3f &v1, const Vec3f &v2, const Vec3f &v3  ) {

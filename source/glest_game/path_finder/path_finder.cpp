@@ -33,100 +33,7 @@ using namespace std;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{ namespace Search {
-
-SearchEngine<AStarNodePool> npSearchEngine;
-SearchEngine<NodeMap> nmSearchEngine;
-
-Vec2i				PosGoal::target( -1 );
-Vec2i		 		RangeGoal::target( -1 );
-float				RangeGoal::range( 0.f );
-Field				FreeCellGoal::field( FieldWalkable );
-const InfluenceMap*	InfluenceGoal::iMap = NULL;
-float				InfluenceGoal::threshold = 0.f;
-Vec2i				DiagonalDistance::target( -1 );
-Vec2i				OverEstimate::target( -1 );
-float				InfluenceBuilderGoal::cutOff = 0.f;
-InfluenceMap*		InfluenceBuilderGoal::iMap = NULL;
-const Unit*			MoveCost::unit = NULL;
-const AnnotatedMap*	MoveCost::map = NULL;
-
-Cartographer::Cartographer() {
-	int w = theMap.getW(), h = theMap.getH();
-	//masterMap = new AnnotatedMap();
-
-	// team maps
-
-	// find and catalog all resources...
-	for ( int x=0; x < theMap.getTileW() - 1; ++x ) {
-		for ( int y=0; y < theMap.getTileH() - 1; ++y ) {
-			const Resource * const r = theMap.getTile( x,y )->getResource();
-			if ( r ) {
-				resourceLocations[r->getType()].push_back( Vec2i(x,y) );
-			}
-		}
-	}
-	// build resource influence maps for each team
-	for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
-		const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
-		if ( rt->getClass() == rcTech || rt->getClass() == rcTileset ) {
-			for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
-				int team = theWorld.getFaction( j )->getTeam();
-				if ( teamResourceMaps[team].find( rt ) == teamResourceMaps[team].end() ) {
-					teamResourceMaps[team][rt] = new InfluenceMap();
-				}
-			}
-		}
-	}
-}
-void Cartographer::updateResourceMaps() {
-	set< int > seen;
-	for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
-		int team = theWorld.getFaction( j )->getTeam();
-		if ( seen.find( team ) != seen.end() ) {
-			continue;
-		}
-		seen.insert( team );
-		for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
-			const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
-			if ( rt->getClass() == rcTech || rt->getClass() == rcTileset ) {
-				initResourceMap( team, rt, teamResourceMaps[team][rt] );
-			}
-		}
-	}
-}
-
-void Cartographer::initResourceMap( int team, const ResourceType *rt, InfluenceMap *iMap ) {
-	//DEBUG
-	static char buf[1024];
-	sprintf( buf, "Initialising %s influence map for team %d", rt->getName().c_str(), team );
-	theLogger.add( buf );
-	int64 time = Chrono::getCurMillis();
-	vector<Vec2i> knownResources;
-	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
-	for ( ; it != resourceLocations[rt].end(); ++it ) {
-		if ( theMap.getTile( *it )->isExplored( team ) ) {
-			knownResources.push_back( *it );
-		}
-	}
-	iMap->clear();
-	nmSearchEngine.reset();
-	for ( it = knownResources.begin(); it != knownResources.end(); ++it ) {
-		Vec2i pos = *it * Map::cellScale;
-		nmSearchEngine.setOpen( pos, 0.f );
-		nmSearchEngine.setOpen( pos + Vec2i( 0,1 ), 0.f );
-		nmSearchEngine.setOpen( pos + Vec2i( 1,0 ), 0.f );
-		nmSearchEngine.setOpen( pos + Vec2i( 1,1 ), 0.f );
-	}
-	nmSearchEngine.buildDistanceMap( iMap, 20.f );
-
-	time = Chrono::getCurMillis() - time;
-	sprintf( buf, "Used %d nodes, took %dms\n", nmSearchEngine.getExpandedLastRun(), time );
-	theLogger.add( buf );
-	//if ( team == theWorld.getThisTeamIndex() && rt->getName() == "gold" ) {
-	//	iMap->log();
-	//}
-}
+namespace Glest { namespace Game { namespace Search {
 
 // =====================================================
 // 	class PathFinder
@@ -134,56 +41,57 @@ void Cartographer::initResourceMap( int team, const ResourceType *rt, InfluenceM
 
 // ===================== PUBLIC ========================
 
-PathManager* PathManager::singleton = NULL;
-AnnotatedMap *PathManager::annotatedMap = NULL;
+RoutePlanner* RoutePlanner::singleton = NULL;
 
-PathManager* PathManager::getInstance() {
+RoutePlanner* RoutePlanner::getInstance() {
 	if ( ! singleton )
-		singleton = new PathManager();
+		singleton = new RoutePlanner();
 	return singleton;
 }
 
-PathManager::PathManager() {
+RoutePlanner::RoutePlanner() {
 	assert( !singleton );
-	annotatedMap = NULL;
-	//superMap = NULL;
-	cartographer = NULL;
 	singleton = this;
 }
 
-PathManager::~PathManager() {
-	delete annotatedMap;
-	//delete superMap;
+RoutePlanner::~RoutePlanner() {
 	singleton = NULL;
+	//TODO fix/reduce dodginess
+	delete nmSearchEngine;
+	delete npSearchEngine;
 }
 
-void PathManager::init() {
-	theLogger.add( "Initialising PathFinder", true );
-	delete annotatedMap;
-	//delete superMap;
-	annotatedMap = new AnnotatedMap();
-	//superMap = new AnnotatedSearchMap( map );
+void RoutePlanner::init() {
+	theLogger.add( "Initialising SearchEngine", true );
 
-	npSearchEngine.init();
-	nmSearchEngine.init();
+	//TODO fix/reduce dodginess
+	nmSearchEngine = new SearchEngine<NodeMap>();
+	npSearchEngine = new SearchEngine<NodePool>();
+
+	npSearchEngine->init();
+	nmSearchEngine->init();
 	
-	cartographer = new Cartographer();
-
-#ifdef DEBUG_SEARCH_TEXTURES
+#if DEBUG_SEARCH_TEXTURES
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
 		int foo = theConfig.getMiscDebugTextureMode ();
-		debug_texture_action = foo == 0 ? PathManager::ShowPathOnly
-							 : foo == 1 ? PathManager::ShowOpenClosedSets
-										: PathManager::ShowLocalAnnotations;
+		debug_texture_action = foo == 0 ? RoutePlanner::ShowPathOnly
+							 : foo == 1 ? RoutePlanner::ShowOpenClosedSets
+										: RoutePlanner::ShowLocalAnnotations;
 	}
 #endif
 }
 
-bool PathManager::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
+/** Determine legality of a proposed move for a unit. This function is the absolute last say
+  * in such matters.
+  * @param unit the unit attempting to move
+  * @param pos2 the position unit desires to move to
+  * @return true if move may proceed, false if not legal.
+  */
+bool RoutePlanner::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
 	assert( theMap.isInside( pos2 ) );
 	//assert( unit->getPos().dist( pos2 ) < 1.5 );
 	if ( unit->getPos().dist( pos2 ) > 1.5 ) {
-		//TODO: figure out why we need this!
+		//TODO: figure out why we need this!  because blocked paths are popping...
 		return false;
 	}
 	const Vec2i &pos1 = unit->getPos();
@@ -191,6 +99,7 @@ bool PathManager::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
 	const Field &field = unit->getCurrField();
 	Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
 
+	AnnotatedMap *annotatedMap = theWorld.getCartographer().getMasterMap();
 	if ( ! annotatedMap->canOccupy( pos2, size, field ) )
 		return false; // obstruction in field
 	if ( pos1.x != pos2.x && pos1.y != pos2.y ) {
@@ -213,29 +122,18 @@ bool PathManager::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
 	return true;
 }
 
-//const ResourceType* PathFinder::resourceGoal = NULL;
-//const Unit* PathFinder::storeGoal = NULL;
-/*
-bool PathFinder::resourceGoalFunc ( const Vec2i &pos ) {
-	//FIXME need to take unit size into account...
-	Vec2i tmp;
-	Map *map = Game::getInstance()->getWorld()->getMap();
-	return map->isResourceNear ( pos, resourceGoal, tmp );
-}
-bool PathFinder::storeGoalFunc ( const Vec2i &pos ) {
-	return Game::getInstance()->getWorld()->getMap()->isNextTo(pos, storeGoal);
-}
-*/
-static int flipper = 0;
-
 #define DONE()		{ unit->setCurrSkill( scStop ); return SearchResult::Arrived; }
 #define BLOCKED()	{ unit->setCurrSkill( scStop ); path.incBlockCount(); return SearchResult::Blocked;	}
 #define TRYMOVE()	{ pos = path.pop(); if ( isLegalMove( unit, pos ) ) { \
 											unit->setNextPos( pos ); \
 											return SearchResult::OnTheWay; \
 										} }
-
-TravelState PathManager::findPathToLocation( Unit *unit, const Vec2i &finalPos ) {
+/** Find a path to a location.
+  * @param unit the unit requesting the path
+  * @param finalPos the position the unit desires to go to
+  * @return SearchResult::ARRIVED, SearchResult::ONTHEWAY or SearchResult::BLOCKED
+  */
+TravelState RoutePlanner::findPathToLocation( Unit *unit, const Vec2i &finalPos ) {
 	UnitPath &path = *unit->getPath();
 	Vec2i pos;
 	//if arrived (where we wanted to go)
@@ -251,22 +149,22 @@ TravelState PathManager::findPathToLocation( Unit *unit, const Vec2i &finalPos )
 	path.clear();
 	
 	// do a 'limited search'
-	
-	annotatedMap->annotateLocal( unit, unit->getCurrField() ); // annotate map
+	AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
+	aMap->annotateLocal( unit, unit->getCurrField() ); // annotate map
 	// reset nodepool and add start to open
-	npSearchEngine.setNodeLimit( theConfig.getPathFinderMaxNodes() );
-	npSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) ); 
-	int result = npSearchEngine.pathToPos( annotatedMap, unit, target ); // perform search
-	annotatedMap->clearLocalAnnotations( unit->getCurrField() ); // clear annotations
-	if ( result == AStarResult::Failed ) BLOCKED()
-	if ( result == AStarResult::Partial ) {
+	npSearchEngine->setNodeLimit( theConfig.getPathFinderMaxNodes() );
+	npSearchEngine->setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) ); 
+	int result = npSearchEngine->pathToPos( aMap, unit, target ); // perform search
+	aMap->clearLocalAnnotations( unit->getCurrField() ); // clear annotations
+	if ( result == AStarResult::FAILED ) BLOCKED()
+	if ( result == AStarResult::PARTIAL ) {
 		// Queue for 'complete' search...
 	}
 	// Partail or Complete... extract path...
-	pos = npSearchEngine.getGoalPos();
+	pos = npSearchEngine->getGoalPos();
 	while ( pos.x >= 0 ) {
 		path.push_front( pos );
-		pos = npSearchEngine.getPreviousPos( pos );
+		pos = npSearchEngine->getPreviousPos( pos );
 	}
 	if ( path.empty() ) DONE()
 	path.pop();
@@ -274,27 +172,28 @@ TravelState PathManager::findPathToLocation( Unit *unit, const Vec2i &finalPos )
 	BLOCKED()
 }
 
-bool PathManager::repairPath( Unit *unit ) {
+bool RoutePlanner::repairPath( Unit *unit ) {
 	UnitPath &path = *unit->getPath();
 	assert(path.size() > 12 );
 	int i=8;
 	while ( i-- ) {
 		path.pop_front();
 	}
-	annotatedMap->annotateLocal( unit, unit->getCurrField () );
+	AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
+	aMap->annotateLocal( unit, unit->getCurrField () );
 	// reset nodepool and add start to open
-	npSearchEngine.setNodeLimit( 256 );
-	npSearchEngine.setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) );
-	int result = npSearchEngine.pathToPos( annotatedMap, unit, path.front() ); // perform search
-	annotatedMap->clearLocalAnnotations( unit->getCurrField () );
+	npSearchEngine->setNodeLimit( 256 );
+	npSearchEngine->setStart( unit->getPos(), DiagonalDistance()( unit->getPos() ) );
+	int result = npSearchEngine->pathToPos( aMap, unit, path.front() ); // perform search
+	aMap->clearLocalAnnotations( unit->getCurrField () );
 
-	if ( result == AStarResult::Complete ) {
-		Vec2i pos = npSearchEngine.getGoalPos();
+	if ( result == AStarResult::COMPLETE ) {
+		Vec2i pos = npSearchEngine->getGoalPos();
 		// skip target (is on the 'front' of the path already...
-		pos = npSearchEngine.getPreviousPos( pos );
+		pos = npSearchEngine->getPreviousPos( pos );
 		while ( pos.x >= 0 ) {
 			path.push_front( pos );
-			pos = npSearchEngine.getPreviousPos( pos );
+			pos = npSearchEngine->getPreviousPos( pos );
 		}
 		return true;
 	}
@@ -309,7 +208,7 @@ bool PathManager::repairPath( Unit *unit ) {
 //
 // Move me to Cartographer, as findFreePos(), rewrite using a Dijkstra Search
 //
-Vec2i PathManager::computeNearestFreePos( const Unit *unit, const Vec2i &finalPos ) {
+Vec2i RoutePlanner::computeNearestFreePos( const Unit *unit, const Vec2i &finalPos ) {
 	//unit data
 	Vec2i unitPos= unit->getPos();
 	int size= unit->getType()->getSize();
@@ -322,6 +221,9 @@ Vec2i PathManager::computeNearestFreePos( const Unit *unit, const Vec2i &finalPo
 	}
 
 	//find nearest pos
+
+	// Local annotate target if visible
+	// set 
 
 	// REPLACE ME!
 	//

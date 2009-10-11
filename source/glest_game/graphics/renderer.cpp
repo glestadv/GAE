@@ -1269,6 +1269,9 @@ void Renderer::renderSurface() {
 #	if DEBUG_RENDERER_VISIBLEQUAD
 		debugRenderer.renderCapturedQuad( visibleQuad );
 #	endif
+#	if DEBUG_VISIBILITY_OVERLAY
+		debugRenderer.renderTeamSightOverlay(visibleQuad);
+#	endif
 }
 
 void Renderer::renderObjects(){

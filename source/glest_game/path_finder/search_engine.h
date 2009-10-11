@@ -35,8 +35,14 @@ namespace Glest { namespace Game { namespace Search {
 
 class NodeMap;
 
-#define _SEARCH_ENGINE_GET_DIAGS_DEFINED_
+/** gets the two 'diagonal' cells to check for obstacles when a unit is moving diagonally
+  * @param s start pos
+  * @param d destination pos
+  * @param size size of unit
+  * @return d1 & d2, the two cells to check
+  */
 __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 ) {
+#	define _SEARCH_ENGINE_GET_DIAGS_DEFINED_
 	assert( s.x != d.x && s.y != d.y );
 	assert( abs( s.x - d.x ) == 1 && abs( s.y - d.y ) == 1 );
 	if ( size == 1 ) {
@@ -76,9 +82,12 @@ __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d
 		Enum value; \
 	};
 
-WRAP_ENUM( AStarResult,
-		   Failed, Complete, Partial, InProgress, Count
-		 )
+/** AStarResult
+  * result set for aStar() */
+WRAP_ENUM( AStarResult, FAILED, COMPLETE, PARTIAL, INPROGRESS, COUNT )
+/** SearchSpace
+  * Specifies a 'space' to search */
+WRAP_ENUM( SearchSpace, CELLMAP, TILEMAP )
 
 const int numOffsetsSize1Dist1 = 8;
 const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
@@ -95,23 +104,36 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 /*
 	// NodeStorage template interface
 	//
-	void reset();
-	void setNodeLimit( int limit );
-	
-	bool isOpen ( const Vec2i &pos );
-	bool isClosed ( const Vec2i &pos );
+	template<typename T>
+	class NodeStorage {
+	public:
+		void reset();
+		void setNodeLimit( int limit );
+		
+		bool isOpen ( const T &pos );
+		bool isClosed ( const T &pos );
 
-	bool setOpen ( const Vec2i &pos, const Vec2i &prev, float h, float d );
-	void updateOpen ( const Vec2i &pos, const Vec2i &prev, const float cost );
-	Vec2i getBestCandidate();
-	Vec2i getBestSeen();
+		bool setOpen ( const T &pos, const T &prev, float h, float d );
+		void updateOpen ( const T &pos, const T &prev, const float cost );
+		T getBestCandidate();
+		T getBestSeen();
 
-	float getHeuristicAt( const Vec2i &pos );
-	float getCostTo( const Vec2i &pos );
-	float getEstimateFor( const Vec2i &pos );
-	Vec2i getBestTo( const Vec2i &pos );
+		float getHeuristicAt( const T &pos );
+		float getCostTo( const T &pos );
+		float getEstimateFor( const T &pos );
+		T getBestTo( const T &pos );
+	};
 */
+/*
+	// Domain Interface
+	//
+	template<typename T>
+	class SearchDomain {
+	public:
+		
+	};
 
+*/
 
 // ========================================================
 // class SearchEngine
@@ -127,55 +149,60 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 // Cost, Goal & Heuristic functions need to accept parameters of the domain
 //
 //TODO: More templating... generalise the node storage
-//template< class NodeStorage, class Domain = Vec2i >
+//template< typename NodeStorage, typename IDomain = CellMapDomain<Vec2i>, typename DomainType = Vec2i >
 template< typename NodeStorage >
 class SearchEngine {
 private:
-	NodeStorage *nodePool;
+	NodeStorage *nodeStorage;
 
 	// The goal pos (the 'result') from the last A* search
 	Vec2i goalPos;
-	int expandLimit, nodeLimit;
-	int expanded;
+	int expandLimit, nodeLimit, expanded, spaceWidth, spaceHeight;
 
 public:
-	SearchEngine() : expandLimit(-1), nodeLimit(-1), expanded(-1) { nodePool = NULL;}
+	SearchEngine() 
+			: expandLimit(-1)
+			, nodeLimit(-1)
+			, expanded(-1)
+			, nodeStorage(NULL)
+			, spaceWidth(theMap.getW())
+			, spaceHeight(theMap.getH()) {
+	}
+	~SearchEngine() { 
+		delete nodeStorage; 
+	}
 	void init()  {
-		delete nodePool;
-		nodePool = new NodeStorage();
+		delete nodeStorage;
+		nodeStorage = new NodeStorage();
 		nodeLimit = -1;
 		expandLimit = -1;
 		expanded = -1;
+		spaceWidth = theMap.getW();
+		spaceHeight = theMap.getH();
 	}
-	void reset() { nodePool->reset(); if ( nodeLimit > 0 ) { nodePool->setMaxNodes( nodeLimit ); } }
-	void setOpen( Vec2i &pos, float h ) { 
-		nodePool->setOpen( pos, Vec2i(-1), h, 0.f );
-		//nodePool->addToOpen( NULL, pos, h, 0.f, true ); 
-	}
+	void reset() { nodeStorage->reset(); nodeStorage->setMaxNodes(nodeLimit > 0 ? nodeLimit : -1); }
+	void setOpen(Vec2i &pos, float h)	{ nodeStorage->setOpen(pos, Vec2i(-1), h, 0.f); }
 	
 	// reset and add pos to open
-	void setStart( Vec2i &pos, float h ) {
-		nodePool->reset();
+	void setStart(Vec2i &pos, float h) {
+		nodeStorage->reset();
 		if ( nodeLimit > 0 ) {
-			nodePool->setMaxNodes( nodeLimit );
+			nodeStorage->setMaxNodes(nodeLimit);
 		}
-		nodePool->setOpen( pos, Vec2i(-1), h, 0.f );
-		//nodePool->addToOpen( NULL, pos, h, 0.f, true );
+		nodeStorage->setOpen(pos, Vec2i(-1), h, 0.f);
 	}
 
-//	NODE_STRUCT* getGoal() { return goalNode; }
 	Vec2i getGoalPos() { return goalPos; }
-	Vec2i getPreviousPos( const Vec2i &pos ) { return nodePool->getBestTo( pos ); }
+	Vec2i getPreviousPos(const Vec2i &pos) { return nodeStorage->getBestTo(pos); }
 	
 	// limit search to use at mose limit nodes
-	void setNodeLimit( int limit ) { nodeLimit = limit; }
-
+	void setNodeLimit(int limit) { nodeLimit = limit > 0 ? limit : -1; }
 	// set an 'expanded nodes' limit, for a resumable serch
-	void setTimeLimit( int limit ) { expandLimit = limit; }
+	void setTimeLimit(int limit) { expandLimit = limit > 0 ? limit : -1; }
 
 	int getExpandedLastRun() { return expanded; }
 
-	int pathToPos( const AnnotatedMap *map, const Unit *unit, const Vec2i &target ) {
+	int pathToPos(const AnnotatedMap *map, const Unit *unit, const Vec2i &target){
 		PosGoal::target = target;
 		DiagonalDistance::target = target;
 		MoveCost::map = map;
@@ -183,8 +210,8 @@ public:
 		return aStar<PosGoal,MoveCost,DiagonalDistance>();
 	}
 
-	int pathToInfluence( const AnnotatedMap *map, const Unit *unit, const Vec2i &target, 
-			const InfluenceMap *resMap, float threshold ) {
+	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const Vec2i &target, 
+			const InfluenceMap *resMap, float threshold){
 		InfluenceGoal::iMap = iMap;
 		InfluenceGoal::threshold = threshold;
 		DiagonalDistance::target = target; // a bit hacky... target is needed for heuristic
@@ -193,10 +220,20 @@ public:
 		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>();
 	}
 
-	void buildDistanceMap( InfluenceMap *iMap, float cutOff ) {
+	void buildDistanceMap(InfluenceMap *iMap, float cutOff){
 		InfluenceBuilderGoal::cutOff = cutOff;
 		InfluenceBuilderGoal::iMap = iMap;
 		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>();
+	}
+
+	void setSearchSpace(SearchSpace s){
+		if ( s == SearchSpace::CELLMAP ) {
+			spaceWidth = theMap.getW();
+			spaceHeight = theMap.getH();
+		} else if ( s == SearchSpace::TILEMAP ) {
+			spaceWidth = theMap.getTileW();
+			spaceHeight = theMap.getTileH();
+		}
 	}
 
 	// A* Algorithm (Just the loop, does not do any setup or post-processing)
@@ -206,51 +243,47 @@ public:
 		
 		Vec2i minPos(-1);
 		while ( true ) {
-			minPos = nodePool->getBestCandidate();
+			minPos = nodeStorage->getBestCandidate();
 			if ( minPos.x < 0 ) { // failure
 				goalPos = Vec2i(-1);
-				return AStarResult::Failed; 
+				return AStarResult::FAILED; 
 			}
-			if ( GoalFunc()(minPos, nodePool->getCostTo( minPos )) ) { // success
+			if ( GoalFunc()(minPos, nodeStorage->getCostTo( minPos )) ) { // success
 				goalPos = minPos;
-				return AStarResult::Complete;
+				return AStarResult::COMPLETE;
 			}
 			for ( int i = 0; i < 8; ++i ) {  // for each neighbour
-				Vec2i sucPos = minPos + OffsetsSize1Dist1[i];
-				if ( !theMap.isInside( sucPos ) || nodePool->isClosed( sucPos ) ) {
+				Vec2i nPos = minPos + OffsetsSize1Dist1[i];
+				if ( nPos.x < 0 || nPos.y < 0 || nPos.x > spaceWidth || nPos.y > spaceHeight
+				||	 nodeStorage->isClosed(nPos) ) {
 					continue;
 				}
-				float cost = CostFunc()( minPos, sucPos );
+				float cost = CostFunc()( minPos, nPos );
 				if ( cost == numeric_limits<float>::infinity() ) {
 					continue;
 				}
-				if ( nodePool->isOpen( sucPos ) ) {
-					nodePool->updateOpen( sucPos, minPos, cost );
+				if ( nodeStorage->isOpen( nPos ) ) {
+					nodeStorage->updateOpen( nPos, minPos, cost );
 				} else {
-					const float &costToMin = nodePool->getCostTo( minPos );
-					if ( ! nodePool->setOpen( sucPos, minPos, Heuristic()( sucPos ), costToMin + cost ) ) {
-						goalPos = nodePool->getBestSeen();
-						return AStarResult::Partial;
+					const float &costToMin = nodeStorage->getCostTo( minPos );
+					if ( ! nodeStorage->setOpen( nPos, minPos, Heuristic()( nPos ), costToMin + cost ) ) {
+						goalPos = nodeStorage->getBestSeen();
+						return AStarResult::PARTIAL;
 					}
 				}
 			} 
 			expanded++;
 			if ( expanded == expandLimit ) {
 				goalPos = Vec2i(-1);
-				return AStarResult::InProgress;
+				return AStarResult::INPROGRESS;
 			}
 		} // while node limit not reached
 		return -1; // impossible... just keeping the compiler from complaining
 	}
-
-	// Reverse Resumable A*, uses currentArray for storage
-	// maxExpand: maximum number of nodes to expand this call ( < 0 will return Failed or Complete).
-	//template< class GoalFunc, class CostFunc, class Heuristic >
-	//int reverseAStar( int maxExpand = -1);
 };
 
-extern SearchEngine< AStarNodePool >	npSearchEngine;
-extern SearchEngine< NodeMap >	 		nmSearchEngine;
+extern SearchEngine<NodePool>	*npSearchEngine;
+extern SearchEngine<NodeMap>	*nmSearchEngine;
 
 }}}
 
