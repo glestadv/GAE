@@ -404,10 +404,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\astar_nodepool.h"
-				>
-			</File>
-			<File
 				RelativePath=".\facilities\auto_test.h"
 				>
 			</File>
@@ -628,6 +624,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\path_finder\node_pool.h"
+				>
+			</File>
+			<File
 				RelativePath=".\type_instances\object.h"
 				>
 			</File>
@@ -637,10 +637,6 @@
 			</File>
 			<File
 				RelativePath=".\graphics\particle_type.h"
-				>
-			</File>
-			<File
-				RelativePath=".\path_finder\path_finder.h"
 				>
 			</File>
 			<File
@@ -669,6 +665,10 @@
 			</File>
 			<File
 				RelativePath=".\types\resource_type.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\route_planner.h"
 				>
 			</File>
 			<File
@@ -789,37 +789,6 @@
 			</File>
 			<File
 				RelativePath=".\path_finder\annotated_map.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						InlineFunctionExpansion="0"
-						EnableIntrinsicFunctions="false"
-						FavorSizeOrSpeed="0"
-						BasicRuntimeChecks="3"
-						SmallerTypeCheck="true"
-						UsePrecompiledHeader="2"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release+SSE2|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						OmitFramePointers="true"
-						WholeProgramOptimization="true"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\path_finder\astar_nodepool.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1126,6 +1095,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\path_finder\node_pool.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\type_instances\object.cpp"
 				>
 			</File>
@@ -1149,35 +1122,6 @@
 						EnableEnhancedInstructionSet="2"
 						UsePrecompiledHeader="0"
 						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\path_finder\path_finder.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						InlineFunctionExpansion="0"
-						EnableIntrinsicFunctions="false"
-						FavorSizeOrSpeed="0"
-						OmitFramePointers="false"
-						WholeProgramOptimization="true"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release+SSE2|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
 					/>
 				</FileConfiguration>
 			</File>
@@ -1250,6 +1194,10 @@
 			</File>
 			<File
 				RelativePath=".\types\resource_type.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\route_planner.cpp"
 				>
 			</File>
 			<File
