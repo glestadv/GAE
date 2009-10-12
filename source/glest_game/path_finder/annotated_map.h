@@ -48,21 +48,21 @@ struct CellMetrics {
 	
 	uint16 get(const Field field) {
 		switch ( field ) {
-			case   FieldWalkable: return field0;
-			case		FieldAir: return field1;
-			case   FieldAnyWater: return field2;
-			case  FieldDeepWater: return field3;
-			case FieldAmphibious: return field4;
+			case   Field::LAND: return field0;
+			case		Field::AIR: return field1;
+			case   Field::ANY_WATER: return field2;
+			case  Field::DEEP_WATER: return field3;
+			case Field::AMPHIBIOUS: return field4;
 			default: throw runtime_error ( "Unknown Field passed to CellMetrics::get()" );
 		}
 	}
 	void set(const Field field, uint16 val) {
 		switch ( field ) {
-			case   FieldWalkable: field0 = val; return;
-			case		FieldAir: field1 = val; return;
-			case   FieldAnyWater: field2 = val; return;
-			case  FieldDeepWater: field3 = val; return;
-			case FieldAmphibious: field4 = val; return;
+			case   Field::LAND: field0 = val; return;
+			case		Field::AIR: field1 = val; return;
+			case   Field::ANY_WATER: field2 = val; return;
+			case  Field::DEEP_WATER: field3 = val; return;
+			case Field::AMPHIBIOUS: field4 = val; return;
 			default: throw runtime_error ( "Unknown Field passed to CellMetrics::set()" );
 		}
 	}	
@@ -72,11 +72,11 @@ struct CellMetrics {
 	void setDirty(const bool val)		{ dirty = val; }
 
 private:
-	uint16 field0 : 3; // In Use: FieldWalkable = land + shallow water 
-	uint16 field1 : 3; // In Use: FieldAir = air
-	uint16 field2 : 3; // In Use: FieldAnyWater = shallow + deep water
-	uint16 field3 : 3; // In Use: FieldDeepWater = deep water
-	uint16 field4 : 3; // In Use: FieldAmphibious = land + shallow + deep water 
+	uint16 field0 : 3; // In Use: Field::LAND = land + shallow water 
+	uint16 field1 : 3; // In Use: Field::AIR = air
+	uint16 field2 : 3; // In Use: Field::ANY_WATER = shallow + deep water
+	uint16 field3 : 3; // In Use: Field::DEEP_WATER = deep water
+	uint16 field4 : 3; // In Use: Field::AMPHIBIOUS = land + shallow + deep water 
 
 	uint16  dirty : 1; // used in 'team' maps as a 'dirty bit' (clearances have changed
 					   // but team hasn't seen that change yet).
@@ -151,7 +151,7 @@ private:
 	void computeClearances( const Vec2i & );
 	uint32 computeClearance( const Vec2i &, Field );
 
-	void cascadingUpdate( const Vec2i &pos, const int size, const Field field = FieldCount );
+	void cascadingUpdate( const Vec2i &pos, const int size, const Field field = Field::COUNT );
 	void annotateUnit( const Unit *unit, const Field field );
 
 	/** the original values of locations that have had local annotations applied */

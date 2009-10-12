@@ -528,7 +528,7 @@ void Gui::hotKey(UserCommand cmd) {
 #if DEBUG_SEARCH_TEXTURES
 	case ucSwitchDebugField:
 		f = (int)PathFinderTextureCallBack::debugField;
-		f ++; f %= FieldCount;
+		f ++; f %= Field::COUNT;
 		PathFinderTextureCallBack::debugField = (Field)f;
 		break;
 #endif

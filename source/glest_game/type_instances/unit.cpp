@@ -130,14 +130,14 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(FieldWalkable)) currField = FieldWalkable;
-	else if(type->getField(FieldAir)) currField = FieldAir;
+	if(type->getField(Field::LAND)) currField = Field::LAND;
+	else if(type->getField(Field::AIR)) currField = Field::AIR;
 
-	if ( type->getField (FieldAmphibious) ) currField = FieldAmphibious;
-	else if ( type->getField (FieldAnyWater) ) currField = FieldAnyWater;
-	else if ( type->getField (FieldDeepWater) ) currField = FieldDeepWater;
+	if ( type->getField (Field::AMPHIBIOUS) ) currField = Field::AMPHIBIOUS;
+	else if ( type->getField (Field::ANY_WATER) ) currField = Field::ANY_WATER;
+	else if ( type->getField (Field::DEEP_WATER) ) currField = Field::DEEP_WATER;
 
-	targetField = FieldWalkable;		// init just to keep it pretty in memory
+	targetField = Field::LAND;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -361,8 +361,8 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 
 	if(!recentlyCommanded) {
 		progress2 = node->getChildIntValue("progress2");
-		currField = (Field)node->getChildIntValue("currField");
-		targetField = (Field)node->getChildIntValue("targetField");
+		currField = (Field::Enum)node->getChildIntValue("currField");
+		targetField = (Field::Enum)node->getChildIntValue("targetField");
 
 
 		pos = node->getChildVec2iValue("pos");		//map->putUnitCells() will set this, so we reload it later
@@ -1155,7 +1155,7 @@ bool Unit::decHp(int i) {
 	hp -= i;
 
 	//fire
-	if (type->getProperty(pBurnable) && hp < type->getMaxHp() / 2 && fire == NULL) {
+	if (type->getProperty(Property::BURNABLE) && hp < type->getMaxHp() / 2 && fire == NULL) {
 		FireParticleSystem *fps;
 		fps = new FireParticleSystem(200);
 		fps->setSpeed(2.5f / Config::getInstance().getGsWorldUpdateFps());
@@ -1326,11 +1326,11 @@ bool Unit::morph(const MorphCommandType *mct) {
 
 	// redo field
 	Field newField;
-	if(morphUnitType->getField(FieldWalkable)) newField = FieldWalkable;
-	else if(morphUnitType->getField(FieldAir)) newField = FieldAir;
-	if ( morphUnitType->getField (FieldAmphibious) ) newField = FieldAmphibious;
-	else if ( morphUnitType->getField (FieldAnyWater) ) newField = FieldAnyWater;
-	else if ( morphUnitType->getField (FieldDeepWater) ) newField = FieldDeepWater;
+	if(morphUnitType->getField(Field::LAND)) newField = Field::LAND;
+	else if(morphUnitType->getField(Field::AIR)) newField = Field::AIR;
+	if ( morphUnitType->getField (Field::AMPHIBIOUS) ) newField = Field::AMPHIBIOUS;
+	else if ( morphUnitType->getField (Field::ANY_WATER) ) newField = Field::ANY_WATER;
+	else if ( morphUnitType->getField (Field::DEEP_WATER) ) newField = Field::DEEP_WATER;
 
 	if (map->areFreeCellsOrHasUnit(pos, morphUnitType->getSize(), newField, this)) {
 		map->clearUnitCells(this, pos);
@@ -1435,7 +1435,7 @@ void Unit::effectExpired(Effect *e){
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
-	if (currField == FieldAir) {
+	if (currField == Field::AIR) {
 		height += World::airHeight;
 	}
 

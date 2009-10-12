@@ -128,7 +128,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 			world->moveUnitCells(unit);
 
 			//play water sound
-			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() && unit->getCurrField() == FieldWalkable) {
+			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() && unit->getCurrField() == Field::LAND) {
 				soundRenderer.playFx(CoreData::getInstance().getWaterSound());
 			}
 		}
@@ -342,12 +342,12 @@ void UnitUpdater::updateMove(Unit *unit) {
 	}
 
 	switch(pathManager->findPath(unit, pos)) {
-	case SearchResult::OnTheWay:
+	case TravelState::ONTHEWAY:
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
 		break;
 
-	case SearchResult::Blocked:
+	case TravelState::BLOCKED:
 		if(unit->getPath()->isBlocked() && !command->getUnit()){
 			unit->finishCommand();
 		}
@@ -427,11 +427,11 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 
 		//if unit arrives destPos order has ended
 		switch(pathManager->findPath(unit, pos)) {
-		case SearchResult::OnTheWay:
+		case TravelState::ONTHEWAY:
 			unit->setCurrSkill(act->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;
-		case SearchResult::Blocked:
+		case TravelState::BLOCKED:
 			if (unit->getPath()->isBlocked()) {
 				return true;
 			}
@@ -494,7 +494,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 		Vec2i waypoint;
 
 		// find the nearest place for the builder
-		if(map->getNearestAdjacentFreePos(waypoint, unit, command->getPos(), FieldWalkable, buildingSize)) {
+		if(map->getNearestAdjacentFreePos(waypoint, unit, command->getPos(), Field::LAND, buildingSize)) {
 			if(waypoint != unit->getTargetPos()) {
 				unit->setTargetPos(waypoint);
 				unit->getPath()->clear();
@@ -506,19 +506,19 @@ void UnitUpdater::updateBuild(Unit *unit){
 		}
 
 		switch (pathManager->findPath(unit, waypoint)) {
-		case SearchResult::OnTheWay:
+		case TravelState::ONTHEWAY:
 			unit->setCurrSkill(bct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			return;
 
-		case SearchResult::Blocked:
+		case TravelState::BLOCKED:
 			if(unit->getPath()->isBlocked()) {
 				console->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
 			}
 			return;
 
-		case SearchResult::Arrived:
+		case TravelState::ARRIVED:
 			if(unit->getPos() != waypoint) {
 				console->addStdMessage("Blocked");
 				unit->cancelCurrCommand();
@@ -529,7 +529,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 
 		//if arrived destination
         assert(command->getUnitType()!=NULL);
-		if(map->areFreeCells(command->getPos(), buildingSize, FieldWalkable)) {
+		if(map->areFreeCells(command->getPos(), buildingSize, Field::LAND)) {
 			if(!verifySubfaction(unit, builtUnitType)) {
 				return;
 			}
@@ -587,7 +587,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 		} else {
 			// there are no free cells
 			vector<Unit *>occupants;
-			map->getOccupants(occupants, command->getPos(), buildingSize, ZoneSurface);
+			map->getOccupants(occupants, command->getPos(), buildingSize, Zone::LAND);
 
 			// is construction already under way?
 			Unit *builtUnit = occupants.size() == 1 ? occupants[0] : NULL;
@@ -682,11 +682,11 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				} 
 				else { //if not continue walking
 					switch (pathManager->findPathToLocation( unit, command->getPos()/*, r->getType()*/)) {
-					case SearchResult::OnTheWay:
+					case TravelState::ONTHEWAY:
 						unit->setCurrSkill(hct->getMoveSkillType());
 						unit->face(unit->getNextPos());
 						break;
-					case SearchResult::Arrived:
+					case TravelState::ARRIVED:
 						/*
 						for ( int i=0; i < 8; ++i ) { // reset target
 							Vec2i cPos = unit->getPos() + Search::OffsetsSize1Dist1[i];
@@ -716,7 +716,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
 				switch (pathManager->findPathToLocation( unit, store->getNearestOccupiedCell(unit->getPos())/*, store*/)) {
-				case SearchResult::OnTheWay:
+				case TravelState::ONTHEWAY:
 					unit->setCurrSkill(hct->getMoveLoadedSkillType());
 					unit->face(unit->getNextPos());
 					break;
@@ -853,7 +853,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 		}
 
 		switch(pathManager->findPath(unit, targetPos)) {
-		case SearchResult::Arrived:
+		case TravelState::ARRIVED:
 			if(repaired && unit->getPos() != targetPos) {
 				// presume blocked
 				unit->setCurrSkill(scStop);
@@ -868,12 +868,12 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			}
 			break;
 
-		case SearchResult::OnTheWay:
+		case TravelState::ONTHEWAY:
 			unit->setCurrSkill(rct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;
 
-		case SearchResult::Blocked:
+		case TravelState::BLOCKED:
 			if(unit->getPath()->isBlocked()){
 				unit->setCurrSkill(scStop);
 				unit->finishCommand();
@@ -1067,11 +1067,11 @@ void UnitUpdater::updateMorph(Unit *unit){
 		Fields mfs = mct->getMorphUnit()->getFields ();
 		
 		Field mf;
-		if ( mfs.get ( FieldWalkable ) ) mf = FieldWalkable;
-		else if ( mfs.get ( FieldAir ) ) mf = FieldAir;
-		if ( mfs.get (FieldAmphibious) ) mf = FieldAmphibious;
-		else if ( mfs.get (FieldAnyWater) ) mf = FieldAnyWater;
-		else if ( mfs.get (FieldDeepWater) ) mf = FieldDeepWater;
+		if ( mfs.get ( Field::LAND ) ) mf = Field::LAND;
+		else if ( mfs.get ( Field::AIR ) ) mf = Field::AIR;
+		if ( mfs.get (Field::AMPHIBIOUS) ) mf = Field::AMPHIBIOUS;
+		else if ( mfs.get (Field::ANY_WATER) ) mf = Field::ANY_WATER;
+		else if ( mfs.get (Field::DEEP_WATER) ) mf = Field::DEEP_WATER;
 
 		if ( map->areFreeCellsOrHasUnit (unit->getPos(), mct->getMorphUnit()->getSize(), mf, unit) ) {
 			unit->setCurrSkill(mct->getMorphSkillType());
@@ -1195,8 +1195,8 @@ void UnitUpdater::updateEmanations(Unit *unit) {
 			i != unit->getGetEmanations().end(); i++) {
 		singleEmanation.resize(1);
 		singleEmanation[0] = *i;
-		applyEffects(unit, singleEmanation, unit->getPos(), FieldWalkable, (*i)->getRadius());
-		applyEffects(unit, singleEmanation, unit->getPos(), FieldAir, (*i)->getRadius());
+		applyEffects(unit, singleEmanation, unit->getPos(), Field::LAND, (*i)->getRadius());
+		applyEffects(unit, singleEmanation, unit->getPos(), Field::AIR, (*i)->getRadius());
 	}
 }
 
@@ -1570,13 +1570,13 @@ bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr,
 
 		while (pci.getNext(pos, distance)) {
 
-			//all fields
-			for(int k=0; k<ZoneCount; k++){
-				Zone f= static_cast<Zone>(k);
+			//all zones
+			for ( int k=0; k < Zone::COUNT; k++ ) {
+				Zone z = (Zone::Enum)k;
 
-				//check field
-				if(!asts || asts->getZone(f)) {
-					Unit *possibleEnemy= map->getCell(pos)->getUnit(f);
+				//check zone
+				if(!asts || asts->getZone(z)) {
+					Unit *possibleEnemy= map->getCell(pos)->getUnit(z);
 
 					//check enemy
 					if(possibleEnemy && possibleEnemy->isAlive() && !unit->isAlly(possibleEnemy)) {
@@ -1651,9 +1651,9 @@ bool UnitUpdater::repairableOnRange(
 	float distance;
 	PosCircularIteratorSimple pci(*map, center, range);
 	while (pci.getNext(pos, distance)) {
-		//all fields
-		for (int f = 0; f < FieldCount; f++) {
-			Unit *candidate = map->getCell(pos)->getUnit((Field)f);
+		//all zones
+		for (int z = 0; z < Zone::COUNT; z++) {
+			Unit *candidate = map->getCell(pos)->getUnit((Zone::Enum)z);
 	
 			//is it a repairable?
 			if (candidate

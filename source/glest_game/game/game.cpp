@@ -42,14 +42,6 @@ using namespace Shared::Platform;
 
 namespace Glest{ namespace Game{
 
-const char *controlTypeNames[ctCount] = {
-	"Closed",
-	"Cpu",
-	"CpuUltra",
-	"Network",
-	"Human"
-};
-
 // =====================================================
 // 	class Game
 // =====================================================

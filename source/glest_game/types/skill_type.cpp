@@ -229,9 +229,9 @@ string SkillType::skillClassToStr(SkillClass skillClass){
 string SkillType::fieldToStr(Zone field){
 	switch(field)
    {
-   case ZoneSurfaceProp: return "SurfaceProp";
-	case ZoneSurface: return "Surface";
-	case ZoneAir: return "Air";
+   case Zone::SURFACE_PROP: return "SurfaceProp";
+	case Zone::LAND: return "Surface";
+	case Zone::AIR: return "Air";
 //	case fSubsurface: return "Subsurface";
 
 		default:
@@ -324,8 +324,8 @@ void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* ra
 
 	//fields
 	str+= lang.get("Zones") + ": ";
-	for(int i= 0; i < ZoneCount; i++){
-		Zone zone = static_cast<Zone>(i);
+	for(int i= 0; i < Zone::COUNT; i++){
+		Zone zone = (Zone::Enum)i;
 		if(zones.get(zone)){
 			str+= fieldToStr(zone) + " ";
 		}

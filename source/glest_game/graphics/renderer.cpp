@@ -174,7 +174,7 @@ Renderer::Renderer(){
 	perspNearPlane = config.getRenderDistanceMin();
 	perspFarPlane = config.getRenderDistanceMax();
 #if DEBUG_SEARCH_TEXTURES
-	PathFinderTextureCallBack::debugField = FieldWalkable;
+	PathFinderTextureCallBack::debugField = Field::LAND;
 #endif
 #if DEBUG_RENDERER_VISIBLEQUAD
 	captureQuad = false;
@@ -570,7 +570,7 @@ void Renderer::renderMouse3d(){
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
 				//choose color
-				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), FieldWalkable, units)) {
+				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), Field::LAND, units)) {
 					color= Vec4f(1.f, 1.f, 1.f, 0.5f);
 				} else {
 					color= Vec4f(1.f, 0.f, 0.f, 0.5f);
@@ -1598,13 +1598,13 @@ void Renderer::renderUnits(){
 			// Quick fix: float boats
 			const Field f = unit->getCurrField ();
 			const Map *map = world->getMap ();
-			if ( f == FieldAmphibious ) {
+			if ( f == Field::AMPHIBIOUS ) {
 				SurfaceType st = map->getCell(unit->getPos())->getType();
-				if ( st == SurfaceTypeDeepWater || st == SurfaceTypeFordable ) {
+				if ( st == SurfaceType::DEEP_WATER || st == SurfaceType::FORDABLE ) {
 					currVec.y = map->getWaterLevel ();
 				}
 			}
-			if ( f == FieldDeepWater || f == FieldAnyWater ) {
+			if ( f == Field::DEEP_WATER || f == Field::ANY_WATER ) {
 				currVec.y = map->getWaterLevel ();
 			}
 

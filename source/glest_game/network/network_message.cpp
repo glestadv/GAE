@@ -250,7 +250,7 @@ void NetworkMessageLaunch::buildGameSettings(GameSettings *gameSettings) const{
 
 	for(int i = 0; i < factionCount; ++i) {
 		gameSettings->setFactionTypeName(i, factionTypeNames[i].getString());
-		gameSettings->setFactionControl(i, static_cast<ControlType>(factionControls[i]));
+		gameSettings->setFactionControl(i, static_cast<ControlType::Enum>(factionControls[i]));
 		gameSettings->setTeam(i, teams[i]);
 		gameSettings->setStartLocationIndex(i, startLocationIndex[i]);
 	}

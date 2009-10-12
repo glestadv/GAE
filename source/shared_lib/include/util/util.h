@@ -46,6 +46,108 @@ namespace Shared { namespace Util {
 
 const string sharedLibVersionString= "v0.4.1";
 
+
+#define ENUMERATED_TYPE(Name,...)						\
+	struct Name {										\
+		enum Enum { __VA_ARGS__, COUNT };				\
+		Name() : value((Enum)0) {}						\
+		Name(Enum val) : value(val) {}					\
+		operator Enum() { return value; }				\
+		operator Enum() const { return value; }			\
+	private:											\
+		Enum value;										\
+	};													\
+    STRINGY_ENUM_NAMES(Name, Name::COUNT, __VA_ARGS__);
+/*
+		bool operator== (const Name &that) const {		\
+			return value == that.value;					\
+		}												\
+		bool operator== (const Name &that) {			\
+			return value == that.value;					\
+		}												\
+		bool operator== (Name &that) {					\
+			return value == that.value;					\
+		}												\
+*/
+
+
+/** A macro for defining C style enums that similtaneously stores their names. */
+#define STRINGY_ENUM(name, countValue, ...)								\
+	enum name {__VA_ARGS__, countValue};								\
+	STRINGY_ENUM_NAMES(enum ## name ## Names, countValue, __VA_ARGS__)
+
+// =====================================================
+//	class EnumNames
+// =====================================================
+
+/** A utility class to provide a text description for enum values. */
+class EnumNames {
+#ifdef NO_ENUM_NAMES
+public:
+    EnumNames(const char *valueList, size_t count, bool copyStrings, bool lazy, const char *enumName = NULL) {}
+    const char *operator[](int i) {return "";}
+	template<typename EnumType>	EnumType match(string &value) { return EnumType::COUNT; }
+#else
+private:
+	const char *valueList;
+	const char **names;
+	const char *qualifiedList;
+	const char **qualifiedNames;
+	size_t count;
+	bool copyStrings;
+
+public:
+	/** Primary ctor. As it turns out, not specifying copyStrings as true on most modern system will
+	 * result in some form of access violation (due to attempting to write to read-only memory. */
+	EnumNames(const char *valueList, size_t count, bool copyStrings, bool lazy, const char *enumName = NULL);
+    ~EnumNames();
+    const char *operator[](unsigned i) const {
+		if(!names) {
+			const_cast<EnumNames*>(this)->init();
+		}
+		return i < count ? qualifiedNames ? qualifiedNames[i] : names[i] : "invalid value";
+	}
+	/** Matches a string value to an enum value  */
+	template<typename EnumType>
+	EnumType match(const char *value) const {
+		if ( !names ) {
+			const_cast<EnumNames*>(this)->init();
+		}
+		for ( unsigned int i=0; i < count; ++i ) {
+			const char *ptr1 = names[i];
+			const char *ptr2 = value;
+			bool same = true;
+			if ( !*ptr1 || !*ptr2 ) {
+				continue;
+			}
+			while ( *ptr1 && *ptr2 ) {
+				if ( isalpha(*ptr1) && isalpha(*ptr2) ) {
+					if ( tolower(*ptr1) != tolower(*ptr2) ) {
+						same = false;
+						break;
+					}
+				} else if ( ! ( *ptr1 == '_' && (*ptr2 == ' ' || *ptr2 == '_') ) ) {
+					same = false;
+					break;
+				}
+				ptr1++;
+				ptr2++;
+				if ( ( !*ptr1 && *ptr2 && !isspace(*ptr2) ) || ( *ptr1 && !*ptr2 ) ) {
+					same = false;
+				}
+			}
+			if ( same ) {
+				return (EnumType::Enum)i;
+			}
+		}
+		return EnumType::COUNT;
+	}
+
+private:
+	void init();
+#endif
+};
+
 void findAll(const string &path, vector<string> &results, bool cutExtension = false);
 
 //string fcs

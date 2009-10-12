@@ -259,7 +259,7 @@ bool NodeMap::assertValidPath ( list<Vec2i> &path ) {
 list<pair<Vec2i,uint32>>* SearchMap::getLocalAnnotations () {
 	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>> ();
 	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it )
-		ret->push_back ( pair<Vec2i,uint32> (it->first,nodeMap[it->first].getClearance(FieldWalkable)) );
+		ret->push_back ( pair<Vec2i,uint32> (it->first,nodeMap[it->first].getClearance(Field::LAND)) );
 	return ret;
 }
 

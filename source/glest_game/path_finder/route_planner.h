@@ -34,10 +34,7 @@ namespace Glest { namespace Game { namespace Search {
 const int maxFreeSearchRadius = 10;
 const int pathFindNodesMax = 2048;
 
-struct SearchResult {
-	enum State { Arrived, OnTheWay, Blocked };
-};
-typedef SearchResult::State TravelState;
+//ENUMERATED_TYPE( TravelState, ARRIVED, ONTHEWAY, BLOCKED )
 
 //enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
 

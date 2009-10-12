@@ -58,23 +58,15 @@ enum Clicks {
 	cTwo
 };
 
-enum AttackSkillPreference {
-	aspWheneverPossible,
-	aspAtMaxRange,
-	aspOnLarge,
-	aspOnBuilding,
-	aspWhenDamaged,
 
-	aspCount
-};
-
-class AttackSkillPreferences : public XmlBasedFlags<AttackSkillPreference, aspCount> {
+class AttackSkillPreferences : public XmlBasedFlags<AttackSkillPreference, AttackSkillPreference::COUNT> {
 private:
-	static const char *names[aspCount];
+//	static const char *names[aspCount];
 
 public:
 	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<AttackSkillPreference, aspCount>::load(node, dir, tt, ft, "flag", names);
+		XmlBasedFlags<AttackSkillPreference, AttackSkillPreference::COUNT>
+			::load(node, dir, tt, ft, "flag", AttackSkillPreferenceNames);
 	}
 };
 

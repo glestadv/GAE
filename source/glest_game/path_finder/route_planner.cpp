@@ -97,7 +97,7 @@ bool RoutePlanner::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
 	const Vec2i &pos1 = unit->getPos();
 	const int &size = unit->getSize();
 	const Field &field = unit->getCurrField();
-	Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
+	Zone zone = field == Field::AIR ? Zone::AIR : Zone::LAND;
 
 	AnnotatedMap *annotatedMap = theWorld.getCartographer().getMasterMap();
 	if ( ! annotatedMap->canOccupy( pos2, size, field ) )
@@ -122,11 +122,11 @@ bool RoutePlanner::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
 	return true;
 }
 
-#define DONE()		{ unit->setCurrSkill( scStop ); return SearchResult::Arrived; }
-#define BLOCKED()	{ unit->setCurrSkill( scStop ); path.incBlockCount(); return SearchResult::Blocked;	}
+#define DONE()		{ unit->setCurrSkill( scStop ); return TravelState::ARRIVED; }
+#define BLOCKED()	{ unit->setCurrSkill( scStop ); path.incBlockCount(); return TravelState::BLOCKED;	}
 #define TRYMOVE()	{ pos = path.pop(); if ( isLegalMove( unit, pos ) ) { \
 											unit->setNextPos( pos ); \
-											return SearchResult::OnTheWay; \
+											return TravelState::ONTHEWAY; \
 										} }
 /** Find a path to a location.
   * @param unit the unit requesting the path
@@ -269,12 +269,12 @@ public:
 	int w;
 	char *cells;
 
-	ValidationMap(int h, int w) : h(h), w(w), cells(new char[h * w * ZoneCount]) {
+	ValidationMap(int h, int w) : h(h), w(w), cells(new char[h * w * Zone::COUNT]) {
 		reset();
 	}
 
 	void reset() {
-		memset(cells, 0, h * w * ZoneCount);
+		memset(cells, 0, h * w * Zone::COUNT);
 	}
 
 	void validate(int x, int y, Zone zone) {
@@ -285,7 +285,7 @@ public:
 	char &getCell(int x, int y, Zone zone) {
 		assert(x >= 0 && x < w);
 		assert(y >= 0 && y < h);
-		assert(zone >= 0 && zone < ZoneCount);
+		assert(zone >= 0 && zone < Zone::COUNT);
 		return cells[zone * h * w + x * w + y];
 	}
 };
@@ -353,7 +353,7 @@ void World::assertConsistiency() {
 	// make sure that every cell that was not validated is empty
 	for(int x = 0; x < map.getW(); ++x) {
 		for(int y = 0; y < map.getH(); ++y ) {
-			for(int zone = 0; zone < ZoneCount; ++zone) {
+			for(int zone = 0; zone < Zone::COUNT; ++zone) {
 				if(!validationMap.getCell(x, y, (Zone)zone)) {
 					Cell *cell = map.getCell(x, y);
 					if(cell->getUnit((Zone)zone)) {

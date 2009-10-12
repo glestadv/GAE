@@ -768,7 +768,7 @@ void World::moveUnitCells(Unit *unit) {
 	}
 
 	//water splash
-	if(tileset.getWaterEffects() && unit->getCurrField()==FieldWalkable){
+	if(tileset.getWaterEffects() && unit->getCurrField()==Field::LAND){
       if ( map.getCell(unit->getLastPos())->isSubmerged () )
       {
 			for(int i=0; i<3; ++i){

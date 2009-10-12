@@ -31,7 +31,9 @@
 #include "node_map.h"
 #include "influence_map.h"
 
-namespace Glest { namespace Game { namespace Search {
+namespace Glest { namespace Game { 
+/** Home of the templated A* algorithm and the primary users of it.*/
+namespace Search {
 
 class NodeMap;
 
@@ -40,6 +42,8 @@ class NodeMap;
   * @param d destination pos
   * @param size size of unit
   * @return d1 & d2, the two cells to check
+  * @warning assumes s & d are indeed diagonal (s.x != d.x && s.y != s.x 
+  *			 && abs(s.x - d.x) == 1 && abs(s.y - d.y) == 1
   */
 __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 ) {
 #	define _SEARCH_ENGINE_GET_DIAGS_DEFINED_
@@ -71,23 +75,6 @@ __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d
 
 // need to have seen getDiags() defined
 #include "search_functions.inl"
-
-// wrapped enum
-#define WRAP_ENUM( Name, ... ) \
-	struct Name { \
-		enum Enum { __VA_ARGS__ }; \
-		Name( Enum val ) : value( val ) {} \
-		operator Enum() { return value; } \
-	private: \
-		Enum value; \
-	};
-
-/** AStarResult
-  * result set for aStar() */
-WRAP_ENUM( AStarResult, FAILED, COMPLETE, PARTIAL, INPROGRESS, COUNT )
-/** SearchSpace
-  * Specifies a 'space' to search */
-WRAP_ENUM( SearchSpace, CELLMAP, TILEMAP )
 
 const int numOffsetsSize1Dist1 = 8;
 const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
@@ -183,10 +170,18 @@ public:
 		spaceWidth = theMap.getW();
 		spaceHeight = theMap.getH();
 	}
+	/** Reset the node storage */
 	void reset() { nodeStorage->reset(); nodeStorage->setMaxNodes(nodeLimit > 0 ? nodeLimit : -1); }
+	/** Add a position to the open set with 0 cost to here (a start position)
+	  * @param pos position to set as open
+	  * @param h heuristc, estimate to goal from pos
+	  */
 	void setOpen(Vec2i &pos, float h)	{ nodeStorage->setOpen(pos, Vec2i(-1), h, 0.f); }
 	
-	// reset and add pos to open
+	/** Reset the node storage and add pos to open 
+	  * @param pos position to set as open
+	  * @param h heuristc, estimate to goal from pos
+	  */
 	void setStart(Vec2i &pos, float h) {
 		nodeStorage->reset();
 		if ( nodeLimit > 0 ) {
@@ -194,17 +189,20 @@ public:
 		}
 		nodeStorage->setOpen(pos, Vec2i(-1), h, 0.f);
 	}
-
+	/** Retrieve the goal of last search, position of last goal reached */
 	Vec2i getGoalPos() { return goalPos; }
+	/** Best path to pos is from */
 	Vec2i getPreviousPos(const Vec2i &pos) { return nodeStorage->getBestTo(pos); }
 	
-	// limit search to use at mose limit nodes
+	/** limit search to use at mose limit nodes */
 	void setNodeLimit(int limit) { nodeLimit = limit > 0 ? limit : -1; }
-	// set an 'expanded nodes' limit, for a resumable serch
+	/** set an 'expanded nodes' limit, for a resumable serch */
 	void setTimeLimit(int limit) { expandLimit = limit > 0 ? limit : -1; }
 
+	/** How many nodes were expanded last search */
 	int getExpandedLastRun() { return expanded; }
 
+	/** Find a path for unit to target using map */
 	int pathToPos(const AnnotatedMap *map, const Unit *unit, const Vec2i &target){
 		PosGoal goalFunc(target);
 		MoveCost costFunc (unit, map);
@@ -212,6 +210,8 @@ public:
 		return aStar<PosGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
 
+	/** Finds a path for unit towards target using map, terminating when a cell with more than
+	  * threshold influence on iMap is found */
 	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const Vec2i &target, 
 			const InfluenceMap *iMap, float threshold){
 		InfluenceGoal		goalFunc(threshold, iMap);
@@ -220,11 +220,13 @@ public:
 		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
 
+	/** Runs a Dijkstra search, setting distance data in iMap, until cutOff is reached */
 	void buildDistanceMap(InfluenceMap *iMap, float cutOff){
 		InfluenceBuilderGoal goalFunc(cutOff, iMap);
 		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>(goalFunc,DistanceCost(),ZeroHeuristic());
 	}
 
+	/** Kludge to search on Cellmap or Tilemap... templated search domain will deprecate this */
 	void setSearchSpace(SearchSpace s){
 		if ( s == SearchSpace::CELLMAP ) {
 			spaceWidth = theMap.getW();
@@ -235,7 +237,14 @@ public:
 		}
 	}
 
-	/** A* Algorithm (Just the loop, does not do any setup or post-processing) */
+	/** A* Algorithm (Just the loop, does not do any setup or post-processing) 
+	  * @param GoalFunc <b>template parameter</b> Goal function class
+	  * @param CostFunc <b>template parameter</b> Cost function class
+	  * @param Heuristic <b>template parameter</b> Heuristic function class
+	  * @param goalFunc goal function object
+	  * @param costFunc cost function object
+	  * @param heuristic heuristic function object
+	  */
 	template< typename GoalFunc, typename CostFunc, typename Heuristic >
 	int aStar(GoalFunc goalFunc, CostFunc costFunc, Heuristic heuristic) {
 		expanded = 0;

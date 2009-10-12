@@ -37,15 +37,6 @@ namespace Glest { namespace Game {
 // 	class AttackSkillTypes & enum AttackSkillPreferenceFlags
 // =====================================================
 
-
-const char* AttackSkillPreferences::names[aspCount] = {
-	"whenever-possible",
-	"at-max-range",
-	"on-large-units",
-	"on-buildings",
-	"when-damaged"
-};
-
 void AttackSkillTypes::init() {
 	maxRange = 0;
 
@@ -87,15 +78,15 @@ const AttackSkillType *AttackSkillTypes::getPreferredAttack(const Unit *unit,
 	}
 
 	//a skill for use when damaged gets 1st priority.
-	if(hasPreference(aspWhenDamaged) && unit->isDamaged()) {
-		return getSkillForPref(aspWhenDamaged, rangeToTarget);
+	if(hasPreference(AttackSkillPreference::WHEN_DAMAGED) && unit->isDamaged()) {
+		return getSkillForPref(AttackSkillPreference::WHEN_DAMAGED, rangeToTarget);
 	}
 
 	//If a skill in this collection is specified as use whenever possible and
 	//the target resides in a field that skill can attack, we will only use that
 	//skill if in range and return NULL otherwise.
-	if(hasPreference(aspWheneverPossible)) {
-		ast = getSkillForPref(aspWheneverPossible, 0);
+	if(hasPreference(AttackSkillPreference::WHENEVER_POSSIBLE)) {
+		ast = getSkillForPref(AttackSkillPreference::WHENEVER_POSSIBLE, 0);
 		assert(ast);
 		if(ast->getZone(target->getCurrZone())) {
 			return unit->getMaxRange(ast) >= rangeToTarget ? ast : NULL;
@@ -103,12 +94,12 @@ const AttackSkillType *AttackSkillTypes::getPreferredAttack(const Unit *unit,
 		ast = NULL;
 	}
 
-	if(hasPreference(aspOnBuilding) && unit->getType()->isOfClass(ucBuilding)) {
-		ast = getSkillForPref(aspOnBuilding, rangeToTarget);
+	if(hasPreference(AttackSkillPreference::ON_BUILDING) && unit->getType()->isOfClass(ucBuilding)) {
+		ast = getSkillForPref(AttackSkillPreference::ON_BUILDING, rangeToTarget);
 	}
 
-	if(!ast && hasPreference(aspOnLarge) && unit->getType()->getSize() > 1) {
-		ast = getSkillForPref(aspOnLarge, rangeToTarget);
+	if(!ast && hasPreference(AttackSkillPreference::ON_LARGE) && unit->getType()->getSize() > 1) {
+		ast = getSkillForPref(AttackSkillPreference::ON_LARGE, rangeToTarget);
 	}
 
 	//still haven't found an attack skill then use the 1st that's in range

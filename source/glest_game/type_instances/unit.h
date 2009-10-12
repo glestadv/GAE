@@ -223,7 +223,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
-	Zone getCurrZone () const  { return currField == FieldAir ? ZoneAir : ZoneSurface; }
+	Zone getCurrZone () const  { return currField == Field::AIR ? Zone::AIR : Zone::LAND; }
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}

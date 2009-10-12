@@ -56,7 +56,7 @@
 				BrowseInformation="1"
 				WarningLevel="2"
 				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4250; 4355"
 			/>
 			<Tool
@@ -509,11 +509,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\socket.h"
+				RelativePath=".\include\platform\socket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\socket.h"
+				RelativePath=".\include\platform\win32\socket.h"
 				>
 			</File>
 			<File
@@ -565,11 +565,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\thread.h"
+				RelativePath=".\include\platform\win32\thread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\thread.h"
+				RelativePath=".\include\platform\thread.h"
 				>
 			</File>
 			<File
@@ -581,11 +581,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\types.h"
+				RelativePath=".\include\platform\types.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\types.h"
+				RelativePath=".\include\platform\win32\types.h"
 				>
 			</File>
 			<File
@@ -601,11 +601,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File

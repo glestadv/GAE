@@ -41,7 +41,7 @@ GameSettings::GameSettings(const XmlNode *node){
 
 		factionTypeNames[i] = factionNode->getChildStringValue("type");
 		playerNames[i] = factionNode->getChildStringValue("playerName");
-		factionControls[i] = (ControlType)factionNode->getChildIntValue("control");
+		factionControls[i] = (ControlType::Enum)factionNode->getChildIntValue("control");
 		teams[i] = factionNode->getChildIntValue("team");
 		startLocationIndex[i] = factionNode->getChildIntValue("startLocationIndex");
 	}

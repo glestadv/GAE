@@ -252,7 +252,7 @@ void MenuStateLoadGame::update(){
 	Lang& lang = Lang::getInstance();
 
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
-		if (gs->getFactionControl(i) == ctNetwork) {
+		if (gs->getFactionControl(i) == ControlType::NETWORK) {
 			ConnectionSlot* connectionSlot = serverInterface->getSlot(i);
 
 			assert(connectionSlot != NULL);
@@ -327,7 +327,7 @@ bool MenuStateLoadGame::loadGame() {
 	}
 
 	for(int i = 0; i < gs->getFactionCount(); ++i) {
-		if(gs->getFactionControl(i) == ctNetwork) {
+		if(gs->getFactionControl(i) == ControlType::NETWORK) {
 			if(!serverInterface) {
 				serverInterface = NetworkManager::getInstance().getServerInterface();
 			}
@@ -422,13 +422,13 @@ void MenuStateLoadGame::initGameInfo() {
 				int control = gs->getFactionControl(i);
 				//beware the buffer overflow -- it's possible for others to send
 				//saved game files that are intended to exploit buffer overruns
-				if(control >= ctCount || control < 0) {
+				if(control >= ControlType::COUNT || control < 0) {
 					throw runtime_error("Invalid control type (" + intToStr(control)
 							+ ") in saved game.");
 				}
 
 				labelPlayers[i].setText(string("Player ") + intToStr(i));
-				labelControls[i].setText(controlTypeNames[gs->getFactionControl(i)]);
+				labelControls[i].setText(ControlTypeNames[gs->getFactionControl(i)]);
 				labelFactions[i].setText(gs->getFactionTypeName(i));
 				labelTeams[i].setText(intToStr(gs->getTeam(i)));
 				labelNetStatus[i].setText("");
@@ -468,10 +468,10 @@ void MenuStateLoadGame::updateNetworkSlots(){
 	assert(gs);
 
 	for(int i= 0; i<GameConstants::maxPlayers; ++i){
-		if(serverInterface->getSlot(i)==NULL && gs->getFactionControl(i) == ctNetwork){
+		if(serverInterface->getSlot(i)==NULL && gs->getFactionControl(i) == ControlType::NETWORK){
 			serverInterface->addSlot(i);
 		}
-		if(serverInterface->getSlot(i) != NULL && gs->getFactionControl(i) != ctNetwork){
+		if(serverInterface->getSlot(i) != NULL && gs->getFactionControl(i) != ControlType::NETWORK){
 			serverInterface->removeSlot(i);
 		}
 	}
