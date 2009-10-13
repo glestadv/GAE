@@ -277,9 +277,7 @@ public:
 
 private:
 	static string wrapString(const string &str, int wrapCount);
-	static string describeLuaStack ( LuaArguments &args );
-	static void luaCppCallError ( const string &func, const string &expected, const string &received, 
-											const string extra = "Wrong number of parameters." ) ;
+	static bool extractArgs(LuaArguments &args, const char *caller, const char *format, ...);
 
 	//
 	// LUA callbacks
