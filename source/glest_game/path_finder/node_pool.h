@@ -19,10 +19,12 @@
 #include "timer.h"
 #include "unit_stats_base.h"
 
+#include <set>
 #include <limits>
 
 using Shared::Platform::Chrono;
 using std::numeric_limits;
+using std::set;
 
 namespace Glest { namespace Game { 
 
@@ -72,93 +74,208 @@ struct AStarNode {					/**< A node structure for A* with NodeStore							*/
 	Vec2i prev()	  { return posOff.getPrev();	  }  /**< best path to this node is from	 */
 	bool hasPrev()	  { return posOff.hasOffset();	  } /**< has valid previous 'pointer'		*/
 }; // == 112 bits ( == 128 aligned )
-#if 0
+
+// =====================================================
+// class AStarComp
+// =====================================================
+class AStarComp { /**< Comparison function for the open heap @todo deprecate, replace heap */
+public:
+	/** Comparison function
+	  * @param one AStarNode for comparison
+	  * @param two AStarNode for comparison
+	  * @return  true if two is 'better' than one
+	  */
+	bool operator()( const AStarNode * const one, const AStarNode * const two ) const {
+		const float diff = ( one->distToHere + one->heuristic ) - ( two->distToHere + two->heuristic );
+		if ( diff < 0 ) return false;
+		else if ( diff > 0 ) return true;
+		// tie, prefer closer to goal...
+		if ( one->heuristic < two->heuristic ) return false;
+		if ( one->heuristic > two->heuristic ) return true;
+		// still tied... prefer nodes 'in line' with goal ???
+		// just distinguish them somehow...
+		return one < two;
+	}
+};
+
+#if 1
 /** A 'split' list, a sorted head (limited size) and unsorted bucket */
 class OpenList {
+private:
+	static const int maxHeadSize = 16;
+
 	/** A sorted doubly linked list with limited storage */
 	class Head {
-		class Node {
+		struct Node {
 			AStarNode *data;
 			Node *next, *prev;
 		};
-		Node *start, *end, *middle;
+		Node *start, *end;//, *middle;
 		float maxEstimate;
-	};
-	/** a unsorted collection of Nodes and some information about them */
-	class Bucket {
-		vector<AStarNode*> data;
-		float minEstimate;		/**< the lowest estimate of any node in the bucket */
-		
-	public:
-		Bucket() : minEstimate(numeric_limits<float>::infinity()) {	}
-		void add(AStarNode *n) {
-			if ( n->est() < minEstimate ) {
-				minEstimate
+		Node *block;
+		vector<Node*> freeNodes;
+		int count;
+
+		void insertBefore(Node *insert, Node *ref) {
+			if ( ref->prev ) {
+				insert->prev = ref->prev;
+				ref->prev->next = insert;
+			} else {
+				start = insert;
+				insert->prev = NULL;
+			}
+			insert->next = ref;
+			ref->prev = insert;
+		}
+
+		void insertAtEnd(Node *insert) {
+			insert->next = NULL;
+			insert->prev = end;
+			end = insert;
+			if ( insert->prev ) {
+				insert->prev->next = insert;
+			} else {
+				start = insert;
 			}
 		}
+
+		Node* unlink(Node *node) {
+			if ( node->prev) {
+				node->prev->next = node->next;
+			} else {
+				start = node->next;
+			}
+			if ( node->next ) {
+				node->next->prev = node->prev;
+			} else {
+				end = node->prev;
+			}
+			return node;
+		}
+
+		bool assertList() {
+			set<Node*> seen;
+			Node *ptr = start;
+			while ( ptr ) {
+				if ( seen.find(ptr) != seen.end() ) {
+					return false; // cycle
+				}
+				seen.insert(ptr);
+				if ( ptr->next ) {
+					if ( ptr->data->est() > ptr->next->data->est() ) {
+						return false; // not in order
+					}
+					if ( ptr->next->prev != ptr ) {
+						return false; // inconsistant next/prev links
+					}
+				}
+				ptr = ptr->next;
+			}
+			if ( count != seen.size() ) {
+				return false; // count inconsistant
+			}
+			return true;
+		}
+
+	public:
+		Head() : start(NULL), end(NULL), maxEstimate(0.f), count(0) {
+			block = new Node[maxHeadSize];
+			for ( int i=0; i < maxHeadSize; ++i ) {
+				freeNodes.push_back(&block[i]);
+			}
+		}
+		~Head() { delete [] block; }
+
+		AStarNode* getBest();
+		AStarNode* add(AStarNode *node);
+		void addToEnd(AStarNode *node);
+		bool empty()	{ return !count; }
+		int  size()		{ return count; }
+		float  maxEst()	{ return maxEstimate; }
+	};
+	/** a unsorted collection of Nodes and some information about them */
+	class Bucket : public vector<AStarNode*> {
+		float minEstimate,	 /**< the lowest estimate of any node in the bucket  */
+			  maxEstimate;	/**< the highest estimate of any node in the bucket */
+	public:
+		Bucket() : minEstimate(numeric_limits<float>::infinity()), maxEstimate(0.f) { }
+		void add(AStarNode *n) {
+			if ( n->est() < minEstimate ) minEstimate = n->est();
+			if ( n->est() > maxEstimate ) maxEstimate = n->est();
+			push_back(n);
+		}
+		void  sort()			{ 
+			std::sort(begin(), end(), AStarComp()); 
+			// store some info?
+			// sort into multiple buckets?
+		}
+		float minEst() const	{ return minEstimate; }
+		float maxEst() const	{ return maxEstimate; }
+		void  setMinEst(float val) { minEstimate = val; }
 	};
 
-	static const int maxHeadSize = 16;
-	list<AStarNode*> head;
-	int headSize;
-	float maxInHead;
-	vector<AStarNode*> bucket;
+private:
+	Head head;
+	Bucket bucket;
 
 	int totalSize() { return head.size() + bucket.size(); }
 
 public:
-	OpenList() : headSize(0), maxInHead(0.f) {}
-
 	void push(AStarNode *node) {
-		if ( totalSize() < maxHeadSize ) {
-			// sort into head
-			head.insert(find_if(head.begin(), head.end(), AStarGreater(node->est())), node);
-			if ( node->est() > maxInHead ) {
-				maxInHead = node->est();
-			}
-			
+		if ( totalSize() < maxHeadSize && bucket.empty() ) {
+			AStarNode *displaced = head.add(node);
+			assert(!displaced);			
 		} else {
 			// if ( node->est() < maxInHead ) sort into head else throw in bucket
-			if ( node->est() <= maxInHead ) {
-				head.insert(find_if( head.begin(), head.end(), AStarGreater(node->est()) ), node);
+			if ( node->est() < head.maxEst() ) {
+				AStarNode *displaced = head.add(node);
+				if ( displaced ) {
+					bucket.add(displaced);
+				}
 			} else {
-				bucket.push_back(node);
+				bucket.add(node);
 			}
 		}
 	}
 
+	/** @todo ADD CODE */
 	void adjust(AStarNode *node, float costToHere) {
-		if ( node->est() <= maxInHead ) {
+		if ( node->est() <= head.maxEst() ) {
 			node->distToHere = costToHere;
-			list<AStarNode*>::iterator it = find(head.begin(),head.end(), node);
-			while ( it != head.begin() && (*(it-1))->est() > (*it)->est ) {
-				swap( it-1, it );
-			}
-		} else {
-			node->distToHere = costToHere;
-			if ( node->est() <= maxInHead ) {
-				bucket.erase( find(bucket.begin(), bucket.end(), node) );
-				head.insert(find_if( head.begin(), head.end(), AStarGreater(node->est()) ), node);
-			}
+			// probably in head... not definately
+			// if in head, adjust and return
+			// else fall through
+		}
+		node->distToHere = costToHere;
+		if ( node->est() < head.maxEst() ) {
+
 		}
 	}
 
 	AStarNode* pop() {
-		if ( !totalSize() ) { // any nodes ?
-			return NULL;
-		}
 		if ( head.empty() ) {
+			if ( bucket.empty() ) {
+				return NULL;
+			}
 			fill_head();
 		}
-		AStarNode *ret = head.front();
-		head.pop_front();
-		return ret;
+		return head.getBest();
 	}
 
 private:
 	/** refill the head list, <b>pre-condition:</b> head is empty, bucket is not */
 	void fill_head() {
-		
+		assert(head.empty() && !bucket.empty());
+		bucket.sort();
+		int num = maxHeadSize;
+		if ( bucket.size() < num ) num = bucket.size();
+		for ( ; num; --num ) {
+			AStarNode *node = bucket.back();
+			bucket.pop_back();
+			head.addToEnd(node);
+		}
+		// maintain bucket.minEstimate
+		bucket.setMinEst(bucket.back()->est());
 	}
 };
 #endif
@@ -185,28 +302,6 @@ public:
 // ========================================================
 class NodeStore {	/**< A NodeStorage class (template interface) for A* */
 private:
-	// =====================================================
-	// class AStarComp
-	// =====================================================
-	class AStarComp { /**< Comparison function for the open heap @todo deprecate, replace heap */
-	public:
-		/** Comparison function
-		  * @param one AStarNode for comparison
-		  * @param two AStarNode for comparison
-		  * @return  true if two is 'better' than one
-		  */
-		bool operator()( const AStarNode * const one, const AStarNode * const two ) const {
-			const float diff = ( one->distToHere + one->heuristic ) - ( two->distToHere + two->heuristic );
-			if ( diff < 0 ) return false;
-			else if ( diff > 0 ) return true;
-			// tie, prefer closer to goal...
-			if ( one->heuristic < two->heuristic ) return false;
-			if ( one->heuristic > two->heuristic ) return true;
-			// still tied... prefer nodes 'in line' with goal ???
-			// just distinguish them somehow...
-			return one < two;
-		}
-	};
 	// =====================================================
 	// struct DoubleMarkerArray
 	// =====================================================
@@ -260,6 +355,7 @@ private:
 	DoubleMarkerArray markerArray;	/**< An array the size of the map, indicating node status (unvisited, open, closed)		  */
 	PointerArray pointerArray;	   /**< An array the size of the map, containing pointers to Nodes, valid if position marked */
 	vector<AStarNode*> openHeap;  /**< the open list, binary heap, maintained with std algorithms							*/
+	OpenList openList;			 /**< the open list,  'split' list, sorted head and unsorted bucket						   */
 
 public:
 	NodeStore();
