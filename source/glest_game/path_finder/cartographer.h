@@ -19,14 +19,16 @@
 #include "world.h"
 #include "config.h"
 
+#include "search_engine.h"
+
 namespace Glest { namespace Game { namespace Search {
 
-/** A map containing a visility counter and explored flag for every cell. */
+/** A map containing a visility counter and explored flag for every map tile. */
 class ExplorationMap {
 #	pragma pack(push, 2)
-		/** The exploration state of one cell for one team */
+		/** The exploration state of one tile for one team */
 		struct ExplorationState {
-			/** Visibility counter, the number of team's units that can see this cell */
+			/** Visibility counter, the number of team's units that can see this tile */
 			uint16 visCounter : 15; // max 32768 units per _team_
 			/** Explored flag */
 			uint16 explored	  :  1; 
@@ -91,8 +93,6 @@ private:
 	PatchSection *data;
 };
 
-
-
 //
 // Cartographer: 'Map' Manager
 //
@@ -108,16 +108,25 @@ class Cartographer {
 	/** Exploration maps for each team */
 	map< int, ExplorationMap* > explorationMaps;
 
+	SearchEngine<NodeMap>	*nmSearchEngine;
+
 	void initResourceMap( int team, const ResourceType *rt, InfluenceMap *iMap );
 
 	/** Custom Goal function for maintaining the exploration maps */
 	class VisibilityMaintainerGoal {
+	private:
+		float range;			/**< range of entity sight */
+		ExplorationMap *eMap;	/**< exploration map to adjust */
+		bool inc;				/**< true to increment, false to decrement */
 	public:
+		/** Construct goal function object
+		  * @param range the range of visibility
+		  * @param eMap the ExplorationMap to adjust
+		  * @param inc true to apply visibility, false to remove
+		  */
 		VisibilityMaintainerGoal(float range, ExplorationMap *eMap, bool inc)
 			: range(range), eMap(eMap), inc(inc) {}
-		float range;				/** range of sight */
-		ExplorationMap *eMap;	/** exploration map to adjust */
-		bool inc;				/** true to increment, false to decrement */
+
 		/** The goal function 
 		  * @param pos position to test
 		  * @param costSoFar the cost of the shortest path to pos
@@ -153,7 +162,7 @@ public:
 
 	/** Update the annotated maps when an obstacle has been added or removed from the map.
 	  * Unconditionally updates the master map, updates team maps if the team can see the cells,
-	  * or mark as 'dirty' if they cannot currently see the change.
+	  * or mark as 'dirty' if they cannot currently see the change. @todo implement team maps
 	  * @param pos position (north-west most cell) of obstacle
 	  * @param size size of obstacle
 	  */
@@ -173,14 +182,14 @@ public:
 		return teamResourceMaps[unit->getTeam()][rt];
 	}
 
-	AnnotatedMap* getMasterMap()					  { return masterMap; }
-	AnnotatedMap* getAnnotatedMap( int team )		  { return masterMap;/*return teamMaps[team];*/ }
-	AnnotatedMap* getAnnotatedMap( Faction *faction ) { return getAnnotatedMap( faction->getTeam() ); }
-	AnnotatedMap* getAnnotatedMap( Unit *unit )		  { return getAnnotatedMap( unit->getTeam() );	  }
+	AnnotatedMap* getMasterMap()					{ return masterMap; }
+	AnnotatedMap* getAnnotatedMap(int team )		{ return masterMap;/*return teamMaps[team];*/ }
+	AnnotatedMap* getAnnotatedMap(Faction *faction)	{ return getAnnotatedMap(faction->getTeam()); }
+	AnnotatedMap* getAnnotatedMap(Unit *unit)		{ return getAnnotatedMap(unit->getTeam());	  }
 };
 
-class Surveyor {
-};
+//class Surveyor {
+//};
 
 }}}
 

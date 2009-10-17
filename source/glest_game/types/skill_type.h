@@ -42,26 +42,6 @@ class EnhancementTypeBase;
 class Unit;
 class EarthquakeType;
 
-enum SkillClass{
-	scStop,
-	scMove,
-	scAttack,
-	scBuild,
-	scHarvest,
-	scRepair,
-	scBeBuilt,
-	scProduce,
-	scUpgrade,
-	scMorph,
-	scDie,
-	scCastSpell,
-	scFallDown,
-	scGetUp,
-	scWaitForServer,
-
-	scCount
-};
-
 // =====================================================
 // 	class SkillType
 //
@@ -173,7 +153,7 @@ public:
 
 class StopSkillType: public SkillType{
 public:
-	StopSkillType() : SkillType(scStop, "Stop"){}
+	StopSkillType() : SkillType(SkillClass::STOP, "Stop"){}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		Lang &lang= Lang::getInstance();
 		str+= lang.get("ReactionSpeed")+": "+ intToStr(speed)+"\n";
@@ -191,7 +171,7 @@ private:
 	float maxDeclination;
 
 public:
-	MoveSkillType() : SkillType(scMove, "Move"){}
+	MoveSkillType() : SkillType(SkillClass::MOVE, "Move"){}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "WalkSpeed");
 		descEpCost(str, unit);
@@ -246,7 +226,7 @@ private:
 	EarthquakeType *earthquakeType;
 
 public:
-	AttackSkillType() : TargetBasedSkillType(scAttack, "Attack"), attackType(NULL) {}
+	AttackSkillType() : TargetBasedSkillType(SkillClass::ATTACK, "Attack"), attackType(NULL) {}
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 
@@ -265,7 +245,7 @@ public:
 
 class BuildSkillType: public SkillType{
 public:
-	BuildSkillType() : SkillType(scBuild, "Build") {}
+	BuildSkillType() : SkillType(SkillClass::BUILD, "Build") {}
 	void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "BuildSpeed");
 		descEpCost(str, unit);
@@ -278,7 +258,7 @@ public:
 
 class HarvestSkillType: public SkillType{
 public:
-	HarvestSkillType() : SkillType(scHarvest, "Harvest") {}
+	HarvestSkillType() : SkillType(SkillClass::HARVEST, "Harvest") {}
 	virtual void getDesc(string &str, const Unit *unit) const {}
 };
 
@@ -335,7 +315,7 @@ public:
 
 class UpgradeSkillType: public SkillType{
 public:
-	UpgradeSkillType() : SkillType(scUpgrade, "Upgrade"){}
+	UpgradeSkillType() : SkillType(SkillClass::UPGRADE, "Upgrade"){}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "UpgradeSpeed");
 		descEpCost(str, unit);
@@ -349,7 +329,7 @@ public:
 
 class BeBuiltSkillType: public SkillType{
 public:
-	BeBuiltSkillType() : SkillType(scBeBuilt, "Be built"){}
+	BeBuiltSkillType() : SkillType(SkillClass::BE_BUILT, "Be built"){}
 	virtual void getDesc(string &str, const Unit *unit) const {}
 };
 
@@ -359,7 +339,7 @@ public:
 
 class MorphSkillType: public SkillType{
 public:
-	MorphSkillType() : SkillType(scMorph, "Morph"){}
+	MorphSkillType() : SkillType(SkillClass::MORPH, "Morph"){}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "MorphSpeed");
 		descEpCost(str, unit);
@@ -375,7 +355,7 @@ private:
 	bool fade;
 
 public:
-	DieSkillType() : SkillType(scDie, "Die"){}
+	DieSkillType() : SkillType(SkillClass::DIE, "Die"){}
 	bool getFade() const	{return fade;}
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
@@ -388,7 +368,7 @@ public:
 
 class CastSpellSkillType: public TargetBasedSkillType{
 public:
-	CastSpellSkillType() : TargetBasedSkillType(scCastSpell, "Cast spell"){}
+	CastSpellSkillType() : TargetBasedSkillType(SkillClass::CAST_SPELL, "Cast spell"){}
 	virtual void getDesc(string &str, const Unit *unit) const {}
 };
 
@@ -401,7 +381,7 @@ private:
 	float agility;
 
 public:
-	FallDownSkillType() : SkillType(scFallDown, "Fall down") {}
+	FallDownSkillType() : SkillType(SkillClass::FALL_DOWN, "Fall down") {}
 	FallDownSkillType(const SkillType *model);
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
@@ -416,7 +396,7 @@ public:
 
 class GetUpSkillType: public SkillType {
 public:
-	GetUpSkillType() : SkillType(scGetUp, "Get up") {}
+	GetUpSkillType() : SkillType(SkillClass::GET_UP, "Get up") {}
 	GetUpSkillType(const SkillType *model);
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);

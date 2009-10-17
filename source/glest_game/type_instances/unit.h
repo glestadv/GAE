@@ -53,28 +53,6 @@ class Game;
 class World;
 class UnitState;
 
-enum CommandResult {
-	crSuccess,
-	crFailRes,
-	crFailReqs,
-	crFailPetLimit,
-	crFailUndefined,
-	crSomeFailed
-};
-
-enum InterestingUnitType {
-	iutIdleBuilder,
-	iutIdleHarvester,
-	iutIdleWorker,
-	iutIdleRepairer,
-	iutIdleRestorer,
-	iutBuiltBuilding,
-	iutProducer,
-	iutIdleProducer,
-	iutDamaged,
-	iutStore
-};
-
 // =====================================================
 // 	class UnitObserver
 // =====================================================
@@ -93,30 +71,42 @@ public:
 
 // =====================================================
 // 	class UnitPath
-//
-/// Holds the next cells of a Unit movement
 // =====================================================
-
-class UnitPath : public list<Vec2i> {
+/** Holds the next cells of a Unit movement 
+  * @extends std::list<Shared::Graphics::Vec2i>
+  */
+class UnitPath : protected list<Vec2i> {
 private:
-	static const int maxBlockCount;
+	static const int maxBlockCount = 10; /**< number of frames to wait on a blocked path */
 
 private:
-	int blockCount;
-	//vector<Vec2i> pathQueue;
+	int blockCount;		/**< number of frames this path has been blocked */
+	int frameRequested, /**< frame this path was requested */
+		frameReturned,	/**< frame this (initial) path was supplied by RoutePlanner */
+		frameValidated,	/**< last frame this path was validated */
+		frameRepaired,  /**< last frame this path was repaired */
+		numRepairs;		/**< number of times this path has been repaired */
 
 public:
+	/** Construct path object */
 	UnitPath() : blockCount(0) {}
+	/** is this path blocked
+	  * @return true if this path has been blocked for at least maxBlockCount frames */
 	bool isBlocked()				{return blockCount >= maxBlockCount;}
-
+	/** is path empty */
+	bool empty()					{return list<Vec2i>::empty();}
+	/** size of path */
+	int  size()						{return list<Vec2i>::size();}
+	/** clear the path */
 	void clear()					{list<Vec2i>::clear(); blockCount = 0;}
+	/** increment block counter */
 	void incBlockCount()			{blockCount++;}
-	void push(const Vec2i &path)	{push_back(path);}
-	Vec2i pop()						{
-		Vec2i p = front();
-		erase(begin());
-		return p;
-	}
+	/** push onto front of path */
+	void push(Vec2i &pos)			{push_front(pos);}
+	/** peek at the next position */
+	Vec2i peek()					{return front();}
+	/** pop the next position off the path */
+	void pop()						{erase(begin());}
 	
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
@@ -150,45 +140,45 @@ public:
 	static const int invalidId;
 
 private:
-	int id;
-	int hp;
-	int ep;
-	int loadCount;
-	int deadCount;
-	float progress;			//between 0 and 1
-	float lastAnimProgress;	//between 0 and 1
-	float animProgress;		//between 0 and 1
-	float highlight;
-	int progress2;
-	int kills;
+	int id;					/**< unique identifier  */
+	int hp;					/**< current hit points */
+	int ep;					/**< current energy points */
+	int loadCount;			/**< current 'load' (resources carried) */
+	int deadCount;			/**< how many frames this unit has been dead */
+	float progress;			/**< skill progress, between 0 and 1 */
+	float lastAnimProgress;	/**< animation progress last frame, between 0 and 1 */
+	float animProgress;		/**< animation progress, between 0 and 1 */
+	float highlight;		/**< alpha for selection circle effects */
+	int progress2;			/**< 'secondary' skill progress counter */
+	int kills;				/**< number of kills */
 
-	UnitReference targetRef;
+	UnitReference targetRef; 
 
-	Field currField;
-	Field targetField;
-	const Level *level;
+	Field currField;		/**< */
+	Field targetField;		/**< */
+	const Level *level;		/**< */
 
-	Vec2i pos;				/** Current position */
-	Vec2i lastPos;			/** The last position before current */
-	Vec2i nextPos;			/** Position unit is moving into next. */
-	Vec2i targetPos;		/** Position of the target, or the cell of the target we care about. */
+	Vec2i pos;				/**< Current position */
+	Vec2i lastPos;			/**< The last position before current */
+	Vec2i nextPos;			/**< Position unit is moving into next. */
+	Vec2i targetPos;		/**< Position of the target, or the cell of the target we care about. */
 	Vec3f targetVec;
 	Vec2i meetingPos;
-	bool faceTarget;		/** If true and target is set, we continue to face target. */
-	bool useNearestOccupiedCell;	/** If true, targetPos is set to target->getNearestOccupiedCell() */
+	bool faceTarget;				/**< If true and target is set, we continue to face target. */
+	bool useNearestOccupiedCell;	/**< If true, targetPos is set to target->getNearestOccupiedCell() */
 
-	float lastRotation;		//in degrees
-	float targetRotation;
-	float rotation;
+	float lastRotation;		/**< facing last frame, in degrees */
+	float targetRotation;	/**< desired facing, in degrees*/
+	float rotation;			/**< current facing, in degrees */
 
-	const UnitType *type;
-	const ResourceType *loadType;
-	const SkillType *currSkill;
+	const UnitType *type;			/**< the UnitType of this unit */
+	const ResourceType *loadType;	/**< the type if resource being carried */
+	const SkillType *currSkill;		/**< the SkillType currently being executed */
 
-	bool toBeUndertaken;
+	bool toBeUndertaken;		/**< awaiting a date with the grim reaper */
 //	bool alive;
-	bool autoRepairEnabled;
-	bool dirty;
+	bool autoRepairEnabled;		/**< is auto repair enabled */
+	bool dirty;					/**< need a bath? */
 
 	/** Effects (spells, etc.) currently effecting unit. */
 	Effects effects;
@@ -271,7 +261,7 @@ public:
 	const int64 &getLastUpdated() const			{return lastUpdated;}
 	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
 	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
-   bool isMobile () { return type->isMobile(); }
+	bool isMobile () { return type->isMobile(); }
 
 
 	void addPet(Unit *u)						{pets.push_back(u);}
@@ -302,7 +292,7 @@ public:
 	 */
 	int getMaxRange(const SkillType *st) const {
 		switch(st->getClass()) {
-			case scAttack:
+			case SkillClass::ATTACK:
 				return (int)roundf(st->getMaxRange() * attackRangeMult + attackRange);
 			default:
 				return st->getMaxRange();
@@ -327,7 +317,7 @@ public:
 	bool isAlive() const				{return hp;}
 	bool isDamaged() const				{return hp < getMaxHp();}
 	bool isOperative() const			{return isAlive() && isBuilt();}
-	bool isBeingBuilt() const			{return currSkill->getClass() == scBeBuilt;}
+	bool isBeingBuilt() const			{return currSkill->getClass() == SkillClass::BE_BUILT;}
 	bool isBuilt() const				{return !isBeingBuilt();}
 	bool isPutrefacting() const			{return deadCount;}
 	bool isAlly(const Unit *unit) const	{return faction->isAlly(unit->getFaction());}
@@ -369,7 +359,7 @@ public:
 	Vec3f getCurrVectorFlat() const {
 		Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
 	
-		if (currSkill->getClass() == scMove) {
+		if (currSkill->getClass() == SkillClass::MOVE) {
 			v = Vec3f(static_cast<float>(lastPos.x), computeHeight(lastPos),
 					  static_cast<float>(lastPos.y)).lerp(progress, v);
 		}
@@ -466,17 +456,17 @@ public:
 	}
 
 	/**
-	 * Cheesy input, specify scCount to tell it not to care about command class.
+	 * Cheesy input, specify SkillClass::COUNT to tell it not to care about command class.
 	 * Specify 0.f for pctHealth and health level wont matter. These should get
 	 * optimized out when inlining.
 	 */
-	Unit *getNearest(SkillClass skillClass = scCount, float pctHealth = 0.0f) {
+	Unit *getNearest(SkillClass skillClass = SkillClass::COUNT, float pctHealth = 0.0f) {
 		Unit *nearest = NULL;
 		int dist = 0x10000;
 		for(iterator i = begin(); i != end(); i++) {
 			Unit * u = i->first;
 			if(i->second < dist
-					&& (skillClass == scCount || u->getType()->hasSkillClass(skillClass))
+					&& (skillClass == SkillClass::COUNT || u->getType()->hasSkillClass(skillClass))
 					&& (!pctHealth || (float)u->getHp() / (float)u->getMaxHp() < pctHealth)) {
 				nearest = i->first;
 				dist = i->second;

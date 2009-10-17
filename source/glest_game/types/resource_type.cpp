@@ -77,7 +77,7 @@ bool ResourceType::load(const string &dir, int id, Checksum &checksum) {
    }
 
    switch (resourceClass) {
-   case rcTech: 
+   case ResourceClass::TECH: 
       try { // model
          const XmlNode *modelNode = typeNode->getChild("model");
          string mPath = dir + "/" + modelNode->getAttribute("path")->getRestrictedValue();
@@ -105,7 +105,7 @@ bool ResourceType::load(const string &dir, int id, Checksum &checksum) {
          loadOk = false;
       }
       break;
-   case rcTileset: 
+   case ResourceClass::TILESET: 
       try { // default resources
          const XmlNode *defaultAmountNode = typeNode->getChild("default-amount");
          defResPerPatch = defaultAmountNode->getAttribute("value")->getIntValue();
@@ -123,7 +123,7 @@ bool ResourceType::load(const string &dir, int id, Checksum &checksum) {
          loadOk = false;
       }
       break;
-   case rcConsumable: 
+   case ResourceClass::CONSUMABLE: 
       try { // interval
          const XmlNode *intervalNode = typeNode->getChild("interval");
          interval = intervalNode->getAttribute("value")->getIntValue();
@@ -145,16 +145,16 @@ bool ResourceType::load(const string &dir, int id, Checksum &checksum) {
 
 ResourceClass ResourceType::strToRc(const string &s) {
 	if (s == "tech") {
-		return rcTech;
+		return ResourceClass::TECH;
 	}
 	if (s == "tileset") {
-		return rcTileset;
+		return ResourceClass::TILESET;
 	}
 	if (s == "static") {
-		return rcStatic;
+		return ResourceClass::STATIC;
 	}
 	if (s == "consumable") {
-		return rcConsumable;
+		return ResourceClass::CONSUMABLE;
 	}
 	throw runtime_error("Error converting from string ro resourceClass, found: " + s);
 }

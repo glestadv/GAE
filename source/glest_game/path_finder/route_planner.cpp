@@ -41,42 +41,43 @@ namespace Glest { namespace Game { namespace Search {
 
 // ===================== PUBLIC ========================
 
+/** The RoutePlanner */
 RoutePlanner* RoutePlanner::singleton = NULL;
 
+/** @return a pointer to the RoutePlanner instance */
 RoutePlanner* RoutePlanner::getInstance() {
 	if ( ! singleton )
 		singleton = new RoutePlanner();
 	return singleton;
 }
 
+/** Construct RoutePlanner object */
 RoutePlanner::RoutePlanner() {
 	assert( !singleton );
 	singleton = this;
 }
 
+/** delete SearchEngine objects and NodePool array*/
 RoutePlanner::~RoutePlanner() {
 	singleton = NULL;
 	//TODO fix/reduce dodginess
-	delete nmSearchEngine;
-	delete npSearchEngine;
+	delete nsSearchEngine;
+	delete nodePool;
 }
 
+/** construct and initialise the SeachEngine<NodePool> object and the NodePool array */
 void RoutePlanner::init() {
 	theLogger.add( "Initialising SearchEngine", true );
+	nsSearchEngine = new SearchEngine<NodeStore>();
+	nodePool = new NodePool();
+	nsSearchEngine->getStorage()->attachNodePool(nodePool);
 
-	//TODO fix/reduce dodginess
-	nmSearchEngine = new SearchEngine<NodeMap>();
-	npSearchEngine = new SearchEngine<NodePool>();
-
-	npSearchEngine->init();
-	nmSearchEngine->init();
-	
 #if DEBUG_SEARCH_TEXTURES
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
 		int foo = theConfig.getMiscDebugTextureMode ();
-		debug_texture_action = foo == 0 ? RoutePlanner::ShowPathOnly
-							 : foo == 1 ? RoutePlanner::ShowOpenClosedSets
-										: RoutePlanner::ShowLocalAnnotations;
+		debug_texture_action = foo == 0 ? RoutePlanner::SHOW_PATH_ONLY
+							 : foo == 1 ? RoutePlanner::SHOW_OPEN_CLOSED_SETS
+										: RoutePlanner::SHOW_LOCAL_ANNOTATIONS;
 	}
 #endif
 }
@@ -87,10 +88,10 @@ void RoutePlanner::init() {
   * @param pos2 the position unit desires to move to
   * @return true if move may proceed, false if not legal.
   */
-bool RoutePlanner::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
-	assert( theMap.isInside( pos2 ) );
-	//assert( unit->getPos().dist( pos2 ) < 1.5 );
-	if ( unit->getPos().dist( pos2 ) > 1.5 ) {
+bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
+	assert(theMap.isInside(pos2));
+	//assert(unit->getPos().dist(pos2) < 1.5);
+	if ( unit->getPos().dist(pos2) > 1.5 ) {
 		//TODO: figure out why we need this!  because blocked paths are popping...
 		return false;
 	}
@@ -100,72 +101,74 @@ bool RoutePlanner::isLegalMove( Unit *unit, const Vec2i &pos2 ) const {
 	Zone zone = field == Field::AIR ? Zone::AIR : Zone::LAND;
 
 	AnnotatedMap *annotatedMap = theWorld.getCartographer().getMasterMap();
-	if ( ! annotatedMap->canOccupy( pos2, size, field ) )
+	if ( ! annotatedMap->canOccupy(pos2, size, field) )
 		return false; // obstruction in field
 	if ( pos1.x != pos2.x && pos1.y != pos2.y ) {
 		// Proposed move is diagonal, check if cells either 'side' are free.
 		Vec2i diag1, diag2;
-		getDiags( pos1, pos2, size, diag1, diag2 );
-		if ( ! annotatedMap->canOccupy( diag1, 1, field ) 
-		||   ! annotatedMap->canOccupy( diag2, 1, field ) ) 
+		getDiags(pos1, pos2, size, diag1, diag2);
+		if ( ! annotatedMap->canOccupy(diag1, 1, field) 
+		||   ! annotatedMap->canOccupy(diag2, 1, field) ) 
 			return false; // obstruction, can not move to pos2
-		if ( ! theMap.getCell( diag1 )->isFree( zone )
-		||   ! theMap.getCell( diag2 )->isFree( zone ) )
+		if ( ! theMap.getCell(diag1)->isFree(zone)
+		||   ! theMap.getCell(diag2)->isFree(zone) )
 			return false; // other unit in the way
 	}
 	for ( int i = pos2.x; i < unit->getSize() + pos2.x; ++i )
 		for ( int j = pos2.y; j < unit->getSize() + pos2.y; ++j )
-			if ( theMap.getCell( i,j )->getUnit( zone ) != unit
-			&&   ! theMap.isFreeCell( Vec2i( i, j ), field ) )
+			if ( theMap.getCell(i,j)->getUnit(zone) != unit
+			&&   ! theMap.isFreeCell(Vec2i(i, j), field) )
 				return false; // blocked by another unit
 	// pos2 is free, and nothing is in the way
 	return true;
 }
 
-#define DONE()		{ unit->setCurrSkill( scStop ); return TravelState::ARRIVED; }
-#define BLOCKED()	{ unit->setCurrSkill( scStop ); path.incBlockCount(); return TravelState::BLOCKED;	}
-#define TRYMOVE()	{ pos = path.pop(); if ( isLegalMove( unit, pos ) ) { \
-											unit->setNextPos( pos ); \
-											return TravelState::ONTHEWAY; \
-										} }
+#define DONE()		{ unit->setCurrSkill(SkillClass::STOP); return TravelState::ARRIVED;}
+#define BLOCKED()	{ unit->setCurrSkill(SkillClass::STOP); path.incBlockCount(); return TravelState::BLOCKED;}
+#define TRYMOVE()	{ pos = path.peek(); if ( isLegalMove(unit, pos) ) {	\
+											unit->setNextPos(pos);			\
+											path.pop();						\
+											return TravelState::ONTHEWAY;	\
+										 }									\
+					}
+
 /** Find a path to a location.
   * @param unit the unit requesting the path
   * @param finalPos the position the unit desires to go to
   * @return SearchResult::ARRIVED, SearchResult::ONTHEWAY or SearchResult::BLOCKED
   */
-TravelState RoutePlanner::findPathToLocation( Unit *unit, const Vec2i &finalPos ) {
+TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) {
 	UnitPath &path = *unit->getPath();
 	Vec2i pos;
 	//if arrived (where we wanted to go)
 	if( finalPos == unit->getPos() ) DONE()
 	else if( ! path.empty() ) {	//route cache
 		TRYMOVE()
-		if ( path.size() > 15  && repairPath( unit ) ) TRYMOVE()
+		if ( path.size() > 15  && repairPath(unit) ) TRYMOVE()
 	}
 	//route cache miss and either no repair performed or repair failed
-	const Vec2i &target = computeNearestFreePos( unit, finalPos ); // set target for PosGoal Function
+	const Vec2i &target = computeNearestFreePos(unit, finalPos); // set target for PosGoal Function
 	//if arrived (as close as we can get to it)
 	if ( target == unit->getPos() ) DONE()
 	path.clear();
 	
 	// do a 'limited search'
 	AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
-	aMap->annotateLocal( unit, unit->getCurrField() ); // annotate map
+	aMap->annotateLocal(unit, unit->getCurrField()); // annotate map
 	// reset nodepool and add start to open
-	npSearchEngine->setNodeLimit( theConfig.getPathFinderMaxNodes() );
-	DiagonalDistance dd(target);
-	npSearchEngine->setStart( unit->getPos(), dd(unit->getPos()) ); 
-	int result = npSearchEngine->pathToPos( aMap, unit, target ); // perform search
-	aMap->clearLocalAnnotations( unit->getCurrField() ); // clear annotations
+	nsSearchEngine->setNodeLimit(theConfig.getPathFinderMaxNodes());
+	nsSearchEngine->setStart(unit->getPos(), DiagonalDistance(target)(unit->getPos())); 
+	int result = nsSearchEngine->pathToPos(aMap, unit, target); // perform search
+	aMap->clearLocalAnnotations(unit->getCurrField()); // clear annotations
 	if ( result == AStarResult::FAILED ) BLOCKED()
 	if ( result == AStarResult::PARTIAL ) {
 		// Queue for 'complete' search...
 	}
 	// Partail or Complete... extract path...
-	pos = npSearchEngine->getGoalPos();
+	pos = nsSearchEngine->getGoalPos();
 	while ( pos.x >= 0 ) {
-		path.push_front( pos );
-		pos = npSearchEngine->getPreviousPos( pos );
+		path.push(pos);
+		pos = nsSearchEngine->getPreviousPos(pos);
 	}
 	if ( path.empty() ) DONE()
 	path.pop();
@@ -173,29 +176,31 @@ TravelState RoutePlanner::findPathToLocation( Unit *unit, const Vec2i &finalPos 
 	BLOCKED()
 }
 
-bool RoutePlanner::repairPath( Unit *unit ) {
+/** repair a blocked path
+  * @param unit unit whose path is blocked 
+  * @return true if repair succeeded */
+bool RoutePlanner::repairPath(Unit *unit) {
 	UnitPath &path = *unit->getPath();
-	assert(path.size() > 12 );
+	assert(path.size() > 12);
 	int i=8;
 	while ( i-- ) {
-		path.pop_front();
+		path.pop();
 	}
 	AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
-	aMap->annotateLocal( unit, unit->getCurrField () );
+	aMap->annotateLocal(unit, unit->getCurrField());
 	// reset nodepool and add start to open
-	npSearchEngine->setNodeLimit( 256 );
-
-	npSearchEngine->setStart( unit->getPos(), DiagonalDistance(path.front())( unit->getPos() ) );
-	int result = npSearchEngine->pathToPos( aMap, unit, path.front() ); // perform search
-	aMap->clearLocalAnnotations( unit->getCurrField () );
+	nsSearchEngine->setNodeLimit(256);
+	nsSearchEngine->setStart(unit->getPos(), DiagonalDistance(path.peek())(unit->getPos()));
+	int result = nsSearchEngine->pathToPos(aMap, unit, path.peek()); // perform search
+	aMap->clearLocalAnnotations(unit->getCurrField());
 
 	if ( result == AStarResult::COMPLETE ) {
-		Vec2i pos = npSearchEngine->getGoalPos();
+		Vec2i pos = nsSearchEngine->getGoalPos();
 		// skip target (is on the 'front' of the path already...
-		pos = npSearchEngine->getPreviousPos( pos );
+		pos = nsSearchEngine->getPreviousPos(pos);
 		while ( pos.x >= 0 ) {
-			path.push_front( pos );
-			pos = npSearchEngine->getPreviousPos( pos );
+			path.push(pos);
+			pos = nsSearchEngine->getPreviousPos(pos);
 		}
 		return true;
 	}
@@ -210,7 +215,14 @@ bool RoutePlanner::repairPath( Unit *unit ) {
 //
 // Move me to Cartographer, as findFreePos(), rewrite using a Dijkstra Search
 //
-Vec2i RoutePlanner::computeNearestFreePos( const Unit *unit, const Vec2i &finalPos ) {
+/** find nearest free position a unit can occupy 
+  * @param unit the unit in question
+  * @param finalPos the position unit wishes to be
+  * @return finalPos if free and occupyable by unit, else the closest such position, or the unit's 
+  * current position if none found
+  * @todo reimplement with Dijkstra search
+  */
+Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPos) {
 	//unit data
 	Vec2i unitPos= unit->getPos();
 	int size= unit->getType()->getSize();
@@ -218,7 +230,7 @@ Vec2i RoutePlanner::computeNearestFreePos( const Unit *unit, const Vec2i &finalP
 	int teamIndex= unit->getTeam();
 
 	//if finalPos is free return it
-	if ( theMap.areAproxFreeCells( finalPos, size, field, teamIndex ) ) {
+	if ( theMap.areAproxFreeCells(finalPos, size, field, teamIndex) ) {
 		return finalPos;
 	}
 
@@ -234,12 +246,12 @@ Vec2i RoutePlanner::computeNearestFreePos( const Unit *unit, const Vec2i &finalP
 	// Now that's efficient... ;-)
 
 	Vec2i nearestPos = unitPos;
-	float nearestDist = unitPos.dist( finalPos );
+	float nearestDist = unitPos.dist(finalPos);
 	for ( int i = -maxFreeSearchRadius; i <= maxFreeSearchRadius; ++i ) {
 		for ( int j = -maxFreeSearchRadius; j <= maxFreeSearchRadius; ++j ) {
-			Vec2i currPos = finalPos + Vec2i( i, j );
-			if ( theMap.areAproxFreeCells( currPos, size, field, teamIndex ) ){
-				float dist = currPos.dist( finalPos );
+			Vec2i currPos = finalPos + Vec2i(i, j);
+			if ( theMap.areAproxFreeCells(currPos, size, field, teamIndex) ){
+				float dist = currPos.dist(finalPos);
 
 				//if nearer from finalPos
 				if ( dist < nearestDist ) {
@@ -248,7 +260,7 @@ Vec2i RoutePlanner::computeNearestFreePos( const Unit *unit, const Vec2i &finalP
 				}
 				//if the distance is the same compare distance to unit
 				else if ( dist == nearestDist ) {
-					if ( currPos.dist( unitPos ) < nearestPos.dist( unitPos ) )
+					if ( currPos.dist(unitPos) < nearestPos.dist(unitPos) )
 						nearestPos = currPos;
 				}
 			}
@@ -315,7 +327,7 @@ void World::assertConsistiency() {
 				assert(false);
 			}
 */
-			if(unit->isDead() && unit->getCurrSkill()->getClass() == scDie) {
+			if(unit->isDead() && unit->getCurrSkill()->getClass() == SkillClass::DIE) {
 				continue;
 			}
 
@@ -337,7 +349,7 @@ void World::assertConsistiency() {
 									<< "(type = " << unit->getType()->getName() << ")"
 									<< " not in cells (" << currPos.x << ", " << currPos.y << ", " << zone << ")";
 							if(unitInCell == NULL && !unit->getHp()) {
-								cerr << " but has zero HP and is not executing scDie." << endl;
+								cerr << " but has zero HP and is not executing SkillClass::DIE." << endl;
 							} else {
 								cerr << endl;
 								assert(false);
@@ -376,9 +388,9 @@ void World::doHackyCleanUp() {
 		Unit &unit = **u;
 		for ( int i=0; i < unit.getSize(); ++i ) {
 			for ( int j=0; j < unit.getSize(); ++j ) {
-				Cell *cell = map.getCell( unit.getPos() + Vec2i( i,j ) );
-				if ( cell->getUnit( unit.getCurrZone() ) == &unit ) {
-					cell->setUnit( unit.getCurrZone(), NULL );
+				Cell *cell = map.getCell(unit.getPos() + Vec2i(i,j));
+				if ( cell->getUnit(unit.getCurrZone()) == &unit ) {
+					cell->setUnit(unit.getCurrZone(), NULL);
 				}
 			}
 		}

@@ -94,7 +94,7 @@ const AttackSkillType *AttackSkillTypes::getPreferredAttack(const Unit *unit,
 		ast = NULL;
 	}
 
-	if(hasPreference(AttackSkillPreference::ON_BUILDING) && unit->getType()->isOfClass(ucBuilding)) {
+	if(hasPreference(AttackSkillPreference::ON_BUILDING) && unit->getType()->isOfClass(UnitClass::BUILDING)) {
 		ast = getSkillForPref(AttackSkillPreference::ON_BUILDING, rangeToTarget);
 	}
 
@@ -132,70 +132,70 @@ CommandType::CommandType(const char* name, CommandClass cc, Clicks clicks, bool 
 
 void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 	switch(cc) {
-		case ccStop:
+		case CommandClass::STOP:
 			if(unit->getLastCommandUpdate() > 250000) {
 				unitUpdater->updateStop(unit);
 				unit->resetLastCommandUpdated();
 			}			
 			break;
 
-		case ccMove:
+		case CommandClass::MOVE:
 			unitUpdater->updateMove(unit);
 			break;
 
-		case ccAttack:
+		case CommandClass::ATTACK:
 			unitUpdater->updateAttack(unit);
 			break;
 
-		case ccAttackStopped:
+		case CommandClass::ATTACK_STOPPED:
 			if(unit->getLastCommandUpdate() > 250000) {
 				unitUpdater->updateAttackStopped(unit);
 				unit->resetLastCommandUpdated();
 			}			
 			break;
 
-		case ccBuild:
+		case CommandClass::BUILD:
 			unitUpdater->updateBuild(unit);
 			break;
 
-		case ccHarvest:
+		case CommandClass::HARVEST:
 			unitUpdater->updateHarvest(unit);
 			break;
 
-		case ccRepair:
+		case CommandClass::REPAIR:
 			unitUpdater->updateRepair(unit);
 			break;
 
-		case ccProduce:
+		case CommandClass::PRODUCE:
 			unitUpdater->updateProduce(unit);
 			break;
 
-		case ccUpgrade:
+		case CommandClass::UPGRADE:
 			unitUpdater->updateUpgrade(unit);
 			break;
 
-		case ccMorph:
+		case CommandClass::MORPH:
 			unitUpdater->updateMorph(unit);
 			break;
 
-		case ccCastSpell:
+		case CommandClass::CAST_SPELL:
 			unitUpdater->updateCastSpell(unit);
 			break;
 
-		case ccGuard:
-			if(unit->getCurrSkill()->getClass() != scStop || unit->getLastCommandUpdate() > 250000) {
+		case CommandClass::GUARD:
+			if(unit->getCurrSkill()->getClass() != SkillClass::STOP || unit->getLastCommandUpdate() > 250000) {
 				unitUpdater->updateGuard(unit);
 				unit->resetLastCommandUpdated();
 			}
 			break;
 
-		case ccPatrol:
+		case CommandClass::PATROL:
 			unitUpdater->updatePatrol(unit);
 			break;
 
-		case ccSetMeetingPoint:
-		case ccCount:
-		case ccNull:
+		case CommandClass::SET_MEETING_POINT:
+		case CommandClass::COUNT:
+		case CommandClass::NULL_COMMAND:
 			assert(0);
 			;
 	}
@@ -239,7 +239,7 @@ bool MoveBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
 	//move
    try { 
 	   string skillName= n->getChild("move-skill")->getAttribute("value")->getRestrictedValue();
-      const SkillType *st = unitType->getSkillType(skillName, scMove);
+      const SkillType *st = unitType->getSkillType(skillName, SkillClass::MOVE);
 	   moveSkillType= static_cast<const MoveSkillType*>(st);
    }
    catch ( runtime_error e ) {
@@ -259,7 +259,7 @@ bool StopBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
 	//stop
    try {
 	   string skillName= n->getChild("stop-skill")->getAttribute("value")->getRestrictedValue();
-	   stopSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, scStop));
+	   stopSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, SkillClass::STOP));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what() );
@@ -280,7 +280,7 @@ bool AttackCommandTypeBase::load(const XmlNode *n, const string &dir, const Tech
 	if(attackSkillNode) {
       try {
          skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
-	      ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, scAttack));
+	      ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, SkillClass::ATTACK));
 	      attackSkillTypes.push_back(ast, AttackSkillPreferences());
       }
       catch ( runtime_error e ) {
@@ -303,7 +303,7 @@ bool AttackCommandTypeBase::load(const XmlNode *n, const string &dir, const Tech
 			      AttackSkillPreferences prefs;
 			      attackSkillNode = attackSkillsNode->getChild("attack-skill", i);
 			      skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
-			      ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, scAttack));
+			      ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, SkillClass::ATTACK));
 			      flagsNode = attackSkillNode->getChild("flags", 0, false);
 			      if(flagsNode) {
 				      prefs.load(flagsNode, dir, tt, ft);
@@ -370,7 +370,7 @@ bool BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	//build
    try {
 	   string skillName= n->getChild("build-skill")->getAttribute("value")->getRestrictedValue();
-	   buildSkillType= static_cast<const BuildSkillType*>(unitType->getSkillType(skillName, scBuild));
+	   buildSkillType= static_cast<const BuildSkillType*>(unitType->getSkillType(skillName, SkillClass::BUILD));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -441,7 +441,7 @@ bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	//harvest
    try {
 	   skillName= n->getChild("harvest-skill")->getAttribute("value")->getRestrictedValue();
-	   harvestSkillType= static_cast<const HarvestSkillType*>(unitType->getSkillType(skillName, scHarvest));
+	   harvestSkillType= static_cast<const HarvestSkillType*>(unitType->getSkillType(skillName, SkillClass::HARVEST));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -450,7 +450,7 @@ bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	//stop loaded
    try { 
       skillName= n->getChild("stop-loaded-skill")->getAttribute("value")->getRestrictedValue();
-      stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, scStop));
+      stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, SkillClass::STOP));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -460,7 +460,7 @@ bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	//move loaded
    try {
 	   skillName= n->getChild("move-loaded-skill")->getAttribute("value")->getRestrictedValue();
-	   moveLoadedSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, scMove));
+	   moveLoadedSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, SkillClass::MOVE));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -525,7 +525,7 @@ bool RepairCommandType::load(const XmlNode *n, const string &dir, const TechTree
 	//repair
    try {
 	   string skillName= n->getChild("repair-skill")->getAttribute("value")->getRestrictedValue();
-	   repairSkillType= static_cast<const RepairSkillType*>(unitType->getSkillType(skillName, scRepair));
+	   repairSkillType= static_cast<const RepairSkillType*>(unitType->getSkillType(skillName, SkillClass::REPAIR));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -587,7 +587,7 @@ bool ProduceCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	//produce
    try { 
       string skillName= n->getChild("produce-skill")->getAttribute("value")->getRestrictedValue();
-	   produceSkillType= static_cast<const ProduceSkillType*>(unitType->getSkillType(skillName, scProduce));
+	   produceSkillType= static_cast<const ProduceSkillType*>(unitType->getSkillType(skillName, SkillClass::PRODUCE));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -629,7 +629,7 @@ bool UpgradeCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	//upgrade
    try {
    	string skillName= n->getChild("upgrade-skill")->getAttribute("value")->getRestrictedValue();
-	   upgradeSkillType= static_cast<const UpgradeSkillType*>(unitType->getSkillType(skillName, scUpgrade));
+	   upgradeSkillType= static_cast<const UpgradeSkillType*>(unitType->getSkillType(skillName, SkillClass::UPGRADE));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -663,7 +663,7 @@ bool MorphCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	//morph skill
    try {
       string skillName= n->getChild("morph-skill")->getAttribute("value")->getRestrictedValue();
-	   morphSkillType= static_cast<const MorphSkillType*>(unitType->getSkillType(skillName, scMorph));
+	   morphSkillType= static_cast<const MorphSkillType*>(unitType->getSkillType(skillName, SkillClass::MORPH));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );
@@ -718,7 +718,7 @@ bool CastSpellCommandType::load(const XmlNode *n, const string &dir, const TechT
 	//cast spell
    try {
 	   string skillName= n->getChild("cast-spell-skill")->getAttribute("value")->getRestrictedValue();
-	   castSpellSkillType= static_cast<const CastSpellSkillType*>(unitType->getSkillType(skillName, scCastSpell));
+	   castSpellSkillType= static_cast<const CastSpellSkillType*>(unitType->getSkillType(skillName, SkillClass::CAST_SPELL));
    }
    catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what () );

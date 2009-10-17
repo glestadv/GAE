@@ -15,18 +15,12 @@
 #include "element_type.h"
 #include "model.h"
 #include "checksum.h"
+#include "game_constants.h"
 
 namespace Glest{ namespace Game{
 
 using Shared::Graphics::Model;
 using Shared::Util::Checksum;
-
-enum ResourceClass{
-	rcTech,
-	rcTileset,
-	rcStatic,
-	rcConsumable
-};
 
 // =====================================================
 // 	class ResourceType
@@ -37,10 +31,10 @@ enum ResourceClass{
 class ResourceType: public DisplayableType {
 private:
     ResourceClass resourceClass;
-    int tilesetObject;	//used only if class==rcTileset
-    int resourceNumber;	//used only if class==rcTech, resource number in the map
-    int interval;		//used only if class==rcConsumable
-	int defResPerPatch;	//used only if class==rcTileset || class==rcTech
+    int tilesetObject;	//used only if class==ResourceClass::TILESET
+    int resourceNumber;	//used only if class==ResourceClass::TECH, resource number in the map
+    int interval;		//used only if class==ResourceClass::CONSUMABLE
+	int defResPerPatch;	//used only if class==ResourceClass::TILESET || class==ResourceClass::TECH
     Model *model;
 	/**
 	 * Rather or not to display this resource at the top of the screen (defaults to true).

@@ -29,17 +29,17 @@ namespace Search {
 #define MAX_MAP_COORD ((1<<MAX_MAP_COORD_BITS)-1)
 
 #pragma pack(push, 1)
-/** A bit packed position (Vec2i).
+/** A bit packed position (Vec2i)
   */
 struct PackedPos {
 	/** Construct a PackedPos [0,0] */
 	PackedPos() : x(0), y(0) {}
 	/** Construct a PackedPos [x,y] */
-	PackedPos( int x, int y ) : x(x), y(y) {} 
+	PackedPos(int x, int y) : x(x), y(y) {} 
 	/** Construct a PackedPos [pos.x, pos.y] */
-	PackedPos( Vec2i pos ) { *this = pos; }
+	PackedPos(Vec2i pos) { *this = pos; }
 	/** Assign from Veci */
-	PackedPos& operator=( Vec2i pos ) { 
+	PackedPos& operator=(Vec2i pos) { 
 		assert( pos.x <= MAX_MAP_COORD && pos.y <= MAX_MAP_COORD ); 
 		if ( pos.x < 0 || pos.y < 0 ) {
 			x = MAX_MAP_COORD; y = MAX_MAP_COORD; // invalid
@@ -60,8 +60,8 @@ struct PackedPos {
 	// MAX_MAP_COORD,MAX_MAP_COORD is considered 'invalid', this is ok still on a 
 	// MAX_MAP_COORD*MAX_MAP_COORD map in Glest, because the far east and south 'tiles' 
 	// (2 cells) are not valid either.
-	uint16 x : MAX_MAP_COORD_BITS; /** x coordinate */
-	uint16 y : MAX_MAP_COORD_BITS; /** y coordinate */
+	uint16 x : MAX_MAP_COORD_BITS; /**< x coordinate */
+	uint16 y : MAX_MAP_COORD_BITS; /**< y coordinate */
 };
 
 /** The cell structure for the node map. Stores all the usual A* node information plus
@@ -86,10 +86,10 @@ struct NodeMapCell {
 	float distToHere;
 
 	/** Construct NodeMapCell */
-	NodeMapCell ()	{ memset( this, 0, sizeof(*this) ); }
+	NodeMapCell()		{ memset( this, 0, sizeof(*this) ); }
 
 	/** the estimate function, costToHere + heuristic */
-	float estimate ()	{ return heuristic + distToHere; }
+	float estimate()	{ return heuristic + distToHere; }
 };
 
 #pragma pack(pop)
@@ -104,9 +104,9 @@ public:
 	~NodeMapCellArray() { delete [] array; }
 
 	/** index by Vec2i */
-	NodeMapCell& operator[] ( const Vec2i &pos )	{ return array[pos.y * stride + pos.x]; }
+	NodeMapCell& operator[] (const Vec2i &pos)		{ return array[pos.y * stride + pos.x]; }
 	/** index by PackedPos */
-	NodeMapCell& operator[] ( const PackedPos pos )	{ return array[pos.y * stride + pos.x]; }
+	NodeMapCell& operator[] (const PackedPos pos)	{ return array[pos.y * stride + pos.x]; }
 };
 
 /** A NodeStorage (template interface) compliant NodeMap. Keeps a store of nodes the size of 
@@ -120,27 +120,26 @@ public:
 	//
 	void reset();
 	/** set a maximum number of nodes to expand */
-	void setMaxNodes( int limit )	{ nodeLimit = limit > 0 ? limit : -1; }
-	
+	void setMaxNodes(int limit)		{ nodeLimit = limit > 0 ? limit : -1;				}
 	/** is the node at pos open */
-	bool isOpen ( const Vec2i &pos )	{ return nodeMap[pos].mark == searchCounter; }
+	bool isOpen(const Vec2i &pos)	{ return nodeMap[pos].mark == searchCounter;		}
 	/** is the node at pos closed */
-	bool isClosed ( const Vec2i &pos )	{ return nodeMap[pos].mark == searchCounter + 1; }
+	bool isClosed(const Vec2i &pos)	{ return nodeMap[pos].mark == searchCounter + 1;	}
 
-	bool setOpen ( const Vec2i &pos, const Vec2i &prev, float h, float d );
-	void updateOpen ( const Vec2i &pos, const Vec2i &prev, const float cost );
+	bool setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d);
+	void updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost);
 	Vec2i getBestCandidate();
 	/** get the best heuristic node seen this search */
 	Vec2i getBestSeen()		{ return bestH.valid() ? bestH : Vec2i(-1); }
 
 	/** get the heuristic of the node at pos [known to be visited] */
-	float getHeuristicAt( const Vec2i &pos )	{ return nodeMap[pos].heuristic;	}
+	float getHeuristicAt(const Vec2i &pos)	{ return nodeMap[pos].heuristic;	}
 	/** get the cost to the node at pos [known to be visited] */
-	float getCostTo( const Vec2i &pos )			{ return nodeMap[pos].distToHere;	}
+	float getCostTo(const Vec2i &pos)		{ return nodeMap[pos].distToHere;	}
 	/** get the estimate for the node at pos [known to be visited] */
-	float getEstimateFor( const Vec2i &pos )	{ return nodeMap[pos].estimate();	}
+	float getEstimateFor(const Vec2i &pos)	{ return nodeMap[pos].estimate();	}
 	/** get the best path to the node at pos [known to be visited] */
-	Vec2i getBestTo( const Vec2i &pos )			{ return nodeMap[pos].prevNode;		}
+	Vec2i getBestTo(const Vec2i &pos)		{ return nodeMap[pos].prevNode;		}
 
 private:
 	/** The array of nodes */
@@ -161,11 +160,11 @@ private:
 	Vec2i openTop;
 
 	/** Debug */
-	bool assertValidPath ( list<Vec2i> &path );
+	bool assertValidPath(list<Vec2i> &path);
 	/** Debug */
-	bool assertOpen ();
+	bool assertOpen();
 	/** Debug */
-	void logOpen ();
+	void logOpen();
 
 #ifdef DEBUG_PATHFINDER_TEXTURES
 	virtual list<Vec2i>* getOpenNodes ();

@@ -40,7 +40,7 @@ Command::Command(CommandArchetype archetype, CommandFlags flags, const Vec2i &po
 }
 
 Command::Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, Unit *commandedUnit) :
-		archetype(catGiveCommand),
+		archetype(CommandArchetype::GIVE_COMMAND),
 		type(type),
 		flags(flags),
 		pos(pos),
@@ -52,7 +52,7 @@ Command::Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, 
 }
 
 Command::Command(const CommandType *type, CommandFlags flags, Unit* unit, Unit *commandedUnit) :
-		archetype(catGiveCommand),
+		archetype(CommandArchetype::GIVE_COMMAND),
 		type(type),
 		flags(flags),
 		pos(-1),
@@ -73,7 +73,7 @@ Command::Command(const CommandType *type, CommandFlags flags, Unit* unit, Unit *
 
 
 Command::Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, const UnitType *unitType, Unit *commandedUnit) :
-		archetype(catGiveCommand),
+		archetype(CommandArchetype::GIVE_COMMAND),
 		type(type),
 		flags(flags),
 		pos(pos),
@@ -87,7 +87,7 @@ Command::Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, 
 Command::Command(const XmlNode *node, const UnitType *ut, const FactionType *ft) :
 		unitRef(node->getChild("unitRef")),
 		unitRef2(node->getChild("unitRef2")) {
-	archetype = static_cast<CommandArchetype>(node->getChildIntValue("archetype"));
+			archetype = (CommandArchetype::Enum)node->getChildIntValue("archetype");
 	type = ut->getCommandType(node->getChildStringValue("type"));
 	flags.flags = node->getChildIntValue("flags");
 	pos = node->getChildVec2iValue("pos");
@@ -98,7 +98,7 @@ Command::Command(const XmlNode *node, const UnitType *ut, const FactionType *ft)
 }
 
 Command::Command(NetworkDataBuffer &buf) :
-		archetype(catGiveCommand),
+		archetype(CommandArchetype::GIVE_COMMAND),
 		type(NULL),
 		flags(0),
 		pos(-1),
@@ -201,7 +201,7 @@ void Command::read(NetworkDataBuffer &buf) {
 
 	// archtype and flags
 	buf.read(archetypeAndFlags);
-	archetype = static_cast<CommandArchetype>(archetypeAndFlags & 0x0f);
+	archetype = (CommandArchetype::Enum)(archetypeAndFlags & 0x0f);
 	flags.flags = (archetypeAndFlags & 0xf0) >> 4;
 
 	// fields present

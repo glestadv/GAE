@@ -37,7 +37,7 @@ InfluenceMap::InfluenceMap()
 	// is this safe?
 	memset( iMap, 0, sizeof(float) * width * height );
 	// let's see...
-	//assert( assertFloatZeroIsAllZeroBits() );
+	//assert(assertFloatZeroIsAllZeroBits());
 }
 
 InfluenceMap::InfluenceMap( int x, int y, int w, int h ) 
@@ -45,16 +45,16 @@ InfluenceMap::InfluenceMap( int x, int y, int w, int h )
 		, yOffset( y )
 		, width( w )
 		, height( h ) {
-	assert( theMap.isInside( x, y ) );
-	assert( theMap.isInside( x + w - 1, y + h - 1 ) );
+	assert(theMap.isInside(x, y));
+	assert(theMap.isInside(x + w - 1, y + h - 1));
 	iMap = new float[w * h];
 	// is this safe?
-	memset( iMap, 0, sizeof(float) * w * h );
+	memset(iMap, 0, sizeof(float) * w * h);
 	// let's see...
 	//assert( assertFloatZeroIsAllZeroBits() );
 }
 
-bool InfluenceMap::isInside( const Vec2i &pos ) const {
+bool InfluenceMap::isInside(const Vec2i &pos) const {
 	const int x = pos.x - xOffset;
 	const int y = pos.y - yOffset;
 	if ( x < 0 || x >= width || y < 0 || y >= height ) {
@@ -63,8 +63,8 @@ bool InfluenceMap::isInside( const Vec2i &pos ) const {
 	return true;
 }
 
-float InfluenceMap::getInfluence( const Vec2i &pos ) const {
-	//assert( theMap.isInside( pos ) );
+float InfluenceMap::getInfluence(const Vec2i &pos) const {
+	//assert(theMap.isInside(pos));
 	const int x = pos.x - xOffset;
 	const int y = pos.y - yOffset;
 	if ( x < 0 || x >= width || y < 0 || y >= height ) {
@@ -73,25 +73,25 @@ float InfluenceMap::getInfluence( const Vec2i &pos ) const {
 	return iMap[y * width + x];
 }
 
-void InfluenceMap::setInfluence( const Vec2i &pos, float infl ) {
-	//assert( theMap.isInside( pos ) );
+void InfluenceMap::setInfluence(const Vec2i &pos, float infl) {
+	//assert(theMap.isInside(pos));
 	const int x = pos.x - xOffset;
 	const int y = pos.y - yOffset;
 	if ( x < 0 || x >= width || y < 0 || y >= height ) {
-		assert( false );
+		assert(false);
 		return;
 	}
 	iMap[y * width + x] = infl;
 }
 
 void InfluenceMap::log() {
-	FILE *fp = fopen( "influence.log", "w" );
+	FILE *fp = fopen("influence.log", "w");
 	for ( int y=0; y < height; ++y ) {
 		for ( int x=0; x < width; ++x ) {
-			fprintf( fp, "%2.2f%s", iMap[y*width+x], x == width - 1 ? "\n" : ", " );
+			fprintf(fp, "%2.2f%s", iMap[y * width + x], x == width - 1 ? "\n" : ", ");
 		}
 	}
-	fclose( fp );
+	fclose(fp);
 }
 
 }}}

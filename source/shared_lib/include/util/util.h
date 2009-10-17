@@ -3,6 +3,7 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa,
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
+//				  2009 James McCulloch <silnarm at gmail>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -46,74 +47,110 @@ namespace Shared { namespace Util {
 
 const string sharedLibVersionString= "v0.4.1";
 
-
-#define ENUMERATED_TYPE(Name,...)						\
+#define WRAPPED_ENUM(Name,...)							\
 	struct Name {										\
 		enum Enum { __VA_ARGS__, COUNT };				\
-		Name() : value((Enum)0) {}						\
+		Name() : value(COUNT) {}						\
 		Name(Enum val) : value(val) {}					\
 		operator Enum() { return value; }				\
 		operator Enum() const { return value; }			\
+		void operator++() {								\
+			if ( value < COUNT ) {						\
+				value = (Enum)(value + 1);				\
+			}											\
+		}												\
 	private:											\
 		Enum value;										\
-	};													\
-    STRINGY_ENUM_NAMES(Name, Name::COUNT, __VA_ARGS__);
-/*
-		bool operator== (const Name &that) const {		\
-			return value == that.value;					\
-		}												\
-		bool operator== (const Name &that) {			\
-			return value == that.value;					\
-		}												\
-		bool operator== (Name &that) {					\
-			return value == that.value;					\
-		}												\
-*/
+	};
 
+#define STRINGY_ENUM(Name,...)							\
+	WRAPPED_ENUM(Name,__VA_ARGS__)						\
+	STRINGY_ENUM_NAMES(Name, Name::COUNT, __VA_ARGS__);
 
-/** A macro for defining C style enums that similtaneously stores their names. */
-#define STRINGY_ENUM(name, countValue, ...)								\
-	enum name {__VA_ARGS__, countValue};								\
-	STRINGY_ENUM_NAMES(enum ## name ## Names, countValue, __VA_ARGS__)
+#ifdef NDEBUG
+#	define REGULAR_ENUM WRAPPED_ENUM
+#else
+#	define REGULAR_ENUM STRINGY_ENUM
+#endif
+
+#ifdef GAME_CONSTANTS_DEF
+#	define STRINGY_ENUM_NAMES(name, count, ...) EnumNames<name> name##Names(#__VA_ARGS__, count, true)
+#else
+#	define STRINGY_ENUM_NAMES(name, count, ...)	extern EnumNames<name> name##Names
+#endif
+
+template<typename E>
+E enum_cast(unsigned i) {
+	return i < E::COUNT ? (E::Enum)i : E::COUNT;
+}
 
 // =====================================================
 //	class EnumNames
 // =====================================================
 
-/** A utility class to provide a text description for enum values. */
+/** A utility class to provide string representation and matching for enum values. */
+template<typename E>
 class EnumNames {
-#ifdef NO_ENUM_NAMES
-public:
-    EnumNames(const char *valueList, size_t count, bool copyStrings, bool lazy, const char *enumName = NULL) {}
-    const char *operator[](int i) {return "";}
-	template<typename EnumType>	EnumType match(string &value) { return EnumType::COUNT; }
-#else
 private:
 	const char *valueList;
 	const char **names;
 	const char *qualifiedList;
 	const char **qualifiedNames;
-	size_t count;
-	bool copyStrings;
 
 public:
-	/** Primary ctor. As it turns out, not specifying copyStrings as true on most modern system will
-	 * result in some form of access violation (due to attempting to write to read-only memory. */
-	EnumNames(const char *valueList, size_t count, bool copyStrings, bool lazy, const char *enumName = NULL);
-    ~EnumNames();
-    const char *operator[](unsigned i) const {
+	/** Primary ctor. */
+	EnumNames(const char *valueList, size_t count, bool lazy, const char *enumName = NULL) 
+			: valueList(valueList)
+			, qualifiedList(NULL)
+			, qualifiedNames(NULL)
+			, names(NULL) {
+		if(!lazy) {
+			init();
+		}
+		if ( enumName ) {
+			if ( lazy ) {
+				throw runtime_error("Qualified names and Lazy loading not simultaneously supported.");
+			}
+			qualifiedList = new const char[(strlen(enumName) + 2) * E::COUNT + strlen(valueList) + 1];
+			qualifiedNames = new const char*[E::COUNT];
+			char *tmp = strcpy(new char[strlen(valueList) + 1], valueList);
+			char *tok = strtok(tmp,", ");
+			char *ptr = const_cast<char*>(qualifiedList);
+			int tokens = 0;
+			while ( tok ) {
+				qualifiedNames[tokens] = ptr;
+				tokens++;
+				while ( isspace(*tok) ) tok++;
+				ptr += sprintf(ptr, "%s::%s", enumName, tok);
+				*ptr++ = 0;
+				tok = strtok(NULL, ", ");
+			}
+			delete [] tmp;
+		}
+	}
+
+    ~EnumNames() {
+		if(names) {
+			delete[] names;
+			delete[] valueList;
+		}
+		if (qualifiedNames) {
+			delete [] qualifiedNames;
+			delete [] qualifiedList;
+		}
+	}
+    const char *operator[](E e) const {
 		if(!names) {
 			const_cast<EnumNames*>(this)->init();
 		}
-		return i < count ? qualifiedNames ? qualifiedNames[i] : names[i] : "invalid value";
+		return e < E::COUNT ? qualifiedNames ? qualifiedNames[e] : names[e] : "invalid value";
 	}
 	/** Matches a string value to an enum value  */
-	template<typename EnumType>
-	EnumType match(const char *value) const {
+	E match(const char *value) const {
 		if ( !names ) {
 			const_cast<EnumNames*>(this)->init();
 		}
-		for ( unsigned int i=0; i < count; ++i ) {
+		for ( unsigned int i=0; i < E::COUNT; ++i ) {
 			const char *ptr1 = names[i];
 			const char *ptr2 = value;
 			bool same = true;
@@ -137,15 +174,39 @@ public:
 				}
 			}
 			if ( same ) {
-				return (EnumType::Enum)i;
+				return enum_cast<E>(i);
 			}
 		}
-		return EnumType::COUNT;
+		return E::COUNT;	
 	}
 
 private:
-	void init();
-#endif
+	void init() {
+		size_t curName = 0;
+		bool needStart = true;
+
+		assert(!names);
+		names = new const char *[E::COUNT];
+		valueList = strcpy(new char[strlen(valueList) + 1], valueList);
+
+		for(char *p = const_cast<char*>(valueList); *p; ++p) {
+			if(isspace(*p)) { // I don't want to have any leading or trailing whitespace
+				*p = 0;
+			} else if(needStart) {
+				// do some basic sanity checking, even though the compiler should catch any such errors
+				assert(isalpha(*p) || *p == '_');
+				assert(curName < E::COUNT);
+				names[curName++] = p;
+				needStart = false;
+			} else if(*p == ',') {
+				assert(!needStart);
+				needStart = true;
+				*p = 0;
+			}
+		}
+		assert(curName == E::COUNT);
+	}
+
 };
 
 void findAll(const string &path, vector<string> &results, bool cutExtension = false);

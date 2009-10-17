@@ -384,7 +384,7 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 					sc->setObject(o);
 					for (int i = 0; i < techTree->getResourceTypeCount(); ++i) {
 						const ResourceType *rt = techTree->getResourceType(i);
-						if (rt->getClass() == rcTileset && rt->getTilesetObject() == objNumber) {
+						if (rt->getClass() == ResourceClass::TILESET && rt->getTilesetObject() == objNumber) {
 							o->setResource(rt, Vec2i(x, y));
 						}
 					}
@@ -1367,7 +1367,7 @@ void Map::assertUnitCells(const Unit * unit) {
 			assert(isInside(currPos));
 
 			if(!ut->hasCellMap() || ut->getCellMapCell(x, y)) {
-				if(unit->getCurrSkill()->getClass() != scDie) {
+				if(unit->getCurrSkill()->getClass() != SkillClass::DIE) {
 					assert(getCell(currPos)->getUnit(field) == unit);
 				} else {
 					assert(getCell(currPos)->getUnit(field) != unit);

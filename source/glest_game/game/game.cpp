@@ -214,14 +214,14 @@ void Game::init() {
 	}
 
 	//wheather particle systems
-	if(world.getTileset()->getWeather() == wRainy){
+	if(world.getTileset()->getWeather() == Weather::RAINY){
 		logger.add("Creating rain particle system", true);
 		weatherParticleSystem= new RainParticleSystem();
 		weatherParticleSystem->setSpeed(12.f / config.getGsWorldUpdateFps());
 		weatherParticleSystem->setPos(gameCamera.getPos());
 		renderer.manageParticleSystem(weatherParticleSystem, rsGame);
 	}
-	else if(world.getTileset()->getWeather() == wSnowy){
+	else if(world.getTileset()->getWeather() == Weather::SNOWY){
 		logger.add("Creating snow particle system", true);
 		weatherParticleSystem= new SnowParticleSystem(1200);
 		weatherParticleSystem->setSpeed(1.5f / config.getGsWorldUpdateFps());
@@ -241,13 +241,13 @@ void Game::init() {
 	AmbientSounds *ambientSounds= tileset->getAmbientSounds();
 
 	//rain
-	if(tileset->getWeather()==wRainy && ambientSounds->isEnabledRain()){
+	if(tileset->getWeather()==Weather::RAINY && ambientSounds->isEnabledRain()){
 		logger.add("Starting ambient stream", true);
 		soundRenderer.playAmbient(ambientSounds->getRain());
 	}
 
 	//snow
-	if(tileset->getWeather()==wSnowy && ambientSounds->isEnabledSnow()){
+	if(tileset->getWeather()==Weather::SNOWY && ambientSounds->isEnabledSnow()){
 		logger.add("Starting ambient stream", true);
 		soundRenderer.playAmbient(ambientSounds->getSnow());
 	}
@@ -1038,7 +1038,7 @@ void Game::checkWinnerScripted(){
 bool Game::hasBuilding(const Faction *faction){
 	for(int i=0; i<faction->getUnitCount(); ++i){
 		Unit *unit = faction->getUnit(i);
-		if(unit->getType()->hasSkillClass(scBeBuilt) && unit->isAlive()){
+		if(unit->getType()->hasSkillClass(SkillClass::BE_BUILT) && unit->isAlive()){
 			return true;
 		}
 	}

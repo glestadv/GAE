@@ -15,7 +15,7 @@
 #define _GLEST_GAME_SEARCH_ENGINE_
 
 #ifdef _SHARED_PCH_H_
-#	error search_engine.h included from file using pre-compiled header
+//#	error search_engine.h included from file using pre-compiled header
 #endif
 
 #define SQRT2 1.41421356f
@@ -130,46 +130,45 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 // using different combinations for different purposes.
 // ========================================================
 //
-// template SearchEngine on 'domain' (Vec2i for everything thus far)
-// and on 'node storage' class (which is itself templated on the 'domain')
+// template SearchEngine on 'domain' (Grid with Vec2i 'key' for everything thus far)
 //
-// Cost, Goal & Heuristic functions need to accept parameters of the domain
+// Cost, Goal & Heuristic functions need to accept parameters of the domain key
 //
-//TODO: More templating... generalise the node storage
-//template< typename NodeStorage, typename IDomain = CellMapDomain<Vec2i>, typename DomainType = Vec2i >
+//template< typename NodeStorage, typename Domain = CellMapDomain<Vec2i>, typename DomainKey = Vec2i >
 /** The home of the templated A* algorithm 
   * @param NodeStorage templated NodeStorage, must conform to implicit interface see ...
   */
 template< typename NodeStorage >
 class SearchEngine {
 private:
-	NodeStorage *nodeStorage;
+	NodeStorage *nodeStorage; /**< NodeStorage for this SearchEngine */
 
-	// The goal pos (the 'result') from the last A* search
-	Vec2i goalPos;
-	int expandLimit, nodeLimit, expanded, spaceWidth, spaceHeight;
+	Vec2i goalPos;		/**< The goal pos (the 'result') from the last A* search */
+	int expandLimit,	/**< limit on number of nodes to expand */
+		nodeLimit,		/**< limit on number of nodes to use */
+		expanded,		/**< number of nodes expanded this/last run */
+		spaceWidth,		/**< kludge because domain isn't templated yet, width of search space */
+		spaceHeight;	/**< kludge because domain isn't templated yet, height of search space */
 
 public:
+	/** construct & initialise NodeStorage */
 	SearchEngine() 
 			: expandLimit(-1)
 			, nodeLimit(-1)
-			, expanded(-1)
-			, nodeStorage(NULL)
+			, expanded(0)
 			, spaceWidth(theMap.getW())
 			, spaceHeight(theMap.getH()) {
+		nodeStorage = new NodeStorage();
+		spaceWidth = theMap.getW();
+		spaceHeight = theMap.getH();
 	}
 	~SearchEngine() { 
 		delete nodeStorage; 
 	}
-	void init()  {
-		delete nodeStorage;
-		nodeStorage = new NodeStorage();
-		nodeLimit = -1;
-		expandLimit = -1;
-		expanded = -1;
-		spaceWidth = theMap.getW();
-		spaceHeight = theMap.getH();
-	}
+
+	/** @return a pointer to this engines node storage */
+	NodeStorage* getStorage()	{ return nodeStorage; }
+
 	/** Reset the node storage */
 	void reset() { nodeStorage->reset(); nodeStorage->setMaxNodes(nodeLimit > 0 ? nodeLimit : -1); }
 	/** Add a position to the open set with 0 cost to here (a start position)
@@ -215,7 +214,7 @@ public:
 	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const Vec2i &target, 
 			const InfluenceMap *iMap, float threshold){
 		InfluenceGoal		goalFunc(threshold, iMap);
-		MoveCost			costFunc(unit, aMap );
+		MoveCost			costFunc(unit, aMap);
 		DiagonalDistance	heuristic(target); // a bit hacky... target is needed for heuristic
 		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
@@ -290,8 +289,8 @@ public:
 	}
 };
 
-extern SearchEngine<NodePool>	*npSearchEngine;
-extern SearchEngine<NodeMap>	*nmSearchEngine;
+//extern SearchEngine<NodeStore>	*nsSearchEngine;
+//extern SearchEngine<NodeMap>	*nmSearchEngine;
 
 }}}
 

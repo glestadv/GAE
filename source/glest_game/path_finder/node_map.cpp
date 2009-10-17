@@ -67,8 +67,8 @@ Vec2i NodeMap::getBestCandidate() {
   * @param d the costSoFar for pos
   * @return true if added, false if node limit reached
   */
-bool NodeMap::setOpen( const Vec2i &pos, const Vec2i &prev, float h, float d ) {
-	assert ( nodeMap[pos].mark < searchCounter );
+bool NodeMap::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
+	assert(nodeMap[pos].mark < searchCounter);
 	if ( nodeCount == nodeLimit ) {
 		return false;
 	}
@@ -94,8 +94,8 @@ bool NodeMap::setOpen( const Vec2i &pos, const Vec2i &prev, float h, float d ) {
 	PackedPos prevOpen, looking = openTop;
 	// find insert spot...
 	while ( true) {
-		assert ( looking.x != 255 );
-		assert ( isOpen( looking ) );
+		assert(looking.x != 255);
+		assert(isOpen(looking));
 
 		if ( est < nodeMap[looking].estimate() ) {
 			// pos better than looking, insert before 'looking'
@@ -103,13 +103,13 @@ bool NodeMap::setOpen( const Vec2i &pos, const Vec2i &prev, float h, float d ) {
 			if ( openTop == looking ) {
 				openTop = pos;
 			} else {
-				assert ( nodeMap[prevOpen].nextOpen == looking );
-				assert ( prevOpen.valid() );
+				assert(nodeMap[prevOpen].nextOpen == looking);
+				assert(prevOpen.valid());
 				nodeMap[prevOpen].nextOpen = pos;
 			}
 			break;
 		} else { // est >= nodeMap[looking].estimate()
-			if ( nodeMap[looking].nextOpen.valid () ) {
+			if ( nodeMap[looking].nextOpen.valid() ) {
 				prevOpen = looking;
 				looking = nodeMap[looking].nextOpen;
 			} else { // end of list
@@ -128,7 +128,7 @@ bool NodeMap::setOpen( const Vec2i &pos, const Vec2i &prev, float h, float d ) {
   * @param prev the new path from
   * @param d the distance to here through prev
   */
-void NodeMap::updateOpen ( const Vec2i &pos, const Vec2i &prev, const float d ) {
+void NodeMap::updateOpen(const Vec2i &pos, const Vec2i &prev, const float d) {
 	const float dist = nodeMap[prev].distToHere + d;
 	if ( dist < nodeMap[pos].distToHere ) {
 		//LOG ( "Updating open node." );
@@ -146,7 +146,7 @@ void NodeMap::updateOpen ( const Vec2i &pos, const Vec2i &prev, const float d ) 
 			openTop = pos;
 			PackedPos ptmp, tmp = nodeMap[pos].nextOpen;
 			while ( pos != tmp ) {
-				assert ( nodeMap[tmp].nextOpen.valid() );
+				assert(nodeMap[tmp].nextOpen.valid());
 				ptmp = tmp;
 				tmp = nodeMap[tmp].nextOpen;
 			}
@@ -173,14 +173,14 @@ void NodeMap::updateOpen ( const Vec2i &pos, const Vec2i &prev, const float d ) 
 				return;
 			}
 			ptmp = tmp;
-			assert ( nodeMap[tmp].nextOpen.valid() );
+			assert(nodeMap[tmp].nextOpen.valid());
 			tmp = nodeMap[tmp].nextOpen;
 		}
 		throw runtime_error ( "SearchMap::updateOpen() called with non-open position" );
 	}
 }
 
-void NodeMap::logOpen () {
+void NodeMap::logOpen() {
 	if ( openTop == Vec2i(-1) ) {
 		LOG ( "Open list is empty." );
 		return;
@@ -188,21 +188,21 @@ void NodeMap::logOpen () {
 	static char buffer[4096];
 	char *ptr = buffer;
 	PackedPos p = openTop;
-	while ( p.valid () ) {
-		ptr += sprintf ( ptr, "%d,%d", p.x, p.y );
-		if ( nodeMap[p].nextOpen.valid () ) {
-			ptr += sprintf ( ptr, " => " );
+	while ( p.valid() ) {
+		ptr += sprintf(ptr, "%d,%d", p.x, p.y);
+		if ( nodeMap[p].nextOpen.valid()) {
+			ptr += sprintf(ptr, " => ");
 			if ( ptr - buffer > 4000 ) {
-				sprintf ( ptr, " => plus more . . ." );
+				sprintf(ptr, " => plus more . . .");
 				break;
 			}
 		}
 		p = nodeMap[p].nextOpen;
 	}
-	LOG ( buffer );
+	LOG(buffer);
 }
 
-bool NodeMap::assertOpen () {
+bool NodeMap::assertOpen() {
 	PackedPos cp;
 	set<Vec2i> seen;
 	if ( openTop.x == -1 ) {
@@ -210,10 +210,10 @@ bool NodeMap::assertOpen () {
 	}
 	// iterate over list, build 'seen' set, checking nextOpen is not there already
 	cp = openTop;
-	while ( cp.valid () ) {
-		seen.insert ( cp );
-		if ( seen.find ( nodeMap[cp].nextOpen ) != seen.end() ) {
-			LOG ( "BIG TIME ERROR: open list is cyclic." );
+	while ( cp.valid() ) {
+		seen.insert(cp);
+		if ( seen.find(nodeMap[cp].nextOpen) != seen.end() ) {
+			LOG("BIG TIME ERROR: open list is cyclic.");
 			return false;
 		}
 		cp = nodeMap[cp].nextOpen;
@@ -222,33 +222,34 @@ bool NodeMap::assertOpen () {
 	set<Vec2i> valid;
 	for ( int y=0; y < theMap.getH(); ++y ) {
 		for ( int x=0; x < theMap.getW(); ++x ) {
-			Vec2i pos ( x, y );
-			if ( isOpen( pos) ) {
-				if ( seen.find ( pos ) == seen.end() ) {
+			Vec2i pos(x, y);
+			if ( isOpen(pos) ) {
+				if ( seen.find(pos) == seen.end() ) {
 					LOG ( "ERROR: open list missing open node, or non open node claiming to be open." );
 					return false;
 				}
-				valid.insert ( pos );
+				valid.insert(pos);
 			}
 		}
 	}
 	// ... and that all nodes on the list are marked open
 	for ( set<Vec2i>::iterator it = seen.begin(); it != seen.end(); ++it) {
-		if ( valid.find ( *it ) == valid.end () ) {
-			LOG ( "ERROR: node on open list was not marked open" );
+		if ( valid.find(*it) == valid.end() ) {
+			LOG("ERROR: node on open list was not marked open");
 			return false;
 		}
 	}
 	return true;
 }
 
-bool NodeMap::assertValidPath ( list<Vec2i> &path ) {
-	if ( path.size () < 2 ) return true;
+bool NodeMap::assertValidPath(list<Vec2i> &path) {
+	if ( path.size() < 2 ) return true;
 	VLIt it = path.begin();
 	Vec2i prevPos = *it;
 	for ( ++it; it != path.end(); ++it ) {
-		if ( prevPos.dist(*it) < 0.99 || prevPos.dist(*it) > 1.42 )
+		if ( prevPos.dist(*it) < 0.99 || prevPos.dist(*it) > 1.42 ) {
 			return false;
+		}
 		prevPos = *it;
 	}
 	return true;
@@ -256,28 +257,29 @@ bool NodeMap::assertValidPath ( list<Vec2i> &path ) {
 
 #ifdef _GAE_DEBUG_EDITION_
 
-list<pair<Vec2i,uint32>>* SearchMap::getLocalAnnotations () {
-	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>> ();
-	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it )
-		ret->push_back ( pair<Vec2i,uint32> (it->first,nodeMap[it->first].getClearance(Field::LAND)) );
-	return ret;
-}
-
-
-list<Vec2i>* SearchMap::getOpenNodes () {
-	list<Vec2i> *ret = new list<Vec2i> ();
-	list<Vec2i>::iterator it = listedNodes.begin();
-	for ( ; it != listedNodes.end (); ++it ) {
-		if ( nodeMap[*it].mark == searchCounter ) ret->push_back ( *it );
+list<pair<Vec2i,uint32>>* SearchMap::getLocalAnnotations() {
+	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>>();
+	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin(); it != localAnnt.end(); ++ it ) {
+		ret->push_back(pair<Vec2i,uint32>(it->first,nodeMap[it->first].getClearance(Field::LAND)));
 	}
 	return ret;
 }
 
-list<Vec2i>* SearchMap::getClosedNodes () {
-	list<Vec2i> *ret = new list<Vec2i> ();
+
+list<Vec2i>* SearchMap::getOpenNodes() {
+	list<Vec2i> *ret = new list<Vec2i>();
 	list<Vec2i>::iterator it = listedNodes.begin();
-	for ( ; it != listedNodes.end (); ++it ) {
-		if ( nodeMap[*it].mark == searchCounter + 1 ) ret->push_back ( *it );
+	for ( ; it != listedNodes.end(); ++it ) {
+		if ( nodeMap[*it].mark == searchCounter ) ret->push_back(*it);
+	}
+	return ret;
+}
+
+list<Vec2i>* SearchMap::getClosedNodes() {
+	list<Vec2i> *ret = new list<Vec2i>();
+	list<Vec2i>::iterator it = listedNodes.begin();
+	for ( ; it != listedNodes.end(); ++it ) {
+		if ( nodeMap[*it].mark == searchCounter + 1 ) ret->push_back(*it);
 	}
 	return ret;
 }

@@ -106,7 +106,7 @@ Gui::Gui(Game &game) : game(game), input(game.getInput()) {
 	computeSelection= false;
 	validPosObjWorld= false;
 	activeCommandType= NULL;
-	activeCommandClass= ccStop;
+	activeCommandClass= CommandClass::STOP;
 	selectingBuilding= false;
 	selectingPos= false;
 	selectingMeetingPoint= false;
@@ -141,7 +141,7 @@ const UnitType *Gui::getBuilding() const{
 // ==================== is ====================
 
 bool Gui::isPlacingBuilding() const{
-	return isSelectingPos() && activeCommandType!=NULL && activeCommandType->getClass()==ccBuild;
+	return isSelectingPos() && activeCommandType!=NULL && activeCommandType->getClass()==CommandClass::BUILD;
 }
 
 // ==================== reset state ====================
@@ -151,7 +151,7 @@ void Gui::resetState(){
 	selectingPos= false;
 	selectingMeetingPoint= false;
 	activePos= invalidPos;
-	activeCommandClass= ccStop;
+	activeCommandClass= CommandClass::STOP;
 	activeCommandType= NULL;
 	dragging = false;
 	draggingMinimap = false;
@@ -247,8 +247,8 @@ void Gui::mouseDownLeft(int x, int y) {
 	//set meeting point
 	} else if(selectingMeetingPoint) {
 		if(selection.isComandable()) {
-			commander->tryGiveCommand(selection, CommandFlags(cpQueue, input.isShiftDown()), NULL,
-					ccSetMeetingPoint, worldPos);
+			commander->tryGiveCommand(selection, CommandFlags(CommandProperties::QUEUE, input.isShiftDown()), NULL,
+					CommandClass::SET_MEETING_POINT, worldPos);
 		}
 		resetState();
 
@@ -444,76 +444,76 @@ void Gui::hotKey(UserCommand cmd) {
 
  	// select idle harvester
 	case ucSelectNextIdleHarvester:
-		selectInterestingUnit(iutIdleHarvester);
+		selectInterestingUnit(InterestingUnitType::IDLE_HARVESTER);
 		break;
 
  	// select idle builder
 	case ucSelectNextIdleBuilder:
-		selectInterestingUnit(iutIdleBuilder);
+		selectInterestingUnit(InterestingUnitType::IDLE_BUILDER);
 		break;
 
  	// select idle repairing/healing unit
 	case ucSelectNextIdleRepairer:
-		selectInterestingUnit(iutIdleRepairer);
+		selectInterestingUnit(InterestingUnitType::IDLE_REPAIRER);
 		break;
 
  	// select idle worker (can either build, repair, or harvest)
 	case ucSelectNextIdleWorker:
-		selectInterestingUnit(iutIdleWorker);
+		selectInterestingUnit(InterestingUnitType::IDLE_WORKER);
 		break;
 
  	// select idle non-hp restoration-skilled unit
 	case ucSelectNextIdleRestorer:
-		selectInterestingUnit(iutIdleRestorer);
+		selectInterestingUnit(InterestingUnitType::IDLE_RESTORER);
 		break;
 
  	// select idle producer
 	case ucSelectNextIdleProducer:
-		selectInterestingUnit(iutIdleProducer);
+		selectInterestingUnit(InterestingUnitType::IDLE_PRODUCER);
 		break;
 
  	// select idle or non-idle producer
 	case ucSelectNextProducer:
-		selectInterestingUnit(iutProducer);
+		selectInterestingUnit(InterestingUnitType::PRODUCER);
 		break;
 
  	// select damaged unit
 	case ucSelectNextDamaged:
-		selectInterestingUnit(iutDamaged);
+		selectInterestingUnit(InterestingUnitType::DAMAGED);
 		break;
 
  	// select building (completed)
 	case ucSelectNextBuiltBuilding:
-		selectInterestingUnit(iutBuiltBuilding);
+		selectInterestingUnit(InterestingUnitType::BUILT_BUILDING);
 		break;
 
  	// select storeage unit
 	case ucSelectNextStore:
-		selectInterestingUnit(iutStore);
+		selectInterestingUnit(InterestingUnitType::STORE);
 		break;
 
  	// Attack
 	case ucAttack:
-		clickCommonCommand(ccAttack);
+		clickCommonCommand(CommandClass::ATTACK);
 		break;
 
 	// Stop
 	case ucStop:
-		clickCommonCommand(ccStop);
+		clickCommonCommand(CommandClass::STOP);
 
  	// Move
 	case ucMove:
-		clickCommonCommand(ccMove);
+		clickCommonCommand(CommandClass::MOVE);
 		break;
 
  	// Repair / Heal / Replenish
 	case ucReplenish:
-		clickCommonCommand(ccRepair);
+		clickCommonCommand(CommandClass::REPAIR);
 		break;	
 
  	// Guard
 	case ucGuard:
-		clickCommonCommand(ccGuard);
+		clickCommonCommand(CommandClass::GUARD);
 		break;
 
  	// Follow
@@ -523,7 +523,7 @@ void Gui::hotKey(UserCommand cmd) {
 
  	// Patrol
 	case ucPatrol:
-		//clickCommonCommand(ccPatrol);
+		//clickCommonCommand(CommandClass::PATROL);
 		break;
 #if DEBUG_SEARCH_TEXTURES
 	case ucSwitchDebugField:
@@ -572,7 +572,7 @@ void Gui::save(XmlNode *node) const {
 
 void Gui::giveOneClickOrders() {
 	CommandResult result;
-	CommandFlags flags(cpQueue, input.isShiftDown());
+	CommandFlags flags(CommandProperties::QUEUE, input.isShiftDown());
 
 	if (selection.isUniform()) {
 		result = commander->tryGiveCommand(selection, flags, activeCommandType);
@@ -583,18 +583,18 @@ void Gui::giveOneClickOrders() {
 	addOrdersResultToConsole(activeCommandClass, result);
 
 	activeCommandType = NULL;
-	activeCommandClass = ccStop;
+	activeCommandClass = CommandClass::STOP;
 }
 
 void Gui::giveDefaultOrders(const Vec2i &targetPos, Unit *targetUnit) {
 
 	//give order
 	CommandResult result = commander->tryGiveCommand(selection,
-			CommandFlags(cpQueue, input.isShiftDown()), NULL, ccNull, targetPos, targetUnit);
+			CommandFlags(CommandProperties::QUEUE, input.isShiftDown()), NULL, CommandClass::NULL_COMMAND, targetPos, targetUnit);
 
 	//graphical result
 	addOrdersResultToConsole(activeCommandClass, result);
-	if(result == crSuccess || result == crSomeFailed) {
+	if(result == CommandResult::SUCCESS || result == CommandResult::SOME_FAILED) {
 		posObjWorld = targetPos;
 		mouse3d.show(targetPos);
 
@@ -613,14 +613,14 @@ void Gui::giveDefaultOrders(const Vec2i &targetPos, Unit *targetUnit) {
 void Gui::giveTwoClickOrders(const Vec2i &targetPos, Unit *targetUnit) {
 
 	CommandResult result;
-	CommandFlags flags(cpQueue, input.isShiftDown());
+	CommandFlags flags(CommandProperties::QUEUE, input.isShiftDown());
 
 	//give orders to the units of this faction
 
 	if(!selectingBuilding) {
 
 		if(selection.isUniform()) {
-			result = commander->tryGiveCommand(selection, flags, activeCommandType, ccNull, targetPos, targetUnit);
+			result = commander->tryGiveCommand(selection, flags, activeCommandType, CommandClass::NULL_COMMAND, targetPos, targetUnit);
 		} else {
 			result = commander->tryGiveCommand(selection, flags, NULL, activeCommandClass, targetPos, targetUnit);
 		}
@@ -641,16 +641,16 @@ void Gui::giveTwoClickOrders(const Vec2i &targetPos, Unit *targetUnit) {
 
 		BuildPositions::const_iterator i;
 		for(i = buildPositions.begin(); i != buildPositions.end(); i++) {
-			flags.set(cpQueue, input.isShiftDown() || !firstBuildPosition);
-			flags.set(cpDontReserveResources, selection.getCount() > 1 || !firstBuildPosition);
-			result = commander->tryGiveCommand(selection, flags, activeCommandType, ccNull, *i, NULL, choosenBuildingType);
+			flags.set(CommandProperties::QUEUE, input.isShiftDown() || !firstBuildPosition);
+			flags.set(CommandProperties::DONT_RESERVE_RESOURCES, selection.getCount() > 1 || !firstBuildPosition);
+			result = commander->tryGiveCommand(selection, flags, activeCommandType, CommandClass::NULL_COMMAND, *i, NULL, choosenBuildingType);
 		}
 	}
 
 	//graphical result
 	addOrdersResultToConsole(activeCommandClass, result);
 
-	if(result == crSuccess || result == crSomeFailed) {
+	if(result == CommandResult::SUCCESS || result == CommandResult::SOME_FAILED) {
 		mouse3d.show(targetPos);
 
 		if(random.randRange(0, 1) == 0) {
@@ -752,7 +752,7 @@ void Gui::mouseDownDisplayUnitSkills(int posDisplay) {
 	} else if(posDisplay == autoRepairPos) {
 		bool newState = selection.getAutoRepairState() == arsOn ? false : true;
 		commander->trySetAutoRepairEnabled(selection,
-				CommandFlags(cpQueue, input.isShiftDown()), newState);
+				CommandFlags(CommandProperties::QUEUE, input.isShiftDown()), newState);
 	} else if(posDisplay == meetingPointPos) {
 		activePos= posDisplay;
 		selectingMeetingPoint= true;
@@ -768,7 +768,7 @@ void Gui::mouseDownDisplayUnitSkills(int posDisplay) {
 			else{
 				posDisplay = invalidPos;
 				activeCommandType = NULL;
-				activeCommandClass = ccStop;
+				activeCommandClass = CommandClass::STOP;
 				return;
 			}
 		}
@@ -783,11 +783,11 @@ void Gui::mouseDownDisplayUnitSkills(int posDisplay) {
 		if(!selection.isEmpty()){
 			//selection.getUnit(0)->getType()->getFirstCtOfClass(activeCommandClass);
 			const CommandType *ct= selection.getUnit(0)->getFirstAvailableCt(activeCommandClass);
-			if(activeCommandType!=NULL && activeCommandType->getClass()==ccBuild){
+			if(activeCommandType!=NULL && activeCommandType->getClass()==CommandClass::BUILD){
 				assert(selection.isUniform());
 				selectingBuilding= true;
 			}
-			else if(ct->getClicks()==cOne) {
+			else if(ct->getClicks()==Clicks::ONE) {
 				invalidatePosObjWorld();
 				giveOneClickOrders();
 			}
@@ -806,7 +806,7 @@ void Gui::mouseDownDisplayUnitBuild(int posDisplay){
 		resetState();
 	}
 	else{
-		if(activeCommandType!=NULL && activeCommandType->getClass()==ccBuild){
+		if(activeCommandType!=NULL && activeCommandType->getClass()==CommandClass::BUILD){
 			const BuildCommandType *bct= static_cast<const BuildCommandType*>(activeCommandType);
 			const UnitType *ut= bct->getBuilding(display.getIndex(posDisplay));
 			if(world->getFaction(factionIndex)->reqsOk(ut)){
@@ -865,7 +865,7 @@ void Gui::computeInfoString(int posDisplay) {
 					if(unit->getFaction()->reqsOk(ct)) {
 						display.setInfoText(ct->getDesc(unit));
 					} else {
-						if(ct->getClass() == ccUpgrade) {
+						if(ct->getClass() == CommandClass::UPGRADE) {
 							const UpgradeCommandType *uct = static_cast<const UpgradeCommandType*>(ct);
 
 							if(unit->getFaction()->getUpgradeManager()->isUpgrading(uct->getProducedUpgrade())) {
@@ -887,7 +887,7 @@ void Gui::computeInfoString(int posDisplay) {
 				const UnitType *ut = selection.getFrontUnit()->getType();
 				CommandClass cc = display.getCommandClass(posDisplay);
 
-				if(cc != ccNull) {
+				if(cc != CommandClass::NULL_COMMAND) {
 					display.setInfoText(lang.get("CommonCommand") + ": " + ut->getFirstCtOfClass(cc)->toString());
 				}
 			}
@@ -896,7 +896,7 @@ void Gui::computeInfoString(int posDisplay) {
 		if(posDisplay == cancelPos) {
 			display.setInfoText(lang.get("Return"));
 		} else {
-			if(activeCommandType != NULL && activeCommandType->getClass() == ccBuild) {
+			if(activeCommandType != NULL && activeCommandType->getClass() == CommandClass::BUILD) {
 				const BuildCommandType *bct = static_cast<const BuildCommandType*>(activeCommandType);
 				display.setInfoText(bct->getBuilding(display.getIndex(posDisplay))->getReqDesc());
 			}
@@ -953,7 +953,7 @@ void Gui::computeDisplay() {
 
 			if (selection.isCanRepair()) {
 				if (selection.getAutoRepairState() == arsOn) {
-					const CommandType *rct = ut->getFirstCtOfClass(ccRepair);
+					const CommandType *rct = ut->getFirstCtOfClass(CommandClass::REPAIR);
 					assert(rct);
 					display.setDownImage(autoRepairPos, rct->getImage());
 				} else {
@@ -968,8 +968,8 @@ void Gui::computeDisplay() {
 					int morphPos = 8;
 					for (int i = 0, j = 0; i < ut->getCommandTypeCount(); ++i) {
 						const CommandType *ct = ut->getCommandType(i);
-						int displayPos = ct->getClass() == ccMorph ? morphPos++ : j;
-						if (u->getFaction()->isAvailable(ct) && ct->getClass() != ccSetMeetingPoint) {
+						int displayPos = ct->getClass() == CommandClass::MORPH ? morphPos++ : j;
+						if (u->getFaction()->isAvailable(ct) && ct->getClass() != CommandClass::SET_MEETING_POINT) {
 							display.setDownImage(displayPos, ct->getImage());
 							display.setCommandType(displayPos, ct);
 							display.setDownLighted(displayPos, u->getFaction()->reqsOk(ct));
@@ -981,9 +981,9 @@ void Gui::computeDisplay() {
 
 				//non uniform selection
 				int lastCommand = 0;
-				for (int i = 0; i < ccCount; ++i) {
-					CommandClass cc = static_cast<CommandClass>(i);
-					if (isSharedCommandClass(cc) && cc != ccBuild) {
+				for (int i = 0; i < CommandClass::COUNT; ++i) {
+					CommandClass cc = (CommandClass::Enum)i;
+					if (isSharedCommandClass(cc) && cc != CommandClass::BUILD) {
 						display.setDownLighted(lastCommand, true);
 						display.setDownImage(lastCommand, ut->getFirstCtOfClass(cc)->getImage());
 						display.setCommandClass(lastCommand, cc);
@@ -995,7 +995,7 @@ void Gui::computeDisplay() {
 
 			//selecting building
 			const Unit *unit = selection.getFrontUnit();
-			if (activeCommandType != NULL && activeCommandType->getClass() == ccBuild) {
+			if (activeCommandType != NULL && activeCommandType->getClass() == CommandClass::BUILD) {
 				const BuildCommandType* bct = static_cast<const BuildCommandType*>(activeCommandType);
 				for (int i = 0, j = 0; i < bct->getBuildingCount(); ++i) {
 					if (unit->getFaction()->isAvailable(bct->getBuilding(i))) {
@@ -1035,12 +1035,12 @@ int Gui::computePosDisplay(int x, int y) {
 		} else {
 			if (!selectingBuilding) {
 				//standard selection
-				if (display.getCommandClass(posDisplay) == ccNull && display.getCommandType(posDisplay) == NULL) {
+				if (display.getCommandClass(posDisplay) == CommandClass::NULL_COMMAND && display.getCommandType(posDisplay) == NULL) {
 					posDisplay = invalidPos;
 				}
 			} else {
 				//building selection
-				if (activeCommandType != NULL && activeCommandType->getClass() == ccBuild) {
+				if (activeCommandType != NULL && activeCommandType->getClass() == CommandClass::BUILD) {
 					const BuildCommandType *bct = static_cast<const BuildCommandType*>(activeCommandType);
 					if (posDisplay >= bct->getBuildingCount()) {
 						posDisplay = invalidPos;
@@ -1058,24 +1058,24 @@ int Gui::computePosDisplay(int x, int y) {
 void Gui::addOrdersResultToConsole(CommandClass cc, CommandResult result) {
 
 	switch(result){
-	case crSuccess:
+	case CommandResult::SUCCESS:
 		break;
-	case crFailReqs:
+	case CommandResult::FAIL_REQUIREMENTS:
 		switch(cc){
-		case ccBuild:
+		case CommandClass::BUILD:
 			console->addStdMessage("BuildingNoReqs");
 			break;
-		case ccProduce:
+		case CommandClass::PRODUCE:
 			console->addStdMessage("UnitNoReqs");
 			break;
-		case ccUpgrade:
+		case CommandClass::UPGRADE:
 			console->addStdMessage("UpgradeNoReqs");
 			break;
 		default:
 			break;
 		}
 		break;
-	case crFailRes: {
+	case CommandResult::FAIL_RESOURCES: {
    			const Faction::ResourceTypes &needed = Faction::getNeededResources();
 			string a, b;
 			for(int i = 0; i < needed.size(); ++i) {
@@ -1091,16 +1091,16 @@ void Gui::addOrdersResultToConsole(CommandClass cc, CommandResult result) {
 
 			if(needed.size() == 1) {
 				switch(cc){
-				case ccBuild:
+				case CommandClass::BUILD:
 					console->addStdMessage("BuildingNoRes1", a);
 					break;
-				case ccProduce:
+				case CommandClass::PRODUCE:
 					console->addStdMessage("UnitNoRes1", a);
 					break;
-				case ccUpgrade:
+				case CommandClass::UPGRADE:
 					console->addStdMessage("UpgradeNoRes1", a);
 					break;
-				case ccMorph:
+				case CommandClass::MORPH:
 					console->addStdMessage("MorphNoRes1", a);
 					break;
 				default:
@@ -1109,16 +1109,16 @@ void Gui::addOrdersResultToConsole(CommandClass cc, CommandResult result) {
 				}
 			} else {
 				switch(cc){
-				case ccBuild:
+				case CommandClass::BUILD:
 					console->addStdMessage("BuildingNoRes2", a, b);
 					break;
-				case ccProduce:
+				case CommandClass::PRODUCE:
 					console->addStdMessage("UnitNoRes2", a, b);
 					break;
-				case ccUpgrade:
+				case CommandClass::UPGRADE:
 					console->addStdMessage("UpgradeNoRes2", a, b);
 					break;
-				case ccMorph:
+				case CommandClass::MORPH:
 					console->addStdMessage("MorphNoRes2", a, b);
 					break;
 				default:
@@ -1130,15 +1130,15 @@ void Gui::addOrdersResultToConsole(CommandClass cc, CommandResult result) {
 
 		break;
 
-	case crFailPetLimit:
+	case CommandResult::FAIL_PET_LIMIT:
 		console->addStdMessage("PetLimitReached");
 		break;
 
-	case crFailUndefined:
+	case CommandResult::FAIL_UNDEFINED:
 		console->addStdMessage("InvalidOrder");
 		break;
 
-	case crSomeFailed:
+	case CommandResult::SOME_FAILED:
 		console->addStdMessage("SomeOrdersFailed");
 		break;
 	}
@@ -1225,12 +1225,12 @@ void Gui::computeBuildPositions(const Vec2i &end) {
 		count = abs(offset.x / size) + 1;
 		offsetAdjusted.x = (offset.x / size) * size;
 		float mulit = (float)offset.x / (float)offsetAdjusted.x;
-		offsetAdjusted.y = (float)offset.y * mulit;
+		offsetAdjusted.y = (int)(offset.y * mulit);
 	} else {
 		count = abs(offset.y / size) + 1;
 		offsetAdjusted.y = (offset.y / size) * size;
 		float mulit = (float)offset.y / (float)offsetAdjusted.y;
-		offsetAdjusted.x = (float)offset.x * mulit;
+		offsetAdjusted.x = (int)(offset.x * mulit);
 	}
 
 	buildPositions.resize(count);

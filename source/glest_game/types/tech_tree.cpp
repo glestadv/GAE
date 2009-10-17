@@ -178,7 +178,7 @@ const ResourceType *TechTree::getTechResourceType(int i) const{
 
      for(int j=0; j<getResourceTypeCount(); ++j){
           const ResourceType *rt= getResourceType(j);
-          if(rt->getResourceNumber()==i && rt->getClass()==rcTech)
+          if(rt->getResourceNumber()==i && rt->getClass()==ResourceClass::TECH)
                return getResourceType(j);
      }
 
@@ -188,7 +188,7 @@ const ResourceType *TechTree::getTechResourceType(int i) const{
 const ResourceType *TechTree::getFirstTechResourceType() const{
      for(int i=0; i<getResourceTypeCount(); ++i){
           const ResourceType *rt= getResourceType(i);
-          if(rt->getResourceNumber()==1 && rt->getClass()==rcTech)
+          if(rt->getResourceNumber()==1 && rt->getClass()==ResourceClass::TECH)
                return getResourceType(i);
      }
 

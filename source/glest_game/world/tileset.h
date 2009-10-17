@@ -21,6 +21,7 @@
 #include "random.h"
 #include "surface_atlas.h"
 #include "checksum.h"
+#include "game_constants.h"
 
 namespace Glest{ namespace Game{
 
@@ -39,12 +40,6 @@ using std::map;
 enum FogMode{
 	fmExp,
 	fmExp2
-};
-
-enum Weather{
-	wSunny,
-	wRainy,
-	wSnowy
 };
 
 class Renderer;

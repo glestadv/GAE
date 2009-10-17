@@ -165,7 +165,7 @@ protected:
 	 */
 	void load(const XmlNode *baseNode, const string &dir, const TechTree *tt,
 			const FactionType *ft, const char* childNodeName,
-			const EnumNames &flagNames) {
+			const EnumNames<E> &flagNames) {
 		string nodeName;
 		string flagName;
 		const XmlNode *node;
@@ -179,7 +179,7 @@ protected:
 			} else {
 				flagName = nodeName;
 			}
-			E result = flagNames.match<E>(flagName.c_str());
+			E result = flagNames.match(flagName.c_str());
 			if ( result == E::COUNT ) {
 				throw runtime_error(string() + "Invalid " + childNodeName + ": " + flagName + ": " + dir);
 			} else {

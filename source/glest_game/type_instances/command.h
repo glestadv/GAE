@@ -27,23 +27,7 @@ using Shared::Platform::int16;
 
 class CommandType;
 
-enum CommandProperties {
-	cpQueue,
-	cpAuto,
-	cpDontReserveResources,
-	cpAutoRepairEnabled,
-
-	cpCount
-};
-
-typedef Flags<CommandProperties, cpCount, uint8> CommandFlags;
-
-enum CommandArchetype {
-	catGiveCommand,
-	catCancelCommand,
-//	catSetMeetingPoint,
-	catSetAutoRepair
-};
+typedef Flags<CommandProperties, CommandProperties::COUNT, uint8> CommandFlags;
 
 // =====================================================
 // 	class Command
@@ -82,10 +66,10 @@ public:
 	CommandArchetype getArchetype() const		{return archetype;}
 	const CommandType *getType() const			{return type;}
 	CommandFlags getFlags() const				{return flags;}
-	bool isQueue() const						{return flags.get(cpQueue);}
-	bool isAuto() const							{return flags.get(cpAuto);}
-	bool isReserveResources() const				{return !flags.get(cpDontReserveResources);}
-	bool isAutoRepairEnabled() const			{return flags.get(cpAutoRepairEnabled);}
+	bool isQueue() const						{return flags.get(CommandProperties::QUEUE);}
+	bool isAuto() const							{return flags.get(CommandProperties::AUTO);}
+	bool isReserveResources() const				{return !flags.get(CommandProperties::DONT_RESERVE_RESOURCES);}
+	bool isAutoRepairEnabled() const			{return flags.get(CommandProperties::AUTO_REPAIR_ENABLED);}
 	Vec2i getPos() const						{return pos;}
 	Vec2i getPos2() const						{return pos2;}
 	Unit* getUnit() const						{return unitRef.getUnit();}
@@ -99,10 +83,10 @@ public:
     //set
 	void setType(const CommandType *type)				{this->type= type;}
 	void setFlags(CommandFlags flags)					{this->flags = flags;}
-	void setQueue(bool queue)							{flags.set(cpQueue, queue);}
-	void setAuto(bool _auto)							{flags.set(cpAuto, _auto);}
-	void setReserveResources(bool reserveResources)		{flags.set(cpDontReserveResources, !reserveResources);}
-	void setAutoRepairEnabled(bool enabled)				{flags.set(cpAutoRepairEnabled, enabled);}
+	void setQueue(bool queue)							{flags.set(CommandProperties::QUEUE, queue);}
+	void setAuto(bool _auto)							{flags.set(CommandProperties::AUTO, _auto);}
+	void setReserveResources(bool reserveResources)		{flags.set(CommandProperties::DONT_RESERVE_RESOURCES, !reserveResources);}
+	void setAutoRepairEnabled(bool enabled)				{flags.set(CommandProperties::AUTO_REPAIR_ENABLED, enabled);}
 	void setPos(const Vec2i &pos)						{this->pos = pos;}
 	void setPos2(const Vec2i &pos2)						{this->pos2 = pos2;}
 

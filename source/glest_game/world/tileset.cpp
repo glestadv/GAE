@@ -184,13 +184,13 @@ void Tileset::load(const string &dir, Checksum &checksum){
 		float rnd= fabs(random.randRange(-1.f, 1.f));
 
 		if(rnd<sunnyProb){
-			weather= wSunny;
+			weather= Weather::SUNNY;
 		}
 		else if(rnd<rainyProb){
-			weather= wRainy;
+			weather= Weather::RAINY;
 		}
 		else{
-			weather= wSnowy;
+			weather= Weather::SNOWY;
 		}
 
 	}

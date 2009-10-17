@@ -2,7 +2,7 @@
 //	This file is part of Glest (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
-//               2009      James McCulloch
+//				  2009      James McCulloch
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -19,6 +19,8 @@
 #include "config.h"
 #include "profiler.h"
 
+#include "search_engine.h"
+
 #include <set>
 #include <map>
 
@@ -31,46 +33,111 @@ using Shared::Platform::uint32;
 
 namespace Glest { namespace Game { namespace Search {
 
+/** maximum radius to search for a free position from a target position */
 const int maxFreeSearchRadius = 10;
+/** @deprecated not in use */
 const int pathFindNodesMax = 2048;
 
-//ENUMERATED_TYPE( TravelState, ARRIVED, ONTHEWAY, BLOCKED )
 
-//enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
+/** @page pathfinding RoutePlanner Path Finding Strategy
+  * <p>A new path request causes an immediate search with a 512 node NodePool.
+  * if that search breaches the node limit, a partial path is returned and 
+  * the RouteInfo saved on the longSearchQueue. If there are still NodePools 
+  * free (to cintinue servicing new requests), the full NodePool is set aside 
+  * and referenced in the RouteInfo.</p>
+  * <p>If time is of the essence, initial searches will be performed with an over estimating 
+  * heuristic, and node limited searches will be put straight onto the hardSearchQueue.</p>
+  * <p>When the RoutePlanner's burnCPU() method is called (at the end of a world update)
+  * the long search queue is consulted, any searches with attached NodePools are serviced
+  * first, a second node pool is attached to the first and the search resumed. Reaching
+  * the node limit again will cause either more node pools to be added in an attempt to get 
+  * a path, or the search abandoned and the RouteInfo placed on the hardSearchQueue. The
+  * exact policy is undecided at this point, and will no doubt require tweaking.</p>
+  * <p>Searches deemed too long/hard to complete with node pools are put on the hard search queue.
+  * Hard searches are performed using the NodeMap as node storage, and must be co-ordinated with
+  * the Cartographer, owner and monopoliser of the NodeMap.  When the RoutePlanner has hard searches
+  * to perform, it notifies the Cartographer, it is then up to the Cartographer to call the 
+  * RoutePlanner back when the NodeMap is free and can be borrowed.</p>
+  */
 
 // =====================================================
 // 	class RoutePlanner
-//
-//	Finds paths for units using the SearchEngine
-//
-//  Performs group path calculations effeciently
-//  using a reverse A*.
-//  Generally tries to hide the horrible details of the 
-//  SearchEngine<>::aStar<>() function.
-// 
 // =====================================================
-class RoutePlanner {	
+/**	Finds paths for units using the SearchEngine
+  * <p>Performs group path calculations effeciently
+  * using a reverse A*.</p>
+  * <p>Generally tries to hide the horrible details of the 
+  * SearchEngine<>::aStar<>() function.</p>
+  * 
+  * @see @ref pathfinding
+  */ 
+class RoutePlanner {
+	/** A unit collection and a goal position for a reverse A* search 
+	  */
+	class GroupInfo : protected pair<vector<Unit*>,Vec2i> {
+	public:
+		GroupInfo(Vec2i &goal)		{ second = goal; }
+		GroupInfo(vector<Unit*> &units, Vec2i &goal) { 
+			copy(units.begin(),units.end(),first.begin()); 
+			second = goal; 
+		}
+
+		vector<Unit*>& getUnits()	{ return first;		}
+		Vec2i getGoal()	const		{ return second;	}
+
+		void addUnit(Unit *unit)	{ first.push_back(unit); }
+		void remUnit(Unit *unit)	{ first.erase(find(first.begin(), first.end(), unit)); }
+	};
+	/** A unit and goal position pair and an optional (full) NodeStore.
+	  * <p>If a search with the default node limit fails, a partial path is returned and a RouteInfo
+	  * is constructed and placed on the 'long search' queue. If there are sufficient node pools 
+	  * to continue servicing new requests then the 'full' node pool can be saved, and the long search
+	  * can then resume the search by attaching a second node pool to the first one.</p>
+	  */
+	class RouteInfo : protected pair<Unit*,Vec2i> {
+	public:
+		RouteInfo(Unit *unit, Vec2i goal, NodePool *pool = NULL) 
+				: pair<Unit*,Vec2i>(unit,goal), pool(pool) {}
+
+		Unit*		getUnit() const	{ return first;	}
+		Vec2i		getGoal() const	{ return second;}
+		bool		hasPool() const	{ return pool;	}
+		NodePool*	getPool() const { return pool;	}
+
+	private:
+		NodePool *pool;
+	};
+
 public:
 	static RoutePlanner* getInstance();
 	~RoutePlanner();
 	void init();
 
-	TravelState findPathToLocation( Unit *unit, const Vec2i &finalPos );
-	TravelState findPath( Unit *unit, const Vec2i &finalPos ) { 
-		return findPathToLocation( unit, finalPos ); 
+	TravelState findPathToLocation(Unit *unit, const Vec2i &finalPos);
+	/** @see findPathToLocation() */
+	TravelState findPath(Unit *unit, const Vec2i &finalPos) { 
+		return findPathToLocation(unit, finalPos); 
 	}
-	bool repairPath( Unit *unit );
-	bool isLegalMove( Unit *unit, const Vec2i &pos ) const;
+	bool repairPath(Unit *unit);
+	bool isLegalMove(Unit *unit, const Vec2i &pos) const;
 
 private:
 	static RoutePlanner *singleton;
+	SearchEngine<NodeStore>	*nsSearchEngine;
+
 	RoutePlanner();
+
+	queue<RouteInfo*> longSearchQueue;  /**< queue for long searches		*/
+	queue<RouteInfo*> hardSearchQueue;  /**< queue for hard case searches	*/
+	queue<GroupInfo*> groupSearchQueue; /**< queue for group searches		*/
 
 	Vec2i computeNearestFreePos(const Unit *unit, const Vec2i &targetPos);
 
+	NodePool* nodePool;
+
 #if DEBUG_SEARCH_TEXTURES
 public:
-	enum { ShowPathOnly, ShowOpenClosedSets, ShowLocalAnnotations } debug_texture_action;
+	enum { SHOW_PATH_ONLY, SHOW_OPEN_CLOSED_SETS, SHOW_LOCAL_ANNOTATIONS } debug_texture_action;
 #endif
 }; // class RoutePlanner
 

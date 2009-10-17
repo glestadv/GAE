@@ -45,41 +45,46 @@ namespace Search {
   */
 struct CellMetrics {
 	CellMetrics() { memset ( this, 0, sizeof(*this) ); }
-	
+	/** get metrics for field */
 	uint16 get(const Field field) {
 		switch ( field ) {
-			case   Field::LAND: return field0;
-			case		Field::AIR: return field1;
-			case   Field::ANY_WATER: return field2;
-			case  Field::DEEP_WATER: return field3;
-			case Field::AMPHIBIOUS: return field4;
+			case Field::LAND:		return field0;
+			case Field::AIR:		return field1;
+			case Field::ANY_WATER:	return field2;
+			case Field::DEEP_WATER:	return field3;
+			case Field::AMPHIBIOUS:	return field4;
 			default: throw runtime_error ( "Unknown Field passed to CellMetrics::get()" );
 		}
 	}
+	/** set metrics for field */
 	void set(const Field field, uint16 val) {
 		switch ( field ) {
-			case   Field::LAND: field0 = val; return;
-			case		Field::AIR: field1 = val; return;
-			case   Field::ANY_WATER: field2 = val; return;
-			case  Field::DEEP_WATER: field3 = val; return;
-			case Field::AMPHIBIOUS: field4 = val; return;
+			case Field::LAND:		field0 = val; return;
+			case Field::AIR:		field1 = val; return;
+			case Field::ANY_WATER:	field2 = val; return;
+			case Field::DEEP_WATER:	field3 = val; return;
+			case Field::AMPHIBIOUS:	field4 = val; return;
 			default: throw runtime_error ( "Unknown Field passed to CellMetrics::set()" );
 		}
-	}	
+	}
+	/** set clearance of all fields to val */
 	void setAll(uint16 val)				{ field0 = field1 = field2 = field3 = field4 = val; }
+	/** comparison */
 	bool operator!=(CellMetrics &that)	{ return memcmp( this, &that, sizeof(*this) ); }
+	/** is this cell dirty */
 	bool isDirty() const				{ return dirty; }
+	/** set dirty flag */
 	void setDirty(const bool val)		{ dirty = val; }
 
 private:
-	uint16 field0 : 3; // In Use: Field::LAND = land + shallow water 
-	uint16 field1 : 3; // In Use: Field::AIR = air
-	uint16 field2 : 3; // In Use: Field::ANY_WATER = shallow + deep water
-	uint16 field3 : 3; // In Use: Field::DEEP_WATER = deep water
-	uint16 field4 : 3; // In Use: Field::AMPHIBIOUS = land + shallow + deep water 
+	uint16 field0 : 3; /**< Field::LAND = land + shallow water */
+	uint16 field1 : 3; /**< Field::AIR = air */
+	uint16 field2 : 3; /**< Field::ANY_WATER = shallow + deep water */
+	uint16 field3 : 3; /**< Field::DEEP_WATER = deep water */
+	uint16 field4 : 3; /**< Field::AMPHIBIOUS = land + shallow + deep water */
 
-	uint16  dirty : 1; // used in 'team' maps as a 'dirty bit' (clearances have changed
-					   // but team hasn't seen that change yet).
+	uint16  dirty : 1; /**< used in 'team' maps as a 'dirty bit' (clearances have changed
+					     * but team hasn't seen that change yet). */
 };
 
 // =====================================================
@@ -94,11 +99,11 @@ private:
 
 public:
 	MetricMap() : width(0), height(0), metrics(NULL) { }
-	~MetricMap ()			{ delete [] metrics; }
+	~MetricMap()			{ delete [] metrics; }
 	void init(int w, int h) { assert ( w > 0 && h > 0); width = w; height = h; metrics = new CellMetrics[w * h]; }
 	void zero()				{ memset(metrics, 0, sizeof(CellMetrics) * width * height); }
 	
-	CellMetrics& operator [] ( const Vec2i &pos ) const { return metrics[pos.y * width + pos.x]; }
+	CellMetrics& operator [] (const Vec2i &pos) const { return metrics[pos.y * width + pos.x]; }
 };
 
 // =====================================================
@@ -127,7 +132,7 @@ public:
 	static const int maxClearanceValue = 7;
 
 	void initMapMetrics();
-	void updateMapMetrics( const Vec2i &pos, const int size ); 
+	void updateMapMetrics(const Vec2i &pos, const int size);
 
 	/** Interface to the clearance metrics, can a unit of size occupy a cell(s) 
 	  * @param pos position agent wishes to occupy
@@ -135,24 +140,24 @@ public:
 	  * @param field field agent moves in
 	  * @return true if position can be occupied, else false
 	  */
-	bool canOccupy( const Vec2i &pos, int size, Field field ) const {
-		assert( theMap.isInside( pos ) );
-		return metrics[pos].get( field ) >= size ? true : false;
+	bool canOccupy(const Vec2i &pos, int size, Field field) const {
+		assert(theMap.isInside(pos));
+		return metrics[pos].get(field) >= size ? true : false;
 	}
 
-	bool isDirty( const Vec2i &pos ) const				{ metrics[pos].isDirty(); }
-	void setDirty( const Vec2i &pos, const bool val )	{ metrics[pos].setDirty( val ); }
+	bool isDirty(const Vec2i &pos) const			{ metrics[pos].isDirty();		}
+	void setDirty(const Vec2i &pos, const bool val)	{ metrics[pos].setDirty( val );	}
 
-	void annotateLocal( const Unit *unit, const Field field );
-	void clearLocalAnnotations( Field field );
+	void annotateLocal(const Unit *unit, const Field field);
+	void clearLocalAnnotations(Field field);
 
 private:
 	// for initMetrics() and updateMapMetrics ()
-	void computeClearances( const Vec2i & );
-	uint32 computeClearance( const Vec2i &, Field );
+	void computeClearances(const Vec2i &);
+	uint32 computeClearance(const Vec2i &, Field);
 
-	void cascadingUpdate( const Vec2i &pos, const int size, const Field field = Field::COUNT );
-	void annotateUnit( const Unit *unit, const Field field );
+	void cascadingUpdate(const Vec2i &pos, const int size, const Field field = Field::COUNT);
+	void annotateUnit(const Unit *unit, const Field field);
 
 	/** the original values of locations that have had local annotations applied */
 	std::map<Vec2i,uint32> localAnnt;

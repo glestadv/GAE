@@ -32,12 +32,6 @@
 #include "util.h"
 using Shared::Util::EnumNames;
 
-#ifdef GAME_CONSTANTS_DEF
-#	define STRINGY_ENUM_NAMES(name, count, ...) EnumNames name##Names(#__VA_ARGS__, count, true, false, #name)
-#else
-#	define STRINGY_ENUM_NAMES(name, count, ...) extern EnumNames name##Names
-#endif
-
 // =====================================================
 //	Enumerations
 // =====================================================
@@ -47,7 +41,7 @@ using Shared::Util::EnumNames;
 	  *		<li><b>VALUE</b> description</li></ul>
 	  */
 
-namespace Glest{ namespace Game{
+namespace Glest{ namespace Game {
 
 namespace Search {
 	/** result set for path finding 
@@ -55,7 +49,11 @@ namespace Search {
 	  *		<li><b>ONTHEWAY</b> On the way to destination</li>
 	  *		<li><b>BLOCKED</b> path is blocked</li></ul>
 	  */
-	ENUMERATED_TYPE( TravelState, ARRIVED, ONTHEWAY, BLOCKED );
+	REGULAR_ENUM( TravelState, 
+						ARRIVED, 
+						ONTHEWAY, 
+						BLOCKED 
+				   );
 
 	/** result set for aStar() 
 	  * <ul><li><b>FAILED</b> No path exists
@@ -63,13 +61,21 @@ namespace Search {
 	  *		<li><b>PARTIAL</b> node limit reached, partial path returned</li>
 	  *		<li><b>INPROGRESS</b> search ongoing (time limit reached)</li></ul>
 	  */
-	ENUMERATED_TYPE( AStarResult, FAILED, COMPLETE, PARTIAL, INPROGRESS );
+	REGULAR_ENUM( AStarResult, 
+						FAILED,
+						COMPLETE,
+						PARTIAL,
+						INPROGRESS
+				   );
 
 	/** Specifies a 'space' to search 
 	  * <ul><li><b>CELLMAP</b> search on cell map</li>
 	  *		<li><b>TILEMAP</b> search on tile map</li></ul>
 	  */
-	ENUMERATED_TYPE( SearchSpace, CELLMAP, TILEMAP );
+	REGULAR_ENUM( SearchSpace,
+						CELLMAP,
+						TILEMAP
+				   );
 
 }
 /** The control type of a 'faction' (aka, player)
@@ -79,16 +85,22 @@ namespace Search {
   *		<li><b>NETWORK</b> Network player</li>
   *		<li><b>HUMAN</b> Local Player</li></ul>
   */
-ENUMERATED_TYPE( ControlType, CLOSED, CPU, CPU_ULTRA, NETWORK, HUMAN );
+STRINGY_ENUM( ControlType, 
+					CLOSED, 
+					CPU, 
+					CPU_ULTRA, 
+					NETWORK, 
+					HUMAN 
+			   );
 
-/** field of movement
+/** fields of movement
   * <ul><li><b>WALKABLE</b> land traveller</li>
   *		<li><b>AIR</b> flying units</li>
   *		<li><b>ANY_WATER</b> travel on water only</li>
   *		<li><b>DEEP_WATER</b> travel in deep water only</li>
   *		<li><b>AMPHIBIOUS</b> land or water</li></ul>
   */
-ENUMERATED_TYPE( Field,
+STRINGY_ENUM( Field,
 				   LAND,
 				   AIR,
 				   ANY_WATER,
@@ -101,7 +113,7 @@ ENUMERATED_TYPE( Field,
   *		<li><b>FORDABLE</b> shallow (fordable) water</li>
   *		<li><b>DEEP_WATER</b> deep (non-fordable) water</li></ul>
   */
-ENUMERATED_TYPE( SurfaceType,
+REGULAR_ENUM( SurfaceType,
 				   LAND, 
 				   FORDABLE, 
 				   DEEP_WATER
@@ -112,7 +124,7 @@ ENUMERATED_TYPE( SurfaceType,
   *		<li><b>SURFACE</b> the surface zone</li>
   *		<li><b>AIR</b> the air zone</li></ul>
   */
-ENUMERATED_TYPE( Zone,
+STRINGY_ENUM( Zone,
 				   SURFACE_PROP,
 				   LAND,
 				   AIR
@@ -123,55 +135,207 @@ ENUMERATED_TYPE( Zone,
   *		<li><b>ROTATED_CLIMB</b> currently deprecated</li>
   *		<li><b>WALL</b> is a wall</li></ul>
   */
-ENUMERATED_TYPE( Property,
+STRINGY_ENUM( Property,
 					BURNABLE,
 					ROTATED_CLIMB,
 					WALL
 			   );
 
 /** effects flags
-  * <ul><li><b>VALUE</b> desc.</li>
-  *		<li><b>VALUE</b> desc.</li>
-  *		<li><b>VALUE</b> desc.</li></ul>
+  * effect properties:
+  * <ul><li><b>ALLY</b> effects allies.</li>
+  *		<li><b>FOE</b> effects foes.</li>
+  *		<li><b>NO_NORMAL_UNITS</b> doesn't effects normal units.</li>
+  *		<li><b>BUILDINGS</b> effects buildings.</li>
+  *		<li><b>PETS_ONLY</b> only effects pets of the originator.</li>
+  *		<li><b>NON_LIVING</b> .</li>
+  *		<li><b>SCALE_SPLASH_STRENGTH</b> decrease strength when applied from splash.</li>
+  *		<li><b>ENDS_WHEN_SOURCE_DIES</b> ends when the unit causing the effect dies.</li>
+  *		<li><b>RECOURsE_ENDS_WITH_ROOT</b> ends when root effect ends (recourse effects only).</li>
+  *		<li><b>PERMANENT</b> the effect has an infinite duration.</li>
+  *		<li><b>ALLOW_NEGATIVE_SPEED</b> .</li>
+  *		<li><b>TICK_IMMEDIATELY</b> .</li></ul>
+  * AI hints:
+  *	<ul><li><b>AI_DAMAGED</b> use on damaged units (benificials only).</li>
+  *		<li><b>AI_RANGED</b> use on ranged attack units.</li>
+  *		<li><b>AI_MELEE</b> use on melee units.</li>
+  *		<li><b>AI_WORKER</b> use on worker units.</li>
+  *		<li><b>AI_BUILDING</b> use on buildings.</li>
+  *		<li><b>AI_HEAVY</b> perfer to use on heavy units.</li>
+  *		<li><b>AI_SCOUT</b> useful for scouting units.</li>
+  *		<li><b>AI_COMBAT</b> don't use outside of combat (benificials only).</li>
+  *		<li><b>AI_SPARINGLY</b> use sparingly.</li>
+  *		<li><b>AI_LIBERALLY</b> use liberally.</li></ul>
   */
-ENUMERATED_TYPE( EffectTypeFlag,
-					ALLY,						// effects allies
-					FOE,						// effects foes
-					NO_NORMAL_UNITS,			// doesn't effects normal units
-					BUILDINGS,					// effects buildings
-					PETS_ONLY,					// only effects pets of the originator
-					NON_LIVING,					//
-					SCALE_SPLASH_STRENGTH,		// decrease strength when applied from splash
-					ENDS_WHEN_SOURCE_DIES,		// ends when the unit causing the effect dies
-					RECOURsE_ENDS_WITH_ROOT,	// ends when root effect ends (recourse effects only)
-					PERMANENT,					// the effect has an infinite duration
-					ALLOW_NEGATIVE_SPEED,		//
-					TICK_IMMEDIATELY,			//
-
-					//ai hints
-					AI_DAMAGED,					// use on damaged units (benificials only)
-					AI_RANGED,					// use on ranged attack units
-					AI_MELEE,					// use on melee units
-					AI_WORKER,					// use on worker units
-					AI_BUILDING,				// use on buildings
-					AI_HEAVY,					// perfer to use on heavy units
-					AI_SCOUT,					// useful for scouting units
-					AI_COMBAT,					// don't use outside of combat (benificials only)
-					AI_SPARINGLY,				// use sparingly
-					AI_LIBERALLY				// use liberally
+STRINGY_ENUM( EffectTypeFlag,
+					ALLY,
+					FOE,
+					NO_NORMAL_UNITS,
+					BUILDINGS,
+					PETS_ONLY,
+					NON_LIVING,
+					SCALE_SPLASH_STRENGTH,
+					ENDS_WHEN_SOURCE_DIES,
+					RECOURsE_ENDS_WITH_ROOT,
+					PERMANENT,
+					ALLOW_NEGATIVE_SPEED,
+					TICK_IMMEDIATELY,
+					AI_DAMAGED,
+					AI_RANGED,
+					AI_MELEE,
+					AI_WORKER,
+					AI_BUILDING,
+					AI_HEAVY,
+					AI_SCOUT,
+					AI_COMBAT,
+					AI_SPARINGLY,
+					AI_LIBERALLY
 			   );
 
 /** attack skill preferences
-  * <ul><li><b>VALUE</b> desc.</li>
-  *		<li><b>VALUE</b> desc.</li>
-  *		<li><b>VALUE</b> desc.</li></ul>
   */
-ENUMERATED_TYPE( AttackSkillPreference,
+REGULAR_ENUM( AttackSkillPreference,
 					WHENEVER_POSSIBLE,
 					AT_MAX_RANGE,
 					ON_LARGE,
 					ON_BUILDING,
 					WHEN_DAMAGED
+			   );
+
+/** unit classes
+  */
+REGULAR_ENUM( UnitClass,
+					WARRIOR,
+					WORKER,
+					BUILDING
+			   );
+
+/** command result set
+  * <ul><li><b>SUCCESS</b> command succeeded.</li>
+  *		<li><b>FAIL_RESOURCES</b> failed, resource requirements not met.</li>
+  *		<li><b>FAIL_REQUIREMENTS</b> failed, unit/upgrade requirements not met.</li>
+  *		<li><b>FAIL_PET_LIMIT</b> failed, would exceed pet limit.</li>
+  *		<li><b>FAIL_UNDEFINED</b> failed.</li>
+  *		<li><b>SOME_FAILED</b> partially failed.</li></ul>
+  */
+REGULAR_ENUM( CommandResult,
+					SUCCESS,
+					FAIL_RESOURCES,
+					FAIL_REQUIREMENTS,
+					FAIL_PET_LIMIT,
+					FAIL_UNDEFINED,
+					SOME_FAILED
+			   );
+
+/** interesting unit types
+  */
+REGULAR_ENUM( InterestingUnitType,
+					IDLE_BUILDER,
+					IDLE_HARVESTER,
+					IDLE_WORKER,
+					IDLE_REPAIRER,
+					IDLE_RESTORER,
+					BUILT_BUILDING,
+					PRODUCER,
+					IDLE_PRODUCER,
+					DAMAGED,
+					STORE
+			   );
+
+/** upgrade states
+  */
+REGULAR_ENUM( UpgradeState,
+					UPGRADING,
+					UPGRADED
+			   );
+
+/** command classes
+  */
+REGULAR_ENUM( CommandClass,
+					STOP,
+					MOVE,
+					ATTACK,
+					ATTACK_STOPPED,
+					BUILD,
+					HARVEST,
+					REPAIR,
+					PRODUCE,
+					UPGRADE,
+					MORPH,
+					CAST_SPELL,
+					GUARD,
+					PATROL,
+					SET_MEETING_POINT,
+					NULL_COMMAND
+			   );
+
+/** click count
+  */
+REGULAR_ENUM( Clicks,
+					ONE,
+					TWO
+			   );
+			
+/** resource classes
+  * <ul><li><b>TECH</b> resource is defined in tech tree.</li>
+  *		<li><b>TILESET</b> resource is defined in tileset.</li>
+  *		<li><b>STATIC</b> resource is static.</li>
+  *		<li><b>CONSUMABLE</b> resource is consumable.</li></ul>
+  */
+STRINGY_ENUM( ResourceClass,
+					TECH,
+					TILESET,
+					STATIC,
+					CONSUMABLE
+			   );
+
+/** skill classes
+  */
+STRINGY_ENUM( SkillClass,
+					STOP,
+					MOVE,
+					ATTACK,
+					BUILD,
+					HARVEST,
+					REPAIR,
+					BE_BUILT,
+					PRODUCE,
+					UPGRADE,
+					MORPH,
+					DIE,
+					CAST_SPELL,
+					FALL_DOWN,
+					GET_UP,
+					WAIT_FOR_SERVER
+			   );
+
+/** weather set
+  * <ul><li><b>SUNNY</b> Sunny weather, no weather particle system.</li>
+  *		<li><b>RAINY</b> Rainy weather..</li>
+  *		<li><b>SNOWY</b> Snowy.</li></ul>
+  */
+REGULAR_ENUM( Weather,
+					SUNNY,
+					RAINY,
+					SNOWY
+			   );
+
+/** command properties
+  */
+REGULAR_ENUM( CommandProperties,
+					QUEUE,
+					AUTO,
+					DONT_RESERVE_RESOURCES,
+					AUTO_REPAIR_ENABLED
+			   );
+
+/** Command Archetypes
+  */
+REGULAR_ENUM( CommandArchetype,
+					GIVE_COMMAND,
+					CANCEL_COMMAND,
+				//	SET_METTING_POINT,
+					SET_AUTO_REPAIR
 			   );
 
 // =====================================================

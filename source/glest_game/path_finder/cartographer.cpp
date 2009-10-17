@@ -32,13 +32,11 @@ using namespace Shared::Util;
 
 namespace Glest { namespace Game { namespace Search {
 
-SearchEngine<NodePool>	*npSearchEngine;
-SearchEngine<NodeMap>	*nmSearchEngine;
-
 /** Construct Cartographer object. Requires game settings, factions & cell map to have been loaded.
   */
 Cartographer::Cartographer() {
 	int w = theMap.getW(), h = theMap.getH();
+	nmSearchEngine = new SearchEngine<NodeMap>();
 	masterMap = new AnnotatedMap();
 
 	// team search and visibility maps
@@ -71,7 +69,7 @@ Cartographer::Cartographer() {
 	// construct resource influence maps for each team
 	for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
 		const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
-		if ( rt->getClass() == rcTech || rt->getClass() == rcTileset ) {
+		if ( rt->getClass() == ResourceClass::TECH || rt->getClass() == ResourceClass::TILESET ) {
 			for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
 				int team = theWorld.getFaction( j )->getTeam();
 				if ( teamResourceMaps[team].find( rt ) == teamResourceMaps[team].end() ) {
@@ -85,6 +83,7 @@ Cartographer::Cartographer() {
 /** Destruct */
 Cartographer::~Cartographer() {
 	delete masterMap;
+	delete nmSearchEngine;
 
 	map<int,AnnotatedMap*>::iterator aMapIt = teamMaps.begin();
 	for ( ; aMapIt != teamMaps.end(); ++aMapIt ) {
@@ -120,7 +119,7 @@ void Cartographer::updateResourceMaps() {
 		seen.insert( team );
 		for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
 			const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
-			if ( rt->getClass() == rcTech || rt->getClass() == rcTileset ) {
+			if ( rt->getClass() == ResourceClass::TECH || rt->getClass() == ResourceClass::TILESET ) {
 				initResourceMap( team, rt, teamResourceMaps[team][rt] );
 			}
 		}

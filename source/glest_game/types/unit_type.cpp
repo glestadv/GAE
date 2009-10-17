@@ -346,10 +346,10 @@ bool UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 	computeFirstStOfClass();
 	computeFirstCtOfClass();
 	try { // Logger::addXmlError() expects a char*, so it's easier just to throw ;)
-		if(!getFirstStOfClass(scStop)) {
+		if(!getFirstStOfClass(SkillClass::STOP)) {
 			throw runtime_error("Every unit must have at least one stop skill: "+ path);
 		}
-		if(!getFirstStOfClass(scDie)) {
+		if(!getFirstStOfClass(SkillClass::DIE)) {
 			throw runtime_error("Every unit must have at least one die skill: "+ path);
 		}
 	}
@@ -358,16 +358,16 @@ bool UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 		loadOk = false;
 	}
 	// if it's mobile and doesn't have a fall down skill, give it one
-	if(!firstSkillTypeOfClass[scFallDown] && firstSkillTypeOfClass[scMove]) {
-		skillTypes.push_back(new FallDownSkillType(firstSkillTypeOfClass[scDie]));
+	if(!firstSkillTypeOfClass[SkillClass::FALL_DOWN] && firstSkillTypeOfClass[SkillClass::MOVE]) {
+		skillTypes.push_back(new FallDownSkillType(firstSkillTypeOfClass[SkillClass::DIE]));
 	}
 
-	if(!firstSkillTypeOfClass[scGetUp] && firstSkillTypeOfClass[scMove]) {
-		skillTypes.push_back(new GetUpSkillType(firstSkillTypeOfClass[scMove]));
+	if(!firstSkillTypeOfClass[SkillClass::GET_UP] && firstSkillTypeOfClass[SkillClass::MOVE]) {
+		skillTypes.push_back(new GetUpSkillType(firstSkillTypeOfClass[SkillClass::MOVE]));
 	}
 
 	//push dummy wait for server skill type and recalculate first of skill cache
-	skillTypes.push_back(new WaitForServerSkillType(getFirstStOfClass(scStop)));
+	skillTypes.push_back(new WaitForServerSkillType(getFirstStOfClass(SkillClass::STOP)));
 	computeFirstStOfClass();
 
 	/*
@@ -425,7 +425,7 @@ const CommandType *UnitType::getCommandType(const string &name) const {
 
 const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *resourceType) const{
 	for(int i=0; i<commandTypes.size(); ++i){
-		if(commandTypes[i]->getClass()== ccHarvest){
+		if(commandTypes[i]->getClass()== CommandClass::HARVEST){
 			const HarvestCommandType *hct= static_cast<const HarvestCommandType*>(commandTypes[i]);
 			if(hct->canHarvest(resourceType)){
 				return hct;
@@ -437,7 +437,7 @@ const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *r
 
 const AttackCommandType *UnitType::getFirstAttackCommand(Zone zone) const{
 	for(int i=0; i<commandTypes.size(); ++i){
-		if(commandTypes[i]->getClass()== ccAttack){
+		if(commandTypes[i]->getClass()== CommandClass::ATTACK){
 			const AttackCommandType *act= static_cast<const AttackCommandType*>(commandTypes[i]);
 			if(act->getAttackSkillTypes()->getZone(zone)){
 				return act;
@@ -449,7 +449,7 @@ const AttackCommandType *UnitType::getFirstAttackCommand(Zone zone) const{
 
 const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaired) const{
 	for(int i=0; i<commandTypes.size(); ++i){
-		if(commandTypes[i]->getClass()== ccRepair){
+		if(commandTypes[i]->getClass()== CommandClass::REPAIR){
 			const RepairCommandType *rct= static_cast<const RepairCommandType*>(commandTypes[i]);
 			if(rct->isRepairableUnitType(repaired)){
 				return rct;
@@ -471,7 +471,7 @@ int UnitType::getStore(const ResourceType *rt) const{
 const SkillType *UnitType::getSkillType(const string &skillName, SkillClass skillClass) const{
 	for(int i=0; i<skillTypes.size(); ++i){
 		if(skillTypes[i]->getName()==skillName){
-			if(skillTypes[i]->getClass() == skillClass || skillClass == scCount){
+			if(skillTypes[i]->getClass() == skillClass || skillClass == SkillClass::COUNT){
 				return skillTypes[i];
 			}
 			else{
@@ -515,12 +515,12 @@ bool UnitType::hasSkillType(const SkillType *skillType) const{
 
 bool UnitType::isOfClass(UnitClass uc) const{
 	switch(uc){
-		case ucWarrior:
-			return hasSkillClass(scAttack) && !hasSkillClass(scHarvest);
-		case ucWorker:
-			return hasSkillClass(scBuild) || hasSkillClass(scRepair);
-		case ucBuilding:
-			return hasSkillClass(scBeBuilt) && !hasSkillClass(scMove);
+		case UnitClass::WARRIOR:
+			return hasSkillClass(SkillClass::ATTACK) && !hasSkillClass(SkillClass::HARVEST);
+		case UnitClass::WORKER:
+			return hasSkillClass(SkillClass::BUILD) || hasSkillClass(SkillClass::REPAIR);
+		case UnitClass::BUILDING:
+			return hasSkillClass(SkillClass::BE_BUILT) && !hasSkillClass(SkillClass::MOVE);
 		default:
 			assert(false);
 	}
@@ -530,10 +530,10 @@ bool UnitType::isOfClass(UnitClass uc) const{
 // ==================== PRIVATE ====================
 
 void UnitType::computeFirstStOfClass(){
-	for(int j= 0; j<scCount; ++j){
+	for(int j= 0; j<SkillClass::COUNT; ++j){
 		firstSkillTypeOfClass[j]= NULL;
 		for(int i= 0; i<skillTypes.size(); ++i){
-			if(skillTypes[i]->getClass()== SkillClass(j)){
+			if(skillTypes[i]->getClass()== SkillClass((SkillClass::Enum)j)){
 				firstSkillTypeOfClass[j]= skillTypes[i];
 				break;
 			}
@@ -542,10 +542,10 @@ void UnitType::computeFirstStOfClass(){
 }
 
 void UnitType::computeFirstCtOfClass(){
-	for(int j=0; j<ccCount; ++j){
+	for(int j=0; j<CommandClass::COUNT; ++j){
 		firstCommandTypeOfClass[j]= NULL;
 		for(int i=0; i<commandTypes.size(); ++i){
-			if(commandTypes[i]->getClass()== CommandClass(j)){
+			if(commandTypes[i]->getClass()== CommandClass((CommandClass::Enum)j)){
 				firstCommandTypeOfClass[j]= commandTypes[i];
 				break;
 			}

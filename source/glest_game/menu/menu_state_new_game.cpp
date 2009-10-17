@@ -105,8 +105,8 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	buttonReturn.setText(lang.get("Return"));
 	buttonPlayNow.setText(lang.get("PlayNow"));
 
-	for(int i = 0; i < ControlType::COUNT; ++i) {
-	    controlItems.push_back(lang.get(ControlTypeNames[i]));
+	for(ControlType ct = enum_cast<ControlType>(0); ct < ControlType::COUNT; ++ct) {
+	    controlItems.push_back(lang.get(ControlTypeNames[ct]));
 	}
 	teamItems.push_back("1");
 	teamItems.push_back("2");

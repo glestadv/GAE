@@ -10,6 +10,10 @@
 // ==============================================================
 //
 // search_functions.inl
+//
+// INLINE FILE, do not place any silly namespaces or what-not in here, this
+// is a part of search_engine.h
+//
 
 /** Goal function for 'normal' search */
 class PosGoal {
@@ -22,7 +26,7 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if pos is target, else false
 	  */
-	bool operator () ( const Vec2i &pos, const float costSoFar ) const { 
+	bool operator()(const Vec2i &pos, const float costSoFar) const { 
 		return pos == target; 
 	}
 };
@@ -40,7 +44,7 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if pos is within range of target, else false
 	  */
-	bool operator () ( const Vec2i &pos, const float costSoFar ) const { 
+	bool operator()(const Vec2i &pos, const float costSoFar) const { 
 		return pos.dist( target ) <= range; 
 	}
 };
@@ -58,7 +62,7 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if influence at pos on iMap is greater than threashold, else false
 	  */
-	bool operator () ( const Vec2i &pos, const float costSoFar ) const { 
+	bool operator()( const Vec2i &pos, const float costSoFar) const { 
 		return iMap->getInfluence( pos ) > threshold; 
 	}
 };
@@ -74,7 +78,7 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if pos is free, else false
 	  */
-	bool operator () ( const Vec2i &pos, const float costSoFar ) const { 
+	bool operator()(const Vec2i &pos, const float costSoFar) const { 
 		return theMap.isFreeCell( pos, field ); 
 	}
 };
@@ -109,7 +113,7 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return false
 	  */
-	bool operator () ( const Vec2i &pos, const float costSoFar ) const { 
+	bool operator()(const Vec2i &pos, const float costSoFar) const { 
 		return false; 
 	}
 };
@@ -127,12 +131,12 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if costSoFar exceeeds cutOff, else false.
 	  */
-	bool operator () ( const Vec2i &pos, const float costSoFar ) const {
+	bool operator()(const Vec2i &pos, const float costSoFar) const {
 		if ( costSoFar > cutOff ) {
 			return true;
 		}
-		if ( costSoFar < iMap->getInfluence( pos ) ) {
-			iMap->setInfluence( pos, cutOff - costSoFar );
+		if ( costSoFar < iMap->getInfluence(pos) ) {
+			iMap->setInfluence(pos, cutOff - costSoFar);
 		}
 		return false;
 	}
@@ -151,12 +155,12 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return 
 	  */
-	bool operator () ( const Vec2i &pos, const float costSoFar ) const {
+	bool operator()(const Vec2i &pos, const float costSoFar) const {
 		if ( costSoFar > cutOff ) {
 			return true;
 		}
-		if ( cutOff - costSoFar > iMap->getInfluence( pos ) ) {
-			iMap->setInfluence( pos, cutOff - costSoFar );
+		if ( cutOff - costSoFar > iMap->getInfluence(pos) ) {
+			iMap->setInfluence(pos, cutOff - costSoFar);
 		}
 		return false;
 	}
@@ -173,7 +177,7 @@ public:
 	  * @param p2 position 2 ('adjacent' p1)
 	  * @return cost
 	  */
-	float operator () ( const Vec2i &p1, const Vec2i &p2 ) const { return 0.f; }
+	float operator()(const Vec2i &p1, const Vec2i &p2) const { return 0.f; }
 };
 
 /** distance cost, no obstacle checks */
@@ -185,8 +189,8 @@ public:
 	  * @param p2 position 2 ('adjacent' p1)
 	  * @return 1.0 if p1 and p2 are 'in line', else SQRT2
 	  */
-	float operator () ( const Vec2i &p1, const Vec2i &p2 ) const {
-		assert ( p1.dist( p2 ) < 1.5 );
+	float operator()(const Vec2i &p1, const Vec2i &p2) const {
+		assert ( p1.dist(p2) < 1.5 );
 		if ( p1.x != p2.x && p1.y != p2.y ) {
 			return SQRT2;
 		}
@@ -207,16 +211,16 @@ public:
 	  * @param p2 position 2 ('adjacent' p1)
 	  * @return cost of move, possibly infinite
 	  */
-	float operator () ( const Vec2i &p1, const Vec2i &p2 ) const {
-		assert ( p1.dist(p2) < 1.5 && p1 != p2 );
-		if ( ! aMap->canOccupy( p2, unit->getSize(), unit->getCurrField() ) ) {
+	float operator()(const Vec2i &p1, const Vec2i &p2) const {
+		assert(p1.dist(p2) < 1.5 && p1 != p2);
+		if ( ! aMap->canOccupy(p2, unit->getSize(), unit->getCurrField()) ) {
 			return numeric_limits<float>::infinity();
 		}
 		if ( p1.x != p2.x && p1.y != p2.y ) {
 			Vec2i d1, d2;
-			getDiags( p1, p2, unit->getSize(), d1, d2 );
-			if ( !aMap->canOccupy( d1, 1, unit->getCurrField() ) 
-			||	 !aMap->canOccupy( d2, 1, unit->getCurrField() ) ) {
+			getDiags(p1, p2, unit->getSize(), d1, d2);
+			if ( !aMap->canOccupy(d1, 1, unit->getCurrField()) 
+			||	 !aMap->canOccupy(d2, 1, unit->getCurrField()) ) {
 				return numeric_limits<float>::infinity();
 			}
 			return SQRT2;
@@ -236,9 +240,9 @@ public:
 	  * @param pos the position to calculate the heuristic for
 	  * @return an estimate of the cost to target
 	  */
-	float operator () ( const Vec2i &pos ) const {
-		float dx = (float)abs( pos.x - target.x ), 
-			  dy = (float)abs( pos.y - target.y );
+	float operator()(const Vec2i &pos) const {
+		float dx = (float)abs(pos.x - target.x), 
+			  dy = (float)abs(pos.y - target.y);
 		float diag = dx < dy ? dx : dy;
 		float straight = dx + dy - 2 * diag;
 		return 1.4 * diag + straight;
@@ -255,11 +259,11 @@ public:
 	  * @param pos the position to calculate the heuristic for
 	  * @return an (over) estimate of the cost to target
 	  */
-	float operator () ( const Vec2i &pos ) const {
-		float dx = (float)abs( pos.x - target.x ), 
-			  dy = (float)abs( pos.y - target.y );
+	float operator()(const Vec2i &pos) const {
+		float dx = (float)abs(pos.x - target.x), 
+			  dy = (float)abs(pos.y - target.y);
 		float diag = dx < dy ? dx : dy;
-		float estimate = 1.4 * diag + ( dx + dy - 2 * diag );
+		float estimate = 1.4 * diag + (dx + dy - 2 * diag);
 		estimate *= 1.25;
 		return estimate;
 	}
@@ -273,5 +277,5 @@ public:
 	  * @param pos the position to ignore
 	  * @return 0.f
 	  */
-	float operator () ( const Vec2i &pos ) const { return 0.0f; }
+	float operator()(const Vec2i &pos) const { return 0.0f; }
 };

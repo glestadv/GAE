@@ -48,7 +48,7 @@ public:
 		const Selection &selection,
 		CommandFlags flags,
 		const CommandType *commandType = NULL,
-		CommandClass commandClass = ccNull,
+		CommandClass commandClass = CommandClass::NULL_COMMAND,
 		const Vec2i &pos = Command::invalidPos,
 		Unit *targetUnit = NULL,
 		const UnitType* unitType = NULL) const;
