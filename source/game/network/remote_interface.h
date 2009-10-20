@@ -34,7 +34,7 @@ namespace Game { namespace Net {
  * than pings.  Call to send are thread-safe.
  */
 class RemoteInterface : public Host, public Scheduleable {
-	friend class GameInterface;
+	friend class NetworkMessenger;
 	friend class ServerInterface;
 	friend class ClientInterface;
 
@@ -42,7 +42,7 @@ public:
 	typedef queue<GlestException *> Exceptions;
 
 private:
-	GameInterface &owner;
+	NetworkMessenger &owner;
 	ClientSocket *socket;
 	NetworkStatistics stats;
 	int64 pingInterval;
@@ -53,15 +53,16 @@ private:
 	NetworkDataBuffer rxbuf;
 #ifdef DEBUG_NETWORK_DELAY
 	typedef queue<NetworkMessage *> MessageQueue;
-	MessageQueue debugDelayQ;			/** Queue for messages used only when debugging network. */
+	MessageQueue debugDelayQ;			/**< Queue for messages used only when debugging network. */
 #endif
 
 public:
-	RemoteInterface(GameInterface &owner, NetworkRole role, int id, const uint64 &uid = 0);
+	RemoteInterface(NetworkMessenger &owner, NetworkRole role, int id, const uint64 &uid = 0);
 	virtual ~RemoteInterface();
 
 	// accessors
-	GameInterface &getOwner()					{return owner;}
+	NetworkMessenger &getOwner()				{return owner;}
+	const NetworkMessenger &getOwner() const	{return owner;}
 	ClientSocket *getSocket()					{return socket;}
 	const NetworkStatistics &getStats()			{return stats;}
 	int64 getPingInterval() const				{return pingInterval;}
@@ -105,7 +106,6 @@ public:
 	virtual void ping();
 
 	virtual void print(ObjectPrinter &op) const;
-	const GameInterface &getGameInterface() const	{return owner;}
 
 private:
 	void dispatch(NetworkMessage *msg);

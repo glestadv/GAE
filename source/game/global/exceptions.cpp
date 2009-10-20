@@ -56,7 +56,7 @@ MapException::~MapException() throw() {
 
 NetworkCommException::NetworkCommException(
 			const string &msg,
-			GameInterface *gi,
+			NetworkMessenger *gi,
 			RemoteInterface *ri,
 			NetworkMessage *netmsg,
 			const string &fileName,

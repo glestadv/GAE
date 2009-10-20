@@ -12,17 +12,23 @@
 #ifndef _GAME_STATS_H_
 #define _GAME_STATS_H_
 
-#include <string>
+//#include <string>
 
 #include "game_constants.h"
-#include "faction.h"
-#include "xml_parser.h"
-#include "game_settings.h"
+//#include "faction.h"
+//#include "xml_parser.h"
+//#include "game_settings.h"
 
-using std::string;
+namespace Shared { namespace Xml {
+class Xmlnode;
+}}
+
+//using std::string;
 using Shared::Xml::XmlNode;
 
 namespace Game {
+
+class GameSettings;
 
 // =====================================================
 // 	class Stats
@@ -42,7 +48,6 @@ public:
 	};
 
 private:
-	// FIXME: this guy gets deleted
 	const GameSettings &gs;
 	FactionStats factionStats[GameConstants::maxFactions];
 

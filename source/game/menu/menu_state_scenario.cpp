@@ -277,7 +277,7 @@ void MenuStateScenario::loadScenarioInfo(const string &file, ScenarioInfo &si) {
 
 void MenuStateScenario::loadGameSettings(const ScenarioInfo &si, GameSettings &gs) {
 	NetworkManager &netman = NetworkManager::getInstance();
-	GameInterface &gameInterface = *netman.getGameInterface();
+	NetworkMessenger &gameInterface = *netman.getNetworkMessenger();
 	const Config &config = Config::getInstance();
 	bool autoRepair = config.getGsAutoRepairEnabled();
 	bool autoReturn = config.getGsAutoReturnEnabled();

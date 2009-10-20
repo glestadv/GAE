@@ -271,7 +271,7 @@ void MenuStateLoadGame::update() {
 	foreach(const shared_ptr<GameSettings::Faction> &f, gs->getFactions()) {
 		int slot = f->getMapSlot();
 		if (f->getControlType() == CT_NETWORK) {
-			RemoteClientInterface* client = serverInterface->findClientForMapSlot(slot);
+			RemoteClientMessenger* client = serverInterface->findClientForMapSlot(slot);
 
 			if (client && client->getSocket()) {
 				labelNetStatus[slot].setText(client->getDescription());
@@ -342,7 +342,7 @@ bool MenuStateLoadGame::loadGame() {
 				serverInterface->setGameSettings(gs);
 			}
 
-			RemoteClientInterface* client = serverInterface->findClientForMapSlot(f->getMapSlot());
+			RemoteClientMessenger* client = serverInterface->findClientForMapSlot(f->getMapSlot());
 			if(!(client && client->isConnected())) {
 				return false;
 			}

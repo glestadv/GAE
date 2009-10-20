@@ -18,12 +18,13 @@
 #include <errno.h>
 #include <map>
 
-#include "util.h"
+#include "patterns.h"
 
 using std::runtime_error;
 using std::stringstream;
 using std::string;
-using Shared::Util::newStrOrNull;
+using std::map;
+//using Shared::Util::newStrOrNull;
 using Shared::Util::Cloneable;
 
 #define __STRIZE2(x) #x
@@ -39,8 +40,8 @@ namespace Shared { namespace Util {
 /** Base exception type */
 class GlestException : public runtime_error, public Cloneable {
 public:
-	typedef std::map<std::string, std::string> ValueMap;
-	typedef std::map<std::string, Shared::Util::Printable *> PrintableMap;
+	typedef map<string, string> ValueMap;
+	typedef map<string, Shared::Util::Printable *> PrintableMap;
 
 private:
 	string msg;

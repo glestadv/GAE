@@ -35,11 +35,11 @@ using namespace Shared::Util;
 namespace Game { namespace Net {
 
 // =====================================================
-//	class ClientInterface
+//	class NetworkClientMessenger
 // =====================================================
 
-ClientInterface::ClientInterface(unsigned short port)
-		: GameInterface(NR_CLIENT, port)
+NetworkClientMessenger::NetworkClientMessenger(unsigned short port)
+		: NetworkMessenger(NR_CLIENT, port)
 		, server(*this)
 		, updates()
 		, updateRequests()
@@ -48,10 +48,10 @@ ClientInterface::ClientInterface(unsigned short port)
 	getLogger().clear();
 }
 
-ClientInterface::~ClientInterface() {
+NetworkClientMessenger::~NetworkClientMessenger() {
 }
 
-void ClientInterface::accept() {
+void NetworkClientMessenger::accept() {
 	ClientSocket *s = getServerSocket().accept();
 
 	if(s) {
@@ -62,7 +62,7 @@ void ClientInterface::accept() {
 	}
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageHandshake &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageHandshake &msg) {
 	MutexLock lock(getMutex());
 	if(&source == &server) {
 		assert(getState() < STATE_NEGOTIATED);
@@ -103,13 +103,13 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageHandshak
 	}
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
 #ifndef NO_PARINOID_NETWORK_CHECKS
-	THROW_PROTOCOL_EXCEPTION("ClientInterface doesn't accept NetworkMessagePlayerInfo.");
+	THROW_PROTOCOL_EXCEPTION("NetworkClientMessenger doesn't accept NetworkMessagePlayerInfo.");
 #endif
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageGameInfo &msg) {
 #ifndef NO_PARINOID_NETWORK_CHECKS
 	if(&source != &server) {
 		THROW_PROTOCOL_EXCEPTION("naughty peer tried to send NetworkMessageGameInfo");
@@ -138,12 +138,14 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 		}
 		const HumanPlayer &p = static_cast<const HumanPlayer &>(*pair.second);
 		int id = p.getId();
+		NetworkMessageGameInfo::Statuses::const_iterator statusIterator = statuses.find(id);
 
-		if(statuses.find(id) == statuses.end()) {
+		if(statusIterator == statuses.end()) {
 			stringstream str;
 			str << "Consistency error: did not receive status for human player (id=" << id << ").";
 			THROW_PROTOCOL_EXCEPTION(str.str());
 		}
+		const NetworkPlayerStatus &status = statusIterator->second;
 
 		if(id == Host::getId()) {
 			// info for this player
@@ -179,18 +181,21 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 				// p2p-TODO: We're skipping clients processing status updates on other clients now,
 				// but this needs to be done for peer-to-peer implementation.
 				if(peer->getRole() == NR_SERVER) {
-					peer->updateStatus(statuses.find(id)->second, msg);
+					peer->updateStatus(status, msg);
 
 					// If server is launching and we're ready to launch, then change state and let
 					// the UI screen query our state and realize we need to change the ProgramState
 					// to Game.
 					if(peer->getState() == STATE_LAUNCHING && getState() < STATE_LAUNCHING) {
 						setState(STATE_LAUNCHING);
-					} else {
+					}
+
+					if(getState() < STATE_LAUNCH_READY) {
 						setState(STATE_LAUNCH_READY);
 					}
 				}
 			}
+			//assert(!peer);
 			// If state is STATE_NEGOTIATED then this is the first time we've received this message.
 			// Thus, we are the client responsible for connecting with each peer.
 			if(getState() == STATE_NEGOTIATED) {
@@ -222,39 +227,39 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo
 	}
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
 	NetworkPlayerStatus &status = msg.getNetworkPlayerStatus();
 	_onReceive(source, status, msg);
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageText &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageText &msg) {
 	THROW_PROTOCOL_EXCEPTION("not yet implemented");
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageFileHeader &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageFileHeader &msg) {
 	THROW_PROTOCOL_EXCEPTION("not yet implemented");
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageFileFragment &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageFileFragment &msg) {
 	THROW_PROTOCOL_EXCEPTION("not yet implemented");
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageReady &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageReady &msg) {
 	THROW_PROTOCOL_EXCEPTION("not yet implemented");
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageCommandList &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageCommandList &msg) {
 	THROW_PROTOCOL_EXCEPTION("not yet implemented");
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageUpdate &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageUpdate &msg) {
 	THROW_PROTOCOL_EXCEPTION("not yet implemented");
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageUpdateRequest &msg) {
-	THROW_PROTOCOL_EXCEPTION("ClientInterface doesn't accept NetworkMessageUpdateRequest.");
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageUpdateRequest &msg) {
+	THROW_PROTOCOL_EXCEPTION("NetworkClientMessenger doesn't accept NetworkMessageUpdateRequest.");
 }
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkPlayerStatus &status, NetworkMessage &msg) {
+void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkPlayerStatus &status, NetworkMessage &msg) {
 	bool isServer = &source == &server;
 	switch(status.getState()) {
 		case STATE_UNCONNECTED:
@@ -288,7 +293,7 @@ void ClientInterface::_onReceive(RemoteInterface &source, NetworkPlayerStatus &s
 /* * True if world updates should proceed, false otherwise.  This is set to false if a key frame is
  * due but not yet recieved.
  *//*
-bool ClientInterface::isReady() {
+bool NetworkClientMessenger::isReady() {
 	MutexLock localLock(getMutex());
 	return ready;
 }
@@ -298,7 +303,7 @@ bool ClientInterface::isReady() {
  * However, only non-auto commands generated by the human player are transmitted accross the
  * network.
  */
-void ClientInterface::requestCommand(Command *command) {
+void NetworkClientMessenger::requestCommand(Command *command) {
 	MutexLock localLock(getMutex());
 	if(!command->isAuto() && command->getCommandedUnit()->getFaction()->isThisFaction()) {
 		copyCommandToNetwork(command);
@@ -306,12 +311,12 @@ void ClientInterface::requestCommand(Command *command) {
 	futureCommands[getLastFrame() + getGameSettings()->getCommandDelay()].push(command);
 }
 
-void ClientInterface::beginUpdate(int frame, bool isKeyFrame) {
+void NetworkClientMessenger::beginUpdate(int frame, bool isKeyFrame) {
 	MutexLock lock(getMutex());
-	GameInterface::beginUpdate(frame, isKeyFrame);
+	NetworkMessenger::beginUpdate(frame, isKeyFrame);
 }
 
-void ClientInterface::endUpdate() {
+void NetworkClientMessenger::endUpdate() {
 	NetworkMessageCommandList networkMessageCommandList(*this);
 	NetworkMessage *msg;
 #if 0
@@ -353,7 +358,7 @@ void ClientInterface::endUpdate() {
 #endif
 }
 
-void ClientInterface::connectToServer(const IpAddress &ipAddress, unsigned short port) {
+void NetworkClientMessenger::connectToServer(const IpAddress &ipAddress, unsigned short port) {
 	MutexLock lock(getMutex());
 	assert(getState() <= STATE_LISTENING);
 	server.connect(ipAddress, port);
@@ -361,21 +366,21 @@ void ClientInterface::connectToServer(const IpAddress &ipAddress, unsigned short
 	addPeer(&server);
 }
 
-void ClientInterface::disconnectFromServer() {
+void NetworkClientMessenger::disconnectFromServer() {
 	MutexLock lock(getMutex());
 	server.quit();
 	removePeer(&server);
 	setState(STATE_LISTENING);
 }
 
-void ClientInterface::onError(RemoteInterface &ri, GlestException &e) {
-	GameInterface::onError(ri, e);
+void NetworkClientMessenger::onError(RemoteInterface &ri, GlestException &e) {
+	NetworkMessenger::onError(ri, e);
 	if(!isConnected()) {
 		setState(STATE_UNCONNECTED);
 	}
 }
 
-void ClientInterface::sendUpdateRequests() {
+void NetworkClientMessenger::sendUpdateRequests() {
 	if(isConnected() && updateRequests.size()) {
 		NetworkMessageUpdateRequest msg;
 		UnitReferences::iterator i;
@@ -392,7 +397,7 @@ void ClientInterface::sendUpdateRequests() {
 	}
 }
 
-string ClientInterface::getStatus() const {
+string NetworkClientMessenger::getStatus() const {
 	stringstream str;
 	str << server.getStatus();
 	foreach(const PeerMap::value_type &v, getPeers()) {
@@ -403,27 +408,27 @@ string ClientInterface::getStatus() const {
 	return str.str();
 }
 
-void ClientInterface::print(ObjectPrinter &op) const {
-	GameInterface::print(op.beginClass("ClientInterface"));
+void NetworkClientMessenger::print(ObjectPrinter &op) const {
+	NetworkMessenger::print(op.beginClass("NetworkClientMessenger"));
 	op		.endClass();
 }
 
-void ClientInterface::update() {
+void NetworkClientMessenger::update() {
 
 }
 
 /*
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageUpdate &msg) {
+bool NetworkClientMessenger::process(RemoteInterface &source, NetworkMessageUpdate &msg) {
 	updates.push_back(&msg);
 	// do not delete
 	return false;
 }
 
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageUpdateRequest &msg) {
+bool NetworkClientMessenger::process(RemoteInterface &source, NetworkMessageUpdateRequest &msg) {
 	throw runtime_error("unexpected message");
 }
 
-bool ClientInterface::vProcess(RemoteInterface &source, NetworkMessageHandshake &msg) {
+bool NetworkClientMessenger::vProcess(RemoteInterface &source, NetworkMessageHandshake &msg) {
 	// clients don't have clients
 	assert(source.getRole() == NR_SERVER || source.getRole() == NR_PEER);
 
@@ -434,20 +439,20 @@ bool ClientInterface::vProcess(RemoteInterface &source, NetworkMessageHandshake 
 	return true;
 }
 
-bool ClientInterface::process(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
+bool NetworkClientMessenger::process(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
 	throw runtime_error("unexpected message");
 }
 
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageGameInfo &msg) {
+bool NetworkClientMessenger::process(RemoteInterface &source, NetworkMessageGameInfo &msg) {
 	// clients don't have clients
 	assert(source.getRole() == NR_SERVER || source.getRole() == NR_PEER);
 
 }
 */
 /*
-void ClientInterface::process(RemoteInterface &source, const NetworkMessageIntro &msg, bool versionsMatch) {
+void NetworkClientMessenger::process(RemoteInterface &source, const NetworkMessageIntro &msg, bool versionsMatch) {
 }*//*
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageIntro &msg) {
+bool NetworkClientMessenger::process(RemoteInterface &source, NetworkMessageIntro &msg) {
 //	const Version protoVersion = getNetworkVersionString();
 //	bool versionsMatch = msg.getVersionString() == version;
 
@@ -487,7 +492,7 @@ bool ClientInterface::process(RemoteInterface &source, NetworkMessageIntro &msg)
 	return true;
 }*/
 #if 0
-void ClientInterface::updateLobby() {
+void NetworkClientMessenger::updateLobby() {
 	NetworkMessage *genericMsg = nextMsg();
 	if(!genericMsg) {
 		return;
@@ -580,7 +585,7 @@ void ClientInterface::updateLobby() {
 	delete genericMsg;
 }
 
-void ClientInterface::waitUntilReady(Checksums &checksums) {
+void NetworkClientMessenger::waitUntilReady(Checksums &checksums) {
 	NetworkMessage *msg = NULL;
 	NetworkMessageReady networkMessageReady(&checksums);
 	Chrono chrono;
@@ -624,7 +629,7 @@ void ClientInterface::waitUntilReady(Checksums &checksums) {
 }
 #endif
 /*
-NetworkMessage *ClientInterface::waitForMessage() {
+NetworkMessage *NetworkClientMessenger::waitForMessage() {
 	NetworkMessage *msg = NULL;
 	Chrono chrono;
 

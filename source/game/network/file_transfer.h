@@ -26,15 +26,15 @@ namespace Game { namespace Net {
 
 class FileReceiver {
 private:
-	string name;	/** The file name */
-	bool compressed;/** Rather or not the incoming file is compressed. */
-	size_t size;	/** Total size expected (uncompressed) */
-	string path;	/** The full path to the output file */
-	ofstream out;	/** The output file stream */
-	z_stream z;		/** The compression stream */
-	char buf[4096];	/** A working buffer */
-	bool finished;	/** True if this transfer is complete. */
-	int nextseq;	/** The next fragment needed. */
+	string name;	/**< The file name */
+	bool compressed;/**< Rather or not the incoming file is compressed. */
+	size_t size;	/**< Total size expected (uncompressed) */
+	string path;	/**< The full path to the output file */
+	ofstream out;	/**< The output file stream */
+	z_stream z;		/**< The compression stream */
+	char buf[4096];	/**< A working buffer */
+	bool finished;	/**< True if this transfer is complete. */
+	int nextseq;	/**< The next fragment needed. */
 
 public:
 	FileReceiver(const NetworkMessageFileHeader &msg, const string &outdir);

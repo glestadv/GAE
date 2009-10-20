@@ -12,6 +12,7 @@
 
 #include "pch.h"
 #include "game.h"
+
 #include "config.h"
 #include "renderer.h"
 #include "particle_renderer.h"
@@ -43,42 +44,41 @@ namespace Game {
 
 Game *Game::singleton = NULL;
 
+Game(GameManager &manager, Program &program)
 Game::Game(Program &program, const shared_ptr<GameSettings> &gs, XmlNode *savedGame) :
+		: ProgramState(program)
 		//main data
-		ProgramState(program),
-		gs(gs),
-		savedGame(savedGame),
-		keymap(program.getKeymap()),
-		input(program.getInput()),
-		config(Config::getInstance()),
-		world(this),
-		aiInterfaces(),
-		gui(*this),
-		gameCamera(),
-		commander(),
-		console(),
-		chatManager(keymap/*, console, world.getThisTeamIndex()*/),
+		, manager(manager)
+		, keymap(program.getKeymap())
+		, input(program.getInput())
+		, config(Config::getInstance())
+		, world(this)
+		, aiInterfaces()
+		, gui(*this)
+		, gameCamera()
+		, commander()
+		, console()
+		, chatManager(keymap/*, console, world.getThisTeamIndex()*/)
 
 		//misc
-		checksums(),
-		loadingText(""),
-		mouse2d(0),
-		updateFps(0),
-		lastUpdateFps(0),
-		renderFps(0),
-		lastRenderFps(0),
-		paused(false),
-		gameOver(false),
-		renderNetworkStatus(true),
-		scrollSpeed(config.getUiScrollSpeed()),
-		speed(GAME_SPEED_NORMAL),
-		fUpdateLoops(1.f),
-		lastUpdateLoopsFraction(0.f),
-		saveBox(NULL),
-		lastMousePos(0),
-		weatherParticleSystem(NULL) {
+		, checksums()
+		, loadingText("")
+		, mouse2d(0)
+		, updateFps(0)
+		, lastUpdateFps(0)
+		, renderFps(0)
+		, lastRenderFps(0)
+		, paused(false)
+		, gameOver(false)
+		, renderNetworkStatus(true)
+		, scrollSpeed(config.getUiScrollSpeed())
+		, speed(GAME_SPEED_NORMAL)
+		, fUpdateLoops(1.f)
+		, lastUpdateLoopsFraction(0.f)
+		, saveBox(NULL)
+		, lastMousePos(0)
+		, weatherParticleSystem(NULL) {
 	assert(!singleton);
-	assert(gs);
 	singleton = this;
 }
 
@@ -100,7 +100,7 @@ Game::~Game() {
 	gui.end();		//selection must be cleared before deleting units
 	world.end();	//must die before selection because of referencers
 	singleton = NULL;
-	logger.setLoading ( true );
+	logger.setLoading(true);
 }
 
 
@@ -235,7 +235,7 @@ void Game::init() {
 	}
 
 	if(networkManager.isNetworkGame()) {
-		GameInterface &gameInterface = *networkManager.getGameInterface();
+		NetworkMessenger &gameInterface = *networkManager.getNetworkMessenger();
 		Checksums::ComparisonResults differences;
 		Chrono readyTimer;
 
@@ -261,7 +261,7 @@ void Game::init() {
 		}*/
 		/*
 		vector<string> mismatches;
-		checksum.compare(networkManager.getGameInterface()->getChecksum(mismatches));
+		checksum.compare(networkManager.getNetworkMessenger()->getChecksum(mismatches));
 		if(!mismatches.empty()) {
 			stringstream str;
 			str << "Checksum error, you don't have the same data as the server";
@@ -317,7 +317,7 @@ void Game::update() {
 		if(netman.isNetworkServer()) {
 			lastKeyFrame -= world.getFrameCount();
 		}
-		updateWorld = netman.getGameInterface()->getLastKeyFrame() >= lastKeyFrame;
+		updateWorld = netman.getNetworkMessenger()->getLastKeyFrame() >= lastKeyFrame;
 	}
 
 	if(updateWorld) {
@@ -366,7 +366,7 @@ void Game::update() {
 	}
 
 	//check for quiting status
-	if (NetworkManager::getInstance().getGameInterface()->getState() >= STATE_QUIT) {
+	if (NetworkManager::getInstance().getNetworkMessenger()->getState() >= STATE_QUIT) {
 		quitGame();
 	}
 
@@ -448,7 +448,7 @@ void Game::mouseDownLeft(int x, int y) {
 		int button= 1;
 		if(mainMessageBox.mouseClick(x, y, button)){
 			if (button == 1) {
-				networkManager.getGameInterface()->quit();
+				networkManager.getNetworkMessenger()->quit();
 				quitGame();
 			} else {
 				//close message box
@@ -934,7 +934,7 @@ void Game::render2d() {
 	//network status
 	if (renderNetworkStatus && networkManager.isNetworkGame()) {
 		renderer.renderText(
-			networkManager.getGameInterface()->getStatus(),
+			networkManager.getNetworkMessenger()->getStatus(),
 			coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 750, 75, false);
 	}

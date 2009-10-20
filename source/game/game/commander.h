@@ -25,7 +25,7 @@ namespace Game {
 
 using Shared::Graphics::Vec2i;
 
-class World;
+class Game;
 class Unit;
 
 // =====================================================
@@ -37,11 +37,12 @@ class Unit;
 class Commander {
 private:
 	typedef vector<CommandResult> CommandResultContainer;
-	typedef CommandResultContainer::const_iterator CRIterator;
-	World *world;
+
+private:
+	Game &game;
 
 public:
-    void init(World *world)		{this->world = world;}
+    void init(Game &game) : (game) {}
 	void getNetworkData();
 
 	CommandResult tryGiveCommand(

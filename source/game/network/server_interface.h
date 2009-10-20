@@ -31,7 +31,7 @@ namespace Game { namespace Net {
 //	class ServerInterface
 // =====================================================
 
-class ServerInterface : public GameInterface {
+class ServerInterface : public NetworkMessenger {
 private:
 	enum UnitUpdateType {
 		UUT_NEW,

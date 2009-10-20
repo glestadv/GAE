@@ -42,6 +42,7 @@ namespace Game {
 class GameSettings : public XmlWritable, public LockableAdapter, Uncopyable {
 public:
 	//typedef vector<const Player *> Players;
+	/** Maps a player ID with a Game::Player object. */
 	typedef map<int, shared_ptr<Player> > PlayerMap;
 
 	class Team : public IdNamePair, Uncopyable {

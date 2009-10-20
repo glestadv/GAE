@@ -12,7 +12,7 @@
 #include "pch.h"
 #include "commander.h"
 
-#include "world.h"
+#include "game.h"
 #include "unit.h"
 #include "conversion.h"
 #include "upgrade.h"
@@ -49,10 +49,10 @@ CommandResult Commander::tryGiveCommand(
 
 	// can't have a target and unit type
 	assert(!(unitType && targetUnit));
-	
+
 	// build commands must include position
 	assert(!unitType || pos != Command::invalidPos);
-	
+
 	// if a build command, make sure it makes sense
 	assert(!unitType || ((ct && ct->getClass() == ccBuild) || cc == ccBuild));
 
@@ -139,7 +139,7 @@ Vec2i Commander::computeDestPos(const Vec2i &refUnitPos, const Vec2i &unitPos, c
 	}
 
 	pos = commandPos + posDiff;
-	world->getMap()->clampPos(pos);
+	game.getWorld()->getMap()->clampPos(pos);
 	return pos;
 }
 
@@ -153,11 +153,11 @@ CommandResult Commander::computeResult(const CommandResultContainer &results) co
 			bool anySucceed = false;
 			bool anyFail = false;
 			bool unique = true;
-			for (CRIterator i = results.begin(); i != results.end(); ++i) {
-				if (*i != results.front()) {
+			foreach(CommandResult cr, results) {
+				if (cr != results.front()) {
 					unique = false;
 				}
-				if (*i == crSuccess) {
+				if (cr == crSuccess) {
 					anySucceed = true;
 				} else {
 					anyFail = true;
@@ -173,14 +173,17 @@ CommandResult Commander::computeResult(const CommandResultContainer &results) co
 }
 
 CommandResult Commander::pushCommand(Command *command) const {
-	NetworkManager &netman = NetworkManager::getInstance();
 	assert(command->getCommandedUnit());
 	CommandResult result = command->getCommandedUnit()->checkCommand(*command);
+	game.getMessenger().postCommand(command);
+#if 0
+	NetworkManager &netman = NetworkManager::getInstance();
 	if(netman.isNetworkGame()) {
-		netman.getGameInterface()->requestCommand(command);
+		netman.getNetworkMessenger()->requestCommand(command);
 	} else {
 		giveCommand(command);
 	}
+#endif
 	return result;
 }
 
@@ -190,7 +193,7 @@ void Commander::getNetworkData() {
 /*
 	// on network games, we need to get recently recieved commands from the network interface.
 	if(netman.isNetworkGame()) {
-		GameInterface *gameInterface = netman.getGameInterface();
+		NetworkMessenger *gameInterface = netman.getNetworkMessenger();
 		MutexLock lock(gameInterface->getMutex());
 
 		//give pending commands locally

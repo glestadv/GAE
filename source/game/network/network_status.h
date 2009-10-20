@@ -52,6 +52,7 @@ private:
 	/**
 	 * Stores size information on recent packets of data and calculates statistics based on that
 	 * information.
+	 * @todo Many of these member functions are good candidates for out-lining.
 	 */
 	template<typename T> class DataCollection : Uncopyable {
 	private:
@@ -97,7 +98,7 @@ private:
 				return (float)data / (float)age * 1000000.f;
 			} else {
 				return 0;
-			} 
+			}
 		}
 
 		float getFloatAverageByCount() const {
@@ -119,18 +120,18 @@ public:
 
 private:
 	RemoteInterface &ri;
-	int64 updateInterval;		/** Update interval in microseconds */
+	int64 updateInterval;		/**< Update interval in microseconds */
 	Throughput dataSent;
 	Throughput dataRecieved;
 	PingTimes pingTimes;
 	ClockOffsets clockOffsets;
 	float txBytesPerSecond;
 	float rxBytesPerSecond;
-	int64 latency;				/** Most recent ping time in microseconds */
-	int64 avgLatency;			/** Average ping time in microseconds */
-	int64 avgClockOffset;		/** Aproximate remote clock time after accounting for latency */
+	int64 latency;				/**< Most recent ping time in microseconds */
+	int64 avgLatency;			/**< Average ping time in microseconds */
+	int64 avgClockOffset;		/**< Aproximate remote clock time after accounting for latency */
 	string statusStr;
-	bool valid;					/** True if this object contains valid data */
+	bool valid;					/**< True if this object contains valid data */
 
 public:
 	NetworkStatistics(RemoteInterface &ri, int64 updateInterval = 1 * ONE_SECOND,

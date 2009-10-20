@@ -27,7 +27,7 @@ using Shared::Platform::ClientSocket;
 namespace Game { namespace Net {
 
 // =====================================================
-//	class ClientInterface
+//	class NetworkClientMessenger
 // =====================================================
 
 /**
@@ -37,7 +37,7 @@ namespace Game { namespace Net {
  * - STATE_QUIT
  * - STATE_END
  */
-class ClientInterface : public GameInterface {
+class NetworkClientMessenger : public NetworkMessenger {
 private:
 	typedef deque<NetworkMessageUpdate*> UpdateMessages;
 	typedef vector<UnitReference> UnitReferences;
@@ -49,8 +49,8 @@ private:
 	XmlNode *savedGame;
 
 public:
-	ClientInterface(unsigned short port);
-	virtual ~ClientInterface();
+	NetworkClientMessenger(unsigned short port);
+	virtual ~NetworkClientMessenger();
 
 	virtual void beginUpdate(int frame, bool isKeyFrame);
 	virtual void endUpdate();

@@ -37,10 +37,10 @@ namespace Game { namespace Net {
 
 
 // =====================================================
-//	class GameInterface
+//	class NetworkMessenger
 // =====================================================
 
-GameInterface::GameInterface(NetworkRole role, unsigned short port, int id)
+NetworkMessenger::NetworkMessenger(NetworkRole role, unsigned short port, int id)
 		: Host(role, id, 0)
 		, Thread()
 		, socket()
@@ -70,7 +70,7 @@ GameInterface::GameInterface(NetworkRole role, unsigned short port, int id)
 	start();
 }
 
-GameInterface::~GameInterface() {
+NetworkMessenger::~NetworkMessenger() {
 	MutexLock lock(getMutex());
 	if(getState() < STATE_QUIT) {
 		setState(STATE_QUIT);
@@ -91,14 +91,14 @@ GameInterface::~GameInterface() {
 
 	foreach(const PeerMap::value_type &pair, const_cast<const PeerMap&>(peers)) {
 		// slightly hacky, but we don't want to delete the RemoteServerInterface object that
-		// ClientInterface objects own
+		// NetworkClientMessenger objects own
 		if(pair.second->getId() != 0) {
 			delete pair.second;
 		}
 	}
 }
 
-string GameInterface::getStatus() const {
+string NetworkMessenger::getStatus() const {
 	Lang &lang = Lang::getInstance();
 	stringstream str;
 
@@ -113,14 +113,14 @@ string GameInterface::getStatus() const {
  * Examines the status of all remote hosts and updates local status (including impending game
  * parameter changes) if needed.
  */
-void GameInterface::updateLocalStatus() {
+void NetworkMessenger::updateLocalStatus() {
 	for (PeerMap::const_iterator i = peers.begin(); i != peers.end(); ++i) {
 		// TODO
 	}
 }
 
 /**
- * Network thread main loop.  This function is called when the ClientInterface or ServerInterface
+ * Network thread main loop.  This function is called when the NetworkClientMessenger or ServerInterface
  * is created and is executed until before it's destroyed.  The loop continues to execute until
  * Host::state is set to STATE_QUIT or a fatal exception occurs.  Here is a summary of this loop:
  * -# Update the socketTests vector to represent every RemoteInterface currently connected.
@@ -129,7 +129,7 @@ void GameInterface::updateLocalStatus() {
  * -# Perform a multi-object select (or in windows, WaitForMultipleObjects) on each socket in use to
  *    either sleep, completely yielding CPU for the amount of time until the next update is due, or
  *    to be interrupted if data becomes available for reading.
- * -# Iterate through each socket (including the GameInterfaces's server socket):
+ * -# Iterate through each socket (including the NetworkMessengers's server socket):
  *    - For the server socket, if data is available, it indicates a new remote host is attempting to
  *      connect, so we accept that connection and instantiate a new RemoteInterface derived object
  *      as needed.
@@ -143,7 +143,7 @@ void GameInterface::updateLocalStatus() {
  * crashing the goddam program (crap, that's a FIXME).  If an exception is thrown while calling any
  * RemoteInterface's update() function, then RemoteInterface will call our onError() function.
  */
-void GameInterface::execute() {
+void NetworkMessenger::execute() {
 	MutexLock lock(getMutex());
 
 	int64 waitTime;
@@ -212,7 +212,7 @@ void GameInterface::execute() {
 			}
 		}
 
-		// Update GameInterface's server socket & each RemoteInterface object as needed.
+		// Update NetworkMessenger's server socket & each RemoteInterface object as needed.
 		now = Chrono::getCurMicros();
 		foreach (SocketTestRI &st, socketTests) {
 			if(st.socket->isServer()) {
@@ -237,7 +237,7 @@ void GameInterface::execute() {
  * Updates the socketTests vector with the data needed for a multi-select/WaitOnMultipleObjects
  * call.
  */
-void GameInterface::updateSocketTests() {
+void NetworkMessenger::updateSocketTests() {
 	socketTests.clear();
 	socketTests.push_back(SocketTestRI(&getServerSocket(), SOCKET_TEST_READ | SOCKET_TEST_ERROR, NULL));
 	for (PeerMap::const_iterator i = peers.begin(); i != peers.end(); ++i) {
@@ -252,7 +252,7 @@ void GameInterface::updateSocketTests() {
 /**
  * Handles an exception that occured in the network thread while processing a connection.
  */
-void GameInterface::onError(RemoteInterface &ri, GlestException &e) {
+void NetworkMessenger::onError(RemoteInterface &ri, GlestException &e) {
 	cerr << e.what();
 	getLogger().add(e.what(), false);
 	if(!exception) {
@@ -267,7 +267,7 @@ void GameInterface::onError(RemoteInterface &ri, GlestException &e) {
 	removePeer(&ri);
 }
 
-void GameInterface::broadcastMessage(NetworkMessage &msg, bool flush) {
+void NetworkMessenger::broadcastMessage(NetworkMessage &msg, bool flush) {
 	MutexLock lock(getMutex());
 	for (PeerMap::const_iterator i = peers.begin(); i != peers.end(); ++i) {
 		RemoteInterface &client = *i->second;
@@ -297,7 +297,7 @@ void GameInterface::broadcastMessage(NetworkMessage &msg, bool flush) {
 void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int excludeSlot) {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i){
 		//ConnectionSlot* slot = slots[i];
-		RemoteClientInterface *client = getClient(i);
+		RemoteNetworkClientMessenger *client = getClient(i);
 
 		if(i !=  excludeSlot && client) {
 			if(client->isConnected()) {
@@ -314,14 +314,14 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 	}
 }
 */
-void GameInterface::end() {
+void NetworkMessenger::end() {
 	MutexLock lock(getMutex());
 	setState(STATE_QUIT);
 	// FIXME make sure thread wakes up so we can join on it
 	cond.signal();
 }
 
-void GameInterface::quit() {
+void NetworkMessenger::quit() {
 	MutexLock lock(getMutex());
 	setState(STATE_QUIT);
 	NetworkMessageStatus quitMsg(*this);
@@ -329,13 +329,13 @@ void GameInterface::quit() {
 	end();
 }
 
-void GameInterface::copyCommandToNetwork(Command *command) {
+void NetworkMessenger::copyCommandToNetwork(Command *command) {
 	// always call with mutex locked
 	MutexLock lock(getMutex());
 	requestedCommands[getLastFrame() + getGameSettings()->getCommandDelay()].push(new Command(*command));
 }
 
-void GameInterface::beginUpdate(int frame, bool isKeyFrame) {/*
+void NetworkMessenger::beginUpdate(int frame, bool isKeyFrame) {/*
 	MutexLock lock(getMutex());
 	lastFrame = frame;
 
@@ -356,10 +356,10 @@ void GameInterface::beginUpdate(int frame, bool isKeyFrame) {/*
 	}*/
 }
 
-void GameInterface::endUpdate() {
+void NetworkMessenger::endUpdate() {
 }
 
-const RemoteInterface &GameInterface::getPeerOrThrow(int id) const throw (range_error) {
+const RemoteInterface &NetworkMessenger::getPeerOrThrow(int id) const throw (range_error) {
 	const RemoteInterface *peer = getPeer(id);
 	if(!peer) {
 		stringstream str;
@@ -369,13 +369,13 @@ const RemoteInterface &GameInterface::getPeerOrThrow(int id) const throw (range_
 	return *peer;
 }
 
-void GameInterface::setGameSettings(const shared_ptr<GameSettings> &v) {
+void NetworkMessenger::setGameSettings(const shared_ptr<GameSettings> &v) {
 	MutexLock localLock(getMutex());
 	gameSettings = v;
 	gameSettingsChanged = true;
 }
 
-void GameInterface::changeFaction(bool isAdd, int factionId, int playerId) throw (range_error) {
+void NetworkMessenger::changeFaction(bool isAdd, int factionId, int playerId) throw (range_error) {
 	MutexLock localLock(getMutex());
 	const GameSettings::Faction &f = gameSettings->getFactionOrThrow(factionId);
 	HumanPlayer &humanPlayer = getPeerOrThrow(playerId).getProtectedPlayer();
@@ -391,17 +391,17 @@ void GameInterface::changeFaction(bool isAdd, int factionId, int playerId) throw
 	gameSettingsChanged = true;
 }
 
-void GameInterface::setGameSettingsChanged(bool v) {
+void NetworkMessenger::setGameSettingsChanged(bool v) {
 	MutexLock localLock(getMutex());
 	gameSettingsChanged = v;
 }
 
-void GameInterface::resetConnectionsChanged() {
+void NetworkMessenger::resetConnectionsChanged() {
 	MutexLock localLock(getMutex());
 	connectionsChanged = false;
 }
 
-void GameInterface::setConnectionsChanged() {
+void NetworkMessenger::setConnectionsChanged() {
 	MutexLock localLock(getMutex());
 	connectionsChanged = true;
 }
@@ -416,7 +416,7 @@ void onReceive(RemoteInterface &source, NetworkPlayerStatus &status, NetworkMess
  * Process a message.
  * @return true if the should be deleted, false otherwise
  *//*
-bool GameInterface::process(RemoteInterface &source, NetworkMessage *msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessage *msg) {
 	MutexLock lock(getMutex());
 
 	switch(msg->getType()) {
@@ -449,11 +449,11 @@ bool GameInterface::process(RemoteInterface &source, NetworkMessage *msg) {
 	}
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageStatus &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageStatus &msg) {
 	return true;
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageHandshake &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageHandshake &msg) {
 	bool ret;
 
 	if(getState() >= STATE_NEGOTIATED) {
@@ -475,19 +475,19 @@ bool GameInterface::process(RemoteInterface &source, NetworkMessageHandshake &ms
 	return vProcess(source, msg);
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageGameInfo &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageGameInfo &msg) {
 	return true;
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageText &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageText &msg) {
 	chatMessages.push(new ChatMessage(msg.getText(), msg.getSender(), msg.getTeamIndex()));
 	return true;
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageFileHeader &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageFileHeader &msg) {
 	if(fileReceiver) {
 		throw runtime_error("Can't receive file from server because I'm already receiving one.");
 	}
@@ -506,7 +506,7 @@ bool GameInterface::process(RemoteInterface &source, NetworkMessageFileHeader &m
 	return true;
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageFileFragment &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageFileFragment &msg) {
 	if(!fileReceiver) {
 		throw runtime_error("Recieved file fragment, but did not get header.");
 	}
@@ -519,7 +519,7 @@ bool GameInterface::process(RemoteInterface &source, NetworkMessageFileFragment 
 	return true;
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageLaunch &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageLaunch &msg) {
 	if(state != STATE_READY) {
 		throw runtime_error("recieved NMT_LANCH at unexpected time");
 	}
@@ -549,11 +549,11 @@ bool GameInterface::process(RemoteInterface &source, NetworkMessageLaunch &msg) 
 	return true;
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageReady &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageReady &msg) {
 	return true;
 }
 
-bool GameInterface::process(RemoteInterface &source, NetworkMessageCommandList &msg) {
+bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageCommandList &msg) {
 	if(!msg.hasFrame()) {
 		throw runtime_error("Recieved NMT_COMMAND_LIST without a frame and that's not "
 				"supposed to happen (I can't do anything with it).");
@@ -576,12 +576,12 @@ bool GameInterface::process(RemoteInterface &source, NetworkMessageCommandList &
 }
 
 */
-void GameInterface::sendTextMessage(const string &text, int teamIndex) {
+void NetworkMessenger::sendTextMessage(const string &text, int teamIndex) {
 	MutexLock lock(getMutex());
 //	outQ.push(new NetworkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex));
 }
 
-void GameInterface::addRemovePeer(bool isAdd, RemoteInterface *peer) {
+void NetworkMessenger::addRemovePeer(bool isAdd, RemoteInterface *peer) {
 	MutexLock lock(getMutex());
 	shared_ptr<MutexLock> gsLock = gameSettings->getLock();
 	int id = peer->getId();
@@ -602,7 +602,7 @@ void GameInterface::addRemovePeer(bool isAdd, RemoteInterface *peer) {
 					"Internal Consistiency Error: An attempt to add or remove a peer was invoked "
 					"when an existing player in the GameSettings was found with the same ID, which "
 					"does not match the specified peer",
-	 				"GameInterface::addRemovePeer()",
+	 				"NetworkMessenger::addRemovePeer()",
 	  				NULL, __FILE__, __LINE__);
 		}
 #endif
@@ -623,7 +623,7 @@ void GameInterface::addRemovePeer(bool isAdd, RemoteInterface *peer) {
 	} else {
 		peers.erase(id);
 		// This is a wee-bit hacky, but we don't delete RemotetServerInterface objects,
-		// ClientInterfaces own them.  We could circumvent this problem by changed PeerMap to
+		// NetworkClientMessengers own them.  We could circumvent this problem by changed PeerMap to
 		// type map<int, shared_ptr<RemoteInterface> > if we wanted to.
 		if(id != 0) {
 			delete peer;
@@ -633,14 +633,14 @@ void GameInterface::addRemovePeer(bool isAdd, RemoteInterface *peer) {
 	peerMapChanged = true;
 }
 
-bool GameInterface::isLocalHumanPlayer(const Player &p) const {
+bool NetworkMessenger::isLocalHumanPlayer(const Player &p) const {
 	return p.getType() == PLAYER_TYPE_HUMAN
 			&& static_cast<const HumanPlayer&>(p).getNetworkInfo().getUid() == getUid();
 	//getPlayer().getName() == p.getName();
 }
 
 /*
-void GameInterface::setPeerId(RemoteInterface *peer, int newId) {
+void NetworkMessenger::setPeerId(RemoteInterface *peer, int newId) {
 	MutexLock lock(getMutex());
 	// may only set a peer ID if it's -1 (i.e., un-initialized)
 	assert(peer->getId() == -1);
@@ -653,7 +653,7 @@ void GameInterface::setPeerId(RemoteInterface *peer, int newId) {
 /**
  * Retreives the next usable id.
  */
-int GameInterface::getNextPeerId() const {
+int NetworkMessenger::getNextPeerId() const {
 	int highestId = 0;
 	foreach(const PeerMap::value_type &p, peers) {
 		if(p.first > highestId) {
@@ -666,7 +666,7 @@ int GameInterface::getNextPeerId() const {
 /**
  * Retreives a temporary id.
  */
-int GameInterface::getTemporaryPeerId() const {
+int NetworkMessenger::getTemporaryPeerId() const {
 	int lowestId = 0;
 	foreach(const PeerMap::value_type &p, peers) {
 		if(p.first < lowestId) {
@@ -677,7 +677,7 @@ int GameInterface::getTemporaryPeerId() const {
 }
 
 /** Send a file to all clients. */
-void GameInterface::sendFile(const string path, const string remoteName, bool compress) {
+void NetworkMessenger::sendFile(const string path, const string remoteName, bool compress) {
 	size_t fileSize;
 	ifstream in;
 	int zstatus;
@@ -785,8 +785,8 @@ void GameInterface::sendFile(const string path, const string remoteName, bool co
 	deflateEnd(&z);*/
 }
 
-void GameInterface::print(ObjectPrinter &op) const {
-	Host::print(op.beginClass("GameInterface"));
+void NetworkMessenger::print(ObjectPrinter &op) const {
+	Host::print(op.beginClass("NetworkMessenger"));
 	op		.print("broadcastTargets", broadcastTargets)
 			.print("fileReceiver", (void *)fileReceiver)
 			.print("gameSettings", (void *)gameSettings.get())
@@ -797,7 +797,7 @@ void GameInterface::print(ObjectPrinter &op) const {
 }
 
 #if 0
-void GameInterface::onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
+void NetworkMessenger::onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
 
 	_onReceive(source, msg);
 }

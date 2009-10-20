@@ -91,6 +91,16 @@ public:
 
 int glestMain(int argc, char** argv) {
 	Config &config = Config::getInstance();
+	vector<string> args;
+
+	// C++-ize args
+	for(int i = 0; i < argc; ++i) {
+		args.push_back(string(argv[i]));
+	}
+
+	if(args.size() > 1 && args[1] == "--dedicated") {
+		return 0;
+	}
 
 	if(config.getMiscCatchExceptions()) {
 		ExceptionHandler exceptionHandler;

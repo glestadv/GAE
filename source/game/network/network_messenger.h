@@ -51,13 +51,13 @@ namespace Game { namespace Net {
 
 /**
  * A network delgate to handle all network functions for a network game while hiding those
- * details from the users of the NetworkGameInterface.  A NetworkGameInterface may actually
+ * details from the users of the NetworkMessenger.  A NetworkMessenger may actually
  * interact with more than one remote hosts whom are in either of the roles of server, client or
  * peer (client to client).
  */
-class GameInterface : public Host, private Thread { // LocalPlayerInterface?
+class NetworkMessenger : public Host, private Thread {
 protected:
-	typedef queue<Command *> Commands;
+	typedef queue<shared_ptr<Command> > Commands;
 	typedef map<int, Commands> CommandQueue;
 	typedef map<int, RemoteInterface *> PeerMap;
 	typedef SocketTestData<RemoteInterface *> SocketTestRI;
@@ -91,8 +91,8 @@ private:
 	size_t commandDelay;
 
 public:
-	GameInterface(NetworkRole role, unsigned short port, int id = IdNamePair::invalidId);
-	virtual ~GameInterface();
+	NetworkMessenger(NetworkRole role, unsigned short port, int id = IdNamePair::invalidId);
+	virtual ~NetworkMessenger();
 
 	virtual void beginUpdate(int frame, bool isKeyFrame);
 	virtual void endUpdate();
@@ -144,12 +144,12 @@ public:
 	// ugly, but const-correct non-const getter wrappers
 	RemoteInterface &getPeerOrThrow(int id) throw (range_error) {
 		return const_cast<RemoteInterface &>(
-			const_cast<const GameInterface*>(this)->getPeerOrThrow(id));
+			const_cast<const NetworkMessenger*>(this)->getPeerOrThrow(id));
 	}
 
 	RemoteInterface *getPeer(int id) {
 		return const_cast<RemoteInterface *>(
-			const_cast<const GameInterface*>(this)->getPeer(id));
+			const_cast<const NetworkMessenger*>(this)->getPeer(id));
 	}
 
 	const ConstPeerMap &getConstPeers() const	{return reinterpret_cast<const ConstPeerMap &>(peers);}
@@ -168,7 +168,7 @@ public:
 	void onReceive(RemoteInterface &source, NetworkPlayerStatus &status, NetworkMessage &msg){_onReceive(source, status, msg);}
 
 	virtual void print(ObjectPrinter &op) const = 0;
-	const GameInterface &getGameInterface() const		{return *this;}
+	const NetworkMessenger &getNetworkMessenger() const		{return *this;}
 
 private:
 	virtual void _onReceive(RemoteInterface &source, NetworkMessageHandshake &msg) = 0;

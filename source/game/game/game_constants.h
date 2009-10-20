@@ -41,18 +41,18 @@ namespace Game { namespace Net {
  * containing it's name by calling stateEnumNames.getName(value);
  */
 STRINGY_ENUM(State, STATE_COUNT,
-	STATE_UNCONNECTED,	/** not yet connected */
-	STATE_LISTENING,	/** not yet connected, but listening for connections */
-	STATE_CONNECTED,	/** established a connection and sent (or expecting) handshake */
-	STATE_NEGOTIATED,	/** compatible protocols have been negotiated (via handshake) */
-	STATE_INITIALIZED,	/** has received game settings (still in lobby) */
-	STATE_LAUNCH_READY,	/** client is ready to launch game (when given the O.K.) */
-	STATE_LAUNCHING,	/** launching game */
-	STATE_READY,		/** ready to begin play */
-	STATE_PLAY,			/** game started (normal play state) */
-	STATE_PAUSED,		/** game paused */
-	STATE_QUIT,			/** quit game requested/initiated */
-	STATE_END			/** game terminated */
+	STATE_UNCONNECTED,	/**< not yet connected */
+	STATE_LISTENING,	/**< not yet connected, but listening for connections */
+	STATE_CONNECTED,	/**< established a connection and sent (or expecting) handshake */
+	STATE_NEGOTIATED,	/**< compatible protocols have been negotiated (via handshake) */
+	STATE_INITIALIZED,	/**< has received game settings (still in lobby) */
+	STATE_LAUNCH_READY,	/**< client is ready to launch game (when given the O.K.) */
+	STATE_LAUNCHING,	/**< launching game */
+	STATE_READY,		/**< ready to begin play */
+	STATE_PLAY,			/**< game started (normal play state) */
+	STATE_PAUSED,		/**< game paused */
+	STATE_QUIT,			/**< quit game requested/initiated */
+	STATE_END			/**< game terminated */
 );
 
 STRINGY_ENUM(NetworkMessageType, NMT_COUNT,
@@ -76,31 +76,31 @@ STRINGY_ENUM(NetworkMessageType, NMT_COUNT,
  * changed, the state of which is specified by ParamChange.
  */
 STRINGY_ENUM(GameParam, GAME_PARAM_COUNT,
-	GAME_PARAM_NONE,		/** No game paramter changes are pending, requested or in progress. */
-	GAME_PARAM_PAUSED,		/** A pause is either pending, requested or in progress. */
-	GAME_PARAM_UNPAUSED,	/** An unpause is either pending, requested or in progress. */
-	GAME_PARAM_SPEED		/** A game speed change is either pending, requested or in progress.
-							 *  The target speed is indicated with a GameSpeed value. */
+	GAME_PARAM_NONE,		/**< No game paramter changes are pending, requested or in progress. */
+	GAME_PARAM_PAUSED,		/**< A pause is either pending, requested or in progress. */
+	GAME_PARAM_UNPAUSED,	/**< An unpause is either pending, requested or in progress. */
+	GAME_PARAM_SPEED		/**< A game speed change is either pending, requested or in progress.
+							 *   The target speed is indicated with a GameSpeed value. */
 );
 
 /**
  * The state of a game paramiter change, valid only if GameParam is other than GAME_PARAM_NONE.
  */
 STRINGY_ENUM(ParamChange, PARAM_CHANGE_COUNT,
-								/** T - target frame required or not */
-	PARAM_CHANGE_NONE,			/** n - no pending state changes */
-	PARAM_CHANGE_REQUESTED,		/** y - state change requested */
-	PARAM_CHANGE_REQ_ACK,		/** y - pause request acknowledged */
-	PARAM_CHANGE_REQ_ACCEPTED,	/** y - pause request accepted */
-	PARAM_CHANGE_REQ_DENIED,	/** y - pause request denied */
-	PARAM_CHANGE_COMMITED		/** n - state change committed (paused, unpaused, speed changed, etc.) */
+								/**< T - target frame required or not */
+	PARAM_CHANGE_NONE,			/**< n - no pending state changes */
+	PARAM_CHANGE_REQUESTED,		/**< y - state change requested */
+	PARAM_CHANGE_REQ_ACK,		/**< y - pause request acknowledged */
+	PARAM_CHANGE_REQ_ACCEPTED,	/**< y - pause request accepted */
+	PARAM_CHANGE_REQ_DENIED,	/**< y - pause request denied */
+	PARAM_CHANGE_COMMITED		/**< n - state change committed (paused, unpaused, speed changed, etc.) */
 );
 
 } // end namespace Game::Net
 
 STRINGY_ENUM(PlayerType, PLAYER_TYPE_COUNT,
-    PLAYER_TYPE_HUMAN,		/** Represents a human player */
-	PLAYER_TYPE_AI			/** Represents a computer player */
+    PLAYER_TYPE_HUMAN,		/**< Represents a human player */
+	PLAYER_TYPE_AI			/**< Represents a computer player */
 );
 
 STRINGY_ENUM(GameSpeed, GAME_SPEED_COUNT,
@@ -123,7 +123,7 @@ STRINGY_ENUM(ControlType, CT_COUNT,
 );
 extern const char* enumControlTypeDesc[CT_COUNT];
 
-STRINGY_ENUM(NetworkRole, NR_COUNT, 
+STRINGY_ENUM(NetworkRole, NR_COUNT,
 	NR_IDLE,		/** */
 	NR_SERVER,		/** */
 	NR_CLIENT,		/** */

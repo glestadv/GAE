@@ -29,9 +29,6 @@ namespace Game {
 // =====================================================
 
 class Console {
-private:
-	static const int consoleLines = 5;
-
 public:
 	typedef pair<string, float> StringTimePair;
 	typedef vector<StringTimePair> Lines;

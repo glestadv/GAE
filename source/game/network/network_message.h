@@ -38,7 +38,7 @@ using Game::GameSettings;
 namespace Game { namespace Net {
 
 class Host;
-class GameInterface;
+class NetworkMessenger;
 
 // =====================================================
 //	class NetworkMessage
@@ -76,14 +76,14 @@ public:
 	static const char* msgTypeName[NMT_COUNT];
 
 private:
-	uint16 size;
-	uint8 type;
+	uint16 size;	/**< The size of this message in bytes. */
+	uint8 type;		/**< The message type, stored as an unsigned integer (but it's really a NetworkMessageType) */
 #ifdef DEBUG
-	bool writing;	/** Used in debug build to verify write() not called directly */
+	bool writing;	/**< Used in debug build to verify write() not called directly */
 #endif
 
 #ifdef DEBUG_NETWORK_DELAY
-	int64 simRxTime;
+	int64 simRxTime;/**< The simulated rx time (available when compiled with DEBUG_NETWORK_DELAY) */
 #endif
 
 private:
@@ -261,10 +261,10 @@ class NetworkPlayerStatus : public Printable {
 		DATA_MASK_COMMAND_DELAY			= 0x03f00000u	// 6 bits (0 to 63 world frames);
 	};
 
-	uint8 connections;	/** bitmask of peers to whom a connection is established */
-	uint32 data;		/** contains various data packed into 32 bits */
-	uint32 frame;		/** (optional) the current frame at the time this message was generated */
-	uint32 targetFrame;	/** (optional) the frame that actions specified in this packet are intended for */
+	uint8 connections;	/**< bitmask of peers to whom a connection is established */
+	uint32 data;		/**< contains various data packed into 32 bits */
+	uint32 frame;		/**< (optional) the current frame at the time this message was generated */
+	uint32 targetFrame;	/**< (optional) the frame that actions specified in this packet are intended for */
 
 public:
 	NetworkPlayerStatus() {}
@@ -456,14 +456,15 @@ public:
  */
 class NetworkMessageGameInfo : public NetworkMessageXmlDoc {
 public:
+	/** Maps a player ID with a NetworkPlayerStatus object. */
 	typedef std::map<int, NetworkPlayerStatus> Statuses;
 
 private:
-	Statuses statuses;	/** Used to cache statuses when getPlayerStatuses is called. */
+	Statuses statuses;	/**< Used to cache statuses when getPlayerStatuses is called. */
 
 public:
 	NetworkMessageGameInfo(NetworkDataBuffer &buf);
-	NetworkMessageGameInfo(const GameInterface &gi, const GameSettings &gs);
+	NetworkMessageGameInfo(const NetworkMessenger &gi, const GameSettings &gs);
 	virtual ~NetworkMessageGameInfo();
 
 	void addPlayerInfo(const Host &player);
@@ -578,9 +579,9 @@ public:
 
 class NetworkMessageFileHeader: public NetworkMessage {
 private:
-	NetworkString<128> name;
-	uint32 size;		/** uncompressed size in bytes */
-	bool compressed;
+	NetworkString<128> name;	/**< File name. */
+	uint32 size;				/**< Uncompressed size in bytes */
+	bool compressed;			/**< True if file is being sent compressed. */
 
 public:
 	NetworkMessageFileHeader(NetworkDataBuffer &buf);

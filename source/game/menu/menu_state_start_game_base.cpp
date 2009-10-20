@@ -41,14 +41,14 @@ MenuStateStartGameBase::~MenuStateStartGameBase() {
 
 // ============ PROTECTED ===========================
 
-void MenuStateStartGameBase::initGameSettings(GameInterface &gi) {
+void MenuStateStartGameBase::initGameSettings(NetworkMessenger &gi) {
 	gs = gi.getGameSettings();
 }
 
 void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 
 	// FIXME: This is terrible.  All of this map stuff should be in the shared library.
-	
+
 	struct MapFileHeader {
 		int32 version;
 		int32 maxFactions;
@@ -98,7 +98,7 @@ void MenuStateStartGameBase::updateNetworkSlots() {
 				if(client) {
 					serverInterface->assignClientToSlot(client, slot);
 				}
-			}			
+			}
 		} else {
 			if (client) {
 				serverInterface->removeClientFromSlot(client);

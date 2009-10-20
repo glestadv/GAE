@@ -104,7 +104,7 @@ void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
 	CoreData &coreData = CoreData::getInstance();
 	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
 	NetworkManager &networkManager = NetworkManager::getInstance();
-	ClientInterface* clientInterface = networkManager.getClientInterface();
+	NetworkClientMessenger* clientInterface = networkManager.getNetworkClientMessenger();
 
 	if (msgBox) {
 		if (msgBox->mouseClick(x, y)) {
@@ -136,7 +136,7 @@ void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
 
 	//connect/disconnect
 	} else if (buttonConnect.mouseClick(x, y)) {
-		ClientInterface* clientInterface = networkManager.getClientInterface();
+		NetworkClientMessenger* clientInterface = networkManager.getNetworkClientMessenger();
 
 		soundRenderer.playFx(coreData.getClickSoundA());
 		labelInfo.setText("");
@@ -197,7 +197,7 @@ void MenuStateJoinGame::render() {
 }
 
 void MenuStateJoinGame::update() {
-	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
+	NetworkClientMessenger* clientInterface = NetworkManager::getInstance().getNetworkClientMessenger();
 	Lang &lang = Lang::getInstance();
 
 	//update status label
@@ -263,7 +263,7 @@ void MenuStateJoinGame::update() {
 }
 
 void MenuStateJoinGame::keyDown(const Key &key) {
-	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
+	NetworkClientMessenger* clientInterface = NetworkManager::getInstance().getNetworkClientMessenger();
 
 	if (!clientInterface->isConnected()) {
 		if (key == keyBackspace) {
@@ -283,7 +283,7 @@ void MenuStateJoinGame::keyDown(const Key &key) {
 }
 
 void MenuStateJoinGame::keyPress(char c) {
-	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
+	NetworkClientMessenger* clientInterface = NetworkManager::getInstance().getNetworkClientMessenger();
 
 	if (!clientInterface->isConnected()) {
 		int maxTextSize = 16;
@@ -310,7 +310,7 @@ void MenuStateJoinGame::keyPress(char c) {
 }
 
 void MenuStateJoinGame::connectToServer() {
-	ClientInterface &clientInterface = *NetworkManager::getInstance().getClientInterface();
+	NetworkClientMessenger &clientInterface = *NetworkManager::getInstance().getNetworkClientMessenger();
 	Config& config = Config::getInstance();
 	string ipString = labelServerIp.getText();
 	// remove annoying trailing underscore

@@ -31,7 +31,7 @@ namespace Game { namespace Net {
 
 class NetworkManager {
 private:
-	GameInterface* gameInterface;
+	NetworkMessenger* gameInterface;
 	NetworkRole networkRole;
 
 public:
@@ -60,7 +60,7 @@ public:
 	bool isServer()			{return networkRole == NR_SERVER;}
 	bool isNetworkServer()	{return networkRole == NR_SERVER && getServerInterface()->getConnectionCount() > 0;}
 	bool isNetworkClient()	{return networkRole == NR_CLIENT;}
-	bool isNetworkGame()	{return isNetworkClient() || isNetworkServer();}	
+	bool isNetworkGame()	{return isNetworkClient() || isNetworkServer();}
 	bool isLocal()			{return !isNetworkGame();}
 
 	Logger &getLogger() {
@@ -68,7 +68,7 @@ public:
 		return networkRole == NR_CLIENT ? Logger::getClientLog() : Logger::getServerLog();
 	}
 
-	GameInterface* getGameInterface() {
+	NetworkMessenger* getNetworkMessenger() {
 		assert(gameInterface);
 		return gameInterface;
 	}
@@ -79,10 +79,10 @@ public:
 		return static_cast<ServerInterface*>(gameInterface);
 	}
 
-	ClientInterface* getClientInterface() {
+	NetworkClientMessenger* getNetworkClientMessenger() {
 		assert(gameInterface);
 		assert(networkRole == NR_CLIENT);
-		return static_cast<ClientInterface*>(gameInterface);
+		return static_cast<NetworkClientMessenger*>(gameInterface);
 	}
 };
 

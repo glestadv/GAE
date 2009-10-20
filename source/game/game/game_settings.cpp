@@ -85,7 +85,7 @@ ControlType GameSettings::Faction::getControlType() const {
 			return static_cast<const AiPlayer&>(primary).isUltra() ? CT_CPU_ULTRA : CT_CPU;
 		} else {
 			NetworkManager &netman = NetworkManager::getInstance();
-			if(!netman.isNetworkGame() || netman.getGameInterface()->isLocalHumanPlayer(primary)) {
+			if(!netman.isNetworkGame() || netman.getNetworkMessenger()->isLocalHumanPlayer(primary)) {
 				return CT_HUMAN;
 			} else {
 				return CT_NETWORK;

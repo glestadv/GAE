@@ -25,6 +25,8 @@
 #include "game_settings.h"
 #include "config.h"
 #include "keymap.h"
+#include "game_interface.h"
+#include "game_manager.h"
 
 // weather system not yet ready
 //#include "../physics/weather.h"
@@ -50,9 +52,8 @@ private:
 private:
 	static Game *singleton;
 
+	GameManager &manager;
 	//main data
-	shared_ptr<GameSettings> gs;
-	XmlNode *savedGame;
 	Keymap &keymap;
 	const Input &input;
 	const Config &config;
@@ -87,13 +88,14 @@ private:
 	ParticleSystem *weatherParticleSystem;
 
 public:
-	Game(Program &program, const shared_ptr<GameSettings> &gs, XmlNode *savedGame = NULL);
+	Game(GameManager &manager, Program &program);
     ~Game();
 	static Game *getInstance()				{return singleton;}
 
     //get
-//	const shared_ptr<GameSettings> &getGameSettings()	{return gs;}
-	const GameSettings &getGameSettings()	{return *gs;}
+	const GameSettings &getGameSettings()	{return *manager.getGameSettings();}
+	NetworkMessenger &getInterface()		{return *interface;}
+
 	const Keymap &getKeymap() const			{return keymap;}
 	const Input &getInput() const			{return input;}
 

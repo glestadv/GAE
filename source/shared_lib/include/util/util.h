@@ -29,12 +29,12 @@
 #include "types.h"
 
 #if (defined(WIN32) || defined(WIN64)) && !_GNU_SOURCE
-	#include <list>
-	#define slist list
+#	include <list>
+#	define slist list
 
 	using std::slist;
 #else
-	#include <ext/slist>
+#	include <ext/slist>
 
 	using __gnu_cxx::slist;
 #endif
@@ -80,8 +80,10 @@ private:
 	bool copyStrings;
 
 public:
-	/** Primary ctor. As it turns out, not specifying copyStrings as true on most modern system will
-	 * result in some form of access violation (due to attempting to write to read-only memory. */
+	/**
+	 * Primary ctor. As it turns out, not specifying copyStrings as true on most modern system will
+	 * result in some form of access violation (due to attempting to write to read-only memory.
+	 */
 	EnumNames(const char *valueList, size_t count, bool copyStrings, bool lazy);
     ~EnumNames();
     const char *getName(unsigned i) const {
@@ -100,6 +102,7 @@ private:
 // class Version
 // =====================================================
 
+/** Class to manage versions. */
 class Version : public NetSerializable {
 private:
 	uint16 _major;
@@ -153,10 +156,10 @@ public:
 
 class ObjectPrinter {
 private:
-	std::ostream &o;	/** Output destination. */
-	string i;			/** Current indentation. */
-	const string si;	/** Single indentation. */
-	bool indentNext;	/** Flag used to omit indentation at the start of printing an object. */
+	std::ostream &o;	/**< Output destination. */
+	string i;			/**< Current indentation. */
+	const string si;	/**< Single indentation. */
+	bool indentNext;	/**< Flag used to omit indentation at the start of printing an object. */
 
 public:
 	ObjectPrinter(std::ostream &o, const string &si = string("  "));

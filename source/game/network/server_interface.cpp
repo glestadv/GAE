@@ -42,7 +42,7 @@ namespace Game { namespace Net {
 // =====================================================
 
 ServerInterface::ServerInterface(unsigned short port)
-		: GameInterface(NR_SERVER, port, 0)
+		: NetworkMessenger(NR_SERVER, port, 0)
 		, updateFactionsFlag(false) {
 	getLogger().clear();
 }
@@ -51,7 +51,7 @@ ServerInterface::~ServerInterface() {
 }
 
 /**
- * Accept a new connection.  This function should only be called by the GameInterface::execute()
+ * Accept a new connection.  This function should only be called by the NetworkMessenger::execute()
  * function.
  */
 void ServerInterface::accept() {
@@ -198,7 +198,7 @@ void ServerInterface::_onReceive(RemoteInterface &source, NetworkMessageUpdateRe
 }
 
 void ServerInterface::beginUpdate(int frame, bool isKeyFrame) {
-	GameInterface::beginUpdate(frame, isKeyFrame);
+	NetworkMessenger::beginUpdate(frame, isKeyFrame);
 }
 
 void ServerInterface::endUpdate() {
@@ -253,7 +253,7 @@ string ServerInterface::getStatus() const {
 }
 
 void ServerInterface::print(ObjectPrinter &op) const {
-	GameInterface::print(op.beginClass("ServerInterface"));
+	NetworkMessenger::print(op.beginClass("ServerInterface"));
 	op		.endClass();
 }
 

@@ -156,7 +156,7 @@ void Gui::resetState() {
 	buildPositions.clear();
 }
 
-/** return true if the position is valid, false otherwise */
+/** @return true if the position is valid, false otherwise */
 bool Gui::getMinimapCell(int x, int y, Vec2i &cell) {
 	const Map *map = world->getMap();
 	const Metrics &metrics = Metrics::getInstance();
@@ -916,7 +916,7 @@ void Gui::computeDisplay() {
 		display.setDownSelectedPos(activePos);
 	}
 
-	if (selection.isComandable() 
+	if (selection.isComandable()
 	&& selection.getFrontUnit()->getFaction()->getTeam() == thisTeam ) {
 		if (!selectingBuilding) {
 
@@ -1074,7 +1074,7 @@ void Gui::addOrdersResultToConsole(CommandClass cc, CommandResult result) {
 					b = needed[i]->getName();
 				}
 			}
-	
+
 			if (needed.size() == 1) {
 				switch (cc) {
 				case ccBuild:

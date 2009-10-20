@@ -46,7 +46,7 @@ namespace Game { namespace Net {
 
 //const int NetworkInterface::readyWaitTimeout = 60000;	//1 minute
 
-RemoteInterface::RemoteInterface(GameInterface &owner, NetworkRole role, int id, const uint64 &uid)
+RemoteInterface::RemoteInterface(NetworkGameConnector &owner, NetworkRole role, int id, const uint64 &uid)
 		: Host(role, id, uid)
 		, Scheduleable(0, 0)
 		, owner(owner)

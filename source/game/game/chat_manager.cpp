@@ -88,11 +88,11 @@ bool ChatManager::keyDown(const Key &key) {
 		return true;
 	}
 
-	
+
 	if (key == keyReturn && editEnabled) {
 		editEnabled = false;
 		if (!text.empty()) {
-			Net::GameInterface *gameInterface = NetworkManager::getInstance().getGameInterface();
+			Net::NetworkMessenger *gameInterface = NetworkManager::getInstance().getNetworkMessenger();
 			console->addLine(gameInterface->getPlayer().getName() + ": " + text);
 			gameInterface->sendTextMessage(text, teamMode ? thisTeamIndex : -1);
 		}
@@ -118,7 +118,7 @@ void ChatManager::keyPress(char c) {
 }
 
 void ChatManager::updateNetwork() {
-	Net::GameInterface *gameInterface = NetworkManager::getInstance().getGameInterface();
+	Net::NetworkMessenger *gameInterface = NetworkManager::getInstance().getNetworkMessenger();
 	ChatMessage *msg;
 	while((msg = gameInterface->getNextChatMessage())) {
 		int teamIndex = msg->getTeamIndex();

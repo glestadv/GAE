@@ -14,10 +14,13 @@
 #define _GAME_NET_PROTOCOLEXCEPTION_H_
 
 #include "exception_base.h"
-#include "remote_interface.h"
-#include "network_message.h"
+//#include "remote_interface.h"
+//#include "network_message.h"
 
 namespace Game { namespace Net {
+
+class RemoteInterface;
+class NetworkMessage;
 
 // =====================================================
 //	class ProtocolException

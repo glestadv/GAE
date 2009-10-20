@@ -17,15 +17,16 @@
 #include <vector>
 #include <deque>
 
-#include "checksum.h"
-#include "network_message.h"
-#include "network_types.h"
-#include "network_status.h"
+#include "game_constants.h"
 #include "thread.h"
-#include "chat_manager.h"
-#include "file_transfer.h"
 #include "patterns.h"
 #include "network_info.h"
+//#include "checksum.h"
+//#include "network_message.h"
+//#include "network_types.h"
+//#include "network_status.h"
+//#include "chat_manager.h"
+//#include "file_transfer.h"
 
 using std::string;
 using std::vector;
@@ -44,7 +45,7 @@ using namespace Game::Net;
 namespace Game { namespace Net {
 
 class RemoteInterface;
-class ClientInterface;
+class NetworkClientMessenger;
 class ServerInterface;
 class NetworkPlayerStatus;
 
@@ -60,16 +61,16 @@ protected:
 private:
 	HumanPlayer player;
 	NetworkRole role;
-	State state;				/** Current state of this game host */
-	ParamChange paramChange;	/** Current pause or speed changes in progress */
-	GameParam gameParam;		/** If paramChange != PARAM_CHANGE_NONE, the game parameter being changed, otherwise irrelevant */
-	int targetFrame;			/** If paramChange != PARAM_CHANGE_NONE, the targeted frame for the impending game parameter change, otherwise irrelevant */
-	GameSpeed newSpeed;			/** If paramChange != PARAM_CHANGE_NONE and gameParam == GAME_PARAM_SPEED, the new game speed, otherwise irrelevant */
+	State state;				/**< Current state of this game host */
+//	ParamChange paramChange;	/**< Current pause or speed changes in progress */
+//	GameParam gameParam;		/**< If paramChange != PARAM_CHANGE_NONE, the game parameter being changed, otherwise irrelevant */
+//	int targetFrame;			/**< If paramChange != PARAM_CHANGE_NONE, the targeted frame for the impending game parameter change, otherwise irrelevant */
+//	GameSpeed newSpeed;			/**< If paramChange != PARAM_CHANGE_NONE and gameParam == GAME_PARAM_SPEED, the new game speed, otherwise irrelevant */
 	bool peerConnectionState[GameConstants::maxPlayers];
 	string description;
-	int lastFrame;
-	int lastKeyFrame;
-	unsigned short port;
+//	int lastFrame;
+//	int lastKeyFrame;
+//	unsigned short port;
 
 public:
 	Host(NetworkRole role, int id, const uint64 &uid);
@@ -80,27 +81,27 @@ public:
 	int getId() const						{return player.getId();}
 	NetworkRole getRole() const				{return role;}
 	State getState() const					{return state;}
-	ParamChange getParamChange() const		{return paramChange;}
-	GameParam getGameParam() const			{return gameParam;}
-	int getTargetFrame() const				{return targetFrame;}
-	GameSpeed getNewSpeed() const			{return newSpeed;}
+//	ParamChange getParamChange() const		{return paramChange;}
+//	GameParam getGameParam() const			{return gameParam;}
+//	int getTargetFrame() const				{return targetFrame;}
+//	GameSpeed getNewSpeed() const			{return newSpeed;}
 	bool isConnected(size_t i) const		{assert(i < GameConstants::maxPlayers); return peerConnectionState[i];}
 	const string &getDescription() const	{return description;}
-	int getLastFrame() const				{return lastFrame;}
-	int getLastKeyFrame() const				{return lastKeyFrame;}
-	unsigned short getPort() const			{return port;}
+//	int getLastFrame() const				{return lastFrame;}
+//	int getLastKeyFrame() const				{return lastKeyFrame;}
+//	unsigned short getPort() const			{return port;}
 
 //	virtual bool isConnected()				{return connected;}
 	virtual Socket *getSocket() = 0;
 
 //	bool isListening() const				{return state == STATE_LISTENING;}
-	bool isReady() const					{return state >= STATE_READY;}
+//	bool isReady() const					{return state >= STATE_READY;}
 //	bool isLaunching() const				{return state == STATE_LAUNCHING;}
 //	bool isConnected() const				{return state >= STATE_CONNECTED && state <= STATE_PAUSED;}
-	bool isPlay() const						{return state == STATE_PLAY;}
-	bool isPaused() const					{return state == STATE_PAUSED;}
-	bool isQuit() const						{return state >= STATE_QUIT;}
-	bool isEnd() const						{return state == STATE_END;}
+//	bool isPlay() const						{return state == STATE_PLAY;}
+//	bool isPaused() const					{return state == STATE_PAUSED;}
+//	bool isQuit() const						{return state >= STATE_QUIT;}
+//	bool isEnd() const						{return state == STATE_END;}
 
 //	virtual void beginUpdate(int frame, bool isKeyFrame) = 0;
 //	virtual void endUpdate() = 0;
@@ -108,7 +109,7 @@ public:
 	void setId(int id)						{player.setId(id);}
 
 	virtual void print(ObjectPrinter &op) const = 0;
-	virtual const GameInterface &getGameInterface() const = 0;
+	virtual const NetworkMessenger &getNetworkMessenger() const = 0;
 	virtual void updateStatus(const NetworkPlayerStatus &status);
 
 protected:

@@ -16,7 +16,11 @@
 
 #include "util.h"
 #include "socket.h"
-#include "xml_parser.h"
+//#include "xml_parser.h"
+
+namespace Util { namespace Xml {
+class XmlNode;
+}}
 
 using std::string;
 using Shared::Platform::IpAddress;
@@ -36,12 +40,11 @@ class NetworkInfo : public Printable {
 private:
 	IpAddress ipAddress;
 	uint16 port;
-	string localHostName;
-	string resolvedHostName;
-	Version gameVersion;
-	Version protocolVersion;
-	uint64 uid;				/** A big fat ugly number that the server generates to uniquely identify
-							 *  each client in the game, similiar to a sesson id. */
+	string localHostName;		/**< The name of the host, as the local host sees it. */
+	string resolvedHostName;	/**< The name of the host, as resolved via reverse DNS. */
+	Version gameVersion;		/**< The game version of the host. */
+	Version protocolVersion;	/**< The protocol version (or network compatibility version). If two hosts are on different game versions, but the protocol version matches, then they should be compatible (i.e., able to play together). */
+	uint64 uid;					/**< A big fat ugly number that the server generates to uniquely identify each client in the game, similiar to a sesson id. */
 
 public:
 	NetworkInfo(const uint64 &uid);

@@ -663,8 +663,8 @@ void NetworkPlayerStatus::init(const Host &host) {
 	setState(host.getState());
 	setParamChange(host.getParamChange());
 	setGameParam(host.getGameParam());
-//	setCommandDelay(NetworkManager::getInstance().getGameInterface()->getGameSettings()->getCommandDelay());
-	setCommandDelay(host.getGameInterface().getCommandDelay());
+//	setCommandDelay(NetworkManager::getInstance().getNetworkMessenger()->getGameSettings()->getCommandDelay());
+	setCommandDelay(host.getNetworkMessenger().getCommandDelay());
 }
 
 size_t NetworkPlayerStatus::getNetSize() const {
@@ -887,7 +887,7 @@ NetworkMessageGameInfo::NetworkMessageGameInfo(NetworkDataBuffer &buf) {
 	getDoc().parse(false);
 }
 
-NetworkMessageGameInfo::NetworkMessageGameInfo(const GameInterface &gi, const GameSettings &gs)
+NetworkMessageGameInfo::NetworkMessageGameInfo(const NetworkMessenger &gi, const GameSettings &gs)
 		: NetworkMessageXmlDoc(new XmlNode("game-info"), true, NMT_GAME_INFO) {
 	XmlNode &root = getDoc().getRootNode();
 	gs.write(*root.addChild("game-settings"));
@@ -898,7 +898,7 @@ NetworkMessageGameInfo::NetworkMessageGameInfo(const GameInterface &gi, const Ga
 		player.addAttribute("id", 0);
 		NetworkPlayerStatus(gi).write(player);
 	}
-	foreach(const GameInterface::ConstPeerMap::value_type &pair, gi.getConstPeers()) {
+	foreach(const NetworkMessenger::ConstPeerMap::value_type &pair, gi.getConstPeers()) {
 		XmlNode &player = *statuses.addChild("player");
 		player.addAttribute("id", pair.first);
 		NetworkPlayerStatus(*pair.second).write(player);

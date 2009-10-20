@@ -47,7 +47,7 @@ void NetworkManager::init(NetworkRole networkRole) {
 	if (networkRole == NR_SERVER) {
 		gameInterface = new ServerInterface(config.getNetServerPort());
 	} else {
-		gameInterface = new ClientInterface(config.getNetClientPort());
+		gameInterface = new NetworkClientMessenger(config.getNetClientPort());
 	}
 }
 

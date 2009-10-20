@@ -151,12 +151,12 @@ private:
  */
 class FixedIntervalTimer : public Scheduleable {
 private:
-	float fps;							/** executions (or "frames") per second */
-	int64 interval;						/** Same as fps, expressed in microseconds */
-	size_t consecutiveExecutions;		/** The current number of consecutive executions that have occured */
-	size_t maxConsecutiveExecutions;	/** The maximum number consecutive executions allowed or zero if no restriction */
-	bool restrictBacklogProcessing;		/** If true, and execution occurs at a time when more than one execution should have already occured, maxBacklog will be used to determine how many executions should be made to catch up.  If false, excess time is discarded. */
-	size_t maxBacklog;					/** If restrictBacklogProcessing is true, the number of backlogged executions to execute before discarding the lost time.  If restrictBacklogProcessing is false, this field is ignored. */
+	float fps;							/**< executions (or "frames") per second */
+	int64 interval;						/**< Same as fps, expressed in microseconds */
+	size_t consecutiveExecutions;		/**< The current number of consecutive executions that have occured */
+	size_t maxConsecutiveExecutions;	/**< The maximum number consecutive executions allowed or zero if no restriction */
+	bool restrictBacklogProcessing;		/**< If true, and execution occurs at a time when more than one execution should have already occured, maxBacklog will be used to determine how many executions should be made to catch up.  If false, excess time is discarded. */
+	size_t maxBacklog;					/**< If restrictBacklogProcessing is true, the number of backlogged executions to execute before discarding the lost time.  If restrictBacklogProcessing is false, this field is ignored. */
 
 public:
 	FixedIntervalTimer(float fps, size_t maxConsecutiveExecutions = 0,

@@ -160,7 +160,7 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 
 	//initialize network interface
 	networkManager.init(NR_SERVER);
-	initGameSettings(*networkManager.getGameInterface());
+	initGameSettings(*networkManager.getNetworkMessenger());
 	labelNetwork.init(50, 50);
 	try {
 		labelNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIpAddress().toString()

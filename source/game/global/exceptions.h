@@ -23,7 +23,7 @@ using Shared::Util::Cloneable;
 namespace Game {
 
 namespace Net {
-	class GameInterface;
+	class NetworkMessenger;
 	class RemoteInterface;
 	class NetworkMessage;
 } // end namespace Net
@@ -62,13 +62,13 @@ public:
 
 class NetworkCommException : public GameException {
 private:
-	GameInterface *gi;
+	NetworkMessenger *gi;
 	RemoteInterface *ri;
 	NetworkMessage *netmsg;
 public:
 	NetworkCommException(
 			const string &msg,
-			GameInterface *gi,
+			NetworkMessenger *gi,
 			RemoteInterface *ri,
 			NetworkMessage *netmsg,
 			const string &fileName = "",
