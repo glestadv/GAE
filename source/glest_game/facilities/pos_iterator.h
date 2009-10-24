@@ -191,6 +191,41 @@ private:
 	}
 };
 
+/** An iterator over a rectangular region that starts at the 'bottom-right' and proceeds right 
+  * to left, bottom to top. */
+class ReverseRectIterator {
+private:
+	int ex, wx, sy, ny;
+	int cx, cy;
+
+public:
+	ReverseRectIterator(const Vec2i &p1, const Vec2i &p2) {
+		if ( p1.x > p2.x ) {
+			ex = p1.x; wx = p2.x;
+		} else {
+			ex = p2.x; wx = p1.x;
+		}
+		if ( p1.y > p2.y ) {
+			sy = p1.y; ny = p2.y;
+		} else {
+			sy = p2.y; ny = p1.y;
+		}
+		cx = ex;
+		cy = sy;
+	}
+
+	bool  more() const { return cy >= ny; }
+	Vec2i next() { 
+		Vec2i n(cx,cy); 
+		if ( cx == wx ) {
+			cx = ex; cy--;
+		} else {
+			cx--;
+		}
+		return n;
+	}
+};
+
 }}} //last namespace
 
 #endif // _GLEST_GAME_UTIL_POSITERATOR_H_

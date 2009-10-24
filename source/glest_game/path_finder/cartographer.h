@@ -26,71 +26,28 @@ namespace Glest { namespace Game { namespace Search {
 /** A map containing a visility counter and explored flag for every map tile. */
 class ExplorationMap {
 #	pragma pack(push, 2)
-		/** The exploration state of one tile for one team */
-		struct ExplorationState {
-			/** Visibility counter, the number of team's units that can see this tile */
-			uint16 visCounter : 15; // max 32768 units per _team_
-			/** Explored flag */
-			uint16 explored	  :  1; 
-		};
+		struct ExplorationState {	/**< The exploration state of one tile for one team */			
+			uint16 visCounter : 15;	/**< Visibility counter, the number of team's units that can see this tile */ 
+			uint16 explored	  :  1;	/**< Explored flag */
+		}; // max 32768 units per _team_
 #	pragma pack(pop)
-	/** The Data */
-	ExplorationState *state;
+	ExplorationState *state; /**< The Data */
 public:
-	ExplorationMap() {
+	ExplorationMap() { /**< Construct ExplorationMap, sets everything to zero */
 		state = new ExplorationState[theMap.getTileW() * theMap.getTileH()];
 		memset( state, 0, sizeof(ExplorationState) * theMap.getTileW() * theMap.getTileH() );
 	}
-
-	/** @param pos cell coordinates @return number of units that can see this cell */
+	/** @param pos cell coordinates @return number of units that can see this tile */
 	int  getVisCounter(const Vec2i &pos) const	{ return state[pos.y * theMap.getTileH() + pos.x].visCounter; }
-	/** @param pos cell coordinates to increase visibilty on */
+	/** @param pos tile coordinates to increase visibilty on */
 	void incVisCounter(const Vec2i &pos) const	{ state[pos.y * theMap.getTileH() + pos.x].visCounter ++;		}
-	/** @param pos cell coordinates to decrease visibilty on */
+	/** @param pos tile coordinates to decrease visibilty on */
 	void decVisCounter(const Vec2i &pos) const	{ state[pos.y * theMap.getTileH() + pos.x].visCounter --;		}
-	/** @param pos cell coordinates @return true if explored. */
+	/** @param pos tile coordinates @return true if explored. */
 	bool isExplored(const Vec2i &pos)	 const	{ return state[pos.y * theMap.getTileH() + pos.x].explored;	}
-	/** @param pos coordinates of cell to set as explored */
+	/** @param pos coordinates of tile to set as explored */
 	void setExplored(const Vec2i &pos)	 const	{ state[pos.y * theMap.getTileH() + pos.x].explored = 1;		}
 
-};
-
-template<int bits=2> struct PatchMap {
-#	pragma pack(push, 1)
-		struct PatchSection {
-			static const int sectionSize = 8 / bits;
-			uint8 get( int ndx ) {
-				assert( ndx < sectionSize );
-				const int shift = 8 - (ndx + 1) * bits;
-				return( (byte >> shift) & ( (1 << bits) - 1) );
-			}
-		private:
-			uint8 byte : bits;
-		};
-#	pragma pack(pop)
-
-	PatchMap( int x, int y, int w, int h ) : offsetX(x) , offsetY(y) , width(w) , height(h) {
-		assert( x >= 0 && y >= 0 && x + w <= theMap.getW() && y + h <= theMap.getH() );
-		// height and width must be (positive, non zero) multiples of 8
-		assert( w > 0 && w & 3 == 0 && h > 0 && h & 3 == 0 );
-		const int stride = w / PatchSection::sectionSize; // patches per row
-		data = new PatchSection[stride*h];
-	}
-	uint8 getValue( const int mx, const int my ) const {
-		const int x = mx - offestX;
-		const int y = my - offsetY;
-		if ( x < 0 || y < 0 || x >= width || y >= height ) {
-			return 0;
-		}
-		const int stride = width / PatchSection::sectionSize;
-		const int sx = x / PatchSection::sectionSize;
-		const int ox = x % PatchSection::sectionSize;
-		return data[y*stride+sx].get(ox);
-	}
-
-private:
-	int offsetX, offsetY, width, height;
-	PatchSection *data;
 };
 
 //
@@ -151,14 +108,18 @@ public:
 	~Cartographer();
 	void updateResourceMaps();
 
-	/** @return the number of units of team that can see pos */
+	/** @return the number of units of team that can see a tile 
+	  * @param team team index 
+	  * @param pos the co-ordinates of the <b>tile</b> of interest. */
 	int getTeamVisibility(int team, const Vec2i &pos) { return explorationMaps[team]->getVisCounter(pos); }
 	/** Adds a unit's visibility to its team's exploration map */
 	void applyUnitVisibility(Unit *unit)	{ maintainUnitVisibility(unit, true); }
 	/** Removes a unit's visibility from its team's exploration map */
 	void removeUnitVisibility(Unit *unit)	{ maintainUnitVisibility(unit, false); }
 
-	void resourceDepleted( Resource *r );
+	void resourceDepleted(Resource *r);
+
+	void initTeamMaps();
 
 	/** Update the annotated maps when an obstacle has been added or removed from the map.
 	  * Unconditionally updates the master map, updates team maps if the team can see the cells,
@@ -166,26 +127,27 @@ public:
 	  * @param pos position (north-west most cell) of obstacle
 	  * @param size size of obstacle
 	  */
-	void updateMapMetrics( const Vec2i &pos, const int size ) { 
-		masterMap->updateMapMetrics( pos, size );
+	void updateMapMetrics(const Vec2i &pos, const int size) { 
+		masterMap->updateMapMetrics(pos, size);
 		// who can see it ? update their maps too.
 		// set cells as dirty for those that can't see it
+
 	}
 
-	InfluenceMap* getResourceMap( int team, const ResourceType* rt ) {
+	InfluenceMap* getResourceMap(int team, const ResourceType* rt) {
 		return teamResourceMaps[team][rt];
 	}
-	InfluenceMap* getResourceMap( Faction *faction, const ResourceType* rt ) {
+	InfluenceMap* getResourceMap(Faction *faction, const ResourceType* rt) {
 		return teamResourceMaps[faction->getTeam()][rt];
 	}
-	InfluenceMap* getResourceMap( Unit *unit, const ResourceType* rt ) {
+	InfluenceMap* getResourceMap(Unit *unit, const ResourceType* rt) {
 		return teamResourceMaps[unit->getTeam()][rt];
 	}
 
-	AnnotatedMap* getMasterMap()					{ return masterMap; }
-	AnnotatedMap* getAnnotatedMap(int team )		{ return masterMap;/*return teamMaps[team];*/ }
-	AnnotatedMap* getAnnotatedMap(Faction *faction)	{ return getAnnotatedMap(faction->getTeam()); }
-	AnnotatedMap* getAnnotatedMap(Unit *unit)		{ return getAnnotatedMap(unit->getTeam());	  }
+	AnnotatedMap* getMasterMap()				const	{ return masterMap;							  }
+	AnnotatedMap* getAnnotatedMap(int team )			{ return teamMaps[team];					  }
+	AnnotatedMap* getAnnotatedMap(Faction *faction) 	{ return getAnnotatedMap(faction->getTeam()); }
+	AnnotatedMap* getAnnotatedMap(Unit *unit)			{ return getAnnotatedMap(unit->getTeam());	  }
 };
 
 //class Surveyor {

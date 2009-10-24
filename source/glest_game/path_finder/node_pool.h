@@ -19,6 +19,7 @@
 #include "timer.h"
 #include "unit_stats_base.h"
 
+#include <algorithm>
 #include <set>
 #include <limits>
 
@@ -42,12 +43,13 @@ struct PosOff {				/**< A bit packed position (Vec2i) and offset (direction) pai
 		assert(pos.x <= 8191 && pos.y <= 8191);
 		x = pos.x; y = pos.y; return *this;
 	}
-	bool operator==(PosOff &that) { return x == that.x && y == that.y; } /**< compare position components only */
-	Vec2i getPos()		{ return Vec2i(x, y); }				/**< this packed pos as Vec2i  */
-	Vec2i getPrev()		{ return Vec2i(x + ox, y + oy); }  /**< return pos + offset		  */
-	Vec2i getOffset()	{ return Vec2i(ox, oy); }		  /**< return offset			 */
-	bool hasOffset()	{ return ox || oy; }			 /**< has an offset				*/
-	bool valid() { return x >= 0 && y >= 0; }			/**< is this position valid	   */
+	bool operator==(PosOff &p) 
+						{ return x == p.x && y == p.y; }	 /**< compare position components only */
+	Vec2i getPos()		{ return Vec2i(x, y); }				/**< this packed pos as Vec2i		  */
+	Vec2i getPrev()		{ return Vec2i(x + ox, y + oy); }  /**< return pos + offset				 */
+	Vec2i getOffset()	{ return Vec2i(ox, oy); }		  /**< return offset					*/
+	bool hasOffset()	{ return ox || oy; }			 /**< has an offset					   */
+	bool valid() { return x >= 0 && y >= 0; }			/**< is this position valid			  */
 
 	int32  x : 14; /**< x coordinate  */
 	int32  y : 14; /**< y coordinate */
@@ -55,9 +57,15 @@ struct PosOff {				/**< A bit packed position (Vec2i) and offset (direction) pai
 	int32 oy :  2; /**< y offset   */
 };
 #pragma pack(2)
+/** compact reference to AStarNodes, contains pool number and index in pool */
 struct NodeID {		  // max 65536 'addressable' nodes
 	uint16 pool	:  4; // max 16 pools
 	uint16 ndx	: 12; // max pool size 4096
+};
+/** pair of offsets, used by OpenList::Head to link nodes */
+struct OffsetPair {	// indices, < 0 == invalid
+	int16 next : 8; // index of next node
+	int16 prev : 8; // index of previous node
 };
 #pragma pack(pop)
 
@@ -102,80 +110,23 @@ public:
 /** A 'split' list, a sorted head (limited size) and unsorted bucket */
 class OpenList {
 private:
-	static const int maxHeadSize = 16;
-
+	static const int maxHeadSize = 16; /**< size of head list storage */
 	/** A sorted doubly linked list with limited storage */
 	class Head {
 		struct Node {
-			AStarNode *data;
-			Node *next, *prev;
-		};
-		Node *start, *end;//, *middle;
+			AStarNode *data;	// @todo use NodeID == 16 bits
+			Node *next, *prev;	// @todo use offsets == 16 bits
+		}; // will be 32 bits...
+		Node *start, *end;	//	use indices, just to be consistent
 		float maxEstimate;
 		Node *block;
 		vector<Node*> freeNodes;
 		int count;
 
-		void insertBefore(Node *insert, Node *ref) {
-			if ( ref->prev ) {
-				insert->prev = ref->prev;
-				ref->prev->next = insert;
-			} else {
-				start = insert;
-				insert->prev = NULL;
-			}
-			insert->next = ref;
-			ref->prev = insert;
-		}
-
-		void insertAtEnd(Node *insert) {
-			insert->next = NULL;
-			insert->prev = end;
-			end = insert;
-			if ( insert->prev ) {
-				insert->prev->next = insert;
-			} else {
-				start = insert;
-			}
-		}
-
-		Node* unlink(Node *node) {
-			if ( node->prev) {
-				node->prev->next = node->next;
-			} else {
-				start = node->next;
-			}
-			if ( node->next ) {
-				node->next->prev = node->prev;
-			} else {
-				end = node->prev;
-			}
-			return node;
-		}
-
-		bool assertList() {
-			set<Node*> seen;
-			Node *ptr = start;
-			while ( ptr ) {
-				if ( seen.find(ptr) != seen.end() ) {
-					return false; // cycle
-				}
-				seen.insert(ptr);
-				if ( ptr->next ) {
-					if ( ptr->data->est() > ptr->next->data->est() ) {
-						return false; // not in order
-					}
-					if ( ptr->next->prev != ptr ) {
-						return false; // inconsistant next/prev links
-					}
-				}
-				ptr = ptr->next;
-			}
-			if ( count != seen.size() ) {
-				return false; // count inconsistant
-			}
-			return true;
-		}
+		void insertBefore(Node *insert, Node *ref);
+		void insertAtEnd(Node *insert);
+		Node* unlink(Node *node);
+		bool assertList();
 
 	public:
 		Head() : start(NULL), end(NULL), maxEstimate(0.f), count(0) {
@@ -189,11 +140,12 @@ private:
 		AStarNode* getBest();
 		AStarNode* add(AStarNode *node);
 		void addToEnd(AStarNode *node);
+		bool adjust(AStarNode *node);
 		bool empty()	{ return !count; }
 		int  size()		{ return count; }
 		float  maxEst()	{ return maxEstimate; }
 	};
-	/** a unsorted collection of Nodes and some information about them */
+	/** an unsorted collection of Nodes and some information about them */
 	class Bucket : public vector<AStarNode*> {
 		float minEstimate,	 /**< the lowest estimate of any node in the bucket  */
 			  maxEstimate;	/**< the highest estimate of any node in the bucket */
@@ -219,64 +171,12 @@ private:
 	Bucket bucket;
 
 	int totalSize() { return head.size() + bucket.size(); }
+	void fill_head();
 
 public:
-	void push(AStarNode *node) {
-		if ( totalSize() < maxHeadSize && bucket.empty() ) {
-			AStarNode *displaced = head.add(node);
-			assert(!displaced);			
-		} else {
-			// if ( node->est() < maxInHead ) sort into head else throw in bucket
-			if ( node->est() < head.maxEst() ) {
-				AStarNode *displaced = head.add(node);
-				if ( displaced ) {
-					bucket.add(displaced);
-				}
-			} else {
-				bucket.add(node);
-			}
-		}
-	}
-
-	/** @todo ADD CODE */
-	void adjust(AStarNode *node, float costToHere) {
-		if ( node->est() <= head.maxEst() ) {
-			node->distToHere = costToHere;
-			// probably in head... not definately
-			// if in head, adjust and return
-			// else fall through
-		}
-		node->distToHere = costToHere;
-		if ( node->est() < head.maxEst() ) {
-
-		}
-	}
-
-	AStarNode* pop() {
-		if ( head.empty() ) {
-			if ( bucket.empty() ) {
-				return NULL;
-			}
-			fill_head();
-		}
-		return head.getBest();
-	}
-
-private:
-	/** refill the head list, <b>pre-condition:</b> head is empty, bucket is not */
-	void fill_head() {
-		assert(head.empty() && !bucket.empty());
-		bucket.sort();
-		int num = maxHeadSize;
-		if ( bucket.size() < num ) num = bucket.size();
-		for ( ; num; --num ) {
-			AStarNode *node = bucket.back();
-			bucket.pop_back();
-			head.addToEnd(node);
-		}
-		// maintain bucket.minEstimate
-		bucket.setMinEst(bucket.back()->est());
-	}
+	void push(AStarNode *node);
+	void adjust(AStarNode *node, float costToHere);
+	AStarNode* pop();
 };
 #endif
 
@@ -284,7 +184,7 @@ private:
 // class NodePool
 // ========================================================
 /** An array of AStarNode.  
-  * A NodePool is attached to a NodeStore and provide the new nodes
+  * A NodePool is attached to a NodeStore and provides the new nodes
   * for a search. */
 class NodePool {
 private:
@@ -385,7 +285,7 @@ public:
 	float getCostTo(const Vec2i &pos)		{ return pointerArray.get(pos)->distToHere;	}
 	/** get the estimate for the node at pos [known to be visited] */
 	float getEstimateFor(const Vec2i &pos)	{ return pointerArray.get(pos)->est();		}
-	/** get the best path to the node at pos [known to be visited] */
+	/** get the best path to the node at pos [known to be closed] */
 	Vec2i getBestTo(const Vec2i &pos)		{ 
 		AStarNode *ptr = pointerArray.get(pos);
 		assert (ptr);

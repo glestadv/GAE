@@ -81,7 +81,7 @@ const string sharedLibVersionString= "v0.4.1";
 
 template<typename E>
 E enum_cast(unsigned i) {
-	return i < E::COUNT ? (E::Enum)i : E::COUNT;
+	return i < E::COUNT ? static_cast<typename E::Enum>(i) : E::COUNT;
 }
 
 // =====================================================
@@ -111,8 +111,8 @@ public:
 			if ( lazy ) {
 				throw runtime_error("Qualified names and Lazy loading not simultaneously supported.");
 			}
-			qualifiedList = new const char[(strlen(enumName) + 2) * E::COUNT + strlen(valueList) + 1];
-			qualifiedNames = new const char*[E::COUNT];
+			qualifiedList = const_cast<const char*>(new char[(strlen(enumName) + 2) * E::COUNT + strlen(valueList) + 1]);
+			qualifiedNames = const_cast<const char**>(new char*[E::COUNT]);
 			char *tmp = strcpy(new char[strlen(valueList) + 1], valueList);
 			char *tok = strtok(tmp,", ");
 			char *ptr = const_cast<char*>(qualifiedList);

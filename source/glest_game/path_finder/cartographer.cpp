@@ -48,20 +48,19 @@ Cartographer::Cartographer() {
 		//theLogger.add( "Faction " + intToStr(i) + " team: " + intToStr(f->getTeam()));
 		if ( teams.find(team) == teams.end() ) {
 			teams.insert(team);
-			theLogger.add( "Team : " + intToStr(team) );
-			//teamMaps[team] = new AnnotatedMap();
+			theLogger.add("Team : " + intToStr(team));
 			// AnnotatedMap needs to be 'bound' to explored status
 			explorationMaps[team] = new ExplorationMap();
-			teamMaps[team] = new AnnotatedMap(false);
+			teamMaps[team] = new AnnotatedMap(explorationMaps[team]);
 		}
 	}
 
 	// find and catalog all resources...
 	for ( int x=0; x < theMap.getTileW() - 1; ++x ) {
 		for ( int y=0; y < theMap.getTileH() - 1; ++y ) {
-			const Resource * const r = theMap.getTile( x,y )->getResource();
+			const Resource * const r = theMap.getTile(x,y)->getResource();
 			if ( r ) {
-				resourceLocations[r->getType()].push_back( Vec2i(x,y) );
+				resourceLocations[r->getType()].push_back(Vec2i(x,y));
 			}
 		}
 	}
@@ -71,8 +70,8 @@ Cartographer::Cartographer() {
 		const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
 		if ( rt->getClass() == ResourceClass::TECH || rt->getClass() == ResourceClass::TILESET ) {
 			for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
-				int team = theWorld.getFaction( j )->getTeam();
-				if ( teamResourceMaps[team].find( rt ) == teamResourceMaps[team].end() ) {
+				int team = theWorld.getFaction(j)->getTeam();
+				if ( teamResourceMaps[team].find(rt) == teamResourceMaps[team].end() ) {
 					teamResourceMaps[team][rt] = new InfluenceMap();
 				}
 			}
@@ -127,36 +126,47 @@ void Cartographer::updateResourceMaps() {
 }
 
 /** WIP */
-void Cartographer::initResourceMap( int team, const ResourceType *rt, InfluenceMap *iMap ) {
+void Cartographer::initResourceMap(int team, const ResourceType *rt, InfluenceMap *iMap) {
 	//DEBUG
 	static char buf[1024];
-	sprintf( buf, "Initialising %s influence map for team %d", rt->getName().c_str(), team );
-	theLogger.add( buf );
+	sprintf(buf, "Initialising %s influence map for team %d", rt->getName().c_str(), team);
+	theLogger.add(buf);
 	int64 time = Chrono::getCurMillis();
 	vector<Vec2i> knownResources;
 	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
 	for ( ; it != resourceLocations[rt].end(); ++it ) {
-		if ( theMap.getTile( *it )->isExplored( team ) ) {
-			knownResources.push_back( *it );
+		if ( theMap.getTile(*it)->isExplored(team) ) {
+			knownResources.push_back(*it);
 		}
 	}
 	iMap->clear();
 	nmSearchEngine->reset();
 	for ( it = knownResources.begin(); it != knownResources.end(); ++it ) {
 		Vec2i pos = *it * Map::cellScale;
-		nmSearchEngine->setOpen( pos, 0.f );
-		nmSearchEngine->setOpen( pos + Vec2i( 0,1 ), 0.f );
-		nmSearchEngine->setOpen( pos + Vec2i( 1,0 ), 0.f );
-		nmSearchEngine->setOpen( pos + Vec2i( 1,1 ), 0.f );
+		nmSearchEngine->setOpen(pos, 0.f);
+		nmSearchEngine->setOpen(pos + Vec2i(0,1), 0.f);
+		nmSearchEngine->setOpen(pos + Vec2i(1,0), 0.f);
+		nmSearchEngine->setOpen(pos + Vec2i(1,1), 0.f);
 	}
-	nmSearchEngine->buildDistanceMap( iMap, 20.f );
+	nmSearchEngine->buildDistanceMap(iMap, 20.f);
 
 	time = Chrono::getCurMillis() - time;
-	sprintf( buf, "Used %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time );
-	theLogger.add( buf );
+	sprintf(buf, "Used %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time);
+	theLogger.add(buf);
 	//if ( team == theWorld.getThisTeamIndex() && rt->getName() == "gold" ) {
 	//	iMap->log();
 	//}
+}
+
+/** Initialise annotated maps for each team, call after initial units visibility is applied */
+void Cartographer::initTeamMaps() {
+	map<int, ExplorationMap*>::iterator it = explorationMaps.begin();
+	for ( ; it != explorationMaps.end(); ++it ) {
+		AnnotatedMap *aMap = getAnnotatedMap(it->first);
+		ExplorationMap *eMap = it->second;
+
+	}
+
 }
 
 /** Maintains visibility on a per team basis. Adds or removes a unit's visibility
@@ -171,11 +181,11 @@ void Cartographer::maintainUnitVisibility(Unit *unit, bool add) {
 	nmSearchEngine->setSearchSpace(SearchSpace::TILEMAP);
 	nmSearchEngine->setNodeLimit(-1);
 	nmSearchEngine->reset();
+	///@todo take unit size into account?
 	nmSearchEngine->setOpen(Map::toTileCoords(unit->getPos()), 0.f);
 	// zap
 	nmSearchEngine->aStar<VisibilityMaintainerGoal,DistanceCost,ZeroHeuristic>
 						 (goalFunc,DistanceCost(),ZeroHeuristic());
-
 	// reset search space
 	nmSearchEngine->setSearchSpace(SearchSpace::CELLMAP);
 }

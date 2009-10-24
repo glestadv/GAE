@@ -59,12 +59,14 @@ private:
 	typedef vector<Faction> Factions;
 
 public:
+	/** max radius to look when placing units */
 	static const int generationArea= 100;
+	/** height air units are drawn at. @todo this is not game data, probably belongs somewhere else */
 	static const float airHeight;
+	/** ??? anyone ? */
 	static const int indirectSightRange= 5;
 
 private:
-
 	Map map;
 	Tileset tileset;
 	TechTree techTree;

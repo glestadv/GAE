@@ -127,6 +127,8 @@ void World::init(const XmlNode *worldNode) {
 	else if ( game.getGameSettings().getDefaultUnits() )
 		initUnits();
 
+//	cartographer->updateTeamMaps();
+
 	initExplorationState();
 	
 	if(worldNode) {

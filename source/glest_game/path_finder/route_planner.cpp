@@ -36,7 +36,7 @@ using namespace Shared::Util;
 namespace Glest { namespace Game { namespace Search {
 
 // =====================================================
-// 	class PathFinder
+// 	class RoutePlanner
 // =====================================================
 
 // ===================== PUBLIC ========================

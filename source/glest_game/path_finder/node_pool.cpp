@@ -20,6 +20,10 @@
 
 namespace Glest { namespace Game { namespace Search {
 
+// =====================================================
+// 	class OpenList::Head
+// =====================================================
+
 /** get best node, precondition: list not empty */
 AStarNode* OpenList::Head::getBest() {
 	assert(start);
@@ -89,6 +93,160 @@ AStarNode* OpenList::Head::add(AStarNode *node) {
 	insertBefore(lNode,ptr);
 	return NULL;
 }
+
+bool OpenList::Head::adjust(AStarNode *node) {
+	Node *ptr = end;
+	while ( ptr ) {
+		if ( ptr->data == node ) {
+			if ( ptr->prev ) {
+				if ( ptr->prev->data->est() > ptr->data->est() ) {
+					Node *look = ptr->prev;
+					unlink(ptr);
+					while ( look->prev && look->prev->data->est() > ptr->data->est() ) {
+						look = look->prev;
+					}
+					insertBefore(ptr, look);
+				}
+			}
+			return true;
+		}
+		ptr = ptr->prev;
+	}
+	return false;
+}
+
+void OpenList::Head::insertBefore(Node *insert, Node *ref) {
+	if ( ref->prev ) {
+		insert->prev = ref->prev;
+		ref->prev->next = insert;
+	} else {
+		start = insert;
+		insert->prev = NULL;
+	}
+	insert->next = ref;
+	ref->prev = insert;
+}
+
+void OpenList::Head::insertAtEnd(Node *insert) {
+	insert->next = NULL;
+	insert->prev = end;
+	end = insert;
+	if ( insert->prev ) {
+		insert->prev->next = insert;
+	} else {
+		start = insert;
+	}
+}
+
+OpenList::Head::Node* OpenList::Head::unlink(Node *node) {
+	if ( node->prev) {
+		node->prev->next = node->next;
+	} else {
+		start = node->next;
+	}
+	if ( node->next ) {
+		node->next->prev = node->prev;
+	} else {
+		end = node->prev;
+	}
+	return node;
+}
+
+bool OpenList::Head::assertList() {
+	set<Node*> seen;
+	Node *ptr = start;
+	while ( ptr ) {
+		if ( seen.find(ptr) != seen.end() ) {
+			return false; // cycle
+		}
+		seen.insert(ptr);
+		if ( ptr->next ) {
+			if ( ptr->data->est() > ptr->next->data->est() ) {
+				return false; // not in order
+			}
+			if ( ptr->next->prev != ptr ) {
+				return false; // inconsistant next/prev links
+			}
+		}
+		ptr = ptr->next;
+	}
+	if ( count != seen.size() ) {
+		return false; // count inconsistant
+	}
+	return true;
+}
+
+// =====================================================
+// 	class OpenList
+// =====================================================
+
+/** refill the head list, <b>pre-condition:</b> head is empty, bucket is not */
+void OpenList::fill_head() {
+	assert(head.empty() && !bucket.empty());
+	bucket.sort();
+	int num = maxHeadSize;
+	if ( bucket.size() < num ) num = bucket.size();
+	for ( ; num; --num ) {
+		AStarNode *node = bucket.back();
+		bucket.pop_back();
+		head.addToEnd(node);
+	}
+	// maintain bucket.minEstimate
+	bucket.setMinEst(bucket.back()->est());
+}
+
+void OpenList::push(AStarNode *node) {
+	if ( totalSize() < maxHeadSize && bucket.empty() ) {
+		AStarNode *displaced = head.add(node);
+		assert(!displaced);			
+	} else {
+		// if ( node->est() < maxInHead ) sort into head else throw in bucket
+		if ( node->est() < head.maxEst() ) {
+			AStarNode *displaced = head.add(node);
+			if ( displaced ) {
+				bucket.add(displaced);
+			}
+		} else {
+			bucket.add(node);
+		}
+	}
+}
+
+/** @todo ADD CODE */
+void OpenList::adjust(AStarNode *node, float costToHere) {
+	if ( node->est() <= head.maxEst() ) {
+		node->distToHere = costToHere;
+		// probably in head... not definately
+		// if in head, adjust and return
+		if ( head.adjust(node) ) {
+			return;
+		}
+		// else its in the bucket, fall through
+	}
+	// in bucket
+	node->distToHere = costToHere; // update
+	if ( node->est() < head.maxEst() ) { // good enough to go in head ?
+		AStarNode *disp = head.add(node);
+		if ( disp ) {
+			bucket.add(disp);
+		}
+	}
+}
+
+AStarNode* OpenList::pop() {
+	if ( head.empty() ) {
+		if ( bucket.empty() ) {
+			return NULL;
+		}
+		fill_head();
+	}
+	return head.getBest();
+}
+
+
+// =====================================================
+// 	class NodeStore
+// =====================================================
 
 NodeStore::NodeStore() 
 		: tmpMaxNodes(NodePool::size)

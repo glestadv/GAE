@@ -109,7 +109,7 @@ class NoGoal {
 public:
 	NoGoal(){}
 	/** The goal function 
-	  * @param pos position to test
+	  * @param pos the position to ignore
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return false
 	  */
@@ -265,6 +265,26 @@ public:
 		float diag = dx < dy ? dx : dy;
 		float estimate = 1.4 * diag + (dx + dy - 2 * diag);
 		estimate *= 1.25;
+		return estimate;
+	}
+};
+
+/** Diagonal Distance underestimating Heuristic */
+class UnderEstimate {
+public:
+	UnderEstimate(const Vec2i &target) : target(target) {}
+	/** search target */
+	Vec2i target;
+	/** The heuristic function.
+	  * @param pos the position to calculate the heuristic for
+	  * @return an (over) estimate of the cost to target
+	  */
+	float operator()(const Vec2i &pos) const {
+		float dx = (float)abs(pos.x - target.x), 
+			  dy = (float)abs(pos.y - target.y);
+		float diag = dx < dy ? dx : dy;
+		float estimate = 1.4 * diag + (dx + dy - 2 * diag);
+		estimate *= 0.75;
 		return estimate;
 	}
 };

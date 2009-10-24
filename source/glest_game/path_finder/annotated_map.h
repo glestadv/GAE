@@ -31,8 +31,12 @@ typedef list<Vec2i>::const_reverse_iterator VLConRevIt;
 using Shared::Platform::int64;
 
 namespace Glest { namespace Game {
+
 class Map;
+
 namespace Search {
+
+class ExplorationMap;
 
 // =====================================================
 // struct CellMetrics
@@ -125,13 +129,16 @@ class AnnotatedMap {
 #	endif
 
 public:
-	AnnotatedMap(bool master=true);
+	AnnotatedMap(ExplorationMap *eMap=NULL);
 	~AnnotatedMap();
 
 	/** Maximum clearance allowed. Hence, also maximum moveable unit size supported. */
 	static const int maxClearanceValue = 7;
 
 	void initMapMetrics();
+
+	void revealTile(const Vec2i &pos);
+
 	void updateMapMetrics(const Vec2i &pos, const int size);
 
 	/** Interface to the clearance metrics, can a unit of size occupy a cell(s) 
@@ -146,7 +153,7 @@ public:
 	}
 
 	bool isDirty(const Vec2i &pos) const			{ metrics[pos].isDirty();		}
-	void setDirty(const Vec2i &pos, const bool val)	{ metrics[pos].setDirty( val );	}
+	void setDirty(const Vec2i &pos, const bool val)	{ metrics[pos].setDirty(val);	}
 
 	void annotateLocal(const Unit *unit, const Field field);
 	void clearLocalAnnotations(Field field);
@@ -159,10 +166,14 @@ private:
 	void cascadingUpdate(const Vec2i &pos, const int size, const Field field = Field::COUNT);
 	void annotateUnit(const Unit *unit, const Field field);
 
+	bool updateCell(const Vec2i &pos, const Field field);
+	
+
 	/** the original values of locations that have had local annotations applied */
 	std::map<Vec2i,uint32> localAnnt;
 	/** The metrics */
 	MetricMap metrics;
+	ExplorationMap *eMap;
 };
 
 }}}

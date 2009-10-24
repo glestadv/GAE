@@ -38,6 +38,10 @@ const int maxFreeSearchRadius = 10;
 /** @deprecated not in use */
 const int pathFindNodesMax = 2048;
 
+/** number of NodePool objects to use, max 16, size of pools can be adjusted with NodePool::size
+  * @todo this shouldn't be a const, but dynamically set based on number of players 
+  * before a game starts */
+const int numNodePools = 4;
 
 /** @page pathfinding RoutePlanner Path Finding Strategy
   * <p>A new path request causes an immediate search with a 512 node NodePool.
