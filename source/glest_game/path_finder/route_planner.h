@@ -139,6 +139,18 @@ private:
 
 	NodePool* nodePool;
 
+
+	bool attemptMove(Unit *unit) const {
+		Vec2i pos = unit->getPath()->peek(); 
+		if ( isLegalMove(unit, pos) ) {
+			unit->setNextPos(pos);
+			unit->getPath()->pop();
+			return true;
+		}
+		return false;
+	}
+
+
 #if DEBUG_SEARCH_TEXTURES
 public:
 	enum { SHOW_PATH_ONLY, SHOW_OPEN_CLOSED_SETS, SHOW_LOCAL_ANNOTATIONS } debug_texture_action;

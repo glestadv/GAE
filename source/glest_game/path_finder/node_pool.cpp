@@ -9,17 +9,15 @@
 //	License, or (at your option) any later version
 // ==============================================================
 //
-// File: astar_nodepool.cpp
+// File: node_pool.cpp
 //
 #include "pch.h"
 
-#include "route_planner.h"
 #include "node_pool.h"
-#include "map.h"
-#include "unit.h"
 
 namespace Glest { namespace Game { namespace Search {
 
+#if 0
 // =====================================================
 // 	class OpenList::Head
 // =====================================================
@@ -222,9 +220,10 @@ void OpenList::adjust(AStarNode *node, float costToHere) {
 			return;
 		}
 		// else its in the bucket, fall through
+	} else {
+		node->distToHere = costToHere; // update
 	}
 	// in bucket
-	node->distToHere = costToHere; // update
 	if ( node->est() < head.maxEst() ) { // good enough to go in head ?
 		AStarNode *disp = head.add(node);
 		if ( disp ) {
@@ -242,18 +241,18 @@ AStarNode* OpenList::pop() {
 	}
 	return head.getBest();
 }
-
+#endif
 
 // =====================================================
 // 	class NodeStore
 // =====================================================
 
-NodeStore::NodeStore() 
+NodeStore::NodeStore(int w, int h) 
 		: tmpMaxNodes(NodePool::size)
 		, numNodes(0)
 		, leastH(NULL)
-		, markerArray(theMap.getW(), theMap.getH())
-		, pointerArray(theMap.getW(), theMap.getH())
+		, markerArray(w,h)
+		, pointerArray(w,h)
 		, pool(NULL) {
 	openHeap.reserve(512);
 }
@@ -288,7 +287,7 @@ void NodeStore::setMaxNodes(const int max) {
   */
 bool NodeStore::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	assert(!isOpen(pos));
-	assert(prev.x < 0 || isClosed(prev));
+//	assert(prev.x < 0 || isClosed(prev));
 	AStarNode *node = pool->newNode();
 	if ( !node ) { // NodePool exhausted
 		return false;
@@ -318,7 +317,7 @@ void NodeStore::addOpenNode(AStarNode *node) {
 	assert(!isOpen(node->pos()));
 	markerArray.setOpen(node->pos());
 	pointerArray.set(node->pos(), node);
-#if 1
+#if 0
 	openList.push(node);
 #else
 	openHeap.push_back(node);
@@ -339,9 +338,9 @@ void NodeStore::updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost
 	if ( prevNode->distToHere + cost < posNode->distToHere ) {
 		posNode->posOff.ox = prev.x - pos.x;
 		posNode->posOff.oy = prev.y - pos.y;
-#if 1
+#if 0
 		openList.adjust(posNode, prevNode->distToHere + cost);
-#elif 1 == 2
+#elif 0
 		posNode->distToHere = prevNode->distToHere + cost;
 		vector<AStarNode*>::iterator it = find(openHeap.begin(), openHeap.end(), posNode);// openHeap.begin();
 		push_heap(openHeap.begin(), it + 1, AStarComp());
@@ -354,7 +353,7 @@ void NodeStore::updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost
 
 /** @deprecated use getBestCandidate() */
 AStarNode* NodeStore::getBestCandidateNode () {
-#if 1
+#if 0
 	AStarNode *ret = openList.pop();
 	if ( ret ) {
 		markerArray.setClosed(ret->pos());

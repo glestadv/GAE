@@ -169,6 +169,8 @@ public:
 class MoveCommandType: public MoveBaseCommandType {
 public:
 	MoveCommandType() : MoveBaseCommandType("Move", CommandClass::MOVE, Clicks::TWO) {}
+
+	void update(Unit *unit) const;
 };
 
 // ===============================

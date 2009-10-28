@@ -21,7 +21,7 @@
 namespace Glest { namespace Game { namespace Search {
 
 /** Construct a NodeMap */
-NodeMap::NodeMap() 
+NodeMap::NodeMap(int w, int h) 
 		: openTop(-1)
 		, nodeCount(0)
 		, nodeLimit(-1) 
@@ -29,7 +29,8 @@ NodeMap::NodeMap()
 	invalidPos.x = invalidPos.y = MAX_MAP_COORD;
 	assert( !invalidPos.valid() );
 	bestH = invalidPos;
-	stride = theMap.getW();
+	stride = w;
+	nodeMap.init(w,h);
 }
 
 /** resets the NodeMap for use */

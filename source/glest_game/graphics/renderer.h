@@ -46,7 +46,7 @@ class MenuBackground;
 class ChatManager;
 
 #ifdef DEBUG_SEARCH_OVERLAYS
-	namespace Search { class InfluenceMap; }
+	namespace Search { template<typename type>class TypeMap; }
 #endif
 
 enum ResourceScope{

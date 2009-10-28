@@ -175,6 +175,16 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 			}
 		}
 	}
+	// calculate and cache skill progress here.
+
+	unit->preProcessSkill();
+/*
+	if ( unit->anyCommand() ) {
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " updating command " 
+					+ CommandClassNames[unit->getCurrCommand()->getType()->getClass()] );
+	} else {
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " has no command!" );
+	}*/
 }
 
 // ==================== updateStop ====================
@@ -300,6 +310,7 @@ void UnitUpdater::updateStop(Unit *unit) {
 	// if we have another command then stop sitting on your ass
 	if(unit->getCommands().size() > 1 && unit->getCommands().front()->getType()->getClass() == CommandClass::STOP) {
 		unit->finishCommand();
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " cancelling stop" );
 		return;
 	}
 
@@ -342,9 +353,11 @@ void UnitUpdater::updateMove(Unit *unit) {
 	}
 
 	switch(pathManager->findPath(unit, pos)) {
-	case TravelState::ONTHEWAY:
+	case TravelState::MOVING:
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " updating move " 
+			+ "Unit is at " + Vec2iToStr(unit->getPos()) + " now moving into " + Vec2iToStr(unit->getNextPos()) );
 		break;
 
 	case TravelState::BLOCKED:
@@ -353,7 +366,7 @@ void UnitUpdater::updateMove(Unit *unit) {
 		}
 		break;
 
-	default:
+	default: // TravelState::ARRIVED
 		unit->finishCommand();
 	}
 
@@ -387,7 +400,7 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 	const AttackSkillType *ast = NULL;
 	const AttackSkillTypes *asts = act->getAttackSkillTypes();
 
-	if ( target && !asts->getZone (target->getCurrZone()) )
+	if ( target && !asts->getZone(target->getCurrZone()) )
 		unit->finishCommand();
 
 	//if found
@@ -399,8 +412,7 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		} else {
 			unit->setCurrSkill(SkillClass::STOP);
 		}
-	} 
-	else {
+	} else {
 		//compute target pos
 		Vec2i pos;
 		if ( attackableOnSight(unit, &target, asts, NULL) ) {
@@ -427,7 +439,7 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 
 		//if unit arrives destPos order has ended
 		switch(pathManager->findPath(unit, pos)) {
-		case TravelState::ONTHEWAY:
+		case TravelState::MOVING:
 			unit->setCurrSkill(act->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;
@@ -506,7 +518,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 		}
 
 		switch (pathManager->findPath(unit, waypoint)) {
-		case TravelState::ONTHEWAY:
+		case TravelState::MOVING:
 			unit->setCurrSkill(bct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			return;
@@ -682,7 +694,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				} 
 				else { //if not continue walking
 					switch (pathManager->findPathToLocation( unit, command->getPos()/*, r->getType()*/)) {
-					case TravelState::ONTHEWAY:
+					case TravelState::MOVING:
 						unit->setCurrSkill(hct->getMoveSkillType());
 						unit->face(unit->getNextPos());
 						break;
@@ -716,23 +728,20 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
 				switch (pathManager->findPathToLocation( unit, store->getNearestOccupiedCell(unit->getPos())/*, store*/)) {
-				case TravelState::ONTHEWAY:
-					unit->setCurrSkill(hct->getMoveLoadedSkillType());
-					unit->face(unit->getNextPos());
-					break;
-				default:
-					break;
+					case TravelState::MOVING:
+						unit->setCurrSkill(hct->getMoveLoadedSkillType());
+						unit->face(unit->getNextPos());
+						break;
+					case TravelState::BLOCKED:
+						unit->setCurrSkill(hct->getStopLoadedSkillType());
+						break;
 				}
-
-				//world->changePosCells(unit,unit->getPos()+unit->getDest());
 				if (map->isNextTo(unit->getPos(), store)) {
-
 					//update resources
 					int resourceAmount = unit->getLoadCount();
-					//
 					// Just do this all players ???
 					if (unit->getFaction()->getCpuUltraControl()) {
-						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier ( unit->getFactionIndex () ));
+						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
 						//resourceAmount *= ultraResourceFactor; // Pull from GameSettings
 					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
@@ -868,7 +877,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			}
 			break;
 
-		case TravelState::ONTHEWAY:
+		case TravelState::MOVING:
 			unit->setCurrSkill(rct->getMoveSkillType());
 			unit->face(unit->getNextPos());
 			break;

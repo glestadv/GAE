@@ -76,7 +76,6 @@ bool LuaScript::isDefined ( const string &name ) {
 		defined = true;
 	}
 	lua_pop( luaState, 1 );
-	
 	return defined;
 }
 

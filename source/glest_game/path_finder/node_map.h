@@ -100,8 +100,10 @@ private:
 	NodeMapCell *array;
 	int stride;
 public:
-	NodeMapCellArray()	{ array = new NodeMapCell[theMap.getW() * theMap.getH()]; stride = theMap.getW(); }
+	NodeMapCellArray()	{ array = NULL; }
 	~NodeMapCellArray() { delete [] array; }
+
+	void init(int w, int h)	{ delete [] array; array = new NodeMapCell[w * h]; stride = w; }
 
 	/** index by Vec2i */
 	NodeMapCell& operator[] (const Vec2i &pos)		{ return array[pos.y * stride + pos.x]; }
@@ -114,7 +116,7 @@ public:
   */
 class NodeMap {
 public:
-	NodeMap();
+	NodeMap(int w, int h);
 
 	// NodeStorage template interface
 	//

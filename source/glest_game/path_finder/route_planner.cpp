@@ -123,40 +123,38 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 	return true;
 }
 
-#define DONE()		{ unit->setCurrSkill(SkillClass::STOP); return TravelState::ARRIVED;}
-#define BLOCKED()	{ unit->setCurrSkill(SkillClass::STOP); path.incBlockCount(); return TravelState::BLOCKED;}
-#define TRYMOVE()	{ pos = path.peek(); if ( isLegalMove(unit, pos) ) {	\
-											unit->setNextPos(pos);			\
-											path.pop();						\
-											return TravelState::ONTHEWAY;	\
-										 }									\
-					}
-
 /** Find a path to a location.
   * @param unit the unit requesting the path
   * @param finalPos the position the unit desires to go to
-  * @return SearchResult::ARRIVED, SearchResult::ONTHEWAY or SearchResult::BLOCKED
+  * @return SearchResult::ARRIVED, SearchResult::MOVING or SearchResult::BLOCKED
   */
 TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) {
 	UnitPath &path = *unit->getPath();
 	Vec2i pos;
 	//if arrived (where we wanted to go)
-	if( finalPos == unit->getPos() ) DONE()
-	else if( ! path.empty() ) {	//route cache
-		TRYMOVE()
-		if ( path.size() > 15  && repairPath(unit) ) TRYMOVE()
+	if( finalPos == unit->getPos() ) {
+		unit->setCurrSkill(SkillClass::STOP);
+		return TravelState::ARRIVED;
+	} else if( ! path.empty() ) {	//route cache
+		if ( attemptMove(unit) ) return TravelState::MOVING;
+		if ( path.size() > 15  && repairPath(unit) ) {
+			if ( attemptMove(unit) ) return TravelState::MOVING;
+		}
 	}
 	//route cache miss and either no repair performed or repair failed
 	const Vec2i &target = computeNearestFreePos(unit, finalPos); // set target for PosGoal Function
 	//if arrived (as close as we can get to it)
-	if ( target == unit->getPos() ) DONE()
+	if ( target == unit->getPos() ) {
+		unit->setCurrSkill(SkillClass::STOP);
+		return TravelState::ARRIVED;
+	}
 	path.clear();
 	
 	// do a 'limited search'
 	AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
 	aMap->annotateLocal(unit, unit->getCurrField()); // annotate map
 	// reset nodepool and add start to open
-	nsSearchEngine->setNodeLimit(theConfig.getPathFinderMaxNodes());
+	nsSearchEngine->setNodeLimit(NodePool::size);
 	nsSearchEngine->setStart(unit->getPos(), DiagonalDistance(target)(unit->getPos())); 
 	int result = nsSearchEngine->pathToPos(aMap, unit, target); // perform search
 	aMap->clearLocalAnnotations(unit->getCurrField()); // clear annotations
@@ -170,10 +168,15 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		path.push(pos);
 		pos = nsSearchEngine->getPreviousPos(pos);
 	}
-	if ( path.empty() ) DONE()
-	path.pop();
-	TRYMOVE() // should always succeed
-	BLOCKED()
+	if ( path.size() ) path.pop();
+	if ( path.empty() ) {
+		unit->setCurrSkill(SkillClass::STOP);
+		return TravelState::ARRIVED;
+	}
+	if ( attemptMove(unit) ) return TravelState::MOVING; // should always succeed
+	unit->setCurrSkill(SkillClass::STOP);
+	path.incBlockCount();
+	return TravelState::BLOCKED;
 }
 
 /** repair a blocked path

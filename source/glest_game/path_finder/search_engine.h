@@ -42,12 +42,10 @@ class NodeMap;
   * @param d destination pos
   * @param size size of unit
   * @return d1 & d2, the two cells to check
-  * @warning assumes s & d are indeed diagonal (s.x != d.x && s.y != s.x 
-  *			 && abs(s.x - d.x) == 1 && abs(s.y - d.y) == 1
+  * @warning assumes s & d are indeed diagonal, abs(s.x - d.x) == 1 && abs(s.y - d.y) == 1
   */
 __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 ) {
 #	define _SEARCH_ENGINE_GET_DIAGS_DEFINED_
-	assert( s.x != d.x && s.y != d.y );
 	assert( abs( s.x - d.x ) == 1 && abs( s.y - d.y ) == 1 );
 	if ( size == 1 ) {
 		d1.x = s.x; d1.y = d.y;
@@ -136,7 +134,7 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 //
 //template< typename NodeStorage, typename Domain = CellMapDomain<Vec2i>, typename DomainKey = Vec2i >
 /** The home of the templated A* algorithm 
-  * @param NodeStorage templated NodeStorage, must conform to implicit interface see ...
+  * @param NodeStorage templated NodeStorage, must conform to implicit interface see elsewhere
   */
 template< typename NodeStorage >
 class SearchEngine {
@@ -158,7 +156,7 @@ public:
 			, expanded(0)
 			, spaceWidth(theMap.getW())
 			, spaceHeight(theMap.getH()) {
-		nodeStorage = new NodeStorage();
+		nodeStorage = new NodeStorage(spaceWidth, spaceHeight);
 		spaceWidth = theMap.getW();
 		spaceHeight = theMap.getH();
 	}
@@ -202,7 +200,7 @@ public:
 	int getExpandedLastRun() { return expanded; }
 
 	/** Find a path for unit to target using map */
-	int pathToPos(const AnnotatedMap *map, const Unit *unit, const Vec2i &target){
+	int pathToPos(const AnnotatedMap *map, const Unit *unit, const Vec2i &target) {
 		PosGoal goalFunc(target);
 		MoveCost costFunc (unit, map);
 		DiagonalDistance heuristic(target);
@@ -212,21 +210,21 @@ public:
 	/** Finds a path for unit towards target using map, terminating when a cell with more than
 	  * threshold influence on iMap is found */
 	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const Vec2i &target, 
-			const InfluenceMap *iMap, float threshold){
-		InfluenceGoal		goalFunc(threshold, iMap);
-		MoveCost			costFunc(unit, aMap);
-		DiagonalDistance	heuristic(target); // a bit hacky... target is needed for heuristic
+			const TypeMap<float> *iMap, float threshold) {
+		InfluenceGoal<float> goalFunc(threshold, iMap);
+		MoveCost			 costFunc(unit, aMap);
+		DiagonalDistance	 heuristic(target); // a bit hacky... target is needed for heuristic
 		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
 
 	/** Runs a Dijkstra search, setting distance data in iMap, until cutOff is reached */
-	void buildDistanceMap(InfluenceMap *iMap, float cutOff){
+	void buildDistanceMap(TypeMap<float> *iMap, float cutOff) {
 		InfluenceBuilderGoal goalFunc(cutOff, iMap);
 		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>(goalFunc,DistanceCost(),ZeroHeuristic());
 	}
 
 	/** Kludge to search on Cellmap or Tilemap... templated search domain will deprecate this */
-	void setSearchSpace(SearchSpace s){
+	void setSearchSpace(SearchSpace s) {
 		if ( s == SearchSpace::CELLMAP ) {
 			spaceWidth = theMap.getW();
 			spaceHeight = theMap.getH();
@@ -255,7 +253,7 @@ public:
 				goalPos = Vec2i(-1);
 				return AStarResult::FAILED; 
 			}
-			if ( goalFunc(minPos, nodeStorage->getCostTo( minPos )) ) { // success
+			if ( goalFunc(minPos, nodeStorage->getCostTo(minPos)) ) { // success
 				goalPos = minPos;
 				return AStarResult::COMPLETE;
 			}
@@ -265,15 +263,15 @@ public:
 				||	 nodeStorage->isClosed(nPos) ) {
 					continue;
 				}
-				float cost = costFunc( minPos, nPos );
+				float cost = costFunc(minPos, nPos);
 				if ( cost == numeric_limits<float>::infinity() ) {
 					continue;
 				}
-				if ( nodeStorage->isOpen( nPos ) ) {
-					nodeStorage->updateOpen( nPos, minPos, cost );
+				if ( nodeStorage->isOpen(nPos) ) {
+					nodeStorage->updateOpen(nPos, minPos, cost);
 				} else {
-					const float &costToMin = nodeStorage->getCostTo( minPos );
-					if ( ! nodeStorage->setOpen( nPos, minPos, heuristic( nPos ), costToMin + cost ) ) {
+					const float &costToMin = nodeStorage->getCostTo(minPos);
+					if ( ! nodeStorage->setOpen(nPos, minPos, heuristic(nPos), costToMin + cost) ) {
 						goalPos = nodeStorage->getBestSeen();
 						return AStarResult::PARTIAL;
 					}

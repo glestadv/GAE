@@ -46,12 +46,12 @@ namespace Glest{ namespace Game {
 namespace Search {
 	/** result set for path finding 
 	  * <ul><li><b>ARRIVED</b> Arrived at destination (or as close as unit can get to target)</li>
-	  *		<li><b>ONTHEWAY</b> On the way to destination</li>
+	  *		<li><b>MOVING</b> On the way to destination</li>
 	  *		<li><b>BLOCKED</b> path is blocked</li></ul>
 	  */
 	REGULAR_ENUM( TravelState, 
 						ARRIVED, 
-						ONTHEWAY, 
+						MOVING, 
 						BLOCKED 
 				   );
 
@@ -194,7 +194,7 @@ STRINGY_ENUM( EffectTypeFlag,
 
 /** attack skill preferences
   */
-REGULAR_ENUM( AttackSkillPreference,
+STRINGY_ENUM( AttackSkillPreference,
 					WHENEVER_POSSIBLE,
 					AT_MAX_RANGE,
 					ON_LARGE,
@@ -251,7 +251,7 @@ REGULAR_ENUM( UpgradeState,
 
 /** command classes
   */
-REGULAR_ENUM( CommandClass,
+STRINGY_ENUM( CommandClass,
 					STOP,
 					MOVE,
 					ATTACK,

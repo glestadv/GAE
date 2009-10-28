@@ -43,9 +43,6 @@ class UnitType;
 class Game;
 class World;
 
-namespace Search { class InfluenceMap; }
-using Search::InfluenceMap;
-
 // =====================================================
 // 	class Faction
 //

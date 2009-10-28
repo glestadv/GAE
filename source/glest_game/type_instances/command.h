@@ -37,7 +37,6 @@ typedef Flags<CommandProperties, CommandProperties::COUNT, uint8> CommandFlags;
 
 class Command : public NetworkWriteable {
 public:
-
 	static const Vec2i invalidPos;
 
 private:

@@ -146,6 +146,9 @@ private:
 	int loadCount;			/**< current 'load' (resources carried) */
 	int deadCount;			/**< how many frames this unit has been dead */
 	float progress;			/**< skill progress, between 0 and 1 */
+	float progressSpeed;
+	float animProgressSpeed;
+	int nextCommandUpdate;
 	float lastAnimProgress;	/**< animation progress last frame, between 0 and 1 */
 	float animProgress;		/**< animation progress, between 0 and 1 */
 	float highlight;		/**< alpha for selection circle effects */
@@ -409,6 +412,7 @@ public:
 	bool repair(int amount = 0, float multiplier = 1.0f);
 	bool decHp(int i);
 	int update2()										{return ++progress2;}
+	void preProcessSkill();
 	bool update();
 	void update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld, bool netClient, float nextAdvanceFrames);
 	void updateMinor(const XmlNode *node);

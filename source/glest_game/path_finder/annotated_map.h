@@ -50,7 +50,7 @@ class ExplorationMap;
 struct CellMetrics {
 	CellMetrics() { memset ( this, 0, sizeof(*this) ); }
 	/** get metrics for field */
-	uint16 get(const Field field) {
+	uint16 get(const Field field) const {
 		switch ( field ) {
 			case Field::LAND:		return field0;
 			case Field::AIR:		return field1;
@@ -73,8 +73,14 @@ struct CellMetrics {
 	}
 	/** set clearance of all fields to val */
 	void setAll(uint16 val)				{ field0 = field1 = field2 = field3 = field4 = val; }
-	/** comparison */
-	bool operator!=(CellMetrics &that)	{ return memcmp( this, &that, sizeof(*this) ); }
+	/** comparison, ignoring dirty bit */
+	bool operator!=(CellMetrics &that)	const { 
+		if ( field0 == that.field0 && field1 == that.field1 
+		&&  field2 == that.field2 && field3 == that.field3 && field4 == that.field4 ) {
+			return false;
+		}
+		return true;
+	}
 	/** is this cell dirty */
 	bool isDirty() const				{ return dirty; }
 	/** set dirty flag */
@@ -107,7 +113,7 @@ public:
 	void init(int w, int h) { assert ( w > 0 && h > 0); width = w; height = h; metrics = new CellMetrics[w * h]; }
 	void zero()				{ memset(metrics, 0, sizeof(CellMetrics) * width * height); }
 	
-	CellMetrics& operator [] (const Vec2i &pos) const { return metrics[pos.y * width + pos.x]; }
+	CellMetrics& operator[](const Vec2i &pos) const { return metrics[pos.y * width + pos.x]; }
 };
 
 // =====================================================

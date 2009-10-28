@@ -50,13 +50,13 @@ public:
 };
 
 /** Goal function using influence map */
-class InfluenceGoal {
+template<typename type>class InfluenceGoal {
 public:
-	InfluenceGoal(const InfluenceMap *iMap, float threshold) : iMap(iMap), threshold(threshold) {}
+	InfluenceGoal(const TypeMap<type> *iMap, type threshold) : iMap(iMap), threshold(threshold) {}
 	/** InfluenceMap to use */
-	const InfluenceMap *iMap;
+	const TypeMap<type> *iMap;
 	/** influence 'threshold' of goal */
-	float threshold;
+	type threshold;
 	/** The goal function 
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -121,11 +121,11 @@ public:
 /** Helper goal, used to build distance maps. */
 class DistanceBuilderGoal {
 public:
-	DistanceBuilderGoal(float cutOff, InfluenceMap *iMap) : cutOff(cutOff), iMap(iMap) {}
+	DistanceBuilderGoal(float cutOff, TypeMap<float> *iMap) : cutOff(cutOff), iMap(iMap) {}
 	/** a 'cutoff' distance, search ends after this is reached. */
 	float cutOff;
 	/** inluence map to write distance data into. */
-	InfluenceMap *iMap;
+	TypeMap<float> *iMap;
 	/** The goal function, writes ( cutOff - costSoFar ) into the influence map.
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
@@ -145,11 +145,11 @@ public:
 /** Helper goal, used to build influence maps. */
 class InfluenceBuilderGoal {
 public:
-	InfluenceBuilderGoal(float cutOff, InfluenceMap *iMap) : cutOff(cutOff), iMap(iMap) {}
+	InfluenceBuilderGoal(float cutOff, TypeMap<float> *iMap) : cutOff(cutOff), iMap(iMap) {}
 	/** WIP */
 	float cutOff;
 	/** WIP */
-	InfluenceMap *iMap;
+	TypeMap<float> *iMap;
 	/** The goal function, WIP
 	  * @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos

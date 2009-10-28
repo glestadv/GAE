@@ -61,13 +61,13 @@ class Cartographer {
 	/** The locations of each and every resource on the map */
 	map< const ResourceType*, vector< Vec2i > > resourceLocations;
 	/** Inlfuence maps, for each team, describing distance to resources */
-	map< int, map< const ResourceType*, InfluenceMap* > > teamResourceMaps;
+	map< int, map< const ResourceType*, TypeMap<float>* > > teamResourceMaps;
 	/** Exploration maps for each team */
 	map< int, ExplorationMap* > explorationMaps;
 
 	SearchEngine<NodeMap>	*nmSearchEngine;
 
-	void initResourceMap( int team, const ResourceType *rt, InfluenceMap *iMap );
+	void initResourceMap( int team, const ResourceType *rt, TypeMap<float> *iMap );
 
 	/** Custom Goal function for maintaining the exploration maps */
 	class VisibilityMaintainerGoal {
@@ -134,18 +134,18 @@ public:
 
 	}
 
-	InfluenceMap* getResourceMap(int team, const ResourceType* rt) {
+	TypeMap<float>* getResourceMap(int team, const ResourceType* rt) {
 		return teamResourceMaps[team][rt];
 	}
-	InfluenceMap* getResourceMap(Faction *faction, const ResourceType* rt) {
+	TypeMap<float>* getResourceMap(Faction *faction, const ResourceType* rt) {
 		return teamResourceMaps[faction->getTeam()][rt];
 	}
-	InfluenceMap* getResourceMap(Unit *unit, const ResourceType* rt) {
+	TypeMap<float>* getResourceMap(Unit *unit, const ResourceType* rt) {
 		return teamResourceMaps[unit->getTeam()][rt];
 	}
 
 	AnnotatedMap* getMasterMap()				const	{ return masterMap;							  }
-	AnnotatedMap* getAnnotatedMap(int team )			{ return teamMaps[team];					  }
+	AnnotatedMap* getAnnotatedMap(int team )			{ return masterMap;/*teamMaps[team];*/					  }
 	AnnotatedMap* getAnnotatedMap(Faction *faction) 	{ return getAnnotatedMap(faction->getTeam()); }
 	AnnotatedMap* getAnnotatedMap(Unit *unit)			{ return getAnnotatedMap(unit->getTeam());	  }
 };

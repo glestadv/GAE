@@ -33,6 +33,7 @@
 
 // some local headers of importance
 #include "types.h"
+#include "game_constants.h"
 
 // POSIX base
 #include <stdlib.h>

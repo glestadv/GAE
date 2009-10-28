@@ -171,6 +171,8 @@ void AnnotatedMap::cascadingUpdate(const Vec2i &pos, const int size,  const Fiel
 				if ( y - 1 >= 0 ) { 
 					newAboveList->push_back(Vec2i(x,y-1));
 				}
+			} else {
+				corner = NULL;
 			}
 		}
 		leftList->clear(); 

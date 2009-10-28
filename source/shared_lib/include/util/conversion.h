@@ -17,8 +17,12 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "vec.h"
+
 using std::string;
 using std::runtime_error;
+
+using Shared::Graphics::Vec2i;
 
 namespace Shared { namespace Util {
 
@@ -112,6 +116,12 @@ inline string floatToStr(float f) {
 inline string doubleToStr(double d){
 	char str[maxStrSize];
 	sprintf(str, "%.2f", d);
+	return str; 
+}
+
+inline string Vec2iToStr(Vec2i v) {
+	char str[maxStrSize];
+	sprintf(str, "(%d,%d)", v.x, v.y);
 	return str; 
 }
 

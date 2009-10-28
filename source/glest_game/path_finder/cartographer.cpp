@@ -72,7 +72,7 @@ Cartographer::Cartographer() {
 			for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
 				int team = theWorld.getFaction(j)->getTeam();
 				if ( teamResourceMaps[team].find(rt) == teamResourceMaps[team].end() ) {
-					teamResourceMaps[team][rt] = new InfluenceMap();
+					teamResourceMaps[team][rt] = new TypeMap<float>(Rect(0,0,theMap.getW(),theMap.getH()), -1.f);
 				}
 			}
 		}
@@ -95,8 +95,8 @@ Cartographer::~Cartographer() {
 	}
 	explorationMaps.clear();
 
-	map<int,map<const ResourceType*, InfluenceMap*>>::iterator teamIt;
-	map<const ResourceType*, InfluenceMap*>::iterator iMapIt;
+	map<int,map<const ResourceType*, TypeMap<float>*>>::iterator teamIt;
+	map<const ResourceType*, TypeMap<float>*>::iterator iMapIt;
 	teamIt = teamResourceMaps.begin();
 	for ( ; teamIt != teamResourceMaps.end(); ++teamIt ) {
 		iMapIt = teamIt->second.begin();
@@ -126,7 +126,7 @@ void Cartographer::updateResourceMaps() {
 }
 
 /** WIP */
-void Cartographer::initResourceMap(int team, const ResourceType *rt, InfluenceMap *iMap) {
+void Cartographer::initResourceMap(int team, const ResourceType *rt, TypeMap<float> *iMap) {
 	//DEBUG
 	static char buf[1024];
 	sprintf(buf, "Initialising %s influence map for team %d", rt->getName().c_str(), team);
@@ -139,7 +139,7 @@ void Cartographer::initResourceMap(int team, const ResourceType *rt, InfluenceMa
 			knownResources.push_back(*it);
 		}
 	}
-	iMap->clear();
+	iMap->zeroMap();
 	nmSearchEngine->reset();
 	for ( it = knownResources.begin(); it != knownResources.end(); ++it ) {
 		Vec2i pos = *it * Map::cellScale;

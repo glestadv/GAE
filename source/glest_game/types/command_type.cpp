@@ -25,13 +25,16 @@
 #include "faction_type.h"
 #include "unit_updater.h"
 #include "renderer.h"
-
+#include "game_constants.h"
+#include "route_planner.h"
 #include "leak_dumper.h"
 
 
 using namespace Shared::Util;
 
 namespace Glest { namespace Game {
+
+using Search::TravelState;
 
 // =====================================================
 // 	class AttackSkillTypes & enum AttackSkillPreferenceFlags
@@ -133,14 +136,21 @@ CommandType::CommandType(const char* name, CommandClass cc, Clicks clicks, bool 
 void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 	switch(cc) {
 		case CommandClass::STOP:
+			unitUpdater->updateStop(unit);
+			/*
+			// translate to frames, 10 frames == quarter of a second at normal speed
 			if(unit->getLastCommandUpdate() > 250000) {
 				unitUpdater->updateStop(unit);
 				unit->resetLastCommandUpdated();
-			}			
+			}*/			
 			break;
 
 		case CommandClass::MOVE:
-			unitUpdater->updateMove(unit);
+			if ( unit->getFaction()->isThisFaction() ) {
+				static_cast<const MoveCommandType * const>(this)->update(unit);
+			} else {
+				unitUpdater->updateMove(unit);
+			}
 			break;
 
 		case CommandClass::ATTACK:
@@ -148,10 +158,13 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			break;
 
 		case CommandClass::ATTACK_STOPPED:
+			unitUpdater->updateAttackStopped(unit);
+			/*
+			// translate to frames, 10 frames == quarter of a second at normal speed
 			if(unit->getLastCommandUpdate() > 250000) {
 				unitUpdater->updateAttackStopped(unit);
 				unit->resetLastCommandUpdated();
-			}			
+			}*/			
 			break;
 
 		case CommandClass::BUILD:
@@ -247,6 +260,29 @@ bool MoveBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
       loadOk = false;
    }
    return loadOk;
+}
+
+void MoveCommandType::update(Unit *unit) const {
+	Command *command= unit->getCurrCommand();
+	if(command->getUnit()) {
+		command->setPos(command->getUnit()->getCenteredPos());
+		if ( !command->getUnit()->isAlive() ) {
+			command->setUnit(NULL);
+		}
+	} 
+	switch ( theRoutePlanner.findPath(unit, command->getPos()) ) {
+		case TravelState::MOVING:
+			unit->setCurrSkill(getMoveSkillType());
+			unit->face(unit->getNextPos());
+			break;
+		case TravelState::BLOCKED:
+			if ( unit->getPath()->isBlocked() && !command->getUnit() ) {
+				unit->finishCommand();
+			}
+			break;
+		case TravelState::ARRIVED:
+			unit->finishCommand();
+	}
 }
 
 // =====================================================

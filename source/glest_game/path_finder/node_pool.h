@@ -16,23 +16,17 @@
 #define _GLEST_GAME_PATHFINDER_NODE_POOL_H_
 
 #include "vec.h"
-#include "timer.h"
-#include "unit_stats_base.h"
 
 #include <algorithm>
 #include <set>
 #include <limits>
 
-using Shared::Platform::Chrono;
-using std::numeric_limits;
-using std::set;
+using Shared::Graphics::Vec2i;
 
-namespace Glest { namespace Game { 
+using namespace std;
+using namespace Shared::Platform;
 
-class Unit;
-class Map;
-
-namespace Search {
+namespace Glest { namespace Game { namespace Search {
 
 #pragma pack(push, 4)
 struct PosOff {				/**< A bit packed position (Vec2i) and offset (direction) pair		 */
@@ -106,7 +100,7 @@ public:
 	}
 };
 
-#if 1
+#if 0
 /** A 'split' list, a sorted head (limited size) and unsorted bucket */
 class OpenList {
 private:
@@ -231,7 +225,7 @@ private:
 	// =====================================================
 	/** An array of pointers
 	  * <p>Must be used in conjunction with marker array, constantly contains junk 
-	  * values, use only if mark > counter</p> */
+	  * values, use only if mark >= counter</p> */
 	struct PointerArray {
 	private:
 		int stride;			 /**< stride of array */
@@ -255,10 +249,10 @@ private:
 	DoubleMarkerArray markerArray;	/**< An array the size of the map, indicating node status (unvisited, open, closed)		  */
 	PointerArray pointerArray;	   /**< An array the size of the map, containing pointers to Nodes, valid if position marked */
 	vector<AStarNode*> openHeap;  /**< the open list, binary heap, maintained with std algorithms							*/
-	OpenList openList;			 /**< the open list,  'split' list, sorted head and unsorted bucket						   */
+	//OpenList openList;			 /**< the open list,  'split' list, sorted head and unsorted bucket						   */
 
 public:
-	NodeStore();
+	NodeStore(int w, int h);
 	~NodeStore();
 
 	void attachNodePool(NodePool *nPool) { pool = nPool; }
