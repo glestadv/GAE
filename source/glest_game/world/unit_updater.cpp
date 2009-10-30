@@ -403,10 +403,10 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 	if ( target && !asts->getZone(target->getCurrZone()) )
 		unit->finishCommand();
 
-	//if found
 	if(attackableOnRange(unit, &target, act->getAttackSkillTypes(), &ast)) {
+		// found a target in range
 		assert(ast);
-		if(unit->getEp() >= ast->getEpCost()) {
+		if(unit->getEp() >= ast->getEpCost()) { //FIXME duplicate effort? done after command update...
 			unit->setCurrSkill(ast);
 			unit->setTarget(target, true, true);
 		} else {
@@ -416,13 +416,13 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		//compute target pos
 		Vec2i pos;
 		if ( attackableOnSight(unit, &target, asts, NULL) ) {
+			// found a target, but not in range
 			pos = target->getNearestOccupiedCell(unit->getPos());
 			if (pos != unit->getTargetPos()) {
 				unit->setTargetPos(pos);
 				unit->getPath()->clear();
 			}
-		} 
-		else {
+		} else {
 			// if no more targets and on auto command, then turn around
 			if(command->isAuto() && command->hasPos2()) {
 				if(Config::getInstance().getGsAutoReturnEnabled()) {
@@ -691,36 +691,23 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					unit->face(targetPos);
 					unit->setLoadCount(0);
 					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
-				} 
-				else { //if not continue walking
+				} else { //if not continue walking
 					switch (pathManager->findPathToLocation( unit, command->getPos()/*, r->getType()*/)) {
-					case TravelState::MOVING:
-						unit->setCurrSkill(hct->getMoveSkillType());
-						unit->face(unit->getNextPos());
-						break;
-					case TravelState::ARRIVED:
-						/*
-						for ( int i=0; i < 8; ++i ) { // reset target
-							Vec2i cPos = unit->getPos() + Search::OffsetsSize1Dist1[i];
-							Resource *res = map->getTile (Map::toTileCoords(cPos))->getResource();
-							if ( res && hct->canHarvest (res->getType()) ) {
-								command->setPos ( cPos );
-								break;
-							}
-						}*/
-						//command->setPos ( 
-					default:
-						break;
+						case TravelState::MOVING:
+							unit->setCurrSkill(hct->getMoveSkillType());
+							unit->face(unit->getNextPos());
+							break;
+						default:
+							break;
 					}
 				}
-			} 
-			else {
+			} else {
 				//if can't harvest, search for another resource
 				unit->setCurrSkill(SkillClass::STOP);
 				if (!searchForResource(unit, hct)) {
 					unit->finishCommand();
-               //FIXME don't just stand around at the store!!
-               //insert move command here.
+					//FIXME don't just stand around at the store!!
+					//insert move command here.
 				}
 			}
 		} else {
@@ -1071,10 +1058,9 @@ void UnitUpdater::updateMorph(Unit *unit){
 
 	if(unit->getCurrSkill()->getClass() != SkillClass::MORPH){
 		//if not morphing, check space
-		bool gotSpace = false;
-		// redo field
+
+		// determine morph unit field
 		Fields mfs = mct->getMorphUnit()->getFields ();
-		
 		Field mf;
 		if ( mfs.get ( Field::LAND ) ) mf = Field::LAND;
 		else if ( mfs.get ( Field::AIR ) ) mf = Field::AIR;
@@ -1085,10 +1071,10 @@ void UnitUpdater::updateMorph(Unit *unit){
 		if ( map->areFreeCellsOrHasUnit (unit->getPos(), mct->getMorphUnit()->getSize(), mf, unit) ) {
 			unit->setCurrSkill(mct->getMorphSkillType());
 			unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), false);
-		} 
-		else {
-			if(unit->getFactionIndex() == world->getThisFactionIndex())
+		} else {
+			if(unit->getFactionIndex() == world->getThisFactionIndex()) {
 				Game::getInstance()->getConsole()->addStdMessage("InvalidPosition");
+			}
 			unit->cancelCurrCommand();
 		}
 	} else {

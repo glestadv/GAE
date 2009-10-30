@@ -158,7 +158,11 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	nsSearchEngine->setStart(unit->getPos(), DiagonalDistance(target)(unit->getPos())); 
 	int result = nsSearchEngine->pathToPos(aMap, unit, target); // perform search
 	aMap->clearLocalAnnotations(unit->getCurrField()); // clear annotations
-	if ( result == AStarResult::FAILED ) BLOCKED()
+	if ( result == AStarResult::FAILED ) {
+		unit->setCurrSkill(SkillClass::STOP);
+		path.incBlockCount();
+		return TravelState::BLOCKED;
+	}
 	if ( result == AStarResult::PARTIAL ) {
 		// Queue for 'complete' search...
 	}
