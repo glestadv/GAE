@@ -60,7 +60,7 @@ private:
 	World *world;
 	Console *console;
 	ScriptManager *scriptManager;
-	Search::RoutePlanner *pathManager;
+	Search::RoutePlanner *routePlanner;
 	Random random;
 	GameSettings gameSettings;
 

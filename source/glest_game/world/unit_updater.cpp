@@ -64,8 +64,7 @@ void UnitUpdater::init(Game &game) {
 	this->world = game.getWorld();
 	this->map = world->getMap();
 	this->console = game.getConsole();
-	pathManager = Search::RoutePlanner::getInstance();
-	pathManager->init();
+	routePlanner = Search::RoutePlanner::getInstance();
 	gameSettings = game.getGameSettings();
 }
 
@@ -352,7 +351,7 @@ void UnitUpdater::updateMove(Unit *unit) {
 		pos = command->getPos();
 	}
 
-	switch(pathManager->findPath(unit, pos)) {
+	switch(routePlanner->findPath(unit, pos)) {
 	case TravelState::MOVING:
 		unit->setCurrSkill(mct->getMoveSkillType());
 		unit->face(unit->getNextPos());
@@ -438,7 +437,7 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		}
 
 		//if unit arrives destPos order has ended
-		switch(pathManager->findPath(unit, pos)) {
+		switch(routePlanner->findPath(unit, pos)) {
 		case TravelState::MOVING:
 			unit->setCurrSkill(act->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -517,7 +516,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 			return;
 		}
 
-		switch (pathManager->findPath(unit, waypoint)) {
+		switch (routePlanner->findPath(unit, waypoint)) {
 		case TravelState::MOVING:
 			unit->setCurrSkill(bct->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -692,7 +691,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					unit->setLoadCount(0);
 					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
 				} else { //if not continue walking
-					switch (pathManager->findPathToLocation( unit, command->getPos()/*, r->getType()*/)) {
+					switch (routePlanner->findPathToLocation( unit, command->getPos()/*, r->getType()*/)) {
 						case TravelState::MOVING:
 							unit->setCurrSkill(hct->getMoveSkillType());
 							unit->face(unit->getNextPos());
@@ -714,7 +713,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			//if loaded, return to store
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
-				switch (pathManager->findPathToLocation( unit, store->getNearestOccupiedCell(unit->getPos())/*, store*/)) {
+				switch (routePlanner->findPathToLocation( unit, store->getNearestOccupiedCell(unit->getPos())/*, store*/)) {
 					case TravelState::MOVING:
 						unit->setCurrSkill(hct->getMoveLoadedSkillType());
 						unit->face(unit->getNextPos());
@@ -848,7 +847,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			targetPos = command->getPos();
 		}
 
-		switch(pathManager->findPath(unit, targetPos)) {
+		switch(routePlanner->findPath(unit, targetPos)) {
 		case TravelState::ARRIVED:
 			if(repaired && unit->getPos() != targetPos) {
 				// presume blocked

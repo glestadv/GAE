@@ -9,6 +9,7 @@
 #include "route_planner.h"   
 #include "influence_map.h"
 #include "cartographer.h"
+#include "abstract_map.h"
 
 #include "vec.h"
 #include "math_util.h"
@@ -45,14 +46,14 @@ public:
 		else if ( closedSet.find ( cell ) != closedSet.end() ) ndx = 16; // closed nodes
 		else if ( localAnnotations.find ( cell ) != localAnnotations.end() ) // local annotation
 			ndx = 17 + localAnnotations.find(cell)->second;
-		else ndx = theRoutePlanner.annotatedMap->metrics[cell].get( debugField ); // else use cell metric for debug field
+		else ndx = theWorld.getCartographer().getMasterMap()->metrics[cell].get( debugField ); // else use cell metric for debug field
 		return (Texture2DGl*)PFDebugTextures[ndx];
    }
 };
 
 #endif // DEBUG_SEARCH_TEXTURES
 
-#if DEBUG_SEARCH_OVERLAYS
+#if DEBUG_RESOURCE_MAP_OVERLAYS
 
 class ResourceInfluenceColourCallback {
 public:
@@ -66,7 +67,7 @@ public:
 	}
 };
 
-#endif // DEBUG_SEARCH_OVERLAYS
+#endif // DEBUG_RESOURCE_MAP_OVERLAYS
 
 #if DEBUG_RENDERER_VISIBLEQUAD
 
@@ -115,6 +116,31 @@ public:
 
 #endif
 
+#if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+
+class PathfinderClusterOverlay {
+public:
+	static set<Vec2i> entranceCells;
+	static set<Vec2i> pathCells;
+
+	Vec4f operator()( const Vec2i &cell ) {
+		const int &clusterSize = Search::AbstractMap::clusterSize;
+		if ( pathCells.find(cell) != pathCells.end() ) {
+			return Vec4f(0.f, 0.f, 1.f, 0.7f);
+		} else if ( cell.x % clusterSize == 0 || cell.x % clusterSize == clusterSize - 1 
+		|| cell.y % clusterSize == 0 || cell.y % clusterSize == clusterSize - 1  ) {
+			if ( entranceCells.find(cell) != entranceCells.end() ) {
+				return Vec4f(0.f, 1.f, 0.f, 0.7f); // entrance
+			} else {
+				return Vec4f(1.f, 0.f, 0.f, 0.7f);  // border
+			}
+		} else {
+			return Vec4f(0.f, 0.f, 0.f, 0.f); // nothing interesting
+		}
+	}
+};
+
+#endif
 
 
 class DebugRenderer {
@@ -207,13 +233,18 @@ public:
 				renderCellOverlay( colour, tc00->getNormal(), mc, mr, br, bc );
 			}
 		}
-		glEnd();
+		glEnd(); //??
 		//Restore
 		glPopAttrib();
 		//assert
 		glGetError();	//remove when first mtex problem solved
 		assertGl();
 	}
+#if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+	void renderClusterOverlay( Quad2i &visibleQuad ) {
+		renderCellOverlay<PathfinderClusterOverlay>(visibleQuad);
+	}
+#endif
 
 #if DEBUG_SEARCH_TEXTURES
 	void renderPFDebug( Quad2i &visibleQuad ) {
@@ -270,6 +301,46 @@ private:
 			glColor4fv( colour.ptr() );
 			glVertex3fv(v3.ptr());                        
 		glEnd ();
+	}
+
+	void renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width);
+
+	static list<Vec3f> waypoints;
+public:
+	static void clearWaypoints() {waypoints.clear();}
+	static void addWaypoint(Vec3f v){waypoints.push_back(v);}
+
+	void renderPathOverlay() {
+		
+		//return;
+
+		Vec3f one, two;
+		if ( waypoints.size() < 2 ) return;
+
+		assertGl();
+		glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT );
+		glEnable( GL_COLOR_MATERIAL ); 
+		glDisable( GL_ALPHA_TEST );
+		glDepthFunc(GL_ALWAYS);
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_CULL_FACE);
+		glLineWidth(2.f);
+		glActiveTexture( GL_TEXTURE0 );
+		glDisable( GL_TEXTURE_2D );
+
+		list<Vec3f>::iterator it = waypoints.begin(); 
+		one = *it;
+		++it;
+		two = *it;
+		while ( true ) {
+			renderArrow(one,two,Vec3f(0.2f, 0.2f, 1.0f), 0.3f);
+			one = two;
+			++it;
+			if ( it == waypoints.end() ) break;
+			two = *it;
+		}
+		//Restore
+		glPopAttrib();
 	}
 };
 

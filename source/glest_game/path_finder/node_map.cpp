@@ -21,16 +21,16 @@
 namespace Glest { namespace Game { namespace Search {
 
 /** Construct a NodeMap */
-NodeMap::NodeMap(int w, int h) 
+NodeMap::NodeMap(/*int w, int h*/) 
 		: openTop(-1)
 		, nodeCount(0)
 		, nodeLimit(-1) 
 		, searchCounter(1) {
-	invalidPos.x = invalidPos.y = MAX_MAP_COORD;
+	invalidPos.x = invalidPos.y = 65535;
 	assert( !invalidPos.valid() );
 	bestH = invalidPos;
-	stride = w;
-	nodeMap.init(w,h);
+	stride = theMap.getW();
+	nodeMap.init(stride, theMap.getH());
 }
 
 /** resets the NodeMap for use */
@@ -80,7 +80,7 @@ bool NodeMap::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	float est = h + d;
 	nodeCount ++;
 
-#	ifdef _GAE_DEBUG_EDITION_
+#	if DEBUG_SEARCH_TEXTURES
 		listedNodes.push_back ( pos );
 #	endif
 
@@ -256,8 +256,8 @@ bool NodeMap::assertValidPath(list<Vec2i> &path) {
 	return true;
 }
 
-#ifdef _GAE_DEBUG_EDITION_
-
+#if DEBUG_SEARCH_TEXTURES
+/*
 list<pair<Vec2i,uint32>>* SearchMap::getLocalAnnotations() {
 	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>>();
 	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin(); it != localAnnt.end(); ++ it ) {
@@ -265,9 +265,9 @@ list<pair<Vec2i,uint32>>* SearchMap::getLocalAnnotations() {
 	}
 	return ret;
 }
+*/
 
-
-list<Vec2i>* SearchMap::getOpenNodes() {
+list<Vec2i>* NodeMap::getOpenNodes() {
 	list<Vec2i> *ret = new list<Vec2i>();
 	list<Vec2i>::iterator it = listedNodes.begin();
 	for ( ; it != listedNodes.end(); ++it ) {
@@ -276,7 +276,7 @@ list<Vec2i>* SearchMap::getOpenNodes() {
 	return ret;
 }
 
-list<Vec2i>* SearchMap::getClosedNodes() {
+list<Vec2i>* NodeMap::getClosedNodes() {
 	list<Vec2i> *ret = new list<Vec2i>();
 	list<Vec2i>::iterator it = listedNodes.begin();
 	for ( ; it != listedNodes.end(); ++it ) {

@@ -177,7 +177,7 @@ public:
 	  * @param p2 position 2 ('adjacent' p1)
 	  * @return cost
 	  */
-	float operator()(const Vec2i &p1, const Vec2i &p2) const { return 0.f; }
+	float operator()(const Vec2i &p1, const Vec2i &p2) const { return cost; }
 };
 
 /** distance cost, no obstacle checks */
@@ -201,9 +201,15 @@ public:
 /** The movement cost function */
 class MoveCost {
 public:
-	MoveCost(const Unit *unit, const AnnotatedMap *aMap) : unit(unit), aMap(aMap) {}
-	/** unit wanting to move */
-	const Unit *unit;
+	MoveCost(const Unit *unit, const AnnotatedMap *aMap) 
+			: field(unit->getCurrField()), size(unit->getSize()), aMap(aMap) {}
+	MoveCost(const Field field, const int size, const AnnotatedMap *aMap )
+			: field(field), size(size), aMap(aMap) {}
+	/*/* unit wanting to move */
+	//const Unit *unit;
+	const int size;
+	const Field field;
+
 	/** map to search on */
 	const AnnotatedMap *aMap;
 	/** The cost function
@@ -213,14 +219,13 @@ public:
 	  */
 	float operator()(const Vec2i &p1, const Vec2i &p2) const {
 		assert(p1.dist(p2) < 1.5 && p1 != p2);
-		if ( ! aMap->canOccupy(p2, unit->getSize(), unit->getCurrField()) ) {
+		if ( ! aMap->canOccupy(p2, size, field) ) {
 			return numeric_limits<float>::infinity();
 		}
 		if ( p1.x != p2.x && p1.y != p2.y ) {
 			Vec2i d1, d2;
-			getDiags(p1, p2, unit->getSize(), d1, d2);
-			if ( !aMap->canOccupy(d1, 1, unit->getCurrField()) 
-			||	 !aMap->canOccupy(d2, 1, unit->getCurrField()) ) {
+			getDiags(p1, p2, size, d1, d2);
+			if ( !aMap->canOccupy(d1, 1, field) || !aMap->canOccupy(d2, 1, field) ) {
 				return numeric_limits<float>::infinity();
 			}
 			return SQRT2;

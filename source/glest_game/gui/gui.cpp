@@ -529,7 +529,7 @@ void Gui::hotKey(UserCommand cmd) {
 	case ucSwitchDebugField:
 		f = (int)PathFinderTextureCallBack::debugField;
 		f ++; f %= Field::COUNT;
-		PathFinderTextureCallBack::debugField = (Field)f;
+		PathFinderTextureCallBack::debugField = enum_cast<Field>(f);
 		break;
 #endif
 #if DEBUG_RENDERER_VISIBLEQUAD

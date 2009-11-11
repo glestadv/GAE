@@ -17,6 +17,7 @@
 #include "cartographer.h"
 
 #include "search_engine.h"
+#include "abstract_map.h"
 
 #include "map.h"
 #include "game.h"
@@ -35,9 +36,13 @@ namespace Glest { namespace Game { namespace Search {
 /** Construct Cartographer object. Requires game settings, factions & cell map to have been loaded.
   */
 Cartographer::Cartographer() {
+	theLogger.add("Cartographer", true);
 	int w = theMap.getW(), h = theMap.getH();
-	nmSearchEngine = new SearchEngine<NodeMap>();
+	nmSearchEngine = new SearchEngine<NodeMap,GridNeighbours>();
+	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
+	nmSearchEngine->setInvalidKey(Vec2i(-1));
 	masterMap = new AnnotatedMap();
+	abstractMap = new AbstractMap(this);
 
 	// team search and visibility maps
 	set<int> teams;
@@ -178,7 +183,7 @@ void Cartographer::maintainUnitVisibility(Unit *unit, bool add) {
 	// set up goal function
 	VisibilityMaintainerGoal goalFunc((float)unit->getSight(), explorationMaps[unit->getTeam()], add);
 	// set up search engine
-	nmSearchEngine->setSearchSpace(SearchSpace::TILEMAP);
+	GridNeighbours::setSearchSpace(SearchSpace::TILEMAP);
 	nmSearchEngine->setNodeLimit(-1);
 	nmSearchEngine->reset();
 	///@todo take unit size into account?
@@ -187,7 +192,7 @@ void Cartographer::maintainUnitVisibility(Unit *unit, bool add) {
 	nmSearchEngine->aStar<VisibilityMaintainerGoal,DistanceCost,ZeroHeuristic>
 						 (goalFunc,DistanceCost(),ZeroHeuristic());
 	// reset search space
-	nmSearchEngine->setSearchSpace(SearchSpace::CELLMAP);
+	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 }
 
 }}}

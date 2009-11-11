@@ -30,6 +30,8 @@ namespace Glest { namespace Game { namespace Search {
   */
 AnnotatedMap::AnnotatedMap(ExplorationMap *eMap) : eMap(eMap) {
 	metrics.init(theMap.getW(), theMap.getH());
+	width = theMap.getW();
+	height = theMap.getH();
 	if ( !eMap ) {
 		initMapMetrics();
 	} else {

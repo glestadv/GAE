@@ -14,6 +14,46 @@ using Glest::Game::Search::Cartographer;
 
 namespace Glest { namespace Game{
 
+list<Vec3f> DebugRenderer::waypoints;
+
+void DebugRenderer::renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width){
+	const int tesselation= 3;
+	const float arrowEndSize= 0.4f;
+
+	Vec3f dir= Vec3f(pos2-pos1);
+	float len= dir.length();
+	float alphaFactor= 0.9f;
+
+	dir.normalize();
+	Vec3f normal= dir.cross(Vec3f(0, 1, 0));
+
+	Vec3f pos2Left= pos2 + normal*(width-0.05f) - dir*arrowEndSize*width;
+	Vec3f pos2Right= pos2 - normal*(width-0.05f) - dir*arrowEndSize*width;
+	Vec3f pos1Left= pos1 + normal*(width+0.05f);
+	Vec3f pos1Right= pos1 - normal*(width+0.05f);
+
+	//arrow body
+	glBegin(GL_TRIANGLE_STRIP);
+	for(int i=0; i<=tesselation; ++i){
+		float t= static_cast<float>(i)/tesselation;
+		Vec3f a= pos1Left.lerp(t, pos2Left);
+		Vec3f b= pos1Right.lerp(t, pos2Right);
+		Vec4f c= Vec4f(color, t*0.25f*alphaFactor);
+
+		glColor4fv(c.ptr());
+		glVertex3fv(a.ptr());
+		glVertex3fv(b.ptr());
+	}
+	glEnd();
+
+	//arrow end
+	glBegin(GL_TRIANGLES);
+		glVertex3fv((pos2Left + normal*(arrowEndSize-0.1f)).ptr());
+		glVertex3fv((pos2Right - normal*(arrowEndSize-0.1f)).ptr());
+		glVertex3fv((pos2 + dir*(arrowEndSize-0.1f)).ptr());
+	glEnd();
+}
+
 #if DEBUG_SEARCH_TEXTURES
 
 Field		PathFinderTextureCallBack::debugField;
@@ -59,7 +99,7 @@ void PathFinderTextureCallBack::loadPFDebugTextures()
 #undef _load_tex
 #endif // DEBUG_SEARCH_TEXTURES
 
-#if DEBUG_SEARCH_OVERLAYS
+#if DEBUG_RESOURCE_MAP_OVERLAYS
 
 #define INFLUENCE_SCALE 30.f
 
@@ -207,7 +247,7 @@ void Renderer::renderInfluenceOverlay( Vec3f clr, float scale, InfluenceMap *iMa
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
 }
-#endif // DEBUG_SEARCH_OVERLAYS
+#endif // DEBUG_RESOURCE_MAP_OVERLAYS
 
 
 #if DEBUG_RENDERER_VISIBLEQUAD
@@ -216,6 +256,13 @@ Vec4f VisibleQuadColourCallback::colour( 0.f, 1.f, 0.f, 0.5f );
 set<Vec2i> VisibleQuadColourCallback::quadSet;
 
 #endif // DEBUG_RENDERER_VISIBLEQUAD
+
+#if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+
+set<Vec2i> PathfinderClusterOverlay::entranceCells;
+set<Vec2i> PathfinderClusterOverlay::pathCells;
+
+#endif 
 
 }} // end namespace Glest::Game
 

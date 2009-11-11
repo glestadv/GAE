@@ -134,8 +134,8 @@ public:
 	float getHeight() const						{return vertex.y;}
 	const Vec3f &getColor() const				{return color;}
 	const Vec3f &getNormal() const				{return normal;}
-	int getTileType() const					{return tileType;}
-	const Texture2D *getTileTexture() const	{return tileTexture;}
+	int getTileType() const						{return tileType;}
+	const Texture2D *getTileTexture() const		{return tileTexture;}
 	Object *getObject() const					{return object;}
 	Resource *getResource() const				{return object==NULL? NULL: object->getResource();}
 	const Vec2f &getFowTexCoord() const			{return fowTexCoord;}
@@ -150,7 +150,7 @@ public:
 	void setHeight(float height)					{originalVertex.y = vertex.y = height;}
 	void setNormal(const Vec3f &normal)				{this->normal= normal;}
 	void setColor(const Vec3f &color)				{this->color= color;}
-	void setTileType(int tileType)			{this->tileType= tileType;}
+	void setTileType(int tileType)					{this->tileType= tileType;}
 	void setTileTexture(const Texture2D *st)		{this->tileTexture= st;}
 	void setObject(Object *object)					{this->object= object;}
 	void setFowTexCoord(const Vec2f &ftc)			{this->fowTexCoord= ftc;}

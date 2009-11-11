@@ -75,7 +75,7 @@ public:
 /** Holds the next cells of a Unit movement 
   * @extends std::list<Shared::Graphics::Vec2i>
   */
-class UnitPath : protected list<Vec2i> {
+class UnitPath : public list<Vec2i> {
 private:
 	static const int maxBlockCount = 10; /**< number of frames to wait on a blocked path */
 
@@ -88,31 +88,28 @@ private:
 		numRepairs;		/**< number of times this path has been repaired */
 
 public:
-	/** Construct path object */
-	UnitPath() : blockCount(0) {}
-	/** is this path blocked
-	  * @return true if this path has been blocked for at least maxBlockCount frames */
-	bool isBlocked()				{return blockCount >= maxBlockCount;}
-	/** is path empty */
-	bool empty()					{return list<Vec2i>::empty();}
-	/** size of path */
-	int  size()						{return list<Vec2i>::size();}
-	/** clear the path */
-	void clear()					{list<Vec2i>::clear(); blockCount = 0;}
-	/** increment block counter */
-	void incBlockCount()			{blockCount++;}
-	/** push onto front of path */
-	void push(Vec2i &pos)			{push_front(pos);}
-	/** peek at the next position */
-	Vec2i peek()					{return front();}
-	/** pop the next position off the path */
-	void pop()						{erase(begin());}
-	
+	UnitPath() : blockCount(0) {} /**< Construct path object */
+	bool isBlocked()	{return blockCount >= maxBlockCount;} /**< is this path blocked @return true if this path has been blocked for at least maxBlockCount frames */
+	bool empty()		{return list<Vec2i>::empty();}	/**< is path empty				  */
+	int  size()			{return list<Vec2i>::size();}	/**< size of path				 */
+	void clear()		{list<Vec2i>::clear(); blockCount = 0;} /**< clear the path		*/
+	void incBlockCount(){blockCount++;}		   /**< increment block counter			   */
+	void push(Vec2i &pos){push_front(pos);}	  /**< push onto front of path			  */
+	Vec2i peek()		{return front();}	 /**< peek at the next position			 */	
+	void pop()			{erase(begin());}	/**< pop the next position off the path */
+
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
 };
 
-
+class WaypointPath : public list<pair<Vec2i,float>> {
+public:
+	WaypointPath() {}
+	void push(const Vec2i &pos, float dist)	{ push_front(pair<Vec2i,float>(pos,dist)); }
+	Vec2i peek() const					{return front().first;}
+	float waypointToGoal() const		{ return front().second; }
+	void pop()							{erase(begin());}
+};
 
 // ===============================
 // 	class Unit
@@ -196,6 +193,7 @@ private:
 	Map *map;
 
 	UnitPath unitPath;
+	WaypointPath waypointPath;
 
 	Commands commands;
 	Observers observers;
@@ -251,6 +249,7 @@ public:
 	string getFullName() const;
 	const UnitPath *getPath() const				{return &unitPath;}
 	UnitPath *getPath()							{return &unitPath;}
+	WaypointPath *getWaypointPath()				{return &waypointPath;}
 	int getSpeed(const SkillType *st) const;
 	int getSpeed() const						{return getSpeed(currSkill);}
 	Unit *getMaster() const						{return master;}

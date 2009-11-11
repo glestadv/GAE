@@ -45,7 +45,7 @@ class Console;
 class MenuBackground;
 class ChatManager;
 
-#ifdef DEBUG_SEARCH_OVERLAYS
+#ifdef DEBUG_RESOURCE_MAP_OVERLAYS
 	namespace Search { template<typename type>class TypeMap; }
 #endif
 
@@ -240,7 +240,7 @@ public:
 	bool captureQuad;
 	void clearCapturedQuad () { VisibleQuadColourCallback::quadSet.clear(); }
 #endif
-#if DEBUG_SEARCH_OVERLAYS
+#if DEBUG_RESOURCE_MAP_OVERLAYS
 	void renderGoldInfluence();
 	void renderInfluenceOverlay ( Vec3f clr, float scale, InfluenceMap *iMap );
 

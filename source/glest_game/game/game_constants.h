@@ -50,22 +50,17 @@ namespace Search {
 	  *		<li><b>BLOCKED</b> path is blocked</li></ul>
 	  */
 	REGULAR_ENUM( TravelState, 
-						ARRIVED, 
-						MOVING, 
-						BLOCKED 
+						ARRIVED, MOVING, BLOCKED, IMPOSSIBLE
 				   );
 
 	/** result set for aStar() 
 	  * <ul><li><b>FAILED</b> No path exists
-	  *		<li><b>COMPLETE</b> comlete path found</li>
+	  *		<li><b>COMPLETE</b> complete path found</li>
 	  *		<li><b>PARTIAL</b> node limit reached, partial path returned</li>
 	  *		<li><b>INPROGRESS</b> search ongoing (time limit reached)</li></ul>
 	  */
 	REGULAR_ENUM( AStarResult, 
-						FAILED,
-						COMPLETE,
-						PARTIAL,
-						INPROGRESS
+						FAILED, COMPLETE, PARTIAL, INPROGRESS
 				   );
 
 	/** Specifies a 'space' to search 
@@ -73,11 +68,16 @@ namespace Search {
 	  *		<li><b>TILEMAP</b> search on tile map</li></ul>
 	  */
 	REGULAR_ENUM( SearchSpace,
-						CELLMAP,
-						TILEMAP
-				   );
+						CELLMAP, TILEMAP, CLUSTERMAP
+				);
 
-}
+	/** The cardinal and ordinal directions enumerated for convenience */
+//	REGULAR_ENUM( Directions,
+//						NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST );
+//				);
+
+} // end namespace Search
+
 /** The control type of a 'faction' (aka, player)
   * <ul><li><b>CLOSED</b> Slot closed, no faction</li>
   *		<li><b>CPU</b> CPU player</li>

@@ -14,6 +14,8 @@
 #include "pch.h"
 
 #include "node_pool.h"
+#include "world.h"
+#include "map.h"
 
 namespace Glest { namespace Game { namespace Search {
 
@@ -247,12 +249,12 @@ AStarNode* OpenList::pop() {
 // 	class NodeStore
 // =====================================================
 
-NodeStore::NodeStore(int w, int h) 
+NodeStore::NodeStore(/*int w, int h*/) 
 		: tmpMaxNodes(NodePool::size)
 		, numNodes(0)
 		, leastH(NULL)
-		, markerArray(w,h)
-		, pointerArray(w,h)
+		, markerArray(theMap.getW(),theMap.getH())
+		, pointerArray(theMap.getW(),theMap.getH())
 		, pool(NULL) {
 	openHeap.reserve(512);
 }

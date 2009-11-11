@@ -50,7 +50,7 @@
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="pch.h"
 				WarningLevel="2"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -189,18 +189,6 @@
 			</File>
 			<File
 				RelativePath=".\search\influence_map_test.h"
-				>
-			</File>
-			<File
-				RelativePath="..\glest_game\path_finder\node_pool.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\search\node_pool_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\search\node_pool_test.h"
 				>
 			</File>
 		</Filter>

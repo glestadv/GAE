@@ -23,6 +23,8 @@
 
 namespace Glest { namespace Game { namespace Search {
 
+class AbstractMap;
+
 /** A map containing a visility counter and explored flag for every map tile. */
 class ExplorationMap {
 #	pragma pack(push, 2)
@@ -58,6 +60,8 @@ class Cartographer {
 	AnnotatedMap *masterMap;
 	/** Team annotateded maps, 'foggy' */
 	map< int, AnnotatedMap* > teamMaps;
+	/**  */
+	AbstractMap *abstractMap;
 	/** The locations of each and every resource on the map */
 	map< const ResourceType*, vector< Vec2i > > resourceLocations;
 	/** Inlfuence maps, for each team, describing distance to resources */
@@ -65,7 +69,7 @@ class Cartographer {
 	/** Exploration maps for each team */
 	map< int, ExplorationMap* > explorationMaps;
 
-	SearchEngine<NodeMap>	*nmSearchEngine;
+	SearchEngine<NodeMap,GridNeighbours> *nmSearchEngine;
 
 	void initResourceMap( int team, const ResourceType *rt, TypeMap<float> *iMap );
 
@@ -108,6 +112,8 @@ public:
 	~Cartographer();
 	void updateResourceMaps();
 
+	SearchEngine<NodeMap,GridNeighbours>* getSearchEngine() { return nmSearchEngine; }
+
 	/** @return the number of units of team that can see a tile 
 	  * @param team team index 
 	  * @param pos the co-ordinates of the <b>tile</b> of interest. */
@@ -144,10 +150,12 @@ public:
 		return teamResourceMaps[unit->getTeam()][rt];
 	}
 
+	AbstractMap* getAbstractMap() const	{ return abstractMap; }
+
 	AnnotatedMap* getMasterMap()				const	{ return masterMap;							  }
 	AnnotatedMap* getAnnotatedMap(int team )			{ return masterMap;/*teamMaps[team];*/					  }
-	AnnotatedMap* getAnnotatedMap(Faction *faction) 	{ return getAnnotatedMap(faction->getTeam()); }
-	AnnotatedMap* getAnnotatedMap(Unit *unit)			{ return getAnnotatedMap(unit->getTeam());	  }
+	AnnotatedMap* getAnnotatedMap(const Faction *faction) 	{ return getAnnotatedMap(faction->getTeam()); }
+	AnnotatedMap* getAnnotatedMap(const Unit *unit)			{ return getAnnotatedMap(unit->getTeam());	  }
 };
 
 //class Surveyor {

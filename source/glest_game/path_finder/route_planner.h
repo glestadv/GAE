@@ -16,6 +16,7 @@
 #include "game_constants.h"
 #include "influence_map.h"
 #include "annotated_map.h"
+#include "abstract_map.h"
 #include "config.h"
 #include "profiler.h"
 
@@ -126,8 +127,12 @@ public:
 	bool isLegalMove(Unit *unit, const Vec2i &pos) const;
 
 private:
+	float quickSearch(const Unit *unit, const Vec2i &dest);
+	void openBorders(const Unit *unit, const Vec2i &dest);
+	bool findAbstractPath(const Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
 	static RoutePlanner *singleton;
-	SearchEngine<NodeStore>	*nsSearchEngine;
+	SearchEngine<NodeStore,GridNeighbours>	 *nsgSearchEngine;
+	SearchEngine<AbstractNodeStorage,BorderNeighbours,const Border*> *nsbSearchEngine;
 
 	RoutePlanner();
 
@@ -137,8 +142,8 @@ private:
 
 	Vec2i computeNearestFreePos(const Unit *unit, const Vec2i &targetPos);
 
-	NodePool* nodePool;
-
+	NodePool *nodePool;
+	AbstractMap *abstractMap;
 
 	bool attemptMove(Unit *unit) const {
 		Vec2i pos = unit->getPath()->peek(); 
@@ -156,6 +161,27 @@ public:
 	enum { SHOW_PATH_ONLY, SHOW_OPEN_CLOSED_SETS, SHOW_LOCAL_ANNOTATIONS } debug_texture_action;
 #endif
 }; // class RoutePlanner
+
+class AbstractAssistedHeuristic {
+public:
+	AbstractAssistedHeuristic(const Vec2i &target, const Vec2i &waypoint, float wpCost) 
+			: target(target), waypoint(waypoint), wpCost(wpCost) {}
+	/** search target */
+	Vec2i target, waypoint;	
+	float wpCost;
+	/** The heuristic function.
+	  * @param pos the position to calculate the heuristic for
+	  * @return an estimate of the cost to target
+	  */
+	float operator()(const Vec2i &pos) const {
+		float dx = (float)abs(pos.x - waypoint.x), 
+			  dy = (float)abs(pos.y - waypoint.y);
+		float diag = dx < dy ? dx : dy;
+		float straight = dx + dy - 2 * diag;
+		return  1.4 * diag + straight + wpCost;
+
+	}
+};
 
 }}}//end namespace
 

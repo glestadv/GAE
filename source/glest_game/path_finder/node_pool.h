@@ -70,7 +70,7 @@ struct AStarNode {					/**< A node structure for A* with NodeStore							*/
 	PosOff posOff;				   /**< position of this node, and direction of best path to it		   */
 	float heuristic;			  /**< estimate of distance to goal									  */
 	float distToHere;			 /**< cost from origin to this node									 */
-	NodeID nextOpen;			/**< index of next open node, valid of this node is on the openList */
+	//NodeID nextOpen;			/**< index of next open node, valid of this node is on the openList */
 	float est()	const { return distToHere + heuristic;}	   /**< estimate, costToHere + heuristic   */
 	Vec2i pos()		  { return posOff.getPos();		  }	  /**< position of this node			  */
 	Vec2i prev()	  { return posOff.getPrev();	  }  /**< best path to this node is from	 */
@@ -225,7 +225,7 @@ private:
 	// =====================================================
 	/** An array of pointers
 	  * <p>Must be used in conjunction with marker array, constantly contains junk 
-	  * values, use only if mark >= counter</p> */
+	  * values, use only if mark >= counter (node visited this search)</p> */
 	struct PointerArray {
 	private:
 		int stride;			 /**< stride of array */
@@ -252,7 +252,7 @@ private:
 	//OpenList openList;			 /**< the open list,  'split' list, sorted head and unsorted bucket						   */
 
 public:
-	NodeStore(int w, int h);
+	NodeStore();
 	~NodeStore();
 
 	void attachNodePool(NodePool *nPool) { pool = nPool; }

@@ -1263,7 +1263,7 @@ void Renderer::renderSurface() {
 #	if DEBUG_SEARCH_TEXTURES
 	}
 #	endif
-#	if DEBUG_SEARCH_OVERLAYS
+#	if DEBUG_RESOURCE_MAP_OVERLAYS
 		renderGoldInfluence();
 #	endif
 #	if DEBUG_RENDERER_VISIBLEQUAD
@@ -1272,6 +1272,11 @@ void Renderer::renderSurface() {
 #	if DEBUG_VISIBILITY_OVERLAY
 		debugRenderer.renderTeamSightOverlay(visibleQuad);
 #	endif
+#	if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+		debugRenderer.renderClusterOverlay(visibleQuad);
+#	endif
+
+	debugRenderer.renderPathOverlay();
 }
 
 void Renderer::renderObjects(){

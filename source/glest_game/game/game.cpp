@@ -936,7 +936,7 @@ void Game::render2d(){
 		}
 
 #		if DEBUG_SEARCH_TEXTURES
-			str << "Debug Field : " << Fields::getName ( PathFinderTextureCallBack::debugField ) << endl;
+			str << "Debug Field : " << FieldNames[PathFinderTextureCallBack::debugField] << endl;
 #		endif
 
 		renderer.renderText(

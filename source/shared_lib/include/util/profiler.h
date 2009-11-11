@@ -15,16 +15,16 @@
 #define SL_PROFILE
 // SL_PROFILE controls if profile is enabled or not
 
-#define _PROFILE_GAME
-#define _PROFILE_PATHFINDER_LEVEL 1
+//#define _PROFILE_GAME
+#define _PROFILE_PATHFINDER_LEVEL 0
 
-#if ( _PROFILE_PATHFINDER_LEVEL > 0 ) || ( defined _PROFILE_GAME )
-#	define PROFILE_START(x) Shared::Util::profileBegin(x)
-#	define PROFILE_STOP(x)  Shared::Util::profileEnd(x)
-#else
+//#if ( _PROFILE_PATHFINDER_LEVEL > 0 ) || ( defined _PROFILE_GAME )
+//#	define PROFILE_START(x) Shared::Util::profileBegin(x)
+//#	define PROFILE_STOP(x)  Shared::Util::profileEnd(x)
+//#else
 #	define PROFILE_START(x)
 #	define PROFILE_STOP(x)
-#endif
+//#endif
 
 #if _PROFILE_PATHFINDER_LEVEL > 1
 #	define PROFILE_LVL2_START(x) Shared::Util::profileBegin(x)
@@ -42,7 +42,8 @@
 #	define PROFILE_LVL3_STOP(x)
 #endif
 
-#define PROFILE_CHILD_CALL(x) Shared::Util::profileAddChildCall(x)
+#define PROFILE_CHILD_CALL(x) 
+//Shared::Util::profileAddChildCall(x)
 
 #include "platform_util.h"
 #include "timer.h"

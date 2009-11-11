@@ -38,14 +38,13 @@ struct PackedPos {
 	PackedPos(int x, int y) : x(x), y(y) {} 
 	/** Construct a PackedPos [pos.x, pos.y] */
 	PackedPos(Vec2i pos) { *this = pos; }
-	/** Assign from Veci */
+	/** Assign from Vec2i */
 	PackedPos& operator=(Vec2i pos) { 
 		assert( pos.x <= MAX_MAP_COORD && pos.y <= MAX_MAP_COORD ); 
 		if ( pos.x < 0 || pos.y < 0 ) {
 			x = MAX_MAP_COORD; y = MAX_MAP_COORD; // invalid
 		} else {
-			x = pos.x; 
-			y = pos.y; 
+			x = pos.x; y = pos.y; 
 		}
 		return *this; 
 	}
@@ -54,8 +53,12 @@ struct PackedPos {
 	/** Comparision operator */
 	bool operator==( PackedPos &that ) { return x == that.x && y == that.y; }
 	/** is this position valid */
-	bool valid() { return !(( x == MAX_MAP_COORD ) && ( y == MAX_MAP_COORD )); }
-
+	bool valid() {
+		if ( ( x == 65535 ) || ( y == 65535 ) ) {
+			return false;
+		}
+		return true;
+	}
 	// max == MAX_MAP_COORD,
 	// MAX_MAP_COORD,MAX_MAP_COORD is considered 'invalid', this is ok still on a 
 	// MAX_MAP_COORD*MAX_MAP_COORD map in Glest, because the far east and south 'tiles' 
@@ -116,7 +119,7 @@ public:
   */
 class NodeMap {
 public:
-	NodeMap(int w, int h);
+	NodeMap(/*int w, int h*/);
 
 	// NodeStorage template interface
 	//
@@ -141,7 +144,9 @@ public:
 	/** get the estimate for the node at pos [known to be visited] */
 	float getEstimateFor(const Vec2i &pos)	{ return nodeMap[pos].estimate();	}
 	/** get the best path to the node at pos [known to be visited] */
-	Vec2i getBestTo(const Vec2i &pos)		{ return nodeMap[pos].prevNode;		}
+	Vec2i getBestTo(const Vec2i &pos)		{ 
+		return nodeMap[pos].prevNode.valid() ? nodeMap[pos].prevNode : Vec2i(-1);
+	}
 
 private:
 	/** The array of nodes */
@@ -168,9 +173,10 @@ private:
 	/** Debug */
 	void logOpen();
 
-#ifdef DEBUG_PATHFINDER_TEXTURES
-	virtual list<Vec2i>* getOpenNodes ();
-	virtual list<Vec2i>* getClosedNodes ();
+#ifdef DEBUG_SEARCH_TEXTURES
+public:
+	list<Vec2i>* getOpenNodes ();
+	list<Vec2i>* getClosedNodes ();
 	list<Vec2i> listedNodes;
 #endif
 

@@ -56,46 +56,45 @@ CommandResult Commander::tryGiveCommand(
 	// if a build command, make sure it makes sense
 	assert(!unitType || ((ct && ct->getClass() == CommandClass::BUILD) || cc == CommandClass::BUILD));
 
-	if(!selection.isEmpty()) {
-		Vec2i refPos = computeRefPos(selection);
-		CommandResultContainer results;
-
-		//give orders to all selected units
-		const Selection::UnitContainer &units = selection.getUnits();
-		for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
-			const CommandType *effectiveCt;
-			if(ct) {
-				effectiveCt = ct;
-			} else if(cc != CommandClass::NULL_COMMAND) {
-				effectiveCt = (*i)->getFirstAvailableCt(cc);
-			} else {
-				effectiveCt = (*i)->computeCommandType(pos, targetUnit);
-			}
-			if(effectiveCt) {
-				CommandResult result;
-				if(unitType) {
-					result = pushCommand(new Command(effectiveCt, flags, pos, unitType, *i));
-				} else if(targetUnit) {
-					result = pushCommand(new Command(effectiveCt, flags, targetUnit, *i));
-				} else if(pos != Command::invalidPos) {
-					//every unit is ordered to a different pos
-					Vec2i currPos = computeDestPos(refPos, (*i)->getPos(), pos);
-					result = pushCommand(new Command(effectiveCt, flags, currPos, *i));
-				} else {
-					result = pushCommand(new Command(effectiveCt, flags, Command::invalidPos, *i));
-				}
-				if(result == CommandResult::SUCCESS) {
-					(*i)->resetLastCommanded();
-				}
-				results.push_back(result);
-			} else {
-				results.push_back(CommandResult::FAIL_UNDEFINED);
-			}
-		}
-		return computeResult(results);
-	} else {
+	if ( selection.isEmpty() ) {
 		return CommandResult::FAIL_UNDEFINED;
 	}
+	Vec2i refPos = computeRefPos(selection);
+	CommandResultContainer results;
+
+	//give orders to all selected units
+	const Selection::UnitContainer &units = selection.getUnits();
+	for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
+		const CommandType *effectiveCt;
+		if(ct) {
+			effectiveCt = ct;
+		} else if(cc != CommandClass::NULL_COMMAND) {
+			effectiveCt = (*i)->getFirstAvailableCt(cc);
+		} else {
+			effectiveCt = (*i)->computeCommandType(pos, targetUnit);
+		}
+		if(effectiveCt) {
+			CommandResult result;
+			if(unitType) {
+				result = pushCommand(new Command(effectiveCt, flags, pos, unitType, *i));
+			} else if(targetUnit) {
+				result = pushCommand(new Command(effectiveCt, flags, targetUnit, *i));
+			} else if(pos != Command::invalidPos) {
+				//every unit is ordered to a different pos
+				Vec2i currPos = computeDestPos(refPos, (*i)->getPos(), pos);
+				result = pushCommand(new Command(effectiveCt, flags, currPos, *i));
+			} else {
+				result = pushCommand(new Command(effectiveCt, flags, Command::invalidPos, *i));
+			}
+			if(result == CommandResult::SUCCESS) {
+				(*i)->resetLastCommanded();
+			}
+			results.push_back(result);
+		} else {
+			results.push_back(CommandResult::FAIL_UNDEFINED);
+		}
+	}
+	return computeResult(results);
 }
 
 CommandResult Commander::tryCancelCommand(const Selection *selection) const{

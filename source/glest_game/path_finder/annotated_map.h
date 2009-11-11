@@ -33,6 +33,7 @@ using Shared::Platform::int64;
 namespace Glest { namespace Game {
 
 class Map;
+class PathFinderTextureCallBack;
 
 namespace Search {
 
@@ -131,12 +132,16 @@ class AnnotatedMap {
 	friend class AbstractMap;
 #	if DEBUG_SEARCH_TEXTURES
 		list<std::pair<Vec2i,uint32>>* getLocalAnnotations();
-		friend class Renderer; // DebugRenderer ?
+		friend class Glest::Game::PathFinderTextureCallBack;
 #	endif
+	int width, height;
 
 public:
 	AnnotatedMap(ExplorationMap *eMap=NULL);
 	~AnnotatedMap();
+
+	int getWidth()	{ return width;		}
+	int getHeight()	{ return height;	}
 
 	/** Maximum clearance allowed. Hence, also maximum moveable unit size supported. */
 	static const int maxClearanceValue = 7;

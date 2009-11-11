@@ -41,7 +41,7 @@ CppUnit::Test *NodePoolTest::suite() {
 }
 
 void NodePoolTest::setUp() {
-	store = new NodeStore(MAP_WIDTH,MAP_HEIGHT);
+	store = new NodeStore(/*MAP_WIDTH,MAP_HEIGHT*/);
 	pool = new NodePool();
 	store->attachNodePool(pool);
 }

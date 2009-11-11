@@ -43,7 +43,7 @@
 				InlineFunctionExpansion="2"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;../shared_lib/include/tinyxml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=0;DEBUG_VISIBILITY_OVERLAY=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_RESOURCE_MAP_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=1;DEBUG_VISIBILITY_OVERLAY=0;DEBUG_PATHFINDER_CLUSTER_OVERLAY=0"
 				StringPooling="true"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -229,7 +229,7 @@
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../../../deps/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/xml;../shared_lib/include/lua;../shared_lib/include/tinyxml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=1;DEBUG_SEARCH_TEXTURES=0;DEBUG_VISIBILITY_OVERLAY=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1;DEBUG_SEARCH_OVERLAYS=0;DEBUG_RENDERER_VISIBLEQUAD=0;DEBUG_SEARCH_TEXTURES=1;DEBUG_VISIBILITY_OVERLAY=0;DEBUG_PATHFINDER_CLUSTER_OVERLAY=1"
 				StringPooling="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -387,6 +387,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\path_finder\abstract_map.h"
+				>
+			</File>
 			<File
 				RelativePath=".\ai\ai.h"
 				>
@@ -775,6 +779,26 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath=".\path_finder\abstract_map.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
 			<File
 				RelativePath=".\ai\ai.cpp"
 				>

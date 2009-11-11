@@ -15,7 +15,7 @@
 #include <iostream>
 
 #include "reverse_rect_iter_test.h"
-#include "node_pool_test.h"
+//#include "node_pool_test.h"
 #include "influence_map_test.h"
 
 #include "leak_dumper.h"
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 	CppUnit::TextUi::TestRunner runner;
 
 	runner.addTest(Test::ReverseRectIteratorTest::suite());
-	runner.addTest(Test::NodePoolTest::suite());
+	//runner.addTest(Test::NodePoolTest::suite());
 	runner.addTest(Test::InfluenceMapTest::suite());
 
 	runner.run();

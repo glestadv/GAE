@@ -13,6 +13,7 @@
 // Does not use pre-compiled header because it's optimized in debug build.
 
 #include <algorithm>
+#include <list>
 
 #include "game_constants.h"
 #include "route_planner.h"
@@ -29,11 +30,18 @@
 
 #include "leak_dumper.h"
 
+#include "debug_renderer.h"
+
 using namespace std;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
 namespace Glest { namespace Game { namespace Search {
+
+int GridNeighbours::x = 0;
+int GridNeighbours::y = 0;
+int GridNeighbours::height = 0;
+int GridNeighbours::width = 0;
 
 // =====================================================
 // 	class RoutePlanner
@@ -52,7 +60,10 @@ RoutePlanner* RoutePlanner::getInstance() {
 }
 
 /** Construct RoutePlanner object */
-RoutePlanner::RoutePlanner() {
+RoutePlanner::RoutePlanner()
+		: abstractMap(NULL)
+		, nsgSearchEngine(NULL)
+		, nodePool(NULL) {
 	assert( !singleton );
 	singleton = this;
 }
@@ -61,16 +72,26 @@ RoutePlanner::RoutePlanner() {
 RoutePlanner::~RoutePlanner() {
 	singleton = NULL;
 	//TODO fix/reduce dodginess
-	delete nsSearchEngine;
+	delete nsgSearchEngine;
 	delete nodePool;
+	delete abstractMap;
 }
 
 /** construct and initialise the SeachEngine<NodePool> object and the NodePool array */
 void RoutePlanner::init() {
 	theLogger.add( "Initialising SearchEngine", true );
-	nsSearchEngine = new SearchEngine<NodeStore>();
+	nsgSearchEngine = new SearchEngine<NodeStore,GridNeighbours>();
+	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 	nodePool = new NodePool();
-	nsSearchEngine->getStorage()->attachNodePool(nodePool);
+	nsgSearchEngine->getStorage()->attachNodePool(nodePool);
+	nsgSearchEngine->setInvalidKey(Vec2i(-1));
+
+	nsbSearchEngine = new SearchEngine<AbstractNodeStorage,BorderNeighbours,const Border*>();
+	nsbSearchEngine->getStorage()->init(
+		(theMap.getW() / AbstractMap::clusterSize) * (theMap.getH() / AbstractMap::clusterSize) );
+	nsbSearchEngine->setInvalidKey(NULL);
+
+	abstractMap = theWorld.getCartographer().getAbstractMap();
 
 #if DEBUG_SEARCH_TEXTURES
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
@@ -123,6 +144,107 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 	return true;
 }
 
+float RoutePlanner::quickSearch(const Unit *unit, const Vec2i &dest) {
+	Vec2i &start = unit->getPos();
+	MoveCost moveCost(unit, theWorld.getCartographer().getAnnotatedMap(unit));
+	DiagonalDistance heuristic(dest);
+	nsgSearchEngine->setNodeLimit(AbstractMap::clusterSize*AbstractMap::clusterSize/2);
+	nsgSearchEngine->setStart(start,heuristic(start));
+	int r = nsgSearchEngine->aStar<PosGoal,MoveCost,DiagonalDistance>(PosGoal(dest),moveCost,heuristic);
+	if ( r == AStarResult::COMPLETE ) {
+		Vec2i goalPos = nsgSearchEngine->getGoalPos();
+		if ( goalPos != dest ) {
+			return numeric_limits<float>::infinity();
+		}
+		return nsgSearchEngine->getCostTo(dest);
+	} else {
+		return numeric_limits<float>::infinity();
+	}
+}
+
+void RoutePlanner::openBorders(const Unit *unit, const Vec2i &dest) {
+	Vec2i startCluster = AbstractMap::cellToCluster(unit->getPos());
+	nsbSearchEngine->reset();
+	vector<Border*> startBorders;
+	DiagonalDistance heuristic(dest);
+	Border *b = abstractMap->getNorthBorder(startCluster);
+	Vec2i vec;
+	if ( b != abstractMap->getSentinel() ) {
+		vec.y = startCluster.y * AbstractMap::clusterSize;
+		vec.x = b->transitions[unit->getCurrField()].position;
+		if ( unit->getSize() <= b->transitions[unit->getCurrField()].clearance ) {
+			// path length to entrance, push border on open with cost	
+			float cost = quickSearch(unit,vec);
+			if ( cost != numeric_limits<float>::infinity() ) {
+				nsbSearchEngine->setOpen(b, heuristic(vec), cost);
+			}
+		}
+	}
+	b = abstractMap->getSouthBorder(startCluster);
+	if ( b != abstractMap->getSentinel() ) {
+		vec.y = startCluster.y * AbstractMap::clusterSize + AbstractMap::clusterSize - 1;
+		vec.x = b->transitions[unit->getCurrField()].position;
+		if ( unit->getSize() <= b->transitions[unit->getCurrField()].clearance ) {
+			// path length to entrance, push border on open with cost	
+			float cost = quickSearch(unit,vec);
+			if ( cost != numeric_limits<float>::infinity() ) {
+				nsbSearchEngine->setOpen(b, heuristic(vec), cost);
+			}
+		}
+	}
+	b = abstractMap->getWestBorder(startCluster);
+	if ( b != abstractMap->getSentinel() ) {
+		vec.y = b->transitions[unit->getCurrField()].position;
+		vec.x = startCluster.x * AbstractMap::clusterSize;
+		if ( unit->getSize() <= b->transitions[unit->getCurrField()].clearance ) {
+			// path length to entrance, push border on open with cost	
+			float cost = quickSearch(unit,vec);
+			if ( cost != numeric_limits<float>::infinity() ) {
+				nsbSearchEngine->setOpen(b, heuristic(vec), cost);
+			}
+		}
+	}
+	b = abstractMap->getEastBorder(startCluster);
+	if ( b != abstractMap->getSentinel() ) {
+		vec.y = b->transitions[unit->getCurrField()].position;
+		vec.x = startCluster.x * AbstractMap::clusterSize +AbstractMap::clusterSize - 1;
+		if ( unit->getSize() <= b->transitions[unit->getCurrField()].clearance ) {
+			// path length to entrance, push border on open with cost	
+			float cost = quickSearch(unit,vec);
+			if ( cost != numeric_limits<float>::infinity() ) {
+				nsbSearchEngine->setOpen(b, heuristic(vec), cost);
+			}
+		}
+	}
+
+}
+
+#define ABSTRACT_ASTAR aStar<AbstractSearchGoal,AbstractMoveCost,AbstractHeuristic>
+
+bool RoutePlanner::findAbstractPath(const Unit *unit, const Vec2i &dest, WaypointPath &waypoints) {
+	Vec2i startCluster = AbstractMap::cellToCluster(unit->getPos());
+	Vec2i destCluster  = AbstractMap::cellToCluster(dest);
+	openBorders(unit, dest);
+	AbstractSearchGoal goal(dest,abstractMap);
+	AbstractMoveCost cost(unit);
+	AbstractHeuristic heuristic(dest, unit->getCurrField());
+	int res = nsbSearchEngine->ABSTRACT_ASTAR(goal,cost,heuristic);
+	if ( res == AStarResult::COMPLETE ) {
+		waypoints.push(dest,0.f);
+		const Border *b = nsbSearchEngine->getGoalPos();
+		float totalCost = nsbSearchEngine->getCostTo(b);
+		while ( b ) {
+			waypoints.push( b->getTransitionPoint(unit->getCurrField()), 
+							totalCost - nsbSearchEngine->getCostTo(b) );
+			b = nsbSearchEngine->getPreviousPos(b);
+		}
+		return true;
+	}
+	return false;
+}
+
+#define ASTAR_TO_POS aStar<PosGoal,MoveCost,DiagonalDistance>
+#define ASTAR_ASSISTED aStar<RangeGoal,MoveCost,AbstractAssistedHeuristic>
 /** Find a path to a location.
   * @param unit the unit requesting the path
   * @param finalPos the position the unit desires to go to
@@ -130,6 +252,8 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
   */
 TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) {
 	UnitPath &path = *unit->getPath();
+	WaypointPath &wpPath = *unit->getWaypointPath();
+
 	Vec2i pos;
 	//if arrived (where we wanted to go)
 	if( finalPos == unit->getPos() ) {
@@ -149,14 +273,200 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		return TravelState::ARRIVED;
 	}
 	path.clear();
-	
+	wpPath.clear();
+
+	Vec2i startCluster = AbstractMap::cellToCluster(unit->getPos());
+	Vec2i destCluster  = AbstractMap::cellToCluster(target);
+	if ( startCluster.dist(destCluster) >= 3.0f ) {
+
+		if ( findAbstractPath(unit, target, wpPath) ) {
+			DebugRenderer::clearWaypoints();
+			WaypointPath::iterator it = wpPath.begin();
+			for ( ; it != wpPath.end(); ++it ) {
+				Vec3f vert = theMap.getTile(Map::toTileCoords(it->first))->getVertex();
+				vert.x += it->first.x % Map::cellScale + 0.5f;
+				vert.z += it->first.y % Map::cellScale + 0.5f;
+				vert.y += 0.25f;
+				DebugRenderer::addWaypoint(vert);
+			}
+		} else {
+			if ( unit->getFaction()->isThisFaction() ) {
+				theConsole.addLine("Destination unreachable?");
+			}
+			return TravelState::IMPOSSIBLE;
+		}
+		
+#		if DEBUG_SEARCH_TEXTURES
+			PathFinderTextureCallBack::pathStart = unit->getPos();
+			PathFinderTextureCallBack::pathDest = target;
+			PathFinderTextureCallBack::pathSet.clear();
+			PathFinderTextureCallBack::openSet.clear();
+			PathFinderTextureCallBack::closedSet.clear();
+#		endif
+
+		assert(wpPath.size() > 2);
+		wpPath.pop();
+
+		Vec2i startPos = unit->getPos();
+		AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
+		SearchEngine<NodeMap,GridNeighbours> *se = theWorld.getCartographer().getSearchEngine();
+		AbstractAssistedHeuristic aah (target, wpPath.peek(), wpPath.waypointToGoal());
+		MoveCost cost(unit, aMap);
+		RangeGoal goal(wpPath.peek(), 7.0f);
+		se->setNodeLimit(512);
+		se->setStart(startPos, aah(startPos));
+		int res = se->ASTAR_ASSISTED(goal,cost,aah);
+		while ( res == AStarResult::COMPLETE ) {
+#			if DEBUG_SEARCH_TEXTURES
+				NodeMap* nm = se->getStorage();
+				list<Vec2i> *nodes = nm->getOpenNodes();
+				list<Vec2i>::iterator nit = nodes->begin();
+				for ( ; nit != nodes->end(); ++nit ) {
+					PathFinderTextureCallBack::openSet.insert(*nit);
+				}
+				delete nodes;
+				nodes = nm->getClosedNodes();
+				for ( nit = nodes->begin(); nit != nodes->end(); ++nit ) {
+					PathFinderTextureCallBack::closedSet.insert(*nit);
+				}
+				delete nodes;					
+#			endif
+
+			// extract path
+			Vec2i pos = se->getGoalPos();
+			//list<Vec2i> posList;
+			list<Vec2i>::iterator it = path.end();
+			while ( pos.x != 65535 ) {
+				it = path.insert(it, pos);
+				//posList.push_front(pos);
+				pos = se->getPreviousPos(pos);
+			}
+			path.erase(it);
+			//posList.pop_front();
+			//for ( list<Vec2i>::iterator it = posList.begin(); it != posList.end(); ++it ) {
+			//	path.push_back(*it);
+			//}
+			startPos = path.back();
+			//startPos = posList.back();
+
+			// pop waypoint
+			wpPath.pop();
+			if ( wpPath.size() == 1 ) break; // use PosGoal for final leg
+			
+			// reset heuristic & goal functions
+			aah = AbstractAssistedHeuristic(target, wpPath.peek(), wpPath.waypointToGoal());
+			goal = RangeGoal(wpPath.peek(), 7.5f);
+
+			// go again
+			se->setStart(startPos, aah(startPos));
+			res = se->ASTAR_ASSISTED(goal,cost,aah);
+		}
+		if ( res != AStarResult::COMPLETE ) {
+			theLogger.add("bad things happening refining path");
+		}
+		assert(wpPath.size() == 1);
+		assert(wpPath.front().first == target);
+		DiagonalDistance dd(target);
+		PosGoal posGoal(target);
+		se->setNodeLimit(256);
+		se->setStart(startPos, dd(unit->getPos()));
+		res = se->ASTAR_TO_POS(posGoal,cost,dd);
+		if ( res == AStarResult::COMPLETE ) {
+#			if DEBUG_SEARCH_TEXTURES
+				NodeMap* nm = se->getStorage();
+				list<Vec2i> *nodes = nm->getOpenNodes();
+				list<Vec2i>::iterator nit = nodes->begin();
+				for ( ; nit != nodes->end(); ++nit ) {
+					PathFinderTextureCallBack::openSet.insert(*nit);
+				}
+				delete nodes;
+				nodes = nm->getClosedNodes();
+				for ( nit = nodes->begin(); nit != nodes->end(); ++nit ) {
+					PathFinderTextureCallBack::closedSet.insert(*nit);
+				}
+				delete nodes;				
+#			endif
+			Vec2i pos = se->getGoalPos();
+			assert(pos == target);
+			//list<Vec2i> posList;
+			list<Vec2i>::iterator it = path.end();
+			while ( pos.x != 65535 ) {
+				it = path.insert(it, pos);
+				//posList.push_front(pos);
+				pos = se->getPreviousPos(pos);
+			}
+			path.erase(it);
+#			if DEBUG_SEARCH_TEXTURES
+				UnitPath::iterator pit = path.begin();
+				for ( ; pit != path.end(); ++pit ) {
+					PathFinderTextureCallBack::pathSet.insert(*pit);
+				}
+#			endif
+
+			//posList.pop_front();
+			//for ( list<Vec2i>::iterator it = posList.begin(); it != posList.end(); ++it ) {
+			//	path.push_back(*it);
+			//}
+			unit->setNextPos(path.front());
+			return TravelState::MOVING;
+		}
+		
+//
+		//
+/*
+		AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
+		SearchEngine<NodeMap,GridNeighbours> *se = theWorld.getCartographer().getSearchEngine();
+		DiagonalDistance dd(target);
+		MoveCost cost(unit, aMap);
+		PosGoal goal(target);
+		se->setNodeLimit(-1);
+		se->setStart(unit->getPos(), dd(unit->getPos()));
+		int res = se->ASTAR_TO_POS(goal,cost,dd);
+		switch ( res ) {
+			case AStarResult::COMPLETE:
+				Vec2i goal = se->getGoalPos();
+				Vec2i pos = goal;
+				while ( pos.x != 65535 ) {
+					path.push(pos);
+#					if DEBUG_SEARCH_TEXTURES
+						PathFinderTextureCallBack::pathSet.insert(pos);
+#					endif
+					pos = se->getPreviousPos(pos);
+				}
+				if ( path.size() ) path.pop();
+#				if DEBUG_SEARCH_TEXTURES
+					NodeMap* nm = se->getStorage();
+					assert(goal == target);
+					list<Vec2i> *nodes = nm->getOpenNodes();
+					list<Vec2i>::iterator it = nodes->begin();
+					for ( ; it != nodes->end(); ++it ) {
+						PathFinderTextureCallBack::openSet.insert(*it);
+					}
+					delete nodes;
+					nodes = nm->getClosedNodes();
+					for ( it = nodes->begin(); it != nodes->end(); ++it ) {
+						PathFinderTextureCallBack::closedSet.insert(*it);
+					}
+					delete nodes;					
+#				endif
+					goto End;
+					break; // case AStarResult::COMPLETE
+			case AStarResult::FAILED:
+				wpPath.clear();
+				return TravelState::IMPOSSIBLE;
+				break;
+			default:
+				throw runtime_error("Something that shouldn't have happened, did happen :(");
+				break;
+		}*/
+	}
 	// do a 'limited search'
 	AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
 	aMap->annotateLocal(unit, unit->getCurrField()); // annotate map
 	// reset nodepool and add start to open
-	nsSearchEngine->setNodeLimit(NodePool::size);
-	nsSearchEngine->setStart(unit->getPos(), DiagonalDistance(target)(unit->getPos())); 
-	int result = nsSearchEngine->pathToPos(aMap, unit, target); // perform search
+	nsgSearchEngine->setNodeLimit(NodePool::size);
+	nsgSearchEngine->setStart(unit->getPos(), DiagonalDistance(target)(unit->getPos())); 
+	int result = nsgSearchEngine->pathToPos(aMap, unit, target); // perform search
 	aMap->clearLocalAnnotations(unit->getCurrField()); // clear annotations
 	if ( result == AStarResult::FAILED ) {
 		unit->setCurrSkill(SkillClass::STOP);
@@ -167,12 +477,13 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		// Queue for 'complete' search...
 	}
 	// Partail or Complete... extract path...
-	pos = nsSearchEngine->getGoalPos();
+	pos = nsgSearchEngine->getGoalPos();
 	while ( pos.x >= 0 ) {
 		path.push(pos);
-		pos = nsSearchEngine->getPreviousPos(pos);
+		pos = nsgSearchEngine->getPreviousPos(pos);
 	}
 	if ( path.size() ) path.pop();
+End:
 	if ( path.empty() ) {
 		unit->setCurrSkill(SkillClass::STOP);
 		return TravelState::ARRIVED;
@@ -196,18 +507,18 @@ bool RoutePlanner::repairPath(Unit *unit) {
 	AnnotatedMap *aMap = theWorld.getCartographer().getAnnotatedMap(unit);
 	aMap->annotateLocal(unit, unit->getCurrField());
 	// reset nodepool and add start to open
-	nsSearchEngine->setNodeLimit(256);
-	nsSearchEngine->setStart(unit->getPos(), DiagonalDistance(path.peek())(unit->getPos()));
-	int result = nsSearchEngine->pathToPos(aMap, unit, path.peek()); // perform search
+	nsgSearchEngine->setNodeLimit(256);
+	nsgSearchEngine->setStart(unit->getPos(), DiagonalDistance(path.peek())(unit->getPos()));
+	int result = nsgSearchEngine->pathToPos(aMap, unit, path.peek()); // perform search
 	aMap->clearLocalAnnotations(unit->getCurrField());
 
 	if ( result == AStarResult::COMPLETE ) {
-		Vec2i pos = nsSearchEngine->getGoalPos();
+		Vec2i pos = nsgSearchEngine->getGoalPos();
 		// skip target (is on the 'front' of the path already...
-		pos = nsSearchEngine->getPreviousPos(pos);
+		pos = nsgSearchEngine->getPreviousPos(pos);
 		while ( pos.x >= 0 ) {
 			path.push(pos);
-			pos = nsSearchEngine->getPreviousPos(pos);
+			pos = nsgSearchEngine->getPreviousPos(pos);
 		}
 		return true;
 	}

@@ -27,6 +27,7 @@
 #include "game_constants.h"
 #include "map.h"
 #include "annotated_map.h"
+//#include "abstract_map.h"
 #include "node_pool.h"
 #include "node_map.h"
 #include "influence_map.h"
@@ -89,64 +90,80 @@ const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
 /*
 	// NodeStorage template interface
 	//
-	template<typename T>
 	class NodeStorage {
 	public:
 		void reset();
 		void setMaxNode( int limit );
 		
-		bool isOpen ( const T &pos );
-		bool isClosed ( const T &pos );
+		bool isOpen ( const Vec2i &pos );
+		bool isClosed ( const Vec2i &pos );
 
-		bool setOpen ( const T &pos, const T &prev, float h, float d );
-		void updateOpen ( const T &pos, const T &prev, const float cost );
-		T getBestCandidate();
-		T getBestSeen();
+		bool setOpen ( const Vec2i &pos, const Vec2i &prev, float h, float d );
+		void updateOpen ( const Vec2i &pos, const Vec2i &prev, const float cost );
+		Vec2i getBestCandidate();
+		Vec2i getBestSeen();
 
-		float getHeuristicAt( const T &pos );
-		float getCostTo( const T &pos );
-		float getEstimateFor( const T &pos );
-		T getBestTo( const T &pos );
+		float getHeuristicAt( const Vec2i &pos );
+		float getCostTo( const Vec2i &pos );
+		float getEstimateFor( const Vec2i &pos );
+		Vec2i getBestTo( const Vec2i &pos );
 	};
 */
-/*
-	// Domain Interface
-	//
-	template<typename T>
-	class SearchDomain {
-	public:
-		
-	};
 
-*/
+class GridNeighbours {
+public:
+	static const int clusterSize = 16;
+	static int x, y;
+	static int width, height;
+	//GridNeighbours(int w, int h) : width(w), height(h) {}
+	void operator()(Vec2i &pos, vector<Vec2i> &neighbours) const {
+		for ( int i = 0; i < 8; ++i ) { 
+			Vec2i nPos = pos + OffsetsSize1Dist1[i];
+			if ( nPos.x >= x && nPos.x < x + width && nPos.y >= y && nPos.y < y + height ) {
+				neighbours.push_back(nPos);
+			}
+		}
+	}
+	/** Kludge to search on Cellmap or Tilemap... templated search domain should deprecate this */
+	static void setSearchSpace(SearchSpace s) {
+		if ( s == SearchSpace::CELLMAP ) {
+			GridNeighbours::x = GridNeighbours::y = 0;
+			GridNeighbours::width = theMap.getW();
+			GridNeighbours::height = theMap.getH();
+		} else if ( s == SearchSpace::TILEMAP ) {
+			GridNeighbours::x = GridNeighbours::y = 0;
+			GridNeighbours::width = theMap.getTileW();
+			GridNeighbours::height= theMap.getTileH();
+		}
+	}
+
+	/** more kludgy search restriction stuff... */
+	static void setSearchClusterLocal(Vec2i cluster) {
+		GridNeighbours::x = cluster.x * clusterSize;
+		GridNeighbours::y = cluster.y * clusterSize;
+		GridNeighbours::width = clusterSize;
+		GridNeighbours::height = clusterSize;
+	}
+};
 
 // ========================================================
 // class SearchEngine
-//
-// Wrapper for generic (templated) A*, contains all associated
-// goal, cost and heuristic functions, and exposes an interface
-// using different combinations for different purposes.
 // ========================================================
-//
-// template SearchEngine on 'domain' (Grid with Vec2i 'key' for everything thus far)
-//
-// Cost, Goal & Heuristic functions need to accept parameters of the domain key
-//
-//template< typename NodeStorage, typename Domain = CellMapDomain<Vec2i>, typename DomainKey = Vec2i >
-/** The home of the templated A* algorithm 
-  * @param NodeStorage templated NodeStorage, must conform to implicit interface see elsewhere
+/** Wrapper for generic (templated) A*
+  * @param NodeStorage templated NodeStorage, must conform to implicit interface, see elsewhere
   */
-template< typename NodeStorage >
+template< typename NodeStorage, typename NeighbourFunc, typename DomainKey = Vec2i >
 class SearchEngine {
 private:
 	NodeStorage *nodeStorage; /**< NodeStorage for this SearchEngine */
 
-	Vec2i goalPos;		/**< The goal pos (the 'result') from the last A* search */
+	DomainKey goalPos;	/**< The goal pos (the 'result') from the last A* search */
+	DomainKey invalidKey;
 	int expandLimit,	/**< limit on number of nodes to expand */
 		nodeLimit,		/**< limit on number of nodes to use */
-		expanded,		/**< number of nodes expanded this/last run */
-		spaceWidth,		/**< kludge because domain isn't templated yet, width of search space */
-		spaceHeight;	/**< kludge because domain isn't templated yet, height of search space */
+		expanded;//,		/**< number of nodes expanded this/last run */
+		//spaceWidth,		/**< kludge because domain isn't templated yet, width of search space */
+		//spaceHeight;	/**< kludge because domain isn't templated yet, height of search space */
 
 public:
 	/** construct & initialise NodeStorage */
@@ -154,17 +171,21 @@ public:
 			: expandLimit(-1)
 			, nodeLimit(-1)
 			, expanded(0)
-			, spaceWidth(theMap.getW())
-			, spaceHeight(theMap.getH()) {
-		nodeStorage = new NodeStorage(spaceWidth, spaceHeight);
-		spaceWidth = theMap.getW();
-		spaceHeight = theMap.getH();
+			//, spaceWidth(theMap.getW())
+			/*, spaceHeight(theMap.getH()) */ {
+		nodeStorage = new NodeStorage();//theMap.getW(), theMap.getH());
+		//spaceWidth = theMap.getW();
+		//spaceHeight = theMap.getH();
 	}
 	~SearchEngine() { 
 		delete nodeStorage; 
 	}
 
-	/** @return a pointer to this engines node storage */
+	void setInvalidKey(DomainKey key) {
+		invalidKey = key;
+	}
+
+	/** @return a pointer to this engine's node storage */
 	NodeStorage* getStorage()	{ return nodeStorage; }
 
 	/** Reset the node storage */
@@ -173,23 +194,25 @@ public:
 	  * @param pos position to set as open
 	  * @param h heuristc, estimate to goal from pos
 	  */
-	void setOpen(Vec2i &pos, float h)	{ nodeStorage->setOpen(pos, Vec2i(-1), h, 0.f); }
+	void setOpen(DomainKey pos, float h, float d = 0.f) { 
+		nodeStorage->setOpen(pos, invalidKey, h, d); 
+	}
 	
 	/** Reset the node storage and add pos to open 
 	  * @param pos position to set as open
 	  * @param h heuristc, estimate to goal from pos
 	  */
-	void setStart(Vec2i &pos, float h) {
+	void setStart(DomainKey pos, float h, float d = 0.f) {
 		nodeStorage->reset();
 		if ( nodeLimit > 0 ) {
 			nodeStorage->setMaxNodes(nodeLimit);
 		}
-		nodeStorage->setOpen(pos, Vec2i(-1), h, 0.f);
+		nodeStorage->setOpen(pos, invalidKey, h, d);
 	}
 	/** Retrieve the goal of last search, position of last goal reached */
-	Vec2i getGoalPos() { return goalPos; }
+	DomainKey getGoalPos() { return goalPos; }
 	/** Best path to pos is from */
-	Vec2i getPreviousPos(const Vec2i &pos) { return nodeStorage->getBestTo(pos); }
+	DomainKey getPreviousPos(const DomainKey &pos) { return nodeStorage->getBestTo(pos); }
 	
 	/** limit search to use at mose limit nodes */
 	void setNodeLimit(int limit) { nodeLimit = limit > 0 ? limit : -1; }
@@ -200,7 +223,7 @@ public:
 	int getExpandedLastRun() { return expanded; }
 
 	/** Find a path for unit to target using map */
-	int pathToPos(const AnnotatedMap *map, const Unit *unit, const Vec2i &target) {
+	int pathToPos(const AnnotatedMap *map, const Unit *unit, const DomainKey &target) {
 		PosGoal goalFunc(target);
 		MoveCost costFunc (unit, map);
 		DiagonalDistance heuristic(target);
@@ -209,7 +232,7 @@ public:
 
 	/** Finds a path for unit towards target using map, terminating when a cell with more than
 	  * threshold influence on iMap is found */
-	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const Vec2i &target, 
+	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const DomainKey &target, 
 			const TypeMap<float> *iMap, float threshold) {
 		InfluenceGoal<float> goalFunc(threshold, iMap);
 		MoveCost			 costFunc(unit, aMap);
@@ -223,15 +246,9 @@ public:
 		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>(goalFunc,DistanceCost(),ZeroHeuristic());
 	}
 
-	/** Kludge to search on Cellmap or Tilemap... templated search domain will deprecate this */
-	void setSearchSpace(SearchSpace s) {
-		if ( s == SearchSpace::CELLMAP ) {
-			spaceWidth = theMap.getW();
-			spaceHeight = theMap.getH();
-		} else if ( s == SearchSpace::TILEMAP ) {
-			spaceWidth = theMap.getTileW();
-			spaceHeight = theMap.getTileH();
-		}
+	float getCostTo(const DomainKey &pos) {
+		assert(nodeStorage->isOpen(pos) || nodeStorage->isClosed(pos));
+		return nodeStorage->getCostTo(pos);
 	}
 
 	/** A* Algorithm (Just the loop, does not do any setup or post-processing) 
@@ -246,21 +263,33 @@ public:
 	int aStar(GoalFunc goalFunc, CostFunc costFunc, Heuristic heuristic) {
 		expanded = 0;
 		
-		Vec2i minPos(-1);
+		DomainKey minPos(invalidKey);
+		vector<DomainKey> neighbours;
+		NeighbourFunc neighbourFunc;
 		while ( true ) {
 			minPos = nodeStorage->getBestCandidate();
-			if ( minPos.x < 0 ) { // failure
-				goalPos = Vec2i(-1);
+			if ( minPos == invalidKey ) { // failure
+				goalPos = invalidKey;
 				return AStarResult::FAILED; 
 			}
 			if ( goalFunc(minPos, nodeStorage->getCostTo(minPos)) ) { // success
 				goalPos = minPos;
 				return AStarResult::COMPLETE;
 			}
-			for ( int i = 0; i < 8; ++i ) {  // for each neighbour
-				Vec2i nPos = minPos + OffsetsSize1Dist1[i];
-				if ( nPos.x < 0 || nPos.y < 0 || nPos.x > spaceWidth || nPos.y > spaceHeight
-				||	 nodeStorage->isClosed(nPos) ) {
+
+			// getNeighbours
+			neighbourFunc( minPos, neighbours);
+			while ( ! neighbours.empty() ) {
+				DomainKey nPos = neighbours.back();
+				neighbours.pop_back();
+//			for ( vector<DomainKey>::iterator it = neighbours.begin(); it != neighbours.end(); ++it ) {
+			
+			//for ( int i = 0; i < 8; ++i ) {  // for each neighbour
+			//	Vec2i nPos = minPos + OffsetsSize1Dist1[i];
+				//DomainKey nPos = *it;
+
+				//if ( nPos.x < 0 || nPos.y < 0 || nPos.x > spaceWidth || nPos.y > spaceHeight
+				if ( nodeStorage->isClosed(nPos) ) {
 					continue;
 				}
 				float cost = costFunc(minPos, nPos);
@@ -279,16 +308,13 @@ public:
 			} 
 			expanded++;
 			if ( expanded == expandLimit ) {
-				goalPos = Vec2i(-1);
+				goalPos = invalidKey;
 				return AStarResult::INPROGRESS;
 			}
 		} // while node limit not reached
 		return -1; // impossible... just keeping the compiler from complaining
 	}
 };
-
-//extern SearchEngine<NodeStore>	*nsSearchEngine;
-//extern SearchEngine<NodeMap>	*nmSearchEngine;
 
 }}}
 

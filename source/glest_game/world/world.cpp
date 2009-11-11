@@ -122,6 +122,8 @@ void World::init(const XmlNode *worldNode) {
 	cartographer = new Cartographer();
 	cartographer->updateResourceMaps();
 
+	theRoutePlanner.init();
+
 	if(worldNode)
 		loadSaved(worldNode);
 	else if ( game.getGameSettings().getDefaultUnits() )
@@ -761,7 +763,7 @@ void World::moveUnitCells(Unit *unit) {
 	*/
 	//}
 
-	assert ( unitUpdater.pathManager->isLegalMove ( unit, newPos ) );
+	assert( unitUpdater.routePlanner->isLegalMove ( unit, newPos ) );
 	map.clearUnitCells(unit, unit->getPos());
 	map.putUnitCells(unit, newPos);
 	if ( changingTiles ) {
@@ -1177,7 +1179,7 @@ void World::initUnits() {
 						"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
 				}
 				//if ( !unit->isMobile() )
-				//   unitUpdater.pathManager->updateMapMetrics ( unit->getPos(),
+				//   unitUpdater.routePlanner->updateMapMetrics ( unit->getPos(),
 				//                unit->getSize(), true, unit->getCurrField () );
 				if(unit->getType()->hasSkillClass(SkillClass::BE_BUILT)) {
 					map.flatternTerrain(unit);
