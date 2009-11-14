@@ -21,7 +21,7 @@
 namespace Glest { namespace Game { namespace Search {
 
 /** Construct a NodeMap */
-NodeMap::NodeMap(/*int w, int h*/) 
+NodeMap::NodeMap(int w, int h) 
 		: openTop(-1)
 		, nodeCount(0)
 		, nodeLimit(-1) 
@@ -29,8 +29,8 @@ NodeMap::NodeMap(/*int w, int h*/)
 	invalidPos.x = invalidPos.y = 65535;
 	assert( !invalidPos.valid() );
 	bestH = invalidPos;
-	stride = theMap.getW();
-	nodeMap.init(stride, theMap.getH());
+	stride = w;
+	nodeMap.init(w, h);
 }
 
 /** resets the NodeMap for use */
@@ -40,6 +40,9 @@ void NodeMap::reset() {
 	nodeLimit = -1;
 	nodeCount = 0;
 	openTop = Vec2i(-1);
+#if DEBUG_SEARCH_TEXTURES
+		listedNodes.clear();
+#endif
 }
 
 /** get the best candidate from the open list, and close it.

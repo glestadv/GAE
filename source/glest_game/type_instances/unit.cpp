@@ -918,7 +918,7 @@ void Unit::born(){
 	recalculateStats();
 	hp= type->getMaxHp();
 	faction->checkAdvanceSubfaction(type, true);
-	theWorld.getCartographer().applyUnitVisibility(this);
+	theWorld.getCartographer()->applyUnitVisibility(this);
 	preProcessSkill();
 	nextCommandUpdate--;
 }
@@ -932,7 +932,7 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	hp = 0;
 
 	World::getCurrWorld()->hackyCleanUp(this);
-	theWorld.getCartographer().removeUnitVisibility(this);
+	theWorld.getCartographer()->removeUnitVisibility(this);
 
 	if(fire != NULL) {
 		fire->fade();

@@ -42,11 +42,11 @@ public:
 		if ( pathStart == cell ) ndx = 9;
 		else if ( pathDest == cell ) ndx = 10;
 		else if ( pathSet.find ( cell ) != pathSet.end() ) ndx = 14; // on path
-		else if ( openSet.find ( cell ) != openSet.end() ) ndx = 15; // open nodes
 		else if ( closedSet.find ( cell ) != closedSet.end() ) ndx = 16; // closed nodes
+		else if ( openSet.find ( cell ) != openSet.end() ) ndx = 15; // open nodes
 		else if ( localAnnotations.find ( cell ) != localAnnotations.end() ) // local annotation
 			ndx = 17 + localAnnotations.find(cell)->second;
-		else ndx = theWorld.getCartographer().getMasterMap()->metrics[cell].get( debugField ); // else use cell metric for debug field
+		else ndx = theWorld.getCartographer()->getMasterMap()->metrics[cell].get( debugField ); // else use cell metric for debug field
 		return (Texture2DGl*)PFDebugTextures[ndx];
    }
 };

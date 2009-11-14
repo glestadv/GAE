@@ -162,8 +162,6 @@ private:
 	int expandLimit,	/**< limit on number of nodes to expand */
 		nodeLimit,		/**< limit on number of nodes to use */
 		expanded;//,		/**< number of nodes expanded this/last run */
-		//spaceWidth,		/**< kludge because domain isn't templated yet, width of search space */
-		//spaceHeight;	/**< kludge because domain isn't templated yet, height of search space */
 
 public:
 	/** construct & initialise NodeStorage */
@@ -171,19 +169,13 @@ public:
 			: expandLimit(-1)
 			, nodeLimit(-1)
 			, expanded(0)
-			//, spaceWidth(theMap.getW())
-			/*, spaceHeight(theMap.getH()) */ {
-		nodeStorage = new NodeStorage();//theMap.getW(), theMap.getH());
-		//spaceWidth = theMap.getW();
-		//spaceHeight = theMap.getH();
+			, nodeStorage(NULL) {
 	}
 	~SearchEngine() { 
-		delete nodeStorage; 
 	}
 
-	void setInvalidKey(DomainKey key) {
-		invalidKey = key;
-	}
+	void setStorage(NodeStorage *storage)	{ nodeStorage = storage;	}
+	void setInvalidKey(DomainKey key)		{ invalidKey = key;			}
 
 	/** @return a pointer to this engine's node storage */
 	NodeStorage* getStorage()	{ return nodeStorage; }
@@ -223,7 +215,7 @@ public:
 	int getExpandedLastRun() { return expanded; }
 
 	/** Find a path for unit to target using map */
-	int pathToPos(const AnnotatedMap *map, const Unit *unit, const DomainKey &target) {
+	AStarResult pathToPos(const AnnotatedMap *map, const Unit *unit, const DomainKey &target) {
 		PosGoal goalFunc(target);
 		MoveCost costFunc (unit, map);
 		DiagonalDistance heuristic(target);
@@ -232,7 +224,7 @@ public:
 
 	/** Finds a path for unit towards target using map, terminating when a cell with more than
 	  * threshold influence on iMap is found */
-	int pathToInfluence(const AnnotatedMap *map, const Unit *unit, const DomainKey &target, 
+	AStarResult pathToInfluence(const AnnotatedMap *map, const Unit *unit, const DomainKey &target, 
 			const TypeMap<float> *iMap, float threshold) {
 		InfluenceGoal<float> goalFunc(threshold, iMap);
 		MoveCost			 costFunc(unit, aMap);
@@ -260,13 +252,13 @@ public:
 	  * @param heuristic heuristic function object
 	  */
 	template< typename GoalFunc, typename CostFunc, typename Heuristic >
-	int aStar(GoalFunc goalFunc, CostFunc costFunc, Heuristic heuristic) {
+	AStarResult aStar(GoalFunc goalFunc, CostFunc costFunc, Heuristic heuristic) {
 		expanded = 0;
-		
 		DomainKey minPos(invalidKey);
 		vector<DomainKey> neighbours;
 		NeighbourFunc neighbourFunc;
 		while ( true ) {
+			// get best open
 			minPos = nodeStorage->getBestCandidate();
 			if ( minPos == invalidKey ) { // failure
 				goalPos = invalidKey;
@@ -276,19 +268,11 @@ public:
 				goalPos = minPos;
 				return AStarResult::COMPLETE;
 			}
-
-			// getNeighbours
+			// expand it...
 			neighbourFunc( minPos, neighbours);
 			while ( ! neighbours.empty() ) {
 				DomainKey nPos = neighbours.back();
 				neighbours.pop_back();
-//			for ( vector<DomainKey>::iterator it = neighbours.begin(); it != neighbours.end(); ++it ) {
-			
-			//for ( int i = 0; i < 8; ++i ) {  // for each neighbour
-			//	Vec2i nPos = minPos + OffsetsSize1Dist1[i];
-				//DomainKey nPos = *it;
-
-				//if ( nPos.x < 0 || nPos.y < 0 || nPos.x > spaceWidth || nPos.y > spaceHeight
 				if ( nodeStorage->isClosed(nPos) ) {
 					continue;
 				}
@@ -302,17 +286,17 @@ public:
 					const float &costToMin = nodeStorage->getCostTo(minPos);
 					if ( ! nodeStorage->setOpen(nPos, minPos, heuristic(nPos), costToMin + cost) ) {
 						goalPos = nodeStorage->getBestSeen();
-						return AStarResult::PARTIAL;
+						return AStarResult::NODE_LIMIT;
 					}
 				}
 			} 
 			expanded++;
-			if ( expanded == expandLimit ) {
+			if ( expanded == expandLimit ) { // run limit
 				goalPos = invalidKey;
-				return AStarResult::INPROGRESS;
+				return AStarResult::TIME_LIMIT;
 			}
 		} // while node limit not reached
-		return -1; // impossible... just keeping the compiler from complaining
+		return AStarResult::INVALID; // impossible... just keeping the compiler from complaining
 	}
 };
 

@@ -119,7 +119,7 @@ public:
   */
 class NodeMap {
 public:
-	NodeMap(/*int w, int h*/);
+	NodeMap(int w, int h);
 
 	// NodeStorage template interface
 	//

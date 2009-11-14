@@ -69,6 +69,7 @@ class Cartographer {
 	/** Exploration maps for each team */
 	map< int, ExplorationMap* > explorationMaps;
 
+	NodeMap *nodeMap;
 	SearchEngine<NodeMap,GridNeighbours> *nmSearchEngine;
 
 	void initResourceMap( int team, const ResourceType *rt, TypeMap<float> *iMap );

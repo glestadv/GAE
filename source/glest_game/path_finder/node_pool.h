@@ -50,17 +50,6 @@ struct PosOff {				/**< A bit packed position (Vec2i) and offset (direction) pai
 	int32 ox :  2; /**< x offset	*/
 	int32 oy :  2; /**< y offset   */
 };
-#pragma pack(2)
-/** compact reference to AStarNodes, contains pool number and index in pool */
-struct NodeID {		  // max 65536 'addressable' nodes
-	uint16 pool	:  4; // max 16 pools
-	uint16 ndx	: 12; // max pool size 4096
-};
-/** pair of offsets, used by OpenList::Head to link nodes */
-struct OffsetPair {	// indices, < 0 == invalid
-	int16 next : 8; // index of next node
-	int16 prev : 8; // index of previous node
-};
 #pragma pack(pop)
 
 // =====================================================
@@ -70,12 +59,11 @@ struct AStarNode {					/**< A node structure for A* with NodeStore							*/
 	PosOff posOff;				   /**< position of this node, and direction of best path to it		   */
 	float heuristic;			  /**< estimate of distance to goal									  */
 	float distToHere;			 /**< cost from origin to this node									 */
-	//NodeID nextOpen;			/**< index of next open node, valid of this node is on the openList */
 	float est()	const { return distToHere + heuristic;}	   /**< estimate, costToHere + heuristic   */
 	Vec2i pos()		  { return posOff.getPos();		  }	  /**< position of this node			  */
 	Vec2i prev()	  { return posOff.getPrev();	  }  /**< best path to this node is from	 */
 	bool hasPrev()	  { return posOff.hasOffset();	  } /**< has valid previous 'pointer'		*/
-}; // == 112 bits ( == 128 aligned )
+}; // == 96 bits (12 bytes)
 
 // =====================================================
 // class AStarComp
@@ -100,80 +88,6 @@ public:
 	}
 };
 
-#if 0
-/** A 'split' list, a sorted head (limited size) and unsorted bucket */
-class OpenList {
-private:
-	static const int maxHeadSize = 16; /**< size of head list storage */
-	/** A sorted doubly linked list with limited storage */
-	class Head {
-		struct Node {
-			AStarNode *data;	// @todo use NodeID == 16 bits
-			Node *next, *prev;	// @todo use offsets == 16 bits
-		}; // will be 32 bits...
-		Node *start, *end;	//	use indices, just to be consistent
-		float maxEstimate;
-		Node *block;
-		vector<Node*> freeNodes;
-		int count;
-
-		void insertBefore(Node *insert, Node *ref);
-		void insertAtEnd(Node *insert);
-		Node* unlink(Node *node);
-		bool assertList();
-
-	public:
-		Head() : start(NULL), end(NULL), maxEstimate(0.f), count(0) {
-			block = new Node[maxHeadSize];
-			for ( int i=0; i < maxHeadSize; ++i ) {
-				freeNodes.push_back(&block[i]);
-			}
-		}
-		~Head() { delete [] block; }
-
-		AStarNode* getBest();
-		AStarNode* add(AStarNode *node);
-		void addToEnd(AStarNode *node);
-		bool adjust(AStarNode *node);
-		bool empty()	{ return !count; }
-		int  size()		{ return count; }
-		float  maxEst()	{ return maxEstimate; }
-	};
-	/** an unsorted collection of Nodes and some information about them */
-	class Bucket : public vector<AStarNode*> {
-		float minEstimate,	 /**< the lowest estimate of any node in the bucket  */
-			  maxEstimate;	/**< the highest estimate of any node in the bucket */
-	public:
-		Bucket() : minEstimate(numeric_limits<float>::infinity()), maxEstimate(0.f) { }
-		void add(AStarNode *n) {
-			if ( n->est() < minEstimate ) minEstimate = n->est();
-			if ( n->est() > maxEstimate ) maxEstimate = n->est();
-			push_back(n);
-		}
-		void  sort()			{ 
-			std::sort(begin(), end(), AStarComp()); 
-			// store some info?
-			// sort into multiple buckets?
-		}
-		float minEst() const	{ return minEstimate; }
-		float maxEst() const	{ return maxEstimate; }
-		void  setMinEst(float val) { minEstimate = val; }
-	};
-
-private:
-	Head head;
-	Bucket bucket;
-
-	int totalSize() { return head.size() + bucket.size(); }
-	void fill_head();
-
-public:
-	void push(AStarNode *node);
-	void adjust(AStarNode *node, float costToHere);
-	AStarNode* pop();
-};
-#endif
-
 // ========================================================
 // class NodePool
 // ========================================================
@@ -196,21 +110,28 @@ public:
 // ========================================================
 class NodeStore {	/**< A NodeStorage class (template interface) for A* */
 private:
+	static const int size = 512;	/**< total number of AStarNodes in each pool   */
+	AStarNode *stock; /**< The block of nodes */
+	int counter;	 /**< current counter    */
+
 	// =====================================================
-	// struct DoubleMarkerArray
+	// struct MarkerArray
 	// =====================================================
-	/** A Marker Array supporting two mark types, open and closed. @todo interleave with pointer array */
-	struct DoubleMarkerArray {
+	/** An interleaved Marker & Pointer Array supporting two mark types, open and closed. */
+	struct MarkerArray {
 	private:
-		int stride;				/**< stride of array */
-		unsigned int counter;  /**< the counter		*/
-		unsigned int *marker; /**< the array	   */
+		int stride;				/**< stride of array   */
+		unsigned int counter;  /**< the counter		  */
+		unsigned int *marker; /**< the mark array	 */
+		AStarNode **pArray;	 /**< the pointer array	*/
 	public:
-		DoubleMarkerArray(int w, int h)	: stride(w) { 
+		MarkerArray(int w, int h)	: stride(w) { 
 			marker = new unsigned int[w * h]; 
 			memset(marker, 0, w * h * sizeof(unsigned int)); 
+			pArray = new AStarNode*[w * h]; 
+			memset(pArray, NULL, w * h * sizeof(AStarNode*)); 
 		}
-		~DoubleMarkerArray() { delete [] marker; }
+		~MarkerArray() { delete [] marker; delete [] pArray; }
 		inline void newSearch() { counter += 2; }
 		inline void setOpen(const Vec2i &pos)	{ marker[pos.y * stride + pos.x] = counter; }
 		inline void setClosed(const Vec2i &pos)	{ marker[pos.y * stride + pos.x] = counter + 1; }
@@ -218,89 +139,68 @@ private:
 		inline bool isClosed(const Vec2i &pos)	{ return marker[pos.y * stride + pos.x] == counter + 1;  }
 		inline bool isListed(const Vec2i &pos)	{ return marker[pos.y * stride + pos.x] >= counter; } /**< @deprecated not needed? */		
 		inline void setNeither(const Vec2i &pos){ marker[pos.y * stride + pos.x] = 0; } /**< @deprecated not needed? */
-	};
 
-	// =====================================================
-	// struct PointerArray
-	// =====================================================
-	/** An array of pointers
-	  * <p>Must be used in conjunction with marker array, constantly contains junk 
-	  * values, use only if mark >= counter (node visited this search)</p> */
-	struct PointerArray {
-	private:
-		int stride;			 /**< stride of array */
-		AStarNode **pArray;	/**< the array		 */
-	public:
-		PointerArray(int w, int h) : stride(w) { /**< Construct pointer array */
-			pArray = new AStarNode*[w * h]; 
-			memset(pArray, NULL, w * h * sizeof(AStarNode*)); 
-		}
-		~PointerArray() { delete [] pArray; } /**< delete pointer array */
 		inline void set(const Vec2i &pos, AStarNode *ptr) { pArray[pos.y * stride + pos.x] = ptr; }	 /**< set the pointer for pos to ptr */
 		inline AStarNode* get(const Vec2i &pos) { return pArray[pos.y * stride + pos.x]; }			/**< get the pointer for pos		*/
 	};
 
 private:
 	AStarNode *leastH;	/**< The 'best' node seen so far this search	*/
-	NodePool *pool;	   /**< the current NodePool to get new nodes from */
 	int numNodes;	  /**< number of nodes used so far this search	  */
 	int tmpMaxNodes; /**< a temporary maximum number of nodes to use */
 	
-	DoubleMarkerArray markerArray;	/**< An array the size of the map, indicating node status (unvisited, open, closed)		  */
-	PointerArray pointerArray;	   /**< An array the size of the map, containing pointers to Nodes, valid if position marked */
+	MarkerArray markerArray;	/**< An array the size of the map, indicating node status (unvisited, open, closed)		  */
 	vector<AStarNode*> openHeap;  /**< the open list, binary heap, maintained with std algorithms							*/
-	//OpenList openList;			 /**< the open list,  'split' list, sorted head and unsorted bucket						   */
 
 public:
-	NodeStore();
+	NodeStore(int w, int h);
 	~NodeStore();
-
-	void attachNodePool(NodePool *nPool) { pool = nPool; }
 
 	// NodeStorage template interface
 	//
-	// same as old...
-	//void reset();
-	//bool isOpen ( const Vec2i &pos );
-	//bool isClosed ( const Vec2i &pos );
+	void setMaxNodes(const int max);
+	void reset();
+
+	bool isOpen(const Vec2i &pos)	{ return markerArray.isOpen(pos);	}	/**< test if a position is open */
+	bool isClosed(const Vec2i &pos) { return markerArray.isClosed(pos); }	/**< test if a position is closed */
+	bool isListed(const Vec2i &pos) { return markerArray.isListed(pos); }	/**< @deprecated needed for canPathOut() */
+
 	bool setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d);
 	void updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost);
+
 	/** get the best candidate from the open list, and close it.
 	  * @return the lowest estimate node from the open list, or -1,-1 if open list empty */
 	Vec2i getBestCandidate() {
-		AStarNode *ptr = getBestCandidateNode();
-		return ptr ? ptr->pos() : Vec2i(-1); 
+		if ( openHeap.empty() ) {
+			return Vec2i(-1);
+		}
+		pop_heap(openHeap.begin(), openHeap.end(), AStarComp());
+		AStarNode *ptr = openHeap.back();
+		openHeap.pop_back();
+		markerArray.setClosed(ptr->pos());
+		return ptr->pos();
 	}
 	/** get the best heuristic node seen this search */
 	Vec2i getBestSeen()						{ return leastH->pos(); }
 	/** get the heuristic of the node at pos [known to be visited] */
-	float getHeuristicAt(const Vec2i &pos)	{ return pointerArray.get(pos)->heuristic;	}
+	float getHeuristicAt(const Vec2i &pos)	{ return markerArray.get(pos)->heuristic;	}
 	/** get the cost to the node at pos [known to be visited] */
-	float getCostTo(const Vec2i &pos)		{ return pointerArray.get(pos)->distToHere;	}
+	float getCostTo(const Vec2i &pos)		{ return markerArray.get(pos)->distToHere;	}
 	/** get the estimate for the node at pos [known to be visited] */
-	float getEstimateFor(const Vec2i &pos)	{ return pointerArray.get(pos)->est();		}
+	float getEstimateFor(const Vec2i &pos)	{ return markerArray.get(pos)->est();		}
 	/** get the best path to the node at pos [known to be closed] */
 	Vec2i getBestTo(const Vec2i &pos)		{ 
-		AStarNode *ptr = pointerArray.get(pos);
+		AStarNode *ptr = markerArray.get(pos);
 		assert (ptr);
 		return ptr->hasPrev() ? ptr->prev() : Vec2i(-1);
 	}
 
-	// old algorithm interface...
-	void setMaxNodes(const int max);
-	void reset();
-	/** @deprecated ? do not use ? */
-	bool limitReached() { return numNodes == tmpMaxNodes; }
-	bool addToOpen(AStarNode *prev, const Vec2i &pos, float h, float d);
+private:
 	void addOpenNode(AStarNode *node);
-	void updateOpenNode(const Vec2i &pos, AStarNode *neighbour, float cost);
-	AStarNode* getBestCandidateNode();
-	bool isOpen(const Vec2i &pos)	{ return markerArray.isOpen(pos);	}	/**< test if a position is open */
-	bool isClosed(const Vec2i &pos) { return markerArray.isClosed(pos); }	/**< test if a position is closed */
-	bool isListed(const Vec2i &pos) { return markerArray.isListed(pos); }	/**< @deprecated needed for canPathOut() */
-	AStarNode* getBestHNode() { return leastH; }	/** @deprecated use getBestSeen() */
+	AStarNode*	newNode()	{ return ( counter < size ? &stock[counter++] : NULL ); } 
 
 #if DEBUG_SEARCH_TEXTURES
+public:
 	// interface to support debugging textures
 	list<Vec2i>* getOpenNodes();
 	list<Vec2i>* getClosedNodes();

@@ -45,8 +45,8 @@ class Config;
 class Game;
 class GameSettings;
 class ScriptManager;
-namespace Search { class Cartographer; }
-using Search::Cartographer;
+namespace Search { class Cartographer; class RoutePlanner; }
+using namespace Search;
 
 // =====================================================
 // 	class World
@@ -86,6 +86,7 @@ private:
 
 	ScriptManager *scriptManager;
 	Cartographer *cartographer;
+	RoutePlanner *routePlanner;
 
 	int thisFactionIndex;
 	int thisTeamIndex;
@@ -123,7 +124,8 @@ public:
 	const TimeFlow *getTimeFlow() const				{return &timeFlow;}
 	Tileset *getTileset() 							{return &tileset;}
 	Map *getMap() 									{return &map;}
-	Cartographer& getCartographer()					{return *cartographer;}
+	Cartographer* getCartographer()					{return cartographer;}
+	RoutePlanner* getRoutePlanner()					{return routePlanner;}
 	const Faction *getFaction(int i) const			{return &factions[i];}
 	Faction *getFaction(int i) 						{return &factions[i];}
 	const Minimap *getMinimap() const				{return &minimap;}

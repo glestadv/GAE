@@ -175,13 +175,26 @@ public:
 
 	void getBorders(Vec2i cluster, vector<Border*> &borders, Border *exclude = NULL);
 
-	void getNeighbours(const Border *border);
 	// Border getters
-	Border* getNorthBorder(Vec2i cluster);
-	Border* getEastBorder(Vec2i cluster);
-	Border* getSouthBorder(Vec2i cluster);
-	Border* getWestBorder(Vec2i cluster);
+	Border* AbstractMap::getNorthBorder(Vec2i cluster) {
+		return ( cluster.y == 0 )
+			? &sentinel : &horizBorders[(cluster.y - 1) * w + cluster.x ];
+	}
 
+	Border* AbstractMap::getEastBorder(Vec2i cluster) {
+		return ( cluster.x == w - 1 )
+			? &sentinel : &vertBorders[cluster.y * (w - 1) + cluster.x ];
+	}
+
+	Border* AbstractMap::getSouthBorder(Vec2i cluster) {
+		return ( cluster.y == h - 1 ) 
+			? &sentinel : &horizBorders[cluster.y * w + cluster.x];
+	}
+
+	Border* getWestBorder(Vec2i cluster) { 
+		return ( cluster.x == 0 )	
+			? &sentinel : &vertBorders[cluster.y * (w - 1) + cluster.x - 1];
+	}
 private:
 
 	float aStarPathLength(Field f, Vec2i &start, Vec2i &dest);

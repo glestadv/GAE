@@ -49,7 +49,7 @@ const string sharedLibVersionString= "v0.4.1";
 
 #define WRAPPED_ENUM(Name,...)							\
 	struct Name {										\
-		enum Enum { __VA_ARGS__, COUNT };				\
+		enum Enum { INVALID = -1, __VA_ARGS__, COUNT };	\
 		Name() : value(COUNT) {}						\
 		Name(Enum val) : value(val) {}					\
 		operator Enum() { return value; }				\

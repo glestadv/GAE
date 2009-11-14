@@ -21,7 +21,7 @@
 #define theGui				(*Gui::getCurrentGui())
 #define theConsole			(*Game::getInstance()->getConsole())
 #define theConfig			(Config::getInstance())
-#define theRoutePlanner		(*Search::RoutePlanner::getInstance())
+#define theRoutePlanner		(*World::getInstance().getRoutePlanner())
 #define theRenderer			(Renderer::getInstance())
 #define theNetworkManager	(NetworkManager::getInstance())
 #define theSoundRenderer	(SoundRenderer::getInstance())
@@ -56,11 +56,11 @@ namespace Search {
 	/** result set for aStar() 
 	  * <ul><li><b>FAILED</b> No path exists
 	  *		<li><b>COMPLETE</b> complete path found</li>
-	  *		<li><b>PARTIAL</b> node limit reached, partial path returned</li>
-	  *		<li><b>INPROGRESS</b> search ongoing (time limit reached)</li></ul>
+	  *		<li><b>NODE_LIMIT</b> node limit reached, partial path available</li>
+	  *		<li><b>TIME_LIMIT</b> search ongoing (time limit reached)</li></ul>
 	  */
 	REGULAR_ENUM( AStarResult, 
-						FAILED, COMPLETE, PARTIAL, INPROGRESS
+						FAILED, COMPLETE, NODE_LIMIT, TIME_LIMIT
 				   );
 
 	/** Specifies a 'space' to search 

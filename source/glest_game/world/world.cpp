@@ -51,7 +51,8 @@ World::World(Game *game)
 		, gs(game->getGameSettings())
 		, stats(game->getGameSettings())
 		, posIteratorFactory(65)
-		, cartographer(NULL) {
+		, cartographer(NULL)
+		, routePlanner(NULL) {
 	Config &config= Config::getInstance();
 
 	fogOfWar= config.getGsFogOfWarEnabled();
@@ -114,15 +115,14 @@ void World::init(const XmlNode *worldNode) {
 
 	initSplattedTextures();
 
+	cartographer = new Cartographer();
+	cartographer->updateResourceMaps();
+	routePlanner = new RoutePlanner(this);
+
 	unitUpdater.init(game); // must be done after initMap()
 	
 	//minimap must be init after sum computation
 	initMinimap();
-
-	cartographer = new Cartographer();
-	cartographer->updateResourceMaps();
-
-	theRoutePlanner.init();
 
 	if(worldNode)
 		loadSaved(worldNode);
@@ -744,7 +744,7 @@ void World::moveUnitCells(Unit *unit) {
 	if ( Map::toTileCoords(newPos) != Map::toTileCoords(unit->getPos()) ) {
 		changingTiles = true;
 		// remove unit's visibility
-		theWorld.getCartographer().removeUnitVisibility(unit);
+		cartographer->removeUnitVisibility(unit);
 	}
 	/*if(newPos == unit->getPos()) {
 		return;
@@ -768,7 +768,7 @@ void World::moveUnitCells(Unit *unit) {
 	map.putUnitCells(unit, newPos);
 	if ( changingTiles ) {
 		// re-apply unit's visibility
-		theWorld.getCartographer().applyUnitVisibility(unit);
+		cartographer->applyUnitVisibility(unit);
 	}
 
 	//water splash

@@ -41,13 +41,10 @@ void AbstractNodeStorage::insertIntoOpen(AbstractAStarNode *node) {
 		return;
 	}
 	list<AbstractAStarNode*>::iterator it = openList.begin();
-	while ( it != openList.end() && (*it)->est() <= node->est() ) ++it;
-	
-	//if ( it != openList.begin() ) {
-		openList.insert(it, node);
-	//} else {
-	//	openList.push_back(node);
-	//}
+	while ( it != openList.end() && (*it)->est() <= node->est() ) {
+		++it;
+	}
+	openList.insert(it, node);
 }
 
 bool AbstractNodeStorage::assertOpen() {
@@ -102,7 +99,6 @@ bool AbstractNodeStorage::setOpen ( const Border* pos, const Border* prev, float
 	node->prev = prev;
 	node->distToHere = d;
 	node->heuristic = h;
-	//node->startBorder = prev != NULL ? false : true;
 	open.insert(pos);
 	insertIntoOpen(node);
 	listed[pos] = node;
@@ -482,66 +478,20 @@ void AbstractMap::evalCluster(Vec2i cluster) {
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 
 }
-/*
-bool AbstractMap::search(SearchParams params, list<Vec2i> &apath) {
-	Vec2i startCluster(0), destCluster(0);
-	startCluster.x = params.start.x / clusterSize;
-	startCluster.y = params.start.y / clusterSize;
-	destCluster.x = params.dest.x / clusterSize;
-	destCluster.y = params.dest.y / clusterSize;
-	
-	apath.clear();
-	if ( startCluster.dist(destCluster) < 1.5 ) {
-		apath.push_back(params.start);
-		apath.push_back(params.dest);
-		return true;
-	}
-
-}*/
-
 
 void AbstractMap::getBorders(Vec2i cluster, vector<Border*> &borders, Border *exclude) {
-	if ( getNorthBorder(cluster) != &sentinel ) borders.push_back(getNorthBorder(cluster));
-	if ( getEastBorder(cluster) != &sentinel ) borders.push_back(getEastBorder(cluster));
-	if ( getSouthBorder(cluster) != &sentinel ) borders.push_back(getSouthBorder(cluster));
-	if ( getWestBorder(cluster) != &sentinel ) borders.push_back(getWestBorder(cluster));
-}
-/*
-void AbstractMap::getNeighbours(const Border *border) {
-
-}
-*/
-Border* AbstractMap::getNorthBorder(Vec2i cluster) {
-	if ( cluster.y == 0 ) {
-		return &sentinel;
-	} else {
-		return &horizBorders[(cluster.y - 1) * w + cluster.x ];
-	}
-}
-
-Border* AbstractMap::getEastBorder(Vec2i cluster) {
-	if ( cluster.x == w - 1 ) {
-		return &sentinel;
-	} else {
-		return &vertBorders[cluster.y * (w - 1) + cluster.x ];
-	}
-}
-
-Border* AbstractMap::getSouthBorder(Vec2i cluster) {
-	if ( cluster.y == h - 1 ) {
-		return &sentinel;
-	} else {
-		return &horizBorders[cluster.y * w + cluster.x];
-	}
-
-}
-
-Border* AbstractMap::getWestBorder(Vec2i cluster) {
-	if ( cluster.x == 0 ) {
-		return &sentinel;
-	} else {
-		return &vertBorders[cluster.y * (w - 1) + cluster.x - 1];
-	}
+	Border *b = getNorthBorder(cluster);
+	if ( b != &sentinel && b != exclude ) 
+		borders.push_back(getNorthBorder(cluster));
+	b = getEastBorder(cluster);
+	if ( b != &sentinel && b != exclude ) 
+		borders.push_back(getEastBorder(cluster));
+	b = getSouthBorder(cluster);
+	if ( b != &sentinel && b != exclude ) 
+		borders.push_back(getSouthBorder(cluster));
+	b = getWestBorder(cluster);
+	if ( b != &sentinel && b != exclude ) 
+		borders.push_back(getWestBorder(cluster));
 }
 
 }}}

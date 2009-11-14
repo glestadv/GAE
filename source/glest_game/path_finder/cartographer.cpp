@@ -38,9 +38,11 @@ namespace Glest { namespace Game { namespace Search {
 Cartographer::Cartographer() {
 	theLogger.add("Cartographer", true);
 	int w = theMap.getW(), h = theMap.getH();
+	nodeMap = new NodeMap(w,h);
 	nmSearchEngine = new SearchEngine<NodeMap,GridNeighbours>();
-	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
+	nmSearchEngine->setStorage(nodeMap);
 	nmSearchEngine->setInvalidKey(Vec2i(-1));
+	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 	masterMap = new AnnotatedMap();
 	abstractMap = new AbstractMap(this);
 
@@ -88,6 +90,7 @@ Cartographer::Cartographer() {
 Cartographer::~Cartographer() {
 	delete masterMap;
 	delete nmSearchEngine;
+	delete nodeMap;
 
 	map<int,AnnotatedMap*>::iterator aMapIt = teamMaps.begin();
 	for ( ; aMapIt != teamMaps.end(); ++aMapIt ) {
@@ -134,7 +137,8 @@ void Cartographer::updateResourceMaps() {
 void Cartographer::initResourceMap(int team, const ResourceType *rt, TypeMap<float> *iMap) {
 	//DEBUG
 	static char buf[1024];
-	sprintf(buf, "Initialising %s influence map for team %d", rt->getName().c_str(), team);
+	char *ptr = buf;
+	ptr += sprintf(ptr, "Initialising %s influence map for team %d : ", rt->getName().c_str(), team);
 	theLogger.add(buf);
 	int64 time = Chrono::getCurMillis();
 	vector<Vec2i> knownResources;
@@ -156,7 +160,7 @@ void Cartographer::initResourceMap(int team, const ResourceType *rt, TypeMap<flo
 	nmSearchEngine->buildDistanceMap(iMap, 20.f);
 
 	time = Chrono::getCurMillis() - time;
-	sprintf(buf, "Used %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time);
+	ptr += sprintf(ptr, "Used %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time);
 	theLogger.add(buf);
 	//if ( team == theWorld.getThisTeamIndex() && rt->getName() == "gold" ) {
 	//	iMap->log();

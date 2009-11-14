@@ -64,7 +64,7 @@ void UnitUpdater::init(Game &game) {
 	this->world = game.getWorld();
 	this->map = world->getMap();
 	this->console = game.getConsole();
-	routePlanner = Search::RoutePlanner::getInstance();
+	routePlanner = world->getRoutePlanner();
 	gameSettings = game.getGameSettings();
 }
 
@@ -585,7 +585,7 @@ void UnitUpdater::updateBuild(Unit *unit){
 			}
 			if ( !builtUnit->isMobile() ) {
 				// new obstacle, inform cartographer
-				theWorld.getCartographer().updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
+				world->getCartographer()->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
 			}
 
 			//play start sound
@@ -764,7 +764,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					// let the cartographer know
 					Vec2i rPos = r->getPos();
 					sc->deleteResource();
-					theWorld.getCartographer().updateMapMetrics(rPos, 2);
+					world->getCartographer()->updateMapMetrics(rPos, 2);
 					unit->setCurrSkill(hct->getStopLoadedSkillType());
 				}
 				if (unit->getLoadCount() == hct->getMaxLoad()) {
@@ -1091,7 +1091,7 @@ void UnitUpdater::updateMorph(Unit *unit){
 				if ( mapUpdate ) {
 					// obstacle added or removed, update annotated maps
 					bool adding = !mct->getMorphUnit()->isMobile();
-					theWorld.getCartographer().updateMapMetrics(unit->getPos(), unit->getSize());
+					world->getCartographer()->updateMapMetrics(unit->getPos(), unit->getSize());
 				}
 
 				if(isNetworkServer()) {

@@ -39,110 +39,40 @@ const int maxFreeSearchRadius = 10;
 /** @deprecated not in use */
 const int pathFindNodesMax = 2048;
 
-/** number of NodePool objects to use, max 16, size of pools can be adjusted with NodePool::size
-  * @todo this shouldn't be a const, but dynamically set based on number of players 
-  * before a game starts */
-const int numNodePools = 4;
-
-/** @page pathfinding RoutePlanner Path Finding Strategy
-  * <p>A new path request causes an immediate search with a 512 node NodePool.
-  * if that search breaches the node limit, a partial path is returned and 
-  * the RouteInfo saved on the longSearchQueue. If there are still NodePools 
-  * free (to cintinue servicing new requests), the full NodePool is set aside 
-  * and referenced in the RouteInfo.</p>
-  * <p>If time is of the essence, initial searches will be performed with an over estimating 
-  * heuristic, and node limited searches will be put straight onto the hardSearchQueue.</p>
-  * <p>When the RoutePlanner's burnCPU() method is called (at the end of a world update)
-  * the long search queue is consulted, any searches with attached NodePools are serviced
-  * first, a second node pool is attached to the first and the search resumed. Reaching
-  * the node limit again will cause either more node pools to be added in an attempt to get 
-  * a path, or the search abandoned and the RouteInfo placed on the hardSearchQueue. The
-  * exact policy is undecided at this point, and will no doubt require tweaking.</p>
-  * <p>Searches deemed too long/hard to complete with node pools are put on the hard search queue.
-  * Hard searches are performed using the NodeMap as node storage, and must be co-ordinated with
-  * the Cartographer, owner and monopoliser of the NodeMap.  When the RoutePlanner has hard searches
-  * to perform, it notifies the Cartographer, it is then up to the Cartographer to call the 
-  * RoutePlanner back when the NodeMap is free and can be borrowed.</p>
-  */
-
 // =====================================================
 // 	class RoutePlanner
 // =====================================================
-/**	Finds paths for units using the SearchEngine
-  * <p>Performs group path calculations effeciently
-  * using a reverse A*.</p>
-  * <p>Generally tries to hide the horrible details of the 
-  * SearchEngine<>::aStar<>() function.</p>
-  * 
-  * @see @ref pathfinding
-  */ 
+/**	Finds paths for units using SearchEngine<>::aStar<>() */ 
 class RoutePlanner {
-	/** A unit collection and a goal position for a reverse A* search 
-	  */
-	class GroupInfo : protected pair<vector<Unit*>,Vec2i> {
-	public:
-		GroupInfo(Vec2i &goal)		{ second = goal; }
-		GroupInfo(vector<Unit*> &units, Vec2i &goal) { 
-			copy(units.begin(),units.end(),first.begin()); 
-			second = goal; 
-		}
-
-		vector<Unit*>& getUnits()	{ return first;		}
-		Vec2i getGoal()	const		{ return second;	}
-
-		void addUnit(Unit *unit)	{ first.push_back(unit); }
-		void remUnit(Unit *unit)	{ first.erase(find(first.begin(), first.end(), unit)); }
-	};
-	/** A unit and goal position pair and an optional (full) NodeStore.
-	  * <p>If a search with the default node limit fails, a partial path is returned and a RouteInfo
-	  * is constructed and placed on the 'long search' queue. If there are sufficient node pools 
-	  * to continue servicing new requests then the 'full' node pool can be saved, and the long search
-	  * can then resume the search by attaching a second node pool to the first one.</p>
-	  */
-	class RouteInfo : protected pair<Unit*,Vec2i> {
-	public:
-		RouteInfo(Unit *unit, Vec2i goal, NodePool *pool = NULL) 
-				: pair<Unit*,Vec2i>(unit,goal), pool(pool) {}
-
-		Unit*		getUnit() const	{ return first;	}
-		Vec2i		getGoal() const	{ return second;}
-		bool		hasPool() const	{ return pool;	}
-		NodePool*	getPool() const { return pool;	}
-
-	private:
-		NodePool *pool;
-	};
-
 public:
-	static RoutePlanner* getInstance();
+	//static RoutePlanner* getInstance();
+	RoutePlanner(World *world);
 	~RoutePlanner();
-	void init();
+	//void init();
 
 	TravelState findPathToLocation(Unit *unit, const Vec2i &finalPos);
 	/** @see findPathToLocation() */
 	TravelState findPath(Unit *unit, const Vec2i &finalPos) { 
 		return findPathToLocation(unit, finalPos); 
 	}
-	bool repairPath(Unit *unit);
 	bool isLegalMove(Unit *unit, const Vec2i &pos) const;
 
 private:
+	bool repairPath(Unit *unit);
 	float quickSearch(const Unit *unit, const Vec2i &dest);
 	void openBorders(const Unit *unit, const Vec2i &dest);
 	bool findAbstractPath(const Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
-	static RoutePlanner *singleton;
+	bool refinePath(Unit *unit);
+
+	//static RoutePlanner *singleton;
+	World *world;
 	SearchEngine<NodeStore,GridNeighbours>	 *nsgSearchEngine;
+	NodeStore *nodeStore;
+	AbstractNodeStorage *abstractNodeStore;
 	SearchEngine<AbstractNodeStorage,BorderNeighbours,const Border*> *nsbSearchEngine;
-
-	RoutePlanner();
-
-	queue<RouteInfo*> longSearchQueue;  /**< queue for long searches		*/
-	queue<RouteInfo*> hardSearchQueue;  /**< queue for hard case searches	*/
-	queue<GroupInfo*> groupSearchQueue; /**< queue for group searches		*/
 
 	Vec2i computeNearestFreePos(const Unit *unit, const Vec2i &targetPos);
 
-	NodePool *nodePool;
 	AbstractMap *abstractMap;
 
 	bool attemptMove(Unit *unit) const {
@@ -162,6 +92,8 @@ public:
 #endif
 }; // class RoutePlanner
 
+//
+// just use DiagonalDistance to waypoint ??
 class AbstractAssistedHeuristic {
 public:
 	AbstractAssistedHeuristic(const Vec2i &target, const Vec2i &waypoint, float wpCost) 
