@@ -127,22 +127,24 @@ public:
 	/** Kludge to search on Cellmap or Tilemap... templated search domain should deprecate this */
 	static void setSearchSpace(SearchSpace s) {
 		if ( s == SearchSpace::CELLMAP ) {
-			GridNeighbours::x = GridNeighbours::y = 0;
-			GridNeighbours::width = theMap.getW();
-			GridNeighbours::height = theMap.getH();
+			x = y = 0;
+			width = theMap.getW();
+			height = theMap.getH();
 		} else if ( s == SearchSpace::TILEMAP ) {
-			GridNeighbours::x = GridNeighbours::y = 0;
-			GridNeighbours::width = theMap.getTileW();
-			GridNeighbours::height= theMap.getTileH();
+			x = y = 0;
+			width = theMap.getTileW();
+			height= theMap.getTileH();
 		}
 	}
 
 	/** more kludgy search restriction stuff... */
-	static void setSearchClusterLocal(Vec2i cluster) {
-		GridNeighbours::x = cluster.x * clusterSize;
-		GridNeighbours::y = cluster.y * clusterSize;
-		GridNeighbours::width = clusterSize;
-		GridNeighbours::height = clusterSize;
+	static void setSearchCluster(Vec2i cluster) {
+		x = cluster.x * clusterSize - 1;
+		if ( x < 0 ) x = 0;
+		y = cluster.y * clusterSize - 1;
+		if ( y < 0 ) y = 0;
+		width = clusterSize + 1;
+		height = clusterSize + 1;
 	}
 };
 
@@ -269,7 +271,7 @@ public:
 				return AStarResult::COMPLETE;
 			}
 			// expand it...
-			neighbourFunc( minPos, neighbours);
+			neighbourFunc(minPos, neighbours);
 			while ( ! neighbours.empty() ) {
 				DomainKey nPos = neighbours.back();
 				neighbours.pop_back();

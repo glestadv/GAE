@@ -18,6 +18,7 @@
 
 #include "search_engine.h"
 #include "abstract_map.h"
+#include "cluster_map.h"
 
 #include "map.h"
 #include "game.h"
@@ -44,7 +45,8 @@ Cartographer::Cartographer() {
 	nmSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 	masterMap = new AnnotatedMap();
-	abstractMap = new AbstractMap(this);
+	//abstractMap = new AbstractMap(this);
+	clusterMap = new ClusterMap(masterMap,this);
 
 	// team search and visibility maps
 	set<int> teams;

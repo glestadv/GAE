@@ -28,7 +28,7 @@ struct Entrance {
 struct Border {
 	Border() { memset(this, 0, sizeof(*this)); clusters[0] = clusters[1] = Vec2i(-1); }
 	Entrance transitions[Field::COUNT]; /**< Entrances of maximum clearance for each field */
-
+	
 	/** intra cluster edge weights
 	 for vertical borders...        for horizontal borders...
 	       2      3					       1
@@ -50,7 +50,7 @@ struct Border {
 	Vec2i clusters[2]; /**< the clusters that this border is between */
 	bool vertical;
 
-	Vec2i getTransitionPoint(Field f) const {
+	Vec2i getTransitionPoint(Field f, int i = 0) const {
 		assert(transitions[f].position > 0);
 		int x = -1, y = -1;
 		Vec2i pos;
@@ -176,17 +176,17 @@ public:
 	void getBorders(Vec2i cluster, vector<Border*> &borders, Border *exclude = NULL);
 
 	// Border getters
-	Border* AbstractMap::getNorthBorder(Vec2i cluster) {
+	Border* getNorthBorder(Vec2i cluster) {
 		return ( cluster.y == 0 )
 			? &sentinel : &horizBorders[(cluster.y - 1) * w + cluster.x ];
 	}
 
-	Border* AbstractMap::getEastBorder(Vec2i cluster) {
+	Border* getEastBorder(Vec2i cluster) {
 		return ( cluster.x == w - 1 )
 			? &sentinel : &vertBorders[cluster.y * (w - 1) + cluster.x ];
 	}
 
-	Border* AbstractMap::getSouthBorder(Vec2i cluster) {
+	Border* getSouthBorder(Vec2i cluster) {
 		return ( cluster.y == h - 1 ) 
 			? &sentinel : &horizBorders[cluster.y * w + cluster.x];
 	}

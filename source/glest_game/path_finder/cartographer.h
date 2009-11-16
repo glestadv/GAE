@@ -24,6 +24,7 @@
 namespace Glest { namespace Game { namespace Search {
 
 class AbstractMap;
+class ClusterMap;
 
 /** A map containing a visility counter and explored flag for every map tile. */
 class ExplorationMap {
@@ -62,6 +63,7 @@ class Cartographer {
 	map< int, AnnotatedMap* > teamMaps;
 	/**  */
 	AbstractMap *abstractMap;
+	ClusterMap *clusterMap;
 	/** The locations of each and every resource on the map */
 	map< const ResourceType*, vector< Vec2i > > resourceLocations;
 	/** Inlfuence maps, for each team, describing distance to resources */
@@ -152,6 +154,7 @@ public:
 	}
 
 	AbstractMap* getAbstractMap() const	{ return abstractMap; }
+	ClusterMap* getClusterMap() const { return clusterMap; }
 
 	AnnotatedMap* getMasterMap()				const	{ return masterMap;							  }
 	AnnotatedMap* getAnnotatedMap(int team )			{ return masterMap;/*teamMaps[team];*/					  }

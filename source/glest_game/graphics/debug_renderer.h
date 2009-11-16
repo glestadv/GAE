@@ -41,12 +41,12 @@ public:
 		int ndx = -1;
 		if ( pathStart == cell ) ndx = 9;
 		else if ( pathDest == cell ) ndx = 10;
-		else if ( pathSet.find ( cell ) != pathSet.end() ) ndx = 14; // on path
-		else if ( closedSet.find ( cell ) != closedSet.end() ) ndx = 16; // closed nodes
-		else if ( openSet.find ( cell ) != openSet.end() ) ndx = 15; // open nodes
-		else if ( localAnnotations.find ( cell ) != localAnnotations.end() ) // local annotation
+		else if ( pathSet.find(cell) != pathSet.end() ) ndx = 14; // on path
+		else if ( closedSet.find(cell) != closedSet.end() ) ndx = 16; // closed nodes
+		else if ( openSet.find(cell) != openSet.end() ) ndx = 15; // open nodes
+		else if ( localAnnotations.find(cell) != localAnnotations.end() ) // local annotation
 			ndx = 17 + localAnnotations.find(cell)->second;
-		else ndx = theWorld.getCartographer()->getMasterMap()->metrics[cell].get( debugField ); // else use cell metric for debug field
+		else ndx = theWorld.getCartographer()->getMasterMap()->metrics[cell].get(debugField); // else use cell metric for debug field
 		return (Texture2DGl*)PFDebugTextures[ndx];
    }
 };
@@ -125,15 +125,15 @@ public:
 
 	Vec4f operator()( const Vec2i &cell ) {
 		const int &clusterSize = Search::AbstractMap::clusterSize;
-		if ( pathCells.find(cell) != pathCells.end() ) {
-			return Vec4f(0.f, 0.f, 1.f, 0.7f);
-		} else if ( cell.x % clusterSize == 0 || cell.x % clusterSize == clusterSize - 1 
-		|| cell.y % clusterSize == 0 || cell.y % clusterSize == clusterSize - 1  ) {
+		if ( cell.x % clusterSize == clusterSize - 1 
+		|| cell.y % clusterSize == clusterSize - 1  ) {
 			if ( entranceCells.find(cell) != entranceCells.end() ) {
 				return Vec4f(0.f, 1.f, 0.f, 0.7f); // entrance
 			} else {
 				return Vec4f(1.f, 0.f, 0.f, 0.7f);  // border
 			}
+		} else if ( pathCells.find(cell) != pathCells.end() ) { // intra-cluster edge
+			return Vec4f(0.f, 0.f, 1.f, 0.7f);
 		} else {
 			return Vec4f(0.f, 0.f, 0.f, 0.f); // nothing interesting
 		}

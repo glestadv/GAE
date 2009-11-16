@@ -377,7 +377,7 @@ void AbstractMap::evalCluster(Vec2i cluster) {
 
 	Vec2i start, dest;
 
-	GridNeighbours::setSearchClusterLocal(cluster);
+	GridNeighbours::setSearchCluster(cluster);
 
 	for ( int i = 0; i < Field::COUNT; ++i ) {
 		//
@@ -481,17 +481,13 @@ void AbstractMap::evalCluster(Vec2i cluster) {
 
 void AbstractMap::getBorders(Vec2i cluster, vector<Border*> &borders, Border *exclude) {
 	Border *b = getNorthBorder(cluster);
-	if ( b != &sentinel && b != exclude ) 
-		borders.push_back(getNorthBorder(cluster));
+	if ( b != &sentinel && b != exclude ) borders.push_back(getNorthBorder(cluster));
 	b = getEastBorder(cluster);
-	if ( b != &sentinel && b != exclude ) 
-		borders.push_back(getEastBorder(cluster));
+	if ( b != &sentinel && b != exclude ) borders.push_back(getEastBorder(cluster));
 	b = getSouthBorder(cluster);
-	if ( b != &sentinel && b != exclude ) 
-		borders.push_back(getSouthBorder(cluster));
+	if ( b != &sentinel && b != exclude ) borders.push_back(getSouthBorder(cluster));
 	b = getWestBorder(cluster);
-	if ( b != &sentinel && b != exclude ) 
-		borders.push_back(getWestBorder(cluster));
+	if ( b != &sentinel && b != exclude ) borders.push_back(getWestBorder(cluster));
 }
 
 }}}

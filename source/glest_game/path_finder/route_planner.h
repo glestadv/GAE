@@ -17,6 +17,7 @@
 #include "influence_map.h"
 #include "annotated_map.h"
 #include "abstract_map.h"
+#include "cluster_map.h"
 #include "config.h"
 #include "profiler.h"
 
@@ -39,16 +40,15 @@ const int maxFreeSearchRadius = 10;
 /** @deprecated not in use */
 const int pathFindNodesMax = 2048;
 
+typedef SearchEngine<TransitionNodeStore,TransitionNeighbours,const Transition*> TransitionSearchEngine;
 // =====================================================
 // 	class RoutePlanner
 // =====================================================
 /**	Finds paths for units using SearchEngine<>::aStar<>() */ 
 class RoutePlanner {
 public:
-	//static RoutePlanner* getInstance();
 	RoutePlanner(World *world);
 	~RoutePlanner();
-	//void init();
 
 	TravelState findPathToLocation(Unit *unit, const Vec2i &finalPos);
 	/** @see findPathToLocation() */
@@ -59,17 +59,21 @@ public:
 
 private:
 	bool repairPath(Unit *unit);
-	float quickSearch(const Unit *unit, const Vec2i &dest);
-	void openBorders(const Unit *unit, const Vec2i &dest);
-	bool findAbstractPath(const Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
+	float quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
+	//void openBorders(const Unit *unit, const Vec2i &dest);
+	//bool findAbstractPath(const Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
 	bool refinePath(Unit *unit);
 
-	//static RoutePlanner *singleton;
+	bool setupHierarchicalSearch(Unit *unit, const Vec2i &dest, TransitionGoal &goalFunc);
+	bool findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
+
 	World *world;
 	SearchEngine<NodeStore,GridNeighbours>	 *nsgSearchEngine;
 	NodeStore *nodeStore;
-	AbstractNodeStorage *abstractNodeStore;
-	SearchEngine<AbstractNodeStorage,BorderNeighbours,const Border*> *nsbSearchEngine;
+	//AbstractNodeStorage *abstractNodeStore;
+	//SearchEngine<AbstractNodeStorage,BorderNeighbours,const Border*> *nsbSearchEngine;
+	TransitionSearchEngine *tSearchEngine;
+	TransitionNodeStore *tNodeStore;
 
 	Vec2i computeNearestFreePos(const Unit *unit, const Vec2i &targetPos);
 
@@ -91,6 +95,15 @@ public:
 	enum { SHOW_PATH_ONLY, SHOW_OPEN_CLOSED_SETS, SHOW_LOCAL_ANNOTATIONS } debug_texture_action;
 #endif
 }; // class RoutePlanner
+
+class TransitionHeuristic {
+	DiagonalDistance dd;
+public:
+	TransitionHeuristic(const Vec2i &target) : dd(target) {}
+	bool operator()(const Transition *t) const {
+		return dd(t->nwPos);
+	}
+};
 
 //
 // just use DiagonalDistance to waypoint ??

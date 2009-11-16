@@ -130,6 +130,7 @@ public:
 //TODO: pretty pictures for the doco...
 class AnnotatedMap {
 	friend class AbstractMap;
+	friend class ClusterMap;
 #	if DEBUG_SEARCH_TEXTURES
 		list<std::pair<Vec2i,uint32>>* getLocalAnnotations();
 		friend class Glest::Game::PathFinderTextureCallBack;

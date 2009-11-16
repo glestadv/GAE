@@ -428,6 +428,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\path_finder\cluster_map.h"
+				>
+			</File>
+			<File
 				RelativePath=".\type_instances\command.h"
 				>
 			</File>
@@ -892,6 +896,10 @@
 			</File>
 			<File
 				RelativePath=".\network\client_interface.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\cluster_map.cpp"
 				>
 			</File>
 			<File

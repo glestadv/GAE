@@ -102,12 +102,12 @@ public:
 	void write(XmlNode *node) const;
 };
 
-class WaypointPath : public list<pair<Vec2i,float>> {
+class WaypointPath : public list<Vec2i> {
 public:
 	WaypointPath() {}
-	void push(const Vec2i &pos, float dist)	{ push_front(pair<Vec2i,float>(pos,dist)); }
-	Vec2i peek() const					{return front().first;}
-	float waypointToGoal() const		{ return front().second; }
+	void push(const Vec2i &pos/*, float dist*/)	{ push_front(pos); }
+	Vec2i peek() const					{return front();}
+	//float waypointToGoal() const		{ return front().second; }
 	void pop()							{erase(begin());}
 };
 
