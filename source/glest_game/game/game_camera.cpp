@@ -41,8 +41,10 @@ const float GameCamera::centerOffsetZ= 8.0f;
 
 // ================= Constructor =================
 
-GameCamera::GameCamera() : pos(0.f, defaultHeight, 0.f),
-		destPos(0.f, defaultHeight, 0.f), destAng(startingVAng, startingHAng) {
+GameCamera::GameCamera() 
+		: pos(0.f, defaultHeight, 0.f)
+		, destPos(0.f, defaultHeight, 0.f)
+		, destAng(startingVAng, startingHAng) {
 	Config &config = Config::getInstance();
     state= sGame;
 
@@ -143,8 +145,7 @@ void GameCamera::update(){
 }
 
 Quad2i GameCamera::computeVisibleQuad() const{
-	/*
-	//maxRenderDistance
+	/*//maxRenderDistance
 	float flatDist = maxRenderDistance * -cos(degToRad(vAng + fov / 2.f));
 	Vec3f p1(flatDist * sin(degToRad(hAng + fov / 2.f)), maxRenderDistance * sin(degToRad(vAng + fov / 2.f)), flatDist  * -cos(degToRad(hAng + fov / 2.f)));
 	Vec3f p2(flatDist * sin(degToRad(hAng - fov / 2.f)), maxRenderDistance * sin(degToRad(vAng + fov / 2.f)), flatDist  * -cos(degToRad(hAng - fov / 2.f)));
@@ -175,8 +176,7 @@ Quad2i GameCamera::computeVisibleQuad() const{
 	if(hAng>=225 && hAng<=315) {
 		return Quad2i(pi2, pi4, pi1, pi3);
 	}
-	return Quad2i(pi4, pi3, pi2, pi1);
-	*/
+	return Quad2i(pi4, pi3, pi2, pi1);*/
 
 	float nearDist = 20.f;
 	float dist = pos.y > 20.f ? pos.y * 1.2f : 20.f;

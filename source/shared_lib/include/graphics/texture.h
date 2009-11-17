@@ -14,6 +14,7 @@
 
 #include "types.h"
 #include "pixmap.h"
+#include "opengl.h"
 
 #include <string>
 
@@ -29,6 +30,9 @@ class TextureParams;
 // =====================================================
 
 class Texture{
+protected:
+	GLuint handle;	
+
 public:
 	static const int defaultSize;
 
@@ -50,6 +54,8 @@ public:
 		fRgb,
 		fRgba
 	};
+
+	GLuint getHandle() const	{return handle;}
 
 protected:
 	string path;
@@ -76,7 +82,13 @@ public:
 	void setFormat(Format format)		{this->format= format;}
 
 	virtual void init(Filter filter= fBilinear, int maxAnisotropy= 1)=0;
-	virtual void end()=0;
+	void end(){
+		if(inited){
+			assertGl();
+			glDeleteTextures(1, &handle);
+			assertGl();
+		}
+	}
 };
 
 // =====================================================
@@ -92,6 +104,7 @@ public:
 
 	Pixmap1D *getPixmap()				{return &pixmap;}
 	const Pixmap1D *getPixmap() const	{return &pixmap;}
+	virtual void init(Filter filter, int maxAnisotropy= 1);
 };
 
 // =====================================================
@@ -107,6 +120,7 @@ public:
 
 	Pixmap2D *getPixmap()				{return &pixmap;}
 	const Pixmap2D *getPixmap() const	{return &pixmap;}
+	virtual void init(Filter filter, int maxAnisotropy= 1);
 };
 
 // =====================================================
@@ -122,6 +136,7 @@ public:
 
 	Pixmap3D *getPixmap()				{return &pixmap;}
 	const Pixmap3D *getPixmap() const	{return &pixmap;}
+	virtual void init(Filter filter, int maxAnisotropy= 1);
 };
 
 // =====================================================
@@ -137,6 +152,7 @@ public:
 
 	PixmapCube *getPixmap()				{return &pixmap;}
 	const PixmapCube *getPixmap() const	{return &pixmap;}
+	virtual void init(Filter filter, int maxAnisotropy= 1);
 };
 
 }}//end namespace

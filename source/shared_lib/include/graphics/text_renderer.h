@@ -26,12 +26,16 @@ namespace Shared{ namespace Graphics{
 // =====================================================
 
 class TextRenderer2D{
-public:	
-	virtual ~TextRenderer2D(){};
+private:
+	const Font2D *font;
+	bool rendering;
 
-	virtual void begin(const Font2D *font)= 0;
-	virtual void render(const string &text, int x, int y, bool centered= false)= 0;
-	virtual void end()= 0;
+public:
+	TextRenderer2D();
+
+	void begin(const Font2D *font);
+	void render(const string &text, int x, int y, bool centered = false);
+	void end();
 };
 
 // =====================================================
@@ -39,12 +43,16 @@ public:
 // =====================================================
 
 class TextRenderer3D{
-public:	
-	virtual ~TextRenderer3D(){};
+private:
+	const Font3D *font;
+	bool rendering;
 
-	virtual void begin(const Font3D *font)= 0;
-	virtual void render(const string &text, float x, float y, float size, bool centered= false)= 0;
-	virtual void end()= 0;
+public:
+	TextRenderer3D();
+
+	void begin(const Font3D *font);
+	void render(const string &text, float x, float y, float size, bool centered);
+	void end();
 };
 
 }}//end namespace

@@ -32,7 +32,7 @@ void WindowGl::initGl(int colorBits, int depthBits, int stencilBits){
 	context.setDepthBits(depthBits);
 	context.setStencilBits(stencilBits);
 
-	context.init();
+	context.initialise();
 }
 
 void WindowGl::makeCurrentGl(){

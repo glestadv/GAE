@@ -20,7 +20,6 @@
 
 #include <string>
 
-#include "font.h"
 #include "types.h"
 
 
@@ -28,9 +27,11 @@
 
 using std::string;
 
-using Shared::Graphics::FontMetrics;
+namespace Shared { 
+namespace Graphics { class FontMetrics; }
+namespace Platform {
 
-namespace Shared { namespace Platform {
+using Graphics::FontMetrics;
 
 // =====================================================
 // class PlatformContextGl

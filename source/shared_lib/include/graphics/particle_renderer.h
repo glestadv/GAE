@@ -24,12 +24,26 @@ class ModelRenderer;
 
 class ParticleRenderer{
 public:
+	static const int bufferSize = 1024;
+
+private:
+	bool rendering;
+	Vec3f vertexBuffer[bufferSize];
+	Vec2f texCoordBuffer[bufferSize];
+	Vec4f colorBuffer[bufferSize];
+
+public:
 	//particles
-	virtual ~ParticleRenderer(){};
-	virtual void renderManager(ParticleManager *pm, ModelRenderer *mr)=0;
-	virtual void renderSystem(ParticleSystem *ps)=0;
-	virtual void renderSystemLine(ParticleSystem *ps)=0;
-	virtual void renderSingleModel(AttackParticleSystem *ps, ModelRenderer *mr)=0;
+	ParticleRenderer();
+	void renderManager(ParticleManager *pm, ModelRenderer *mr);
+	void renderSystem(ParticleSystem *ps);
+	void renderSystemLine(ParticleSystem *ps);
+	void renderSingleModel(AttackParticleSystem *ps, ModelRenderer *mr);
+
+private:
+	void renderBufferQuads(int quadCount);
+	void renderBufferLines(int lineCount);
+	void setBlendMode(Particle::BlendMode blendMode);
 };
 
 }}//end namespace

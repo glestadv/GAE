@@ -12,7 +12,7 @@
 #include "pch.h"
 #include "renderer.h"
 
-#include "texture_gl.h"
+#include "texture.h"
 #include "main_menu.h"
 #include "config.h"
 #include "components.h"
@@ -38,74 +38,6 @@ namespace Glest { namespace Game{
 	bool Renderer::captureQuad = false;
 	set<Vec2i> Renderer::capturedQuad;
 #endif
-
-// =====================================================
-// 	class MeshCallbackTeamColor
-// =====================================================
-
-class MeshCallbackTeamColor: public MeshCallback{
-private:
-	const Texture *teamTexture;
-
-public:
-	void setTeamTexture(const Texture *teamTexture)	{this->teamTexture= teamTexture;}
-	virtual void execute(const Mesh *mesh);
-};
-
-void MeshCallbackTeamColor::execute(const Mesh *mesh){
-
-	//team color
-	if(mesh->getCustomTexture() && teamTexture!=NULL){
-		//texture 0
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-
-		//set color to interpolation
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_TEXTURE1);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
-
-		//set alpha to 1
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA);
-
-		//texture 1
-		glActiveTexture(GL_TEXTURE1);
-		glMultiTexCoord2f(GL_TEXTURE1, 0.f, 0.f);
-		glEnable(GL_TEXTURE_2D);
-
-		glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(teamTexture)->getHandle());
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_PREVIOUS);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-
-		//set alpha to 1
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
-		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA);
-
-		glActiveTexture(GL_TEXTURE0);
-	}
-	else{
-		glActiveTexture(GL_TEXTURE1);
-		glDisable(GL_TEXTURE_2D);
-		glActiveTexture(GL_TEXTURE0);
-		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	}
-}
 
 // ===========================================================
 //	class Renderer
@@ -236,7 +168,7 @@ void Renderer::initGame(Game *game){
 
 	//shadows
 	if(shadows==sProjected || shadows==sShadowMapping){
-		static_cast<ModelRendererGl*>(modelRenderer)->setSecondaryTexCoordUnit(2);
+		modelRenderer->setSecondaryTexCoordUnit(2);
 
 		glGenTextures(1, &shadowMapHandle);
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
@@ -876,7 +808,7 @@ void Renderer::renderButton(const GraphicButton *button){
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 
-	glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(backTexture)->getHandle());
+	glBindTexture(GL_TEXTURE_2D, backTexture->getHandle());
 
 	//button
 	Vec4f color= Vec4f(1.f, 1.f, 1.f, GraphicComponent::getFade());
@@ -1039,7 +971,7 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 
-	glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(backTexture)->getHandle());
+	glBindTexture(GL_TEXTURE_2D, backTexture->getHandle());
 
 	//textentry
 	Vec4f color= Vec4f(1.f, 1.f, 1.f, GraphicComponent::getFade());
@@ -1176,7 +1108,7 @@ void Renderer::renderSurface(){
 	//fog of war tex unit
 	glActiveTexture(fowTexUnit);
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(fowTex)->getHandle());
+	glBindTexture(GL_TEXTURE_2D, fowTex->getHandle());
 	glTexSubImage2D(
 		GL_TEXTURE_2D, 0, 0, 0,
 		fowTex->getPixmap()->getW(), fowTex->getPixmap()->getH(),
@@ -1189,7 +1121,7 @@ void Renderer::renderSurface(){
 
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
-		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+		modelRenderer->setDuplicateTexCoords(true);
 		enableProjectiveTexturing();
 	}
 
@@ -1213,7 +1145,7 @@ void Renderer::renderSurface(){
 			pointCount+= 4;
 
 			//set texture
-			currTex= static_cast<const Texture2DGl*>(tc00->getTileTexture())->getHandle();
+			currTex= tc00->getTileTexture()->getHandle();
 			if(currTex!=lastTex){
 				lastTex=currTex;
 				glBindTexture(GL_TEXTURE_2D, lastTex);
@@ -1250,7 +1182,7 @@ void Renderer::renderSurface(){
 	glEnd();
 
 	//Restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
+	modelRenderer->setDuplicateTexCoords(false);
 	glPopAttrib();
 
 	//assert
@@ -1389,7 +1321,7 @@ void Renderer::renderOverlay( CellOverlayCallback *cb ) {
 	glEnd();
 
 	//Restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
+	modelRenderer->setDuplicateTexCoords(false);
 	glPopAttrib();
 }
 
@@ -1580,7 +1512,7 @@ void Renderer::renderObjects(){
 
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
-		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+		modelRenderer->setDuplicateTexCoords(true);
 		enableProjectiveTexturing();
 	}
 
@@ -1641,7 +1573,7 @@ void Renderer::renderObjects(){
 	modelRenderer->end();
 
 	//restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+	modelRenderer->setDuplicateTexCoords(true);
 	glPopAttrib();
 }
 
@@ -1665,7 +1597,7 @@ void Renderer::renderWater(){
 	if(textures3D){
 		Texture3D *waterTex= world->getTileset()->getWaterTex();
 		glEnable(GL_TEXTURE_3D);
-		glBindTexture(GL_TEXTURE_3D, static_cast<Texture3DGl*>(waterTex)->getHandle());
+		glBindTexture(GL_TEXTURE_3D,waterTex->getHandle());
 	}
 	else{
 		glEnable(GL_COLOR_MATERIAL);
@@ -1679,7 +1611,7 @@ void Renderer::renderWater(){
 	const Texture2D *fowTex= world->getMinimap()->getFowTexture();
 	glActiveTexture(fowTexUnit);
 	glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(fowTex)->getHandle());
+    glBindTexture(GL_TEXTURE_2D, fowTex->getHandle());
     glActiveTexture(baseTexUnit);
 
 	assertGl();
@@ -1823,7 +1755,7 @@ void Renderer::renderUnits(){
 
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
-		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+		modelRenderer->setDuplicateTexCoords(true);
 		enableProjectiveTexturing();
 	}
 	glActiveTexture(baseTexUnit);
@@ -1913,7 +1845,7 @@ void Renderer::renderUnits(){
 	modelRenderer->end();
 
 	//restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+	modelRenderer->setDuplicateTexCoords(true);
 	glPopAttrib();
 
 /*
@@ -2073,7 +2005,7 @@ void Renderer::renderWaterEffects(){
 	glNormal3f(0.f, 1.f, 0.f);
 
 	//splashes
-	glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
+	glBindTexture(GL_TEXTURE_2D, coreData.getWaterSplashTexture()->getHandle());
 	for(int i=0; i<we->getWaterSplashCount(); ++i){
 		const WaterSplash *ws= we->getWaterSplash(i);
 
@@ -2132,7 +2064,7 @@ void Renderer::renderMinimap(){
 
 	glActiveTexture(fowTexUnit);
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(minimap->getFowTexture())->getHandle());
+	glBindTexture(GL_TEXTURE_2D, minimap->getFowTexture()->getHandle());
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 
 	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
@@ -2145,7 +2077,7 @@ void Renderer::renderMinimap(){
 	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
 
 	glActiveTexture(baseTexUnit);
-	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(minimap->getTexture())->getHandle());
+	glBindTexture(GL_TEXTURE_2D, minimap->getTexture()->getHandle());
 
 	glColor4f(0.5f, 0.5f, 0.5f, 0.1f);
 	glBegin(GL_TRIANGLE_STRIP);
@@ -2381,7 +2313,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 
 		glNormal3f(0.f, 1.f, 0.f);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, Vec4f(1.f, 1.f, 1.f, 1.f).ptr());
-		GLuint waterHandle= static_cast<Texture2DGl*>(menuBackground->getWaterTexture())->getHandle();
+		GLuint waterHandle= menuBackground->getWaterTexture()->getHandle();
 		glBindTexture(GL_TEXTURE_2D, waterHandle);
 		for(int i=1; i<waterTesselation; ++i){
 			glBegin(GL_TRIANGLE_STRIP);
@@ -2406,7 +2338,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 
 			//splashes
 			CoreData &coreData= CoreData::getInstance();
-			glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
+			glBindTexture(GL_TEXTURE_2D, coreData.getWaterSplashTexture()->getHandle());
 			for(int i=0; i<MenuBackground::raindropCount; ++i){
 
 				Vec2f pos= menuBackground->getRaindropPos(i);
@@ -3420,7 +3352,7 @@ void Renderer::renderTile(const Vec2i &pos){
 }
 
 void Renderer::renderQuad(int x, int y, int w, int h, const Texture2D *texture){
-	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(texture)->getHandle());
+	glBindTexture(GL_TEXTURE_2D, texture->getHandle());
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2i(0, 1);
 		glVertex2i(x, y+h);

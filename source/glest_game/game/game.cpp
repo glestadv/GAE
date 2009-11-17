@@ -25,6 +25,8 @@
 #include "network_manager.h"
 #include "checksum.h"
 
+#include "profiler.h"
+
 #include "leak_dumper.h"
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -813,11 +815,13 @@ void Game::render3d(){
 	//selection circles
 	renderer.renderSelectionEffects();
 
+	profileBegin("Rendering Models");
 	//units
 	renderer.renderUnits();
 
 	//objects
 	renderer.renderObjects();
+	profileEnd("Rendering Models");
 
 	//water
 	renderer.renderWater();

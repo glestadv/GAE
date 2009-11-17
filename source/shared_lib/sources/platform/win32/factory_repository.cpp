@@ -27,12 +27,8 @@ FactoryRepository &FactoryRepository::getInstance(){
 
 GraphicsFactory *FactoryRepository::getGraphicsFactory(const string &name){
 	if(name == "OpenGL"){
-		return &graphicsFactoryGl;
+		return &graphicsFactory;
 	}
-	else if(name == "OpenGL2"){
-		return &graphicsFactoryGl2;
-	}
-
 	throw runtime_error("Unknown graphics factory: " + name);
 }
 
@@ -40,7 +36,6 @@ SoundFactory *FactoryRepository::getSoundFactory(const string &name){
 	if(name == "DirectSound8"){
 		return &soundFactoryDs8;
 	}
-
 	throw runtime_error("Unknown sound factory: " + name);
 }
 

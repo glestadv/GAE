@@ -23,7 +23,7 @@
 #include "components.h"
 #include "texture.h"
 #include "model_manager.h"
-#include "graphics_factory_gl.h"
+#include "graphics_factory.h"
 #include "font_manager.h"
 #include "camera.h"
 

@@ -13,10 +13,10 @@
 #ifndef _SHARED_PLATFORM_WINDOWGL_H_
 #define _SHARED_PLATFORM_WINDOWGL_H_
 
-#include "context_gl.h"
+#include "context.h"
 #include "window.h"
 
-using Shared::Graphics::Gl::ContextGl;
+using Shared::Graphics::Context;
 
 namespace Shared { namespace Platform {
 
@@ -26,7 +26,7 @@ namespace Shared { namespace Platform {
 
 class WindowGl: public Window {
 protected:
-	ContextGl context;
+	Context context;
 
 public:
 	void initGl(int colorBits, int depthBits, int stencilBits);

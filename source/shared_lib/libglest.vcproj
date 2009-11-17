@@ -331,10 +331,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\gl\context_gl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\util\conversion.h"
 				>
 			</File>
@@ -355,10 +351,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\gl\font_gl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\graphics\font_manager.h"
 				>
 			</File>
@@ -368,18 +360,6 @@
 			</File>
 			<File
 				RelativePath=".\include\graphics\graphics_factory.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\gl\graphics_factory_basic_gl.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\gl\graphics_factory_gl.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\gl\graphics_factory_gl2.h"
 				>
 			</File>
 			<File
@@ -415,10 +395,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\gl\model_gl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\graphics\model_header.h"
 				>
 			</File>
@@ -431,10 +407,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\gl\model_renderer_gl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\graphics\gl\opengl.h"
 				>
 			</File>
@@ -444,10 +416,6 @@
 			</File>
 			<File
 				RelativePath=".\include\graphics\particle_renderer.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\gl\particle_renderer_gl.h"
 				>
 			</File>
 			<File
@@ -495,14 +463,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\gl\shader_gl.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\shader_manager.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\platform\simd.h"
 				>
 			</File>
@@ -547,15 +507,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\gl\text_renderer_gl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\graphics\texture.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\gl\texture_gl.h"
 				>
 			</File>
 			<File
@@ -563,11 +515,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\thread.h"
+				RelativePath=".\include\platform\win32\thread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\thread.h"
+				RelativePath=".\include\platform\thread.h"
 				>
 			</File>
 			<File
@@ -595,11 +547,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File
@@ -683,26 +635,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\sources\graphics\gl\context_gl.cpp"
-				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\sources\util\conversion.cpp"
 				>
 			</File>
@@ -712,26 +644,6 @@
 			</File>
 			<File
 				RelativePath=".\sources\graphics\font.cpp"
-				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\sources\graphics\gl\font_gl.cpp"
 				>
 				<FileConfiguration
 					Name="Debug+opt|Win32"
@@ -903,24 +815,8 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\sources\graphics\gl\model_renderer_gl.cpp"
+				RelativePath=".\sources\graphics\model_renderer.cpp"
 				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\sources\graphics\gl\opengl.cpp"
@@ -963,24 +859,8 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\sources\graphics\gl\particle_renderer_gl.cpp"
+				RelativePath=".\sources\graphics\particle_renderer.cpp"
 				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\sources\pch.cpp"
@@ -1099,46 +979,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\sources\graphics\gl\shader_gl.cpp"
-				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\sources\graphics\shader_manager.cpp"
-				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\sources\platform\win32\socket.cpp"
 				>
 			</File>
@@ -1163,47 +1003,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\sources\graphics\gl\text_renderer_gl.cpp"
+				RelativePath=".\sources\text_renderer.cpp"
 				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\sources\graphics\texture.cpp"
-				>
-				<FileConfiguration
-					Name="Debug+opt|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\sources\graphics\gl\texture_gl.cpp"
 				>
 				<FileConfiguration
 					Name="Debug+opt|Win32"

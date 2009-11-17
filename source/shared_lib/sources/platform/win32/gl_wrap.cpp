@@ -10,12 +10,11 @@
 // ==============================================================
 
 #include "pch.h"
-#include "gl_wrap.h"
 
 #include <cassert>
 #include <windows.h>
 
-#include "opengl.h"
+#include "font.h"
 
 #include "leak_dumper.h"
 

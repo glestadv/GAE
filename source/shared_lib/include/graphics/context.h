@@ -13,9 +13,11 @@
 #define _SHARED_GRAPHICS_CONTEXT_H_ 
 
 #include "types.h"
+#include "gl_wrap.h"
 
 namespace Shared{ namespace Graphics{
 
+using Platform::PlatformContextGl;
 using Platform::uint32;
 
 // =====================================================
@@ -30,7 +32,7 @@ protected:
 
 public:
 	Context();
-	virtual ~Context(){}
+	~Context(){}
 
 	uint32 getColorBits() const		{return colorBits;}
 	uint32 getDepthBits() const		{return depthBits;}
@@ -40,13 +42,18 @@ public:
 	void setDepthBits(uint32 depthBits)		{this->depthBits= depthBits;}
 	void setStencilBits(uint32 stencilBits)	{this->stencilBits= stencilBits;}
 
-	virtual void init()= 0;
-	virtual void end()= 0;
-	virtual void reset()= 0;
+protected:
+	PlatformContextGl pcgl;
 
-	virtual void makeCurrent()= 0;
-	virtual void swapBuffers()= 0;
-};
+public:
+	void initialise()	{ pcgl.init(colorBits, depthBits, stencilBits); }
+	void end()			{ pcgl.end(); }
+	void reset()		{}
+	void makeCurrent()	{ pcgl.makeCurrent(); }
+	void swapBuffers()	{ pcgl.swapBuffers(); }
+
+
+	const PlatformContextGl *getPlatformContextGl() const	{return &pcgl;}};
 
 }}//end namespace
 

@@ -53,8 +53,8 @@ private:
 	Vec3f pos;
 	Vec3f destPos;
 
-    float hAng;	//YZ plane positive -Z axis
-    float vAng;	//XZ plane positive +Z axis
+    float hAng;	//YZ plane positive -Z axis // rotation around y axis
+    float vAng;	//XZ plane positive +Z axis // rotation around x axis
 	float lastHAng;
     float lastVAng;
 	Vec2f destAng;

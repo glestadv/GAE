@@ -15,7 +15,7 @@
 #include <stdexcept>
 
 #include "graphics_interface.h"
-#include "context_gl.h"
+#include "context.h"
 #include "gl_wrap.h"
 
 #include "leak_dumper.h"
@@ -111,7 +111,7 @@ const char *getGlExtensions(){
 
 const char *getGlPlatformExtensions(){
 	Context *c= GraphicsInterface::getInstance().getCurrentContext();
-	return getPlatformExtensions(static_cast<ContextGl*>(c)->getPlatformContextGl());
+	return getPlatformExtensions(c->getPlatformContextGl());
 }
 
 int getGlMaxLights(){

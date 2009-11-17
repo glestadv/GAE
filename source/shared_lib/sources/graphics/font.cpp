@@ -16,6 +16,8 @@
 
 namespace Shared { namespace Graphics {
 
+using namespace Platform;
+
 // =====================================================
 //	class FontMetrics
 // =====================================================
@@ -81,12 +83,36 @@ Font2D::Font2D() {
 	size = 10;
 }
 
+void Font2D::init(){
+	assertGl();
+
+	if(!inited){
+		handle= glGenLists(charCount);
+		createGlFontBitmaps(handle, type, size, width, charCount, metrics);
+		inited= true;
+	}
+
+	assertGl();
+}
+
 // ===============================================
 //	class Font3D
 // ===============================================
 
 Font3D::Font3D() {
 	depth = 10.f;
+}
+
+void Font3D::init(){
+	assertGl();
+
+	if(!inited){
+		handle= glGenLists(charCount);
+		createGlFontOutlines(handle, type, width, depth, charCount, metrics);
+		inited= true;
+	}
+
+	assertGl();
 }
 
 }}//end namespace

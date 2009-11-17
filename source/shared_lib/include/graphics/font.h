@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "opengl.h"
 #include "vec.h"
 
 using std::string;
@@ -45,6 +46,12 @@ public:
 // =====================================================
 
 class Font{
+protected:
+	GLuint handle;
+
+public:
+	GLuint getHandle() const				{return handle;}
+
 public:
 	static const int charCount;
 
@@ -65,7 +72,17 @@ public:
 	Font();
 	virtual ~Font(){};
 	virtual void init() = 0;
-	virtual void end() = 0;
+	void end(){
+		assertGl();
+
+		if(inited){
+			assert(glIsList(handle));
+			glDeleteLists(handle, 1);
+			inited= false;
+		}
+
+		assertGl();
+	}
 
 	//get
 	string getType() const					{return type;}
@@ -90,6 +107,7 @@ public:
 
 	int getSize() const				{return size;}
 	void setSize(int size)			{this->size= size;}
+	virtual void init();
 };
 
 // =====================================================
@@ -105,6 +123,7 @@ public:
 
 	float getDepth() const			{return depth;}
 	void setDepth(float depth)		{this->depth= depth;}
+	virtual void init();
 };
 
 }}//end namespace

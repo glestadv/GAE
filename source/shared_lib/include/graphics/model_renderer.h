@@ -14,6 +14,7 @@
 #define _SHARED_GRAPHICS_MODELRENDERER_H_
 
 #include "model.h"
+#include "opengl.h"
 
 namespace Shared{ namespace Graphics{
 
@@ -24,11 +25,23 @@ class Texture;
 //
 /// This gets called before rendering mesh
 // =====================================================
-
+/*
 class MeshCallback{
 public:
 	virtual ~MeshCallback(){};
 	virtual void execute(const Mesh *mesh)= 0;
+};*/
+// =====================================================
+// 	class MeshCallbackTeamColor
+// =====================================================
+
+class MeshCallbackTeamColor/*: public MeshCallback*/{
+private:
+	const Texture *teamTexture;
+
+public:
+	void setTeamTexture(const Texture *teamTexture)	{this->teamTexture= teamTexture;}
+	virtual void execute(const Mesh *mesh);
 };
 
 // =====================================================
@@ -36,21 +49,73 @@ public:
 // =====================================================
 
 class ModelRenderer {
-protected:
+private:
 	bool renderNormals;
 	bool renderTextures;
 	bool renderColors;
-	MeshCallback *meshCallback;
+	MeshCallbackTeamColor *meshCallback;
+
+	bool rendering;
+	bool duplicateTexCoords;
+	int secondaryTexCoordUnit;
+	GLuint lastTexture;
 
 public:
-	ModelRenderer() : meshCallback(NULL) {}
+//	ModelRenderer() : meshCallback(NULL) {}
+	ModelRenderer();
+	void begin(bool renderNormals, bool renderTextures, bool renderColors, MeshCallbackTeamColor *meshCallback=NULL);
 
-	virtual ~ModelRenderer(){};
+	void end() {
+		//assertions
+		assert(rendering);
+		assertGl();
+	
+		//set render state
+		rendering = false;
+	
+		//pop
+		glPopAttrib();
+		glPopClientAttrib();
+	
+		//assertions
+		assertGl();
+	}
+	
+	void render(const Model *model) {
+		//assertions
+		assert(rendering);
+		assertGl();
+	
+		//render every mesh
+		for (uint32 i = 0; i < model->getMeshCount(); ++i) {
+			renderMesh(model->getMesh(i));
+		}
+	
+		//assertions
+		assertGl();
+	}
+	
+	void renderNormalsOnly(const Model *model) {
+		//assertions
+		assert(rendering);
+		assertGl();
+	
+		//render every mesh
+		for (uint32 i = 0; i < model->getMeshCount(); ++i) {
+			renderMeshNormals(model->getMesh(i));
+		}
+	
+		//assertions
+		assertGl();
+	}
 
-	virtual void begin(bool renderNormals, bool renderTextures, bool renderColors, MeshCallback *meshCallback= NULL)=0;
-	virtual void end()=0;
-	virtual void render(const Model *model)=0;
-	virtual void renderNormalsOnly(const Model *model)=0;
+	void setDuplicateTexCoords(bool duplicateTexCoords)			{this->duplicateTexCoords= duplicateTexCoords;}
+	void setSecondaryTexCoordUnit(int secondaryTexCoordUnit)	{this->secondaryTexCoordUnit= secondaryTexCoordUnit;}
+
+private:
+	
+	void renderMesh(const Mesh *mesh);
+	void renderMeshNormals(const Mesh *mesh);
 };
 
 }}//end namespace
