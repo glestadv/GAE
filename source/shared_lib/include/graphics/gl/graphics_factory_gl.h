@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -31,10 +31,10 @@ namespace Shared{ namespace Graphics{ namespace Gl{
 //	class GraphicsFactoryGl
 // =====================================================
 
-class GraphicsFactoryGl: public GraphicsFactory{
+class GraphicsFactoryGl: public GraphicsFactory {
 public:
 	//context
-	virtual Context *newContext()					{return new ContextGl();}
+	virtual Context *newContext(uint32 colorBits, uint32 depthBits, uint32 stencilBits)		{return new ContextGl(colorBits, depthBits, stencilBits);}
 
 	//textures
 	virtual TextureManager *newTextureManager()		{return new TextureManager();}
@@ -42,7 +42,7 @@ public:
 	virtual Texture2D *newTexture2D()				{return new Texture2DGl();}
 	virtual Texture3D *newTexture3D()				{return new Texture3DGl();}
 	virtual TextureCube *newTextureCube()			{return new TextureCubeGl();}
-	
+
 	//models
 	virtual ModelManager *newModelManager()			{return new ModelManager();}
 	virtual ModelRenderer *newModelRenderer()		{return new ModelRendererGl();}

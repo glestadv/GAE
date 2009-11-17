@@ -133,7 +133,7 @@ void Command::swap() {
 	pos2 = tmpPos;
 }
 
-// =============== NetworkWriteable ===============
+// =============== NetSerializable ===============
 
 size_t Command::getNetSize() const {
 	return	  sizeof(uint16)		// id of unit command is being issued to

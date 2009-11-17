@@ -24,6 +24,9 @@
 #include "factory.h"
 #include "sound_container.h"
 #include "lang.h"
+#include "game_constants.h"
+#include "program.h"
+
 
 using Shared::Sound::StaticSound;
 using Shared::Xml::XmlNode;
@@ -123,7 +126,7 @@ public:
 
 	void descEpCost(string &str, const Unit *unit) const {
 		if(epCost){
-			str+= Lang::getInstance().get("EpCost") + ": " + intToStr(epCost) + "\n";
+			str+= theLang.get("EpCost") + ": " + intToStr(epCost) + "\n";
 		}
 	}
 
@@ -145,7 +148,7 @@ public:
 	float getStartTime() const				{return startTime;}
 
 	//other
-	virtual string toString() const		{return Lang::getInstance().get(typeName);}
+	virtual string toString() const		{return theLang.get(typeName);}
 	static string skillClassToStr(SkillClass skillClass);
 	static string fieldToStr(Zone field);
 
@@ -171,11 +174,11 @@ public:
 // 	class StopSkillType
 // ===============================
 
-class StopSkillType: public SkillType{
+class StopSkillType: public SkillType {
 public:
 	StopSkillType() : SkillType(scStop, "Stop"){}
 	virtual void getDesc(string &str, const Unit *unit) const {
-		Lang &lang= Lang::getInstance();
+		const Lang &lang= theLang;
 		str+= lang.get("ReactionSpeed")+": "+ intToStr(speed)+"\n";
 		descEpCost(str, unit);
 	}

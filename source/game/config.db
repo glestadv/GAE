@@ -1,7 +1,15 @@
 # Config Settings file.
 # This file is processed and used to generate config.cpp and confg.h using
-# config.cpp.template and config.h.template.  NOTE: You may not use the pipe
-# character in this file unless you want to modify the script.
+# config.cpp.template and config.h.template.
+#
+# INSTRUCTIONS
+# Do not use the pipe character in this file (unless you want to modify the script).
+# Each entry entry cannot have spaces.
+# variable - the name of the variable (should be in lowerAndThenProperCase format)
+# type - the type of the variable (generally, stick to primitives & string)
+# default - the default value if the variable isn't specified in the .ini file
+# min - (optional) the minimim allowed value (numeric types only)
+# max - (optional) the maxiumum allowed value (numeric types only)
 #
 # variable					type	default			min		max
 cameraFov					float	45.f			0.f		360.f
@@ -84,3 +92,5 @@ uiLocale					string	"en"
 uiPhotoMode					bool	false
 uiRandomStartLocations		bool	false
 uiScrollSpeed				float	1.5f
+
+# vim: ts=4

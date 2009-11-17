@@ -9,6 +9,10 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
+#include "context_gl.h"
+
+#if 0
+
 #ifndef _SHARED_GRAPHICS_GL_OPENGL_H_
 #define _SHARED_GRAPHICS_GL_OPENGL_H_
 
@@ -24,7 +28,7 @@ using std::string;
 
 namespace Shared{ namespace Graphics{ namespace Gl{
 
-using Util::intToStr;
+using Util::Conversion;
 
 #define WGL_SAMPLE_BUFFERS_ARB	0x2041
 #define WGL_SAMPLES_ARB			0x2042
@@ -35,11 +39,11 @@ using Util::intToStr;
 
 bool isGlExtensionSupported(const char *extensionName);
 bool isGlVersionSupported(int major, int minor, int release);
-const char *getGlVersion();
-const char *getGlRenderer();
-const char *getGlVendor();
-const char *getGlExtensions();
-const char *getGlPlatformExtensions();
+string getGlVersion();
+string getGlRenderer();
+string getGlVendor();
+string getGlExtensions();
+string getGlPlatformExtensions();
 int getGlMaxLights();
 int getGlMaxTextureSize();
 int getGlMaxTextureUnits();
@@ -53,7 +57,8 @@ void inline _assertGl(const char *file, int line){
 
 	if(error != GL_NO_ERROR){
 		const char *errorString= reinterpret_cast<const char*>(gluErrorString(error));
-		throw runtime_error("OpenGL error: "+string(errorString)+" at file: "+string(file)+", line "+intToStr(line));
+		throw runtime_error("OpenGL error: " + string(errorString) + " at file: "
+				+ string(file) + ", line " + Conversion::toStr(line));
 	}
 
 }
@@ -69,4 +74,5 @@ void inline _assertGl(const char *file, int line){
 
 }}}//end namespace
 
+#endif
 #endif

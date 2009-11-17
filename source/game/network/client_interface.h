@@ -20,7 +20,7 @@
 
 #include "socket.h"
 
-using Shared::Platform::Ip;
+using Shared::Platform::IpAddress;
 using Shared::Platform::ClientSocket;
 using std::deque;
 
@@ -104,7 +104,7 @@ public:
 		return ret;
 	}
 
-	void connect(const Ip &ip, int port);
+	void connect(const IpAddress &ip, int port);
 	void reset();
 	void requestUpdate(Unit *unit)				{UnitReference ur(unit); requestUpdate(ur);}
 	void requestUpdate(UnitReference &ur)		{updateRequests.push_back(ur);}

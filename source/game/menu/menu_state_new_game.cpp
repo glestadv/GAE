@@ -158,22 +158,22 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	labelMapInfo.setText(mapInfo.desc);
 
 	//initialize network interface
-	networkManager.init(nrServer);
+	networkManager.init(NR_SERVER);
 	labelNetwork.init(50, 50);
 	try {
-		labelNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIp() + ":" + intToStr(GameConstants::serverPort));
+		labelNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIpAddress() + ":" + intToStr(GameConstants::serverPort));
 	} catch (const exception &e) {
 		labelNetwork.setText(lang.get("Address") + ": ? " + e.what());
 	}
 
 	//init controllers
-	listBoxControls[0].setSelectedItemIndex(ctHuman);
+	listBoxControls[0].setSelectedItemIndex(CT_HUMAN);
 	if (openNetworkSlots) {
 		for (int i = 1; i < mapInfo.players; ++i) {
-			listBoxControls[i].setSelectedItemIndex(ctNetwork);
+			listBoxControls[i].setSelectedItemIndex(CT_NETWORK);
 		}
 	} else {
-		listBoxControls[1].setSelectedItemIndex(ctCpu);
+		listBoxControls[1].setSelectedItemIndex(CT_CPU);
 	}
 	updateControlers();
 	updateNetworkSlots();
@@ -244,7 +244,7 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 				int humanIndex2 = -1;
 				for (int j = 0; j < GameConstants::maxPlayers; ++j) {
 					ControlType ct = static_cast<ControlType>(listBoxControls[j].getSelectedItemIndex());
-					if (ct == ctHuman) {
+					if (ct == CT_HUMAN) {
 						if (humanIndex1 == -1) {
 							humanIndex1 = j;
 						} else {
@@ -255,12 +255,12 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 
 				//no human
 				if (humanIndex1 == -1 && humanIndex2 == -1) {
-					listBoxControls[i].setSelectedItemIndex(ctHuman);
+					listBoxControls[i].setSelectedItemIndex(CT_HUMAN);
 				}
 
 				//2 humans
 				if (humanIndex1 != -1 && humanIndex2 != -1) {
-					listBoxControls[humanIndex1==i? humanIndex2: humanIndex1].setSelectedItemIndex(ctClosed);
+					listBoxControls[humanIndex1==i? humanIndex2: humanIndex1].setSelectedItemIndex(CT_CLOSED);
 				}
 				updateNetworkSlots();
 			} else if (listBoxFactions[i].mouseClick(x, y)) {
@@ -303,7 +303,7 @@ void MenuStateNewGame::render() {
 	for (i = 0; i < GameConstants::maxPlayers; ++i) {
 		renderer.renderLabel(&labelPlayers[i]);
 		renderer.renderListBox(&listBoxControls[i]);
-		if (listBoxControls[i].getSelectedItemIndex() != ctClosed) {
+		if (listBoxControls[i].getSelectedItemIndex() != CT_CLOSED) {
 			renderer.renderListBox(&listBoxFactions[i]);
 			renderer.renderListBox(&listBoxTeams[i]);
 			renderer.renderLabel(&labelNetStatus[i]);
@@ -338,7 +338,7 @@ void MenuStateNewGame::update() {
 	Lang& lang = Lang::getInstance();
 
 	for (int i = 0; i < mapInfo.players; ++i) {
-		if (listBoxControls[i].getSelectedItemIndex() == ctNetwork) {
+		if (listBoxControls[i].getSelectedItemIndex() == CT_NETWORK) {
 			ConnectionSlot* connectionSlot = serverInterface->getSlot(i);
 
 			assert(connectionSlot != NULL);
@@ -371,11 +371,11 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings) {
 
 	for (int i = 0; i < mapInfo.players; ++i) {
 		ControlType ct = static_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());
-		if (ct != ctClosed) {
-			if (ct == ctHuman) {
+		if (ct != CT_CLOSED) {
+			if (ct == CT_HUMAN) {
 				gameSettings->setThisFactionIndex(factionCount);
 			}
-			if (ct == ctCpuUltra) {
+			if (ct == CT_CPU_ULTRA) {
 				gameSettings->setResourceMultiplier(factionCount, 3.f);
 			} else {
 				gameSettings->setResourceMultiplier(factionCount, 1.f);
@@ -426,24 +426,24 @@ void MenuStateNewGame::updateControlers() {
 	bool humanPlayer = false;
 
 	for (int i = 0; i < mapInfo.players; ++i) {
-		if (listBoxControls[i].getSelectedItemIndex() == ctHuman) {
+		if (listBoxControls[i].getSelectedItemIndex() == CT_HUMAN) {
 			humanPlayer = true;
 		}
 	}
 
 	if (!humanPlayer) {
-		listBoxControls[0].setSelectedItemIndex(ctHuman);
+		listBoxControls[0].setSelectedItemIndex(CT_HUMAN);
 	}
 
 	for (int i = mapInfo.players; i < GameConstants::maxPlayers; ++i) {
-		listBoxControls[i].setSelectedItemIndex(ctClosed);
+		listBoxControls[i].setSelectedItemIndex(CT_CLOSED);
 	}
 }
 
 bool MenuStateNewGame::isUnconnectedSlots() {
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
 	for (int i = 0; i < mapInfo.players; ++i) {
-		if (listBoxControls[i].getSelectedItemIndex() == ctNetwork) {
+		if (listBoxControls[i].getSelectedItemIndex() == CT_NETWORK) {
 			if (!serverInterface->getSlot(i)->isConnected()) {
 				return true;
 			}
@@ -457,10 +457,10 @@ void MenuStateNewGame::updateNetworkSlots() {
 
 
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
-		if (serverInterface->getSlot(i) == NULL && listBoxControls[i].getSelectedItemIndex() == ctNetwork) {
+		if (serverInterface->getSlot(i) == NULL && listBoxControls[i].getSelectedItemIndex() == CT_NETWORK) {
 			serverInterface->addSlot(i);
 		}
-		if (serverInterface->getSlot(i) != NULL && listBoxControls[i].getSelectedItemIndex() != ctNetwork) {
+		if (serverInterface->getSlot(i) != NULL && listBoxControls[i].getSelectedItemIndex() != CT_NETWORK) {
 			serverInterface->removeSlot(i);
 		}
 	}

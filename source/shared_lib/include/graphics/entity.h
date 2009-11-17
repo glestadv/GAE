@@ -15,7 +15,7 @@
 
 #include "vec.h"
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
 
 class Entity {
 public:
@@ -26,6 +26,6 @@ public:
 	virtual Vec3f getCurrVectorFlat() const = 0;
 };
 
-}}//end namespace
+}} // end namespace
 
 #endif

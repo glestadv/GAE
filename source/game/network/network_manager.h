@@ -27,12 +27,6 @@ namespace Glest{ namespace Game{
 //	class NetworkManager
 // =====================================================
 
-enum NetworkRole{
-	nrServer,
-	nrClient,
-	nrIdle
-};
-
 class NetworkManager{
 private:
 	GameNetworkInterface* gameNetworkInterface;
@@ -57,19 +51,19 @@ public:
 	}
 
 	bool isServer() {
-		return networkRole == nrServer;
+		return networkRole == NR_SERVER;
 	}
 
 	bool isNetworkServer() {
-		return networkRole == nrServer && getServerInterface()->getConnectedSlotCount() > 0;
+		return networkRole == NR_SERVER && getServerInterface()->getConnectedSlotCount() > 0;
 	}
 
 	bool isNetworkClient() {
-		return networkRole == nrClient;
+		return networkRole == NR_CLIENT;
 	}
 
 	bool isNetworkGame() {
-		return networkRole == nrClient || getServerInterface()->getConnectedSlotCount() > 0;
+		return networkRole == NR_CLIENT || getServerInterface()->getConnectedSlotCount() > 0;
 	}
 
 	GameNetworkInterface* getGameNetworkInterface() {
@@ -79,13 +73,13 @@ public:
 
 	ServerInterface* getServerInterface() {
 		assert(gameNetworkInterface != NULL);
-		assert(networkRole == nrServer);
+		assert(networkRole == NR_SERVER);
 		return static_cast<ServerInterface*>(gameNetworkInterface);
 	}
 
 	ClientInterface* getClientInterface() {
 		assert(gameNetworkInterface != NULL);
-		assert(networkRole == nrClient);
+		assert(networkRole == NR_CLIENT);
 		return static_cast<ClientInterface*>(gameNetworkInterface);
 	}
 };

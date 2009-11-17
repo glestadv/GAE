@@ -37,14 +37,14 @@ private:
 	Properties strings;
 	Properties scenarioStrings;
 
-private:
-	Lang() {}
-
 public:
+	Lang();
+#if 0
 	static Lang &getInstance() {
 		static Lang lang;
 		return lang;
 	}
+#endif
 	const string &getLocale() const			{return locale;}
 #if 0
 	const string &getLanguage() const		{return language;}
@@ -55,8 +55,9 @@ public:
 
 	void setLocale(const string &locale);
 	void loadScenarioStrings(const string &scenarioDir, const string &scenarioName);
-	string getScenarioString(const string &s);
 	string get(const string &s) const;
+	string getScenarioString(const string &s) const;
+	string format(const string &s, ...) const;
 };
 
 }}//end namespace

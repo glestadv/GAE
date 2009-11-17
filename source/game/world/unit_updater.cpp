@@ -902,7 +902,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 		if (!repaired) {
 			unit->setCurrSkill(scStop);
 		} else {
-			//shiney
+			//shiny
 			if (rst->getSplashParticleSystemType()) {
 				const Tile *sc = map->getTile(Map::toTileCoords(repaired->getCenteredPos()));
 				bool visible = sc->isVisible(world.getThisTeamIndex());

@@ -99,7 +99,7 @@ void ModelRendererGl::renderMesh(const Mesh *mesh) {
 
 	//texture state
 	const Texture2DGl *texture = static_cast<const Texture2DGl*>(mesh->getTexture(mtDiffuse));
-	if (texture != NULL && renderTextures) {
+	if (texture && renderTextures) {
 		if (lastTexture != texture->getHandle()) {
 			assert(glIsTexture(texture->getHandle()));
 			glBindTexture(GL_TEXTURE_2D, texture->getHandle());
@@ -110,7 +110,7 @@ void ModelRendererGl::renderMesh(const Mesh *mesh) {
 		lastTexture = 0;
 	}
 
-	if (meshCallback != NULL) {
+	if (meshCallback) {
 		meshCallback->execute(mesh);
 	}
 
@@ -139,8 +139,8 @@ void ModelRendererGl::renderMesh(const Mesh *mesh) {
 		glDisableClientState(GL_NORMAL_ARRAY);
 	}
 
-	//tex coords	
-	if (renderTextures && mesh->getTexture(mtDiffuse) != NULL) {
+	//tex coords
+	if (renderTextures && mesh->getTexture(mtDiffuse)) {
 		if (duplicateTexCoords) {
 			glActiveTexture(GL_TEXTURE0 + secondaryTexCoordUnit);
 			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -160,7 +160,7 @@ void ModelRendererGl::renderMesh(const Mesh *mesh) {
 	}
 
 	//draw model
-	glDrawRangeElements(GL_TRIANGLES, 0, vertexCount-1, indexCount, GL_UNSIGNED_INT, mesh->getIndices());
+	glDrawRangeElements(GL_TRIANGLES, 0, vertexCount - 1, indexCount, GL_UNSIGNED_INT, mesh->getIndices());
 
 	//assertions
 	assertGl();

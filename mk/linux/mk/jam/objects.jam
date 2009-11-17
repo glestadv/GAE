@@ -57,6 +57,7 @@ rule CompileObjects
     return $(targets) ;
 }
 
+# Begin pre-compiled header support, added by Daniel Santos
 # This is hacky CRAP and needs fixing by somebody who understands this build system
 rule CompilePch
 {
@@ -74,15 +75,6 @@ rule CompilePch
 }
 
 rule CompilePchSingle {
-    # handle #includes for source: Jam scans for headers with
-    # the regexp pattern $(HDRSCAN) and then invokes $(HDRRULE)
-    # with the scanned file as the target and the found headers
-    # as the sources.  HDRSEARCH is the value of SEARCH used for
-    # the found header files.
-
-    # $(SEARCH_SOURCE:E) is where cc first looks for #include
-    # "foo.h" files.  If the source file is in a distant directory,
-    # look there.  Else, look in "" (the current directory).
     if $(HDRRULE_$(<:S))
     {
         HDRSEARCH on $(<) = $(SEARCH_SOURCE:E) $(HDRSEARCH) $(STDHDRSEARCH) ;
@@ -102,6 +94,7 @@ rule CompilePchSingle {
 
     return $(targets) ;
 }
+#End pre-compiled header support
 
 #----------------------------------------------------------------------------
 # private part

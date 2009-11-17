@@ -80,12 +80,12 @@ bool ChatManager::keyDown(const Key &key) {
 		return true;
 	}
 
-	
+
 	if (key == keyReturn && editEnabled) {
 		editEnabled = false;
 		if (!text.empty()) {
 			GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
-			console->addLine(gameNetworkInterface->getHostName() + ": " + text);
+			console->addLine(gameNetworkInterface->getLocalHostName() + ": " + text);
 			gameNetworkInterface->sendTextMessage(text, teamMode ? thisTeamIndex : -1);
 		}
 	} else if (key == keyBackspace) {

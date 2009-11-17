@@ -25,8 +25,7 @@
 using namespace Shared::Util;
 using namespace std;
 
-namespace Shared {
-namespace Platform {
+namespace Shared { namespace Platform {
 
 // =====================================================
 // class Window
@@ -402,7 +401,7 @@ LRESULT CALLBACK Window::eventRouter(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 	case WM_MOVE: {
 			RECT rect;
-	
+
 			GetWindowRect(eventWindow->getHandle(), &rect);
 			eventWindow->x = rect.left;
 			eventWindow->y = rect.top;
@@ -413,13 +412,13 @@ LRESULT CALLBACK Window::eventRouter(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 	case WM_SIZE: {
 			RECT rect;
-	
+
 			GetWindowRect(eventWindow->getHandle(), &rect);
 			eventWindow->x = rect.left;
 			eventWindow->y = rect.top;
 			eventWindow->w = rect.right - rect.left;
 			eventWindow->h = rect.bottom - rect.top;
-	
+
 			eventWindow->eventResize(static_cast<SizeState>(wParam));
 		}
 		break;

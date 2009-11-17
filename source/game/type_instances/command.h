@@ -51,7 +51,7 @@ enum CommandArchetype {
 ///	A unit command
 // =====================================================
 
-class Command : public NetworkWriteable {
+class Command : public NetSerializable {
 public:
 
 	static const Vec2i invalidPos;
@@ -107,7 +107,7 @@ public:
 	void setPos2(const Vec2i &pos2)						{this->pos2 = pos2;}
 
 	void setUnit(Unit *unit)							{this->unitRef = unit;}
-	void setUnit2(Unit *unit2)							{this->unitRef2 = unit2;}	
+	void setUnit2(Unit *unit2)							{this->unitRef2 = unit2;}
 	void setUnitType(const UnitType* unitType)			{this->unitType = unitType;}
 	void setCommandedUnit(Unit *commandedUnit)			{this->commandedUnit = commandedUnit;}
 
@@ -116,7 +116,7 @@ public:
 	void popPos()										{pos = pos2; pos2 = invalidPos;}
 	void save(XmlNode *node) const;
 
-	// NetworkWriteable methods
+	// NetSerializable methods
 	void write(NetworkDataBuffer &buf) const;
 	void read(NetworkDataBuffer &buf);
 	size_t getNetSize() const;

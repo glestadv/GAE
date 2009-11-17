@@ -62,18 +62,19 @@ public:
 	static const int indirectSightRange= 5;
 
 private:
+	Game &game;
+	const GameSettings &gs;
+	const Config &config;
 
 	Map map;
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
 	Scenario scenario;
-	Game &game;
-	const GameSettings &gs;
 
 	UnitUpdater unitUpdater;
 	WaterEffects waterEffects;
-	Minimap minimap;
+	Minimap minimap;	// does this really belong here?
 	Stats stats;
 
 	Factions factions;

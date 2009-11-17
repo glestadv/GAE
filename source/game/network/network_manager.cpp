@@ -35,7 +35,7 @@ void NetworkManager::init(NetworkRole networkRole) {
 
 	this->networkRole = networkRole;
 
-	if(networkRole == nrServer) {
+	if(networkRole == NR_SERVER) {
 		gameNetworkInterface = new ServerInterface();
 	} else {
 		gameNetworkInterface = new ClientInterface();

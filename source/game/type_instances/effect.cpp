@@ -75,7 +75,7 @@ void Effect::save(XmlNode *node) const {
 	node->addChild("actualHpRegen", actualHpRegen);
 }
 /*
-class EffectReference : public NetworkWriteable {
+class EffectReference : public NetSerializable {
 	UnitReference source;
 	int32 typeId;
 	float strength;

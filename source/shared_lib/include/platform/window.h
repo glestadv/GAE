@@ -53,7 +53,7 @@ private:
 #ifdef USE_SDL
 	int64 lastMouseDown[mbCount];
 	Vec2i lastMouse[mbCount];
-#elif defined(WIN32)  || defined(WIN64)
+#elif defined(WIN32) || defined(WIN64)
 	typedef map<WindowHandle, Window*> WindowMap;
 
 	static const DWORD fullscreenStyle;
@@ -64,16 +64,16 @@ private:
 	static WindowMap createdWindows;
 #endif
 
-protected:
+private:
 	Input input;
 	int x;
 	int y;
 	int w;
 	int h;
 	WindowHandle handle;
-#if defined(WIN32)  || defined(WIN64)
 	string text;
 	WindowStyle windowStyle;
+#if defined(WIN32) || defined(WIN64)
 	string className;
 	DWORD style;
 	DWORD exStyle;
@@ -82,6 +82,7 @@ protected:
 
 public:
 	Window();
+	Window(WindowStyle windowStyle, int x, int y, int w, int h, int colorBits, int freq, const string &text);
 	virtual ~Window();
 
 	WindowHandle getHandle()		{return handle;}
@@ -117,36 +118,45 @@ public:
 	bool handleEvent();
 
 protected:
-	virtual void eventCreate() {}
-	virtual void eventMouseDown(int x, int y, MouseButton mouseButton) {}
-	virtual void eventMouseUp(int x, int y, MouseButton mouseButton) {}
-	virtual void eventMouseMove(int x, int y, const MouseState &mouseState) {}
-	virtual void eventMouseDoubleClick(int x, int y, MouseButton mouseButton) {}
-	virtual void eventMouseWheel(int x, int y, int zDelta) {}
-	virtual void eventKeyDown(const Key &key) {}
-	virtual void eventKeyUp(const Key &key) {}
-	virtual void eventKeyPress(char c) {}
-	virtual void eventResize() {}
-	virtual void eventPaint() {}
-	virtual void eventTimer(int timerId) {}
-	virtual void eventActivate(bool activated) {}
-	virtual void eventResize(SizeState sizeState) {}
-	virtual void eventMenu(int menuId) {}
-	virtual void eventClose() {}
-	virtual void eventDestroy() {}
+	virtual void eventMouseDown(int x, int y, MouseButton mouseButton) = 0;
+	virtual void eventMouseUp(int x, int y, MouseButton mouseButton) = 0;
+	virtual void eventMouseMove(int x, int y, const MouseState &mouseState) = 0;
+	virtual void eventMouseDoubleClick(int x, int y, MouseButton mouseButton) = 0;
+	virtual void eventMouseWheel(int x, int y, int zDelta) = 0;
+	virtual void eventKeyDown(const Key &key) = 0;
+	virtual void eventKeyUp(const Key &key) = 0;
+	virtual void eventKeyPress(char c) = 0;
+	virtual void eventCreate() = 0;
+	virtual void eventDestroy() = 0;
+	virtual void eventResize() = 0;
+	virtual void eventResize(SizeState sizeState) = 0;
+	virtual void eventActivate(bool activated) = 0;
+	virtual void eventMenu(int menuId) = 0;
+	virtual void eventClose() = 0;
+	virtual void eventPaint() = 0;
+	virtual void eventTimer(int timerId) = 0;
 
 private:
 #ifdef USE_SDL
 	/// needed to detect double clicks
 	void handleMouseDown(SDL_Event event);
-#elif defined(WIN32)  || defined(WIN64)
+#elif defined(WIN32) || defined(WIN64)
 	static LRESULT CALLBACK eventRouter(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	static int getNextClassName();
 	void registerWindow(WNDPROC wndProc = NULL);
 	void createWindow(LPVOID creationData = NULL);
-	void mouseyVent(int asdf, MouseButton mouseButton) {
+
+	/**
+	 * Manage a Windows mouse button event. This code is here for simplicity and to reduce duplicate
+	 * source code.  All callers of this function are passing constants for parameters, so most of
+	 * it will be compiled out (as dead code).  Therefore, please do not outline it.
+	 *
+	 * @param buttonEvent The event type: 0 = button down; 1 = button up; 2 = double click.
+	 * @param mouseButton The button.
+	 */
+	void mouseyVent(int buttonEvent, MouseButton mouseButton) {
 		const Vec2i &mousePos = input.getMousePos();
-		switch(asdf) {
+		switch(buttonEvent) {
 		case 0:
 			input.setMouseState(mouseButton, true);
 			eventMouseDown(mousePos.x, mousePos.y, mouseButton);

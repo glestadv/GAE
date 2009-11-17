@@ -90,8 +90,8 @@ public:
 	const FactionType *getType() const					{return factionType;}
 	int getIndex() const								{return id;}
 	int getTeam() const									{return teamIndex;}
-	bool getCpuControl() const							{return control == ctCpuUltra || control == ctCpu;}
-	bool getCpuUltraControl() const						{return control == ctCpuUltra;}
+	bool getCpuControl() const							{return control == CT_CPU_ULTRA || control == CT_CPU;}
+	bool getCpuUltraControl() const						{return control == CT_CPU_ULTRA;}
 	Unit *getUnit(int i) const							{assert(units.size() == unitMap.size()); assert(i < units.size()); return units[i];}
 	int getUnitCount() const							{return units.size();}
 	const Units &getUnits() const						{return units;}

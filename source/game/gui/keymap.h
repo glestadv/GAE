@@ -14,14 +14,16 @@
 
 #include "properties.h"
 #include "input.h"
-#include "lang.h"
+//#include "lang.h"
+#include "patterns.h"
 
 using Shared::Util::Properties;
 using namespace Shared::Platform;
 using Shared::Platform::Key;
-using Shared::Platform::KeyCode;
 
 namespace Glest { namespace Game {
+
+using Shared::Platform::KeyCode;
 
 // =====================================================
 // 	class Keymap
@@ -89,7 +91,7 @@ enum UserCommand {
 	ucCount
 };
 
-class Keymap {
+class Keymap : Uncopyable {
 public:
 	enum BasicKeyModifier {
 		bkmNone		= 0x00,
@@ -111,7 +113,7 @@ public:
 
 #pragma pack(pop)
 
-	/** 
+	/**
 	 * A single key map entry specifying a KeyCode and a set of modifiers.  Modifiers use the values
 	 * of the BasicKeyModifier enum as bit masks for each modifier key.
 	 */
@@ -133,18 +135,18 @@ public:
 		bool operator ==(const Entry &arg) const {
 			return key == arg.key && mod == arg.mod;
 		}
-		
+
 		bool matches(KeyCode key, int mod) const {
 			return this->key == key && this->mod == mod;
 		}
-		
+
 		KeyCode getKey() const			{return key;}
 		int getMod() const				{return mod;}
 		void clear() 					{key = keyNone; mod = bkmNone;}
 		void init(const string &str);
 		string toString() const;
 	};
-	
+
 	class EntryPair {
 		Entry a;
 		Entry b;
@@ -159,7 +161,7 @@ public:
 		bool matches(KeyCode keyCode, int mod) const {
 			return a.matches(keyCode, mod) || b.matches(keyCode, mod);
 		}
-		
+
 		const Entry &getA() const	{return a;}
 		const Entry &getB() const	{return b;}
 		void clear() 				{a.clear(); b.clear();}
@@ -169,15 +171,11 @@ public:
 
 private:
 	const Input &input;
-	const Lang &lang;
+	//const Lang &lang;
 	vector<EntryPair> entries;
 	map<Entry, UserCommand> entryCmdMap;
 
 	static const UserCommandInfo commandInfo[ucCount];
-
-private:
-	Keymap(const Keymap &);
-	Keymap &operator=(const Keymap &);
 
 public:
 	Keymap(const Input &input, const char* fileName);
@@ -190,7 +188,7 @@ public:
 		}
 		return entries[cmd].matches(keyCode, getCurrentMods());
 	}
-	
+
 	UserCommand getCommand(Key key) const {
 		KeyCode keyCode = key.getCode();
 		if(keyCode > keyUnknown) {
@@ -200,14 +198,14 @@ public:
 		}
 		return ucNone;
 	}
-	
+
 	int getCurrentMods() const {
 		return	  (input.isShiftDown()	? bkmShift	: 0)
 				| (input.isCtrlDown()	? bkmCtrl	: 0)
 				| (input.isAltDown()	? bkmAlt	: 0)
 				| (input.isMetaDown()	? bkmMeta	: 0);
 	}
-	
+
 	static const char* getCommandName(UserCommand cmd) {
 		assert(cmd >= 0 && cmd < ucCount);
 		return commandInfo[cmd].name;

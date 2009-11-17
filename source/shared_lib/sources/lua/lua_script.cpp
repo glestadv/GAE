@@ -11,10 +11,11 @@
 
 #include "pch.h"
 
-//#include <stdexcept>
+#include <stdexcept>
 #include <iostream>
 #include "lua_script.h"
 #include "conversion.h"
+
 #include "leak_dumper.h"
 
 using namespace std;

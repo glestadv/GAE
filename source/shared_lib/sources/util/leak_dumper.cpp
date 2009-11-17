@@ -12,7 +12,7 @@
 #include "pch.h"
 #include "leak_dumper.h"
 
-#ifdef SL_LEAK_DUMP
+#if SL_LEAK_DUMP
 
 AllocInfo::AllocInfo() :
 		line(-1),

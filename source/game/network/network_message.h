@@ -54,7 +54,7 @@ enum NetworkMessageType {
 //	class NetworkMessage
 // =====================================================
 
-class NetworkMessage : public NetworkWriteable {
+class NetworkMessage : public NetSerializable {
 	uint8 type;
 #ifdef DEBUG_NETWORK
 	int simRxTime;
@@ -454,7 +454,7 @@ private:
 ///
 // =====================================================
 /*
-class EffectReference : public NetworkWriteable {
+class EffectReference : public NetSerializable {
 	UnitReference source;
 	int32 typeId;
 	float strength;
@@ -485,7 +485,7 @@ public:
 ///
 // =====================================================
 
-class UnitState : public NetworkWriteable {
+class UnitState : public NetSerializable {
 public:
 	typedef vector<EffectReference> Effects;
 

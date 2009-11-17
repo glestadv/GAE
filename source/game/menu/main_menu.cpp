@@ -45,7 +45,7 @@ namespace Glest { namespace Game {
 
 // ===================== PUBLIC ========================
 
-MainMenu::MainMenu(Program &program) : ProgramState(program) {
+MainMenu::MainMenu(Program &program) : GuiProgramState(program) {
 	mouseX = 100;
 	mouseY = 100;
 
@@ -60,21 +60,21 @@ MainMenu::MainMenu(Program &program) : ProgramState(program) {
 
 MainMenu::~MainMenu() {
 	delete state;
-	Renderer::getInstance().endMenu();
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	theRenderer.endMenu();
+	SoundRenderer &soundRenderer = theSoundRenderer;
 	soundRenderer.stopAllSounds();
 }
 
 void MainMenu::init() {
-	Renderer::getInstance().initMenu(this);
+	theRenderer.initMenu(this);
 }
 
 //asynchronus render update
 void MainMenu::render() {
 
-	Config &config = Config::getInstance();
-	Renderer &renderer = Renderer::getInstance();
-	CoreData &coreData = CoreData::getInstance();
+	Config &config = theConfig;
+	Renderer &renderer = theRenderer;
+	CoreData &coreData = theCoreData;
 
 	fps++;
 
@@ -94,7 +94,7 @@ void MainMenu::render() {
 
 	if (config.getMiscDebugMode()) {
 		renderer.renderText(
-				"FPS: " + intToStr(lastFps),
+				"FPS: " + Conversion::toStr(lastFps),
 				coreData.getMenuFontNormal(), Vec3f(1.f), 10, 10, false);
 	}
 
@@ -103,10 +103,13 @@ void MainMenu::render() {
 
 //syncronus update
 void MainMenu::update() {
-	Renderer::getInstance().updateParticleManager(rsMenu);
+	theRenderer.updateParticleManager(rsMenu);
 	mouse2dAnim = (mouse2dAnim + 1) % Renderer::maxMouse2dAnim;
 	menuBackground.update();
 	state->update();
+}
+
+void MainMenu::updateCamera() {
 }
 
 void MainMenu::tick() {

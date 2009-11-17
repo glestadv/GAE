@@ -98,7 +98,7 @@ void Tileset::load(const string &dir, Checksum &checksum){
 
 	try{
 		Logger::getInstance().add("Tileset: "+dir, true);
-		Renderer &renderer= Renderer::getInstance();
+		Renderer &renderer= theRenderer;
 
 		//parse xml
 		XmlTree xmlTree;
@@ -144,7 +144,7 @@ void Tileset::load(const string &dir, Checksum &checksum){
 		const XmlNode *waterNode= parametersNode->getChild("water");
 		waterTex= renderer.newTexture3D(rsGame);
 		waterTex->setMipmap(false);
-		waterTex->setWrapMode(Texture::wmRepeat);
+		waterTex->setWrapMode(Texture::WRAP_MODE_REPEAT);
 		waterEffects= waterNode->getAttribute("effects")->getBoolValue();
 
 		int waterFrameCount= waterNode->getChildCount();

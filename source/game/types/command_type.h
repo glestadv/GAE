@@ -91,7 +91,7 @@ public:
 	int getMaxRange() const									{return maxRange;}
 // const vector<const AttackSkillType*> &getTypes() const	{return types;}
 	void getDesc(string &str, const Unit *unit) const;
-	bool getZone(Zone zone) const						{return zones.get(zone);}
+	bool getZone(Zone zone) const							{return zones.get(zone);}
 	bool hasPreference(AttackSkillPreference pref) const	{return allPrefs.get(pref);}
 	const AttackSkillType *getPreferredAttack(const Unit *unit, const Unit *target, int rangeToTarget) const;
 	const AttackSkillType *getSkillForPref(AttackSkillPreference pref, int rangeToTarget) const {
@@ -137,12 +137,11 @@ public:
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void setUnitTypeAndIndex(const UnitType *unitType, int unitTypeIndex);
 	virtual void getDesc(string &str, const Unit *unit) const = 0;
-	virtual string toString() const						{return Lang::getInstance().get(name);}
+	virtual string toString() const						{return theLang.get(name);}
 	virtual const ProducibleType *getProduced() const	{return NULL;}
 	bool isQueuable() const								{return queuable;}
 	const UnitType *getUnitType() const					{return unitType;}
 	int getUnitTypeIndex() const						{return unitTypeIndex;}
-	
 
 	//get
 	CommandClass getClass() const						{assert(this); return cc;}

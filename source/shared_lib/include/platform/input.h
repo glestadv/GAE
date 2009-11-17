@@ -18,6 +18,7 @@
 
 #ifdef USE_SDL
 #	include <SDL.h>
+// Force compatibility with older versions of SDL
 #ifndef SDL_BUTTON_WHEELUP
 #	define SDL_BUTTON_WHEELUP	4
 #	define SDL_BUTTON_WHEELDOWN	5
@@ -36,6 +37,7 @@
 
 #include "types.h"
 #include "vec.h"
+#include "patterns.h"
 
 using std::map;
 using std::string;
@@ -67,13 +69,9 @@ enum MouseEvent {
 	meMove
 };
 
-class MouseState {
+class MouseState : Uncopyable {
 private:
 	bool states[mbCount];
-
-private:
-	MouseState(const MouseState &);
-	MouseState &operator=(const MouseState &);
 
 public:
 	MouseState() {
@@ -398,13 +396,13 @@ enum KeyModifier {
 /*
 class MouseEvent {
 public:
-	enum EventType 
+	enum EventType
 	Vec2i pos;
 	MouseButton button;
 
 };
 */
-class Input {
+class Input : Uncopyable {
 public:
 #ifdef USE_SDL
 	static const size_t NATIVE_MOUSE_BUTTON_START = SDL_BUTTON_LEFT;
@@ -539,7 +537,7 @@ class Key {
 private:
 	KeyCode key;
 	char ascii;
-	
+
 	static const char*names[keyCount];
 
 public:
@@ -551,13 +549,13 @@ public:
 #elif defined(WIN32)  || defined(WIN64)
 	Key(KeyCode key, char ascii) : key(key), ascii(ascii) {}
 #endif
-	
+
 	operator KeyCode() const	{return key;}
 
 	KeyCode getCode() const		{return key;}
 	char getAscii() const		{return ascii;}
 	bool isModifier() const		{return key >= keyNumLock && key <= keyMode;}
-	
+
 	static KeyCode findByName(const char *name);
 	static const char* getName(KeyCode key) {
 		assert(key >= 0 && key < keyCount);

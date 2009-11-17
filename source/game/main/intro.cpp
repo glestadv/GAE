@@ -59,9 +59,9 @@ const int Intro::appearTime= 2500;
 const int Intro::showTime= 2500;
 const int Intro::disapearTime= 2500;
 
-Intro::Intro(Program &program) : ProgramState(program) {
-	CoreData &coreData= CoreData::getInstance();
-	const Metrics &metrics= Metrics::getInstance();
+Intro::Intro(GuiProgram &program) : GuiProgramState(guiProgram) {
+	CoreData &coreData = getCoreData();
+	const Metrics &metrics = getMetrics();
 	int w= metrics.getVirtualW();
 	int h= metrics.getVirtualH();
 	timer=0;
@@ -69,23 +69,26 @@ Intro::Intro(Program &program) : ProgramState(program) {
 	texts.push_back(Text(coreData.getLogoTexture(), Vec2i(w/2-128, h/2-64), Vec2i(256, 128), 4000));
 	texts.push_back(Text("Advanced Engine " + gaeVersionString, Vec2i(w / 2 + 80, h / 2 - 32), 4000, coreData.getMenuFontNormal()));
 	texts.push_back(Text("www.glest.org", Vec2i(w/2, h/2), 12000, coreData.getMenuFontVeryBig()));
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
-	soundRenderer.playMusic(CoreData::getInstance().getIntroMusic());
+	SoundRenderer &soundRenderer= theSoundRenderer;
+	soundRenderer.playMusic(theCoreData.getIntroMusic());
 }
 
 void Intro::update(){
 	timer++;
-	if(timer>introTime * Config::getInstance().getGsWorldUpdateFps() / 1000){
+	if(timer>introTime * theConfig.getGsWorldUpdateFps() / 1000){
 		program.setState(new MainMenu(program));
 	}
 
-	if (Config::getInstance().getMiscAutoTest()) {
+	//TOOD: add AutoTest to config
+	/*
+	if(theConfig.getMiscAutoTest()){
 		AutoTest::getInstance().updateIntro(program);
 	}
+	*/
 }
 
 void Intro::render(){
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= theRenderer;
 	int difTime;
 
 	renderer.reset2d();
@@ -93,7 +96,7 @@ void Intro::render(){
 	for(int i=0; i<texts.size(); ++i){
 		Text *text= &texts[i];
 
-		difTime= 1000*timer / Config::getInstance().getGsWorldUpdateFps() - text->getTime();
+		difTime= 1000*timer / theConfig.getGsWorldUpdateFps() - text->getTime();
 
 		if(difTime>0 && difTime<appearTime+showTime+disapearTime){
 			float alpha= 1.f;
@@ -128,9 +131,9 @@ void Intro::keyDown(const Key &key){
 }
 
 void Intro::mouseUpLeft(int x, int y){
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
-	soundRenderer.stopMusic(CoreData::getInstance().getIntroMusic());
-	soundRenderer.playMusic(CoreData::getInstance().getMenuMusic());
+	SoundRenderer &soundRenderer= theSoundRenderer;
+	soundRenderer.stopMusic(theCoreData.getIntroMusic());
+	soundRenderer.playMusic(theCoreData.getMenuMusic());
 	program.setState(new MainMenu(program));
 }
 

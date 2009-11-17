@@ -10,6 +10,7 @@
 // ==============================================================
 
 #include "pch.h"
+#if 0
 #include "graphics_interface.h"
 
 #include <cstddef>
@@ -44,3 +45,4 @@ void GraphicsInterface::setCurrentContext(Context *context){
 }
 
 }}//end namespace
+#endif

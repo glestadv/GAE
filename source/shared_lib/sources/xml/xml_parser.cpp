@@ -46,9 +46,10 @@ XmlNode *XmlIo::load(const string &path){
 	TiXmlDocument document( path.c_str() );
 
 	if ( !document.LoadFile() )	{
-		char message[strSize];
-		sprintf(message, "Error parsing XML, file: %s, line %i, %s", path.c_str(), document.ErrorRow(), document.ErrorDesc());
-		throw runtime_error(message);
+		stringstream str;
+		str << "Error parsing XML, file: " << path << ", line " << document.ErrorRow() << ", "
+				<< document.ErrorDesc();
+		throw runtime_error(str.str());
 	}
 
 	XmlNode *rootNode = new XmlNode(document.RootElement());
@@ -64,9 +65,9 @@ XmlNode *XmlIo::parseString(const char *doc, size_t size) {
 	document.Parse(doc); // returns const char* but not sure why
 
 	if ( document.Error() ) {
-		char message[strSize];
-		sprintf(message, "Error parsing XML text: line %i, %s", document.ErrorRow(), document.ErrorDesc());
-		throw runtime_error(message);
+		stringstream str;
+		str << "Error parsing XML text: line " << document.ErrorRow() << ", " << document.ErrorDesc();
+		throw runtime_error(str.str());
 	}
 
 	XmlNode *rootNode = new XmlNode(document.RootElement());
@@ -220,7 +221,7 @@ XmlAttribute *XmlNode::addAttribute(const char *name, const char *value){
 	return attr;
 }
 
-auto_ptr<string> XmlNode::toString(bool pretty, const string &indentSingle) const {
+shared_ptr<string> XmlNode::toString(bool pretty, const string &indentSingle) const {
 	stringstream str;
 
 	if (pretty) {
@@ -229,7 +230,7 @@ auto_ptr<string> XmlNode::toString(bool pretty, const string &indentSingle) cons
 	} else {
 		toStringSimple(str);
 	}
-	return auto_ptr<string>(new string(str.str()));
+	return shared_ptr<string>(new string(str.str()));
 }
 
 void XmlNode::toStringSimple(stringstream &str) const {

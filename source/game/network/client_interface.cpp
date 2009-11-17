@@ -221,7 +221,7 @@ void ClientInterface::updateLobby(){
 
 				//send intro message
 				NetworkMessageIntro sendNetworkMessageIntro(getNetworkVersionString(),
-						getHostName(), Config::getInstance().getNetPlayerName(), -1, false);
+						getLocalHostName(), Config::getInstance().getNetPlayerName(), -1, false);
 
 				playerIndex = msg->getPlayerIndex();
 				setRemoteNames(msg->getHostName(), msg->getPlayerName());
@@ -275,11 +275,11 @@ void ClientInterface::updateLobby(){
 				for(int i = 0; i < gameSettings.getFactionCount(); ++i){
 
 					//replace by network
-					if(gameSettings.getFactionControl(i) == ctHuman){
-						gameSettings.setFactionControl(i, ctNetwork);
+					if(gameSettings.getFactionControl(i) == CT_HUMAN){
+						gameSettings.setFactionControl(i, CT_NETWORK);
 					}
 				}
-				gameSettings.setFactionControl(playerIndex, ctHuman);
+				gameSettings.setFactionControl(playerIndex, CT_HUMAN);
 				gameSettings.setThisFactionIndex(playerIndex);
 				launchGame= true;
 			}

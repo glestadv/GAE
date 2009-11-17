@@ -11,15 +11,18 @@
 #include "sound_player.h"
 #include "platform_util.h"
 
+#include <vector>
 #include <SDL.h>
 #include <AL/alc.h>
 #include <AL/al.h>
 
-#include <vector>
+#include "timer.h"
+
 
 using std::vector;
+using Shared::Platform::Chrono;
 
-namespace Shared{ namespace Sound{ namespace OpenAL{
+namespace Shared { namespace Sound { namespace OpenAL {
 
 class SoundSource {
 public:

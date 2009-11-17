@@ -21,10 +21,14 @@ die() {
 	exit
 }
 
+# Removes all lines that start with a # or are empty and sorts them, removing any duplicates.
 cleanFile() {
 	egrep -v '^$|^#' $input_file | sort -u || die
 }
 
+# Replaces all consecutive whitespace (except for carriage return) with a single tab
+# Adds a space after the type name (2nd parameter)
+# Replaces any string type with "const string &"
 constStringRef() {
 	perl -pe '
 		s/(\t| )+/\t/g;
@@ -76,3 +80,4 @@ perl -pe "s|CONFIG_SETTERS|$CONFIG_SETTERS|g" > $output_h
 perl -pe "s|CONFIG_INIT|$CONFIG_INIT|g" $input_cpp |
 perl -pe "s|CONFIG_SAVE|$CONFIG_SAVE|g" > $output_cpp
 
+# vim: ts=4

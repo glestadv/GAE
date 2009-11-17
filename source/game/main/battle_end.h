@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -18,17 +18,14 @@
 namespace Glest { namespace Game {
 
 // =====================================================
-// 	class BattleEnd  
+// 	class BattleEnd
 //
-///	ProgramState representing the end of the game
+///	GuiProgramState representing the end of the game
 // =====================================================
 
-class BattleEnd: public ProgramState {
-private:
-	Stats stats;
-
+class BattleEnd: public GuiProgramState {
 public:
-	BattleEnd(Program &program, const Stats &stats);
+	BattleEnd(GuiProgram &program);
 	~BattleEnd();
 	virtual void update();
 	virtual void render();

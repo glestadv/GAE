@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -27,13 +27,16 @@ using Shared::Graphics::Font2D;
 using Shared::Sound::StrSound;
 using Shared::Sound::StaticSound;
 
+class Renderer;
+class Config;
+
 // =====================================================
-// 	class CoreData  
+// 	class CoreData
 //
-/// Data shared ammont all the ProgramStates
+/// Data shared ammongst all the GuiProgramStates
 // =====================================================
 
-class CoreData{
+class CoreData {
 private:
     StrSound introMusic;
     StrSound menuMusic;
@@ -41,7 +44,7 @@ private:
     StaticSound clickSoundB;
     StaticSound clickSoundC;
 	SoundContainer waterSounds;
-	
+
 	Texture2D *logoTexture;
     Texture2D *backgroundTexture;
     Texture2D *fireTexture;
@@ -60,10 +63,8 @@ private:
 	Font2D *consoleFont;
 
 public:
-	static CoreData &getInstance();
+	CoreData(const Config &config, Renderer &renderer);
 	~CoreData();
-
-    void load();
 
 	Texture2D *getBackgroundTexture() const		{return backgroundTexture;}
 	Texture2D *getFireTexture() const			{return fireTexture;}
@@ -90,8 +91,6 @@ public:
     Font2D *getConsoleFont() const			{return consoleFont;}
 
 private:
-	CoreData(){};
-
 	int computeFontSize(int size);
 };
 

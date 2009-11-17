@@ -46,7 +46,7 @@ Vec2f FontMetrics::getTextDiminsions(const string &str) const {
 			width = 0.f;
 			dim.y += height;
 		} else {
-			width += widths[str[i]];
+			width += widths[static_cast<unsigned char>(str[i])];
 		}
 	}
 

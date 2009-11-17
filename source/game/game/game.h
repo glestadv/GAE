@@ -42,7 +42,7 @@ class GraphicTextEntryBox;
 //	Main game class
 // =====================================================
 
-class Game: public ProgramState {
+class Game: public GuiProgramState {
 public:
 	enum Speed {
 		sSlowest,

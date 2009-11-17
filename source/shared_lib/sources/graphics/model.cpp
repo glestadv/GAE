@@ -78,17 +78,18 @@ void Mesh::end() {
 	delete interpolationData;
 }
 
+
 // ========================== shadows & interpolation =========================
 
-void Mesh::buildInterpolationData(){
+void Mesh::buildInterpolationData() {
 	interpolationData = new InterpolationData(this);
 }
 
-void Mesh::updateInterpolationData(float t, bool cycle) const{
+void Mesh::updateInterpolationData(float t, bool cycle) const {
 	interpolationData->update(t, cycle);
 }
 
-void Mesh::updateInterpolationVertices(float t, bool cycle) const{
+void Mesh::updateInterpolationVertices(float t, bool cycle) const {
 	interpolationData->updateVertices(t, cycle);
 }
 
@@ -152,7 +153,7 @@ void Mesh::loadV2(const string &dir, FILE *f, TextureManager *textureManager){
 	fread(indices, sizeof(uint32)*indexCount, 1, f);
 }
 
-void Mesh::loadV3(const string &dir, FILE *f, TextureManager *textureManager){
+void Mesh::loadV3(const string &dir, FILE *f, TextureManager *textureManager) {
 	//read header
 	MeshHeaderV3 meshHeader;
 	fread(&meshHeader, sizeof(MeshHeaderV3), 1, f);
@@ -274,6 +275,15 @@ void Mesh::load(const string &dir, FILE *f, TextureManager *textureManager){
 	}
 }
 
+void Mesh::resize(float scale) {
+	Vec3f *end = &vertices[frameCount * vertexCount];
+	for(Vec3f *pv = vertices; pv < end; pv++) {
+		pv->x *= scale;
+		pv->y *= scale;
+		pv->z *= scale;
+	}
+}
+
 void Mesh::save(const string &dir, FILE *f){
 	/*MeshHeader meshHeader;
 	meshHeader.vertexFrameCount= vertexFrameCount;
@@ -381,22 +391,22 @@ uint32 Model::getVertexCount() const{
 
 // ==================== io ====================
 
-void Model::load(const string &path){
-	string extension= path.substr(path.find_last_of('.')+1);
-	if(extension=="g3d" || extension=="G3D"){
-		loadG3d(path);
-	}
-	else{
+void Model::load(const string &path, float scale) {
+	string extension = path.substr(path.find_last_of('.') + 1);
+
+	if (extension == "g3d" || extension == "G3D") {
+		loadG3d(path, scale);
+	} else {
 		throw runtime_error("Unknown model format: " + extension);
 	}
 }
 
 void Model::save(const string &path){
-	string extension= path.substr(path.find_last_of('.')+1);
-	if(extension=="g3d" ||extension=="G3D" || extension=="s3d" || extension=="S3D"){
+	string extension = path.substr(path.find_last_of('.') + 1);
+
+	if (extension == "g3d" || extension == "G3D" || extension == "s3d" || extension == "S3D") {
 		saveS3d(path);
-	}
-	else{
+	} else {
 		throw runtime_error("Unknown model format: " + extension);
 	}
 }
@@ -440,11 +450,11 @@ void Model::save(const string &path){
 }*/
 
 //load a model from a g3d file
-void Model::loadG3d(const string &path){
+void Model::loadG3d(const string &path, float scale) {
 
-    try{
-		FILE *f=fopen(path.c_str(),"rb");
-		if (f==NULL){
+	try {
+		FILE *f = fopen(path.c_str(), "rb");
+		if (!f) {
 			throw runtime_error("Error opening 3d model file");
 		}
 
@@ -453,57 +463,64 @@ void Model::loadG3d(const string &path){
 		//file header
 		FileHeader fileHeader;
 		fread(&fileHeader, sizeof(FileHeader), 1, f);
-		if(strncmp(reinterpret_cast<char*>(fileHeader.id), "G3D", 3)!=0){
+		if (strncmp(reinterpret_cast<char*>(fileHeader.id), "G3D", 3) != 0) {
 			throw runtime_error("Not a valid S3D model");
 		}
-		fileVersion= fileHeader.version;
+		fileVersion = fileHeader.version;
 
 		//version 4
-		if(fileHeader.version==4){
+		if (fileHeader.version == 4) {
 
 			//model header
 			ModelHeader modelHeader;
 			fread(&modelHeader, sizeof(ModelHeader), 1, f);
-			meshCount= modelHeader.meshCount;
-			if(modelHeader.type!=mtMorphMesh){
+			meshCount = modelHeader.meshCount;
+			if (modelHeader.type != mtMorphMesh) {
 				throw runtime_error("Invalid model type");
 			}
 
 			//load meshes
-			meshes= new Mesh[meshCount];
-			for(uint32 i=0; i<meshCount; ++i){
+			meshes = new Mesh[meshCount];
+			for (uint32 i = 0; i < meshCount; ++i) {
 				meshes[i].load(dir, f, textureManager);
+				if(scale != 1.f) {
+					meshes[i].resize(scale);
+				}
 				meshes[i].buildInterpolationData();
 			}
 		}
 		//version 3
-		else if(fileHeader.version==3){
+		else if (fileHeader.version == 3) {
 
 			fread(&meshCount, sizeof(meshCount), 1, f);
-			meshes= new Mesh[meshCount];
-			for(uint32 i=0; i<meshCount; ++i){
+			meshes = new Mesh[meshCount];
+			for (uint32 i = 0; i < meshCount; ++i) {
 				meshes[i].loadV3(dir, f, textureManager);
+				if(scale != 1.f) {
+					meshes[i].resize(scale);
+				}
 				meshes[i].buildInterpolationData();
 			}
 		}
 		//version 2
-		else if(fileHeader.version==2){
+		else if (fileHeader.version == 2) {
 
 			fread(&meshCount, sizeof(meshCount), 1, f);
-			meshes= new Mesh[meshCount];
-			for(uint32 i=0; i<meshCount; ++i){
+			meshes = new Mesh[meshCount];
+			for (uint32 i = 0; i < meshCount; ++i) {
 				meshes[i].loadV2(dir, f, textureManager);
+				if(scale != 1.f) {
+					meshes[i].resize(scale);
+				}
 				meshes[i].buildInterpolationData();
 			}
-		}
-		else{
-			throw runtime_error("Invalid model version: "+ intToStr(fileHeader.version));
+		} else {
+			throw runtime_error("Invalid model version: " + Conversion::toStr(fileHeader.version));
 		}
 
 		fclose(f);
-    }
-	catch(exception &e){
-		throw runtime_error("Exception caught loading 3d file: " + path +"\n"+ e.what());
+	} catch (exception &e) {
+		throw runtime_error("Exception caught loading 3d file: " + path + "\n" + e.what());
 	}
 }
 

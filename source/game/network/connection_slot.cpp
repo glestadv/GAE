@@ -49,7 +49,7 @@ void ConnectionSlot::update() {
 
 		//send intro message when connected
 		if(socket) {
-			NetworkMessageIntro networkMessageIntro(getNetworkVersionString(), socket->getHostName(),
+			NetworkMessageIntro networkMessageIntro(getNetworkVersionString(), socket->getLocalHostName(),
 					Config::getInstance().getNetPlayerName(), playerIndex, resumeSaved);
 			send(&networkMessageIntro, true);
 		}
@@ -59,7 +59,7 @@ void ConnectionSlot::update() {
 			close();
 			return;
 		}
-				
+
 		while ((genericMsg = nextMsg())) {
 			try {
 				//process incoming commands
@@ -85,7 +85,7 @@ void ConnectionSlot::update() {
 					case nmtText:
 						serverInterface->process(*reinterpret_cast<NetworkMessageText*>(genericMsg), playerIndex);
 						break;
-					
+
 					case nmtQuit:			// I pwned joo wus!
 						break;
 
@@ -96,7 +96,7 @@ void ConnectionSlot::update() {
 					case nmtReady:			// cute, but I don't care
 					case nmtLaunch: 		// launch your heart out
 						break;
-					
+
 					case nmtFileHeader:		// I don't want your files
 					case nmtFileFragment:
 					case nmtInvalid:		// invalid, duh!

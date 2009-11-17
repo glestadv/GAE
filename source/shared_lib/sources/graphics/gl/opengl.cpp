@@ -9,6 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
+#if 0
+
 #include "pch.h"
 #include "opengl.h"
 
@@ -51,7 +53,8 @@ bool isGlExtensionSupported(const char *extensionName){
 
 bool isGlVersionSupported(int major, int minor, int release){
 
-	const char *strVersion= getGlVersion();
+	string stringVersion = getGlVersion();
+	const char *strVersion = stringVersion.c_str();
 
 	//major
 	const char *majorTok= strVersion;
@@ -93,25 +96,25 @@ bool isGlVersionSupported(int major, int minor, int release){
 	return true;
 }
 
-const char *getGlVersion(){
-	return reinterpret_cast<const char *>(glGetString(GL_VERSION));
+string getGlVersion(){
+	return string(reinterpret_cast<const char *>(glGetString(GL_VERSION)));
 }
 
-const char *getGlRenderer(){
-	return reinterpret_cast<const char *>(glGetString(GL_RENDERER));
+string getGlRenderer(){
+	return string(reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
 }
 
-const char *getGlVendor(){
-	return reinterpret_cast<const char *>(glGetString(GL_VENDOR));
+string getGlVendor(){
+	return string(reinterpret_cast<const char *>(glGetString(GL_VENDOR)));
 }
 
-const char *getGlExtensions(){
-	return reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS));
+string getGlExtensions(){
+	return string(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
 }
 
-const char *getGlPlatformExtensions(){
+string getGlPlatformExtensions() {
 	Context *c= GraphicsInterface::getInstance().getCurrentContext();
-	return getPlatformExtensions(static_cast<ContextGl*>(c)->getPlatformContextGl());
+	return static_cast<ContextGl*>(c)->getPlatformContextGl()->getPlatformExtensions();
 }
 
 int getGlMaxLights(){
@@ -151,3 +154,4 @@ void checkGlExtension(const char *extensionName){
 }
 
 }}}// end namespace
+#endif

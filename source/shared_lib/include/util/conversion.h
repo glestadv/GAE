@@ -28,12 +28,6 @@ using std::stringstream;
 using Shared::Platform::int64;
 using Shared::Platform::uint64;
 
-#if defined(WIN32) || defined(WIN64)
-#	define strtoull(np,ep,b) _strtoui64(np,ep,b)
-#	define strtof(np,ep) ((float)strtod(np,ep))
-#	define strtold(np,ep) ((long double)strtod(np,ep))
-#endif
-
 namespace Shared { namespace Util {
 
 const int maxStrSize = 256;
@@ -51,7 +45,6 @@ private:
 	static const string str_false;
 	static const string str_one;
 	static const string str_true;
-
 	static const string str_bool;
 	static const string str_int;
 	static const string str_uint;
@@ -65,11 +58,11 @@ private:
 	Conversion();
 
 public:
-
 	static bool strToBool(const string &s) {
 		if (s == str_zero || s == str_false) {
 			return false;
 		}
+
 		if (s == str_one || s == str_true) {
 			return true;
 		}

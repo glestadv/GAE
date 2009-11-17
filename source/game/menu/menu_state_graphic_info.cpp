@@ -36,7 +36,7 @@ MenuStateGraphicInfo::MenuStateGraphicInfo(Program &program, MainMenu *mainMenu)
 
 	Renderer &renderer= Renderer::getInstance();
 	glInfo= renderer.getGlInfo();
-	glMoreInfo= renderer.getGlMoreInfo();
+	glMoreInfo= renderer.getGlMoreInfo(program.getContext());
 }
 
 void MenuStateGraphicInfo::mouseClick(int x, int y, MouseButton mouseButton){

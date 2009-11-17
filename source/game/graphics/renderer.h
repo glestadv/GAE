@@ -26,6 +26,7 @@
 #include "graphics_factory_gl.h"
 #include "font_manager.h"
 #include "camera.h"
+#include "game_camera.h"
 
 namespace Glest{ namespace Game{
 
@@ -106,7 +107,7 @@ public:
 
 	//light
 	static const float maxLightDist;
-	
+
 public:
 	enum Shadows{
 		sDisabled,
@@ -117,6 +118,12 @@ public:
 	};
 
 private:
+	// foreign references
+	const Config &config;
+	const World *world;
+	const Map *map;
+	const GameCamera *camera;
+
 	//config
 	int maxLights;
     bool photoMode;
@@ -126,9 +133,6 @@ private:
 	bool focusArrows;
 	bool textures3D;
 	Shadows shadows;
-
-	//game
-	const Game *game;
 
 	//misc
 	int triangleCount;
@@ -159,18 +163,18 @@ private:
 
 	//water
 	float waterAnim;
-	
+
 	//perspective values
 	float perspFov;
 	float perspNearPlane;
 	float perspFarPlane;
 
 private:
-	Renderer();
+	Renderer(const Config &config);
 	~Renderer();
 
 public:
-	static Renderer &getInstance();
+//	static Renderer &getInstance();
 
     //init
 	void init();
@@ -193,13 +197,15 @@ public:
 	void reloadResources();
 
 	//engine interface
-	Model *newModel(ResourceScope rs);
-	Texture2D *newTexture2D(ResourceScope rs);
-	Texture3D *newTexture3D(ResourceScope rs);
-	Font2D *newFont(ResourceScope rs);
-	TextRenderer2D *getTextRenderer() const	{return textRenderer;}
-	void manageParticleSystem(ParticleSystem *particleSystem, ResourceScope rs);
-	void updateParticleManager(ResourceScope rs);
+	Model *newModel(ResourceScope rs)								{return modelManager[rs]->newModel();}
+	Texture2D *newTexture2D(ResourceScope rs)						{return textureManager[rs]->newTexture2D();}
+	Texture3D *newTexture3D(ResourceScope rs)						{return textureManager[rs]->newTexture3D();}
+	Texture2D *loadTexture2D(ResourceScope rs, const XmlNode &node)	{return textureManager[rs]->loadTexture2D(node);}
+	Texture3D *loadTexture3D(ResourceScope rs, const XmlNode &node)	{return textureManager[rs]->loadTexture3D(node);}
+	Font2D *newFont(ResourceScope rs)								{return fontManager[rs]->newFont2D();}
+	void manageParticleSystem(ParticleSystem *ps, ResourceScope rs)	{particleManager[rs]->manage(ps);}
+	void updateParticleManager(ResourceScope rs)					{particleManager[rs]->update();}
+	TextRenderer2D *getTextRenderer() const							{return textRenderer;}
 	void renderParticleManager(ResourceScope rs);
 	void swapBuffers();
 
@@ -220,7 +226,7 @@ public:
 	void renderSelectionQuad();
 	void renderText(const string &text, const Font2D *font, float alpha, int x, int y, bool centered= false);
 	void renderText(const string &text, const Font2D *font, const Vec3f &color, int x, int y, bool centered= false);
-	void renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered= false);	
+	void renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered= false);
 
     //components
 	void renderLabel(const GraphicLabel *label);
@@ -240,6 +246,8 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
+	void renderLoadingScreen(const vector<string> &lines);
+
 #ifdef _GAE_DEBUG_EDITION_
 	Field debugField;
 	void setDebugField ( Field f ) { debugField = f; }

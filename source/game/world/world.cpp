@@ -48,10 +48,21 @@ World *World::singleton = NULL;
 World::World(Game *game)
 		: game(*game)
 		, gs(game->getGameSettings())
+		, config(game->getConfig())
+
+		, map()
+		, tileset()
+		, techTree()
+		, timeFlow()
+		, scenario()
+
 		, unitUpdater(*game)
+		, waterEffects()
+		, minimap(game->getRenderer())
 		, stats(game->getGameSettings())
+		, factions()
+
 		, posIteratorFactory(65) {
-	Config &config = Config::getInstance();
 
 	fogOfWar = config.getGsFogOfWarEnabled();
 	fogOfWarSmoothing = config.getRenderFogOfWarSmoothing();

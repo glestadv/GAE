@@ -34,7 +34,7 @@ class Config;
 /// A basic camera that holds information about the game view
 // =====================================================
 
-class GameCamera{
+class GameCamera {
 public:
 	static const float startingVAng;
 	static const float startingHAng;
@@ -44,7 +44,7 @@ public:
 	static const float centerOffsetZ;
 
 public:
-	enum State{
+	enum State {
 		sGame,
 		sFree
 	};

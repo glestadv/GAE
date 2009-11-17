@@ -55,7 +55,7 @@ Game *Game::singleton = NULL;
 
 Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
 		//main data
-		ProgramState(program),
+		GuiProgramState(program),
 		gameSettings(gs),
 		savedGame(savedGame),
 		keymap(program.getKeymap()),
@@ -390,7 +390,7 @@ void Game::mouseDownLeft(int x, int y){
 	NetworkManager &networkManager= NetworkManager::getInstance();
 	Vec2i mmCell;
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= getMetrics();
 	bool messageBoxClick= false;
 
 	//script message box, only if the exit box is not enabled
@@ -441,7 +441,7 @@ void Game::mouseDoubleClickLeft(int x, int y)
 }
 
 void Game::mouseMove(int x, int y, const MouseState &ms) {
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = getMetrics();
 
 	mouseX = x;
 	mouseY = y;

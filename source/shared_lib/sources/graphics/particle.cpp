@@ -637,7 +637,7 @@ ProjectileParticleSystem::Trajectory ProjectileParticleSystem::strToTrajectory(c
 	} else if(str == "random") {
 		return tRandom;
 	} else {
-		throw runtime_error("Unknown particle system trajectory: " + str);
+		throw runtime_error("Unknown projectile particle system trajectory: " + str);
 	}
 }
 

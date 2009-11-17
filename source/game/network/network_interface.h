@@ -53,12 +53,12 @@ public:
 	virtual Socket* getSocket() = 0;
 	virtual const Socket* getSocket() const = 0;
 
-	string getIp() const				{return getSocket()->getIp();}
-	string getHostName() const			{return getSocket()->getHostName();}
+	string getIpAddress() const			{return getSocket()->getIpAddress();}
+	string getLocalHostName() const		{return getSocket()->getLocalHostName();}
 	string getRemoteHostName() const	{return remoteHostName;}
 	string getRemotePlayerName() const	{return remotePlayerName;}
 	string getDescription() const		{return description;}
-	
+
 	void setRemoteNames(const string &hostName, const string &playerName);
 	void pop()							{if(q.empty()) throw runtime_error("queue empty"); q.pop_front();}
 
@@ -68,10 +68,10 @@ public:
 
 #ifdef DEBUG_NETWORK
 	std::deque<NetworkMessagePing*> pingQ;
-	
+
 	NetworkMessage *peek() {
 		receive();
-		
+
 		int now = Chrono::getCurMillis();
 
 		while(!pingQ.empty()) {
@@ -81,7 +81,7 @@ public:
 				pingQ.pop_front();
 			} else {
 				break;
-			} 
+			}
 		}
 
 		if(!q.empty()) {
@@ -96,7 +96,7 @@ public:
 		// more processor, more accurate ping times
 		receive();
 		return q.empty() ? NULL : q.front();
-		
+
 		// less processor, less accurate ping times
 		/*
 		if(!q.empty()) {
@@ -125,7 +125,7 @@ protected:
 		NetworkMessagePing msg;
 		send(&msg);
 	}
-	
+
 	void processPing(NetworkMessagePing *ping) {
 		if(ping->isPong()) {
 			pong(ping->getTime(), ping->getTimeRcvd());

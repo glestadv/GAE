@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -33,11 +33,11 @@ namespace Glest{ namespace Game{
 //	class Text
 // =====================================================
 
-class Text{
+class Text {
 private:
 	string text;
 	Vec2i pos;
-    Vec2i size;
+	Vec2i size;
 	int time;
 	const Font2D *font;
 	const Texture2D *texture;
@@ -55,12 +55,12 @@ public:
 };
 
 // =====================================================
-// 	class Intro  
+// 	class Intro
 //
-///	ProgramState representing the intro
+/// GuiProgramState representing the intro
 // =====================================================
 
-class Intro: public ProgramState {
+class Intro: public GuiProgramState {
 private:
 	static const int introTime;
 	static const int appearTime;
@@ -72,7 +72,7 @@ private:
 	int timer;
 
 public:
-	Intro(Program &program);
+	Intro(GuiProgram &guiProgram);
 	virtual void update();
 	virtual void render();
 	virtual void keyDown(const Key &key);

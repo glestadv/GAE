@@ -12,28 +12,34 @@
 #ifndef _SHARED_GRAPHICS_TEXTUREMANAGER_H_
 #define _SHARED_GRAPHICS_TEXTUREMANAGER_H_
 
-#include <vector>
+#include <map>
+#include <string>
 
 #include "texture.h"
+#include "util.h"
 
-using std::vector;
+using std::map;
+using std::string;
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
+
+class GraphicsFactory; 
 
 // =====================================================
-//	class TextureManager
+// class TextureManager
 // =====================================================
 
 //manages textures, creation on request and deletion on destruction
-class TextureManager{
-protected:
-	typedef vector<Texture*> TextureContainer;
-	
-protected:
-	TextureContainer textures;
-	
+class TextureManager {
+private:
+//	typedef map<string, shared_ptr<Texture> > Textures;
+	typedef vector<shared_ptr<Texture> > Textures;
+
+private:
+	Textures textures;
 	Texture::Filter textureFilter;
 	int maxAnisotropy;
+	GraphicsFactory &factory;
 
 public:
 	TextureManager();
@@ -44,11 +50,16 @@ public:
 	void setFilter(Texture::Filter textureFilter);
 	void setMaxAnisotropy(int maxAnisotropy);
 
+//	Texture *load(const XmlNode &node);
 	Texture *getTexture(const string &path);
 	Texture1D *newTexture1D();
 	Texture2D *newTexture2D();
 	Texture3D *newTexture3D();
 	TextureCube *newTextureCube();
+	Texture1D *loadTexture1D(const XmlNode &node);
+	Texture2D *loadTexture2D(const XmlNode &node);
+	Texture3D *loadTexture3D(const XmlNode &node);
+	TextureCube *loadTextureCube(const XmlNode &node);
 };
 
 

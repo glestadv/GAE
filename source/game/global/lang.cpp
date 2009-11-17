@@ -29,6 +29,18 @@ namespace Glest { namespace Game {
 //  class Lang
 // =====================================================
 
+Lang::Lang()
+		: locale()
+#if 0
+		, language()
+		, territory()
+		, encoding()
+		, script()
+#endif
+		, strings()
+		, scenarioStrings() {
+}
+
 void Lang::setLocale(const string &locale) {
 	this->locale = locale;
 	strings.clear();
@@ -55,19 +67,28 @@ void Lang::loadScenarioStrings(const string &scenarioDir, const string &scenario
 }
 
 string Lang::get(const string &s) const {
-	try {
-		return strings.getString(s);
-	} catch (exception &) {
-		return "???" + s + "???";
-	}
+	const string *ret = strings.getStringOrNull(s);
+	return ret ? *ret : string("???" + s + "???");
 }
 
-string Lang::getScenarioString(const string &s) {
-	try {
-		return scenarioStrings.getString(s);
-	} catch (exception &) {
-		return "???" + s + "???";
-	}
+string Lang::getScenarioString(const string &s) const {
+	const string *ret = scenarioStrings.getStringOrNull(s);
+	return ret ? *ret : string("???" + s + "???");
+}
+
+string Lang::format(const string &s, ...) const {
+	va_list ap;
+	const string fmt = get(s);
+	size_t bufsize = fmt.size() + 2048;
+	char *buf = new char[bufsize];
+
+	va_start(ap, s);
+	vsnprintf(buf, bufsize, fmt.c_str(), ap);
+	va_end(ap);
+
+	string ret(buf);
+	delete[] buf;
+	return ret;
 }
 
 }}//end namespace

@@ -84,7 +84,7 @@ MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool 
 	labelInfo.init(330, 370);
 	labelInfo.setText("");
 
-	networkManager.init(nrClient);
+	networkManager.init(NR_CLIENT);
 	connected = false;
 	playerIndex = -1;
 

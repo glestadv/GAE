@@ -36,58 +36,60 @@ namespace Glest { namespace Game {
 //  class BattleEnd
 // =====================================================
 
-BattleEnd::BattleEnd(Program &program, const Stats &stats) : ProgramState(program), stats(stats) {
+BattleEnd::BattleEnd(GuiProgram &program)
+		: GuiProgramState(program) {
 }
 
 BattleEnd::~BattleEnd() {
-	SoundRenderer::getInstance().playMusic(CoreData::getInstance().getMenuMusic());
+	getSoundRenderer().playMusic(theCoreData.getMenuMusic());
 }
 
 void BattleEnd::update(){
-	if (Config::getInstance().getMiscAutoTest()) {
+	//TOOD: add AutoTest to config
+	/*
+	if(theConfig.getMiscAutoTest()){
 		AutoTest::getInstance().updateBattleEnd(program);
-	}
+	}*/
 }
 
 void BattleEnd::render() {
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = getRenderer();
 	TextRenderer2D *textRenderer = renderer.getTextRenderer();
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 
 	renderer.clearBuffers();
 	renderer.reset2d();
-	renderer.renderBackground(CoreData::getInstance().getBackgroundTexture());
+	renderer.renderBackground(getCoreData().getBackgroundTexture());
 
-	textRenderer->begin(CoreData::getInstance().getMenuFontBig());
+	textRenderer->begin(getCoreData().getMenuFontBig());
 
 	int lm = 80;
 	int bm = 100;
-	
-	const GameSettings &gs = stats.getGameSettings();
 
-	for (int i = 0; i < gs.getFactionCount(); ++i) {
+	foreach(const shared_ptr<GameSettings::Faction> &f, gs->getFactions()) {
+		int id = f->getId();
 
-		int textX = lm + 300 + i * 120;
-		int team = gs.getTeam(i) + 1;
-		int kills = stats.getKills(i);
-		int deaths = stats.getDeaths(i);
-		int unitsProduced = stats.getUnitsProduced(i);
-		int resourcesHarvested = stats.getResourcesHarvested(i);
+		int textX = lm + 300 + id * 120;
+		int team = f->getTeam().getId() + 1;
+		int kills = stats.getKills(id);
+		int deaths = stats.getDeaths(id);
+		int unitsProduced = stats.getUnitsProduced(id);
+		int resourcesHarvested = stats.getResourcesHarvested(id);
 
 		int score = kills * 100 + unitsProduced * 50 + resourcesHarvested / 10;
 		string controlString;
 
 		switch (gs.getFactionControl(i)) {
-		case ctCpu:
+		case CT_CPU:
 			controlString = lang.get("Cpu");
 			break;
-		case ctCpuUltra:
+		case CT_CPU_ULTRA:
 			controlString = lang.get("CpuUltra");
 			break;
-		case ctNetwork:
+		case CT_NETWORK:
 			controlString = lang.get("Network");
 			break;
-		case ctHuman:
+		case CT_HUMAN:
 			controlString = lang.get("Human");
 			break;
 		default:
@@ -126,11 +128,11 @@ void BattleEnd::render() {
 
 	textRenderer->end();
 
-	textRenderer->begin(CoreData::getInstance().getMenuFontVeryBig());
+	textRenderer->begin(getCoreData().getMenuFontVeryBig());
 
-	string header = gs.getDescription() + " - ";
+	string header = gs->getDescription() + " - ";
 
-	if (stats.getVictory(gs.getThisFactionIndex())) {
+	if (stats.getVictory(gs->getThisFactionId())) {
 		header += lang.get("Victory");
 	} else {
 		header += lang.get("Defeat");
@@ -144,12 +146,12 @@ void BattleEnd::render() {
 
 void BattleEnd::keyDown(const Key &key) {
 	if(!key.isModifier()) {
-		program.setState(new MainMenu(program));
+		getProgram().setState(new MainMenu(getProgram()));
 	}
 }
 
 void BattleEnd::mouseDownLeft(int x, int y) {
-	program.setState(new MainMenu(program));
+	getProgram().setState(new MainMenu(getProgram()));
 }
 
 }}//end namespace

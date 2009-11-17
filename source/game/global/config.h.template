@@ -35,8 +35,6 @@ private:
 
 CONFIG_VARIABLES
 
-	Config(const char* fileName);
-
 	static bool isWindows() {
 #if defined(WIN32) || defined(WIN64)
 		return true;
@@ -54,10 +52,14 @@ CONFIG_VARIABLES
 	}
 
 public:
+	Config(const char* fileName);
+
+#if 0
 	static Config &getInstance() {
 		static Config singleton("glestadv.ini");
 		return singleton;
 	}
+#endif
 
 	void save(const char *path = "glestadv.ini");
 

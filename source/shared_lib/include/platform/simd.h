@@ -15,41 +15,22 @@
 // Header file for explicit simd support
 
 #include <types.h>
+#include "gae_features.h"
+#include "lang_features.h"
 
-#if defined(USE_SSE2_INTRINSICS)
+#if USE_SSE2_INTRINSICS
 	// if we're using intrinsics, we have to align vectors
-#	define ALIGN_12BYTE_VECTORS
-#endif
-
-#if defined(ALIGN_12BYTE_VECTORS)
-#	define ALIGN_VECTORS
-#endif
-
-// stack alignment macros
-#if defined(__GNUC__)
-#	define ALIGN_ATTR(x) __attribute__((aligned(x)))
-#	define ALIGN_DECL(x)
-#elif defined(_MSC_VER) && (_MSC_VER >= 1300)
-#	define ALIGN_ATTR(x) 
-#	define ALIGN_DECL(x) __declspec(align(x))
-#	ifndef __inline__
-#		define __inline__ inline
-#	endif
-//#		define _mm_malloc(a, b) _aligned_malloc(a, b)
-//#		define _mm_free(a) _aligned_free(a)
-#else
-#	pragma message("Don't konw how to align data on stack.")
+#	define ALIGN_12BYTE_VECTORS=1
+#	define ALIGN_16BYTE_VECTORS=1
+#	warning Profiling data has shown this code to be slower than allowing GCC to perform its own \
+			optimizations.  If you find it to be faster on your system, please submit this \
+			information to the glest message board.
 #endif
 
 // simd headers and vector types
 #if (defined __i386__ || defined __x86_64__ || defined(_MSC_VER) )
-#	if defined(USE_SSE2_INTRINSICS) || defined(ALIGN_VECTORS)
+#	if USE_SSE2_INTRINSICS || ALIGN_12BYTE_VECTORS || ALIGN_16BYTE_VECTORS
 #		include <emmintrin.h>	// SSE2
-#		if defined(_MSC_VER) && (_MSC_VER >= 1300)
-			// I'm not certain that these are neccisary, will have to test it
-//#			define _mm_malloc(a, b) _aligned_malloc(a, b)
-//#			define _mm_free(a) _aligned_free(a)
-#		endif
 		typedef __m128 vFloat;
 #	else
 		typedef float vFloat;
@@ -60,27 +41,24 @@
 #else
 	// no simd support.
 	typedef float vFloat;
-	//typedef float vFloat __attribute__((__vector_size__(16)));
-#	define ALIGN_ATTR(x)
-#	define ALIGN_DECL(x)
 #endif
 
 
-#ifdef ALIGN_VECTORS
-#	define ALIGN_VEC_ATTR ALIGN_ATTR(16)
-#	define ALIGN_VEC_DECL ALIGN_DECL(16)
+#ifdef ALIGN_16BYTE_VECTORS
+#	define ALIGN_VEC16_DECL __aligned_pre(16)
+#	define ALIGN_VEC16_ATTR __aligned_post(16)
 #else
-#	define ALIGN_VEC_ATTR
-#	define ALIGN_VEC_DECL
+#	define ALIGN_VEC16_DECL
+#	define ALIGN_VEC16_ATTR
 #endif
 
 // Rather or not to align 12-byte vectors.
 #ifdef ALIGN_12BYTE_VECTORS
-#	define ALIGN_VEC12_ATTR ALIGN_ATTR(16)
-#	define ALIGN_VEC12_DECL ALIGN_DECL(16)
+#	define ALIGN_VEC12_DECL __aligned_pre(16)
+#	define ALIGN_VEC12_ATTR __aligned_post(16)
 #else
-#	define ALIGN_VEC12_ATTR
 #	define ALIGN_VEC12_DECL
+#	define ALIGN_VEC12_ATTR
 #endif
 
 //#define ALIGN16(len) ((len + 15) & ~15)

@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -26,11 +26,11 @@ namespace Shared{ namespace Graphics{
 ///	Creates, Intializes, Finalizes, and Deletes fonts
 // =====================================================
 
-class FontManager{
-protected:
-	typedef vector<Font*> FontContainer;
+class FontManager {
+private:
+	typedef vector<shared_ptr<Font> > FontContainer;
 
-protected:
+private:
 	FontContainer fonts;
 
 public:
@@ -39,7 +39,6 @@ public:
 	Font2D *newFont2D();
 	Font3D *newFont3D();
 
-	void init();
 	void end();
 };
 

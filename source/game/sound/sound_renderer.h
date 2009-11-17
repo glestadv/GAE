@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -23,6 +23,9 @@ using Shared::Sound::StrSound;
 using Shared::Sound::StaticSound;
 using Shared::Sound::SoundPlayer;
 using Shared::Graphics::Vec3f;
+using Shared::Platform::Window;
+
+class Config;
 
 // =====================================================
 // 	class SoundRenderer
@@ -30,33 +33,30 @@ using Shared::Graphics::Vec3f;
 ///	Wrapper to acces the shared library sound engine
 // =====================================================
 
-class SoundRenderer{
+class SoundRenderer {
 public:
-	static const int ambientFade;
-	static const float audibleDist;
-private:
-	SoundPlayer *soundPlayer;
+	static const int ambientFade = 6000;
+	static const float audibleDist = 50.f;
 
+private:
 	//volume
 	float fxVolume;
 	float musicVolume;
 	float ambientVolume;
 
-private:
-	SoundRenderer();
+	SoundPlayer *soundPlayer;
 
 public:
-	//misc
+	SoundRenderer(const Config &config, Window *window);
 	~SoundRenderer();
-	static SoundRenderer &getInstance();
-	void init(Window *window);
+
 	void update();
-	SoundPlayer *getSoundPlayer() const	{return soundPlayer;}
+	SoundPlayer &getSoundPlayer() const	{return *soundPlayer;}
 
 	//music
 	void playMusic(StrSound *strSound);
 	void stopMusic(StrSound *strSound);
-	
+
 	//fx
 	void playFx(StaticSound *staticSound, Vec3f soundPos, Vec3f camPos);
 	void playFx(StaticSound *staticSound);
@@ -65,12 +65,11 @@ public:
 	//void playAmbient(StaticSound *staticSound);
 	void playAmbient(StrSound *strSound);
 	void stopAmbient(StrSound *strSound);
-	
+
 	//misc
 	void stopAllSounds();
-	void loadConfig();
 };
 
-}}//end namespace
+}} // end namespace
 
 #endif

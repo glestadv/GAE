@@ -10,6 +10,7 @@
 // ==============================================================
 
 #include "pch.h"
+#if 0
 #include "sound_interface.h"
 
 #include "leak_dumper.h"
@@ -34,3 +35,4 @@ SoundPlayer *SoundInterface::newSoundPlayer(){
 }
 
 }}//end namespace
+#endif

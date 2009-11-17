@@ -116,6 +116,7 @@ private:
 	//External objects
 	Game &game;
 	const Input &input;
+	const Metrics &metrics;
 	const Commander *commander;
 	const World *world;
 	GameCamera *gameCamera;
@@ -152,7 +153,7 @@ private:
 	bool selectingMeetingPoint;
 	bool needSelectionUpdate;
 	int currentGroup;
-	
+
 	static Gui* currentGui;
 
 
@@ -161,11 +162,11 @@ public:
 	~Gui() {
 		currentGui = NULL;
 	}
-	
+
 	static Gui* getCurrentGui() {
 		return currentGui;
 	}
-	
+
 	void init();
 	void end();
 
@@ -243,7 +244,7 @@ public:
 		selection.update();
 		computeDisplay();
 	}
-	
+
 	/**
 	 * Hacky backstop function to make sure units are removed from all selection groups before they
 	 * are deleted.

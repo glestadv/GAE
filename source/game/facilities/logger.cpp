@@ -88,7 +88,7 @@ void Logger::addXmlError ( const string &path, const char *error )
 
 
 // ==================== PRIVATE ====================
-
+#if 0
 void Logger::renderLoadingScreen(){
 
 	Renderer &renderer= Renderer::getInstance();
@@ -120,11 +120,11 @@ void Logger::renderLoadingScreen(){
 	else
 	{
 		renderer.renderText(
-			current, coreData.getMenuFontNormal(), 1.0f, 
-			metrics.getVirtualW()/4, 
+			current, coreData.getMenuFontNormal(), 1.0f,
+			metrics.getVirtualW()/4,
 			62*metrics.getVirtualH()/100, false);
 	}
 	renderer.swapBuffers();
 }
-
+#endif
 }}//end namespace

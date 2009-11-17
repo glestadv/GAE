@@ -97,7 +97,12 @@ void SelectionQuad::disable(){
 Gui* Gui::currentGui = NULL;
 
 //constructor
-Gui::Gui(Game &game) : game(game), input(game.getInput()) {
+Gui::Gui(Game &game)
+		: game(game)
+		, input(game.getInput())
+		, metrics(get.getMetrics())
+		, display()
+{
 	posObjWorld= Vec2i(54, 14);
 	dragStartPos= Vec2i(0, 0);
 	computeSelection= false;

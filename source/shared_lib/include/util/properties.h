@@ -149,10 +149,10 @@ public:
 	void clear();
 	void load(const string &path, bool trim = true);
 	void save(const string &path);
-
-	int getPropertyCount()	{return propertyVector.size();}
-	string getKey(int i)	{return propertyVector[i].first;}
-	string getString(int i)	{return propertyVector[i].second;}
+/*
+	int getPropertyCount()		{return propertyVector.size();}
+	string getKey(int i)		{return propertyVector[i].first;}
+	string getString(int i)		{return propertyVector[i].second;}*/
 
 	const PropertyMap &getPropertyMap() const								{return propertyMap;}
 	bool getBool(const string &key) const									{return _getBool(key);}
@@ -167,6 +167,10 @@ public:
 	float getFloat(const string &key, float def, float min, float max) const{return _getFloat(key, &def, &min, &max);}
 	const string &getString(const string &key) const						{return _getString(key);}
 	const string &getString(const string &key, const string &def) const		{return _getString(key, &def);}
+	const string *getStringOrNull(const string &key) const {
+		PropertyMap::const_iterator i = propertyMap.find(key);
+		return i == propertyMap.end() ? NULL : &(i->second);
+	}
 
 	void setInt(const string &key, int value)		{setString(key, Conversion::toStr(value));}
 	void setBool(const string &key, bool value)		{setString(key, Conversion::toStr(value));}

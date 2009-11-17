@@ -46,6 +46,7 @@ public:
     static const int infoStringY = imageSize * 4;
 
 private:
+	const Metrics &metrics;
 	string title;
 	string text;
 	string infoText;
@@ -108,7 +109,7 @@ public:
 	}
 
 	int computeUpY(int index) const {
-		return Metrics::getInstance().getDisplayH() - (index / cellSideCount) * imageSize - imageSize;
+		return metrics.getDisplayH() - (index / cellSideCount) * imageSize - imageSize;
 	}
 };
 

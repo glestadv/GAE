@@ -71,6 +71,6 @@ for f in data docs gae maps techs tilesets; do
 	ln -sf ../../data/game/$f .;
 done
 
-for f in configurator g3d_viewer game map_editor shared_lib test; do
+for f in configurator g3d_viewer game map_editor shared_lib features.h test; do
 	ln -sf ../../source/$f .;
 done

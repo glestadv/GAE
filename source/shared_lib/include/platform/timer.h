@@ -14,33 +14,37 @@
 #ifndef _SHARED_PLATFORM_TIMER_H_
 #define _SHARED_PLATFORM_TIMER_H_
 
-// Prefer posix, then SDL then native windows call
-#ifdef HAVE_SYS_TIME_H
+// Prefer posix, native windows call (which could have uS precision) and finally SDL, which lacks
+// microsecond precision
+#if defined(HAVE_SYS_TIME_H)
 	// use gettimeofday with microsecond precision, although the actual resolution may be anywhere
 	// from one microsecond to 100 milliseconds.
 #	define	_CHRONO_USE_POSIX
 #	include <sys/time.h>
-#else
-#ifdef USE_SDL
+#elif defined(WIN32) || defined(WIN64)
+	// use QueryPerformanceCounter with variable precision
+	inline struct tm* localtime_r (const time_t *clock, struct tm *result) {
+	if (!clock || !result) return NULL;
+	memcpy(result,localtime(clock),sizeof(*result));
+	return result;
+}
+#	define	_CHRONO_USE_WIN
+#	include <winbase.h>
+#elif defined(USE_SDL)
 	// use SDL_GetTicks() with millisecond precision.
 #	define	_CHRONO_USE_SDL
 #	include <SDL.h>
 #else
-#if defined(WIN32) || defined(WIN64)
-	// use QueryPerformanceCounter with variable precision
-#	define	_CHRONO_USE_WIN
-#	include <winbase.h>
-#else
 #	error No usable timer
-#endif
-#endif
 #endif
 
 #include <cassert>
+#include <string>
 
-#include "types.h"
+#include "patterns.h"
 
 using Shared::Platform::int64;
+using namespace std;
 
 namespace Shared { namespace Platform {
 
@@ -48,6 +52,13 @@ namespace Shared { namespace Platform {
 //	class Chrono
 // =====================================================
 
+/**
+ * Core class encapsulating low-level timing functionality.  The "current time" is gauranteed only
+ * to be current within the process, it isn't gauranteed to match the system time since the goal
+ * of this class is to provide the most accurate timing mechanism possible given the available
+ * libraries, first trying Posix gettimeofday(), then Windows QueryPerformanceCounter() and finally
+ * SDL's SDL_GetTicks() if none of the others are found.
+ */
 class Chrono {
 private:
 	int64 startTime;
@@ -83,31 +94,25 @@ public:
 	int64 getMicros() const				{return queryCounter(1000000);}
 	int64 getMillis() const				{return queryCounter(1000);}
 	int64 getSeconds() const			{return queryCounter(1);}
+	float getFloatSeconds() const		{return static_cast<float>(queryCounter(1000000)) / 1000000.f;}
+	double getDoubleSeconds() const		{return static_cast<double>(queryCounter(1000000)) / 1000000.;}
 	static const int64 &getResolution()	{return freq;}
+	static string getTimestamp(const int64 t = getCurMicros());
 
-#ifdef _CHRONO_USE_POSIX
+#if defined(_CHRONO_USE_POSIX)
 
 	static int64 getCurMicros()			{return getCurTicks();}
 	static int64 getCurMillis()			{return getCurTicks() / 1000;}
 	static int64 getCurSeconds()		{return getCurTicks() / 1000000;}
 	static void getCurTicks(int64 &dest){dest = getCurTicks();}
+//	static int64 getCurMicros()			{return getCurTicks();}
 	static int64 getCurTicks() {
 		struct timeval now;
 		gettimeofday(&now, &tz);
 		return 1000000LL * now.tv_sec + now.tv_usec;
 	}
 
-#endif
-#ifdef _CHRONO_USE_SDL
-
-	static int64 getCurMicros()			{return SDL_GetTicks() * 1000;}
-	static int64 getCurMillis()			{return SDL_GetTicks();}
-	static int64 getCurSeconds()		{return SDL_GetTicks() / 1000;}
-	static void getCurTicks(int64 &dest){dest = getCurTicks();}
-	static int64 getCurTicks()			{return SDL_GetTicks();}
-
-#endif
-#ifdef _CHRONO_USE_WIN
+#elif defined(_CHRONO_USE_WIN)
 
 	static int64 getCurMicros()			{return getCurTicks() * 1000000 / freq;}
 	static int64 getCurMillis()			{return getCurTicks() * 1000 / freq;}
@@ -119,6 +124,14 @@ public:
 		return now;
 	}
 
+#elif defined(_CHRONO_USE_SDL)
+
+	static int64 getCurMicros()			{return SDL_GetTicks() * 1000;}
+	static int64 getCurMillis()			{return SDL_GetTicks();}
+	static int64 getCurSeconds()		{return SDL_GetTicks() / 1000;}
+	static void getCurTicks(int64 &dest){dest = getCurTicks();}
+	static int64 getCurTicks()			{return SDL_GetTicks();}
+
 #endif
 
 private:
@@ -128,35 +141,57 @@ private:
 	}
 };
 
-
-
 // =====================================================
-//	class PerformanceTimer
+//	class FixedIntervalTimer
 // =====================================================
 
-class PerformanceTimer {
+/**
+ * A timer object using a fixed interval supporting maximum continuious execution and backlog
+ * control.
+ */
+class FixedIntervalTimer : public Scheduleable {
 private:
-	int64 lastTicks;
-	int64 updateTicks;
-
-	int times;			// number of consecutive times
-	int maxTimes;		// maximum number consecutive times
-	int maxBacklog;		// maxiumum backlog to allow after maxTimes is reached
+	float fps;							/**< executions (or "frames") per second */
+	int64 interval;						/**< Same as fps, expressed in microseconds */
+	size_t consecutiveExecutions;		/**< The current number of consecutive executions that have occured */
+	size_t maxConsecutiveExecutions;	/**< The maximum number consecutive executions allowed or zero if no restriction */
+	bool restrictBacklogProcessing;		/**< If true, and execution occurs at a time when more than one execution should have already occured, maxBacklog will be used to determine how many executions should be made to catch up.  If false, excess time is discarded. */
+	size_t maxBacklog;					/**< If restrictBacklogProcessing is true, the number of backlogged executions to execute before discarding the lost time.  If restrictBacklogProcessing is false, this field is ignored. */
 
 public:
-	PerformanceTimer(float fps, int maxTimes = -1, int maxBacklog = -1);
+	FixedIntervalTimer(float fps, size_t maxConsecutiveExecutions = 0,
+			bool restrictBacklogProcessing = false, size_t maxBacklog = 0,
+   			int64 curTime = Chrono::getCurMicros());
 
-	/** Returns the amount of time to wait in milliseconds before the timer is due. */
-	uint32 timeToWait() {
-		int64 elapsed = Chrono::getCurTicks() - lastTicks;
-		return elapsed >= updateTicks ? 0 : (updateTicks - elapsed) * 1000 / Chrono::getResolution();
+	float getFps() const						{return fps;}
+	int64 getInterval() const					{return interval;}
+
+	void setMaxConsecutiveExecutions(size_t v)	{maxConsecutiveExecutions = v;}
+	void setBacklogRestrictions(bool restrictBacklogProcessing, size_t maxBacklog) {
+		this->restrictBacklogProcessing = restrictBacklogProcessing;
+		this->maxBacklog = maxBacklog;
+	}
+	void setFps(float v);
+	void execute();
+	void reset() {
+		int64 curTime = Chrono::getCurMicros();
+		setLastExecution(curTime - interval);
+		setNextExecution(curTime);
 	}
 
-	bool isTime();
-	void reset() 						{Chrono::getCurTicks(lastTicks);}
-	void setFps(float fps)				{updateTicks = (int64)((float)Chrono::getResolution() / fps);}
-	void setMaxTimes(int maxTimes)		{this->maxTimes = maxTimes;}
-	void setMaxBacklog(int maxBacklog)	{this->maxBacklog = maxBacklog;}
+	bool isTime() {
+		// allow inlining for simple part which will probably be executed most often and a function
+		// call for the more complex portion that will be called less often.
+		int64 curTime = Chrono::getCurMicros();
+		if(curTime >= getNextExecution()) {
+			return _isTime(curTime);
+		}
+		consecutiveExecutions = 0;
+		return false;
+	}
+
+private:
+	bool _isTime(const int64 &curTime);
 };
 
 }}//end namespace

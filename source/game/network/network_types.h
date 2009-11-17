@@ -33,12 +33,12 @@ public:
 	NetworkException(const string &msg) : runtime_error(msg) {}
 	NetworkException(const char *msg) : runtime_error(msg) {}
 };
-	
+
 // =====================================================
 //	class NetworkString
 // =====================================================
 
-template<int S> class NetworkString : public NetworkWriteable {
+template<int S> class NetworkString : public NetSerializable {
 private:
 	uint16 size;	//size excluding null terminator, max of S - 1
 	char buffer[S];
