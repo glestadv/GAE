@@ -41,7 +41,6 @@ class GameSettings;
 class Game;
 class UnitType;
 
-
 // =====================================================
 //	class ScriptTimer
 // =====================================================
@@ -49,11 +48,7 @@ class UnitType;
 class ScriptTimer {
 public:
 	ScriptTimer ( const string &name, bool real, int interval, bool periodic) 
-			: name (name)
-			, real (real)
-			, periodic  (periodic)
-			, interval (interval)
-			, active (true) {
+			: name (name), real (real), periodic  (periodic), interval (interval), active (true) {
 		reset();
 	}
 
@@ -117,7 +112,7 @@ struct CompoundRegion : public Region {
 	virtual bool isInside(const Vec2i &pos) const {
 		for ( vector<Region*>::const_iterator it = regions.begin(); it != regions.end(); ++it ) {
 			if ( (*it)->isInside(pos) ) {
-				return false;
+				return true;
 			}
 		}
 		return false;
@@ -129,61 +124,36 @@ struct CompoundRegion : public Region {
 // =====================================================
 
 class LocationEventManager {
+	typedef map<string,Region*> Regions;
+	typedef map<string,string> Events;
+	typedef multimap<int, string> Triggers;
+
 	// named regions
-	map<string,Region*> regions;
+	Regions regions;
 	
 	// named events, maps to region
-	map<string,string>  events;
+	Events  events;
 
 	// maps to event name
-	multimap<int, string> unitIdTriggers;
-	multimap<int, string> factionIndexTriggers;
-	multimap<int, string> teamIndexTriggers;
+	Triggers unitIdTriggers;
+	Triggers factionIndexTriggers;
+	Triggers teamIndexTriggers;
 	//map<int, multimap<const UnitType*, string>> factionUnitTypeTriggers;
 
 public:
 	LocationEventManager() { reset(); }
 
-	void reset() {
-		regions.clear();
-		events.clear();
-		unitIdTriggers.clear();
-		factionIndexTriggers.clear();
-		teamIndexTriggers.clear();
-		//factionUnitTypeTriggers.clear();
-	}
-
-	bool registerRegion(const string &name, const Rect &rect) {
-		if ( regions.find(name) != regions.end() ) {
-			return false;
-		}
-		Region *region = new Rect(rect);
-		regions[name] = region;
-		return true;
-	}
-
-	bool registerEvent(const string &name, const string &region) {
-		if ( events.find(name) != events.end() || regions.find(region) == regions.end() ) {
-			return false;
-		}
-		events[name] = region;
-		return true;
-	}
+	void reset();
+	bool registerRegion(const string &name, const Rect &rect);
+	int registerEvent(const string &name, const string &region);
 
 	// must be called any time a unit is 'put' in cells (created, moved, 
 	void unitMoved(const Unit *unit);
 	void unitDied(const Unit *unit);
 	
-	void addUnitIdTrigger(int unitId, const string &eventName) {
-		theLogger.add("adding unit="+intToStr(unitId)+ ", event=" + eventName + " trigger");
-		unitIdTriggers.insert(pair<int,string>(unitId,eventName));
-	}
-	void addFactionTrigger(int ndx, const string &eventName ) {
-		factionIndexTriggers.insert(pair<int,string>(ndx, eventName));
-	}
-	void addTeamTrigger(int ndx, const string &eventName ) {
-		teamIndexTriggers.insert(pair<int,string>(ndx,eventName));
-	}
+	int addUnitIdTrigger(int unitId, const string &eventName);
+	int addFactionTrigger(int ndx, const string &eventName);
+	int addTeamTrigger(int ndx, const string &eventName);
 };
 
 

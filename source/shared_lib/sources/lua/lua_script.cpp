@@ -197,11 +197,11 @@ Vec2i LuaArguments::getVec2i(int argumentIndex) const{
 Vec4i LuaArguments::getVec4i( int ndx ) const {
 	Vec4i v;
 	if ( ! lua_istable(luaState, ndx) ) {
-		string emsg = "Argument " + intToStr(-ndx) + " expected Table, got " + getType(ndx) + ".\n";
+		string emsg = "Argument " + intToStr(ndx) + " expected Table, got " + getType(ndx) + ".\n";
 		throw LuaError ( emsg );
 	}
 	if ( luaL_getn(luaState, ndx) != 4 ) {
-		string emsg = "Argument " + intToStr(-ndx) + " expected Table with four elements, got Table with " 
+		string emsg = "Argument " + intToStr(ndx) + " expected Table with four elements, got Table with " 
 			+ intToStr(luaL_getn(luaState, ndx)) + " elements.\n";
 		throw LuaError(emsg);
 	}

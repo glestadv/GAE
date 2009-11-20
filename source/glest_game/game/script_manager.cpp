@@ -27,6 +27,14 @@ using namespace Shared::Lua;
 
 namespace Glest{ namespace Game{
 
+//TODO move these somewhere sensible [after branch is re-intergrated]
+ostream& operator<<(ostream &lhs, Vec2i &rhs) {
+	return lhs << "(" << rhs.x << ", " << rhs.y << ")";
+}
+ostream& operator<<(ostream &lhs, Vec4i &rhs) {
+	return lhs << "(" << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << ")";
+}
+
 // =====================================================
 //	class ScriptTimer
 // =====================================================
@@ -50,17 +58,44 @@ void ScriptTimer::reset() {
 //	class LocationEventManager
 // =====================================================
 
+void LocationEventManager::reset() {
+	regions.clear();
+	events.clear();
+	unitIdTriggers.clear();
+	factionIndexTriggers.clear();
+	teamIndexTriggers.clear();
+	//factionUnitTypeTriggers.clear();
+}
+
+bool LocationEventManager::registerRegion(const string &name, const Rect &rect) {
+	if ( regions.find(name) != regions.end() ) {
+		return false;
+	}
+	Region *region = new Rect(rect);
+	regions[name] = region;
+	return true;
+}
+
+int LocationEventManager::registerEvent(const string &name, const string &region) {
+	if ( events.find(name) != events.end() ) {
+		return -1;
+	}
+	if ( regions.find(region) == regions.end() ) {
+		return -2;
+	}
+	events[name] = region;
+	return 0;
+}
+
+
+
 void LocationEventManager::unitMoved(const Unit *unit) {
-	multimap<int,string>::iterator it;
-	
+	Triggers::iterator it;
 	// check id
 	it = unitIdTriggers.lower_bound(unit->getId());
 	while ( it != unitIdTriggers.upper_bound(unit->getId()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
-			theLogger.add("firing unit="+intToStr(it->first)+ ", event=" + it->second + " trigger.");
 			ScriptManager::onTrigger(it->second, unit->getId());
-			// remove trigger ??
-			theLogger.add("removing unit="+intToStr(it->first)+ ", event=" + it->second + " trigger, expired.");
 			it = unitIdTriggers.erase(it);
 		} else {
 			++it;
@@ -71,7 +106,6 @@ void LocationEventManager::unitMoved(const Unit *unit) {
 	while ( it != factionIndexTriggers.upper_bound(unit->getFactionIndex()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
 			ScriptManager::onTrigger(it->second, unit->getId());
-			// remove ?
 			it = factionIndexTriggers.erase(it);
 		} else {
 			++it;
@@ -82,7 +116,6 @@ void LocationEventManager::unitMoved(const Unit *unit) {
 	while ( it != teamIndexTriggers.upper_bound(unit->getTeam()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
 			ScriptManager::onTrigger(it->second, unit->getId());
-			// remove ?
 			it = teamIndexTriggers.erase(it);
 		} else {
 			++it;
@@ -93,16 +126,52 @@ void LocationEventManager::unitMoved(const Unit *unit) {
 
 void LocationEventManager::unitDied(const Unit *unit) {
 	int id = unit->getId();
-	multimap<int, string>::iterator it;
-	it = unitIdTriggers.begin();
+	Triggers::iterator it = unitIdTriggers.begin();
 	while ( it != unitIdTriggers.end() ) {
 		if ( id == it->first ) {
-			theLogger.add("removing unit="+intToStr(it->first)+ ", event=" + it->second + " trigger, unit died.");
 			it = unitIdTriggers.erase(it);
 		} else {
 			++it;
 		}
 	}
+}
+
+/** @return 0 if ok, -1 if bad unit id, -2 if event not found  */
+int LocationEventManager::addUnitIdTrigger(int unitId, const string &eventName) {
+	//theLogger.add("adding unit="+intToStr(unitId)+ ", event=" + eventName + " trigger");
+	Unit *unit = theWorld.findUnitById(unitId);
+	if ( !unit ) {
+		return -1;
+	}
+	if ( events.find(eventName) == events.end() ) {
+		return -2;
+	}
+	unitIdTriggers.insert(pair<int,string>(unitId,eventName));
+	return 0;
+}
+
+/** @return 0 if ok, -1 if bad index, -2 if event not found  */
+int LocationEventManager::addFactionTrigger(int ndx, const string &eventName ) {
+	if ( ndx < 0 || ndx >= theWorld.getFactionCount() ) {
+		return -1;
+	}
+	if ( events.find(eventName) == events.end() ) {
+		return -2;
+	}
+	factionIndexTriggers.insert(pair<int,string>(ndx, eventName));
+	return 0;
+}
+
+/** @return 0 if ok, -1 if bad index, -2 if event not found  */
+int LocationEventManager::addTeamTrigger(int ndx, const string &eventName ) {
+	if ( ndx < 0 || ndx >= GameConstants::maxPlayers ) {
+		return -1;
+	}
+	if ( events.find(eventName) == events.end() ) {
+		return -2;
+	}
+	teamIndexTriggers.insert(pair<int,string>(ndx,eventName));
+	return 0;
 }
 
 LocationEventManager ScriptManager::locationEventManager;
@@ -233,6 +302,7 @@ void ScriptManager::addErrorMessage(const char *txt) {
 	theGame.pause ();
 	ScriptManagerMessage msg( txt ? txt : luaScript.getLastError(), "Error");
 	messageQueue.push(msg);
+	theLogger.getErrorLog().add(msg.getText());
 	if ( !messageBox.getEnabled() ) {
 		messageBox.setEnabled ( true );
 		messageBox.setText ( wrapString(messageQueue.front().getText(), messageWrapCount) );
@@ -370,7 +440,7 @@ string ScriptManager::wrapString(const string &str, int wrapCount){
 bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const char *arg_desc, ...) {
 	if ( !*arg_desc ) {
 		if ( luaArgs.getArgumentCount() ) {
-			addErrorMessage("Error: " + string(caller) + "() expected 0 arguments, got " 
+			addErrorMessage(string(caller) + "(): expected 0 arguments, got " 
 					+ intToStr(luaArgs.getArgumentCount()) );
 			return false;
 		} else {
@@ -383,9 +453,8 @@ bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const
 		if ( *ptr++ == ',' ) expected++;
 	}
 	if ( expected != luaArgs.getArgumentCount() ) {
-		addErrorMessage("Error: " + string(caller) + "() expected " + intToStr(expected) 
+		addErrorMessage(string(caller) + "(): expected " + intToStr(expected) 
 			+ " arguments, got " + intToStr(luaArgs.getArgumentCount()));
-
 		return false;
 	}
 	va_list vArgs;
@@ -449,7 +518,7 @@ int ScriptManager::setTimer(LuaHandle* luaHandle) {
 		} else if ( type == "game" ) {
 			newTimerQueue.push_back(ScriptTimer(name, false, period, repeat));
 		} else {
-			addErrorMessage("Error: setTimer() called with illegal second parameter '" + type + "'");
+			addErrorMessage("setTimer(): invalid type '" + type + "'");
 		}
 	}
 	return args.getReturnCount(); // == 0
@@ -461,15 +530,15 @@ int ScriptManager::stopTimer(LuaHandle* luaHandle){
 	if ( extractArgs(args, "stopTimer", "str", &name) ) {
 		vector<ScriptTimer>::iterator i;
 		bool killed = false;
-		for (i = timers.begin(); i != timers.end(); ++i) {
-			if (i->getName() == name) {
+		for ( i = timers.begin(); i != timers.end(); ++i ) {
+			if ( i->getName() == name ) {
 				i->kill ();
 				killed = true;
 				break;
 			}
 		}
 		if ( !killed ) {
-			addErrorMessage("Warning: stopTimer() called with param " + name + ", timer not found.");
+			addErrorMessage("stopTimer(): timer '" + name + "' not found.");
 		}
 	} 
 	return args.getReturnCount();
@@ -480,7 +549,12 @@ int ScriptManager::registerRegion(LuaHandle* luaHandle) {
 	string name;
 	Vec4i rect;
 	if ( extractArgs(args, "registerRegion", "str,v4i", &name, &rect) ) {
-		locationEventManager.registerRegion(name, rect);
+		if ( !locationEventManager.registerRegion(name, rect) ) {
+			stringstream ss;
+			ss << "registerRegion(): with name='" << name << "' at " << rect
+				<< "failed, a region with that name is already registered.";
+			addErrorMessage(ss.str()); 
+		}
 	}
 	return args.getReturnCount();
 }
@@ -499,24 +573,35 @@ int ScriptManager::registerEvent(LuaHandle* luaHandle) {
 				string val = condition.substr(ePos+1);
 				if ( key == "hp_below" ) { // nop
 				} else if ( key == "region" ) { // look, this one does something!
-					locationEventManager.registerEvent(name,val);
+					int res = locationEventManager.registerEvent(name,val);
+					if ( res == -1 ) {
+						addErrorMessage("registerEvent(): event '" + name + "' already exists");
+					} else if ( res == -2 ) {
+						addErrorMessage("registerEvent(): unkown region  '" + val + "'");
+					}
 					did_something = true;
 				}
 			}
 		}
 		if ( !did_something ) {
-			addErrorMessage("registerEvent() with bad condition = '" + condition + "'");
+			addErrorMessage("registerEvent(): invalid condition = '" + condition + "'");
 		}
 	}
 	return args.getReturnCount();
 }
+/** @return 0 if ok, -1 if bad unit id, -2 if event not found  */
 
 int ScriptManager::setUnitTrigger(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int id;
 	string name;
 	if ( extractArgs(args, "setUnitTrigger", "int,str", &id, &name) ) {
-		locationEventManager.addUnitIdTrigger(id, name);
+		int res = locationEventManager.addUnitIdTrigger(id, name);
+		if ( res == -1 ) {
+			addErrorMessage("setUnitTrigger(): invalid unitId " + id);
+		} else if ( res == -2 ) {
+			addErrorMessage("setUnitTrigger(): event '" + name + "' not found");
+		}
 	}
 	return args.getReturnCount();
 }
@@ -526,7 +611,12 @@ int ScriptManager::setFactionTrigger(LuaHandle* luaHandle) {
 	int fNdx;
 	string name;
 	if ( extractArgs(args, "setFactionTrigger", "int,str", &fNdx, &name) ) {
-		locationEventManager.addFactionTrigger(fNdx, name);
+		int res = locationEventManager.addFactionTrigger(fNdx, name);
+		if ( res == -1 ) {
+			addErrorMessage("setFactionTrigger(): invalid faction index " + fNdx);
+		} else if ( res == -2 ) {
+			addErrorMessage("setFactionTrigger(): event '" + name + "' not found");
+		}
 	}
 	return args.getReturnCount();
 }
@@ -536,7 +626,12 @@ int ScriptManager::setTeamTrigger(LuaHandle* luaHandle) {
 	int tNdx;
 	string name;
 	if ( extractArgs(args, "setTeamTrigger", "int,str", &tNdx, &name) ) {
-		locationEventManager.addTeamTrigger(tNdx, name);
+		int res = locationEventManager.addTeamTrigger(tNdx, name);
+		if ( res == -1 ) {
+			addErrorMessage("setTeamTrigger(): invalid team index " + tNdx);
+		} else if ( res == -2 ) {
+			addErrorMessage("setTeamTrigger(): event '" + name + "' not found");
+		}
 	}
 	return args.getReturnCount();
 }
@@ -588,7 +683,18 @@ int ScriptManager::createUnit(LuaHandle* luaHandle){
 	int fNdx;
 	Vec2i pos;
 	if ( extractArgs(args, "createUnit", "str,int,v2i", &type, &fNdx, &pos) ) {
-		theWorld.createUnit(type, fNdx, pos);
+		int id = theWorld.createUnit(type, fNdx, pos);
+		if ( id < 0 ) {
+			stringstream ss;
+			switch (id) {
+				case -1: ss << "createUnit(): invalid faction index " << fNdx; break;
+				case -2: ss << "createUnit(): invalid unit type '" << type << "' for faction " << fNdx; break;
+				case -3: ss << "createUnit(): unit could not be placed near " << pos; break;
+				case -4: ss << "createUnit(): invalid positon " << pos; break;
+				default: throw runtime_error("In ScriptManager::createUnit(), World::createUnit() returned unkown error code");
+			}
+			addErrorMessage(ss.str());
+		}
 	}
 	return args.getReturnCount(); // == 0  Why not return ID ?
 }
@@ -598,7 +704,12 @@ int ScriptManager::giveResource(LuaHandle* luaHandle){
 	string resource;
 	int fNdx, amount;
 	if ( extractArgs(args, "giveResource", "str,int,int", &resource, &fNdx, &amount) ) {
-		theWorld.giveResource(resource, fNdx, amount);
+		int err = theWorld.giveResource(resource, fNdx, amount);
+		if ( err == -1 ) {
+			addErrorMessage("giveResource(): invalid faction index " + intToStr(fNdx));
+		} else if ( err == -2 ) {
+			addErrorMessage("giveResource(): invalid resource '" + resource + "'");			
+		}
 	}
 	return args.getReturnCount();
 }
@@ -609,8 +720,17 @@ int ScriptManager::givePositionCommand(LuaHandle* luaHandle){
 	string cmd;
 	Vec2i pos;
 	if ( extractArgs(args, "givePositionCommand", "int,str,v2i", &id, &cmd, &pos) ) {
-		theWorld.givePositionCommand(id, cmd, pos);
-	}
+		int res = theWorld.givePositionCommand(id, cmd, pos);
+		if ( res < 0 ) {
+			stringstream ss;
+			switch ( res ) {
+				case -1: ss << "givePositionCommand(): invalid unit id " << id; break;
+				case -2: ss << "givePositionCommand(): unit " << id << " has no '" << cmd << "' command"; break;
+				case -3: ss << "givePositionCommand(): invalid command '" << cmd; break;
+				default: throw runtime_error("In ScriptManager::givePositionCommand, World::givePositionCommand() returned unknown error code.");
+			}
+			addErrorMessage(ss.str());
+		}	}
 	return args.getReturnCount();
 }
 
@@ -619,7 +739,17 @@ int ScriptManager::giveTargetCommand ( LuaHandle * luaHandle ) {
 	int id, id2;
 	string cmd;
 	if ( extractArgs(args, "giveTargetCommand", "int,str,int", &id, &cmd, &id2) ) {
-		theWorld.giveTargetCommand(id, cmd, id2);
+		int res = theWorld.giveTargetCommand(id, cmd, id2);
+		if ( res < 0 ) {
+			stringstream ss;
+			switch ( res ) {
+				case -1: ss << "giveTargetCommand(): invalid unit id " << id; break;
+				case -2: ss << "giveTargetCommand(): unit " << id << " can not attack unit " << id2 << " no appropriate attack command found"; break;
+				case -3: ss << "giveTargetCommand(): invalid command '" << cmd; break;
+				default: throw runtime_error("In ScriptManager::giveTargetCommand, World::giveTargetCommand() returned unknown error code.");
+			}
+			addErrorMessage(ss.str());
+		}	
 	}
 	return args.getReturnCount();
 }
@@ -629,7 +759,17 @@ int ScriptManager::giveStopCommand ( LuaHandle * luaHandle ) {
 	int id;
 	string cmd;
 	if ( extractArgs(args, "giveStopCommand", "int,str", &id, &cmd) ) {
-		theWorld.giveStopCommand(id, cmd);
+		int res = theWorld.giveStopCommand(id, cmd);
+		if ( res < 0 ) {
+			stringstream ss;
+			switch ( res ) {
+				case -1: ss << "giveStopCommand(): invalid unit id " << id; break;
+				case -2: ss << "giveStopCommand(): unit " << id << " has no '" << cmd << "' command"; break;
+				case -3: ss << "giveStopCommand(): invalid command '" << cmd; break;
+				default: throw runtime_error("In ScriptManager::giveStopCommand, World::giveStopCommand() returned unknown error code.");
+			}
+			addErrorMessage(ss.str());
+		}
 	}
 	return args.getReturnCount();	
 }
@@ -637,9 +777,19 @@ int ScriptManager::giveStopCommand ( LuaHandle * luaHandle ) {
 int ScriptManager::giveProductionCommand(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int id;
-	string cmd;
-	if ( extractArgs(args, "giveProductionCommand", "int,str", &id, &cmd) ) {
-		theWorld.giveProductionCommand(id, cmd);
+	string prod;
+	if ( extractArgs(args, "giveProductionCommand", "int,str", &id, &prod) ) {
+		int res = theWorld.giveProductionCommand(id, prod);
+		if ( res < 0 ) {
+			stringstream ss;
+			switch ( res ) {
+				case -1: ss << "giveProductionCommand(): invalid unit id " << id; break;
+				case -2: ss << "giveProductionCommand(): unit " << id << " can not produce unit '" << prod << "'"; break;
+				case -3: ss << "giveProductionCommand(): unit '" << prod << " not found."; break;
+				default: throw runtime_error("In ScriptManager::giveProductionCommand, World::giveProductionCommand() returned unknown error code.");
+			}
+			addErrorMessage(ss.str());
+		}
 	}
 	return args.getReturnCount();
 }
@@ -647,9 +797,19 @@ int ScriptManager::giveProductionCommand(LuaHandle* luaHandle) {
 int ScriptManager::giveUpgradeCommand(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int id;
-	string cmd;
-	if ( extractArgs(args, "giveUpgradeCommand", "int,str", &id, &cmd) ) {
-		theWorld.giveUpgradeCommand(id, cmd);
+	string prod;
+	if ( extractArgs(args, "giveUpgradeCommand", "int,str", &id, &prod) ) {
+		int res = theWorld.giveUpgradeCommand(id, prod);
+		if ( res < 0 ) {
+			stringstream ss;
+			switch ( res ) {
+				case -1: ss << "giveUpgradeCommand(): invalid unit id " << id; break;
+				case -2: ss << "giveUpgradeCommand(): unit " << id << " can not produce upgrade '" << prod << "'"; break;
+				case -3: ss << "giveUpgradeCommand(): upgrade '" << prod << " not found."; break;
+				default: throw runtime_error("In ScriptManager::giveUpgradeCommand, World::giveUpgradeCommand() returned unknown error code.");
+			}
+			addErrorMessage(ss.str());
+		}
 	}
 	return args.getReturnCount();
 }
@@ -658,8 +818,10 @@ int ScriptManager::disableAi(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int fNdx;
 	if ( extractArgs(args, "disableAi", "int", &fNdx) ) {
-		if ( fNdx < GameConstants::maxPlayers ) {
+		if ( fNdx >= 0 && fNdx < theGameSettings.getFactionCount() ) {
 			playerModifiers[fNdx].disableAi();
+		} else {
+			addErrorMessage("disableAi(): invalid faction index " + intToStr(fNdx));
 		}
 	}
 	return args.getReturnCount();
@@ -669,8 +831,10 @@ int ScriptManager::setPlayerAsWinner(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int fNdx;
 	if ( extractArgs(args, "setPlayerAsWinner", "int", &fNdx) ) {
-		if ( fNdx < GameConstants::maxPlayers ) {
+		if ( fNdx >= 0 && fNdx < theGameSettings.getFactionCount() ) {
 			playerModifiers[fNdx].setAsWinner();
+		} else {
+			addErrorMessage("setPlayerAsWinner(): invalid faction index " + intToStr(fNdx));
 		}
 	}
 	return args.getReturnCount();
@@ -686,9 +850,13 @@ int ScriptManager::endGame(LuaHandle* luaHandle) {
 int ScriptManager::getPlayerName(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int fNdx;
-	if ( extractArgs(args, "getPlayerName", "int", &fNdx) ) {
-		string playerName= theGameSettings.getPlayerName(fNdx);
-		args.returnString(playerName);
+	if ( extractArgs(args, "playerName", "int", &fNdx) ) {
+		if ( fNdx >= 0 && fNdx < theGameSettings.getFactionCount() ) {
+			string playerName= theGameSettings.getPlayerName(fNdx);
+			args.returnString(playerName);
+		} else {
+			addErrorMessage("playerName(): invalid faction index " + intToStr(fNdx));
+		}
 	}
 	return args.getReturnCount();
 }
@@ -696,9 +864,13 @@ int ScriptManager::getPlayerName(LuaHandle* luaHandle) {
 int ScriptManager::getFactionTypeName(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int fNdx;
-	if ( extractArgs(args, "getFactionTypeName", "int", &fNdx) ) {
-		string factionTypeName= theGameSettings.getFactionTypeName(fNdx);
-		args.returnString(factionTypeName);
+	if ( extractArgs(args, "factionTypeName", "int", &fNdx) ) {
+		if ( fNdx >= 0 && fNdx < theGameSettings.getFactionCount() ) {
+			string factionTypeName = theGameSettings.getFactionTypeName(fNdx);
+			args.returnString(factionTypeName);
+		} else {
+			addErrorMessage("factionTypeName(): invalid faction index " + intToStr(fNdx));
+		}
 	}
 	return args.getReturnCount();
 }
@@ -712,8 +884,11 @@ int ScriptManager::getScenarioDir(LuaHandle* luaHandle) {
 int ScriptManager::getStartLocation(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int fNdx;
-	if ( extractArgs(args, "getStartLocation", "int", &fNdx) ) {
+	if ( extractArgs(args, "startLocation", "int", &fNdx) ) {
 		Vec2i pos= theWorld.getStartLocation(fNdx);
+		if ( pos == Vec2i(-1) ) {
+			addErrorMessage("startLocation(): invalid faction index " + intToStr(fNdx));
+		}
 		args.returnVec2i(pos);
 	}
 	return args.getReturnCount();
@@ -722,8 +897,11 @@ int ScriptManager::getStartLocation(LuaHandle* luaHandle) {
 int ScriptManager::getUnitPosition(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
 	int id;
-	if ( extractArgs(args, "getUnitPosition", "int", &id) ) {
+	if ( extractArgs(args, "unitPosition", "int", &id) ) {
 		Vec2i pos= theWorld.getUnitPosition(id);
+		if ( pos == Vec2i(-1) ) {
+			addErrorMessage("unitPosition(): Can not find unit=" + intToStr(id) + " to get position");
+		}
 		args.returnVec2i(pos);
 	}
 	return args.getReturnCount();
@@ -732,8 +910,11 @@ int ScriptManager::getUnitPosition(LuaHandle* luaHandle){
 int ScriptManager::getUnitFaction(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
 	int id;
-	if ( extractArgs(args, "getUnitFaction", "int", &id) ) {
-		int factionIndex= theWorld.getUnitFactionIndex(id);
+	if ( extractArgs(args, "unitFaction", "int", &id) ) {
+		int factionIndex = theWorld.getUnitFactionIndex(id);
+		if ( factionIndex == -1 ) {
+			addErrorMessage("unitFaction(): Can not find unit=" + intToStr(id) + " to get faction index");
+		}
 		args.returnInt(factionIndex);
 	}
 	return args.getReturnCount();
@@ -743,8 +924,13 @@ int ScriptManager::getResourceAmount(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
 	string resource;
 	int fNdx;
-	if ( extractArgs(args, "getResourceAmount", "str,int", &resource, &fNdx) ) {
+	if ( extractArgs(args, "resourceAmount", "str,int", &resource, &fNdx) ) {
 		int amount = theWorld.getResourceAmount(resource, fNdx);
+		if ( amount == -1 ) {
+			addErrorMessage("resourceAmount(): invalid faction index " + intToStr(fNdx));
+		} else if ( amount == -2 ) {
+			addErrorMessage("resourceAmount(): invalid resource '" + resource + "'");
+		}
 		args.returnInt(amount);
 	}
 	return args.getReturnCount();
@@ -752,24 +938,36 @@ int ScriptManager::getResourceAmount(LuaHandle* luaHandle){
 
 int ScriptManager::getLastCreatedUnitName(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
+	if ( lastCreatedUnitId == -1 ) {
+		addErrorMessage("lastCreatedUnitName(): called before any units created.");
+	}
 	args.returnString( lastCreatedUnitName );
 	return args.getReturnCount();
 }
 
 int ScriptManager::getLastCreatedUnitId(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
+	if ( lastCreatedUnitId == -1 ) {
+		addErrorMessage("lastCreatedUnit(): called before any units created.");
+	}
 	args.returnInt(lastCreatedUnitId);
 	return args.getReturnCount();
 }
 
 int ScriptManager::getLastDeadUnitName(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
+	if ( lastDeadUnitId == -1 ) {
+		addErrorMessage("lastDeadUnitName(): called before any units died.");
+	}
 	args.returnString(lastDeadUnitName);
 	return args.getReturnCount();
 }
 
 int ScriptManager::getLastDeadUnitId(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
+	if ( lastDeadUnitId == -1 ) {
+		addErrorMessage("lastDeadUnit(): called before any units died.");
+	}
 	args.returnInt(lastDeadUnitId);
 	return args.getReturnCount();
 }
@@ -777,8 +975,11 @@ int ScriptManager::getLastDeadUnitId(LuaHandle* luaHandle){
 int ScriptManager::getUnitCount(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
 	int fNdx;
-	if ( extractArgs(args, "getUnitCount", "int", &fNdx) ) {
+	if ( extractArgs(args, "unitCount", "int", &fNdx) ) {
 		int amount = theWorld.getUnitCount(fNdx);
+		if ( amount == -1 ) {
+			addErrorMessage("unitCount() invalid faction index " + intToStr(fNdx));
+		}
 		args.returnInt(amount);
 	}
 	return args.getReturnCount();
@@ -788,8 +989,14 @@ int ScriptManager::getUnitCountOfType(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
 	int fNdx;
 	string type;
-	if ( extractArgs(args, "getUnitCount", "int,str", &fNdx, &type) ) {
+	if ( extractArgs(args, "unitCountOfType", "int,str", &fNdx, &type) ) {
 		int amount = theWorld.getUnitCountOfType(fNdx, type);
+		if ( amount == -1 ) {
+			addErrorMessage("unitCountOfType(): invalid faction index " + intToStr(fNdx));
+		} else if ( amount == -2 ) {
+			addErrorMessage("unitCountOfType(): invalid unit type '" + type + "' for faction "
+				+ intToStr(fNdx));
+		}
 		args.returnInt(amount);
 	}
 	return args.getReturnCount();
