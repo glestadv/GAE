@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -23,6 +23,7 @@ using Shared::Platform::uint8;
 namespace Shared{ namespace Graphics{
 
 class TextureParams;
+class Context;
 
 // =====================================================
 //	class Texture
@@ -52,6 +53,7 @@ public:
 	};
 
 protected:
+	Context &context;
 	string path;
 	bool mipmap;
 	WrapMode wrapMode;
@@ -61,7 +63,7 @@ protected:
 	bool inited;
 
 protected:
-	Texture();
+	Texture(Context &context);
 
 public:
 	virtual ~Texture();
@@ -82,9 +84,10 @@ public:
 
 	virtual void init(Filter filter = FILTER_BILINEAR, int maxAnisotropy = 1) = 0;
 	virtual void end() = 0;
-	
+
 protected:
 	void setInitialized(bool v)		{inited = v;}
+	Context &getContext()			{return context;}
 };
 
 
@@ -97,6 +100,7 @@ protected:
 	Pixmap1D pixmap;
 
 public:
+	Texture1D(Context &context) : Texture(context) {}
 	void load(const string &path);
 
 	Pixmap1D *getPixmap()				{return &pixmap;}
@@ -112,6 +116,9 @@ protected:
 	Pixmap2D pixmap;
 
 public:
+	Texture2D(Context &context) : Texture(context) {}
+	virtual ~Texture2D() { }
+
 	void load(const string &path);
 
 	Pixmap2D *getPixmap()				{return &pixmap;}
@@ -127,6 +134,9 @@ protected:
 	Pixmap3D pixmap;
 
 public:
+	Texture3D(Context &context) : Texture(context) {}
+	virtual ~Texture3D() { }
+
 	void loadSlice(const string &path, int slice);
 
 	Pixmap3D *getPixmap()				{return &pixmap;}
@@ -142,6 +152,9 @@ protected:
 	PixmapCube pixmap;
 
 public:
+	TextureCube(Context &context) : Texture(context) {}
+	virtual ~TextureCube() { }
+
 	void loadFace(const string &path, int face);
 
 	PixmapCube *getPixmap()				{return &pixmap;}

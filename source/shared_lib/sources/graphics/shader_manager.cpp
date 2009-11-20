@@ -20,57 +20,64 @@
 #include "leak_dumper.h"
 
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
 
 // =====================================================
-//	class ShaderManager
+// class ShaderManager
 // =====================================================
 
-ShaderManager::~ShaderManager(){
+ShaderManager::ShaderManager(GraphicsFactory &factory)
+		: shaderPrograms()
+		, shaders()
+		, logString()
+		, factory(factory) {
 }
 
-void ShaderManager::init(){
-	for(int i=0; i<shaders.size(); ++i){
+ShaderManager::~ShaderManager() {
+}
+
+void ShaderManager::init() {
+	for (int i = 0; i < shaders.size(); ++i) {
 		shaders[i]->init();
-		if(!shaders[i]->compile(logString)){
+		if (!shaders[i]->compile(logString)) {
 			throw runtime_error("Can't compile shader\n");
 		}
 	}
-	for(int i=0; i<shaderPrograms.size(); ++i){
+	for (int i = 0; i < shaderPrograms.size(); ++i) {
 		shaderPrograms[i]->init();
-		if(!shaderPrograms[i]->link(logString)){
+		if (!shaderPrograms[i]->link(logString)) {
 			throw runtime_error("Can't link shader\n");
 		}
 	}
 }
 
-void ShaderManager::end(){
-	for(int i=0; i<shaderPrograms.size(); ++i){
+void ShaderManager::end() {
+	for (int i = 0; i < shaderPrograms.size(); ++i) {
 		shaderPrograms[i]->end();
 		delete shaderPrograms[i];
 	}
 	shaderPrograms.clear();
-	for(int i=0; i<shaders.size(); ++i){
+	for (int i = 0; i < shaders.size(); ++i) {
 		shaders[i]->end();
 		delete shaders[i];
 	}
 	shaders.clear();
 }
 
-ShaderProgram *ShaderManager::newShaderProgram(){
-	ShaderProgram *sp= GraphicsInterface::getInstance().getFactory()->newShaderProgram();
+ShaderProgram *ShaderManager::newShaderProgram() {
+	ShaderProgram *sp = factory.newShaderProgram();
 	shaderPrograms.push_back(sp);
 	return sp;
 }
 
-VertexShader *ShaderManager::newVertexShader(){
-	VertexShader *vs= GraphicsInterface::getInstance().getFactory()->newVertexShader();
+VertexShader *ShaderManager::newVertexShader() {
+	VertexShader *vs = factory.newVertexShader();
 	shaders.push_back(vs);
 	return vs;
 }
 
-FragmentShader *ShaderManager::newFragmentShader(){
-	FragmentShader *fs= GraphicsInterface::getInstance().getFactory()->newFragmentShader();
+FragmentShader *ShaderManager::newFragmentShader() {
+	FragmentShader *fs = factory.newFragmentShader();
 	shaders.push_back(fs);
 	return fs;
 }

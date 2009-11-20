@@ -12,8 +12,12 @@
 #ifndef _GLEST_GAME_BATTLEEND_H_
 #define _GLEST_GAME_BATTLEEND_H_
 
-#include "program.h"
-#include "stats.h"
+#include "gui_program.h"
+//#include "stats.h"
+
+namespace Shared { namespace Platform
+	class Key;
+}}
 
 namespace Glest { namespace Game {
 

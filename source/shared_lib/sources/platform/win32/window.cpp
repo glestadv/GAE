@@ -40,15 +40,21 @@ Window::WindowMap Window::createdWindows;
 
 // ===================== PUBLIC ========================
 
-Window::Window() {
-	handle = 0;
-	style =  windowedFixedStyle;
-	exStyle = 0;
-	ownDc = false;
-	x = 0;
-	y = 0;
-	w = 100;
-	h = 100;
+Window::Window(WindowStyle windowStyle, int x, int y, size_t width, size_t height, float freq,
+		size_t colorBits, size_t depthBits, size_t stencilBits, const string &text)
+		: input()
+		, x(x)
+		, y(y)
+		, width(width)
+		, height(height)
+		, handle(0)
+		, text(text)
+		, windowStyle(windowStyle)
+
+		, className()
+		, style(windowStyle)
+		, exStyle(0)
+		, ownDc(false) {
 }
 
 Window::~Window() {
@@ -110,7 +116,7 @@ void Window::setText(string text) {
 	}
 }
 
-void Window::setSize(int w, int h) {
+void Window::setSize(int width, int height) {
 
 	if (windowStyle != wsFullscreen) {
 		RECT rect;
@@ -125,11 +131,11 @@ void Window::setSize(int w, int h) {
 		h = rect.bottom - rect.top;
 	}
 
-	this->w = w;
-	this->h = h;
+	this->width = width;
+	this->height = height;
 
 	if (handle != 0) {
-		MoveWindow(handle, x, y, w, h, FALSE);
+		MoveWindow(handle, x, y, width, height, FALSE);
 		UpdateWindow(handle);
 	}
 }
@@ -138,7 +144,7 @@ void Window::setPos(int x, int y) {
 	this->x = x;
 	this->y = y;
 	if (handle != 0) {
-		MoveWindow(handle, x, y, w, h, FALSE);
+		MoveWindow(handle, x, y, width, height, FALSE);
 	}
 }
 
@@ -478,7 +484,7 @@ void Window::createWindow(LPVOID creationData) {
 				 className.c_str(),
 				 text.c_str(),
 				 style,
-				 x, y, w, h,
+				 x, y, width, height,
 				 NULL, NULL, GetModuleHandle(NULL), creationData);
 
 	createdWindows.insert(pair<WindowHandle, Window*>(handle, this));

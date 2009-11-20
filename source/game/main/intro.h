@@ -14,7 +14,7 @@
 
 #include <vector>
 
-#include "program.h"
+#include "gui_program.h"
 #include "font.h"
 #include "vec.h"
 #include "texture.h"
@@ -26,6 +26,10 @@ using Shared::Graphics::Vec2f;
 using Shared::Graphics::Vec3f;
 using Shared::Graphics::Font2D;
 using Shared::Graphics::Texture2D;
+
+namespace Shared { namespace Platform {
+	class Key;
+}}
 
 namespace Glest{ namespace Game{
 
@@ -60,7 +64,7 @@ public:
 /// GuiProgramState representing the intro
 // =====================================================
 
-class Intro: public GuiProgramState {
+class Intro : public GuiProgramState {
 private:
 	static const int introTime;
 	static const int appearTime;

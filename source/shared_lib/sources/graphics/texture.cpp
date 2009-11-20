@@ -20,8 +20,9 @@ namespace Shared { namespace Graphics {
 // class Texture
 // =====================================================
 
-Texture::Texture()
-		: path()
+Texture::Texture(Context &context)
+		: context(context)
+		, path()
 		, mipmap(true)
 		, wrapMode(WRAP_MODE_REPEAT)
 		, pixmapInit(true)

@@ -27,6 +27,7 @@ using std::string;
 using Shared::Util::Conversion;
 using Shared::Platform::uint32;
 using Shared::Platform::PlatformContextGl;
+using Shared::Graphics::Context;
 
 namespace Shared { namespace Graphics { namespace Gl {
 
@@ -36,24 +37,33 @@ namespace Shared { namespace Graphics { namespace Gl {
 // class ContextGl
 // =====================================================
 
-class ContextGl /*: public Context */{
+class ContextGl : public Context {
 private:
-	uint32 colorBits;
-	uint32 depthBits;
-	uint32 stencilBits;
-	PlatformContextGl pcgl;
+	bool fullScreen;
+ 	size_t width;
+	size_t height;
+	float freq;
+	size_t colorBits;
+	size_t depthBits;
+	size_t stencilBits;
 
 public:
-	ContextGl(uint32 colorBits, uint32 depthBits, uint32 stencilBits);
+	ContextGl(bool fullScreen, size_t width, size_t height, float freq, size_t colorBits, size_t depthBits, size_t stencilBits);
 	~ContextGl();
 
-	uint32 getColorBits() const		{return colorBits;}
-	uint32 getDepthBits() const		{return depthBits;}
-	uint32 getStencilBits() const	{return stencilBits;}
+	bool isFullScreen() const		{return fullScreen;}
+ 	size_t getWidth() const			{return width;}
+	size_t getHeight() const		{return height;}
+	float getFreq() const			{return freq;}
+	size_t getColorBits() const		{return colorBits;}
+	size_t getDepthBits() const		{return depthBits;}
+	size_t getStencilBits() const	{return stencilBits;}
 
-	void setColorBits(uint32 v)		{colorBits = v;}
-	void setDepthBits(uint32 v)		{depthBits = v;}
-	void setStencilBits(uint32 v)	{stencilBits = v;}
+#if 0
+	void setColorBits(size_t v)		{colorBits = v;}
+	void setDepthBits(size_t v)		{depthBits = v;}
+	void setStencilBits(size_t v)	{stencilBits = v;}
+#endif
 
 	void end();
 	void reset();
@@ -94,7 +104,7 @@ public:
 #if defined(NDEBUG) || defined(NO_GL_ASSERTIONS)
 #	define assertGl() ((void) 0)
 #else
-#	define assertGl() ContextGl::_assertGl(__FILE__, __LINE__)
+#	define assertGl() ::Shared::Graphics::Gl::ContextGl::_assertGl(__FILE__, __LINE__)
 #endif
 
 #endif

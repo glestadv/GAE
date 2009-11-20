@@ -11,11 +11,51 @@
 
 #include "pch.h"
 #include "platform_exception.h"
+
 #include "leak_dumper.h"
 
 typedef int error_t;
 
 namespace Shared { namespace Platform {
+
+// ===============================
+//  class PosixException
+// ===============================
+
+#if USE_SDL
+
+SDLException::SDLException(
+		const string &msg,
+		const string &operation,
+		const GlestException *rootCause,
+		const string &fileName,
+		long lineNumber,
+		const string & err) throw()
+		: GlestException(msg, operation, rootCause, fileName, lineNumber, 0, err) {
+}
+
+SDLException::~SDLException() throw() {
+}
+
+SDLException *SDLException::clone() const throw () {
+	return new SDLException(*this);
+}
+
+string SDLException::getType() const throw() {
+	return string("SDLException");
+}
+
+__noreturn __cold void SDLException::coldThrow(
+		const string &msg,
+		const string &operation,
+		const GlestException *rootCause,
+		const string &fileName,
+		long lineNumber,
+		const string & err) {
+	throw SDLException(msg, operation, rootCause, fileName, lineNumber, err);
+}
+
+#endif // USE_SDL
 
 // ===============================
 //  class PosixException

@@ -26,11 +26,11 @@ namespace Shared { namespace Graphics {
 // class TextureManager
 // =====================================================
 
-TextureManager::TextureManager()
+TextureManager::TextureManager(GraphicsFactory &factory)
 		: textures()
 		, textureFilter(Texture::FILTER_BILINEAR)
 		, maxAnisotropy(1)
-		, factory(*GraphicsInterface::getInstance().getFactory()) {
+		, factory(factory) {
 }
 
 TextureManager::~TextureManager() {

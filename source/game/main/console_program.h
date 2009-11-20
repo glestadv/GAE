@@ -16,8 +16,9 @@
 
 namespace Glest { namespace Game {
 
-class ConsoleProgram : public Glest::Program {
+class ConsoleProgram : public Program {
 public:
+	ConsoleProgram() : Program(START_OPTION_DEDICATED) {}
 	int main();
 };
 

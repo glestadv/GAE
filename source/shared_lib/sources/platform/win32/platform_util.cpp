@@ -122,7 +122,7 @@ DirectoryListing::DirectoryListing(const string &path)
 		exists = true;
 	} else if(errno != ENOENT) {
 		throw PosixException(
-				("Error searching for files in directory '" + path + "'").c_str(),
+				"Error searching for files in directory '" + path + "'",
 				"_findfirst64(path.c_str(), &fi)",
 				NULL, __FILE__, __LINE__);
 	}

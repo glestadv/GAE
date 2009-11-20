@@ -488,11 +488,13 @@ public:
 //	class ParticleManager
 // =====================================================
 
-class ParticleManager {
+class ParticleManager : Uncopyable {
 private:
 	list<ParticleSystem*> particleSystems;
+	GraphicsFactory &factory;
 
 public:
+	ParticleManager(GraphicsFactory &factory);
 	~ParticleManager();
 	void update();
 	void render(ParticleRenderer *pr, ModelRenderer *mr) const;

@@ -13,6 +13,7 @@
 #include "socket.h"
 
 #include <stdexcept>
+#include <sstream>
 #if ! ( defined(WIN32) || defined(WIN64) )
 #include <netdb.h>
 #else
@@ -21,6 +22,7 @@
 #include "leak_dumper.h"
 
 using std::range_error;
+using std::stringstream;
 
 // Forward declaring class from the game project is hacky, but I want to control template
 // instantiation for Socket::wait and haven't found a better way to do it :(

@@ -46,7 +46,7 @@ class GuiProgramState;
 // 	class GuiProgram
 // ===============================
 
-class GuiProgram : public Program, public FactoryRepository, public WindowGl {
+class GuiProgram : public Program, public WindowGl, public FactoryRepository {
 private:
     GuiProgramState *state;					/**< The current programState this Project object is executing. */
     GuiProgramState *preCrashState;			/**< The program state prior to a crash or NULL if no crash has occured.  This is also used to determine if the CrashProgramState has crashed (re-entered the crash handler) so we know not to try that again. */

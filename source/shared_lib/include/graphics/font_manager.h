@@ -13,12 +13,16 @@
 #define _SHARED_GRAPHICS_FONTMANAGER_H_
 
 #include "font.h"
+#include "patterns.h"
 
 #include <vector>
 
 using namespace std;
+using Shared::Util::Uncopyable;
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
+
+class GraphicsFactory;
 
 // =====================================================
 //	class FontManager
@@ -26,14 +30,16 @@ namespace Shared{ namespace Graphics{
 ///	Creates, Intializes, Finalizes, and Deletes fonts
 // =====================================================
 
-class FontManager {
+class FontManager : Uncopyable {
 private:
 	typedef vector<shared_ptr<Font> > FontContainer;
 
 private:
 	FontContainer fonts;
+	GraphicsFactory &factory;
 
 public:
+	FontManager(GraphicsFactory &factory);
 	virtual ~FontManager();
 
 	Font2D *newFont2D();

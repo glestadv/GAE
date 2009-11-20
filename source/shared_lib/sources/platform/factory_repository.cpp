@@ -22,16 +22,15 @@ namespace Shared { namespace Platform {
 // class FactoryRepository
 // =====================================================
 
-FactoryRepository(const string &graphicsFactoryName, const string &soundFactoryName)
-		: graphicsFactoryName(graphicsFactoryName)
+FactoryRepository::FactoryRepository(ContextGl &context, const string &graphicsFactoryName, const string &soundFactoryName)
+		: context(context)
+		, graphicsFactoryName(graphicsFactoryName)
 		, soundFactoryName(soundFactoryName)
 		, graphicsFactory(NULL)
 		, soundFactory(NULL) {
 
 	if (graphicsFactoryName == "OpenGL") {
-		graphicsFactory = new GraphicsFactoryGl;
-	} else if (graphicsFactoryName == "OpenGL2") {
-		graphicsFactory = new GraphicsFactoryGl2;
+		graphicsFactory = new GraphicsFactoryGl(context);
 	} else {
 		throw runtime_error("Unknown graphics factory: " + graphicsFactory);
 	}

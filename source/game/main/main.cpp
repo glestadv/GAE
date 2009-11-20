@@ -23,7 +23,6 @@
 #include "metrics.h"
 #include "game_util.h"
 #include "platform_util.h"
-#include "platform_main.h"
 
 using namespace std;
 using namespace Shared::Platform;
@@ -101,7 +100,7 @@ static void showUsage(const vector<const string> &args) {
 // Main
 // =====================================================
 
-int glestMain(int argc, char** argv) {
+int main(int argc, char** argv) {
 
 	vector<const string> args;
 	Program::LaunchType launchType;

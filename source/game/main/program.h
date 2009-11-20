@@ -41,8 +41,10 @@ private:
 
 	static Program *singleton;				/**< The one and only Program object. */
 
-public:
+protected:
 	Program(Program::LaunchType launchType);
+
+public:
 	virtual ~Program();
 
 	static Program &getInstance()		{assert(singleton); return *singleton;}

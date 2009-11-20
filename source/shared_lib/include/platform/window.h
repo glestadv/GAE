@@ -50,10 +50,7 @@ enum WindowStyle {
 
 class Window {
 private:
-#ifdef USE_SDL
-	int64 lastMouseDown[mbCount];
-	Vec2i lastMouse[mbCount];
-#elif defined(WIN32) || defined(WIN64)
+#if !USE_SDL && (defined(WIN32) || defined(WIN64))
 	typedef map<WindowHandle, Window*> WindowMap;
 
 	static const DWORD fullscreenStyle;
@@ -68,12 +65,15 @@ private:
 	Input input;
 	int x;
 	int y;
-	int w;
-	int h;
+	size_t width;
+	size_t height;
 	WindowHandle handle;
 	string text;
 	WindowStyle windowStyle;
-#if defined(WIN32) || defined(WIN64)
+#ifdef USE_SDL
+	int64 lastMouseDown[mbCount];
+	Vec2i lastMouse[mbCount];
+#elif defined(WIN32) || defined(WIN64)
 	string className;
 	DWORD style;
 	DWORD exStyle;
@@ -81,8 +81,9 @@ private:
 #endif
 
 public:
-	Window();
-	Window(WindowStyle windowStyle, int x, int y, int w, int h, int colorBits, int freq, const string &text);
+//	Window();
+	Window(WindowStyle windowStyle, int x, int y, size_t width, size_t height, float freq,
+			size_t colorBits, size_t depthBits, size_t stencilBits, const string &text);
 	virtual ~Window();
 
 	WindowHandle getHandle()		{return handle;}
@@ -91,8 +92,8 @@ public:
 	string getText();
 	int getX() const			{return x;}
 	int getY() const			{return y;}
-	int getW() const			{return w;}
-	int getH() const			{return h;}
+	size_t getW() const			{return width;}
+	size_t getH() const			{return height;}
 
 	//component state
 	int getClientW();//			{return getW();}
@@ -102,13 +103,12 @@ public:
 	//object state
 	void setText(string text);
 	void setStyle(WindowStyle windowStyle);
-	void setSize(int w, int h);
+	void setSize(size_t w, size_t h);
 	void setPos(int x, int y);
 	void setEnabled(bool enabled);
 	void setVisible(bool visible);
 
 	//misc
-	void create();
 	void minimize();
 	void maximize();
 	void restore();
@@ -145,6 +145,7 @@ private:
 	static int getNextClassName();
 	void registerWindow(WNDPROC wndProc = NULL);
 	void createWindow(LPVOID creationData = NULL);
+	void create();
 
 	/**
 	 * Manage a Windows mouse button event. This code is here for simplicity and to reduce duplicate

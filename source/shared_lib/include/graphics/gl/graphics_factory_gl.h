@@ -12,52 +12,54 @@
 #ifndef _SHARED_GRAPHICS_GL_GRAPHICSFACTORYGL_H_
 #define _SHARED_GRAPHICS_GL_GRAPHICSFACTORYGL_H_
 
-#include "texture_manager.h"
-#include "model_manager.h"
-#include "particle.h"
-#include "font_manager.h"
 #include "graphics_factory.h"
-#include "text_renderer_gl.h"
-#include "model_renderer_gl.h"
-#include "particle_renderer_gl.h"
-#include "context_gl.h"
-#include "model_gl.h"
-#include "texture_gl.h"
-#include "font_gl.h"
 
-namespace Shared{ namespace Graphics{ namespace Gl{
+
+namespace Shared { namespace Graphics { namespace Gl {
+
+class ContextGl;
 
 // =====================================================
 //	class GraphicsFactoryGl
 // =====================================================
 
-class GraphicsFactoryGl: public GraphicsFactory {
+class GraphicsFactoryGl : public GraphicsFactory {
+	ContextGl &context;
+
 public:
-	//context
-	virtual Context *newContext(uint32 colorBits, uint32 depthBits, uint32 stencilBits)		{return new ContextGl(colorBits, depthBits, stencilBits);}
+	GraphicsFactoryGl(ContextGl &context) : context(context) { }
+	~GraphicsFactoryGl() { }
+
+	ContextGl &getContext() {return context;}
 
 	//textures
-	virtual TextureManager *newTextureManager()		{return new TextureManager();}
-	virtual Texture1D *newTexture1D()				{return new Texture1DGl();}
-	virtual Texture2D *newTexture2D()				{return new Texture2DGl();}
-	virtual Texture3D *newTexture3D()				{return new Texture3DGl();}
-	virtual TextureCube *newTextureCube()			{return new TextureCubeGl();}
+	virtual TextureManager *newTextureManager();
+	virtual Texture1D *newTexture1D();
+	virtual Texture2D *newTexture2D();
+	virtual Texture3D *newTexture3D();
+	virtual TextureCube *newTextureCube();
 
 	//models
-	virtual ModelManager *newModelManager()			{return new ModelManager();}
-	virtual ModelRenderer *newModelRenderer()		{return new ModelRendererGl();}
-	virtual Model *newModel()						{return new ModelGl();}
+	virtual ModelManager *newModelManager();
+	virtual ModelRenderer *newModelRenderer();
+	virtual Model *newModel();
 
 	//text
-	virtual FontManager *newFontManager()			{return new FontManager();}
-	virtual TextRenderer2D *newTextRenderer2D()		{return new TextRenderer2DGl();}
-	virtual TextRenderer3D *newTextRenderer3D()		{return new TextRenderer3DGl();}
-	virtual Font2D *newFont2D()						{return new Font2DGl();}
-	virtual Font3D *newFont3D()						{return new Font3DGl();}
+	virtual FontManager *newFontManager();
+	virtual TextRenderer2D *newTextRenderer2D();
+	virtual TextRenderer3D *newTextRenderer3D();
+	virtual Font2D *newFont2D();
+	virtual Font3D *newFont3D();
 
 	//particles
-	virtual ParticleManager *newParticleManager()	{return new ParticleManager();}
-	virtual ParticleRenderer *newParticleRenderer()	{return new ParticleRendererGl();}
+	virtual ParticleManager *newParticleManager();
+	virtual ParticleRenderer *newParticleRenderer();
+
+	//shaders
+	virtual ShaderManager *newShaderManager();
+	virtual ShaderProgram *newShaderProgram();
+	virtual VertexShader *newVertexShader();
+	virtual FragmentShader *newFragmentShader();
 };
 
 }}}//end namespace

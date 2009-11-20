@@ -11,29 +11,35 @@
 // ==============================================================
 
 #include "pch.h"
+
 #include "program.h"
+
+#if USE_SDL
+#	include <SDL.h>
+#endif
+#include <iostream>
 
 #include "leak_dumper.h"
 
 
 using namespace Shared::Util;
-using namespace Shared::Graphics;
-using namespace Shared::Graphics::Gl;
+//using namespace Shared::Graphics;
+//using namespace Shared::Graphics::Gl;
 
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
-// 	class Program
+//  class Program
 // =====================================================
 
 Program *Program::singleton = NULL;
 
-Program::Program()
+Program::Program(Program::LaunchType launchType)
 		: config("glestadv.ini")
 		, console(config)
 		, lang()
-		, dedicated(false) {
+		, dedicated(launchType == START_OPTION_DEDICATED ? true : false) {
 	lang.setLocale(config.getUiLocale());
 
 	//log start
@@ -42,27 +48,29 @@ Program::Program()
 	Logger::getClientLog().clear();
 	Logger::getErrorLog().clear();
 
-    if(SDL_Init(SDL_INIT_EVERYTHING) < 0)  {
-        std::cerr << "Couldn't initialize SDL: " << SDL_GetError() << "\n";
-        return 1;
-    }
+#if USE_SDL
+	if (SDL_Init(dedicated ? SDL_INIT_TIMER : SDL_INIT_EVERYTHING) < 0)  {
+		throw SDLException("Couldn't initialize SDL", "SDL_Init", NULL, __FILE__, __LINE__);
+	}
 	SDL_EnableUNICODE(1);
+#endif
 
 	assert(!singleton);
 	singleton = this;
-
 }
 
 Program::~Program() {
+#if USE_SDL
+	SDL_Quit();
+#endif
 	assert(singleton);
 	singleton = NULL;
-    SDL_Quit();
 }
 
 #if 0
 int Program::launch(Program::LaunchType launchType, const string &serverAddress) {
 
-	if(config.getMiscCatchExceptions()) {
+	if (config.getMiscCatchExceptions()) {
 		ExceptionHandler exceptionHandler;
 
 		try {
@@ -74,12 +82,12 @@ int Program::launch(Program::LaunchType launchType, const string &serverAddress)
 			try {
 				//main loop
 				program.main();
-			} catch(const exception &e) {
+			} catch (const exception &e) {
 				// friendlier error handling
 				program.crash(&e);
 				restoreVideoMode();
 			}
-		} catch(const exception &e) {
+		} catch (const exception &e) {
 			restoreVideoMode();
 			exceptionMessage(e);
 		}
@@ -90,4 +98,5 @@ int Program::launch(Program::LaunchType launchType, const string &serverAddress)
 	}
 }
 #endif
-} // end namespace
+
+}} // end namespace

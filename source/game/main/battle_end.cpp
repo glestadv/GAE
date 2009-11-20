@@ -24,6 +24,7 @@
 #include "metrics.h"
 #include "stats.h"
 #include "auto_test.h"
+#include "text_renderer.h"
 
 #include "leak_dumper.h"
 

@@ -98,7 +98,7 @@ public:
 //	class ScriptManager
 // =====================================================
 
-class ScriptManager {
+class ScriptManager : Uncopyable {
 
 	//friend class World; // Lua Debugging, using setDisplayTest()
 

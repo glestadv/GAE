@@ -18,35 +18,37 @@
 #include "leak_dumper.h"
 
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
 
 // =====================================================
-//	class ModelManager
+// class ModelManager
 // =====================================================
 
-ModelManager::ModelManager(){
-	textureManager= NULL;
+ModelManager::ModelManager(GraphicsFactory &factory)
+		: factory(factory)
+		, models()
+		, textureManager(NULL) {
 }
 
-ModelManager::~ModelManager(){
+ModelManager::~ModelManager() {
 	end();
 }
 
-Model *ModelManager::newModel(){
-	Model *model= GraphicsInterface::getInstance().getFactory()->newModel();
+Model *ModelManager::newModel() {
+	Model *model = factory.newModel();
 	model->setTextureManager(textureManager);
 	models.push_back(model);
 	return model;
 }
 
-void ModelManager::init(){
-	for(size_t i=0; i<models.size(); ++i){
+void ModelManager::init() {
+	for (size_t i = 0; i < models.size(); ++i) {
 		models[i]->init();
 	}
 }
 
-void ModelManager::end(){
-	for(size_t i=0; i<models.size(); ++i){
+void ModelManager::end() {
+	for (size_t i = 0; i < models.size(); ++i) {
 		models[i]->end();
 		delete models[i];
 	}

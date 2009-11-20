@@ -21,7 +21,7 @@
 #include "conversion.h"
 #include "platform_util.h"
 
-#include "sdl_private.h"
+//#include "sdl_private.h"
 #include "noimpl.h"
 
 #include "leak_dumper.h"
@@ -42,7 +42,23 @@ Window::Window() : x(0), y(0), w(0), h(0), handle(0) {
 	memset(lastMouse, 0, sizeof(lastMouse));
 }
 #endif
+Window::Window(WindowStyle windowStyle, int x, int y, size_t width, size_t height, float freq,
+		size_t colorBits, size_t depthBits, size_t stencilBits, const string &text)
+		: input()
+		, x(x)
+		, y(y)
+		, width(width)
+		, height(height)
+		, handle(0)
+		, text(text)
+		, windowStyle(windowStyle)
+{
+	memset(lastMouseDown, 0, sizeof(lastMouseDown));
+	memset(lastMouse, 0, sizeof(lastMouse));
+	// this class doesn't create the window, its created in WindowGl
+}
 
+#if 0
 Window::Window() : x(0), y(0), w(0), h(0), handle(0) {
 	memset(lastMouseDown, 0, sizeof(lastMouseDown));
 	memset(lastMouse, 0, sizeof(lastMouse));
@@ -56,6 +72,7 @@ Window::Window() : x(0), y(0), w(0), h(0), handle(0) {
 	initGl(config.getRenderColorBits(), config.getRenderDepthBits(), config.getRenderStencilBits());
 	makeCurrentGl();
 }
+#endif
 
 Window::~Window() {}
 
@@ -130,11 +147,11 @@ void Window::setText(string text) {
 	SDL_WM_SetCaption(text.c_str(), 0);
 }
 
-void Window::setSize(int w, int h) {
-	this->w = w;
-	this->h = h;
-	Private::ScreenWidth = w;
-	Private::ScreenHeight = h;
+void Window::setSize(size_t width, size_t height) {
+	this->width = width;
+	this->height = height;
+	//Private::ScreenWidth = w;
+	//Private::ScreenHeight = h;
 }
 
 void Window::setPos(int x, int y)  {
@@ -156,10 +173,6 @@ void Window::setStyle(WindowStyle windowStyle) {
 	if(windowStyle == wsFullscreen)
 		return;
 	// NOIMPL;
-}
-
-void Window::create() {
-	// nothing here
 }
 
 void Window::minimize() {
@@ -220,6 +233,7 @@ void Window::handleMouseDown(SDL_Event event) {
 	lastMouse[button] = input.getMousePos();
 }
 
+#if 0
 static void setDisplaySettings(int width, int height, int colorBits, int freq) {
 
 	Config &config = theConfig;
@@ -239,5 +253,6 @@ static void setDisplaySettings(int width, int height, int colorBits, int freq) {
 		}
 	}
 }
+#endif
 
 }}//end namespace

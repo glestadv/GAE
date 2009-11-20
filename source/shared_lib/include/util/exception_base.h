@@ -14,7 +14,7 @@
 
 #include <exception>
 #include <stdexcept>
-#include <sstream>
+//#include <sstream>
 #include <string>
 #include <errno.h>
 #include <map>
@@ -23,7 +23,7 @@
 #include "patterns.h"
 
 using std::runtime_error;
-using std::stringstream;
+//using std::stringstream;
 using std::string;
 using std::map;
 //using Shared::Util::newStrOrNull;

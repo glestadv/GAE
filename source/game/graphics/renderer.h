@@ -27,6 +27,8 @@
 #include "font_manager.h"
 #include "camera.h"
 #include "game_camera.h"
+#include "gl_wrap.h"
+
 
 namespace Glest{ namespace Game{
 
@@ -56,6 +58,7 @@ class MainMenu;
 class Console;
 class MenuBackground;
 class ChatManager;
+class GuiProgram;
 
 enum ResourceScope{
 	rsGlobal,
@@ -71,7 +74,8 @@ enum ResourceScope{
 ///	OpenGL renderer, uses the shared library
 // ===========================================================
 
-class Renderer{
+class Renderer {
+	friend class GuiProgram;
 public:
 	//progress bar
 	static const int maxProgressBar;

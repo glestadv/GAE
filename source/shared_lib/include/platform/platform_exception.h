@@ -14,15 +14,54 @@
 
 #include "exception_base.h"
 
+#include <errno.h>
+
+#if USE_SDL
+#	include <SDL.h>
+#endif
+
+#if defined(WIN32) || defined(WIN64)
+#	include <winbase.h>
+#	include <winsock2.h>
+#endif
+
 using Shared::Util::GlestException;
 
 namespace Shared { namespace Platform {
 
 // ===============================
-//  class PosixException
+//  class SDLException
 // ===============================
 
-//#if defined(USE_SDL) || defined(USE_POSIX_SOCKETS)
+#if USE_SDL
+/** Exception type to encapsulate posix errno and strerror_r calls. */
+class SDLException : public GlestException {
+public:
+	SDLException(
+			const string &msg,
+			const string &operation,
+			const GlestException *rootCause = NULL,
+			const string &fileName = "",
+			long lineNumber = 0,
+			const string & err = SDL_GetError()) throw();
+	virtual ~SDLException() throw();
+	virtual SDLException *clone() const throw();
+
+	virtual string getType() const throw();
+
+	static __noreturn __cold void coldThrow(
+			const string &msg,
+			const string &operation,
+			const GlestException *rootCause = NULL,
+			const string &fileName = "",
+			long lineNumber = 0,
+			const string & err = SDL_GetError());
+};
+#endif // USE_SDL
+
+// ===============================
+//  class PosixException
+// ===============================
 
 /** Exception type to encapsulate posix errno and strerror_r calls. */
 class PosixException : public GlestException {

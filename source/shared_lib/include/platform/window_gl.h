@@ -29,15 +29,17 @@ protected:
 	ContextGl context;
 
 public:
-	WindowGl();
-	WindowGl(WindowStyle windowStyle, int x, int y, int w, int h, int freq, const string &text, int colorBits, int depthBits, int stencilBits);
+//	WindowGl();
+	WindowGl(WindowStyle windowStyle, int x, int y, size_t width, size_t height, float freq,
+			size_t colorBits, size_t depthBits, size_t stencilBits, const string &text);
+	virtual ~WindowGl();
 //	setStyle(WindowStyle windowStyle);
 //	setText(text);
 
-	void initGl(int colorBits, int depthBits, int stencilBits);
+	//void initGl(int colorBits, int depthBits, int stencilBits);
 	void makeCurrentGl();
 	void swapBuffersGl();
-	ContextGl &getContext();
+	ContextGl &getContext()		{return context;}
 /*
 	static void setDisplaySettings(int width, int height, int colorBits, int freq) {
 

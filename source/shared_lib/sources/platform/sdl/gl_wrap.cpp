@@ -23,20 +23,21 @@
 #endif
 
 #include "opengl.h"
-#include "sdl_private.h"
+//#include "sdl_private.h"
 #include "noimpl.h"
 #include "exception_base.h"
 
 #include "leak_dumper.h"
 
 using namespace Shared::Graphics::Gl;
+using Shared::Util::GlestException;
 
 namespace Shared { namespace Platform {
 
 // ======================================
 // class PlatformContextGl
 // ======================================
-
+#if 0
 void PlatformContextGl::init(int colorBits, int depthBits, int stencilBits) {
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -63,6 +64,7 @@ void PlatformContextGl::init(int colorBits, int depthBits, int stencilBits) {
 		throw std::runtime_error(msg.str());
 	}
 }
+#endif
 
 void PlatformContextGl::end() {
 }
@@ -71,7 +73,7 @@ void PlatformContextGl::makeCurrent() {
 }
 
 void PlatformContextGl::swapBuffers() {
-	SDL_GL_SwapBuffers();
+
 }
 
 void PlatformContextGl::createGlFontBitmaps(uint32 &base, const string &type, int size, int width,

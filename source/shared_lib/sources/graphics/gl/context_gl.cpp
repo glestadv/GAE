@@ -18,20 +18,25 @@
 #include <stdexcept>
 
 #include "opengl.h"
+#include "platform_exception.h"
 
 #include "leak_dumper.h"
 
 #ifdef USE_SDL
+#	define THROW_PLATFORM_EXCEPTION(msg, func) \
+		SDLException::coldThrow((msg), (func), NULL, __FILE__, __LINE__)
 #elif defined(WIN32) || defined(WIN64)
-#	define THROW_WINDOWS_EXCEPTION(msg, func) \
+#	define THROW_PLATFORM_EXCEPTION(msg, func) \
 		WindowsException::coldThrow((msg), (func), NULL, __FILE__, __LINE__)
-#	define THROW_IF(cond, msg, func) if((cond)) {THROW_WINDOWS_EXCEPTION(msg, func);}
 #else
 #	error what are we building on?
 #endif
 
+#define THROW_IF(cond, msg, func) if((cond)) {THROW_PLATFORM_EXCEPTION(msg, func);}
+
 
 using namespace std;
+using namespace Shared::Platform;
 
 namespace Shared { namespace Graphics { namespace Gl {
 
@@ -39,11 +44,14 @@ namespace Shared { namespace Graphics { namespace Gl {
 // class ContextGl
 // =====================================================
 
-ContextGl::ContextGl(uint32 colorBits, uint32 depthBits, uint32 stencilBits)
-		: colorBits(colorBits)
+ContextGl::ContextGl(bool fullScreen, size_t width, size_t height, float freq, size_t colorBits, size_t depthBits, size_t stencilBits)
+		: fullScreen(fullScreen)
+		, width(width)
+		, height(height)
+		, freq(freq)
+		, colorBits(colorBits)
 		, depthBits(depthBits)
-		, stencilBits(stencilBits)
-		, pcgl(colorBits, depthBits, stencilBits) {
+		, stencilBits(stencilBits) {
 #ifdef USE_SDL
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 1);
@@ -53,20 +61,17 @@ ContextGl::ContextGl(uint32 colorBits, uint32 depthBits, uint32 stencilBits)
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, depthBits);
 	int flags = SDL_OPENGL;
 
-	if (Private::shouldBeFullscreen) {
+	if (fullScreen) {
 		flags |= SDL_FULLSCREEN;
 	}
 
-	int resW = Private::ScreenWidth;
-	int resH = Private::ScreenHeight;
-	SDL_Surface* screen = SDL_SetVideoMode(resW, resH, colorBits, flags);
-	if (screen == 0) {
+	SDL_Surface* screen = SDL_SetVideoMode(width, height, colorBits, flags);
+	if (!screen) {
 		std::ostringstream msg;
-		msg << "Couldn't set video mode "
-			<< resW << "x" << resH << " (" << colorBits
-			<< "bpp " << stencilBits << " stencil "
-			<< depthBits << " depth-buffer). SDL Error is: " << SDL_GetError();
-		throw std::runtime_error(msg.str());
+		msg << "Couldn't set video mode " << width << "x" << height
+			<< " (" << colorBits << "bpp " << stencilBits << " stencil "
+			<< depthBits << " depth-buffer).";
+		throw SDLException(msg.str(), "SDL_SetVideoMode", NULL, __FILE__, __LINE__);
 	}
 
 #elif defined(WIN32) || defined(WIN64)
@@ -105,18 +110,28 @@ ContextGl::~ContextGl() {
 }
 
 void ContextGl::end() {
-	pcgl.end();
+#ifdef USE_SDL
+#elif defined(WIN32) || defined(WIN64)
+	THROW_IF(!wglDeleteContext(glch), "Failed to delete OpenGL context.", "wglDeleteContext");
+#endif
 }
 
 void ContextGl::reset() {
 }
 
 void ContextGl::makeCurrent() {
-	pcgl.makeCurrent();
+#ifdef USE_SDL
+#elif defined(WIN32) || defined(WIN64)
+	THROW_IF(!wglMakeCurrent(dch, glch), "Failed to set the OpenGL context.", "wglMakeCurrent");
+#endif
 }
 
 void ContextGl::swapBuffers() {
-	pcgl.swapBuffers();
+#ifdef USE_SDL
+	SDL_GL_SwapBuffers();
+#elif defined(WIN32) || defined(WIN64)
+	THROW_IF(!SwapBuffers(dch), "Failed swap frame buffers.", "SwapBuffers");
+#endif
 }
 
 
@@ -199,7 +214,13 @@ string ContextGl::getGlExtensions() {
 }
 
 string ContextGl::getGlPlatformExtensions() {
-	return pcgl.getPlatformExtensions();
+#ifdef USE_SDL
+	return "";
+#elif defined(WIN32) || defined(WIN64)
+	typedef const char*(WINAPI * PROCTYPE)(HDC hdc);
+	PROCTYPE proc = reinterpret_cast<PROCTYPE>(getGlProcAddress("wglGetExtensionsStringARB"));
+	return proc == NULL ? "" : proc(getHandle());
+#endif
 }
 
 int ContextGl::getGlMaxLights() {

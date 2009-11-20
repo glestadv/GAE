@@ -46,7 +46,7 @@ private:
 	Properties servers;
 
 public:
-	MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool connect = false, Ip serverIp = Ip());
+	MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool connect = false, IpAddress serverIp = IpAddress());
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);

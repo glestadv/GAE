@@ -15,17 +15,18 @@
 #include <stdexcept>
 
 #include "opengl.h"
+#include "context_gl.h"
 
 #include "leak_dumper.h"
 
 using namespace std;
 using namespace Shared::Platform;
+using namespace Shared::Graphics;
 
 namespace Shared{ namespace Graphics{ namespace Gl{
 
 // local functions
-
-static GLint (Texture::WrapMode wrapMode) {
+static GLint toWrapModeGl(Texture::WrapMode wrapMode) {
 	switch (wrapMode) {
 	case Texture::WRAP_MODE_CLAMP:
 		return GL_CLAMP;
@@ -122,7 +123,7 @@ void Texture1DGl::init(Filter filter, int maxAnisotropy){
 		glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, wrap);
 
 		//maxAnisotropy
-		if(isGlExtensionSupported("GL_EXT_texture_filter_anisotropic")){
+		if(reinterpret_cast<ContextGl&>(getContext()).isGlExtensionSupported("GL_EXT_texture_filter_anisotropic")){
 			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 		}
 
@@ -195,7 +196,7 @@ void Texture2DGl::init(Filter filter, int maxAnisotropy){
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
 
 		//maxAnisotropy
-		if(isGlExtensionSupported("GL_EXT_texture_filter_anisotropic")){
+		if(reinterpret_cast<ContextGl&>(getContext()).isGlExtensionSupported("GL_EXT_texture_filter_anisotropic")){
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 		}
 

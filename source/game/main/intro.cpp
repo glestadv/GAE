@@ -22,13 +22,14 @@
 #include "core_data.h"
 #include "metrics.h"
 #include "auto_test.h"
+#include "input.h"
 
 #include "leak_dumper.h"
 
-
 using namespace Shared::Graphics;
+using Shared::Platform::Key;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 // =====================================================
 // 	class Text
@@ -134,7 +135,7 @@ void Intro::mouseUpLeft(int x, int y){
 	SoundRenderer &soundRenderer= theSoundRenderer;
 	soundRenderer.stopMusic(theCoreData.getIntroMusic());
 	soundRenderer.playMusic(theCoreData.getMenuMusic());
-	program.setState(new MainMenu(program));
+	getProgram().setState(new MainMenu(program));
 }
 
 }}//end namespace

@@ -29,6 +29,7 @@
 #include "network_manager.h"
 #include "menu_state_new_game.h"
 #include "menu_state_join_game.h"
+#include "gui_program.h"
 
 #include "leak_dumper.h"
 
@@ -38,7 +39,7 @@ using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 // 	class GuiProgramState
@@ -69,32 +70,45 @@ void GuiProgramState::keyPress(char c) {}
 
 GuiProgram::GuiProgram(Program::LaunchType launchType, const string &ipAddress)
 		: Program(launchType)
-		, FactoryRepository(config.getRenderGraphicsFactory(), config.getSoundFactory())
-		, WindowGl()
+		, WindowGl(
+			getConfig().getDisplayWindowed() ? wsWindowedFixed : wsFullscreen,
+			0,
+			0,
+			getConfig().getDisplayWidth(),
+			getConfig().getDisplayHeight(),
+			getConfig().getDisplayRefreshFrequency(),
+			getConfig().getRenderColorBits(),
+			getConfig().getRenderDepthBits(),
+			getConfig().getRenderStencilBits(),
+			"Glest Advanced Engine")
+		, FactoryRepository(
+			getContext(),
+			getConfig().getRenderGraphicsFactory(),
+			getConfig().getSoundFactory())
 		, programState(NULL)
 		, preCrashState(NULL)
 		, keymap(getInput(), "keymap.ini")
 		, metrics()
 		, renderer()
 		, soundRenderer(getConfig(), this)
-		, coreData(config, renderer)
+		, coreData(getConfig(), renderer)
 		, renderTimer(getConfig().getRenderFpsMax(), 1)
 		, tickTimer(1.f, maxTimes, -1)
 		, updateTimer(static_cast<float>(getConfig().getGsWorldUpdateFps()), maxTimes, 2)
 		, updateCameraTimer(static_cast<float>(GameConstants::cameraFps), maxTimes, 10) {
 
 	//set video mode
-	setDisplaySettings();
+	//setDisplaySettings(config.getDisplayWindowed() ? wsWindowedFixed: wsFullscreen);
 
 	//window
-	setText("Glest Advanced Engine");
-	setStyle(config.getDisplayWindowed() ? wsWindowedFixed: wsFullscreen);
-	setPos(0, 0);
-	setSize(config.getDisplayWidth(), config.getDisplayHeight());
-	create();
+	//setText("Glest Advanced Engine");
+	//setStyle(config.getDisplayWindowed() ? wsWindowedFixed: wsFullscreen);
+	//setPos(0, 0);
+	//setSize(config.getDisplayWidth(), config.getDisplayHeight());
+	//create();
 
-	initGl(config.getRenderColorBits(), config.getRenderDepthBits(), config.getRenderStencilBits());
-	makeCurrentGl();
+	//initGl(config.getRenderColorBits(), config.getRenderDepthBits(), config.getRenderStencilBits());
+	//makeCurrentGl();
 
 	//init renderer (load global textures)
 	renderer.init();
@@ -432,4 +446,4 @@ void CrashProgramState::update() {
 	mouse2dAnim = (mouse2dAnim + 1) % Renderer::maxMouse2dAnim;
 }
 
-} // end namespace
+}} // end namespace

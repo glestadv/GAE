@@ -26,20 +26,13 @@ namespace Shared{ namespace Platform{
 // =====================================================
 //	class WindowGl
 // =====================================================
-WindowGl::WindowGl(WindowStyle windowStyle, int x, int y, int w, int h, int freq, const string &text, int colorBits, int depthBits, int stencilBits)
-	: context()
-{
-}
-void WindowGl::initGl(int colorBits, int depthBits, int stencilBits) {
-	context.setColorBits(colorBits);
-	context.setDepthBits(depthBits);
-	context.setStencilBits(stencilBits);
-
-	context.init();
+WindowGl::WindowGl(WindowStyle windowStyle, int x, int y, size_t width, size_t height, float freq,
+		size_t colorBits, size_t depthBits, size_t stencilBits, const string &text)
+		: Window(windowStyle, x, y, width, height, freq, colorBits, depthBits, stencilBits, text)
+		, context(windowStyle == wsFullscreen, width, height, freq, colorBits, depthBits, stencilBits) {
 }
 
 void WindowGl::makeCurrentGl() {
-	GraphicsInterface::getInstance().setCurrentContext(&context);
 	context.makeCurrent();
 }
 

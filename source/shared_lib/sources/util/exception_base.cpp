@@ -9,12 +9,14 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
+#include <sstream>
 
 #include "pch.h"
 #include "exception_base.h"
 #include "leak_dumper.h"
 
 using std::endl;
+using std::stringstream;
 
 namespace Shared { namespace Util {
 

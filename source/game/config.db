@@ -20,7 +20,7 @@ cameraMaxYaw				float	77.50f			0.f		360.f
 cameraMinDistance			float	8.f				0.f		20.f
 cameraMinYaw				float	20.f			0.f		360.f
 displayHeight				int		768
-displayRefreshFrequency		int		75
+displayRefreshFrequency		float	75.f
 displayWidth				int		1024
 displayWindowed				bool	true
 gsAutoRepairEnabled			bool	true

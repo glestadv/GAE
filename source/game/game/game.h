@@ -25,6 +25,7 @@
 #include "game_settings.h"
 #include "config.h"
 #include "keymap.h"
+#include "gui_program.h"
 
 // weather system not yet ready
 //#include "../physics/weather.h"
@@ -42,7 +43,7 @@ class GraphicTextEntryBox;
 //	Main game class
 // =====================================================
 
-class Game: public GuiProgramState {
+class Game : public GuiProgramState {
 public:
 	enum Speed {
 		sSlowest,

@@ -9,8 +9,6 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#if 0  // We don't need no stinkin' badges!
-
 #ifndef _SHARED_GRAPHICS_GRAPHICSFACTORY_H_
 #define _SHARED_GRAPHICS_GRAPHICSFACTORY_H_
 
@@ -56,7 +54,7 @@ public:
 	virtual ~GraphicsFactory(){}
 
 	//context
-	virtual Context *newContext(uint32 colorBits, uint32 depthBits, uint32 stencilBits) = 0;
+	//virtual Context *newContext(uint32 colorBits, uint32 depthBits, uint32 stencilBits) = 0;
 
 	//textures
 	virtual TextureManager *newTextureManager() = 0;
@@ -90,5 +88,4 @@ public:
 
 }} // end namespace
 
-#endif
 #endif
