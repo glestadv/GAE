@@ -25,34 +25,33 @@ using Shared::Sound::SoundPlayer;
 using Shared::Graphics::Vec3f;
 using Shared::Platform::Window;
 
+class Config;
+
 // =====================================================
 // 	class SoundRenderer
 //
 ///	Wrapper to acces the shared library sound engine
 // =====================================================
 
-class SoundRenderer{
+class SoundRenderer {
 public:
-	static const int ambientFade;
-	static const float audibleDist;
-private:
-	SoundPlayer *soundPlayer;
+	static const int ambientFade = 6000;
+	static const float audibleDist = 50.f;
 
+private:
 	//volume
 	float fxVolume;
 	float musicVolume;
 	float ambientVolume;
 
-private:
-	SoundRenderer();
+	SoundPlayer *soundPlayer;
 
 public:
-	//misc
+	SoundRenderer(const Config &config, Window *window);
 	~SoundRenderer();
-	static SoundRenderer &getInstance();
-	void init(Window *window);
+
 	void update();
-	SoundPlayer *getSoundPlayer() const	{return soundPlayer;}
+	SoundPlayer &getSoundPlayer() const	{return *soundPlayer;}
 
 	//music
 	void playMusic(StrSound *strSound);
@@ -69,7 +68,6 @@ public:
 
 	//misc
 	void stopAllSounds();
-	void loadConfig();
 };
 
 } // end namespace

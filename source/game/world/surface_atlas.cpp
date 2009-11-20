@@ -81,7 +81,7 @@ void SurfaceAtlas::addSurface(SurfaceInfo *si){
 	SurfaceInfos::iterator it= find(surfaceInfos.begin(), surfaceInfos.end(), *si);
 	if(it==surfaceInfos.end()){
 		//add new texture
-		Texture2D *t= Renderer::getInstance().newTexture2D(rsGame);
+		Texture2D *t= theRenderer.newTexture2D(rsGame);
 		t->setWrapMode(Texture::WRAP_MODE_CLAMP_TO_EDGE);
 		t->getPixmap()->init(surfaceSize, surfaceSize, 3);
 

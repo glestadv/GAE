@@ -30,18 +30,15 @@ namespace Game {
 
 class AiInterface{
 private:
-    World *world;
-    Commander *commander;
-    Console *console;
-    Ai ai;
-
+    World &world;
+    Commander &commander;
+    Console &console;
     int timer;
     int factionIndex;
     int teamIndex;
-
-	//config
 	bool redir;
     int logLevel;
+    Ai ai;
 
 public:
     AiInterface(Game &game, int factionIndex, int teamIndex);
@@ -82,7 +79,7 @@ public:
 	bool reqsOk(const CommandType *ct);
     bool checkCosts(const ProducibleType *pt);
 	bool areFreeCells(const Vec2i &pos, int size, Field field);
-	bool isUltra() const {return world->getFaction(factionIndex)->getCpuUltraControl();}
+	bool isUltra() const {return world.getFaction(factionIndex)->getCpuUltraControl();}
 
 private:
 	string getLogFilename() const	{return "ai" + Conversion::toStr(factionIndex) + ".log";}

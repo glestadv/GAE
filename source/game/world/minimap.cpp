@@ -41,14 +41,14 @@ const float Minimap::exploredAlpha = 0.5f;
 Minimap::Minimap() {
 	fowPixmap0 = NULL;
 	fowPixmap1 = NULL;
-	fogOfWar = Config::getInstance().getGsFogOfWarEnabled();
+	fogOfWar = theConfig.getGsFogOfWarEnabled();
 }
 
 void Minimap::init(int w, int h, const World *world) {
 	int scaledW = w / Map::cellScale;
 	int scaledH = h / Map::cellScale;
 
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 
 	//fow pixmaps
 	float f = 0.f;

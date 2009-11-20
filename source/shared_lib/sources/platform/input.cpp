@@ -27,10 +27,10 @@ namespace Shared { namespace Platform {
 // class Input
 // =======================================
 
-#ifdef USE_SDL
+#if USE_SDL
 #pragma pack(push, 1)
 const unsigned char Input::native2mb[Input::NATIVE_MOUSE_BUTTON_LAST + 1] = {
-	mbUnknown,		// 0 
+	mbUnknown,		// 0
 	mbLeft,			// 1 SDL_BUTTON_LEFT
 	mbCenter,		// 2 SDL_BUTTON_MIDDLE
 	mbRight,		// 3 SDL_BUTTON_RIGHT
@@ -1170,7 +1170,7 @@ void Input::verifyTranslationTables() {
 #elif defined(WIN32)  || defined(WIN64)
 #pragma pack(push, 1)
 const unsigned char Input::native2mb[Input::NATIVE_MOUSE_BUTTON_LAST + 1] = {
-	mbUnknown,		// 0 
+	mbUnknown,		// 0
 	mbLeft,			// 1 VK_LBUTTON
 	mbRight,		// 2 VK_RBUTTON
 	mbUnknown,		// 3

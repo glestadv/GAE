@@ -65,7 +65,7 @@ UnitUpdater::UnitUpdater(Game &game)
 		, gui(*(game.getGui()))
 		, world(*(game.getWorld()))
 		, map(NULL)
-		, console(*(game.getConsole()))
+		, console(game.getConsole())
 		, scriptManager(NULL)
 		, pathFinder(NULL)
 		, random() // note, should be initialized identically on all nodes of a network game!
@@ -82,7 +82,7 @@ void UnitUpdater::init(Game &game) {
 
 //skill dependent actions
 void UnitUpdater::updateUnit(Unit *unit) {
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	SoundRenderer &soundRenderer = theSoundRenderer;
 
 	//play skill sound
 	const SkillType *currSkill = unit->getCurrSkill();
@@ -146,7 +146,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 			//play water sound
 			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() && unit->getCurrField() == FieldWalkable) {
-				soundRenderer.playFx(CoreData::getInstance().getWaterSound());
+				soundRenderer.playFx(theCoreData.getWaterSound());
 			}
 		}
 	}
@@ -597,7 +597,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			}
 			//play start sound
 			if (unit->getFactionIndex() == world.getThisFactionIndex()) {
-				SoundRenderer::getInstance().playFx(bct->getStartSound(), unit->getCurrVector(), gameCamera->getPos());
+				theSoundRenderer.playFx(bct->getStartSound(), unit->getCurrVector(), gameCamera->getPos());
 			}
 		} else {
 			// there are no free cells
@@ -657,7 +657,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), true);
 			scriptManager->onUnitCreated(builtUnit);
 			if (unit->getFactionIndex() == world.getThisFactionIndex()) {
-				SoundRenderer::getInstance().playFx(
+				theSoundRenderer.playFx(
 						bct->getBuiltSound(),
 						unit->getCurrVector(),
 						gameCamera->getPos());
@@ -917,7 +917,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				SplashParticleSystem *psSplash = rst->getSplashParticleSystemType()->createSplashParticleSystem();
 				psSplash->setPos(repaired->getCurrVector());
 				psSplash->setVisible(visible);
-				Renderer::getInstance().manageParticleSystem(psSplash, rsGame);
+				theRenderer.manageParticleSystem(psSplash, rsGame);
 			}
 
 			bool wasBuilt = repaired->isBuilt();
@@ -933,7 +933,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 						// try to find finish build sound
 						BuildCommandType *bct = (BuildCommandType *)unit->getType()->getFirstCtOfClass(ccBuild);
 						if (bct) {
-							SoundRenderer::getInstance().playFx(
+							theSoundRenderer.playFx(
 							    bct->getBuiltSound(),
 							    unit->getCurrVector(),
 							    gameCamera->getPos());
@@ -1345,7 +1345,7 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 }
 
 void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 
 	ProjectileParticleSystem *psProj = 0;
 	SplashParticleSystem *psSplash;
@@ -1412,7 +1412,7 @@ void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 		et->spawn(*map, unit, unit->getTargetPos(), 1.f);
 		if (et->getSound()) {
 			// play rather visible or not
-			SoundRenderer::getInstance().playFx(et->getSound(), unit->getTargetVec(), gameCamera->getPos());
+			theSoundRenderer.playFx(et->getSound(), unit->getTargetVec(), gameCamera->getPos());
 		}
 		// FIXME: hacky mechanism of keeping attackers from walking into their own earthquake :(
 		unit->finishCommand();
@@ -1757,7 +1757,7 @@ void ParticleDamager::update(ParticleSystem *particleSystem) {
 		//play sound
 		StaticSound *projSound = ast->getProjSound();
 		if (particleSystem->getVisible() && projSound) {
-			SoundRenderer::getInstance().playFx(projSound, Vec3f(targetPos.x, 0.f, targetPos.y), gameCamera->getPos());
+			theSoundRenderer.playFx(projSound, Vec3f(targetPos.x, 0.f, targetPos.y), gameCamera->getPos());
 		}
 	}
 	particleSystem->setObserver(NULL);

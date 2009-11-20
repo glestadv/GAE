@@ -42,8 +42,8 @@ const string MenuStateJoinGame::serverFileName = "servers.ini";
 MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool connect, IpAddress serverIp)
 		: MenuState(program, mainMenu, "join-game")
 		, msgBox(NULL) {
-	Lang &lang = Lang::getInstance();
-	Config &config = Config::getInstance();
+	const Lang &lang = theLang;
+	Config &config = theConfig;
 	NetworkManager &networkManager = NetworkManager::getInstance();
 
 	servers.load(serverFileName);
@@ -99,10 +99,10 @@ MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool 
 }
 
 void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
-	const Lang &lang = Lang::getInstance();
+	const const Lang &lang = theLang;
 
-	CoreData &coreData = CoreData::getInstance();
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	CoreData &coreData = theCoreData;
+	SoundRenderer &soundRenderer = theSoundRenderer;
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	NetworkClientMessenger* clientInterface = networkManager.getNetworkClientMessenger();
 
@@ -143,7 +143,7 @@ void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
 
 		if (clientInterface->isConnected()) {
 			clientInterface->disconnectFromServer();
-			buttonConnect.setText(Lang::getInstance().get("Connect"));
+			buttonConnect.setText(theLang.get("Connect"));
 		} else {
 			try {
 				connectToServer();
@@ -151,7 +151,7 @@ void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
 				msgBox = new GraphicMessageBox();
 				msgBox->init(lang.get("ConnectionFailed") + "\n" + e.what(), lang.get("Ok"));
 			}
-			//buttonConnect.setText(Lang::getInstance().get("Disconnect"));
+			//buttonConnect.setText(theLang.get("Disconnect"));
 		}
 	}
 }
@@ -175,7 +175,7 @@ void MenuStateJoinGame::mouseMove(int x, int y, const MouseState &ms) {
 }
 
 void MenuStateJoinGame::render() {
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 
 	renderer.renderButton(&buttonReturn);
 	renderer.renderLabel(&labelServer);
@@ -198,7 +198,7 @@ void MenuStateJoinGame::render() {
 
 void MenuStateJoinGame::update() {
 	NetworkClientMessenger* clientInterface = NetworkManager::getInstance().getNetworkClientMessenger();
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	//update status label
 	if (clientInterface->isConnected()) {
@@ -311,7 +311,7 @@ void MenuStateJoinGame::keyPress(char c) {
 
 void MenuStateJoinGame::connectToServer() {
 	NetworkClientMessenger &clientInterface = *NetworkManager::getInstance().getNetworkClientMessenger();
-	Config& config = Config::getInstance();
+	Config& config = theConfig;
 	string ipString = labelServerIp.getText();
 	// remove annoying trailing underscore
 	ipString.resize(ipString.size() - 1);

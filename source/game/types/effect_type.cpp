@@ -196,7 +196,7 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 	try {
 		attr = effectNode->getAttribute("image", false);
 		if (attr && !(attr->getRestrictedValue() == "")) {
-			image = Renderer::getInstance().newTexture2D(rsGame);
+			image = theRenderer.newTexture2D(rsGame);
 			image->load(dir + "/" + attr->getRestrictedValue());
 		}
 	} catch (runtime_error e) {

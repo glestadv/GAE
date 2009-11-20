@@ -139,15 +139,15 @@ private:
 	typedef vector<Unit *> repairers;
 
 private:
-	AiInterface *aiInterface;
+	AiInterface &aiInterface;
 	AiRules aiRules;
+	Random random;
 	int startLoc;
 	int upgradeCount;
 	int minWarriors;
 	Tasks tasks;
 	Positions expansionPositions;
 	Positions knownEnemyLocatoins;
-	Random random;
 	bool baseSeen;
 	float aggressivness;
 
@@ -160,13 +160,13 @@ private:
 	UpgradeTypes availableUpgrades;
 
 public:
+	Ai(AiInterface &aiInterface);
 	~Ai();
-	void init(AiInterface *aiInterface);
 	void update();
 
 	//state requests
-	AiInterface *getAiInterface() const  {return aiInterface;}
-	Random* getRandom()      {return &random;}
+	AiInterface &getAiInterface() const	{return aiInterface;}
+	Random& getRandom()      			{return random;}
 	int getCountOfType(const UnitType *ut);
 
 	int getCountOfClass(UnitClass uc);

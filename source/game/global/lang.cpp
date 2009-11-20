@@ -29,6 +29,18 @@ namespace Game {
 //  class Lang
 // =====================================================
 
+Lang::Lang()
+		: locale()
+#if 0
+		, language()
+		, territory()
+		, encoding()
+		, script()
+#endif
+		, strings()
+		, scenarioStrings() {
+}
+
 void Lang::setLocale(const string &locale) {
 	this->locale = locale;
 	strings.clear();

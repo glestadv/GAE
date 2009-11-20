@@ -33,21 +33,16 @@ using namespace Shared::Graphics;
 
 namespace Game {
 
-AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex){
-	this->world= game.getWorld();
-	this->commander= game.getCommander();
-	this->console= game.getConsole();
-
-	this->factionIndex= factionIndex;
-	this->teamIndex= teamIndex;
-	timer= 0;
-
-	//init ai
-	ai.init(this);
-
-	//config
-	logLevel= Config::getInstance().getMiscAiLog();
-	redir= Config::getInstance().getMiscAiRedir();
+AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex)
+		: world(*game.getWorld())
+		, commander(*game.getCommander())
+		, console(game.getConsole())
+		, timer(0)
+		, factionIndex(factionIndex)
+		, teamIndex(teamIndex)
+		, redir(game.getConfig().getMiscAiRedir())
+		, logLevel(game.getConfig().getMiscAiLog())
+		, ai(*this) {
 
 	//clear log file
 	if(logLevel>0){
@@ -83,7 +78,7 @@ void AiInterface::printLog(int logLevel, const string &s){
 
 		//redirect to console
 		if(redir) {
-			console->addLine(logString);
+			console.addLine(logString);
 		}
     }
 }
@@ -91,54 +86,54 @@ void AiInterface::printLog(int logLevel, const string &s){
 // ==================== interaction ====================
 
 CommandResult AiInterface::giveCommand(int unitIndex, CommandClass commandClass, const Vec2i &pos){
-    Command *c= new Command (world->getFaction(factionIndex)->getUnit(unitIndex)->getType()->getFirstCtOfClass(commandClass), CommandFlags(), pos);
-	return world->getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(c);
+    Command *c= new Command (world.getFaction(factionIndex)->getUnit(unitIndex)->getType()->getFirstCtOfClass(commandClass), CommandFlags(), pos);
+	return world.getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(c);
 }
 
 CommandResult AiInterface::giveCommand(int unitIndex, const CommandType *commandType, const Vec2i &pos){
-    return world->getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(new Command(commandType, CommandFlags(), pos));
+    return world.getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(new Command(commandType, CommandFlags(), pos));
 }
 
 CommandResult AiInterface::giveCommand(int unitIndex, const CommandType *commandType, const Vec2i &pos, const UnitType *ut){
-    return world->getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(new Command(commandType, CommandFlags(), pos, ut));
+    return world.getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(new Command(commandType, CommandFlags(), pos, ut));
 }
 
 CommandResult AiInterface::giveCommand(int unitIndex, const CommandType *commandType, Unit *u){
-    return world->getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(new Command(commandType, CommandFlags(), u));
+    return world.getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(new Command(commandType, CommandFlags(), u));
 }
 
 // ==================== get data ====================
 
 int AiInterface::getMapMaxPlayers(){
-     return world->getMaxFactions();
+     return world.getMaxFactions();
 }
 
 Vec2i AiInterface::getHomeLocation(){
-	return world->getMap()->getStartLocation(world->getFaction(factionIndex)->getStartLocationIndex());
+	return world.getMap()->getStartLocation(world.getFaction(factionIndex)->getStartLocationIndex());
 }
 
 Vec2i AiInterface::getStartLocation(int loactionIndex){
-	return world->getMap()->getStartLocation(loactionIndex);
+	return world.getMap()->getStartLocation(loactionIndex);
 }
 
 int AiInterface::getFactionCount(){
-     return world->getFactionCount();
+     return world.getFactionCount();
 }
 
 int AiInterface::getMyUnitCount() const{
-	return world->getFaction(factionIndex)->getUnitCount();
+	return world.getFaction(factionIndex)->getUnitCount();
 }
 
 int AiInterface::getMyUpgradeCount() const{
-	return world->getFaction(factionIndex)->getUpgradeManager()->getUpgradeCount();
+	return world.getFaction(factionIndex)->getUpgradeManager()->getUpgradeCount();
 }
 
 int AiInterface::onSightUnitCount(){
     int count=0;
-	Map *map= world->getMap();
-	for(int i=0; i<world->getFactionCount(); ++i){
-		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			Tile *sc= map->getTile(Map::toTileCoords(world->getFaction(i)->getUnit(j)->getPos()));
+	Map *map= world.getMap();
+	for(int i=0; i<world.getFactionCount(); ++i){
+		for(int j=0; j<world.getFaction(i)->getUnitCount(); ++j){
+			Tile *sc= map->getTile(Map::toTileCoords(world.getFaction(i)->getUnit(j)->getPos()));
 			if(sc->isVisible(teamIndex)){
 				count++;
 			}
@@ -148,21 +143,21 @@ int AiInterface::onSightUnitCount(){
 }
 
 const Resource *AiInterface::getResource(const ResourceType *rt){
-	return world->getFaction(factionIndex)->getResource(rt);
+	return world.getFaction(factionIndex)->getResource(rt);
 }
 
 const Unit *AiInterface::getMyUnit(int unitIndex){
-    return world->getFaction(factionIndex)->getUnit(unitIndex);
+    return world.getFaction(factionIndex)->getUnit(unitIndex);
 }
 
 const Unit *AiInterface::getOnSightUnit(int unitIndex){
 
     int count=0;
-	Map *map= world->getMap();
+	Map *map= world.getMap();
 
-	for(int i=0; i<world->getFactionCount(); ++i){
-        for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-            Unit *u= world->getFaction(i)->getUnit(j);
+	for(int i=0; i<world.getFactionCount(); ++i){
+        for(int j=0; j<world.getFaction(i)->getUnitCount(); ++j){
+            Unit *u= world.getFaction(i)->getUnit(j);
             if(map->getTile(Map::toTileCoords(u->getPos()))->isVisible(teamIndex)){
 				if(count==unitIndex){
 					return u;
@@ -177,11 +172,11 @@ const Unit *AiInterface::getOnSightUnit(int unitIndex){
 }
 
 const FactionType * AiInterface::getMyFactionType(){
-	return world->getFaction(factionIndex)->getType();
+	return world.getFaction(factionIndex)->getType();
 }
 
 const TechTree *AiInterface::getTechTree(){
-	return world->getTechTree();
+	return world.getTechTree();
 }
 
 bool AiInterface::getNearestSightedResource(const ResourceType *rt, const Vec2i &pos, Vec2i &resultPos){
@@ -190,7 +185,7 @@ bool AiInterface::getNearestSightedResource(const ResourceType *rt, const Vec2i 
 	float nearestDist= infinity;
 	bool anyResource= false;
 
-	const Map *map= world->getMap();
+	const Map *map= world.getMap();
 
 	for(int i=0; i<map->getW(); ++i){
 		for(int j=0; j<map->getH(); ++j){
@@ -216,22 +211,22 @@ bool AiInterface::getNearestSightedResource(const ResourceType *rt, const Vec2i 
 }
 
 bool AiInterface::isAlly(const Unit *unit) const{
-	return world->getFaction(factionIndex)->isAlly(unit->getFaction());
+	return world.getFaction(factionIndex)->isAlly(unit->getFaction());
 }
 bool AiInterface::reqsOk(const RequirableType *rt){
-    return world->getFaction(factionIndex)->reqsOk(rt);
+    return world.getFaction(factionIndex)->reqsOk(rt);
 }
 
 bool AiInterface::reqsOk(const CommandType *ct){
-    return world->getFaction(factionIndex)->reqsOk(ct);
+    return world.getFaction(factionIndex)->reqsOk(ct);
 }
 
 bool AiInterface::checkCosts(const ProducibleType *pt){
-	return world->getFaction(factionIndex)->checkCosts(pt);
+	return world.getFaction(factionIndex)->checkCosts(pt);
 }
 
 bool AiInterface::areFreeCells(const Vec2i &pos, int size, Field field){
-    return world->getMap()->areFreeCells(pos, size, field);
+    return world.getMap()->areFreeCells(pos, size, field);
 }
 
 } // end namespace

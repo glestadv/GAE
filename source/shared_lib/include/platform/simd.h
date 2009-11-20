@@ -15,23 +15,21 @@
 // Header file for explicit simd support
 
 #include <types.h>
+#include "gae_features.h"
 #include "lang_features.h"
 
-#if defined(USE_SSE2_INTRINSICS)
+#if USE_SSE2_INTRINSICS
 	// if we're using intrinsics, we have to align vectors
-#	define ALIGN_12BYTE_VECTORS
+#	define ALIGN_12BYTE_VECTORS=1
+#	define ALIGN_16BYTE_VECTORS=1
 #	warning Profiling data has shown this code to be slower than allowing GCC to perform its own \
 			optimizations.  If you find it to be faster on your system, please submit this \
 			information to the glest message board.
 #endif
 
-#if defined(ALIGN_12BYTE_VECTORS)
-#	define ALIGN_VECTORS
-#endif
-
 // simd headers and vector types
 #if (defined __i386__ || defined __x86_64__ || defined(_MSC_VER) )
-#	if defined(USE_SSE2_INTRINSICS) || defined(ALIGN_VECTORS)
+#	if USE_SSE2_INTRINSICS || ALIGN_12BYTE_VECTORS || ALIGN_16BYTE_VECTORS
 #		include <emmintrin.h>	// SSE2
 		typedef __m128 vFloat;
 #	else
@@ -46,12 +44,12 @@
 #endif
 
 
-#ifdef ALIGN_VECTORS
-#	define ALIGN_VEC_DECL __aligned_pre(16)
-#	define ALIGN_VEC_ATTR __aligned_post(16)
+#ifdef ALIGN_16BYTE_VECTORS
+#	define ALIGN_VEC16_DECL __aligned_pre(16)
+#	define ALIGN_VEC16_ATTR __aligned_post(16)
 #else
-#	define ALIGN_VEC_DECL
-#	define ALIGN_VEC_ATTR
+#	define ALIGN_VEC16_DECL
+#	define ALIGN_VEC16_ATTR
 #endif
 
 // Rather or not to align 12-byte vectors.

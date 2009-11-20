@@ -83,7 +83,7 @@ const char *Checksums::compareResultDescr[COMPARE_RESULT_COUNT] = {
 /*
 string Checksums::ComparisonResults::toString() {
 	stringstream str;
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	for(const_iterator i = this->begin(); i != this->end(); ++i) {
 		assert(i->second >=0 && i->second < COMPARE_RESULT_COUNT);
 		str << lang.format(compareResultDescr[i->second], i->first.c_str()) << endl;
@@ -153,7 +153,7 @@ void Checksums::read(NetworkDataBuffer &buf) {
 		string path;
 
 		buf.read(checksum);
-		
+
 		// read characters until we hit a null
 		for(buf.read(chr); chr; buf.read(chr)) {
 			assert(chr);

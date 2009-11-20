@@ -44,20 +44,19 @@ namespace Game {
 
 Game *Game::singleton = NULL;
 
-Game(GameManager &manager, Program &program)
-Game::Game(Program &program, const shared_ptr<GameSettings> &gs, XmlNode *savedGame) :
-		: ProgramState(program)
+Game::Game(GameManager &manager, GuiProgram &program)
+		: GuiProgramState(program)
 		//main data
 		, manager(manager)
 		, keymap(program.getKeymap())
 		, input(program.getInput())
-		, config(Config::getInstance())
+		, config(program.getConfig())
+		, console(program.getConsole())
 		, world(this)
 		, aiInterfaces()
 		, gui(*this)
 		, gameCamera()
-		, commander()
-		, console()
+		, commander(*this)
 		, chatManager(keymap/*, console, world.getThisTeamIndex()*/)
 
 		//misc
@@ -84,13 +83,12 @@ Game::Game(Program &program, const shared_ptr<GameSettings> &gs, XmlNode *savedG
 
 Game::~Game() {
 	Logger &logger = Logger::getInstance();
-	Renderer &renderer = Renderer::getInstance();
 
-	logger.setState(Lang::getInstance().get("Deleting"));
-	logger.add("Game", true);
+	logger.setState(getLang().get("Deleting"));
+	printToLoadingScreen("Game");
 
-	renderer.endGame();
-	SoundRenderer::getInstance().stopAllSounds();
+	getRenderer().endGame();
+	getSoundRenderer().stopAllSounds();
 
 	if (saveBox) {
 		delete saveBox;
@@ -100,23 +98,24 @@ Game::~Game() {
 	gui.end();		//selection must be cleared before deleting units
 	world.end();	//must die before selection because of referencers
 	singleton = NULL;
-	logger.setLoading(true);
+	//logger.setLoading(true);
 }
 
 
 // ==================== init and load ====================
 
 void Game::load() {
-	Logger::getInstance().setState(Lang::getInstance().get("Loading"));
+	Logger::getInstance().setState(getLang().get("Loading"));
 	Logger &logger = Logger::getInstance();
-	string mapName = gs->getMapPath();
-	string tilesetName = gs->getTilesetPath();
-	string techName = gs->getTechPath();
-	string scenarioPath = gs->getScenarioPath();
+	GameSettings &gs = manager.getGameSettings();
+	string mapName = gs.getMapPath();
+	string tilesetName = gs.getTilesetPath();
+	string techName = gs.getTechPath();
+	string scenarioPath = gs.getScenarioPath();
 	string scenarioName = basename(scenarioPath);
 
 
-	logger.setState(Lang::getInstance().get("Loading"));
+	logger.setState(getLang().get("Loading"));
 
 	if (scenarioName.empty()) {
 		logger.setSubtitle(formatString(mapName) + " - " + formatString(tilesetName) + " - " + formatString(techName));
@@ -139,19 +138,26 @@ void Game::load() {
 
 	//scenario
 	if (!scenarioName.empty()) {
-		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
+		getProgram().getNonConstLang().loadScenarioStrings(scenarioPath, scenarioName);
 		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksums);
 	}
 }
 
+void Game::printToLoadingScreen(const string &msg) {
+	loadingStrings.push_back(msg);
+	Logger::getInstance().add(msg);
+	getRenderer().renderLoadingScreen(loadingStrings);
+}
+
 void Game::init() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	Logger &logger = Logger::getInstance();
-	CoreData &coreData = CoreData::getInstance();
-	Renderer &renderer = Renderer::getInstance();
+	CoreData &coreData = getCoreData();
+	Renderer &renderer = getRenderer();
 	Map *map = world.getMap();
 	NetworkManager &networkManager = NetworkManager::getInstance();
 
+	loadingStrings.clear();
 	logger.setState(lang.get("Initializing"));
 
 	//mesage box
@@ -190,7 +196,7 @@ void Game::init() {
 		Faction *faction = world.getFaction(i);
 		if(faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled()) {
 			aiInterfaces[i] = new AiInterface(*this, i, faction->getTeam());
-			logger.add("Creating AI for faction " + Conversion::toStr(i), true);
+			printToLoadingScreen("Creating AI for faction " + Conversion::toStr(i));
 		} else {
 			aiInterfaces[i] = NULL;
 		}
@@ -198,13 +204,13 @@ void Game::init() {
 
 	//weather particle systems
 	if (world.getTileset()->getWeather() == wRainy) {
-		logger.add("Creating rain particle system", true);
+		printToLoadingScreen("Creating rain particle system");
 		weatherParticleSystem = new RainParticleSystem();
 		weatherParticleSystem->setSpeed(12.f / config.getGsWorldUpdateFps());
 		weatherParticleSystem->setPos(gameCamera.getPos());
 		renderer.manageParticleSystem(weatherParticleSystem, rsGame);
 	} else if (world.getTileset()->getWeather() == wSnowy) {
-		logger.add("Creating snow particle system", true);
+		printToLoadingScreen("Creating snow particle system");
 		weatherParticleSystem = new SnowParticleSystem(1200);
 		weatherParticleSystem->setSpeed(1.5f / config.getGsWorldUpdateFps());
 		weatherParticleSystem->setPos(gameCamera.getPos());
@@ -213,24 +219,24 @@ void Game::init() {
 	}
 
 	//init renderer state
-	logger.add("Initializing renderer", true);
+	printToLoadingScreen("Initializing renderer");
 	renderer.initGame(this);
 
 	//sounds
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	SoundRenderer &soundRenderer = theSoundRenderer;
 
 	Tileset *tileset = world.getTileset();
 	AmbientSounds *ambientSounds = tileset->getAmbientSounds();
 
 	//rain
 	if (tileset->getWeather() == wRainy && ambientSounds->isEnabledRain()) {
-		logger.add("Starting ambient stream", true);
+		printToLoadingScreen("Starting ambient stream");
 		soundRenderer.playAmbient(ambientSounds->getRain());
 	}
 
 	//snow
 	if (tileset->getWeather() == wSnowy && ambientSounds->isEnabledSnow()) {
-		logger.add("Starting ambient stream", true);
+		printToLoadingScreen("Starting ambient stream");
 		soundRenderer.playAmbient(ambientSounds->getSnow());
 	}
 
@@ -240,7 +246,7 @@ void Game::init() {
 		Chrono readyTimer;
 
 		readyTimer.start();
-		logger.add("Waiting for network", true);
+		printToLoadingScreen("Waiting for network");
 		while (!gameInterface.isReady()) {
 			if(readyTimer.getMillis() > Host::READY_WAIT_TIMEOUT){
 				throw GlestException("Timeout waiting for server");
@@ -274,18 +280,19 @@ void Game::init() {
 	  program.setMaxUpdateBacklog(2);
 	 }*/
 
-	logger.add("Starting music stream", true);
+	printToLoadingScreen("Starting music stream");
 	StrSound *gameMusic = world.getThisFaction()->getType()->getMusic();
 	soundRenderer.playMusic(gameMusic);
 
-	logger.add("Launching game");
+	printToLoadingScreen("Launching game");
 	program.resetTimers();
 
 	if (savedGame) {
 		delete savedGame;
 		savedGame = NULL;
 	}
-	logger.setLoading ( false );
+//	logger.setLoading ( false );
+	loadingStrings.clear();
 }
 
 
@@ -294,7 +301,7 @@ void Game::init() {
 //update
 void Game::update() {
 	NetworkManager &netman = NetworkManager::getInstance();
-	const Config &config = Config::getInstance();
+	const Config &config = getConfig();
 	static const int keyFrameInterval = config.getGsWorldUpdateFps() / config.getNetFps();
 	bool updateWorld;
 
@@ -327,7 +334,7 @@ void Game::update() {
 
 		//update
 		for (int i = 0; i < updateLoops; ++i) {
-			Renderer &renderer = Renderer::getInstance();
+			Renderer &renderer = theRenderer;
 
 			//AiInterface
 			for (int i = 0; i < world.getFactionCount(); ++i) {
@@ -373,14 +380,14 @@ void Game::update() {
 	//TODO: add AutoTest to config
 	//update auto test
 	/*
-	if(Config::getInstance().getBool("AutoTest")){
+	if(getConfig().getBool("AutoTest")){
 		AutoTest::getInstance().updateGame(this);
 	}
 	*/
 }
 //SocketException &e) {
 void Game::autoSaveAndPrompt(string msg, string remotePlayerName, int slot) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	paused = true;
 	stringstream errmsg;
 	char buf[512];
@@ -409,7 +416,7 @@ void Game::render() {
 	renderFps++;
 	render3d();
 	render2d();
-	Renderer::getInstance().swapBuffers();
+	theRenderer.swapBuffers();
 }
 
 // ==================== tick ====================
@@ -431,7 +438,7 @@ void Game::mouseDownLeft(int x, int y) {
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	Vec2i mmCell;
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= getMetrics();
 	bool messageBoxClick= false;
 
 	//script message box, only if the exit box is not enabled
@@ -482,7 +489,7 @@ void Game::mouseDoubleClickLeft(int x, int y)
 }
 
 void Game::mouseMove(int x, int y, const MouseState &ms) {
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = getMetrics();
 
 	mouseX = x;
 	mouseY = y;
@@ -494,8 +501,8 @@ void Game::mouseMove(int x, int y, const MouseState &ms) {
 			gameCamera.moveForwardH((y - lastMousePos.y) * speed, response);
 			gameCamera.moveSideH((x - lastMousePos.x) * speed, response);
 		} else {
-			float ymult = Config::getInstance().getCameraInvertYAxis() ? -0.2f : 0.2f;
-			float xmult = Config::getInstance().getCameraInvertXAxis() ? -0.2f : 0.2f;
+			float ymult = getConfig().getCameraInvertYAxis() ? -0.2f : 0.2f;
+			float xmult = getConfig().getCameraInvertXAxis() ? -0.2f : 0.2f;
 			gameCamera.transitionVH(-(y - lastMousePos.y) * ymult, (lastMousePos.x - x) * xmult);
 		}
 	} else {
@@ -546,7 +553,7 @@ void Game::eventMouseWheel(int x, int y, int zDelta) {
 
 void Game::keyDown(const Key &key) {
 	UserCommand cmd = keymap.getCommand(key);
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	bool isNetworkGame = NetworkManager::getInstance().isNetworkGame();
 	bool speedChangesAllowed = !isNetworkGame;
 
@@ -613,7 +620,7 @@ void Game::keyDown(const Key &key) {
 
 			FILE *f = fopen(path.c_str(), "rb");
 			if (!f) {
-				Renderer::getInstance().saveScreen(path);
+				theRenderer.saveScreen(path);
 				break;
 			} else {
 				fclose(f);
@@ -808,7 +815,7 @@ void Game::quitGame() {
 
 void Game::render3d() {
 
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 
 	//init
 	renderer.reset3d();
@@ -846,9 +853,9 @@ void Game::render3d() {
 }
 
 void Game::render2d() {
-	Renderer &renderer = Renderer::getInstance();
-	Config &config = Config::getInstance();
-	CoreData &coreData = CoreData::getInstance();
+	Renderer &renderer = theRenderer;
+	Config &config = getConfig();
+	CoreData &coreData = getCoreData();
 	NetworkManager &networkManager = NetworkManager::getInstance();
 
 	//init
@@ -1030,16 +1037,16 @@ bool Game::hasBuilding(const Faction *faction) {
 }
 
 void Game::updateSpeed() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	console.addLine(lang.get("GameSpeedSet") + " " + lang.get(enumGameSpeedDesc[speed]));
 	if (speed == GAME_SPEED_NORMAL) {
 		fUpdateLoops = 1.0f;
 	} else if (speed > GAME_SPEED_NORMAL) {
 		fUpdateLoops = 1.0f + (float)(speed - GAME_SPEED_NORMAL) / (float)(GAME_SPEED_FASTEST - GAME_SPEED_NORMAL)
-			* (Config::getInstance().getGsSpeedFastest() - 1.0f);
+			* (getConfig().getGsSpeedFastest() - 1.0f);
 	} else {
-		fUpdateLoops = Config::getInstance().getGsSpeedSlowest() + (float)(speed) / (float)(GAME_SPEED_NORMAL)
-			* (1.0f - Config::getInstance().getGsSpeedSlowest());
+		fUpdateLoops = getConfig().getGsSpeedSlowest() + (float)(speed) / (float)(GAME_SPEED_NORMAL)
+			* (1.0f - getConfig().getGsSpeedSlowest());
 	}
 }
 
@@ -1073,12 +1080,12 @@ int Game::getUpdateLoops() {
 }
 
 void Game::showLoseMessageBox() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	showMessageBox(lang.get("YouLose") + ", " + lang.get("ExitGame?"), lang.get("BattleOver"), false);
 }
 
 void Game::showWinMessageBox() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	showMessageBox(lang.get("YouWin") + ", " + lang.get("ExitGame?"), lang.get("BattleOver"), false);
 }
 

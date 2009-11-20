@@ -44,7 +44,7 @@ protected:
 //	void setDirty(bool v)						{dirty = v;}
 	virtual void updateGameSettings() = 0;
 	//shared_ptr<GameSettings> &getGameSettings()	{return gs;}
-	void initGameSettings(NetworkMessenger &gi);
+	void initGameSettings(GameSettings &gs);
 	void loadMapInfo(string file, MapInfo *mapInfo);
 	void updateNetworkSlots();
 };

@@ -36,7 +36,7 @@ ParticleSystemType::ParticleSystemType(){
 
 void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &dir) {
 
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 
 	const XmlNode *blendFuncNode = particleSystemNode->getChild("blend-func", 0, false);
 	if(blendFuncNode) {
@@ -119,10 +119,10 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 	sizeNoEnergy = particleSystemNode->getChildFloatValue("size-no-energy");
 
 	//speed
-	speed = particleSystemNode->getChildFloatValue("speed") / Config::getInstance().getGsWorldUpdateFps();
+	speed = particleSystemNode->getChildFloatValue("speed") / theConfig.getGsWorldUpdateFps();
 
 	//gravity
-	gravity= particleSystemNode->getChildFloatValue("gravity") / Config::getInstance().getGsWorldUpdateFps();
+	gravity= particleSystemNode->getChildFloatValue("gravity") / theConfig.getGsWorldUpdateFps();
 
 	//emission rate
 	emissionRate = particleSystemNode->getChildIntValue("emission-rate");
@@ -179,7 +179,7 @@ void ParticleSystemTypeProjectile::load(const string &dir, const string &path){
 		trajectory = tajectoryNode->getAttribute("type")->getRestrictedValue();
 
 		//trajectory speed
-		trajectorySpeed = tajectoryNode->getChildFloatValue("speed") / Config::getInstance().getGsWorldUpdateFps();
+		trajectorySpeed = tajectoryNode->getChildFloatValue("speed") / theConfig.getGsWorldUpdateFps();
 
 		if(trajectory == "parabolic" || trajectory == "spiral" || trajectory == "random") {
 			//trajectory scale

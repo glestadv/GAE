@@ -22,6 +22,7 @@
 #include "sound_container.h"
 #include "skill_type.h"
 #include "upgrade_type.h"
+#include "game_constants.h"
 
 namespace Game {
 
@@ -138,12 +139,12 @@ public:
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void setUnitTypeAndIndex(const UnitType *unitType, int unitTypeIndex);
 	virtual void getDesc(string &str, const Unit *unit) const = 0;
-	virtual string toString() const						{return Lang::getInstance().get(name);}
+	virtual string toString() const						{return theLang.get(name);}
 	virtual const ProducibleType *getProduced() const	{return NULL;}
 	bool isQueuable() const								{return queuable;}
 	const UnitType *getUnitType() const					{return unitType;}
 	int getUnitTypeIndex() const						{return unitTypeIndex;}
-	
+
 
 	//get
 	CommandClass getClass() const						{assert(this); return cc;}

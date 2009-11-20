@@ -20,6 +20,8 @@ using Shared::Xml::XmlNode;
 
 namespace Game {
 
+GameManager *GameManager::singleton = NULL;
+
 GameManager::GameManager(Program &program)
 		: program(program)
 		, game()
@@ -27,6 +29,13 @@ GameManager::GameManager(Program &program)
 		, messenger(new LocalMessenger())
 		, savedGame()
 		, stats(gs) {
+	assert(!singleton);
+	singleton = this;
+}
+
+GameManager::~GameManager() {
+	assert(singleton);
+	singleton = NULL;
 }
 
 void GameManager::freeSavedGameData() {

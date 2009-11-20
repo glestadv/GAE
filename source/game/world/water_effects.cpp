@@ -48,12 +48,12 @@ WaterEffects::WaterEffects(){
 }
 
 void WaterEffects::update(){
-	anim+= 0.5f/Config::getInstance().getGsWorldUpdateFps();
+	anim+= 0.5f/theConfig.getGsWorldUpdateFps();
 	if(anim>1.f){
 		anim= 0;
 	}
 	for(int i=0; i<waterSplashes.size(); ++i){
-		waterSplashes[i].update(1.f/Config::getInstance().getGsWorldUpdateFps());
+		waterSplashes[i].update(1.f/theConfig.getGsWorldUpdateFps());
 	}
 }
 

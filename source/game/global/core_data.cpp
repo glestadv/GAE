@@ -36,20 +36,9 @@ using Shared::Graphics::Font;
 
 // ===================== PUBLIC ========================
 
-CoreData &CoreData::getInstance() {
-	static CoreData coreData;
-	return coreData;
-}
-
-CoreData::~CoreData() {
-	deleteValues(waterSounds.getSounds().begin(), waterSounds.getSounds().end());
-}
-
-void CoreData::load() {
+CoreData::CoreData(const Config &config, Renderer &renderer) {
 	const string dir = "data/core";
 	Logger::getInstance().add("Core data");
-
-	Renderer &renderer = Renderer::getInstance();
 
 	//textures
 	backgroundTexture = renderer.newTexture2D(rsGlobal);
@@ -89,7 +78,6 @@ void CoreData::load() {
 	textEntryTexture->getPixmap()->load(dir + "/menu/textures/textentry.tga");
 
 	//display font
-	Config &config = Config::getInstance();
 	string displayFontName = config.getRenderFontDisplay();
 
 	displayFont = renderer.newFont(rsGlobal);
@@ -117,7 +105,7 @@ void CoreData::load() {
 	menuFontVeryBig->setSize(computeFontSize(25));
 
 	//console font
-	string consoleFontName = Config::getInstance().getRenderFontConsole();
+	string consoleFontName = theConfig.getRenderFontConsole();
 
 	consoleFont = renderer.newFont(rsGlobal);
 	consoleFont->setType(consoleFontName);
@@ -139,8 +127,12 @@ void CoreData::load() {
 	}
 }
 
+CoreData::~CoreData() {
+	deleteValues(waterSounds.getSounds().begin(), waterSounds.getSounds().end());
+}
+
 int CoreData::computeFontSize(int size) {
-	int screenH= Config::getInstance().getDisplayHeight();
+	int screenH= theConfig.getDisplayHeight();
 	int rs= size*screenH/1000;
 	if (rs < 12) {
 		rs = 12;

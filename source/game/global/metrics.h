@@ -9,6 +9,7 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
+
 #ifndef _GAME_METRICS_H_
 #define _GAME_METRICS_H_
 
@@ -17,10 +18,10 @@
 namespace Game {
 
 // =====================================================
-//	class Metrics
+// class Metrics
 // =====================================================
 
-class Metrics{
+class Metrics {
 private:
 	int virtualW;
 	int virtualH;
@@ -35,46 +36,40 @@ private:
 	int displayH;
 	int displayW;
 
+public:
 	Metrics();
 
-public:
+	int getVirtualW() const {return virtualW;}
+	int getVirtualH() const {return virtualH;}
+	int getScreenW() const {return screenW;}
+	int getScreenH() const {return screenH;}
+	int getMinimapX() const {return minimapX;}
+	int getMinimapY() const {return minimapY;}
+	int getMinimapW() const {return minimapW;}
+	int getMinimapH() const {return minimapH;}
+	int getDisplayX() const {return displayX;}
+	int getDisplayY() const {return displayY;}
+	int getDisplayH() const {return displayH;}
+	int getDisplayW() const {return displayW;}
 
-	static const Metrics &getInstance(){
-		static const Metrics singleton;
-		return singleton;
-	}
+	float getAspectRatio() const {return static_cast<float>(screenW) / screenH;}
+	int toVirtualX(int w) const  {return w * virtualW / screenW;}
+	int toVirtualY(int h) const  {return h * virtualH / screenH;}
 
-	int getVirtualW() const	{return virtualW;}
-	int getVirtualH() const	{return virtualH;}
-	int getScreenW() const	{return screenW;}
-	int getScreenH() const	{return screenH;}
-	int getMinimapX() const	{return minimapX;}
-	int getMinimapY() const	{return minimapY;}
-	int getMinimapW() const	{return minimapW;}
-	int getMinimapH() const	{return minimapH;}
-	int getDisplayX() const	{return displayX;}
-	int getDisplayY() const	{return displayY;}
-	int getDisplayH() const	{return displayH;}
-	int getDisplayW() const	{return displayW;}
-
-	float getAspectRatio() const	{return static_cast<float>(screenW) / screenH;}
-	int toVirtualX(int w) const		{return w * virtualW / screenW;}
-	int toVirtualY(int h) const		{return h * virtualH / screenH;}
-
-	bool isInDisplay(int x, int y) const{
+	bool isInDisplay(int x, int y) const {
 		return
 			x > displayX &&
 			y > displayY &&
-			x < displayX+displayW &&
-			y < displayY+displayH;
+			x < displayX + displayW &&
+			y < displayY + displayH;
 	}
 
-	bool isInMinimap(int x, int y) const{
+	bool isInMinimap(int x, int y) const {
 		return
 			x > minimapX &&
 			y > minimapY &&
-			x < minimapX+minimapW &&
-			y < minimapY+minimapH;
+			x < minimapX + minimapW &&
+			y < minimapY + minimapH;
 	}
 };
 

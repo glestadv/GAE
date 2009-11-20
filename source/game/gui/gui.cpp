@@ -97,7 +97,7 @@ void SelectionQuad::disable() {
 Gui* Gui::currentGui = NULL;
 
 //constructor
-Gui::Gui(Game &game) : game(game), input(game.getInput()) {
+Gui::Gui(Game &game) : game(game), input(game.getInput()), display(game.getMetrics()) {
 	posObjWorld = Vec2i(54, 14);
 	dragStartPos = Vec2i(0, 0);
 	computeSelection = false;
@@ -159,7 +159,7 @@ void Gui::resetState() {
 /** @return true if the position is valid, false otherwise */
 bool Gui::getMinimapCell(int x, int y, Vec2i &cell) {
 	const Map *map = world->getMap();
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = game.getMetrics();
 
 	int xm = x - metrics.getMinimapX();
 	int ym = y - metrics.getMinimapY();
@@ -192,7 +192,7 @@ static void calculateNearest(Selection::UnitContainer &units, const Vec3f &pos) 
 
 // ==================== events ====================
 void Gui::mouseDownLeft(int x, int y) {
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = game.getMetrics();
 	Selection::UnitContainer units;
 	const Unit *targetUnit = NULL;
 	Vec2i worldPos;
@@ -213,7 +213,7 @@ void Gui::mouseDownLeft(int x, int y) {
 
 	// handle minimap click
 	if (getMinimapCell(x, y, worldPos)) {
-		if (isSelectingPos() && Config::getInstance().getUiEnableCommandMinimap()) {
+		if (isSelectingPos() && theConfig.getUiEnableCommandMinimap()) {
 			targetUnit = NULL;
 			validWorldPos = true;
 		} else {
@@ -260,7 +260,7 @@ void Gui::mouseDownLeft(int x, int y) {
 }
 
 void Gui::mouseDownRight(int x, int y) {
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = game.getMetrics();
 	Vec2i worldPos;
 
 	if (selectingPos || selectingMeetingPoint) {
@@ -279,7 +279,7 @@ void Gui::mouseDownRight(int x, int y) {
 	}
 
 	// handle minimap click
-	if (getMinimapCell(x, y, worldPos) && Config::getInstance().getUiEnableCommandMinimap()) {
+	if (getMinimapCell(x, y, worldPos) && theConfig.getUiEnableCommandMinimap()) {
 		giveDefaultOrders(worldPos, NULL);
 	} else if (selection.isComandable()) {
 		Selection::UnitContainer units;
@@ -303,7 +303,7 @@ void Gui::mouseUpRight(int x, int y) {
 }
 
 void Gui::mouseDoubleClickLeft(int x, int y) {
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = game.getMetrics();
 
 	//display panel
 	if (metrics.isInDisplay(x, y)) {
@@ -345,7 +345,7 @@ void Gui::mouseUpLeftGraphics(int x, int y) {
 	if (!selectingPos && !selectingMeetingPoint && selectionQuad.isEnabled()) {
 		selectionQuad.setPosUp(Vec2i(x, y));
 		if (selection.isComandable() && random.randRange(0, 1)) {
-			SoundRenderer::getInstance().playFx(
+			theSoundRenderer.playFx(
 				selection.getFrontUnit()->getType()->getSelectionSound(),
 				selection.getFrontUnit()->getCurrVector(),
 				gameCamera->getPos());
@@ -377,7 +377,7 @@ void Gui::mouseMoveGraphics(int x, int y) {
 		selectionQuad.setPosUp(Vec2i(x, y));
 		Selection::UnitContainer units;
 		if (computeSelection) {
-			Renderer::getInstance().computeSelected(units, selectionQuad.getPosDown(), selectionQuad.getPosUp());
+			theRenderer.computeSelected(units, selectionQuad.getPosDown(), selectionQuad.getPosUp());
 			computeSelection = false;
 			updateSelection(false, units);
 		}
@@ -385,7 +385,7 @@ void Gui::mouseMoveGraphics(int x, int y) {
 
 	//compute position for building
 	if (isPlacingBuilding()) {
-		validPosObjWorld = Renderer::getInstance().computePosition(Vec2i(x, y), posObjWorld);
+		validPosObjWorld = theRenderer.computePosition(Vec2i(x, y), posObjWorld);
 
 		if (!validPosObjWorld) {
 			buildPositions.clear();
@@ -403,7 +403,7 @@ void Gui::mouseDoubleClickLeftGraphics(int x, int y) {
 		Vec2i pos(x, y);
 
 		selectionQuad.setPosDown(pos);
-		Renderer::getInstance().computeSelected(units, pos, pos);
+		theRenderer.computeSelected(units, pos, pos);
 		calculateNearest(units, gameCamera->getPos());
 		updateSelection(true, units);
 		computeDisplay();
@@ -522,9 +522,9 @@ void Gui::hotKey(UserCommand cmd) {
 		break;
 #ifdef _GAE_DEBUG_EDITION_
 	case ucSwitchDebugField:
-		f = (int)Renderer::getInstance().getDebugField ();
+		f = (int)theRenderer.getDebugField ();
 		f ++; f %= FieldCount;
-		Renderer::getInstance().setDebugField ( (Field)f );
+		theRenderer.setDebugField ( (Field)f );
 		break;
 #endif
 	default:
@@ -586,7 +586,7 @@ void Gui::giveDefaultOrders(const Vec2i &targetPos, Unit *targetUnit) {
 		mouse3d.show(targetPos);
 
 		if (random.randRange(0, 1) == 0) {
-			SoundRenderer::getInstance().playFx(
+			theSoundRenderer.playFx(
 				selection.getFrontUnit()->getType()->getCommandSound(),
 				selection.getFrontUnit()->getCurrVector(),
 				gameCamera->getPos());
@@ -641,7 +641,7 @@ void Gui::giveTwoClickOrders(const Vec2i &targetPos, Unit *targetUnit) {
 		mouse3d.show(targetPos);
 
 		if (random.randRange(0, 1) == 0) {
-			SoundRenderer::getInstance().playFx(
+			theSoundRenderer.playFx(
 				selection.getFrontUnit()->getType()->getCommandSound(),
 				selection.getFrontUnit()->getCurrVector(),
 				gameCamera->getPos());
@@ -802,7 +802,7 @@ void Gui::mouseDownDisplayUnitBuild(int posDisplay) {
 }
 
 void Gui::computeInfoString(int posDisplay) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	display.setInfoText("");
 
@@ -1140,7 +1140,7 @@ bool Gui::isSharedCommandClass(CommandClass commandClass) {
 
 void Gui::updateSelection(bool doubleClick, Selection::UnitContainer &units) {
 	//Selection::UnitContainer units;
-	//Renderer::getInstance().computeSelected(units, selectionQuad.getPosDown(), selectionQuad.getPosUp());
+	//theRenderer.computeSelected(units, selectionQuad.getPosDown(), selectionQuad.getPosUp());
 	selectingBuilding = false;
 	activeCommandType = NULL;
 	needSelectionUpdate = false;
@@ -1179,7 +1179,7 @@ void Gui::updateSelection(bool doubleClick, Selection::UnitContainer &units) {
  */
 bool Gui::computeTarget(const Vec2i &screenPos, Vec2i &worldPos, Selection::UnitContainer &units) {
 	units.clear();
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 	validPosObjWorld = renderer.computePosition(screenPos, worldPos);
 	renderer.computeSelected(units, screenPos, screenPos);
 

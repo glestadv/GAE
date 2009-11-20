@@ -15,13 +15,16 @@
 #include "util.h"
 #include "stats.h"
 
+namespace Shared { namespace Xml {
+	class XmlNode;
+}}
+
 namespace Game {
 
 
 class Program;
 class Messenger;
 class GameSettings;
-class XmlNode;
 class Game;
 
 class GameManager {
@@ -33,17 +36,20 @@ private:
 	shared_ptr<XmlNode> savedGame;
 	Stats stats;
 
+	static GameManager *singleton;
+
 public:
 	GameManager(Program &program);
+	~GameManager();
+	static GameManager &getInstance()	{assert(singleton); return *singleton;}
 
 	Program &getProgram()				{return program;}
-	Game &getGame()						{assert(*game); return *game;}
+	Game &getGame()						{assert(game.get()); return *game;}
 	GameSettings &getGameSettings()		{return gs;}
-	Messenger &getMessenger()			{assert(*messenger); return *messenger;}
-	XmlNode *getSavedGame()				{return savedGame;}
+	Messenger &getMessenger()			{assert(messenger.get()); return *messenger;}
+	XmlNode *getSavedGame()				{return savedGame.get();}
 	Stats &getStats()					{return stats;}
 	bool hasGame() const				{return game.get();}
-
 
 	void freeSavedGameData();
 };

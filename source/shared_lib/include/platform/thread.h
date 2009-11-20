@@ -18,6 +18,8 @@
 
 #if defined(USE_PTHREADS)
 #	include "noimpl.h"
+#	include <pthread.h>
+#	include <sched.h>
 // we should be using pthreads in favor of SDL when possible (IMHO), but we aren't
 #elif defined(USE_SDL)
 #	include <SDL_thread.h>
@@ -76,11 +78,14 @@ public:
 
 	void start();
 	void setPriority(Priority priority);
-	void suspend();
-	void resume();
+	Priority getPriority(Priority priority) const;
 	void kill();
 	bool join(int maxWaitMillis = INFINITE);
 	ThreadId getId() const {return id;}
+
+// It's a generally accepted practice to omit these capibilities.
+//	void suspend();
+//	void resume();
 
 protected:
 	virtual void execute() = 0;
@@ -97,6 +102,7 @@ private:
  * @see http://www.libsdl.org/docs/html/thread.html.
  */
 class Mutex : Uncopyable {
+private:
 	friend class Condition;
 	MutexType mutex;
 
@@ -112,15 +118,15 @@ public:
 	void p() {::EnterCriticalSection(&mutex);}
 	void v() {::LeaveCriticalSection(&mutex);}
 #endif
-	MutexType &getObject() {return mutex;}
+// Ideally, we shouldn't ever have to expose this...
+//	MutexType &getObject() {return mutex;}
 };
 
 /**
- * MutexLock is a convenicnce and safety class to manage locking and unlocking
- * a mutex and is intended to be created on the stack.  The advantage of using
- * MutexLock over explicitly calling Mutex.p() and .v() is that you can never
- * forget to unlock the mutex.  Even if an exception is thrown, the stack unwind
- * will cause the mutex to be unlocked.
+ * MutexLock is a convenicnce and safety class to manage locking and unlocking a mutex and is
+ * intended to be created on the stack.  The advantage of using MutexLock over explicitly calling
+ * Mutex.p() and .v() is that you can never forget to unlock the mutex.  Even if an exception is
+ * thrown, the stack unwind will cause the mutex to be unlocked.
  *
  * Note: Do NOT extend this class unless you modify the destructor to virutal (and then delete this
  * notation :).
@@ -147,34 +153,35 @@ public:
 #ifdef USE_SDL
 	Condition() : cond(SDL_CreateCond()) {}
 	~Condition()						{SDL_DestroyCond(cond);}
-	/** Signal the first thread waiting on this condition. */
-	void signal()						{throwFit(SDL_CondSignal(cond), "SDL_CondSignal");}
-	/** Signal all threads waiting on this condition. */
-	void broadcast()					{throwFit(SDL_CondBroadcast(cond), "SDL_CondBroadcast");}
-	/** Wait for condition to be signled. */
-	void wait(Mutex &mutex)				{throwFit(SDL_CondWait(cond, mutex.getObject()), "SDL_CondWait");}
+	void signal()						{throwFit(SDL_CondSignal(cond), "SDL_CondSignal");}					/**< Signal the first thread waiting on this condition. */
+	void broadcast()					{throwFit(SDL_CondBroadcast(cond), "SDL_CondBroadcast");}			/**< Signal all threads waiting on this condition. */
+	void wait(Mutex &mutex)				{throwFit(SDL_CondWait(cond, mutex.mutex), "SDL_CondWait");}	/**< Wait for condition to be signled. */
 	/**
 	 * Wait for condition to be signled, specifying a max wait time.
 	 * @return true if the condition was signaled, false if it timed out.
 	 */
 	bool wait(Mutex &mutex, size_t max) {
-		int ret = SDL_CondWaitTimeout(cond, mutex.getObject(), max);
+		int ret = SDL_CondWaitTimeout(cond, mutex.mutex, max);
 		throwFit(ret, "SDL_CondWaitTimeout");
 		return ret != SDL_MUTEX_TIMEDOUT;
 	}
+
 private:
+	__cold void coldThrow(const char* func);
+
 	void throwFit(int ret, const char* func) {
 		if(ret == -1) {
-			throw std::runtime_error("Call to " + std::string(func) + " failed.");
+			coldThrow(func);
 		}
 	}
+
 #elif defined(WIN64)
 	Condition()							{InitializeConditionVariable(&cond);}
 	~Condition()						{}
 	void signal()						{WakeConditionVariable(&cond);}
 	void broadcast()					{WakeAllConditionVariable(&cond);}
-	void wait(Mutex &mutex)				{SleepConditionVariableCS(&cond, &mutex.getObject(), INFINITE);}
-	bool wait(Mutex &mutex, size_t max) {return SleepConditionVariableCS(&cond, &mutex.getObject(), max) != WAIT_TIMEOUT;}
+	void wait(Mutex &mutex)				{SleepConditionVariableCS(&cond, &mutex.mutex, INFINITE);}
+	bool wait(Mutex &mutex, size_t max) {return SleepConditionVariableCS(&cond, &mutex.mutex, max) != WAIT_TIMEOUT;}
 #elif defined(WIN32)
 	Condition();
 	~Condition()						{CloseHandle(cond);}

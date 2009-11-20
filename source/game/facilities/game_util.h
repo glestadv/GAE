@@ -18,6 +18,7 @@
 
 #include "socket.h"
 #include "util.h"
+#include "lang.h"
 
 using std::string;
 using std::stringstream;
@@ -34,7 +35,7 @@ const Version &getNetProtocolVersion();
 string getAboutString1(int i);
 string getAboutString2(int i);
 string getTeammateName(int i);
-string getTeammateRole(int i);
+string getTeammateRole(const Lang &lang, int i);
 string getCrashDumpFileName();
 string formatString(const string &str);
 

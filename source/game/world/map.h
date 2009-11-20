@@ -327,7 +327,7 @@ public:
 	void update(float slice);
 
 	//assertions
-	#ifdef DEBUG
+	#if DEBUG_WORLD
 		void assertUnitCells(const Unit * unit);
 	#else
 		void assertUnitCells(const Unit * unit){}

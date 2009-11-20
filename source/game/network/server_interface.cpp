@@ -328,7 +328,7 @@ void ServerInterface::waitUntilReady(Checksums &checksums) {
 }
 
 void ServerInterface::sendTextMessage(const string &text, int teamIndex){
-	NetworkMessageText networkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex);
+	NetworkMessageText networkMessageText(text, theConfig.getNetPlayerName(), teamIndex);
 	broadcastMessage(&networkMessageText);
 }
 
@@ -405,7 +405,7 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 			if(client->isConnected()) {
 				client->send(networkMessage);
 			} else {
-				Lang &lang = Lang::getInstance();
+				const Lang &lang = theLang;
 				string errmsg = client->getDescription() + " (" + lang.get("Player") + " "
 						+ intToStr(client->getId() + 1) + ") " + lang.get("Disconnected");
 				Game::getInstance()->autoSaveAndPrompt(errmsg, slot->getDescription(), i);

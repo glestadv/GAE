@@ -106,7 +106,7 @@ public:
 
 	//light
 	static const float maxLightDist;
-	
+
 public:
 	enum Shadows{
 		sDisabled,
@@ -117,6 +117,12 @@ public:
 	};
 
 private:
+	// foreign references
+	const Config &config;
+	const World *world;
+	const Map *map;
+	const GameCamera *camera;
+
 	//config
 	int maxLights;
     bool photoMode;
@@ -126,9 +132,6 @@ private:
 	bool focusArrows;
 	bool textures3D;
 	Shadows shadows;
-
-	//game
-	const Game *game;
 
 	//misc
 	int triangleCount;
@@ -159,18 +162,18 @@ private:
 
 	//water
 	float waterAnim;
-	
+
 	//perspective values
 	float perspFov;
 	float perspNearPlane;
 	float perspFarPlane;
 
 private:
-	Renderer();
+	Renderer(const Config &config);
 	~Renderer();
 
 public:
-	static Renderer &getInstance();
+//	static Renderer &getInstance();
 
     //init
 	void init();
@@ -222,7 +225,7 @@ public:
 	void renderSelectionQuad();
 	void renderText(const string &text, const Font2D *font, float alpha, int x, int y, bool centered= false);
 	void renderText(const string &text, const Font2D *font, const Vec3f &color, int x, int y, bool centered= false);
-	void renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered= false);	
+	void renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered= false);
 
     //components
 	void renderLabel(const GraphicLabel *label);
@@ -242,6 +245,8 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
+	void renderLoadingScreen(const vector<string> &lines);
+
 #ifdef _GAE_DEBUG_EDITION_
 	Field debugField;
 	void setDebugField ( Field f ) { debugField = f; }

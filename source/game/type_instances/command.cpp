@@ -159,7 +159,7 @@ void Command::write(NetworkDataBuffer &buf) const {
 
 	buf.write(static_cast<uint16>(commandedUnit->getId()));
 	buf.write(static_cast<uint8>((archetype & 0x0f) | ((flags.flags & 0x0f) << 4)));
-	fieldsPresent = 
+	fieldsPresent =
 			  (type					? 0x01 : 0)
 			| (pos != invalidPos 	? 0x02 : 0)
 			| (pos2 != invalidPos	? 0x04 : 0)
@@ -203,11 +203,6 @@ void Command::read(NetworkDataBuffer &buf) {
 
 	// debug related
 	NetworkManager &netman = NetworkManager::getInstance();
-#ifdef DEBUG_NETWORK
-	bool debug = Config::getInstance().getMiscDebugMode() && netman.isNetworkGame();
-#else
-	bool debug = false; // let optimizer remove dead code
-#endif
 
 	// commandedUnit
 	buf.read(commandedUnitId);
@@ -220,15 +215,15 @@ void Command::read(NetworkDataBuffer &buf) {
 
 	// fields present
 	buf.read(fieldsPresent);
-	
-	if(debug) {
+
+	if(DEBUG_NETWORK && Program::getConfig().getMiscDebugMode()) {
 		stringstream str;
 		bool delimit = false;
 		netman.getLogger().printf("=== Command::read() ==>\n");
 		netman.getLogger().printf("  commandedUnitId   = %hd\n", commandedUnitId);
 		netman.getLogger().printf("  archetypeAndFlags = 0x%02hhx (%hhu, 0x%1hhx)\n",
 				archetypeAndFlags, (unsigned int)archetype, flags.flags);
-		
+
 		if(fieldsPresent & 0x01) {
 			str << "commandType";
 			delimit = true;

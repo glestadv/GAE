@@ -17,6 +17,8 @@
 #include "network_manager.h"
 #include "lang.h"
 #include "keymap.h"
+#include "game_settings.h"
+#include "program.h"
 
 #include "leak_dumper.h"
 
@@ -55,7 +57,7 @@ void ChatManager::init(Console* console, int thisTeamIndex) {
 
 /** @return true if the keystroke was used or will be used when keyPressed is called. */
 bool ChatManager::keyDown(const Key &key) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	bool keyUsed = false;
 
 

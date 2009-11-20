@@ -14,7 +14,7 @@
 
 #include "properties.h"
 #include "input.h"
-#include "lang.h"
+//#include "lang.h"
 #include "patterns.h"
 
 using Shared::Util::Properties;
@@ -171,7 +171,7 @@ public:
 
 private:
 	const Input &input;
-	const Lang &lang;
+	//const Lang &lang;
 	vector<EntryPair> entries;
 	map<Entry, UserCommand> entryCmdMap;
 

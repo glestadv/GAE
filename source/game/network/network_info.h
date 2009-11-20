@@ -25,7 +25,9 @@ class XmlNode;
 using std::string;
 using Shared::Platform::IpAddress;
 using Shared::Util::Printable;
+using Shared::Util::Version;
 using Shared::Xml::XmlNode;
+using namespace Shared::Platform;
 
 namespace Game { namespace Net {
 

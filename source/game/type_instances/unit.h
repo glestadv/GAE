@@ -25,6 +25,7 @@
 #include "math_util.h"
 #include "entity.h"
 #include "timer.h"
+#include "faction.h"
 
 namespace Game {
 
@@ -38,7 +39,7 @@ using Shared::Graphics::Entity;
 using Shared::Platform::Chrono;
 
 class Map;
-class Faction;
+//class Faction;
 class Unit;
 class Command;
 class SkillType;

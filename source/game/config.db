@@ -59,7 +59,7 @@ renderFontDisplay			string	getDefaultFontStr()
 renderFontMenu				string	getDefaultFontStr()
 renderFov					float	60.f			0.01f	360.f
 renderFpsMax				int		60				0		1000000
-renderGraphicsFactory		string	"OpenGL"
+renderGraphicsFactory		string	"OpenGL2"
 renderLightsMax				int		1				0		8
 renderShadowAlpha			float	0.2f			0.f		1.f
 renderShadowFrameSkip		int		2

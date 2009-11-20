@@ -63,7 +63,16 @@ string PosixException::getPosixErrorDesc(int err) throw() {
 	// older libc
 	return string(strerror(err));
 #endif
+}
 
+__noreturn __cold void PosixException::coldThrow(
+		const string &msg,
+		const string &operation,
+		const GlestException *rootCause,
+		const string &fileName,
+		long lineNumber,
+		int err) {
+	throw PosixException(msg, operation, rootCause, fileName, lineNumber, err);
 }
 
 #if defined(WIN32)  || defined(WIN64)
@@ -111,6 +120,16 @@ string WindowsException::getWindowsErrorDesc(DWORD err) throw() {
 	return str;
 }
 
+__noreturn __cold void WindowsException::coldThrow(
+		const string &msg,
+		const string &operation,
+		const GlestException *rootCause,
+		const string &fileName,
+		long lineNumber,
+		DWORD err) {
+	throw WindowsException(msg, operation, rootCause, fileName, lineNumber, err);
+}
+
 // ===============================
 //  class WinsockException
 // ===============================
@@ -135,6 +154,15 @@ WinsockException *WinsockException::clone() const throw () {
 string WinsockException::getType() const throw() {
 	return string("WinsockException");
 }
+
+__noreturn __cold void WinsockException::coldThrow(
+		const string &msg,
+		const string &operation,
+		const GlestException *rootCause,
+		const string &fileName,
+		long lineNumber,
+		DWORD err) {
+	throw WinsockException(msg, operation, rootCause, fileName, lineNumber, err);
 
 #endif
 }} // end namespace

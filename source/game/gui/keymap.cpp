@@ -28,7 +28,7 @@ using std::ios_base;
 namespace Game {
 
 static const char *modNames[4] = {"Shift", "Ctrl", "Alt", "Meta"};
-	
+
 // =====================================================
 // 	class Keymap::Entry
 // =====================================================
@@ -195,12 +195,12 @@ const Keymap::UserCommandInfo Keymap::commandInfo[ucCount] = {
 #pragma pack(pop)
 
 Keymap::Keymap(const Input &input, const char* fileName) :
-		input(input), lang(Lang::getInstance()) {
+		input(input)/*, lang(theLang)*/ {
 	for(int i = ucNone; i != ucCount; ++i) {
 		entries.push_back(EntryPair(commandInfo[i]));
 		//entries[i] = EntryPair(commandInfo[i]);
 	}
-	
+
 	if(fileName) {
 		std::ifstream in(fileName, ios_base::in);
 		if(!in.fail()) {

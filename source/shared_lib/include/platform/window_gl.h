@@ -24,14 +24,38 @@ namespace Shared { namespace Platform {
 //	class WindowGl
 // =====================================================
 
-class WindowGl: public Window {
+class WindowGl : public Window {
 protected:
 	ContextGl context;
 
 public:
+	WindowGl(WindowStyle windowStyle, const string &text)
+	setStyle(windowStyle);
+	setText(text);
+
 	void initGl(int colorBits, int depthBits, int stencilBits);
 	void makeCurrentGl();
 	void swapBuffersGl();
+	static void setDisplaySettings(int width, int height, int colorBits, int freq) {
+
+		Config &config = theConfig;
+		// bool multisamplingSupported = isGlExtensionSupported("WGL_ARB_multisample");
+
+		if (!config.getDisplayWindowed()) {
+
+			int freq = config.getDisplayRefreshFrequency();
+			int colorBits = config.getRenderColorBits();
+			int screenWidth = config.getDisplayWidth();
+			int screenHeight = config.getDisplayHeight();
+
+			if (!(changeVideoMode(screenWidth, screenHeight, colorBits, freq)
+					|| changeVideoMode(screenWidth, screenHeight, colorBits, 0))) {
+				throw runtime_error("Error setting video mode: " + Conversion::toStr(screenWidth)
+						+ "x" + Conversion::toStr(screenHeight) + "x" + Conversion::toStr(colorBits));
+			}
+		}
+	}
+
 };
 
 }}//end namespace

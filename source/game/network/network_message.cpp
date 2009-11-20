@@ -42,11 +42,11 @@ namespace Game { namespace Net {
 
 /** Constructor for derived class when reading from NetworkDataBuffer. */
 inline NetworkMessage::NetworkMessage()
-#ifdef DEBUG
+#ifndef NDEBUG
 		: writing(false)
 #endif
 {
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 	simRxTime = Chrono::getCurMicros();
 	Shared::Util::Random rand((simRxTime & 0xffffffff) ^ time_t());
 	simRxTime += (rand.randRange(-DEBUG_NETWORK_DELAY_VAR, DEBUG_NETWORK_DELAY_VAR)
@@ -57,10 +57,10 @@ inline NetworkMessage::NetworkMessage()
 /** Constructor for derived class when creating a message object for transmission. */
 inline NetworkMessage::NetworkMessage(NetworkMessageType type)
 		: type(type)
-#ifdef DEBUG
+#ifndef NDEBUG
 		, writing(false)
 #endif
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 		, simRxTime(0)
 #endif
 {
@@ -69,17 +69,17 @@ inline NetworkMessage::NetworkMessage(NetworkMessageType type)
 inline NetworkMessage::NetworkMessage(const NetworkMessage &o)
 		: size(o.size)
 		, type(o.type)
-#ifdef DEBUG
+#ifndef NDEBUG
 		, writing(false)
 #endif
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 		, simRxTime(o.simRxTime)
 #endif
 {
 }
 
 void NetworkMessage::writeMsg(NetworkDataBuffer &buf) {
-#ifdef DEBUG
+#ifndef NDEBUG
 	assert(!writing);
 	writing = true;
 #endif
@@ -89,7 +89,7 @@ void NetworkMessage::writeMsg(NetworkDataBuffer &buf) {
 	write(buf);
 	size_t dataSent = buf.size() - startBufSize;
 	assert(dataSent == size);
-#ifdef DEBUG
+#ifndef NDEBUG
 	assert(writing);
 	writing = false;
 #endif
@@ -206,10 +206,10 @@ void NetworkMessage::print(ObjectPrinter &op) const {
 	op.beginClass("NetworkMessage")
 			.print("size", size)
 			.print("type", enumNetworkMessageTypeNames.getName(type))
-#ifdef DEBUG
+#ifndef NDEBUG
 			.print("writing", writing)
 #endif
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 			.print("simRxTime", simRxTime)
 #endif
 			.endClass();
@@ -274,7 +274,7 @@ void NetworkWriteableXmlDoc::parse(bool freeTextBuffer) {
 void NetworkWriteableXmlDoc::writeXml() {
 	assert(!data);
 	assert(rootNode);
-	shared_ptr<string> strData = rootNode->toString(Config::getInstance().getMiscDebugMode());
+	shared_ptr<string> strData = rootNode->toString(theConfig.getMiscDebugMode());
 	size = strData->length() + 1;
 	data = strncpy(static_cast<char *>(malloc(size)), strData->c_str(), size);
 	data[size - 1] = 0;	// just in case

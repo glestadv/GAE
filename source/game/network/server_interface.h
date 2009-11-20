@@ -8,7 +8,7 @@
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
-
+#if 0
 #ifndef _GAME_NET_SERVERINTERFACE_H_
 #define _GAME_NET_SERVERINTERFACE_H_
 
@@ -16,7 +16,7 @@
 #include <map>
 
 //#include "game_constants.h"
-#include "game_interface.h"
+#include "network_messenger.h"
 #include "remote_interface.h"
 #include "socket.h"
 
@@ -138,4 +138,5 @@ private:
 
 }} // end namespace
 
+#endif
 #endif

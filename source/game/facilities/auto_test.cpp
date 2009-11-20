@@ -12,7 +12,7 @@
 #include "pch.h"
 #include "auto_test.h"
 
-#include "program.h"
+#include "gui_program.h"
 #include "main_menu.h"
 #include "menu_state_new_game.h"
 #include "menu_state_scenario.h"
@@ -41,15 +41,15 @@ AutoTest & AutoTest::getInstance(){
 	return autoTest;
 }
 
-void AutoTest::updateIntro(Program &program){
+void AutoTest::updateIntro(GuiProgram &program){
 	program.setState(new MainMenu(program));
 }
 
-void AutoTest::updateRoot(Program &program, MainMenu *mainMenu){
+void AutoTest::updateRoot(GuiProgram &program, MainMenu *mainMenu){
 	mainMenu->setState(new MenuStateNewGame(program, mainMenu));
 }
 
-void AutoTest::updateNewGame(Program &program, MainMenu *mainMenu){
+void AutoTest::updateNewGame(GuiProgram &program, MainMenu *mainMenu){
 	mainMenu->setState(new MenuStateScenario(program, mainMenu/*, "scenarios"*/));
 }
 
@@ -76,7 +76,7 @@ void AutoTest::updateGame(Game *game){
 	}
 }
 
-void AutoTest::updateBattleEnd(Program &program){
+void AutoTest::updateBattleEnd(GuiProgram &program){
 	program.setState(new MainMenu(program));
 }
 

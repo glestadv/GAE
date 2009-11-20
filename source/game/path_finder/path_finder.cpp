@@ -103,8 +103,8 @@ void PathFinder::init ( Map *map ) {
 	this->map= map;
 	delete annotatedMap;
 	annotatedMap = new AnnotatedMap ( map );
-	search->init ( map, annotatedMap, Config::getInstance().getPathFinderUseAStar() );
-#ifdef _GAE_DEBUG_EDITION_
+	search->init ( map, annotatedMap, theConfig.getPathFinderUseAStar() );
+#if DEBUG_PATHFINDER
 	if ( Config::getInstance ().getMiscDebugTextures() ) {
 		int foo = Config::getInstance ().getMiscDebugTextureMode ();
 		debug_texture_action = foo == 0 ? PathFinder::ShowPathOnly
@@ -187,7 +187,7 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 		return tsArrived;
 	}
 
-	bool useAStar = Config::getInstance().getPathFinderUseAStar ();
+	bool useAStar = theConfig.getPathFinderUseAStar ();
 	// some tricks to determine if we are probably blocked on a short path, without
 	// an exhuastive and expensive search through pathFindNodesMax nodes
 	/* goal based pathing removes the need for this..
@@ -299,7 +299,7 @@ Vec2i PathFinder::computeNearestFreePos (const Unit *unit, const Vec2i &finalPos
 
 } // end namespace Game::PathFinder
 
-#if defined DEBUG && defined VALIDATE_WORLD
+#if DEBUG_WORLD
 // Why is this here?  Doesn't it belong in world.cpp?  It's here because we compile path_finder.cpp
 // optimized in debug since it's the only possible way you can really debug and this is a dog slow
 // function.

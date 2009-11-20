@@ -36,7 +36,7 @@ using namespace Shared::Util;
 
 MenuStateCustomGame::MenuStateCustomGame(Program *program, MainMenu *mainMenu, bool openNetworkSlots):
 		MenuState(*program, mainMenu, "new-game") {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	NetworkManager &networkManager = NetworkManager::getInstance();
 
 	vector<string> results, teamItems, controlItems;
@@ -156,8 +156,8 @@ MenuStateCustomGame::MenuStateCustomGame(Program *program, MainMenu *mainMenu, b
 
 void MenuStateCustomGame::mouseClick(int x, int y, MouseButton mouseButton){
 
-	CoreData &coreData= CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	CoreData &coreData= theCoreData;
+	SoundRenderer &soundRenderer= theSoundRenderer;
 	ServerInterface* serverInterface= NetworkManager::getInstance().getServerInterface();
 
 	if(buttonReturn.mouseClick(x,y)){
@@ -239,7 +239,7 @@ void MenuStateCustomGame::mouseMove(int x, int y, const MouseState *ms){
 
 void MenuStateCustomGame::render(){
 
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= theRenderer;
 
 	int i;
 
@@ -270,7 +270,7 @@ void MenuStateCustomGame::render(){
 
 void MenuStateCustomGame::update() {
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
-	Lang& lang = Lang::getInstance();
+	Lang& lang = theLang;
 
 	for (int i = 0; i < mapInfo.players; ++i) {
 		if (listBoxControls[i].getSelectedItemIndex() == CT_NETWORK) {
@@ -332,7 +332,7 @@ void MenuStateCustomGame::loadMapInfo(string file, MapInfo *mapInfo){
 		int8 title[128];
 	};
 
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 
 	try{
 		FILE *f= fopen(file.c_str(), "rb");

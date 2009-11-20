@@ -146,7 +146,7 @@ private:
 	int metricHeight;
 	std::map<Vec2i,uint32> localAnnt;
 	Map *cMap;
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_PATHFINDER
 public:
 #endif
 	MetricMap metrics;

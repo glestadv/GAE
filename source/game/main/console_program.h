@@ -1,8 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa,
-//				  2009 Daniel Santos <daniel.santos@pobox.com>
+//	Copyright (C) 2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -10,8 +9,14 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_GAMEPROGRAMSTATE_H_
-#define _GAME_GAMEPROGRAMSTATE_H_
+#ifndef _GAME_CONSOLEPROGRAM_H_
+#define _GAME_CONSOLEPROGRAM_H_
 
+#include "program.h"
 
-#endif // _GAME_GAMEPROGRAMSTATE_H_
+class ConsoleProgram : public Program {
+public:
+	int main();
+};
+
+#endif // _GAME_CONSOLEPROGRAM_H_

@@ -16,6 +16,7 @@
 
 #include "config.h"
 #include "game_constants.h"
+#include "gui_program.h"
 #include "xml_parser.h"
 
 #include "leak_dumper.h"
@@ -43,12 +44,12 @@ const float GameCamera::centerOffsetZ= 8.0f;
 
 GameCamera::GameCamera() : pos(0.f, defaultHeight, 0.f),
 		destPos(0.f, defaultHeight, 0.f), destAng(startingVAng, startingHAng) {
-	Config &config = Config::getInstance();
+	Config &config = theConfig;
     state= sGame;
 
 	//config
 	speed= 15.f / GameConstants::cameraFps;
-	clampBounds= !Config::getInstance().getUiPhotoMode();
+	clampBounds= !theConfig.getUiPhotoMode();
 
 	vAng= startingVAng;
     hAng= startingHAng;
@@ -181,7 +182,7 @@ Quad2i GameCamera::computeVisibleQuad() const{
 	float nearDist = 20.f;
 	float dist = pos.y > 20.f ? pos.y * 1.2f : 20.f;
 	float farDist = 90.f * (pos.y > 20.f ? pos.y / 15.f : 1.f);
-	float fov = Config::getInstance().getCameraFov();
+	float fov = theConfig.getCameraFov();
 
 	Vec2f v(sinf(degToRad(180 - hAng)), cosf(degToRad(180 - hAng)));
 	Vec2f v1(sinf(degToRad(180 - hAng - fov)), cosf(degToRad(180 - hAng - fov)));

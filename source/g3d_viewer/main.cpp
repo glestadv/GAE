@@ -6,7 +6,7 @@
 #include "graphics_interface.h"
 #include "util.h"
 
-using namespace Shared::Platform; 
+using namespace Shared::Platform;
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
@@ -22,26 +22,26 @@ namespace Shared { namespace G3dViewer {
 const string MainWindow::versionString= "v1.3.4";
 const string MainWindow::winHeader= "G3D viewer " + versionString + " - Built: " + __DATE__;
 
-MainWindow::MainWindow(const string &modelPath): 
+MainWindow::MainWindow(const string &modelPath):
 	wxFrame(
-		NULL, -1, winHeader.c_str(), 
-		wxPoint(Renderer::windowX, Renderer::windowY), 
+		NULL, -1, winHeader.c_str(),
+		wxPoint(Renderer::windowX, Renderer::windowY),
 		wxSize(Renderer::windowW, Renderer::windowH))
 {
-	renderer= Renderer::getInstance();
+	renderer= theRenderer;
 	this->modelPath= modelPath;
 	model= NULL;
 	playerColor= Renderer::pcRed;
 
 	speed= 0.025f;
-	
+
 	glCanvas = new GlCanvas(this);
 
 	glCanvas->SetCurrent();
 
 	renderer->init();
 
-	
+
 	menu= new wxMenuBar();
 
 	//menu
@@ -108,7 +108,7 @@ void MainWindow::onPaint(wxPaintEvent &event){
 	renderer->reset(GetClientSize().x, GetClientSize().y, playerColor);
 	renderer->transform(rotX, rotY, zoom);
 	renderer->renderGrid();
-	
+
 	renderer->renderTheModel(model, anim);
 	glCanvas->SwapBuffers();
 }
@@ -118,7 +118,7 @@ void MainWindow::onClose(wxCloseEvent &event){
 }
 
 void MainWindow::onMouseMove(wxMouseEvent &event){
-	
+
 	int x= event.GetX();
 	int y= event.GetY();
 	wxPaintEvent paintEvent;
@@ -127,7 +127,7 @@ void MainWindow::onMouseMove(wxMouseEvent &event){
 		rotX+= clamp(lastX-x, -10, 10);
 		rotY+= clamp(lastY-y, -10, 10);
 		onPaint(paintEvent);
-	} 
+	}
 	else if(event.RightIsDown()){
 		zoom*= 1.0f+(lastX-x+lastY-y)/100.0f;
 		zoom= clamp(zoom, 0.1f, 10.0f);
@@ -208,13 +208,13 @@ void MainWindow::onMenuColorGreen(wxCommandEvent &event){
 
 void MainWindow::onTimer(wxTimerEvent &event){
 	wxPaintEvent paintEvent;
-	
+
 	anim= anim+speed;
 	if(anim>1.0f){
 		anim-= 1.f;
 	}
 	onPaint(paintEvent);
-}	
+}
 
 string MainWindow::getModelInfo(){
 	string str;
@@ -279,7 +279,7 @@ bool App::OnInit(){
 	if(argc==2){
 		modelPath= argv[1];
 	}
-	
+
 	mainWindow= new MainWindow(modelPath);
 	mainWindow->Show();
 	return true;

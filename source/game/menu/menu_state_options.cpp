@@ -33,8 +33,8 @@ namespace Game {
 MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	MenuState(program, mainMenu, "config")
 {
-	Lang &lang= Lang::getInstance();
-	Config &config= Config::getInstance();
+	const Lang &lang= theLang;
+	Config &config= theConfig;
 
 	//create
 	buttonReturn.init(200, 150, 100);
@@ -169,10 +169,10 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 
 void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
 
-	Config &config= Config::getInstance();
-	Lang &lang= Lang::getInstance();
-	CoreData &coreData= CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	Config &config= theConfig;
+	const Lang &lang= theLang;
+	CoreData &coreData= theCoreData;
+	SoundRenderer &soundRenderer= theSoundRenderer;
 
 	if(buttonReturn.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundA());
@@ -180,7 +180,7 @@ void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
     }
 	else if(buttonAutoConfig.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundA());
-		Renderer::getInstance().autoConfig();
+		theRenderer.autoConfig();
 		saveConfig();
 		mainMenu->setState(new MenuStateOptions(program, mainMenu));
 	}
@@ -221,7 +221,7 @@ void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
 		saveConfig();
 	}
 	else if(listBoxVolumeMusic.mouseClick(x, y)){
-		CoreData::getInstance().getMenuMusic()->setVolume(Conversion::strToInt(listBoxVolumeMusic.getSelectedItem())/100.f);
+		theCoreData.getMenuMusic()->setVolume(Conversion::strToInt(listBoxVolumeMusic.getSelectedItem())/100.f);
 		config.setSoundVolumeMusic(atoi(listBoxVolumeMusic.getSelectedItem().c_str()));
 		saveConfig();
 	}
@@ -264,14 +264,14 @@ void MenuStateOptions::mouseMove(int x, int y, const MouseState &ms){
 	listBoxLights.mouseMove(x, y);
    listBoxMaxPathNodes.mouseMove (x, y);
    listBoxPFAlgorithm.mouseMove (x, y);
-#  ifdef _GAE_DEBUG_EDITION_      
+#  ifdef _GAE_DEBUG_EDITION_
       listBoxPFTexturesOn.mouseMove (x, y);
       listBoxPFTextureMode.mouseMove (x, y);
 #  endif
 }
 
 void MenuStateOptions::render(){
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= theRenderer;
 
 	renderer.renderButton(&buttonReturn);
 	renderer.renderButton(&buttonAutoConfig);
@@ -307,11 +307,11 @@ void MenuStateOptions::render(){
 }
 
 void MenuStateOptions::saveConfig(){
-	Config &config= Config::getInstance();
+	Config &config= theConfig;
 
 	config.save();
-	Renderer::getInstance().loadConfig();
-	SoundRenderer::getInstance().loadConfig();
+	theRenderer.loadConfig();
+	theSoundRenderer.loadConfig();
 }
 
 } // end namespace

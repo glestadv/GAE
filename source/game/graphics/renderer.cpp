@@ -41,19 +41,19 @@ namespace Game {
 // 	class MeshCallbackTeamColor
 // =====================================================
 
-class MeshCallbackTeamColor: public MeshCallback{
+class MeshCallbackTeamColor : public MeshCallback {
 private:
 	const Texture *teamTexture;
 
 public:
-	void setTeamTexture(const Texture *teamTexture)	{this->teamTexture= teamTexture;}
+	void setTeamTexture(const Texture *teamTexture) {this->teamTexture = teamTexture;}
 	virtual void execute(const Mesh *mesh);
 };
 
-void MeshCallbackTeamColor::execute(const Mesh *mesh){
+void MeshCallbackTeamColor::execute(const Mesh *mesh) {
 
 	//team color
-	if(mesh->getCustomTexture() && teamTexture!=NULL){
+	if (mesh->getCustomTexture() && teamTexture != NULL) {
 		//texture 0
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
 
@@ -96,8 +96,7 @@ void MeshCallbackTeamColor::execute(const Mesh *mesh){
 		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA);
 
 		glActiveTexture(GL_TEXTURE0);
-	}
-	else{
+	} else {
 		glActiveTexture(GL_TEXTURE1);
 		glDisable(GL_TEXTURE_2D);
 		glActiveTexture(GL_TEXTURE0);
@@ -146,10 +145,12 @@ const float Renderer::maxLightDist= 50.f;
 
 // ==================== constructor and destructor ====================
 
-Renderer::Renderer(){
+Renderer::Renderer(const Config &config)
+		: config(config)
+		,
+{
 	GraphicsInterface &gi= GraphicsInterface::getInstance();
 	FactoryRepository &fr= FactoryRepository::getInstance();
-	Config &config= Config::getInstance();
 
 	gi.setFactory(fr.getGraphicsFactory(config.getRenderGraphicsFactory()));
 	GraphicsFactory *graphicsFactory= GraphicsInterface::getInstance().getFactory();
@@ -188,18 +189,16 @@ Renderer::~Renderer(){
 	}
 }
 
+/*
 Renderer &Renderer::getInstance(){
 	static Renderer renderer;
 	return renderer;
-}
+}*/
 
 
 // ==================== init ====================
 
-void Renderer::init(){
-
-	Config &config= Config::getInstance();
-
+void Renderer::init() {
 	loadConfig();
 
 	if(config.getRenderCheckGlCaps()){
@@ -276,7 +275,7 @@ void Renderer::initMenu(MainMenu *mm){
 	modelManager[rsMenu]->init();
 	textureManager[rsMenu]->init();
 	fontManager[rsMenu]->init();
-	//modelRenderer->setCustomTexture(CoreData::getInstance().getCustomTexture());
+	//modelRenderer->setCustomTexture(theCoreData.getCustomTexture());
 
 	init3dListMenu(mm);
 }
@@ -598,7 +597,7 @@ void Renderer::renderMouse3d(){
 
 void Renderer::renderBackground(const Texture2D *texture){
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 
 	assertGl();
 
@@ -636,16 +635,16 @@ void Renderer::renderConsole(const Console *console){
 	glEnable(GL_BLEND);
 
 	for(int i=0; i<console->getLineCount(); ++i){
-		renderTextShadow( 
-			console->getLine(i), 
-			CoreData::getInstance().getConsoleFont(),
+		renderTextShadow(
+			console->getLine(i),
+			theCoreData.getConsoleFont(),
 			20, i*20+20);
 	}
 	glPopAttrib();
 }
 
 void Renderer::renderChatManager(const ChatManager *chatManager){
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 
 	if(chatManager->getEditEnabled()){
 		string text;
@@ -659,7 +658,7 @@ void Renderer::renderChatManager(const ChatManager *chatManager){
 		}
 		text+= ": " + chatManager->getText() + "_";
 
-		textRenderer->begin(CoreData::getInstance().getConsoleFont());
+		textRenderer->begin(theCoreData.getConsoleFont());
 		textRenderer->render(text, 300, 150);
 		textRenderer->end();
 	}
@@ -667,7 +666,7 @@ void Renderer::renderChatManager(const ChatManager *chatManager){
 
 void Renderer::renderResourceStatus(){
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 	const World *world= game->getWorld();
 	const Faction *thisFaction= world->getFaction(world->getThisFactionIndex());
 	int subfaction = thisFaction->getSubfaction();
@@ -718,7 +717,7 @@ void Renderer::renderResourceStatus(){
 			glDisable(GL_TEXTURE_2D);
 
 			renderTextShadow(
-				str, CoreData::getInstance().getMenuFontSmall(),
+				str, theCoreData.getMenuFontSmall(),
 				j*100+220, metrics.getVirtualH()-30, false);
 			++j;
 		}
@@ -754,7 +753,7 @@ void Renderer::renderSelectionQuad(){
 Vec2i computeCenteredPos(const string &text, const Font2D *font, int x, int y){
 	Vec2i textPos;
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 	Vec2f textDiminsions = font->getMetrics()->getTextDiminsions(text);
 
 	textPos= Vec2i(
@@ -793,7 +792,7 @@ void Renderer::renderText(const string &text, const Font2D *font, const Vec3f &c
 
 void Renderer::renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered){
 	glPushAttrib(GL_CURRENT_BIT);
-	
+
 	Vec2i pos= centered? computeCenteredPos(text, font, x, y): Vec2i(x, y);
 
 	textRenderer->begin(font);
@@ -802,7 +801,7 @@ void Renderer::renderTextShadow(const string &text, const Font2D *font, int x, i
 	glColor3f(1.0f, 1.0f, 1.0f);
 	textRenderer->render(text, pos.x, pos.y);
 	textRenderer->end();
-	
+
 	glPopAttrib();
 }
 
@@ -841,7 +840,7 @@ void Renderer::renderButton(const GraphicButton *button){
 	glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT);
 
 	//background
-	CoreData &coreData= CoreData::getInstance();
+	CoreData &coreData= theCoreData;
 	Texture2D *backTexture= w>3*h/2? coreData.getButtonBigTexture(): coreData.getButtonSmallTexture();
 
 	glEnable(GL_TEXTURE_2D);
@@ -944,33 +943,33 @@ void Renderer::renderMessageBox(const GraphicMessageBox *messageBox){
 		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + 9*messageBox->getH()/10);
 		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY());
 	glEnd();
-	glColor4f(0.0f, 0.0f, 0.0f, 0.8f) ;   
+	glColor4f(0.0f, 0.0f, 0.0f, 0.8f) ;
 	glBegin(GL_TRIANGLE_STRIP);
 		glVertex2i(messageBox->getX(), messageBox->getY()+messageBox->getH());
 		glVertex2i(messageBox->getX(), messageBox->getY()+9*messageBox->getH()/10);
 		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + messageBox->getH());
 		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY()+9*messageBox->getH()/10);
 	glEnd();
- 
+
 	glBegin(GL_LINE_LOOP);
-		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
+		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;
 		glVertex2i(messageBox->getX(), messageBox->getY());
-		
-		glColor4f(0.0f, 0.0f, 0.0f, 0.25f) ;   
+
+		glColor4f(0.0f, 0.0f, 0.0f, 0.25f) ;
 		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY());
-		
-		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
+
+		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;
 		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY() + messageBox->getH());
-		
-		glColor4f(0.25f, 0.25f, 0.25f, 0.25f) ;   
+
+		glColor4f(0.25f, 0.25f, 0.25f, 0.25f) ;
 		glVertex2i(messageBox->getX(), messageBox->getY() + messageBox->getH());
 	glEnd();
 
 	glBegin(GL_LINE_STRIP);
-		glColor4f(1.0f, 1.0f, 1.0f, 0.25f) ;   
+		glColor4f(1.0f, 1.0f, 1.0f, 0.25f) ;
 		glVertex2i(messageBox->getX(), messageBox->getY() + 90*messageBox->getH()/100);
-		
-		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
+
+		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;
 		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY() + 90*messageBox->getH()/100);
 	glEnd();
 
@@ -984,13 +983,13 @@ void Renderer::renderMessageBox(const GraphicMessageBox *messageBox){
 
 	//text
 	renderText(
-		messageBox->getText(), messageBox->getFont(), Vec3f(1.0f, 1.0f, 1.0f), 
-		messageBox->getX()+15, messageBox->getY()+7*messageBox->getH()/10, 
+		messageBox->getText(), messageBox->getFont(), Vec3f(1.0f, 1.0f, 1.0f),
+		messageBox->getX()+15, messageBox->getY()+7*messageBox->getH()/10,
 		false );
 
 	renderText(
-		messageBox->getHeader(), messageBox->getFont(),Vec3f(1.0f, 1.0f, 1.0f), 
-		messageBox->getX()+15, messageBox->getY()+93*messageBox->getH()/100, 
+		messageBox->getHeader(), messageBox->getFont(),Vec3f(1.0f, 1.0f, 1.0f),
+		messageBox->getX()+15, messageBox->getY()+93*messageBox->getH()/100,
 		false );
 
 }
@@ -1004,7 +1003,7 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 	glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT);
 
 	//background
-	CoreData &coreData= CoreData::getInstance();
+	CoreData &coreData= theCoreData;
 	Texture2D *backTexture= coreData.getTextEntryTexture();
 
 	glEnable(GL_TEXTURE_2D);
@@ -1067,7 +1066,7 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 		glEnd();
 	}
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 	const FontMetrics *fontMetrics= textEntry->getFont()->getMetrics();
 
 	renderText(textEntry->getText(), textEntry->getFont(), GraphicTextEntry::getFade(),
@@ -1111,7 +1110,7 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 
 void Renderer::renderSurface() {
 #  if defined _GAE_DEBUG_EDITION_
-   if ( Config::getInstance().getMiscDebugTextures() )
+   if ( theConfig.getMiscDebugTextures() )
    {
       renderSurfacePFDebug ();
       return;
@@ -1236,7 +1235,7 @@ void Renderer::renderSurfacePFDebug ()
 	glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT);
 
 	glEnable(GL_BLEND);
-	glEnable(GL_COLOR_MATERIAL); 
+	glEnable(GL_COLOR_MATERIAL);
 	glDisable(GL_ALPHA_TEST);
 	glActiveTexture(baseTexUnit);
 
@@ -1293,7 +1292,7 @@ void Renderer::renderSurfacePFDebug ()
             glVertex3fv(mc.ptr());
             glTexCoord2f ( 0.f, 0.f );
             glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(ml.ptr());                        
+            glVertex3fv(ml.ptr());
          glEnd ();
 
          cPos = Vec2i( cx+1, cy );
@@ -1319,7 +1318,7 @@ void Renderer::renderSurfacePFDebug ()
             glVertex3fv(mr.ptr());
             glTexCoord2f ( 0.f, 0.f );
             glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(mc.ptr());                        
+            glVertex3fv(mc.ptr());
          glEnd ();
 
          cPos = Vec2i( cx, cy + 1 );
@@ -1345,7 +1344,7 @@ void Renderer::renderSurfacePFDebug ()
             glVertex3fv(bc.ptr());
             glTexCoord2f ( 0.f, 0.f );
             glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(bl.ptr());                        
+            glVertex3fv(bl.ptr());
          glEnd ();
 
          cPos = Vec2i( cx + 1, cy + 1 );
@@ -1371,7 +1370,7 @@ void Renderer::renderSurfacePFDebug ()
             glVertex3fv(br.ptr());
             glTexCoord2f ( 0.f, 0.f );
             glNormal3fv(tc00->getNormal().ptr());
-            glVertex3fv(bc.ptr());                        
+            glVertex3fv(bc.ptr());
          glEnd ();
 		}
 	}
@@ -1428,7 +1427,7 @@ void Renderer::renderObjects(){
 
 				const Model *objModel= sc->getObject()->getModel();
 				Vec3f v= o->getPos();
-            
+
             // QUICK-FIX: Objects/Resources drawn out of place...
             // Why do we need this ??? are the tileset objects / techtree resources defined out of position ??
             v.x += Map::mapScale / 2; // == 1
@@ -1600,11 +1599,11 @@ void Renderer::renderUnits(){
 	MeshCallbackTeamColor meshCallbackTeamColor;
 
 /*	// commented out because "calculate selected units on render" functionality isn't working
-	
+
 	// compute selection variables
 	GLuint selectBuffer[Gui::maxSelBuff];
 	Selection::UnitContainer units;
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 	Gui* gui = Gui::getCurrentGui();
 
 	// compute selected during render
@@ -1619,7 +1618,7 @@ void Renderer::renderUnits(){
 		int h = abs(posDown.y - posUp.y);
 		if (w < 1) w = 1;
 		if (h < 1) h = 1;
-	
+
 		//setup matrices
 		glSelectBuffer(Gui::maxSelBuff, selectBuffer);
 		glMatrixMode(GL_PROJECTION);
@@ -1632,8 +1631,8 @@ void Renderer::renderUnits(){
 		loadGameCameraMatrix();
 	}*/
 
-	
-	
+
+
 	assertGl();
 
 	glPushAttrib(GL_ENABLE_BIT | GL_FOG_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
@@ -1667,7 +1666,7 @@ void Renderer::renderUnits(){
 
 			//translate
 			Vec3f currVec= unit->getCurrVectorFlat();
-			
+
 			//TODO: floating units should maintain their 'y' coord properly...
 			// Quick fix: float boats
 			const Field f = unit->getCurrField ();
@@ -1744,7 +1743,7 @@ void Renderer::renderUnits(){
 		//pop matrices
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
-	
+
 		//select units
 		int selCount= glRenderMode(GL_RENDER);
 		for(int i=1; i<=selCount; ++i){
@@ -1760,7 +1759,7 @@ void Renderer::renderUnits(){
 		}
 		gui->updateSelection(false, units);
 	}*/
-	
+
 	//assert
 	assertGl();
 }
@@ -1880,7 +1879,7 @@ void Renderer::renderWaterEffects(){
 	const World *world= game->getWorld();
 	const WaterEffects *we= world->getWaterEffects();
 	const Map *map= world->getMap();
-	const CoreData &coreData= CoreData::getInstance();
+	const CoreData &coreData= theCoreData;
 	float height= map->getWaterLevel()+0.001f;
 
 	assertGl();
@@ -1933,7 +1932,7 @@ void Renderer::renderMinimap(){
 	const Minimap *minimap= world->getMinimap();
 	const GameCamera *gameCamera= game->getGameCamera();
 	const Pixmap2D *pixmap= minimap->getTexture()->getPixmap();
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 
 	int mx= metrics.getMinimapX();
 	int my= metrics.getMinimapY();
@@ -2044,8 +2043,8 @@ void Renderer::renderMinimap(){
 
 void Renderer::renderDisplay(){
 
-	CoreData &coreData= CoreData::getInstance();
-	const Metrics &metrics= Metrics::getInstance();
+	CoreData &coreData= theCoreData;
+	const Metrics &metrics= theMetrics;
 	const Display *display= game->getGui()->getDisplay();
 
 	glPushAttrib(GL_ENABLE_BIT);
@@ -2070,7 +2069,7 @@ void Renderer::renderDisplay(){
 	renderTextShadow(
 		display->getText().c_str(),
 		coreData.getDisplayFont(),
-		metrics.getDisplayX() -1, 
+		metrics.getDisplayX() -1,
 		metrics.getDisplayY() + metrics.getDisplayH() - 56);
 
 	//progress Bar
@@ -2227,7 +2226,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 			glDepthMask(GL_FALSE);
 
 			//splashes
-			CoreData &coreData= CoreData::getInstance();
+			CoreData &coreData= theCoreData;
 			glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
 			for(int i=0; i<MenuBackground::raindropCount; ++i){
 
@@ -2268,7 +2267,7 @@ bool Renderer::computePosition(const Vec2i &screenPos, Vec2i &worldPos){
 
 	assertGl();
 	const Map* map= game->getWorld()->getMap();
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 	float depth= 0.0f;
 	GLdouble modelviewMatrix[16];
 	GLdouble projectionMatrix[16];
@@ -2306,7 +2305,7 @@ bool Renderer::computePosition(const Vec2i &screenPos, Vec2i &worldPos){
 void Renderer::computeSelected(Selection::UnitContainer &units, const Vec2i &posDown, const Vec2i &posUp){
 	//declarations
 	GLuint selectBuffer[Gui::maxSelBuff];
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 
 	//compute center and dimensions of selection rectangle
 	int x= (posDown.x+posUp.x) / 2;
@@ -2482,7 +2481,7 @@ void Renderer::renderShadowsToTexture() {
 // ==================== gl wrap ====================
 
 string Renderer::getGlInfo(){
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 	stringstream str;
 
 	str << lang.get("OpenGlInfo") << ":" << endl
@@ -2499,7 +2498,7 @@ string Renderer::getGlInfo(){
 }
 
 string Renderer::getGlMoreInfo(){
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 	stringstream str;
 
 	//gl extensions
@@ -2535,7 +2534,7 @@ string Renderer::getGlMoreInfo(){
 
 void Renderer::autoConfig(){
 
-	Config &config= Config::getInstance();
+	Config &config= theConfig;
 	bool nvidiaCard= toLower(getGlVendor()).find("nvidia")!=string::npos;
 	bool atiCard= toLower(getGlVendor()).find("ati")!=string::npos;
 	bool shadowExtensions = isGlExtensionSupported("GL_ARB_shadow") && isGlExtensionSupported("GL_ARB_shadow_ambient");
@@ -2574,7 +2573,7 @@ void Renderer::clearZBuffer(){
 }
 
 void Renderer::loadConfig(){
-	Config &config= Config::getInstance();
+	Config &config= theConfig;
 
 	//cache most used config params
 	maxLights= config.getRenderLightsMax();
@@ -2601,7 +2600,7 @@ void Renderer::loadConfig(){
 
 void Renderer::saveScreen(const string &path){
 
-	const Metrics &sm= Metrics::getInstance();
+	const Metrics &sm= theMetrics;
 
 	Pixmap2D pixmap(sm.getScreenW(), sm.getScreenH(), 3);
 
@@ -2876,7 +2875,7 @@ void Renderer::checkExtension(const string &extension, const string &msg){
 
 void Renderer::init3dList(){
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 
     assertGl();
 
@@ -2958,7 +2957,7 @@ void Renderer::init3dList(){
 
 void Renderer::init2dList(){
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 
 	//this list sets the state for the 2d rendering
 	list2d= glGenLists(1);
@@ -3001,7 +3000,7 @@ void Renderer::init2dList(){
 void Renderer::init3dListMenu(MainMenu *mm){
     assertGl();
 
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 	const MenuBackground *mb= mm->getMenuBackground();
 
 	list3dMenu= glGenLists(1);
@@ -3067,7 +3066,7 @@ void Renderer::init3dListMenu(MainMenu *mm){
 
 void Renderer::loadProjectionMatrix(){
 	GLdouble clipping;
-	const Metrics &metrics= Metrics::getInstance();
+	const Metrics &metrics= theMetrics;
 
     assertGl();
 
@@ -3278,6 +3277,44 @@ Texture2D::Filter Renderer::strToTextureFilter(const string &s) {
 	}
 
 	throw runtime_error("Error converting from string to FilterType, found: " + s);
+}
+
+void Renderer::renderLoadingScreen(const vector<string> &lines) {
+	//TODO: Added rendering of network status of all peers: normal stats plus ready or not
+	//TODO progress for local and remote hosts would be nice
+	//FIXME: This code doesn't belong here :(
+	CoreData &coreData = theCoreData;
+	const Metrics &metrics = theMetrics;
+	bool loadingGame = true;
+
+	reset2d();
+	clearBuffers();
+
+	renderBackground(theCoreData.getBackgroundTexture());
+
+	renderText(
+		state, coreData.getMenuFontBig(), Vec3f(1.f),
+		metrics.getVirtualW() / 4, 75*metrics.getVirtualH() / 100, false);
+	//if (loadingGame) {
+		int offset = 0;
+		Font2D *font = coreData.getMenuFontNormal();
+		for(int i = lines.size() - 1; i >= 0; --i) {
+		//for (Strings::reverse_iterator it = logLines.rbegin(); it != logLines.rend(); ++it) {
+			float alpha = offset == 0 ? 1.0f : 0.8f - 0.8f * static_cast<float>(offset) / lines.size();
+			renderText(
+				lines[i], font, alpha ,
+				metrics.getVirtualW() / 4,
+				70*metrics.getVirtualH() / 100 - offset*(font->getSize() + 4),
+				false);
+			++offset;
+		}/*
+	} else {
+		renderText(
+			current, coreData.getMenuFontNormal(), 1.0f,
+			metrics.getVirtualW() / 4,
+			62*metrics.getVirtualH() / 100, false);
+	}*/
+	swapBuffers();
 }
 
 } // end namespace

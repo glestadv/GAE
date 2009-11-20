@@ -129,11 +129,11 @@ GameSettings::GameSettings() : valid(false) {
 }
 
 /**
- * Initializes all data members who's named is prefixed by either "net" or "gs" using values
+ * Initializes all data members who's name is prefixed by either "net" or "gs" using values
  * from the current Game::Config object.
  */
 void GameSettings::readLocalConfig() {
-	Config &config = Config::getInstance();
+	Config &config = theConfig;
 	autoRepairAllowed = config.getNetAutoRepairAllowed();
 	autoReturnAllowed = config.getNetAutoReturnAllowed();
 	dayTime = config.getGsDayTime();

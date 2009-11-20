@@ -65,7 +65,6 @@ private:
 	ObjectPrinter op;
 	string subtitle;
 	string current;
-	bool loadingGame;
 	static char errorBuf[];
 
 private:
@@ -97,13 +96,11 @@ public:
 	//void setFile(const string &v)			{fileName= v;}
 	void setState(const string &state);
 	void setSubtitle(const string &v)		{subtitle = v;}
-	void setLoading(bool v)					{loadingGame = v;}
 
-	void add(const string &str, bool renderScreen = false);
-	void add(const Printable &, bool renderScreen = false);
-	void add(const string &str, const Printable &p, bool renderScreen = false);
+	void add(const string &str);
+	void add(const Printable &);
+	void add(const string &str, const Printable &p);
 	void printf(const char* pattern, ...);
-	void renderLoadingScreen();
 	void clear();
 };
 

@@ -16,7 +16,7 @@
 #include "console.h"
 #include "vec.h"
 #include "world.h"
-#include "program.h"
+#include "gui_program.h"
 #include "components.h"
 #include "menu_background.h"
 #include "game_settings.h"
@@ -55,10 +55,10 @@ class MenuState;
 // =====================================================
 // 	class MainMenu
 //
-///	Main menu ProgramState
+///	Main menu GuiProgramState
 // =====================================================
 
-class MainMenu: public ProgramState {
+class MainMenu: public GuiProgramState {
 private:
 	//shared
 	GameSettings gameSettings;
@@ -83,6 +83,7 @@ public:
 
     virtual void render();
     virtual void update();
+	virtual void updateCamera();
 	virtual void tick();
 	virtual void init();
     virtual void mouseMove(int x, int y, const MouseState &mouseState);

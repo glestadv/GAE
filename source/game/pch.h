@@ -15,7 +15,7 @@
 #ifdef USE_PCH
 
 #include "../shared_lib/include/pch.h"
-
+#if 0
 #include "ai/ai.h"
 #include "ai/ai_interface.h"
 #include "ai/ai_rule.h"
@@ -60,7 +60,7 @@
 #include "menu/menu_state_start_game_base.h"
 #include "network/client_interface.h"
 #include "network/file_transfer.h"
-#include "network/game_interface.h"
+//#include "network/network_messenger.h"
 #include "network/host.h"
 #include "network/network_info.h"
 #include "network/network_manager.h"
@@ -101,7 +101,7 @@
 #include "world/unit_updater.h"
 #include "world/water_effects.h"
 #include "world/world.h"
-
+#endif
 #endif // USE_PCH
 #endif // _GAME_PCH_H_
 

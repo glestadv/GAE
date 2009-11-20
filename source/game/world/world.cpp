@@ -52,7 +52,7 @@ World::World(Game *game)
 		, unitUpdater(*game)
 		, stats(game->getGameSettings())
 		, posIteratorFactory(65) {
-	Config &config = Config::getInstance();
+	Config &config = theConfig;
 
 	fogOfWar = config.getGsFogOfWarEnabled();
 	fogOfWarSmoothing = config.getRenderFogOfWarSmoothing();
@@ -165,7 +165,7 @@ void World::initNetworkServer() {
 	// For network games, we want to randomize this so we don't send all updates at
 	// once.
 	int64 now = Chrono::getCurMicros();
-	int64 interval = Config::getInstance().getNetMinFullUpdateInterval() * 1000LL;
+	int64 interval = theConfig.getNetMinFullUpdateInterval() * 1000LL;
 
 	for (Factions::iterator f = factions.begin(); f != factions.end(); ++f) {
 		const Units &units = (*f)->getUnits();
@@ -285,7 +285,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		//who the fuck is that?
 		if (minor) {
 			NetworkManager::getInstance().getClientInterface()->requestFullUpdate(unitRef);
-			if (Config::getInstance().getMiscDebugMode()) {
+			if (theConfig.getMiscDebugMode()) {
 				Logger::getClientLog().add("Received minor update for unknown unit, sending full "
 						"update request to server. id = " + intToStr(unitRef.getUnitId())
 						+ ", faction = " + intToStr(unitRef.getFaction()->getId()));
@@ -298,7 +298,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 			nextUnitId = unit->getId() + 1;
 		}
 
-		if (Config::getInstance().getMiscDebugMode()) {
+		if (theConfig.getMiscDebugMode()) {
 			logUnit(unit, "received full update for unknown unit, so created a new one", NULL, NULL);
 		}
 		return;
@@ -325,7 +325,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		map.assertUnitCells(unit);
 	}
 
-#if defined(DEBUG_NETWORK_LEVEL) && DEBUG_NETWORK_LEVEL > 0
+#if DEBUG_NETWORK > 0
 	XmlNode pre("unit");
 	unit->save(&pre);
 #endif
@@ -341,7 +341,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 			Logger::getClientLog().add("fuck, fuck!  Unit is different type without morph.  "
 					"Killing unit and requesting update because I don't know what else to do.\n"
 					+ *pre.toString(true));
-			if (!Config::getInstance().getMiscDebugMode()) {
+			if (!theConfig.getMiscDebugMode()) {
 				Logger::getClientLog().add(string("Update recieved:\n ") + *n->toString(true));
 			}
 			NetworkManager::getInstance().getClientInterface()->requestFullUpdate(unitRef);
@@ -353,7 +353,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		}
 	}
 
-#if defined(DEBUG_NETWORK_LEVEL) && DEBUG_NETWORK_LEVEL > 0
+#if DEBUG_NETWORK > 0
 	if (1) {
 		XmlNode post("unit");
 		bool diffFound = false;
@@ -379,7 +379,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 #endif
 
 
-	if (Config::getInstance().getMiscDebugMode()) {
+	if (theConfig.getMiscDebugMode()) {
 		logUnit(unit, morphed ? "morphed" : "update", &lastPos, &lastHp);
 	}
 
@@ -422,13 +422,13 @@ void World::updateClient() {
 	ClientInterface *clientInterface = NetworkManager::getInstance().getClientInterface();
 	// here we try to make up for the lag time between when the server sent this data and what the
 	// state on the server probably is now.
-	float nextAdvanceFrames = 1.f + clientInterface->getRemoteServerInterface().getAvgLatency() / 2000000.f * Config::getInstance().getGsWorldUpdateFps();
+	float nextAdvanceFrames = 1.f + clientInterface->getRemoteServerInterface().getAvgLatency() / 2000000.f * theConfig.getGsWorldUpdateFps();
 	NetworkMessageUpdate *msg;
 	vector<Unit*> evicted;
 
 	while ((msg = clientInterface->getNextUpdate())) {
 		/*
-		if(Config::getInstance().getDebugMode()) {
+		if(theConfig.getDebugMode()) {
 			Logger::getInstance().add(string("\n======================\n")
 					+ msg->getData() + "\n======================\n");
 		}*/
@@ -450,7 +450,7 @@ void World::updateClient() {
 				unit->setNextUpdateFrames(nextAdvanceFrames);
 
 				moveAndEvict(unit, evicted, NULL);
-				if (Config::getInstance().getMiscDebugMode()) {
+				if (theConfig.getMiscDebugMode()) {
 					logUnit(unit, "new unit", NULL, NULL);
 				}
 				if (unit->getType()->hasSkillClass(scBeBuilt)) {
@@ -592,7 +592,7 @@ void World::update() {
 	//consumable resource (e.g., food) costs
 	for (int i = 0; i < techTree.getResourceTypeCount(); ++i) {
 		const ResourceType *rt = techTree.getResourceType(i);
-		if (rt->getClass() == rcConsumable && frameCount % (rt->getInterval()*Config::getInstance().getGsWorldUpdateFps()) == 0) {
+		if (rt->getClass() == rcConsumable && frameCount % (rt->getInterval()*theConfig.getGsWorldUpdateFps()) == 0) {
 			for (int i = 0; i < getFactionCount(); ++i) {
 				getFaction(i)->applyCostsOnInterval();
 			}
@@ -601,12 +601,12 @@ void World::update() {
 
 	//fow smoothing
 	if (fogOfWarSmoothing && ((frameCount + 1) % (fogOfWarSmoothingFrameSkip + 1)) == 0) {
-		float fogFactor = static_cast<float>(frameCount % Config::getInstance().getGsWorldUpdateFps()) / Config::getInstance().getGsWorldUpdateFps();
+		float fogFactor = static_cast<float>(frameCount % theConfig.getGsWorldUpdateFps()) / theConfig.getGsWorldUpdateFps();
 		minimap.updateFowTex(clamp(fogFactor, 0.f, 1.f));
 	}
 
 	//tick
-	if (frameCount % Config::getInstance().getGsWorldUpdateFps() == 0) {
+	if (frameCount % theConfig.getGsWorldUpdateFps() == 0) {
 		computeFow();
 		tick();
 	}
@@ -616,7 +616,7 @@ void World::update() {
 	//if we're the server, send any updates needed to the client
 	if (isNetworkServer()) {
 		ServerInterface &si = *(NetworkManager::getInstance().getServerInterface());
-		int64 oldest = Chrono::getCurMicros() - Config::getInstance().getNetMinFullUpdateInterval() * 1000;
+		int64 oldest = Chrono::getCurMicros() - theConfig.getNetMinFullUpdateInterval() * 1000;
 
 		for (Factions::iterator f = factions.begin(); f != factions.end(); ++f) {
 			const Units &units = (*f)->getUnits();
@@ -1338,9 +1338,9 @@ void World::hackyCleanUp(Unit *unit) {
 }
 
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_TEXTURES
 #define _load_tex(i,f) \
-	PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);\
+	PFDebugTextures[i]=theRenderer.newTexture2D(rsGame);\
 	PFDebugTextures[i]->setMipmap(false);\
 	PFDebugTextures[i]->getPixmap()->load(f);
 

@@ -184,8 +184,8 @@ void NetworkClientMessenger::_onReceive(RemoteInterface &source, NetworkMessageG
 					peer->updateStatus(status, msg);
 
 					// If server is launching and we're ready to launch, then change state and let
-					// the UI screen query our state and realize we need to change the ProgramState
-					// to Game.
+					// the UI screen query our state and realize we need to change the
+					// GuiProgramState to Game.
 					if(peer->getState() == STATE_LAUNCHING && getState() < STATE_LAUNCHING) {
 						setState(STATE_LAUNCHING);
 					}
@@ -475,7 +475,7 @@ bool NetworkClientMessenger::process(RemoteInterface &source, NetworkMessageIntr
 	}
 
 	//check consistency
-	if(Config::getInstance().getNetConsistencyChecks() && versionsMatch) {
+	if(theConfig.getNetConsistencyChecks() && versionsMatch) {
 		throw runtime_error("Server and client versions do not match (" + version + ").");
 	}
 
@@ -504,13 +504,13 @@ void NetworkClientMessenger::updateLobby() {
 				NetworkMessageIntro *msg = (NetworkMessageIntro *)genericMsg;
 
 				//check consistency
-				if(Config::getInstance().getNetConsistencyChecks() && msg->getVersionString() != getNetworkVersionString()) {
+				if(theConfig.getNetConsistencyChecks() && msg->getVersionString() != getNetworkVersionString()) {
 					throw SocketException("Server and client versions do not match (" + msg->getVersionString() + ").");
 				}
 
 				//send intro message
 				NetworkMessageIntro sendNetworkMessageIntro(getNetworkVersionString(),
-						getHostName(), Config::getInstance().getNetPlayerName(), -1, false);
+						getHostName(), theConfig.getNetPlayerName(), -1, false);
 
 				playerIndex = msg->getPlayerIndex();
 				setRemoteNames(msg->getHostName(), msg->getPlayerName());
@@ -611,7 +611,7 @@ void NetworkClientMessenger::waitUntilReady(Checksums &checksums) {
 		}
 
 		//check checksum
-		if(Config::getInstance().getNetConsistencyChecks()
+		if(theConfig.getNetConsistencyChecks()
 				&& ((NetworkMessageReady*)msg)->getChecksum() != checksum.getSum()) {
 			throw SocketException("Checksum error, you don't have the same data as the server");
 		}

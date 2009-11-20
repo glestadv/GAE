@@ -349,7 +349,7 @@ void EnhancementTypeBase::addMultipliers(const EnhancementTypeBase &e, float str
 
 /*inline */void EnhancementTypeBase::formatModifier(string &str, const char *pre, const char* label,
         int value, float multiplier) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	if (value) {
 		str += pre + lang.get(label) + ": ";

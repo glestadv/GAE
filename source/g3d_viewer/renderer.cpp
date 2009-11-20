@@ -15,24 +15,24 @@ namespace Shared { namespace G3dViewer {
 // ===============================================
 
 void MeshCallbackTeamColor::execute(const Mesh *mesh){
-	
+
 	//team color
 	if(mesh->getCustomTexture() && teamTexture!=NULL){
 		//texture 0
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-		
-		//set color to interpolation	
+
+		//set color to interpolation
 		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_INTERPOLATE);
-		
+
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-		
+
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_TEXTURE1);
 		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
 
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE2_RGB, GL_TEXTURE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND2_RGB, GL_SRC_ALPHA);
-		
+
 		//set alpha to 1
 		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
@@ -45,20 +45,20 @@ void MeshCallbackTeamColor::execute(const Mesh *mesh){
 
 		glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(teamTexture)->getHandle());
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-				
+
 		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_MODULATE);
-		
+
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
 		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
-		
+
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_RGB, GL_PREVIOUS);
 		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND1_RGB, GL_SRC_COLOR);
-		
+
 		//set alpha to 1
 		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
 		glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA);
-		
+
 		glActiveTexture(GL_TEXTURE0);
 	}
 	else{
@@ -84,14 +84,9 @@ Renderer::~Renderer(){
 	delete textureManager;
 }
 
-Renderer * Renderer::getInstance(){
-	static Renderer * renderer = new Renderer();
-	return renderer;
-}
-
 void Renderer::transform(float rotX, float rotY, float zoom){
 	assertGl();
-	
+
 	glMatrixMode(GL_MODELVIEW);
 	glRotatef(rotY, 1.0f, 0.0f, 0.0f);
 	glRotatef(rotX, 0.0f, 1.0f, 0.0f);
@@ -111,7 +106,7 @@ void Renderer::init(){
 
 	modelRenderer= gf->newModelRenderer();
 	textureManager= gf->newTextureManager();
-	
+
 	//red tex
 	customTextureRed= textureManager->newTexture2D();
 	customTextureRed->getPixmap()->init(1, 1, 3);
@@ -131,7 +126,7 @@ void Renderer::init(){
 	customTextureGreen= textureManager->newTexture2D();
 	customTextureGreen->getPixmap()->init(1, 1, 3);
 	customTextureGreen->getPixmap()->setPixel(0, 0, Vec3f(0.f, 0.5f, 0.f));
-	
+
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glEnable(GL_TEXTURE_2D);
 	glFrontFace(GL_CW);
@@ -205,7 +200,7 @@ void Renderer::reset(int w, int h, PlayerColor playerColor){
 
 void Renderer::renderGrid(){
 	if(grid){
-	
+
 		float i;
 
 		assertGl();
@@ -252,7 +247,7 @@ void Renderer::loadTheModel(Model *model, string file){
 
 void Renderer::renderTheModel(Model *model, float f){
 	if(model != NULL){
-		modelRenderer->begin(true, true, !wireframe, &meshCallbackTeamColor);	
+		modelRenderer->begin(true, true, !wireframe, &meshCallbackTeamColor);
 		model->updateInterpolationData(f, true);
 		modelRenderer->render(model);
 
@@ -260,7 +255,7 @@ void Renderer::renderTheModel(Model *model, float f){
 			glPushAttrib(GL_ENABLE_BIT);
 			glDisable(GL_LIGHTING);
 			glDisable(GL_TEXTURE_2D);
-			glColor3f(1.0f, 1.0f, 1.0f);	
+			glColor3f(1.0f, 1.0f, 1.0f);
 			modelRenderer->renderNormalsOnly(model);
 			glPopAttrib();
 		}

@@ -1347,7 +1347,7 @@ void Map::computeCellColors() {
 	}
 }
 
-#ifdef DEBUG
+#if DEBUG_WORLD
 //makes sure a unit is in cells if alive or not if not alive
 void Map::assertUnitCells(const Unit * unit) {
 	assert(unit);

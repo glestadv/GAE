@@ -99,7 +99,7 @@ void Tileset::load(const string &dir, Checksums &checksums) {
 
 	try {
 		Logger::getInstance().add("Tileset: "+dir, true);
-		Renderer &renderer= Renderer::getInstance();
+		Renderer &renderer= theRenderer;
 
 		//parse xml
 		XmlTree xmlTree;

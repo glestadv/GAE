@@ -42,7 +42,7 @@ private:
 	Game &game;
 
 public:
-    void init(Game &game) : (game) {}
+    Commander(Game &game) : game(game) {}
 	void getNetworkData();
 
 	CommandResult tryGiveCommand(

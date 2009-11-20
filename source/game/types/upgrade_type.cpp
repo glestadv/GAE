@@ -60,7 +60,7 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 	//image
 	try {
 		const XmlNode *imageNode = upgradeNode->getChild("image");
-		image = Renderer::getInstance().newTexture2D(rsGame);
+		image = theRenderer.newTexture2D(rsGame);
 		image->load(dir + "/" + imageNode->getAttribute("path")->getRestrictedValue());
 	} catch (runtime_error e) {
 		Logger::getErrorLog().addXmlError(dir, e.what());
@@ -70,7 +70,7 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 	//image cancel
 	try {
 		const XmlNode *imageCancelNode = upgradeNode->getChild("image-cancel");
-		cancelImage = Renderer::getInstance().newTexture2D(rsGame);
+		cancelImage = theRenderer.newTexture2D(rsGame);
 		cancelImage->load(dir + "/" + imageCancelNode->getAttribute("path")->getRestrictedValue());
 	} catch (runtime_error e) {
 		Logger::getErrorLog().addXmlError(dir, e.what());
@@ -127,7 +127,7 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 }
 
 string UpgradeType::getDesc() const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	string str = getReqDesc();
 
 	if (getEffectCount() > 0) {

@@ -14,7 +14,7 @@
 
 #include "util.h"
 #include "lang.h"
-//#include "game_constants.h"
+#include "game_constants.h"
 #include "config.h"
 
 #include "leak_dumper.h"
@@ -70,9 +70,7 @@ string getTeammateName(int i) {
 	return "";
 }
 
-string getTeammateRole(int i) {
-	Lang &l= Lang::getInstance();
-
+string getTeammateRole(const Lang &l, int i) {
 	switch(i){
 	case 0: return l.get("Programming");
 	case 1: return l.get("SoundAndMusic");

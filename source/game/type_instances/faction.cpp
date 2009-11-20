@@ -44,7 +44,7 @@ Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction,
 		, units()
 		, unitMap()
 		, control(gsFaction.getControlType())
-		, texture(Renderer::getInstance().newTexture2D(rsGame))
+		, texture(theRenderer.newTexture2D(rsGame))
 		, factionType(tt.getFactionType(gsFaction.getTypeName()))
 		, teamIndex(gsFaction.getTeam().getId())
 		, startLocationIndex(gsFaction.getMapSlot())
@@ -123,7 +123,7 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 	}
 
 	subfaction = node->getChildIntValue("subfaction"); //reset in case unit construction changed it
-	texture = Renderer::getInstance().newTexture2D(rsGame);
+	texture = theRenderer.newTexture2D(rsGame);
 	texture->load("data/core/faction_textures/faction" + Conversion::toStr(id) + ".tga");
 	assert(units.size() == unitMap.size());
 }
@@ -457,7 +457,7 @@ void Faction::applyCostsOnInterval() {
 						} else {
 							StaticSound *sound = unit->getType()->getFirstStOfClass(scDie)->getSound();
 							if (sound != NULL && thisFaction) {
-								SoundRenderer::getInstance().playFx(sound);
+								theSoundRenderer.playFx(sound);
 							}
 						}
 					}
@@ -596,7 +596,7 @@ void Faction::attackNotice(const Unit *u) {
 			lastEventLoc = u->getCurrVector();
 			StaticSound *sound = factionType->getAttackNotice()->getRandSound();
 			if (sound) {
-				SoundRenderer::getInstance().playFx(sound);
+				theSoundRenderer.playFx(sound);
 			}
 		}
 	}

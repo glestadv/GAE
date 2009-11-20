@@ -65,7 +65,7 @@ void AttackSkillTypes::getDesc(string &str, const Unit *unit) const {
 	if(types.size() == 1) {
 		types[0]->getDesc(str, unit);
 	} else {
-		str += Lang::getInstance().get("Attacks") + ": ";
+		str += theLang.get("Attacks") + ": ";
 		bool printedFirst = false;
 
 		for(int i = 0; i < types.size(); ++i) {
@@ -503,7 +503,7 @@ bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
 }
 
 void HarvestCommandType::getDesc(string &str, const Unit *unit) const{
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 
 	str+= lang.get("HarvestSpeed")+": "+ intToStr(harvestSkillType->getSpeed()/hitsPerUnit);
 	EnhancementTypeBase::describeModifier(str, (unit->getSpeed(harvestSkillType) - harvestSkillType->getSpeed())/hitsPerUnit);
@@ -558,7 +558,7 @@ bool RepairCommandType::load(const XmlNode *n, const string &dir, const TechTree
 }
 
 void RepairCommandType::getDesc(string &str, const Unit *unit) const{
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 
 	repairSkillType->getDesc(str, unit);
 
@@ -699,7 +699,7 @@ bool MorphCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 }
 
 void MorphCommandType::getDesc(string &str, const Unit *unit) const{
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 
 	morphSkillType->getDesc(str, unit);
 

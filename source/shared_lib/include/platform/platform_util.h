@@ -64,13 +64,13 @@ private:
 #endif
 
 public:
-	PlatformExceptionHandler();	
+	PlatformExceptionHandler();
 	virtual ~PlatformExceptionHandler();
 
 	void install();
 	void uninstall();
-	virtual void log(const char *description, void *address, const char **backtrace, size_t count, const exception *e) = 0;
-	virtual void notifyUser(bool pretty) = 0;
+	virtual __cold void log(const char *description, void *address, const char **backtrace, size_t count, const exception *e) = 0;
+	virtual __cold void notifyUser(bool pretty) = 0;
 
 private:
 #ifdef USE_SDL

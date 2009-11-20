@@ -17,12 +17,12 @@
 #if defined(WIN32) || defined(WIN64)
 
 	// sanity checks
-#	if defined (USE_POSIX_SOCKETS)
+#	if USE_POSIX_SOCKETS
 #		error USE_POSIX_SOCKETS is not compatible with WIN32 or WIN64
 #	endif
 
-#	if defined (USE_SDL)
-#		error USE_SDL is not compatible with WIN32 or WIN64
+#	if USE_SDL
+#		error USE_SDL is not compatible with WIN32 or WIN64 (yet)
 #	endif
 #	include <winsock2.h>
 #	include <windows.h>
@@ -71,7 +71,7 @@
 // will this fly on windoze?
 #include <sys/types.h>
 
-#ifdef USE_POSIX_SOCKETS
+#if USE_POSIX_SOCKETS
 #	include <sys/socket.h>
 #	include <sys/types.h>
 #	include <netinet/in.h>
@@ -81,7 +81,7 @@
 #	include <sys/ioctl.h>
 #endif
 
-#ifdef USE_SDL
+#if USE_SDL
 #	include <SDL.h>
 #	define GL_GLEXT_PROTOTYPES
 #	include <SDL_opengl.h>
@@ -122,6 +122,7 @@
 #	include <io.h>
 #endif
 
+#if 0 // this is too ugly
 // Glest Shared Library headers
 #include "graphics/buffer.h"
 #include "graphics/camera.h"
@@ -165,6 +166,7 @@
 #include "lang_features.h"
 #include "physics/weather.h"
 #include "platform/input.h"
+#include "platform/factory_repository.h"
 #include "platform/net_util.h"
 #include "platform/platform_exception.h"
 #include "platform/platform_util.h"
@@ -193,8 +195,8 @@
 #include "util/util.h"
 #include "xml/xml_parser.h"
 
+
 #if defined(WIN32) || defined(WIN64)
-#	include "platform/win32/factory_repository.h"
 #	include "platform/win32/gl_wrap.h"
 #	include "platform/win32/platform_definitions.h"
 #	include "platform/win32/platform_main.h"
@@ -202,7 +204,6 @@
 #	include "sound/ds8/sound_factory_ds8.h"
 #	include "sound/ds8/sound_player_ds8.h"
 #else
-#	include "platform/sdl/factory_repository.h"
 #	include "platform/sdl/gl_wrap.h"
 #	include "platform/sdl/noimpl.h"
 #	include "platform/sdl/platform_main.h"
@@ -211,7 +212,6 @@
 #	include "sound/openal/sound_player_openal.h"
 #endif
 
+#endif // 0
 #endif // USE_PCH
 #endif // _SHARED_PCH_H_
-
-

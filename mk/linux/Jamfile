@@ -18,6 +18,8 @@ local EXTERNAL_LIBS = SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL Z ;
 SubDir TOP ;
 
 SHARED_DIRS =
+	../..
+	.
 	platform
 	platform/posix
 	platform/sdl
@@ -51,6 +53,7 @@ IncludeDir glestlib : $(SHARED_PCH_INCLUDE) $(SHARED_INCLUDE_DIRS) ;
 SubDir TOP ;
 
 GAME_DIRS =
+	..
 	.
 	ai
 	facilities
@@ -84,7 +87,7 @@ ExternalLibs glestadv : SDL GL GLU VORBISFILE OPENAL LUA Z ;
 } else {
 	SubDir TOP ;
 
-	TEST_DIRS = test ;
+	TEST_DIRS = . test ;
 	for i in $(TEST_DIRS) {
 		TEST_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
 	}
@@ -109,7 +112,7 @@ ExternalLibs glestadv : SDL GL GLU VORBISFILE OPENAL LUA Z ;
 if $(WX_AVAILABLE) = "yes" {
 	SubDir TOP ;
 
-	MAP_EDITOR_DIRS = map_editor ;
+	MAP_EDITOR_DIRS = . map_editor ;
 	for i in $(MAP_EDITOR_DIRS) {
 		MAP_EDITOR_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
 	}

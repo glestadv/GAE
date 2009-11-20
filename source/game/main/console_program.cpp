@@ -1,8 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
-//				  2008-2009 Daniel Santos<daniel.santos@pobox.com>
+//	Copyright (C) 2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -11,21 +10,14 @@
 // ==============================================================
 
 #include "pch.h"
-#include "messenger.h"
+#include "console_program.h"
 
-#include "commander.h"
-#include "chat_manager.h"
+#include "leak_dumper.h"
 
 namespace Game {
 
-// =====================================================
-//	class LocalMessenger
-// =====================================================
-
-void LocalMessenger::postCommand(Command *command) {
-}
-
-void LocalMessenger::postTextMessage(const string &text, int teamId) {
+int ConsoleProgram:main() {
+	return 0;
 }
 
 } // end namespace

@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
+
 using std::string;
 using std::vector;
 using std::pair;
@@ -39,23 +41,22 @@ private:
 	Lines lines;
 
 	//this should be deleted from here someday
-	bool won, lost;
+	//bool won, lost;
 
 	//config
 	int maxLines;
 	float timeout;
 
 public:
-	Console();
+	Console(const Config &config);
 
 	int getLineCount() const	{return lines.size();}
 	string getLine(int i) const	{return lines[i].first;}
 
-
 	void addStdMessage(const string &s);
 	void addStdMessage(const string &s, const string &param1, const string &param2 = "", const string &param3 = "");
-	void addLine(string line, bool playSound=false );
-	void update();
+	void addLine(string line/*, bool playSound=false */);
+	//void update();
 	bool isEmpty();
 };
 

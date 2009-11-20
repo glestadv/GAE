@@ -11,7 +11,7 @@
 // ==============================================================
 
 #include "pch.h"
-#include "game_interface.h"
+#include "messenger.h"
 
 #include <exception>
 #include <cassert>
@@ -58,7 +58,7 @@ NetworkMessenger::NetworkMessenger(NetworkRole role, unsigned short port, int id
 		, peerMapChanged(true)
 		, connectionsChanged(false)
 		, commandDelay(10) {
-	Config &config = Config::getInstance();
+	Config &config = theConfig;
 
 	setVersionInfo(getGaeVersion(), getNetProtocolVersion());
 	socket.setBlock(false);
@@ -99,7 +99,7 @@ NetworkMessenger::~NetworkMessenger() {
 }
 
 string NetworkMessenger::getStatus() const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	stringstream str;
 
 	for (PeerMap::const_iterator i = peers.begin(); i != peers.end(); ++i) {
@@ -279,7 +279,7 @@ void NetworkMessenger::broadcastMessage(NetworkMessage &msg, bool flush) {
 		if(client.isConnected()) {
 			client.send(msg, flush);
 		} else {
-			Lang &lang = Lang::getInstance();
+			const Lang &lang = theLang;
 
 			stringstream errmsg;
 			errmsg << client.getDescription() << " (" << lang.get("Player") << " "
@@ -303,7 +303,7 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 			if(client->isConnected()) {
 				client->send(networkMessage);
 			} else {
-				Lang &lang = Lang::getInstance();
+				const Lang &lang = theLang;
 				string errmsg = client->getDescription() + " (" + lang.get("Player") + " "
 						+ intToStr(client->getId() + 1) + ") " + lang.get("Disconnected");
 				Game::getInstance()->autoSaveAndPrompt(errmsg, slot->getDescription(), i);
@@ -578,7 +578,7 @@ bool NetworkMessenger::process(RemoteInterface &source, NetworkMessageCommandLis
 */
 void NetworkMessenger::sendTextMessage(const string &text, int teamIndex) {
 	MutexLock lock(getMutex());
-//	outQ.push(new NetworkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex));
+//	outQ.push(new NetworkMessageText(text, theConfig.getNetPlayerName(), teamIndex));
 }
 
 void NetworkMessenger::addRemovePeer(bool isAdd, RemoteInterface *peer) {

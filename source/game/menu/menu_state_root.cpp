@@ -38,7 +38,7 @@ namespace Game {
 MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
 	MenuState(program, mainMenu, "root")
 {
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 
 	buttonNewGame.init(425, 370, 150);
     buttonJoinGame.init(425, 330, 150);
@@ -64,8 +64,8 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
 
 void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton){
 
-	CoreData &coreData=  CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	CoreData &coreData=  theCoreData;
+	SoundRenderer &soundRenderer= theSoundRenderer;
 
 	if(buttonNewGame.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundB());
@@ -108,9 +108,9 @@ void MenuStateRoot::mouseMove(int x, int y, const MouseState &ms){
 }
 
 void MenuStateRoot::render(){
-	Renderer &renderer= Renderer::getInstance();
-	CoreData &coreData= CoreData::getInstance();
-	const Metrics &metrics= Metrics::getInstance();
+	Renderer &renderer= theRenderer;
+	CoreData &coreData= theCoreData;
+	const Metrics &metrics= theMetrics;
 
 	int w= 300;
 	int h= 150;
@@ -130,7 +130,7 @@ void MenuStateRoot::render(){
 
 void MenuStateRoot::update(){
 	//TOOD: add AutoTest to config
-	/*if(Config::getInstance().getBool("AutoTest")){
+	/*if(theConfig.getBool("AutoTest")){
 		AutoTest::getInstance().updateRoot(program, mainMenu);
 	}*/
 }

@@ -325,7 +325,7 @@ void AnnotatedMap::clearLocalAnnotations ( Field field ) {
 	localAnnt.clear ();
 }
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_PATHFINDER
 
 list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations () {
 	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>> ();

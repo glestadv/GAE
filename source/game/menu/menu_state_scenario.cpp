@@ -32,14 +32,14 @@ using namespace Shared::Xml;
 
 MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu)
 		: MenuState(program, mainMenu, "scenario") {
-	Config &config = Config::getInstance();
-	Lang &lang = Lang::getInstance();
+	Config &config = theConfig;
+	const Lang &lang = theLang;
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	vector<string> results;
 	int match = 0;
 
 	labelInfo.init(350, 350);
-	labelInfo.setFont(CoreData::getInstance().getMenuFontNormal());
+	labelInfo.setFont(theCoreData.getMenuFontNormal());
 
 	buttonReturn.init(350, 200, 125);
 	buttonPlayNow.init(525, 200, 125);
@@ -84,9 +84,9 @@ MenuStateScenario::~MenuStateScenario() {
 }
 
 void MenuStateScenario::mouseClick(int x, int y, MouseButton mouseButton) {
-	Config &config = Config::getInstance();
-	CoreData &coreData = CoreData::getInstance();
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	Config &config = theConfig;
+	CoreData &coreData = theCoreData;
+	SoundRenderer &soundRenderer = theSoundRenderer;
 
 	if (msgBox) {
 		if (msgBox->mouseClick(x, y)) {
@@ -128,7 +128,7 @@ void MenuStateScenario::mouseMove(int x, int y, const MouseState &ms) {
 
 void MenuStateScenario::render() {
 
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 
 	renderer.renderLabel(&labelInfo);
 
@@ -145,7 +145,7 @@ void MenuStateScenario::render() {
 void MenuStateScenario::update() {
 	//TOOD: add AutoTest to config
 	/*
-	if(Config::getInstance().getBool("AutoTest")){
+	if(theConfig.getBool("AutoTest")){
 	 AutoTest::getInstance().updateScenario(this);
 	}
 	*/
@@ -154,7 +154,7 @@ void MenuStateScenario::update() {
 void MenuStateScenario::launchGame() {
 	/*
 	msgBox = new GraphicMessageBox();
-	msgBox->init(Lang::getInstance().get("Broken"), Lang::getInstance().get("Ok"));
+	msgBox->init(theLang.get("Broken"), theLang.get("Ok"));
 	*/
 	shared_ptr<GameSettings> gameSettings = shared_ptr<GameSettings>(new GameSettings());
 	loadGameSettings(scenarioInfo, *gameSettings);
@@ -167,7 +167,7 @@ void MenuStateScenario::setScenario(int i) {
 }
 
 void MenuStateScenario::updateScenarioList(const string &category, bool selectDefault) {
-	const Config &config = Config::getInstance();
+	const Config &config = theConfig;
 	vector<string> results;
 	int match = 0;
 
@@ -198,7 +198,7 @@ void MenuStateScenario::updateScenarioList(const string &category, bool selectDe
 
 
 void MenuStateScenario::loadScenarioInfo(const string &file, ScenarioInfo &si) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	XmlTree xmlTree;
 
 	//gae/scenarios/[category]/[scenario]/[scenario].xml
@@ -226,7 +226,7 @@ void MenuStateScenario::loadScenarioInfo(const string &file, ScenarioInfo &si) {
 			if (nameAttrib) {
 				si.playerNames[i] = nameAttrib->getValue();
 				} else if (factionControl == CT_HUMAN) {
-				si.playerNames[i] = Config::getInstance().getNetPlayerName();
+				si.playerNames[i] = theConfig.getNetPlayerName();
 			} else {
 				si.playerNames[i] = "CPU Player";
 			}
@@ -278,7 +278,7 @@ void MenuStateScenario::loadScenarioInfo(const string &file, ScenarioInfo &si) {
 void MenuStateScenario::loadGameSettings(const ScenarioInfo &si, GameSettings &gs) {
 	NetworkManager &netman = NetworkManager::getInstance();
 	NetworkMessenger &gameInterface = *netman.getNetworkMessenger();
-	const Config &config = Config::getInstance();
+	const Config &config = theConfig;
 	bool autoRepair = config.getGsAutoRepairEnabled();
 	bool autoReturn = config.getGsAutoReturnEnabled();
 	int factionCount = 0;
@@ -310,7 +310,7 @@ void MenuStateScenario::loadGameSettings(const ScenarioInfo &si, GameSettings &g
 		}
 		/* FIXME: broken.  Shouldn't we consolidate this functionality into MenuStateStartGame? */
 		const GameSettings::Faction &newFaction = gs.addFaction(
-				/* ct == CT_HUMAN ? Config::getInstance().getNetPlayerName() : */ si.playerNames[i],
+				/* ct == CT_HUMAN ? theConfig.getNetPlayerName() : */ si.playerNames[i],
 				*gs.getTeam(si.teams[i] - 1),
 				si.factionTypeNames[i],
 				false,

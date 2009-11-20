@@ -13,11 +13,13 @@
 #define _SHARED_UTIL_EXCEPTIONBASE_H_
 
 #include <exception>
+#include <stdexcept>
 #include <sstream>
 #include <string>
 #include <errno.h>
 #include <map>
 
+#include "util.h"
 #include "patterns.h"
 
 using std::runtime_error;

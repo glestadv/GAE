@@ -92,7 +92,7 @@ MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu) :
 
 	Shared::Platform::mkdir("savegames", true);
 
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= theLang;
 
 	//create
 	buttonReturn.init(350, 200, 100);
@@ -103,7 +103,7 @@ MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu) :
 	listBoxGames.init(400, 300, 225);
 	if(!loadGameList()) {
 		msgBox = new GraphicMessageBox();
-		msgBox->init(Lang::getInstance().get("NoSavedGames"), Lang::getInstance().get("Ok"));
+		msgBox->init(theLang.get("NoSavedGames"), theLang.get("Ok"));
 		criticalError = true;
 		return;
 	}
@@ -154,9 +154,9 @@ MenuStateLoadGame::~MenuStateLoadGame() {
 
 void MenuStateLoadGame::mouseClick(int x, int y, MouseButton mouseButton){
 
-	CoreData &coreData= CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
-	Lang &lang= Lang::getInstance();
+	CoreData &coreData= theCoreData;
+	SoundRenderer &soundRenderer= theSoundRenderer;
+	const Lang &lang= theLang;
 
 	if (confirmMessageBox) {
 		int button = 1;
@@ -197,7 +197,7 @@ void MenuStateLoadGame::mouseClick(int x, int y, MouseButton mouseButton){
 		if(!loadGame()) {
 			buttonPlayNow.mouseMove(1, 1);
 			msgBox = new GraphicMessageBox();
-			msgBox->init(Lang::getInstance().get("WaitingForConnections"), Lang::getInstance().get("Ok"));
+			msgBox->init(theLang.get("WaitingForConnections"), theLang.get("Ok"));
 			criticalError = false;
 		}
 	} else if(listBoxGames.mouseClick(x, y)){
@@ -225,7 +225,7 @@ void MenuStateLoadGame::mouseMove(int x, int y, const MouseState &ms){
 }
 
 void MenuStateLoadGame::render() {
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= theRenderer;
 	if(msgBox && criticalError) {
 		renderer.renderMessageBox(msgBox);
 		return;
@@ -266,7 +266,7 @@ void MenuStateLoadGame::update() {
 	}
 
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
-	Lang& lang = Lang::getInstance();
+	Lang& lang = theLang;
 
 	foreach(const shared_ptr<GameSettings::Faction> &f, gs->getFactions()) {
 		int slot = f->getMapSlot();
@@ -382,7 +382,7 @@ void MenuStateLoadGame::selectionChanged() {
 }
 
 void MenuStateLoadGame::initGameInfo() {
-	const Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	bool good = true;
 	try {
 		gs = shared_ptr<GameSettings>(new GameSettings(*savedGame->getChild("settings")));

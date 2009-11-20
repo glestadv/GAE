@@ -149,12 +149,13 @@ private:
 	Vec2i getNear(const Vec2i &pos, const Unit *target, int minRange, int maxRange) {
 		return map->getNearestPos(pos, target, minRange, maxRange);
 	}*/
-
+#if 0
 	bool isLocal()							{return NetworkManager::getInstance().isLocal();}
 	bool isNetworkGame()					{return NetworkManager::getInstance().isNetworkGame();}
 	bool isNetworkServer()					{return NetworkManager::getInstance().isNetworkServer();}
 	bool isNetworkClient()					{return NetworkManager::getInstance().isNetworkClient();}
 	ServerInterface *getServerInterface()	{return NetworkManager::getInstance().getServerInterface();}
+#endif
 };
 
 // =====================================================

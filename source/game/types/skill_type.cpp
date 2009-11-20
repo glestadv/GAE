@@ -72,7 +72,7 @@ void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, c
 
 	//model
 	string path = sn->getChild("animation")->getAttribute("path")->getRestrictedValue();
-	animations.push_back(Renderer::getInstance().newModel(rsGame));
+	animations.push_back(theRenderer.newModel(rsGame));
 	animations.front()->load(dir + "/" + path);
 
 	//sound
@@ -168,7 +168,7 @@ void SkillType::descEffects(string &str, const Unit *unit) const {
 }
 
 void SkillType::descRange(string &str, const Unit *unit, const char* rangeDesc) const {
-	str += Lang::getInstance().get(rangeDesc) + ": ";
+	str += theLang.get(rangeDesc) + ": ";
 	if (minRange > 1) {
 		str += 	intToStr(minRange) + "...";
 	}
@@ -179,7 +179,7 @@ void SkillType::descRange(string &str, const Unit *unit, const char* rangeDesc) 
 
 
 void SkillType::descEffectsRemoved(string &str, const Unit *unit) const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	if (effectsRemoved) {
 		str += lang.get("Removes") + " " + intToStr(effectsRemoved) + " ";
@@ -203,7 +203,7 @@ void SkillType::descEffectsRemoved(string &str, const Unit *unit) const {
 }
 
 void SkillType::descSpeed(string &str, const Unit *unit, const char* speedType) const {
-	str += Lang::getInstance().get(speedType) + ": " + intToStr(speed);
+	str += theLang.get(speedType) + ": " + intToStr(speed);
 	EnhancementTypeBase::describeModifier(str, unit->getSpeed(this) - speed);
 	str += "\n";
 }
@@ -311,7 +311,7 @@ void TargetBasedSkillType::load(const XmlNode *sn, const string &dir, const Tech
 }
 
 void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* rangeDesc) const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	descEpCost(str, unit);
 
@@ -366,7 +366,7 @@ void AttackSkillType::load(const XmlNode *sn, const string &dir, const TechTree 
 }
 
 void AttackSkillType::getDesc(string &str, const Unit *unit) const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	//attack strength
 	str += lang.get("AttackStrength") + ": ";
@@ -476,7 +476,7 @@ void RepairSkillType::load(const XmlNode *sn, const string &dir, const TechTree 
 }
 
 void RepairSkillType::getDesc(string &str, const Unit *unit) const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 //	descRange(str, unit, "MaxRange");
 
 	descSpeed(str, unit, "RepairSpeed");

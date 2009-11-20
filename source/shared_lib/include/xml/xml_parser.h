@@ -35,7 +35,6 @@ using namespace Shared::Util;
 
 namespace Shared { namespace Xml {
 
-const int strSize = 256;
 extern const string defaultIndent;
 
 class XmlIo;

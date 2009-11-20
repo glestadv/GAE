@@ -8,7 +8,7 @@
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
-
+#if 0
 #ifndef _GAME_NET_NETWORKMANAGER_H_
 #define _GAME_NET_NETWORKMANAGER_H_
 
@@ -88,4 +88,5 @@ public:
 
 }} // end namespace
 
+#endif
 #endif

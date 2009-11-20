@@ -41,8 +41,8 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 		: MenuStateStartGameBase(program, mainMenu, "new-game")
 		, dirty(true) {
 
-	Lang &lang = Lang::getInstance();
-	Config &config = Config::getInstance();
+	const Lang &lang = theLang;
+	Config &config = theConfig;
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	vector<string> results;
 	vector<string> teamItems;
@@ -185,17 +185,17 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	listBoxRandomize.init(332, 500 - GameConstants::maxPlayers * 30, 75);
 	listBoxRandomize.pushBackItem(lang.get("No"));
 	listBoxRandomize.pushBackItem(lang.get("Yes"));
-	listBoxRandomize.setSelectedItemIndex(Config::getInstance().getGsRandStartLocs() ? 1 : 0);
+	listBoxRandomize.setSelectedItemIndex(theConfig.getGsRandStartLocs() ? 1 : 0);
 
 	updateNetworkSlots();
 }
 
 
 void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
-	Config &config = Config::getInstance();
-	Lang &lang = Lang::getInstance();
-	CoreData &coreData = CoreData::getInstance();
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	Config &config = theConfig;
+	const Lang &lang = theLang;
+	CoreData &coreData = theCoreData;
+	SoundRenderer &soundRenderer = theSoundRenderer;
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
 
 	if (msgBox) {
@@ -316,7 +316,7 @@ void MenuStateNewGame::mouseMove(int x, int y, const MouseState &ms) {
 }
 
 void MenuStateNewGame::render() {
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 
 	renderer.renderButton(&buttonReturn);
 	renderer.renderButton(&buttonPlayNow);
@@ -364,11 +364,11 @@ void MenuStateNewGame::update() {
 	shared_ptr<MutexLock> localLock = gs.getLock();
 	//TOOD: add AutoTest to config
 	/*
-	if(Config::getInstance().getBool("AutoTest")){
+	if(theConfig.getBool("AutoTest")){
 		AutoTest::getInstance().updateNewGame(program, mainMenu);
 	}
 	*/
-	Lang& lang = Lang::getInstance();
+	Lang& lang = theLang;
 
 	for (int i = 0; i < mapInfo.players; ++i) {
 		ControlType ct = static_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());
@@ -425,7 +425,7 @@ void MenuStateNewGame::updateGameSettings() {
 	gs = shared_ptr<GameSettings>(new GameSettings());
 
 	//shared_ptr<MutexLock> localLock = gs.getLock();
-	const Config &config = Config::getInstance();
+	const Config &config = theConfig;
 	int factionCount = 0;
 	bool autoRepairAllowed = config.getNetAutoRepairAllowed();
 	bool autoReturnAllowed = config.getNetAutoReturnAllowed();
@@ -504,7 +504,7 @@ void MenuStateNewGame::reloadFactions() {
 
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 		listBoxFactions[i].setItems(results);
-		listBoxFactions[i].pushBackItem(Lang::getInstance().get("Random"));
+		listBoxFactions[i].pushBackItem(theLang.get("Random"));
 		listBoxFactions[i].setSelectedItemIndex(i % results.size());
 	}
 }

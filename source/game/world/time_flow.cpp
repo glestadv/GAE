@@ -32,8 +32,8 @@ void TimeFlow::init(Tileset *tileset){
 	this->tileset= tileset;
 	time= dawn+1.5f;
 	lastTime= time;
-	Config &config= Config::getInstance();
-	timeInc= 24.f*(1.f/config.getGsDayTime())/Config::getInstance().getGsWorldUpdateFps();
+	Config &config= theConfig;
+	timeInc= 24.f*(1.f/config.getGsDayTime())/theConfig.getGsWorldUpdateFps();
 }
 
 void TimeFlow::update(){
@@ -45,7 +45,7 @@ void TimeFlow::update(){
 	}
 
 	//sounds
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	SoundRenderer &soundRenderer= theSoundRenderer;
 	AmbientSounds *ambientSounds= tileset->getAmbientSounds();
 
 	//day

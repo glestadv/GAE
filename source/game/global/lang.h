@@ -37,14 +37,14 @@ private:
 	Properties strings;
 	Properties scenarioStrings;
 
-private:
-	Lang() {}
-
 public:
+	Lang();
+#if 0
 	static Lang &getInstance() {
 		static Lang lang;
 		return lang;
 	}
+#endif
 	const string &getLocale() const			{return locale;}
 #if 0
 	const string &getLanguage() const		{return language;}

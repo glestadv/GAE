@@ -20,7 +20,7 @@
 #include "game_settings.h"
 #include "command.h"
 //#include "lang_features.h"
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 #	include "random.h"
 #endif
 
@@ -78,11 +78,11 @@ public:
 private:
 	uint16 size;	/**< The size of this message in bytes. */
 	uint8 type;		/**< The message type, stored as an unsigned integer (but it's really a NetworkMessageType) */
-#ifdef DEBUG
+#ifndef NDEBUG
 	bool writing;	/**< Used in debug build to verify write() not called directly */
 #endif
 
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 	int64 simRxTime;/**< The simulated rx time (available when compiled with DEBUG_NETWORK_DELAY) */
 #endif
 
@@ -115,7 +115,7 @@ public:
 	// Printable
 	virtual void print(ObjectPrinter &op) const;
 
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 	int64 getSimRxTime() const			{return simRxTime;}
 #endif
 };
@@ -737,7 +737,7 @@ public:
 // if we need to reduce code size later on in release builds, we can compile out object printing
 // code with the below block
 #if 0
-#ifndef DEBUG_NETWORK
+#if !DEBUG_NETWORK && defined(NDEBUG)
 inline void NetworkMessage:print(ObjectPrinter &op) const {}
 inline void NetworkWriteableXmlDoc:print(ObjectPrinter &op) const {}
 inline void NetworkMessageXmlDoc:print(ObjectPrinter &op) const {}

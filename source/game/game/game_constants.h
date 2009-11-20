@@ -17,11 +17,20 @@
 // Rationialise singletons, make return all references if plausible,
 // if not, make them ALL return pointers
 //
+#define theProgram		(Program::getInstance())
+#define theGuiProgram	(GuiProgram::getInstance())
 #define theWorld		(World::getInstance())
 #define theGame			(*Game::getInstance())
-#define theCamera		(*Game::getInstance()->getGameCamera())
-#define theGameSettings (Game::getInstance()->getGameSettings())
-#define theConsole		(*Game::getInstance()->getConsole())
+#define theCamera		(theGame.getGameCamera())
+#define theGameSettings (theGame.getGameSettings())
+#define theConsole		(theProgram.getConsole())
+#define theConfig		(theProgram.getConfig())
+#define theLang			(theProgram.getLang())
+#define theRenderer		(theGuiProgram.getRenderer())
+#define theSoundRenderer (theGuiProgram.getSoundRenderer())
+#define theCoreData		(theGuiProgram.getCoreData())
+#define theMetrics		(theGuiProgram.getMetrics())
+
 
 #include "util.h"
 

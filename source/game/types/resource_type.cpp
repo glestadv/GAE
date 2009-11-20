@@ -33,7 +33,7 @@ namespace Game {
 bool ResourceType::load(const string &dir, int id, Checksums &checksums) {
 
 	string path, str;
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = theRenderer;
 	this->id = id;
 
 	bool loadOk = true;

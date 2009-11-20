@@ -141,7 +141,7 @@ AStarNode* AStarNodePool::getBestCandidate () {
 	return ret;
 }
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_PATHFINDER
 
 list<Vec2i>* AStarNodePool::getOpenNodes () {
 	list<Vec2i> *ret = new list<Vec2i> ();

@@ -170,7 +170,7 @@ public: // should be private ... debugging...
 	AnnotatedMap *annotatedMap;
 	GraphSearch *search;
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_PATHFINDER
 	Vec2i PathStart, PathDest;
 	std::set<Vec2i> OpenSet, ClosedSet, PathSet;
 	std::map<Vec2i, uint32> LocalAnnotations;

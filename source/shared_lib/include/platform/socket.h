@@ -14,11 +14,6 @@
 #ifndef _SHARED_PLATFORM_SOCKET_H_
 #define _SHARED_PLATFORM_SOCKET_H_
 
-#ifdef DEBUG_NETWORK_DELAY
-#	define DEBUG_NETWORK_DELAY_BOOL true
-#else
-#	define DEBUG_NETWORK_DELAY_BOOL false
-#endif
 #include <string>
 #include <cassert>
 #include <vector>
@@ -64,19 +59,19 @@ private:
 public:
 	/** Create an empty IPv4 address (i.e., 0.0.0.0). */
 	IpAddress() : addr(0) {}
-	
+
  	IpAddress(const sockaddr_in &addr) : addr(addr.sin_addr.s_addr) {
 		assert(addr.sin_family == AF_INET);
 	}
-	
+
 	IpAddress(in_addr_t addr) : addr(addr) {}
-	
+
 	/** Create a new IPv4 address by parsing the string ipString. */
 	IpAddress(const string& ipString);
 
 	/** Returns true if this address is 0.0.0.0. */
 	bool isZero() const							{return !addr;}
-	
+
 	/** Converts this address to a string. */
 	string toString() const;
 	in_addr_t get() const						{return addr;}
@@ -166,7 +161,7 @@ public:
 	sockaddr_in getsockname() const;
 	unsigned int getLocalPort() const	{return ntohs(getsockname().sin_port);}
 	IpAddress getLocalAddress() const	{return IpAddress(getsockname());}
-	
+
 //	void close() {::close(sock);}
 
 	template<typename T>

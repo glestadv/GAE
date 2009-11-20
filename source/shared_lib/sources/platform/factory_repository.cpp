@@ -1,7 +1,9 @@
 // ==============================================================
 //	This file is part of Glest Shared Library (www.glest.org)
 //
-//	Copyright (C) 2005 Matthias Braun <matze@braunis.de>
+//	Copyright (C) 2001-2008 Martiño Figueroa
+//					   2005 Matthias Braun <matze@braunis.de>
+//					   2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -14,31 +16,37 @@
 
 #include "leak_dumper.h"
 
-namespace Shared{ namespace Platform{
+namespace Shared { namespace Platform {
 
 // =====================================================
-//	class FactoryRepository
+// class FactoryRepository
 // =====================================================
-
-FactoryRepository &FactoryRepository::getInstance() {
-	static FactoryRepository factoryRepository;
-	return factoryRepository;
-}
 
 GraphicsFactory *FactoryRepository::getGraphicsFactory(const string &name) {
-	if(name == "OpenGL") {
+	if(name == "OpenGL"){
 		return &graphicsFactoryGl;
+	}
+	else if(name == "OpenGL2"){
+		return &graphicsFactoryGl2;
 	}
 
 	throw runtime_error("Unknown graphics factory: " + name);
 }
 
 SoundFactory *FactoryRepository::getSoundFactory(const string &name) {
-	if(name == "OpenAL") {
+#if USE_OPENAL
+	if (name == "OpenAL") {
 		return &soundFactoryOpenAL;
 	}
+#endif
+
+#if USE_DS8
+	if (name == "DirectSound8") {
+		return &soundFactoryDs8;
+	}
+#endif
 
 	throw runtime_error("Unknown sound factory: " + name);
 }
 
-}}//end namespace
+}} // end namespace

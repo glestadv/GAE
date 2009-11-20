@@ -19,26 +19,6 @@ using Shared::Util::GlestException;
 namespace Shared { namespace Platform {
 
 // ===============================
-//  class PlatformException
-// ===============================
-
-/** Base exception type for any platform-specific run-time error. */
-/*
-class PlatformException : public GlestException {
-public:
-	PlatformException(
-			const char *msg,
-			const char *operation = NULL,
-			const runtime_error *rootCause = NULL,
-			const char *fileName = NULL,
-			int lineNumber = 0) throw();
-	virtual ~PlatformException() throw();
-
-	virtual int getErrorCode() const throw() = 0;
-	virtual string getErrorDesc() const throw() = 0;
-};
-*/
-// ===============================
 //  class PosixException
 // ===============================
 
@@ -57,8 +37,16 @@ public:
 	virtual ~PosixException() throw();
 	virtual PosixException *clone() const throw ();
 
-	static string getPosixErrorDesc(int err) throw();
 	virtual string getType() const throw();
+
+	static string getPosixErrorDesc(int err) throw();
+	static __noreturn __cold void coldThrow(
+			const string &msg,
+			const string &operation,
+			const GlestException *rootCause = NULL,
+			const string &fileName = "",
+			long lineNumber = 0,
+			int err = errno);
 };
 
 // ===============================
@@ -80,8 +68,16 @@ public:
 	virtual ~WindowsException() throw();
 	virtual WindowsException *clone() const throw ();
 
-	static string getWindowsErrorDesc(DWORD err) throw();
 	virtual string getType() const throw();
+
+	static string getWindowsErrorDesc(DWORD err) throw();
+	static __noreturn __cold void coldThrow(
+			const string &msg,
+			const string &operation,
+			const GlestException *rootCause = NULL,
+			const string &fileName = "",
+			long lineNumber = 0,
+			DWORD err = GetLastError());
 };
 
 // ===============================
@@ -102,6 +98,14 @@ public:
 	virtual WinsockException *clone() const throw ();
 
 	virtual string getType() const throw();
+
+	static __noreturn __cold void coldThrow(
+			const string &msg,
+			const string &operation,
+			const GlestException *rootCause = NULL,
+			const string &fileName = "",
+			long lineNumber = 0,
+			DWORD err = WSAGetLastError());
 };
 
 #endif

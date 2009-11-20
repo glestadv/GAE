@@ -32,16 +32,16 @@ MenuStateGraphicInfo::MenuStateGraphicInfo(Program &program, MainMenu *mainMenu)
 	buttonReturn.init(387, 100, 125);
 	labelInfo.init(100, 700);
 	labelMoreInfo.init(100, 500);
-	labelMoreInfo.setFont(CoreData::getInstance().getMenuFontSmall());
+	labelMoreInfo.setFont(theCoreData.getMenuFontSmall());
 
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= theRenderer;
 	glInfo= renderer.getGlInfo();
 	glMoreInfo= renderer.getGlMoreInfo();
 }
 
 void MenuStateGraphicInfo::mouseClick(int x, int y, MouseButton mouseButton){
-	CoreData &coreData= CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	CoreData &coreData= theCoreData;
+	SoundRenderer &soundRenderer= theSoundRenderer;
 
 	if(buttonReturn.mouseClick(x,y)){
 		soundRenderer.playFx(coreData.getClickSoundA());
@@ -55,8 +55,8 @@ void MenuStateGraphicInfo::mouseMove(int x, int y, const MouseState &ms){
 
 void MenuStateGraphicInfo::render(){
 
-	Renderer &renderer= Renderer::getInstance();
-	Lang &lang= Lang::getInstance();
+	Renderer &renderer= theRenderer;
+	const Lang &lang= theLang;
 
 	buttonReturn.setText(lang.get("Return"));
 	labelInfo.setText(glInfo);

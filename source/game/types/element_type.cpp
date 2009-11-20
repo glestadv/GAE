@@ -57,14 +57,14 @@ void IdNamePair::write(XmlNode &node) const {
 
 DisplayableType::DisplayableType(const XmlNode &node, const string &dir)
 		: IdNamePair(node)
-		, image(Renderer::getInstance().newTexture2D(rsGame)) {
+		, image(theRenderer.newTexture2D(rsGame)) {
 	image->load(dir + "/" + node.getChild("image")->getRestrictedAttribute("path"));
 }
 
 bool DisplayableType::load(const XmlNode *baseNode, const string &dir) {
 	assert(!image);
 	try {
-		image = Renderer::getInstance().newTexture2D(rsGame);
+		image = theRenderer.newTexture2D(rsGame);
 		image->load(dir + "/" + baseNode->getChild("image")->getRestrictedAttribute("path"));
 	} catch (runtime_error e) {
 		Logger::getErrorLog().addXmlError(dir, e.what());
@@ -96,7 +96,7 @@ string RequirableType::getReqDesc() const {
 	string str = getName();
 
 	if (anyReqs) {
-		return str + " " + Lang::getInstance().get("Reqs") + ":\n" + reqString;
+		return str + " " + theLang.get("Reqs") + ":\n" + reqString;
 	} else {
 		return str;
 	}
@@ -169,7 +169,7 @@ ProducibleType::~ProducibleType() {
 }
 
 string ProducibleType::getReqDesc() const {
-	string str = getName() + " " + Lang::getInstance().get("Reqs") + ":\n";
+	string str = getName() + " " + theLang.get("Reqs") + ":\n";
 
 	for (int i = 0; i < getCostCount(); ++i) {
 		if (getCost(i)->getAmount() != 0) {

@@ -159,7 +159,7 @@ void ScriptManager::init() {
 	}
 
 	//setup message box
-	messageBox.init("", Lang::getInstance().get("Ok"));
+	messageBox.init("", theLang.get("Ok"));
 	messageBox.setEnabled(false);
 
 	//last created unit
@@ -174,7 +174,7 @@ void ScriptManager::init() {
 // ========================== events ===============================================
 
 void ScriptManager::onMessageBoxOk() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	if (!messageQueue.empty()) {
 		messageQueue.pop();
@@ -367,7 +367,7 @@ int ScriptManager::stopTimer(LuaHandle* luaHandle) {
 
 int ScriptManager::showMessage(LuaHandle* luaHandle) {
 	LuaArguments luaArguments(luaHandle);
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	if (luaArguments.getArgumentCount() != 2) {
 		luaCppCallError("showMessage", "String, String", describeLuaStack(luaArguments));
 		return luaArguments.getReturnCount();
@@ -393,7 +393,7 @@ int ScriptManager::setDisplayText(LuaHandle* luaHandle) {
 		return luaArguments.getReturnCount();
 	}
 	try {
-		displayText = wrapString(Lang::getInstance().getScenarioString(luaArguments.getString(-1)), displayTextWrapCount);
+		displayText = wrapString(theLang.getScenarioString(luaArguments.getString(-1)), displayTextWrapCount);
 	} catch (LuaError e) {
 		luaCppCallError("setDisplayText", "String", describeLuaStack(luaArguments), e.desc());
 	}

@@ -27,7 +27,7 @@ namespace Shared{ namespace Platform{
 //	class WindowGl
 // =====================================================
 
-void WindowGl::initGl(int colorBits, int depthBits, int stencilBits){
+void WindowGl::initGl(int colorBits, int depthBits, int stencilBits) {
 	context.setColorBits(colorBits);
 	context.setDepthBits(depthBits);
 	context.setStencilBits(stencilBits);
@@ -35,12 +35,12 @@ void WindowGl::initGl(int colorBits, int depthBits, int stencilBits){
 	context.init();
 }
 
-void WindowGl::makeCurrentGl(){
+void WindowGl::makeCurrentGl() {
 	GraphicsInterface::getInstance().setCurrentContext(&context);
 	context.makeCurrent();
 }
 
-void WindowGl::swapBuffersGl(){
+void WindowGl::swapBuffersGl() {
 	context.swapBuffers();
 }
 

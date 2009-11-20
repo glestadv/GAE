@@ -37,7 +37,7 @@ class FactionType;
  * value) and an optional storage type T, defaulting to int.  Flags is very
  * lightweight, consiting of only the value of type T.
  */
-template<class E, size_t max, class T =unsigned int> class Flags {
+template<class E, size_t max, class T = unsigned int> class Flags {
 public:
 	T flags;
 

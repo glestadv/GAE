@@ -39,7 +39,7 @@ NetworkManager::~NetworkManager() {
 }
 
 void NetworkManager::init(NetworkRole networkRole) {
-	Config &config = Config::getInstance();
+	Config &config = theConfig;
 	assert(gameInterface == NULL);
 
 	this->networkRole = networkRole;

@@ -42,6 +42,20 @@ Window::Window() : x(0), y(0), w(0), h(0), handle(0) {
 	memset(lastMouse, 0, sizeof(lastMouse));
 }
 
+Window::Window() : x(0), y(0), w(0), h(0), handle(0) {
+	memset(lastMouseDown, 0, sizeof(lastMouseDown));
+	memset(lastMouse, 0, sizeof(lastMouse));
+
+	setText("Glest Advanced Engine");
+	setStyle(config.getDisplayWindowed() ? wsWindowedFixed: wsFullscreen);
+	setPos(0, 0);
+	setSize(config.getDisplayWidth(), config.getDisplayHeight());
+	create();
+
+	initGl(config.getRenderColorBits(), config.getRenderDepthBits(), config.getRenderStencilBits());
+	makeCurrentGl();
+}
+
 Window::~Window() {}
 
 bool Window::handleEvent() {
@@ -108,7 +122,7 @@ int Window::getClientW() {return getW();}
 int Window::getClientH() {return getH();}
 
 float Window::getAspect() {
-	return static_cast<float>(getClientH())/getClientW();
+	return static_cast<float>(getClientH()) / getClientW();
 }
 
 void Window::setText(string text) {
@@ -203,6 +217,26 @@ void Window::handleMouseDown(SDL_Event event) {
 	}
 	lastMouseDown[button] = input.getLastMouseEvent();
 	lastMouse[button] = input.getMousePos();
+}
+
+static void setDisplaySettings(int width, int height, int colorBits, int freq) {
+
+	Config &config = theConfig;
+	// bool multisamplingSupported = isGlExtensionSupported("WGL_ARB_multisample");
+
+	if (!config.getDisplayWindowed()) {
+
+		int freq = config.getDisplayRefreshFrequency();
+		int colorBits = config.getRenderColorBits();
+		int screenWidth = config.getDisplayWidth();
+		int screenHeight = config.getDisplayHeight();
+
+		if (!(changeVideoMode(screenWidth, screenHeight, colorBits, freq)
+				|| changeVideoMode(screenWidth, screenHeight, colorBits, 0))) {
+			throw runtime_error("Error setting video mode: " + Conversion::toStr(screenWidth)
+					+ "x" + Conversion::toStr(screenHeight) + "x" + Conversion::toStr(colorBits));
+		}
+	}
 }
 
 }}//end namespace

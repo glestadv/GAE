@@ -98,7 +98,7 @@ BFSNode* BFSNodePool::getBestCandidate () {
 	return lists[numClosed-1];
 }
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_PATHFINDER
 
 list<Vec2i>* BFSNodePool::getOpenNodes () {
 	list<Vec2i> *ret = new list<Vec2i> ();

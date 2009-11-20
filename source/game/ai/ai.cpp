@@ -115,29 +115,35 @@ string UpgradeTask::toString() const {
 // 	class Ai
 // =====================================================
 
-void Ai::init(AiInterface *aiInterface) {
-	this->aiInterface = aiInterface;
-	startLoc = random.randRange(0, aiInterface->getMapMaxPlayers() - 1);
-	upgradeCount = 0;
-	minWarriors = minMinWarriors;
-	baseSeen = false;
+Ai::Ai(AiInterface &aiInterface)
+		: aiInterface(aiInterface)
+		, aiRules()
+		, random()
+		, startLoc(random.randRange(0, aiInterface.getMapMaxPlayers() - 1))
+		, upgradeCount(0)
+		, minWarriors(minMinWarriors)
+		, tasks()
+		, expansionPositions()
+		, knownEnemyLocatoins()
+		, baseSeen(false)
+		, aggressivness() {
 
 	//add ai rules
 	aiRules.resize(14);
-	aiRules[0] = new AiRuleWorkerHarvest(this);
-	aiRules[1] = new AiRuleRefreshHarvester(this);
-	aiRules[2] = new AiRuleScoutPatrol(this);
-	aiRules[3] = new AiRuleReturnBase(this);
-	aiRules[4] = new AiRuleMassiveAttack(this);
-	aiRules[5] = new AiRuleAddTasks(this);
-	aiRules[6] = new AiRuleProduceResourceProducer(this);
-	aiRules[7] = new AiRuleBuildOneFarm(this);
-	aiRules[8] = new AiRuleProduce(this);
-	aiRules[9] = new AiRuleBuild(this);
-	aiRules[10] = new AiRuleUpgrade(this);
-	aiRules[11] = new AiRuleExpand(this);
-	aiRules[12] = new AiRuleRepair(this);
-	aiRules[13] = new AiRuleRepair(this);
+	aiRules[0] = new AiRuleWorkerHarvest(*this);
+	aiRules[1] = new AiRuleRefreshHarvester(*this);
+	aiRules[2] = new AiRuleScoutPatrol(*this);
+	aiRules[3] = new AiRuleReturnBase(*this);
+	aiRules[4] = new AiRuleMassiveAttack(*this);
+	aiRules[5] = new AiRuleAddTasks(*this);
+	aiRules[6] = new AiRuleProduceResourceProducer(*this);
+	aiRules[7] = new AiRuleBuildOneFarm(*this);
+	aiRules[8] = new AiRuleProduce(*this);
+	aiRules[9] = new AiRuleBuild(*this);
+	aiRules[10] = new AiRuleUpgrade(*this);
+	aiRules[11] = new AiRuleExpand(*this);
+	aiRules[12] = new AiRuleRepair(*this);
+	aiRules[13] = new AiRuleRepair(*this);
 }
 
 Ai::~Ai() {
@@ -148,10 +154,10 @@ Ai::~Ai() {
 void Ai::update() {
 	//process ai rules
 	for (AiRules::iterator it = aiRules.begin(); it != aiRules.end(); ++it) {
-		if ((aiInterface->getTimer() % ((*it)->getTestInterval() * Config::getInstance().getGsWorldUpdateFps() / 1000)) == 0) {
+		if ((aiInterface.getTimer() % ((*it)->getTestInterval() * theConfig.getGsWorldUpdateFps() / 1000)) == 0) {
 			if ((*it)->test()) {
-				aiInterface->printLog(3,
-						Conversion::toStr(1000 * aiInterface->getTimer() / Config::getInstance().getGsWorldUpdateFps())
+				aiInterface.printLog(3,
+						Conversion::toStr(1000 * aiInterface.getTimer() / theConfig.getGsWorldUpdateFps())
 						+ ": Executing rule: " + (*it)->getName() + '\n');
 				(*it)->execute();
 			}
@@ -164,8 +170,8 @@ void Ai::update() {
 
 int Ai::getCountOfType(const UnitType *ut) {
 	int count = 0;
-	for (int i = 0; i < aiInterface->getMyUnitCount(); ++i) {
-		if (ut == aiInterface->getMyUnit(i)->getType()) {
+	for (int i = 0; i < aiInterface.getMyUnitCount(); ++i) {
+		if (ut == aiInterface.getMyUnit(i)->getType()) {
 			count++;
 		}
 	}
@@ -174,8 +180,8 @@ int Ai::getCountOfType(const UnitType *ut) {
 
 int Ai::getCountOfClass(UnitClass uc) {
 	int count = 0;
-	for (int i = 0; i < aiInterface->getMyUnitCount(); ++i) {
-		if (aiInterface->getMyUnit(i)->getType()->isOfClass(uc)) {
+	for (int i = 0; i < aiInterface.getMyUnitCount(); ++i) {
+		if (aiInterface.getMyUnit(i)->getType()->isOfClass(uc)) {
 			++count;
 		}
 	}
@@ -183,10 +189,10 @@ int Ai::getCountOfClass(UnitClass uc) {
 }
 
 float Ai::getRatioOfClass(UnitClass uc) {
-	if (aiInterface->getMyUnitCount() == 0) {
+	if (aiInterface.getMyUnitCount() == 0) {
 		return 0;
 	} else {
-		return static_cast<float>(getCountOfClass(uc)) / aiInterface->getMyUnitCount();
+		return static_cast<float>(getCountOfClass(uc)) / aiInterface.getMyUnitCount();
 	}
 }
 
@@ -194,11 +200,11 @@ const ResourceType *Ai::getNeededResource() {
 
 	int amount = -1;
 	const ResourceType *neededResource = NULL;
-	const TechTree *tt = aiInterface->getTechTree();
+	const TechTree *tt = aiInterface.getTechTree();
 
 	for (int i = 0; i < tt->getResourceTypeCount(); ++i) {
 		const ResourceType *rt = tt->getResourceType(i);
-		const Resource *r = aiInterface->getResource(rt);
+		const Resource *r = aiInterface.getResource(rt);
 		if (rt->getClass() != rcStatic && rt->getClass() != rcConsumable && (r->getAmount() < amount || amount == -1)) {
 			amount = r->getAmount();
 			neededResource = rt;
@@ -209,17 +215,17 @@ const ResourceType *Ai::getNeededResource() {
 }
 
 bool Ai::beingAttacked(Vec2i &pos, Field &field, int radius) {
-	int count = aiInterface->onSightUnitCount();
+	int count = aiInterface.onSightUnitCount();
 	const Unit *unit;
 
 	for (int i = 0; i < count; ++i) {
-		unit = aiInterface->getOnSightUnit(i);
-		if (!aiInterface->isAlly(unit) && unit->isAlive()) {
+		unit = aiInterface.getOnSightUnit(i);
+		if (!aiInterface.isAlly(unit) && unit->isAlive()) {
 			pos = unit->getPos();
 			field = unit->getCurrField();
-			if (pos.dist(aiInterface->getHomeLocation()) < radius) {
+			if (pos.dist(aiInterface.getHomeLocation()) < radius) {
 				baseSeen = true;
-				aiInterface->printLog(2, "Being attacked at pos " + Conversion::toStr(pos.x) + "," + Conversion::toStr(pos.y) + "\n");
+				aiInterface.printLog(2, "Being attacked at pos " + Conversion::toStr(pos.x) + "," + Conversion::toStr(pos.y) + "\n");
 				return true;
 			}
 		}
@@ -229,10 +235,10 @@ bool Ai::beingAttacked(Vec2i &pos, Field &field, int radius) {
 
 bool Ai::isStableBase() {
 	if (getCountOfClass(ucWarrior) > minWarriors) {
-		aiInterface->printLog(4, "Base is stable\n");
+		aiInterface.printLog(4, "Base is stable\n");
 		return true;
 	} else {
-		aiInterface->printLog(4, "Base is not stable\n");
+		aiInterface.printLog(4, "Base is not stable\n");
 		return false;
 	}
 }
@@ -241,8 +247,8 @@ bool Ai::findAbleUnit(int *unitIndex, CommandClass ability, bool idleOnly) {
 	vector<int> units;
 
 	*unitIndex = -1;
-	for (int i = 0; i < aiInterface->getMyUnitCount(); ++i) {
-		const Unit *unit = aiInterface->getMyUnit(i);
+	for (int i = 0; i < aiInterface.getMyUnitCount(); ++i) {
+		const Unit *unit = aiInterface.getMyUnit(i);
 		if (unit->getType()->hasCommandClass(ability)) {
 			if ((!idleOnly || !unit->anyCommand() || unit->getCurrCommand()->getType()->getClass() == ccStop) && !unit->isAPet()) {
 				units.push_back(i);
@@ -262,8 +268,8 @@ bool Ai::findAbleUnit(int *unitIndex, CommandClass ability, CommandClass current
 	vector<int> units;
 
 	*unitIndex = -1;
-	for (int i = 0; i < aiInterface->getMyUnitCount(); ++i) {
-		const Unit *unit = aiInterface->getMyUnit(i);
+	for (int i = 0; i < aiInterface.getMyUnitCount(); ++i) {
+		const Unit *unit = aiInterface.getMyUnit(i);
 		if (unit->getType()->hasCommandClass(ability)) {
 			if (unit->anyCommand() && unit->getCurrCommand()->getType()->getClass() == currentCommand && !unit->isAPet()) {
 				units.push_back(i);
@@ -286,7 +292,7 @@ bool Ai::findPosForBuilding(const UnitType* building, const Vec2i &searchPos, Ve
 		for (int i = searchPos.x - currRadius; i < searchPos.x + currRadius; ++i) {
 			for (int j = searchPos.y - currRadius; j < searchPos.y + currRadius; ++j) {
 				outPos = Vec2i(i, j);
-				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, FieldWalkable)) {
+				if (aiInterface.areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, FieldWalkable)) {
 					return true;
 				}
 			}
@@ -311,8 +317,8 @@ void Ai::updateStatistics() {
 	availableUpgrades.clear();
 
 	//get a count of all unit types that we have
-	for (int i = 0; i < aiInterface->getMyUnitCount(); ++i){
-		const UnitType *ut = aiInterface->getMyUnit(i)->getType();
+	for (int i = 0; i < aiInterface.getMyUnitCount(); ++i){
+		const UnitType *ut = aiInterface.getMyUnit(i)->getType();
 
 		uti = unitTypeCount.find(ut);
 		if(uti == unitTypeCount.end()) {
@@ -336,7 +342,7 @@ void Ai::updateStatistics() {
 				for(int j = 0; j < bct->getBuildingCount(); ++j) {
 					const UnitType *buildingType = bct->getBuilding(j);
 
-					if(aiInterface->reqsOk(bct) && aiInterface->reqsOk(buildingType)) {
+					if(aiInterface.reqsOk(bct) && aiInterface.reqsOk(buildingType)) {
 						utj = availableBuildings.find(buildingType);
 						if(utj == availableBuildings.end()) {
 							availableBuildings[buildingType] = uti->second;
@@ -349,7 +355,7 @@ void Ai::updateStatistics() {
 				const UpgradeCommandType *uct = (const UpgradeCommandType*)ct;
 				const UpgradeType *upgrade = uct->getProducedUpgrade();
 
-				if (aiInterface->reqsOk(uct) && aiInterface->reqsOk(upgrade)) {
+				if (aiInterface.reqsOk(uct) && aiInterface.reqsOk(upgrade)) {
 					availableUpgrades.push_back(upgrade);
 				}
 			}
@@ -389,8 +395,8 @@ void Ai::updateStatistics() {
 }
 
 bool Ai::isRepairable(const Unit *u) const {
-	for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
-		if(aiInterface->getMyUnit(i)->getRepairCommandType(u)) {
+	for(int i=0; i<aiInterface.getMyUnitCount(); ++i){
+		if(aiInterface.getMyUnit(i)->getRepairCommandType(u)) {
 			return true;
 		}
 	}
@@ -401,7 +407,7 @@ bool Ai::isRepairable(const Unit *u) const {
 
 void Ai::addTask(const Task *task){
 	tasks.push_back(task);
-	aiInterface->printLog(2, "Task added: " + task->toString());
+	aiInterface.printLog(2, "Task added: " + task->toString());
 }
 
 void Ai::addPriorityTask(const Task *task){
@@ -409,7 +415,7 @@ void Ai::addPriorityTask(const Task *task){
 	tasks.clear();
 
 	tasks.push_back(task);
-	aiInterface->printLog(2, "Priority Task added: " + task->toString());
+	aiInterface.printLog(2, "Priority Task added: " + task->toString());
 }
 
 bool Ai::anyTask(){
@@ -426,7 +432,7 @@ const Task *Ai::getTask() const{
 }
 
 void Ai::removeTask(const Task *task){
-	aiInterface->printLog(2, "Task removed: " + task->toString());
+	aiInterface.printLog(2, "Task removed: " + task->toString());
 	tasks.remove(task);
 	delete task;
 }
@@ -458,7 +464,7 @@ void Ai::addExpansion(const Vec2i &pos){
 Vec2i Ai::getRandomHomePosition(){
 
 	if(expansionPositions.empty() || random.randRange(0, 1) == 0){
-		return aiInterface->getHomeLocation();
+		return aiInterface.getHomeLocation();
 	}
 
 	return expansionPositions[random.randRange(0, expansionPositions.size()-1)];
@@ -470,32 +476,32 @@ void Ai::sendScoutPatrol(){
     Vec2i pos;
     int unit;
 
-	startLoc= (startLoc+1) % aiInterface->getMapMaxPlayers();
-	pos= aiInterface->getStartLocation(startLoc);
+	startLoc= (startLoc+1) % aiInterface.getMapMaxPlayers();
+	pos= aiInterface.getStartLocation(startLoc);
 
-	if(aiInterface->getFactionIndex()!=startLoc){
+	if(aiInterface.getFactionIndex()!=startLoc){
 		if(findAbleUnit(&unit, ccAttack, false)){
-			aiInterface->giveCommand(unit, ccAttack, pos);
-			aiInterface->printLog(2, "Scout patrol sent to: " + Conversion::toStr(pos.x)+","+Conversion::toStr(pos.y)+"\n");
+			aiInterface.giveCommand(unit, ccAttack, pos);
+			aiInterface.printLog(2, "Scout patrol sent to: " + Conversion::toStr(pos.x)+","+Conversion::toStr(pos.y)+"\n");
 		}
 	}
 }
 
 void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
 
-    for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
-        const Unit *unit= aiInterface->getMyUnit(i);
+    for(int i=0; i<aiInterface.getMyUnitCount(); ++i){
+        const Unit *unit= aiInterface.getMyUnit(i);
 		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field==FieldAir?ZoneAir:ZoneSurface);
 		bool isWarrior= !unit->getType()->hasCommandClass(ccHarvest) && !unit->getType()->hasCommandClass(ccProduce);
 		bool alreadyAttacking= unit->getCurrSkill()->getClass()==scAttack;
 		if(!alreadyAttacking && act!=NULL && (ultraAttack || isWarrior)){
-			aiInterface->giveCommand(i, act, pos);
+			aiInterface.giveCommand(i, act, pos);
 		}
     }
     if(minWarriors<maxMinWarriors){
 		minWarriors+= 3;
 	}
-	aiInterface->printLog(2, "Massive attack to pos: "+ Conversion::toStr(pos.x)+", "+Conversion::toStr(pos.y)+"\n");
+	aiInterface.printLog(2, "Massive attack to pos: "+ Conversion::toStr(pos.x)+", "+Conversion::toStr(pos.y)+"\n");
 }
 
 void Ai::returnBase(int unitIndex){
@@ -503,13 +509,13 @@ void Ai::returnBase(int unitIndex){
     CommandResult r;
     int fi;
 
-    fi= aiInterface->getFactionIndex();
+    fi= aiInterface.getFactionIndex();
     pos= Vec2i(
 		random.randRange(-villageRadius, villageRadius), random.randRange(-villageRadius, villageRadius)) +
 		getRandomHomePosition();
-    r= aiInterface->giveCommand(unitIndex, ccMove, pos);
+    r= aiInterface.giveCommand(unitIndex, ccMove, pos);
 
-    //aiInterface->printLog(1, "Order return to base pos:" + intToStr(pos.x)+", "+intToStr(pos.y)+": "+rrToStr(r)+"\n");
+    //aiInterface.printLog(1, "Order return to base pos:" + intToStr(pos.x)+", "+intToStr(pos.y)+": "+rrToStr(r)+"\n");
 }
 
 void Ai::harvest(int unitIndex){
@@ -517,12 +523,12 @@ void Ai::harvest(int unitIndex){
 	const ResourceType *rt= getNeededResource();
 
 	if(rt!=NULL){
-		const HarvestCommandType *hct= aiInterface->getMyUnit(unitIndex)->getType()->getFirstHarvestCommand(rt);
+		const HarvestCommandType *hct= aiInterface.getMyUnit(unitIndex)->getType()->getFirstHarvestCommand(rt);
 		Vec2i resPos;
-		if(hct!=NULL && aiInterface->getNearestSightedResource(rt, aiInterface->getHomeLocation(), resPos)){
+		if(hct!=NULL && aiInterface.getNearestSightedResource(rt, aiInterface.getHomeLocation(), resPos)){
 			resPos= resPos+Vec2i(random.randRange(-2, 2), random.randRange(-2, 2));
-			aiInterface->giveCommand(unitIndex, hct, resPos);
-			//aiInterface->printLog(4, "Order harvest pos:" + intToStr(resPos.x)+", "+intToStr(resPos.y)+": "+rrToStr(r)+"\n");
+			aiInterface.giveCommand(unitIndex, hct, resPos);
+			//aiInterface.printLog(4, "Order harvest pos:" + intToStr(resPos.x)+", "+intToStr(resPos.y)+": "+rrToStr(r)+"\n");
 		}
 	}
 }

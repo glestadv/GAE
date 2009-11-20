@@ -22,6 +22,8 @@
 #include "window.h"
 #include "font.h"
 #include "math_util.h"
+#include "game_constants.h"
+#include "gui_program.h"
 
 #include "leak_dumper.h"
 
@@ -40,9 +42,9 @@ float GraphicComponent::fade = 0.f;
 const float GraphicComponent::animSpeed = 0.02f;
 const float GraphicComponent::fadeSpeed = 0.01f;
 
-GraphicComponent::GraphicComponent() : x(0), y(0), w(0), h(0), text(), font(NULL) 
-{ 
-   enabled = true;
+GraphicComponent::GraphicComponent() : x(0), y(0), w(0), h(0), text(), font(NULL)
+{
+	enabled = true;
 }
 
 void GraphicComponent::init(int x, int y, int w, int h) {
@@ -50,8 +52,8 @@ void GraphicComponent::init(int x, int y, int w, int h) {
 	this->y = y;
 	this->w = w;
 	this->h = h;
-	font = CoreData::getInstance().getMenuFontNormal();
-   enabled = true;
+	font = theCoreData.getMenuFontNormal();
+	enabled = true;
 }
 
 bool GraphicComponent::mouseMove(int x, int y) {
@@ -190,16 +192,16 @@ bool GraphicListBox::mouseClick(int x, int y) {
 // class GraphicMessageBox
 // =====================================================
 
-GraphicMessageBox::GraphicMessageBox() 
+GraphicMessageBox::GraphicMessageBox()
 : GraphicComponent(), button1(), button2(), buttonCount(0) {}
 
 const int GraphicMessageBox::defH = 240;
 const int GraphicMessageBox::defW = 350;
 
 void GraphicMessageBox::init(const string &text, const string &button1Str, const string &button2Str) {
-	font = CoreData::getInstance().getMenuFontNormal();
+	font = theCoreData.getMenuFontNormal();
 	GraphicComponent::setText(text);
-	
+
 	//init and position the button(s)
 	buttonCount = (button2Str == "") ? 1 : 2;
 	layout();
@@ -217,7 +219,7 @@ void GraphicMessageBox::layout() {
 	w = max(defW, (int)roundf(dim.x * 0.7f + defW / 16.f));
 	h = max(defH, (int)roundf(dim.y * 1.75f + defH * 0.5f));
 
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = theMetrics;
 
 	x = (metrics.getVirtualW() - w) / 2;
 	y = (metrics.getVirtualH() - h) / 2;
@@ -293,15 +295,15 @@ void GraphicTextEntry::keyDown(const Key &key) {
 		// character
 		if ((key >= 'A' && key <= 'Z') || (key >= 'a' && key <= 'z')) {
 			text += key - 'A' + 'a';
-		
+
 		// other symbol
 		} else if ((key >= 32) && (key <= 126)) {
 			text += key;
-		
+
 		// delete
 		} else*/ if (key == keyDelete) {
 			text = "";
-		
+
 		// backspace
 		} else if (key == keyBackspace && text.size()) {
 			text.erase(text.end() - 1);
@@ -322,12 +324,12 @@ GraphicTextEntryBox::GraphicTextEntryBox() : GraphicComponent(), button1(), butt
 void GraphicTextEntryBox::init(const string &button1Str, const string &button2Str,
 							   const string &title, const string &text, const string &entryText) {
 
-	font = CoreData::getInstance().getMenuFontNormal();
+	font = theCoreData.getMenuFontNormal();
 
 	h = defH;
 	w = defW;
 
-	const Metrics &metrics = Metrics::getInstance();
+	const Metrics &metrics = theMetrics;
 
 	x = (metrics.getVirtualW() - w) / 2;
 	y = (metrics.getVirtualH() - h) / 2;;

@@ -9,13 +9,13 @@
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
-
+#if 0
 #ifndef _GAME_NET_CLIENTINTERFACE_H_
 #define _GAME_NET_CLIENTINTERFACE_H_
 
 #include <deque>
 
-#include "game_interface.h"
+#include "network_messenger.h"
 #include "game_settings.h"
 #include "remote_interface.h"
 
@@ -120,4 +120,5 @@ private:
 
 }} // end namespace
 
+#endif
 #endif

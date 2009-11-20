@@ -217,7 +217,7 @@ void Effects::getDesc(stringstream &str) const {
 	map<const EffectType*, EffectSummary> uniqueEffects;
 	map<const EffectType*, EffectSummary>::iterator uei;
 	bool printedFirst = false;
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	for (const_iterator i = begin(); i != end(); i++) {
 		const EffectType *type = (*i)->getType();

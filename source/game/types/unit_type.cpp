@@ -261,7 +261,7 @@ bool UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 	//image cancel
 	try {
 		const XmlNode *imageCancelNode = parametersNode->getChild("image-cancel");
-		cancelImage = Renderer::getInstance().newTexture2D(rsGame);
+		cancelImage = theRenderer.newTexture2D(rsGame);
 		cancelImage->load(dir + "/" + imageCancelNode->getAttribute("path")->getRestrictedValue());
 	} catch (runtime_error e) {
 		Logger::getErrorLog().addXmlError(path, e.what());
@@ -273,7 +273,7 @@ bool UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 		const XmlNode *meetingPointNode = parametersNode->getChild("meeting-point");
 		meetingPoint = meetingPointNode->getAttribute("value")->getBoolValue();
 		if (meetingPoint) {
-			meetingPointImage = Renderer::getInstance().newTexture2D(rsGame);
+			meetingPointImage = theRenderer.newTexture2D(rsGame);
 			meetingPointImage->load(dir + "/" + meetingPointNode->getAttribute("image-path")->getRestrictedValue());
 		}
 	} catch (runtime_error e) {

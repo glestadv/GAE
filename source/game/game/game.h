@@ -19,13 +19,13 @@
 #include "game_camera.h"
 #include "world.h"
 #include "ai_interface.h"
-#include "program.h"
+#include "gui_program.h"
 #include "chat_manager.h"
 #include "script_manager.h"
 #include "game_settings.h"
 #include "config.h"
 #include "keymap.h"
-#include "game_interface.h"
+#include "messenger.h"
 #include "game_manager.h"
 
 // weather system not yet ready
@@ -44,7 +44,7 @@ class GraphicTextEntryBox;
 //	Main game class
 // =====================================================
 
-class Game: public ProgramState {
+class Game: public GuiProgramState {
 private:
 	typedef vector<Ai*> Ais;
 	typedef vector<AiInterface*> AiInterfaces;
@@ -57,12 +57,12 @@ private:
 	Keymap &keymap;
 	const Input &input;
 	const Config &config;
+    Console &console;
 	World world;
     AiInterfaces aiInterfaces;
     Gui gui;
     GameCamera gameCamera;
     Commander commander;
-    Console console;
 	ChatManager chatManager;
 
 	//misc
@@ -87,14 +87,16 @@ private:
 	//misc ptr
 	ParticleSystem *weatherParticleSystem;
 
+	vector<string> loadingStrings;
+
 public:
-	Game(GameManager &manager, Program &program);
+	Game(GameManager &manager, GuiProgram &program);
     ~Game();
 	static Game *getInstance()				{return singleton;}
 
     //get
-	const GameSettings &getGameSettings()	{return *manager.getGameSettings();}
-	NetworkMessenger &getInterface()		{return *interface;}
+//	const GameSettings &getGameSettings()	{return *manager.getGameSettings();}
+//	Messenger &getMessenger()		{return *interface;}
 
 	const Keymap &getKeymap() const			{return keymap;}
 	const Input &getInput() const			{return input;}
@@ -105,7 +107,7 @@ public:
 	Gui *getGui()							{return &gui;}
 	const Gui *getGui() const				{return &gui;}
 	Commander *getCommander()				{return &commander;}
-	Console *getConsole()					{return &console;}
+	Console &getConsole()					{return getProgram().getConsole();}
 	World *getWorld()						{return &world;}
 	const World *getWorld() const			{return &world;}
 
@@ -144,6 +146,7 @@ private:
 	//render
     void render3d();
     void render2d();
+	void printToLoadingScreen(const string &msg);
 
 	//misc
 	void _init();

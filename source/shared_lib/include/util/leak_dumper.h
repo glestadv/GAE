@@ -12,12 +12,14 @@
 #ifndef _LEAKDUMPER_H_
 #define _LEAKDUMPER_H_
 
+#include "gae_features.h"
+
 //#include "mmgr.h"
 
-//#define SL_LEAK_DUMP
+//#define SL_LEAK_DUMP=1
 //SL_LEAK_DUMP controls if leak dumping is enabled or not
 
-#ifdef SL_LEAK_DUMP
+#if SL_LEAK_DUMP
 
 #include <cstdlib>
 #include <cstdio>

@@ -935,11 +935,11 @@ bool Unit::update() {
 
 	//highlight
 	if(highlight > 0.f) {
-		highlight -= 1.f / (highlightTime * Config::getInstance().getGsWorldUpdateFps());
+		highlight -= 1.f / (highlightTime * theConfig.getGsWorldUpdateFps());
 	}
 
 	//speed
-	static const float speedModifier = 1.f / (float)speedDivider / (float)Config::getInstance().getGsWorldUpdateFps();
+	static const float speedModifier = 1.f / (float)speedDivider / (float)theConfig.getGsWorldUpdateFps();
 	float progressSpeed = getSpeed() * speedModifier;
 	float animationSpeed = currSkill->getAnimSpeed() * speedModifier;
 
@@ -1154,13 +1154,13 @@ bool Unit::decHp(int i) {
 	if (type->getProperty(pBurnable) && hp < type->getMaxHp() / 2 && fire == NULL) {
 		FireParticleSystem *fps;
 		fps = new FireParticleSystem(200);
-		fps->setSpeed(2.5f / Config::getInstance().getGsWorldUpdateFps());
+		fps->setSpeed(2.5f / theConfig.getGsWorldUpdateFps());
 		fps->setPos(getCurrVector());
 		fps->setRadius(type->getSize() / 3.f);
-		fps->setTexture(CoreData::getInstance().getFireTexture());
+		fps->setTexture(theCoreData.getFireTexture());
 		fps->setSize(type->getSize() / 3.f);
 		fire = fps;
-		Renderer::getInstance().manageParticleSystem(fps, rsGame);
+		theRenderer.manageParticleSystem(fps, rsGame);
 	}
 
 	//stop fire on death
@@ -1193,7 +1193,7 @@ int Unit::killPets() {
 
 
 string Unit::getDesc(bool full) const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 	stringstream str;
 	int armorBonus = getArmor() - type->getArmor();
 	int sightBonus = getSight() - type->getSight();

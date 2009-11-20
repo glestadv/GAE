@@ -353,7 +353,7 @@ public:
 		clamp(min.x, min.y, min.z, max.x, max.y, max.z);
 	}
 
-#ifdef ALIGN_12BYTE_VECTORS
+#if ALIGN_12BYTE_VECTORS
 	static void* operator new(size_t size)		{return _mm_malloc(size, 16);}
 	static void* operator new[](size_t size)	{return _mm_malloc(size, 16);}
 	static void operator delete(void* ptr)		{_mm_free(ptr);}
@@ -366,7 +366,7 @@ public:
 // class Vec4
 // =====================================================
 
-ALIGN_VEC_DECL template<typename T> class Vec4 {
+ALIGN_VEC16_DECL template<typename T> class Vec4 {
 public:
 	T x;
 	T y;
@@ -529,14 +529,14 @@ public:
 		clamp(min.x, min.y, min.z, min.w, max.x, max.y, max.z, max.w);
 	}
 
-#ifdef ALIGN_VECTORS
+#ifdef ALIGN_16BYTE_VECTORS
 	static void* operator new(size_t size)		{return _mm_malloc(size, 16);}
 	static void* operator new[](size_t size)	{return _mm_malloc(size, 16);}
 	static void operator delete(void* ptr)		{_mm_free(ptr);}
 	static void operator delete[](void* ptr)	{_mm_free(ptr);}
 #endif
 
-} ALIGN_VEC_ATTR;
+} ALIGN_VEC16_ATTR;
 
 typedef Vec2<int> Vec2i;
 typedef Vec3<int> Vec3i;
@@ -556,12 +556,12 @@ typedef Vec2<double> Vec2d;
 typedef Vec3<double> Vec3d;
 typedef Vec4<double> Vec4d;
 
-#ifndef USE_SSE2_INTRINSICS
+#if !USE_SSE2_INTRINSICS
 typedef Vec3<float> Vec3f;
 typedef Vec4<float> Vec4f;
 #else
 
-//SSE2 16-byte aligned implementations
+// SSE2 16-byte aligned implementations
 
 #define _mm_ps_this_v_op_equal_this_ret(func)							\
 		__m128 a = _mm_loadu_ps(reinterpret_cast<const float*>(this));	\
@@ -591,10 +591,10 @@ typedef Vec4<float> Vec4f;
 
 class Vec3f;
 class Vec4f;
-typedef ALIGN_VEC_DECL float  ALIGN_VEC_ATTR AlignedFloat;
-typedef ALIGN_VEC_DECL int ALIGN_VEC_ATTR AlignedInt;
+typedef __aligned_pre(16) float  __aligned_post(16) AlignedFloat;
+typedef __aligned_pre(16) int __aligned_post(16) AlignedInt;
 
-ALIGN_VEC_DECL class SSE2Vec4f {
+__aligned_pre(16) class SSE2Vec4f {
 public:
 	float x;
 	float y;
@@ -755,9 +755,9 @@ protected:
 		}
 	}
 
-} ALIGN_ATTR(16);
+} __aligned_post(16);
 
-class Vec3f : public SSE2Vec4f {
+__aligned_pre(16) class Vec3f : public SSE2Vec4f {
 public:
 	Vec3f() {}
 	explicit Vec3f(float *p) : SSE2Vec4f(p) {}
@@ -907,9 +907,9 @@ public:
 	static void lerpArray(Vec3f *dest, const Vec3f *srcA, const Vec3f *srcB, float t, size_t size) {
 		SSE2Vec4f::lerpArray(dest, srcA, srcB, t, size);
 	}
-};
+} __aligned_post(16);
 
-class Vec4f : public SSE2Vec4f {
+__aligned_pre(16) class Vec4f : public SSE2Vec4f {
 public:
 	Vec4f() {}
 	explicit Vec4f(float *p) : SSE2Vec4f(p) {}
@@ -1023,7 +1023,7 @@ public:
 	static void lerpArray(Vec4f *dest, const Vec4f *srcA, const Vec4f *srcB, float t, size_t size) {
 		SSE2Vec4f::lerpArray(dest, srcA, srcB, t, size);
 	}
-};
+} __aligned_post(16);
 
 inline Vec3f::Vec3f(const Vec4f &v): SSE2Vec4f(v) {}
 #endif // USE_SSE2_INTRINSICS

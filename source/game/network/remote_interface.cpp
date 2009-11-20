@@ -58,7 +58,7 @@ RemoteInterface::RemoteInterface(NetworkGameConnector &owner, NetworkRole role, 
 		, pendingExceptions()
 		, txbuf(16384)
 		, rxbuf(16384)
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 		, debugDelayQ()
 #endif
 		{
@@ -123,13 +123,13 @@ void RemoteInterface::update(const int64 &now) {
 			rxbuf.resize(rxbuf.size() + bytesReceived);
 		}
 		while((msg = NetworkMessage::readMsg(rxbuf))) {
-			if(Config::getInstance().getMiscDebugMode()) {
+			if(theConfig.getMiscDebugMode()) {
 				stringstream str;
 				str << "received from peer[" << getId() << "]: ";
 				owner.getLogger().add(str.str(), *msg);
 			}
 
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 			// Simulated network lag
 			debugDelayQ.push(msg);
 		}
@@ -149,7 +149,7 @@ void RemoteInterface::update(const int64 &now) {
 		setLastExecution(now);
 
 		// Set the next scheduled call to update this object.
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 		int64 nextSimRxTime = debugDelayQ.empty() ? 0 : debugDelayQ.front()->getSimRxTime();
 		if(nextSimRxTime && nextSimRxTime < stats.getNextExecution()) {
 			setNextExecution(nextSimRxTime);
@@ -241,7 +241,7 @@ bool RemoteInterface::process(NetworkMessageHandshake &msg) {
 
 	// some day, we may want more complex support of older protocol verions
 	if(getNetProtocolVersion() != msg.getProtocolVersion()) {
-		THROW_PROTOCOL_EXCEPTION(Lang::getInstance().format("ErrorVersionMismatch",
+		THROW_PROTOCOL_EXCEPTION(theLang.format("ErrorVersionMismatch",
 				getNetProtocolVersion().toString().c_str(),
 				msg.getProtocolVersion().toString().c_str()));
 	}
@@ -344,7 +344,7 @@ void RemoteInterface::send(NetworkMessage &msg, bool flush) {
 	size_t startBufSize = txbuf.size();
 	msg.writeMsg(txbuf);
 	stats.addDataSent(txbuf.size() - startBufSize);
-	if(Config::getInstance().getMiscDebugMode()) {
+	if(theConfig.getMiscDebugMode()) {
 		stringstream str;
 		str << "sent to peer[" << getId() << "]: ";
 		owner.getLogger().add(str.str(), static_cast<Printable &>(msg), false);
@@ -589,7 +589,7 @@ GameNetworkInterface::~GameNetworkInterface(){
 
 void GameNetworkInterface::sendTextMessage(const string &text, int teamIndex) {
 	MutexLock lock(getMutex());
-	NetworkMessageText networkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex);
+	NetworkMessageText networkMessageText(text, theConfig.getNetPlayerName(), teamIndex);
 	send(&networkMessageText);
 }
 

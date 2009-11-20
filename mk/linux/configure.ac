@@ -52,12 +52,12 @@ case $host_os in
     mingw*|cygwin*)
         AC_MSG_RESULT([WIN32])
 		winapi_available=yes
-        AC_DEFINE([USE_WINSOCK], [], [Define if winsock should be used])
+        AC_DEFINE([USE_WINSOCK], [1], [Define if winsock should be used])
         LIBS="$LIBS -lwsock32"
         ;;
     *)
         AC_MSG_RESULT([assume posix])
-		AC_DEFINE([USE_POSIX_SOCKETS], [],
+		AC_DEFINE([USE_POSIX_SOCKETS], [1],
 				[Define if posix sockets should be used])
 
 		AC_PATH_X
@@ -77,11 +77,11 @@ AC_CHECK_HEADERS([glob.h sys/ioctl.h sys/filio.h sys/time.h byteswap.h])
 AX_TYPE_SOCKLEN_T
 
 AM_PATH_SDL([1.2.5], 
-	[AC_DEFINE([USE_SDL], [], [Define when SDL should be used])], [
+	[AC_DEFINE([USE_SDL], [1], [Define when SDL should be used])], [
 if test "$winapi_available" != "yes"; then
-	AC_MSG_ERROR([Please install libsdl >= 1.2.])
+	AC_MSG_ERROR([Please install libsdl >= 1.2.5])
 else
-	AC_DEFINE([USE_WINAPI], [], [Define if win32 API should be used])
+	AC_DEFINE([USE_WINAPI], [1], [Define if win32 API should be used])
 fi
 ])
 
@@ -89,9 +89,10 @@ NP_FINDLIB([OPENAL], [OpenAL], [OpenAL],
 		NP_LANG_PROGRAM([#include <AL/al.h>],
 			[alcOpenDevice(0);]),
 		[], [-lopenal -ldl -lpthread -lm],
-		[],
+		[AC_DEFINE([USE_OPENAL], [1], [Use OpenAL for sound])],
 		[AC_MSG_ERROR([Please intall OpenAL])],
-		[], [])
+		[],
+		[])
 
 CHECK_LUA([], [AC_MSG_ERROR([Please install lua 5.1])])
 

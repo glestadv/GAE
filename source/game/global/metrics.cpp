@@ -13,6 +13,7 @@
 
 #include "metrics.h"
 #include "element_type.h"
+#include "program.h"
 
 #include "leak_dumper.h"
 
@@ -23,7 +24,7 @@ namespace Game {
 // =====================================================
 
 Metrics::Metrics() {
-	Config &config = Config::getInstance();
+	Config &config = theConfig;
 
 	virtualW = 1000;
 	virtualH = 750;
@@ -32,7 +33,7 @@ Metrics::Metrics() {
 	screenH = config.getDisplayHeight();
 
 	minimapX = 10;
-	minimapY= 750-128-30+16;
+	minimapY = 750 - 128 - 30 + 16;
 	minimapW = 128;
 	minimapH = 128;
 

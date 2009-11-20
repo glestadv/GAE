@@ -30,7 +30,7 @@ namespace Game {
 MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu):
 	MenuState(program, mainMenu, "about")
 {
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= getLang();
 
 	//init
 	buttonReturn.init(460, 100, 125);
@@ -50,7 +50,7 @@ MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu):
 		labelTeammateName[i].init(100+i*180, 500);
 		labelTeammateRole[i].init(100+i*180, 520);
 		labelTeammateName[i].setText(getTeammateName(i));
-		labelTeammateRole[i].setText(getTeammateRole(i));
+		labelTeammateRole[i].setText(getTeammateRole(lang, i));
 	}
 
 	labelTeammateName[5].init(360, 160);
@@ -61,8 +61,8 @@ MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu):
 
 void MenuStateAbout::mouseClick(int x, int y, MouseButton mouseButton){
 
-	CoreData &coreData=  CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	CoreData &coreData=  theCoreData;
+	SoundRenderer &soundRenderer= theSoundRenderer;
 
 	if(buttonReturn.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundA());
@@ -76,7 +76,7 @@ void MenuStateAbout::mouseMove(int x, int y, const MouseState &ms){
 }
 
 void MenuStateAbout::render(){
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= theRenderer;
 
 	renderer.renderButton(&buttonReturn);
 	for(int i= 0; i<aboutStringCount1; ++i){

@@ -36,7 +36,7 @@ namespace Game {
 
 MenuBackground::MenuBackground(){
 
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= theRenderer;
 
 	//load data
 
@@ -67,9 +67,9 @@ MenuBackground::MenuBackground(){
 	rain= menuNode->getChild("rain")->getAttribute("value")->getBoolValue();
 	if(rain){
 		RainParticleSystem *rps= new RainParticleSystem();
-		rps->setSpeed(12.f/Config::getInstance().getGsWorldUpdateFps());
+		rps->setSpeed(12.f/theConfig.getGsWorldUpdateFps());
 		rps->setEmissionRate(25);
-		rps->setWindSpeed2(-90.f, 4.f/Config::getInstance().getGsWorldUpdateFps());
+		rps->setWindSpeed2(-90.f, 4.f/theConfig.getGsWorldUpdateFps());
 		rps->setPos(Vec3f(0.f, 25.f, 0.f));
 		rps->setColor(Vec4f(1.f, 1.f, 1.f, 0.2f));
 		rps->setRadius(30.f);
@@ -136,7 +136,7 @@ void MenuBackground::update(){
 
 	//rain drops
 	for(int i=0; i<raindropCount; ++i){
-		raindropStates[i]+= 1.f / Config::getInstance().getGsWorldUpdateFps();
+		raindropStates[i]+= 1.f / theConfig.getGsWorldUpdateFps();
 		if(raindropStates[i]>=1.f){
 			raindropStates[i]= 0.f;
 			raindropPos[i]= computeRaindropPos();
@@ -144,7 +144,7 @@ void MenuBackground::update(){
 	}
 
 	if(targetCamera!=NULL){
-		t+= ((0.01f+(1.f-t)/10.f)/20.f)*(60.f/Config::getInstance().getGsWorldUpdateFps());
+		t+= ((0.01f+(1.f-t)/10.f)/20.f)*(60.f/theConfig.getGsWorldUpdateFps());
 
 		//interpolate position
 		camera.setPosition(lastCamera.getPosition().lerp(t, targetCamera->getPosition()));
@@ -161,14 +161,14 @@ void MenuBackground::update(){
 
 	//fade
 	if(fade<=1.f){
-		fade+= 0.6f/Config::getInstance().getGsWorldUpdateFps();
+		fade+= 0.6f/theConfig.getGsWorldUpdateFps();
 		if(fade>1.f){
 			fade= 1.f;
 		}
 	}
 
 	//animation
-	anim+=(0.6f/Config::getInstance().getGsWorldUpdateFps())/5+random.randRange(0.f, (0.6f/Config::getInstance().getGsWorldUpdateFps())/5.f);
+	anim+=(0.6f/theConfig.getGsWorldUpdateFps())/5+random.randRange(0.f, (0.6f/theConfig.getGsWorldUpdateFps())/5.f);
 	if(anim>1.f){
 		anim= 0.f;
 	}

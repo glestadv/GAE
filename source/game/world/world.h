@@ -46,51 +46,57 @@ class Game;
 class GameSettings;
 class ScriptManager;
 
-// =====================================================
-// 	class World
-//
-///	The game world: Map + Tileset + TechTree
-// =====================================================
-
-class World {
+class WorldBase {
 public:
 	typedef vector<Faction*> Factions;
 
-public:
-	static const int generationArea = 100;
-	static const float airHeight;
-	static const int indirectSightRange = 5;
-
-private:
+protected:
 	Map map;
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
 	Scenario scenario;
-	Game &game;
-	const GameSettings &gs;
-
-	UnitUpdater unitUpdater;
-	WaterEffects waterEffects;
-	Minimap minimap;
-	Stats stats;
-
 	Factions factions;
-//	UnitMap units;		commented out for now, but we need units mapped here and not in the factions
-
+	UnitMap units;
 	Random random;
-
-	ScriptManager *scriptManager;
 
 	int thisFactionIndex;
 	int thisTeamIndex;
 	int frameCount;
 	int nextUnitId;
 
-	//config
 	bool fogOfWar;
 	int fogOfWarSmoothingFrameSkip;
 	bool fogOfWarSmoothing;
+
+public:
+	const Factions &getFactions() const				{return factions;}
+	const UnitMap &getUnits() const					{return units;}
+};
+
+// =====================================================
+// 	class World
+//
+///	The game world: Map + Tileset + TechTree
+// =====================================================
+
+class World : public WorldBase {
+public:
+	static const int generationArea = 100;
+	static const float airHeight;
+	static const int indirectSightRange = 5;
+
+private:
+	Game &game;
+	const GameSettings &gs;
+
+	UnitUpdater unitUpdater;
+	WaterEffects waterEffects;
+	Minimap minimap;
+
+	ScriptManager *scriptManager;
+
+	//config
 
 	static World *singleton;
 	bool alive;
@@ -106,8 +112,6 @@ public:
 	static World& getInstance()						{assert(singleton); return *singleton;}
 
 	//get
-	const Factions &getFactions() const				{return factions;}
-//	const UnitMap &getUnits() const					{return units;}
 
 	int getMaxFactions() const						{return map.getMaxFactions();}
 	int getThisFactionIndex() const					{return thisFactionIndex;}
@@ -125,7 +129,7 @@ public:
 	Faction *getFaction(int i) 						{return factions[i];}
 	const Minimap *getMinimap() const				{return &minimap;}
 //	const Stats &getStats() const					{return stats;}
-	Stats &getStats() 								{return stats;}
+	Stats &getStats();// 								{return game.getStats();}
 	const WaterEffects *getWaterEffects() const		{return &waterEffects;}
 	int getNextUnitId()								{return nextUnitId++;}
 	int getFrameCount() const						{return frameCount;}
@@ -181,7 +185,7 @@ public:
 	int getUnitCount(int factionIndex);
 	int getUnitCountOfType(int factionIndex, const string &typeName);
 
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_TEXTURES
 	void loadPFDebugTextures();
 	Texture2D *PFDebugTextures[18];
 	//int getNumPathPos () { return map.PathPositions.size (); }
@@ -206,9 +210,11 @@ private:
 	void loadSaved(const XmlNode *worldNode);
 	void moveAndEvict(Unit *unit, vector<Unit*> &evicted, Vec2i *oldPos);
 	void doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, float nextAdvanceFrames);
+#if 0
 	bool isNetworkServer()	{return NetworkManager::getInstance().isNetworkServer();}
 	bool isNetworkClient()	{return NetworkManager::getInstance().isNetworkClient();}
 	bool isNetworkGame()	{return NetworkManager::getInstance().isNetworkGame();}
+#endif
 	void doHackyCleanUp();
 };
 

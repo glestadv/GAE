@@ -15,7 +15,7 @@
 
 #include <queue>
 
-#include "game_interface.h"
+#include "network_messenger.h"
 
 using std::queue;
 
@@ -51,7 +51,7 @@ private:
 	Exceptions pendingExceptions;
 	NetworkDataBuffer txbuf;
 	NetworkDataBuffer rxbuf;
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 	typedef queue<NetworkMessage *> MessageQueue;
 	MessageQueue debugDelayQ;			/**< Queue for messages used only when debugging network. */
 #endif
@@ -87,7 +87,7 @@ public:
 	void updatePlayerInfo(const HumanPlayer &player, NetworkMessage &msg);
 	string getStatusStr() const				{return getPlayer().getName() + ": " + stats.getStatus();}
 
-#ifdef DEBUG_NETWORK_DELAY
+#if DEBUG_NETWORK_DELAY
 	int64 getNextSimRxTime(const int64 &now) {
 		if(!debugDelayQ.empty()) {
 			int64 simRxTime = debugDelayQ.front()->getSimRxTime();

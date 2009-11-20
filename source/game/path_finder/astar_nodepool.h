@@ -160,12 +160,12 @@ public:
 	// conditionally update a node (known to be closed) and re-open if updated
 	void updateClosedNode ( const Vec2i &pos, AStarNode *neighbour, float cost );
 #endif
-#ifdef PATHFINDER_TIMING
+#if PATHFINDER_TIMING
 	int64 startTime;
 	void startTimer () { startTime = Chrono::getCurMicros (); }
 	int64 stopTimer () { return Chrono::getCurMicros () - startTime; }
 #endif
-#ifdef _GAE_DEBUG_EDITION_
+#if DEBUG_PATHFINDER
 	virtual list<Vec2i>* getOpenNodes ();
 	virtual list<Vec2i>* getClosedNodes ();
 	list<Vec2i> listedNodes;

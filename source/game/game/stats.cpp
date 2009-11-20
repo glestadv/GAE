@@ -12,8 +12,12 @@
 #include "pch.h"
 #include "stats.h"
 
+#include "xml_parser.h"
+#include "game_settings.h"
+
 #include "leak_dumper.h"
 
+using Shared::Xml::XmlNode;
 
 namespace Game {
 

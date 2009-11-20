@@ -35,38 +35,36 @@ namespace Game {
 //  class BattleEnd
 // =====================================================
 
-BattleEnd::BattleEnd(Program &program, const shared_ptr<GameSettings> &gs, const Stats &stats)
-		: ProgramState(program)
-		, gs(gs)
-		, stats(stats) {
+BattleEnd::BattleEnd(GuiProgram &program)
+		: GuiProgramState(program) {
 }
 
 BattleEnd::~BattleEnd() {
-	SoundRenderer::getInstance().playMusic(CoreData::getInstance().getMenuMusic());
+	theSoundRenderer.playMusic(theCoreData.getMenuMusic());
 }
 
 void BattleEnd::update(){
 	//TOOD: add AutoTest to config
 	/*
-	if(Config::getInstance().getBool("AutoTest")){
+	if(theConfig.getBool("AutoTest")){
 		AutoTest::getInstance().updateBattleEnd(program);
 	}*/
 }
 
 void BattleEnd::render() {
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = getRenderer();
 	TextRenderer2D *textRenderer = renderer.getTextRenderer();
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	renderer.clearBuffers();
 	renderer.reset2d();
-	renderer.renderBackground(CoreData::getInstance().getBackgroundTexture());
+	renderer.renderBackground(theCoreData.getBackgroundTexture());
 
-	textRenderer->begin(CoreData::getInstance().getMenuFontBig());
+	textRenderer->begin(theCoreData.getMenuFontBig());
 
 	int lm = 80;
 	int bm = 100;
-	
+
 	foreach(const shared_ptr<GameSettings::Faction> &f, gs->getFactions()) {
 		int id = f->getId();
 
@@ -102,7 +100,7 @@ void BattleEnd::render() {
 			playerName = lang.get("Player") + " " + Conversion::toStr(team);
 		}
 		if(gs->getThisFactionId() == id) {
-			playerName = Config::getInstance().getNetPlayerName();
+			playerName = theConfig.getNetPlayerName();
 		}
 //		textRenderer->render((lang.get("Player") + " " + intToStr(i + 1)).c_str(), textX, bm + 400);
 //		textRenderer->render(gs.getPlayerName(i), textX, bm + 400);
@@ -130,7 +128,7 @@ void BattleEnd::render() {
 
 	textRenderer->end();
 
-	textRenderer->begin(CoreData::getInstance().getMenuFontVeryBig());
+	textRenderer->begin(theCoreData.getMenuFontVeryBig());
 
 	string header = gs->getDescription() + " - ";
 
@@ -148,12 +146,12 @@ void BattleEnd::render() {
 
 void BattleEnd::keyDown(const Key &key) {
 	if(!key.isModifier()) {
-		program.setState(new MainMenu(program));
+		getProgram().setState(new MainMenu(getProgram()));
 	}
 }
 
 void BattleEnd::mouseDownLeft(int x, int y) {
-	program.setState(new MainMenu(program));
+	getProgram().setState(new MainMenu(getProgram()));
 }
 
 } // end namespace

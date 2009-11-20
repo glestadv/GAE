@@ -59,7 +59,7 @@ void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 		int8 title[128];
 	};
 
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = theLang;
 
 	try {
 		FILE *f = fopen(file.c_str(), "rb");
