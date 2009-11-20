@@ -80,10 +80,21 @@ bool LuaScript::isDefined( const string &name ) {
 	return defined;
 }
 
+bool LuaScript::luaCallback(const string& functionName, int id) {
+	lua_getglobal(luaState, functionName.c_str());
+	lua_pushnumber(luaState, id);
+	if ( lua_pcall(luaState, 1, 0, 0) ) {
+		cout << "ERROR: " << luaL_checkstring(luaState, 1) << endl;
+		return false; // error
+	}
+	return true;
+}
+
 bool LuaScript::luaCall(const string& functionName) {
 	lua_getglobal(luaState, functionName.c_str());
 	argumentCount= 0;
 	if ( lua_pcall(luaState, argumentCount, 0, 0) ) {
+		cout << "ERROR: " << luaL_checkstring(luaState, 1) << endl;
 		return false; // error
 	}
 	return true;
@@ -95,9 +106,7 @@ void LuaScript::registerFunction(LuaFunction luaFunction, const string &function
 }
 
 string LuaScript::errorToString(int errorCode){
-
-   string error = "LUA:: ";
-		
+	string error = "LUA:: ";
 	switch(errorCode){
 		case LUA_ERRSYNTAX: 
 			error+= "Syntax error"; 
@@ -115,7 +124,7 @@ string LuaScript::errorToString(int errorCode){
 			error+= "Unknown error";
 	}
 	error += string(": ")+luaL_checkstring(luaState, -1);
-	fprintf ( stderr, error.c_str() );
+	fprintf(stderr, error.c_str());
 	return error;
 }
 
@@ -136,15 +145,15 @@ LuaArguments::LuaArguments(lua_State *luaState){
 bool LuaArguments::getBoolean ( int ndx ) const {
 	if ( !lua_isboolean ( luaState, ndx ) ) {
 		string emsg = "Argument " + intToStr(-ndx) + " expected Boolean, got " + getType(ndx) + ".\n";
-		throw LuaError ( emsg );
+		throw LuaError(emsg);
 	}
-	return lua_toboolean ( luaState, ndx );
+	return lua_toboolean(luaState, ndx);
 }
 
 int LuaArguments::getInt(int argumentIndex) const{
 	if(!lua_isnumber(luaState, argumentIndex)){
 		string emsg = "Argument " + intToStr(-argumentIndex) + " expected Number, got " + getType(argumentIndex) + ".\n";
-		throw LuaError ( emsg );
+		throw LuaError(emsg);
 	}
 	return luaL_checkint(luaState, argumentIndex);
 }
@@ -152,7 +161,7 @@ int LuaArguments::getInt(int argumentIndex) const{
 string LuaArguments::getString(int argumentIndex) const{
 	if(!lua_isstring(luaState, argumentIndex)){
 		string emsg = "Argument " + intToStr(-argumentIndex) + " expected String, got " + getType(argumentIndex) + ".\n";
-		throw LuaError ( emsg );
+		throw LuaError(emsg);
 	}
 	return luaL_checkstring(luaState, argumentIndex);
 }
@@ -162,12 +171,12 @@ Vec2i LuaArguments::getVec2i(int argumentIndex) const{
 	
 	if ( ! lua_istable(luaState, argumentIndex ) ) {
 		string emsg = "Argument " + intToStr(-argumentIndex) + " expected Table, got " + getType(argumentIndex) + ".\n";
-		throw LuaError ( emsg );
+		throw LuaError(emsg);
 	}
 	if ( luaL_getn(luaState, argumentIndex) != 2 ) {
 		string emsg = "Argument " + intToStr(-argumentIndex) + " expected Table with two elements, got Table with " 
-			+ intToStr ( luaL_getn(luaState, argumentIndex) ) + " elements.\n";
-		throw LuaError ( emsg );
+			+ intToStr(luaL_getn(luaState, argumentIndex)) + " elements.\n";
+		throw LuaError(emsg);
 	}
 	lua_rawgeti(luaState, argumentIndex, 1);
 	v.x= luaL_checkint(luaState, argumentIndex);
@@ -188,8 +197,8 @@ Vec4i LuaArguments::getVec4i( int ndx ) const {
 	}
 	if ( luaL_getn(luaState, ndx) != 4 ) {
 		string emsg = "Argument " + intToStr(-ndx) + " expected Table with four elements, got Table with " 
-			+ intToStr ( luaL_getn(luaState, ndx) ) + " elements.\n";
-		throw LuaError ( emsg );
+			+ intToStr(luaL_getn(luaState, ndx)) + " elements.\n";
+		throw LuaError(emsg);
 	}
 
 	lua_rawgeti(luaState, ndx, 1);
@@ -233,21 +242,20 @@ void LuaArguments::returnVec2i(const Vec2i &value){
 	lua_rawseti(luaState, -2, 2);
 }
 
-char* LuaArguments::getType ( int ndx ) const {
-
-	if(lua_isnumber(luaState, ndx)){
+char* LuaArguments::getType(int ndx) const {
+	if ( lua_isnumber(luaState, ndx) ) {
 		return "Number";
 	}
-	else if(lua_isstring(luaState, ndx)){
+	else if ( lua_isstring(luaState, ndx) ) {
 		return "String";
 	}
-	else if(lua_istable(luaState, ndx)){
+	else if ( lua_istable(luaState, ndx) ) {
 		return "Table";
 	}
-	else if (lua_isboolean ( luaState, ndx ) ) {
+	else if (lua_isboolean(luaState, ndx) ) {
 		return "Boolean";
 	}
-	else if ( lua_isnil ( luaState, ndx ) ) {
+	else if ( lua_isnil(luaState, ndx) ) {
 		return "Nil";
 	}
 	else {

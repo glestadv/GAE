@@ -50,14 +50,14 @@ void ScriptTimer::reset() {
 //	class LocationEventManager
 // =====================================================
 
-void LocationEventManager::unitMoved( Unit *unit ) {
+void LocationEventManager::unitMoved(const Unit *unit) {
 	multimap<int,string>::iterator it;
 	
 	// check id
 	it = unitIdTriggers.lower_bound(unit->getId());
 	while ( it != unitIdTriggers.upper_bound(unit->getId()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
-			ScriptManager::onTrigger(it->second);
+			ScriptManager::onTrigger(it->second, unit->getId());
 			// remove trigger ??
 			it = unitIdTriggers.erase(it);
 		} else {
@@ -68,7 +68,7 @@ void LocationEventManager::unitMoved( Unit *unit ) {
 	it = factionIndexTriggers.lower_bound(unit->getFactionIndex());
 	while ( it != factionIndexTriggers.upper_bound(unit->getFactionIndex()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
-			ScriptManager::onTrigger(it->second);
+			ScriptManager::onTrigger(it->second, unit->getId());
 			// remove ?
 			it = factionIndexTriggers.erase(it);
 		} else {
@@ -79,7 +79,7 @@ void LocationEventManager::unitMoved( Unit *unit ) {
 	it = teamIndexTriggers.lower_bound(unit->getTeam());
 	while ( it != teamIndexTriggers.upper_bound(unit->getTeam()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
-			ScriptManager::onTrigger(it->second);
+			ScriptManager::onTrigger(it->second, unit->getId());
 			// remove ?
 			it = teamIndexTriggers.erase(it);
 		} else {
@@ -87,6 +87,19 @@ void LocationEventManager::unitMoved( Unit *unit ) {
 		}
 	}
 	// check unit type for faction index
+}
+
+void LocationEventManager::unitDied(const Unit *unit) {
+	int id = unit->getId();
+	multimap<int, string>::iterator it;
+	it = unitIdTriggers.begin();
+	while ( it != unitIdTriggers.end() ) {
+		if ( id == it->first ) {
+			it = unitIdTriggers.erase(it);
+		} else {
+			++it;
+		}
+	}
 }
 
 LocationEventManager ScriptManager::locationEventManager;
@@ -166,7 +179,11 @@ void ScriptManager::init () {
 	//load code
 	for(int i= 0; i<scenario->getScriptCount(); ++i){
 		const Script* script= scenario->getScript(i);
-		luaScript.loadCode("function " + script->getName() + "()" + script->getCode() + " end\n", script->getName());
+		if ( script->getName().substr(0,9) == "unitEvent" ) {
+			luaScript.loadCode("function " + script->getName() + "(unit_id)" + script->getCode() + "\nend\n", script->getName());
+		} else {
+			luaScript.loadCode("function " + script->getName() + "()" + script->getCode() + "\nend\n", script->getName());
+		}
 	}
 	
 	// get globs, startup, unitDied, unitDiedOfType_xxxx (archer, worker, etc...) etc. 
@@ -248,10 +265,11 @@ void ScriptManager::onUnitDied(const Unit* unit){
 	if ( definedEvents.find( "unitDied" ) != definedEvents.end() ) {
 		luaScript.luaCall("unitDied");
 	}
+	locationEventManager.unitDied(unit);
 }
 
-void ScriptManager::onTrigger(const string &name) {
-	luaScript.luaCall("trigger_" + name );
+void ScriptManager::onTrigger(const string &name, int unitId) {
+	luaScript.luaCallback("unitEvent_" + name, unitId);
 }
 
 void ScriptManager::onTimer() {
@@ -437,14 +455,14 @@ int ScriptManager::registerEvent(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	string name, condition;
 	if ( extractArgs(args, "registerEvent", "str,str", &name, &condition) ) {
-		if ( condition == "attacked" ) {
-		} else if ( condition == "enemy_sighted" ) {
+		if ( condition == "attacked" ) { // nop
+		} else if ( condition == "enemy_sighted" ) { // nop
 		} else { // 'complex' conditions
 			size_t ePos = condition.find('=');
 			if ( ePos != string::npos ) {
 				string key = condition.substr(0, ePos);
 				string val = condition.substr(ePos+1);
-				if ( key == "hp_below" ) {
+				if ( key == "hp_below" ) { // nop
 				} else if ( key == "region" ) { // look, this one does something!
 					locationEventManager.registerEvent(name,val);
 				}

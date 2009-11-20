@@ -170,7 +170,8 @@ public:
 	}
 
 	// must be called any time a unit is 'put' in cells (created, moved, 
-	void unitMoved(Unit *unit);
+	void unitMoved(const Unit *unit);
+	void unitDied(const Unit *unit);
 	
 	void addUnitIdTrigger(int unitId, const string &eventName) {
 		unitIdTriggers.insert(pair<int,string>(unitId,eventName));
@@ -271,7 +272,7 @@ public:
 	static void onUnitCreated(const Unit* unit);
 	static void onUnitDied(const Unit* unit);
 	static void onTimer();
-	static void onTrigger(const string &name);
+	static void onTrigger(const string &name, int unitId);
 
 	static void unitMoved(Unit *unit) { locationEventManager.unitMoved(unit); }
 

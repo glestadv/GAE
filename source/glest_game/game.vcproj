@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
-				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zlib.lib lua5.1.lib tinyxmld_STL.lib"
+				AdditionalDependencies="dsound.lib dxguid.lib ogg_static.lib vorbis_static.lib vorbisfile_static.lib opengl32.lib glu32.lib wsock32.lib libglest.lib mmc.lib zlib.lib lua5.1_d.lib tinyxmld_STL.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../../deps/lib;&quot;../../build/$(ConfigurationName)/libglest&quot;"
 				IgnoreAllDefaultLibraries="false"
@@ -629,11 +629,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\path_finder.h"
+				RelativePath=".\ai\path_finder.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ai\path_finder.h"
+				RelativePath=".\path_finder\path_finder.h"
 				>
 			</File>
 			<File

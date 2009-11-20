@@ -55,7 +55,8 @@ public:
 
 	void loadCode(const string &code, const string &name);
 
-	bool isDefined( const string &functionName );
+	bool isDefined(const string &functionName);
+	bool luaCallback(const string &func, int id);
 	bool luaCall(const string& functionName);
 
 	void registerFunction(LuaFunction luaFunction, const string &functionName);
