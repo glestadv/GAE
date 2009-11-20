@@ -57,8 +57,10 @@ void LocationEventManager::unitMoved(const Unit *unit) {
 	it = unitIdTriggers.lower_bound(unit->getId());
 	while ( it != unitIdTriggers.upper_bound(unit->getId()) ) {
 		if ( regions[events[it->second]]->isInside(unit->getPos()) ) {
+			theLogger.add("firing unit="+intToStr(it->first)+ ", event=" + it->second + " trigger.");
 			ScriptManager::onTrigger(it->second, unit->getId());
 			// remove trigger ??
+			theLogger.add("removing unit="+intToStr(it->first)+ ", event=" + it->second + " trigger, expired.");
 			it = unitIdTriggers.erase(it);
 		} else {
 			++it;
@@ -95,6 +97,7 @@ void LocationEventManager::unitDied(const Unit *unit) {
 	it = unitIdTriggers.begin();
 	while ( it != unitIdTriggers.end() ) {
 		if ( id == it->first ) {
+			theLogger.add("removing unit="+intToStr(it->first)+ ", event=" + it->second + " trigger, unit died.");
 			it = unitIdTriggers.erase(it);
 		} else {
 			++it;
@@ -175,15 +178,28 @@ void ScriptManager::init () {
 	luaScript.registerFunction(getUnitCount, "unitCount");
 	luaScript.registerFunction(getUnitCountOfType, "unitCountOfType");
 	
+	//setup message box
+	messageBox.init( "", Lang::getInstance().get("Ok") );
+	messageBox.setEnabled(false);
+
+	//last created unit
+	lastCreatedUnitId= -1;
+	lastDeadUnitId= -1;
+	gameOver= false;
 
 	//load code
 	for(int i= 0; i<scenario->getScriptCount(); ++i){
 		const Script* script= scenario->getScript(i);
+		bool ok;
 		if ( script->getName().substr(0,9) == "unitEvent" ) {
-			luaScript.loadCode("function " + script->getName() + "(unit_id)" + script->getCode() + "\nend\n", script->getName());
+			ok = luaScript.loadCode("function " + script->getName() + "(unit_id)" + script->getCode() + "\nend\n", script->getName());
 		} else {
-			luaScript.loadCode("function " + script->getName() + "()" + script->getCode() + "\nend\n", script->getName());
+			ok = luaScript.loadCode("function " + script->getName() + "()" + script->getCode() + "\nend\n", script->getName());
 		}
+		if ( !ok ) {
+			addErrorMessage();
+		}
+
 	}
 	
 	// get globs, startup, unitDied, unitDiedOfType_xxxx (archer, worker, etc...) etc. 
@@ -209,17 +225,19 @@ void ScriptManager::init () {
 
 	locationEventManager.reset();
 
-	//setup message box
-	messageBox.init( "", Lang::getInstance().get("Ok") );
-	messageBox.setEnabled(false);
-
-	//last created unit
-	lastCreatedUnitId= -1;
-	lastDeadUnitId= -1;
-	gameOver= false;
-
 	//call startup function
 	luaScript.luaCall("startup");
+}
+
+void ScriptManager::addErrorMessage(const char *txt) {
+	theGame.pause ();
+	ScriptManagerMessage msg( txt ? txt : luaScript.getLastError(), "Error");
+	messageQueue.push(msg);
+	if ( !messageBox.getEnabled() ) {
+		messageBox.setEnabled ( true );
+		messageBox.setText ( wrapString(messageQueue.front().getText(), messageWrapCount) );
+		messageBox.setHeader(messageQueue.front().getHeader());
+	}
 }
 
 // ========================== events ===============================================
@@ -244,7 +262,9 @@ void ScriptManager::onMessageBoxOk() {
 
 void ScriptManager::onResourceHarvested(){
 	if ( definedEvents.find( "resourceHarvested" ) != definedEvents.end() ) {
-		luaScript.luaCall("resourceHarvested");
+		if ( !luaScript.luaCall("resourceHarvested") ) {
+			addErrorMessage();
+		}
 	}
 }
 
@@ -252,10 +272,14 @@ void ScriptManager::onUnitCreated(const Unit* unit){
 	lastCreatedUnitName= unit->getType()->getName();
 	lastCreatedUnitId= unit->getId();
 	if ( definedEvents.find( "unitCreated" ) != definedEvents.end() ) {
-		luaScript.luaCall("unitCreated");
+		if ( !luaScript.luaCall("unitCreated") ) {
+			addErrorMessage();
+		}
 	}
 	if ( definedEvents.find( "unitCreatedOfType_"+unit->getType()->getName() ) != definedEvents.end() ) {
-		luaScript.luaCall("unitCreatedOfType_"+unit->getType()->getName());
+		if ( !luaScript.luaCall("unitCreatedOfType_"+unit->getType()->getName()) ) {
+			addErrorMessage();
+		}
 	}
 }
 
@@ -263,13 +287,17 @@ void ScriptManager::onUnitDied(const Unit* unit){
 	lastDeadUnitName= unit->getType()->getName();
 	lastDeadUnitId= unit->getId();
 	if ( definedEvents.find( "unitDied" ) != definedEvents.end() ) {
-		luaScript.luaCall("unitDied");
+		if ( !luaScript.luaCall("unitDied") ) {
+			addErrorMessage();
+		}
 	}
 	locationEventManager.unitDied(unit);
 }
 
 void ScriptManager::onTrigger(const string &name, int unitId) {
-	luaScript.luaCallback("unitEvent_" + name, unitId);
+	if ( !luaScript.luaCallback("unitEvent_" + name, unitId) ) {
+		addErrorMessage();
+	}
 }
 
 void ScriptManager::onTimer() {
@@ -283,7 +311,7 @@ void ScriptManager::onTimer() {
 			if ( timer->isAlive() ) {
 				if ( ! luaScript.luaCall("timer_" + timer->getName()) ) {
 					timer->kill();
-					theConsole.addLine( "Error: timer_" + timer->getName() + " is not defined." );
+					addErrorMessage();
 				}
 			}
 			if ( timer->isPeriodic() && timer->isAlive() ) {
@@ -342,7 +370,7 @@ string ScriptManager::wrapString(const string &str, int wrapCount){
 bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const char *arg_desc, ...) {
 	if ( !*arg_desc ) {
 		if ( luaArgs.getArgumentCount() ) {
-			theConsole.addLine( "Error: " + string(caller) + "() expected 0 arguments, got " 
+			addErrorMessage("Error: " + string(caller) + "() expected 0 arguments, got " 
 					+ intToStr(luaArgs.getArgumentCount()) );
 			return false;
 		} else {
@@ -355,8 +383,9 @@ bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const
 		if ( *ptr++ == ',' ) expected++;
 	}
 	if ( expected != luaArgs.getArgumentCount() ) {
-		theConsole.addLine("Error: " + string(caller) + "() expected " + intToStr(expected) 
+		addErrorMessage("Error: " + string(caller) + "() expected " + intToStr(expected) 
 			+ " arguments, got " + intToStr(luaArgs.getArgumentCount()));
+
 		return false;
 	}
 	va_list vArgs;
@@ -382,7 +411,7 @@ bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const
 			tok = strtok(NULL, ",");
 		}
 	} catch ( LuaError e ) {
-		theConsole.addLine("Error: " + string(caller) + "() " + e.desc());
+		addErrorMessage("Error: " + string(caller) + "() " + e.desc());
 		va_end(vArgs);
 		return false;
 	}
@@ -420,7 +449,7 @@ int ScriptManager::setTimer(LuaHandle* luaHandle) {
 		} else if ( type == "game" ) {
 			newTimerQueue.push_back(ScriptTimer(name, false, period, repeat));
 		} else {
-			theConsole.addLine( "Error: setTimer() called with illegal second parameter." );
+			addErrorMessage("Error: setTimer() called with illegal second parameter '" + type + "'");
 		}
 	}
 	return args.getReturnCount(); // == 0
@@ -431,11 +460,16 @@ int ScriptManager::stopTimer(LuaHandle* luaHandle){
 	string name;
 	if ( extractArgs(args, "stopTimer", "str", &name) ) {
 		vector<ScriptTimer>::iterator i;
+		bool killed = false;
 		for (i = timers.begin(); i != timers.end(); ++i) {
 			if (i->getName() == name) {
 				i->kill ();
+				killed = true;
 				break;
 			}
+		}
+		if ( !killed ) {
+			addErrorMessage("Warning: stopTimer() called with param " + name + ", timer not found.");
 		}
 	} 
 	return args.getReturnCount();
@@ -455,6 +489,7 @@ int ScriptManager::registerEvent(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	string name, condition;
 	if ( extractArgs(args, "registerEvent", "str,str", &name, &condition) ) {
+		bool did_something = false;
 		if ( condition == "attacked" ) { // nop
 		} else if ( condition == "enemy_sighted" ) { // nop
 		} else { // 'complex' conditions
@@ -465,8 +500,12 @@ int ScriptManager::registerEvent(LuaHandle* luaHandle) {
 				if ( key == "hp_below" ) { // nop
 				} else if ( key == "region" ) { // look, this one does something!
 					locationEventManager.registerEvent(name,val);
+					did_something = true;
 				}
 			}
+		}
+		if ( !did_something ) {
+			addErrorMessage("registerEvent() with bad condition = '" + condition + "'");
 		}
 	}
 	return args.getReturnCount();

@@ -51,7 +51,7 @@ void LuaScript::startUp () {
 	argumentCount= -1;
 }
 
-void LuaScript::loadCode(const string &code, const string &name){
+bool LuaScript::loadCode(const string &code, const string &name){
 	int errorCode= luaL_loadbuffer(luaState, code.c_str(), code.size(), name.c_str());	
 	if(errorCode!=0){
 		//DEBUG
@@ -60,14 +60,17 @@ void LuaScript::loadCode(const string &code, const string &name){
 			fprintf ( fp, "%s", code.c_str() );
 			fclose ( fp );
 		}
-		throw runtime_error("Error loading lua code: " + errorToString(errorCode));
+		lastError = "Error loading lua code: " + errorToString(errorCode);
+		return false;//throw runtime_error("Error loading lua code: " + errorToString(errorCode));
 	}
 
 	//run code
 	errorCode= lua_pcall(luaState, 0, 0, 0)!=0;
 	if(errorCode!=0){
-		throw runtime_error("Error initializing lua: " + errorToString(errorCode));
+		lastError = "Error initializing lua: " + errorToString(errorCode);
+		return false;//throw runtime_error("Error initializing lua: " + errorToString(errorCode));
 	}
+	return true;
 }
 bool LuaScript::isDefined( const string &name ) {
 	bool defined = false;
@@ -84,7 +87,8 @@ bool LuaScript::luaCallback(const string& functionName, int id) {
 	lua_getglobal(luaState, functionName.c_str());
 	lua_pushnumber(luaState, id);
 	if ( lua_pcall(luaState, 1, 0, 0) ) {
-		cout << "ERROR: " << luaL_checkstring(luaState, 1) << endl;
+		lastError = luaL_checkstring(luaState, 1);
+		//cout << "ERROR: " << luaL_checkstring(luaState, 1) << endl;
 		return false; // error
 	}
 	return true;
@@ -94,7 +98,8 @@ bool LuaScript::luaCall(const string& functionName) {
 	lua_getglobal(luaState, functionName.c_str());
 	argumentCount= 0;
 	if ( lua_pcall(luaState, argumentCount, 0, 0) ) {
-		cout << "ERROR: " << luaL_checkstring(luaState, 1) << endl;
+		lastError = luaL_checkstring(luaState, 1);
+		//cout << "ERROR: " << luaL_checkstring(luaState, 1) << endl;
 		return false; // error
 	}
 	return true;

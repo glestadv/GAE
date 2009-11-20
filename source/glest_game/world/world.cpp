@@ -790,11 +790,14 @@ void World::createUnit(const string &unitName, int factionIndex, const Vec2i &po
 			scriptManager->onUnitCreated(unit);
 		}
 		else{
-			throw runtime_error("Unit cant be placed");    
+			ScriptManager::addErrorMessage("Error Creating '" + unitName + "' for faction=" 
+				+ intToStr(factionIndex) + " at (" + intToStr(pos.x) + "," 
+				+ intToStr(pos.y) + "): Unit cant be placed");
 		}
 	}
 	else {
-		throw runtime_error("Invalid faction index in createUnitAtPosition: " + intToStr(factionIndex));
+		ScriptManager::addErrorMessage("Error Creating '" + unitName + "' : "
+				+ "Invalid faction index " + intToStr(factionIndex));
 	}
 }
 
@@ -805,7 +808,8 @@ void World::giveResource(const string &resourceName, int factionIndex, int amoun
 		faction->incResourceAmount(rt, amount);
 	}
 	else {
-		throw runtime_error("Invalid faction index in giveResource: " + intToStr(factionIndex));
+		ScriptManager::addErrorMessage("Error giving '" + intToStr(amount) + " of '"
+			+ resourceName + "' : Invalid faction index " + intToStr(factionIndex));
 	}
 }
 
@@ -814,63 +818,58 @@ void World::givePositionCommand(int unitId, const string &commandName, const Vec
 	if(unit!=NULL){
 		const CommandType *cmdType = NULL;
 
-		if(commandName=="move"){
-			cmdType = unit->getType()->getFirstCtOfClass ( ccMove );
-
-		}
-		else if(commandName=="attack"){
-			cmdType = unit->getType()->getFirstCtOfClass ( ccAttack );
-		}
-		else if ( commandName=="harvest" ) {
-			Resource *r = map.getTile ( Map::toTileCoords(pos) )->getResource();
+		if ( commandName == "move" ) {
+			cmdType = unit->getType()->getFirstCtOfClass(ccMove);
+		} else if ( commandName == "attack" ) {
+			cmdType = unit->getType()->getFirstCtOfClass(ccAttack);
+		} else if ( commandName == "harvest" ) {
+			Resource *r = map.getTile(Map::toTileCoords(pos))->getResource();
 			bool found = false;
 			if ( ! unit->getType()->getFirstCtOfClass(ccHarvest) ) {
-				theConsole.addLine ( "Error: Invalid command, unit has no harvest command" );
+				ScriptManager::addErrorMessage("Error: Invalid command, unit has no harvest command");
 				return;
 			}
 			if ( !r ) {
-				theConsole.addLine ( "Warning: No resources found at target pos of harvest cmd" );
+				ScriptManager::addErrorMessage("Warning: No resources found at target pos of harvest cmd");
 				cmdType = unit->getType()->getFirstCtOfClass(ccHarvest);
-			}
-			else {
-				for ( int i=0; i < unit->getType()->getCommandTypeCount (); ++i ) {
-					cmdType = unit->getType()->getCommandType ( i );
+			} else {
+				for ( int i=0; i < unit->getType()->getCommandTypeCount(); ++i ) {
+					cmdType = unit->getType()->getCommandType(i);
 					if ( cmdType->getClass() == ccHarvest ) {
 						HarvestCommandType *hct = (HarvestCommandType*)cmdType;
-						if ( hct->canHarvest (r->getType()) ) {
+						if ( hct->canHarvest(r->getType()) ) {
 							found = true;
 							break;
 						}
 					}
 				}
 				if ( !found ) {
-					theConsole.addLine ( "Warning: Resource at target pos can not be harvested by this unit" );
+					ScriptManager::addErrorMessage("Warning: Resource at target pos can not be harvested by this unit");
 					cmdType = unit->getType()->getFirstCtOfClass(ccHarvest);
 				}
 			}
-		}
-		else if ( commandName == "patrol" ) {
-		}
-		else{
-			throw runtime_error("Invalid position commmand: " + commandName);
+		} else if ( commandName == "patrol" ) {
+			//TODO insert code
+		} else{
+			ScriptManager::addErrorMessage("Invalid position commmand: " + commandName);
 		}
 		
-		CommandResult res = unit->giveCommand(new Command( cmdType, CommandFlags(), pos ));
+		CommandResult res = unit->giveCommand(new Command(cmdType, CommandFlags(), pos));
 		
+		//DEBUG ... REMOVE ME
 		if ( res != crSuccess ) {
-			theConsole.addLine ( "command failed" );
-		}
-		else {
-			theConsole.addLine ( "command succees" );
+			theConsole.addLine("command failed");
+		} else {
+			theConsole.addLine("command succees");
 		}
 
 	}
 }
 void World::giveTargetCommand ( int unitId, const string & cmdName, int targetId ) {
-	Unit *unit = findUnitById ( unitId );
-	Unit *target = findUnitById ( targetId );
+	Unit *unit = findUnitById( unitId );
+	Unit *target = findUnitById( targetId );
 	if ( !target ) {
-		theConsole.addLine ( "Error: Target command has invalid target ID." );
+		ScriptManager::addErrorMessage("Error: Target command '" + cmdName + "' has invalid target ID.");
 		return;
 	}
 	if ( cmdName == "attack" ) {
@@ -884,9 +883,8 @@ void World::giveTargetCommand ( int unitId, const string & cmdName, int targetId
 				}
 			}
 		}
-		theConsole.addLine ( "Warning: Could not attack target, no appropriate attack command found." );
-	}
-	else if ( cmdName == "repair" ) {
+		ScriptManager::addErrorMessage("Warning: Could not attack target, no appropriate attack command found.");
+	} else if ( cmdName == "repair" ) {
 		for ( int i=0; i < unit->getType()->getCommandTypeCount(); ++i ) {
 			if ( unit->getType()->getCommandType( i )->getClass () == ccRepair ) {
 				RepairCommandType *rct = (RepairCommandType*)unit->getType()->getCommandType ( i );
@@ -896,13 +894,11 @@ void World::giveTargetCommand ( int unitId, const string & cmdName, int targetId
 				}
 			}
 		}
-		theConsole.addLine ( "Error: Unit " + unit->getType()->getName() + " can not repair " + target->getType()->getName () );
-
-	}
-	else if ( cmdName == "guard" ) {
-	}
-	else {
-		throw runtime_error ( "Illegal Target Command : " + cmdName );
+		ScriptManager::addErrorMessage("Error: Unit " + unit->getType()->getName() + " can not repair " + target->getType()->getName ());
+	} else if ( cmdName == "guard" ) {
+		//TODO add code
+	} else {
+		ScriptManager::addErrorMessage("Illegal Target Command : " + cmdName);
 	}
 
 }
@@ -913,23 +909,19 @@ void World::giveStopCommand ( int unitId, const string &cmdName ) {
 		const StopCommandType *sct = (StopCommandType *)unit->getType()->getFirstCtOfClass ( ccStop );
 		if ( sct ) {
 			unit->giveCommand ( new Command ( sct, CommandFlags() ) );
+		} else {
+			ScriptManager::addErrorMessage("Error: Unit " + unit->getType()->getName() + "has no Stop Command");
 		}
-		else {
-			throw runtime_error ( "Error: Unit " + unit->getType()->getName() + "has no Stop Command" );
-		}
-	}
-	else if ( cmdName == "attack-stopped" ) {
+	} else if ( cmdName == "attack-stopped" ) {
 		const AttackStoppedCommandType *asct = 
 			(AttackStoppedCommandType *)unit->getType()->getFirstCtOfClass ( ccAttackStopped );
 		if ( asct ) {
 			unit->giveCommand ( new Command ( asct, CommandFlags() ) );
+		} else {
+			ScriptManager::addErrorMessage("Error: Unit Type " + unit->getType()->getName() + " has no Attack Stopped Command.");
 		}
-		else {
-			theConsole.addLine ( "Error: Unit Type " + unit->getType()->getName() + " has no Attack Stopped Command." );
-		}
-	}
-	else {
-		throw runtime_error ( "Illegal Stop Command : " + cmdName );
+	} else {
+		ScriptManager::addErrorMessage("Illegal Stop Command : " + cmdName);
 	}
 }
 
@@ -946,15 +938,15 @@ void World::giveProductionCommand(int unitId, const string &producedName){
 				const ProduceCommandType *pct= static_cast<const ProduceCommandType*>(ct);
 				if(pct->getProducedUnit()->getName()==producedName){
 					if ( unit->giveCommand(new Command(pct, CommandFlags())) == crSuccess ) {
-						theConsole.addLine ( "produce command success" );
-					}
-					else {
-						theConsole.addLine ( "produce command failed" );
+						//DEBUG
+						theConsole.addLine("produce command success");
+					} else {
+						//DEBUG
+						theConsole.addLine("produce command failed");
 					}
 					return;
 				}
-			} // Morph Command ?
-			else if ( ct->getClass() == ccMorph ) {
+			} else if ( ct->getClass() == ccMorph ) { // Morph Command ?
 				if ( ((MorphCommandType*)ct)->getMorphUnit()->getName() == producedName ) {
 					// just record it for now, and keep looking for a Produce Command
 					mct = (MorphCommandType*)ct; 
@@ -965,14 +957,15 @@ void World::giveProductionCommand(int unitId, const string &producedName){
 		// didn't find a Produce Command, was there are Morph Command?
 		if ( mct ) {
 			if ( unit->giveCommand ( new Command (mct, CommandFlags()) ) == crSuccess ) {
-				theConsole.addLine ( "morph command success" );
+				//DEBUG
+				theConsole.addLine("morph command success");
+			} else {
+				//DEBUG
+				theConsole.addLine("morph command failed");
 			}
-			else {
-				theConsole.addLine ( "morph command failed" );
-			}
-		}
-		else {
-			theConsole.addLine ( "Error: invalid production command" );
+		} else {
+			ScriptManager::addErrorMessage("Error: invalid produce '" + producedName + "' command " 
+					+ "for unit type " + ut->getName());
 		}
 	}
 }
@@ -1002,9 +995,8 @@ int World::getResourceAmount(const string &resourceName, int factionIndex){
 		Faction* faction= &factions[factionIndex];
 		const ResourceType* rt= techTree.getResourceType(resourceName);
 		return faction->getResource(rt)->getAmount();
-	}
-	else {
-		throw runtime_error("Invalid faction index in giveResource: " + intToStr(factionIndex));
+	} else {
+		ScriptManager::addErrorMessage("Invalid faction index in getResourceAmount: " + intToStr(factionIndex));
 	}
 }
 
@@ -1012,17 +1004,15 @@ Vec2i World::getStartLocation(int factionIndex){
 	if(factionIndex<factions.size()){
 		Faction* faction= &factions[factionIndex];
 		return map.getStartLocation(faction->getStartLocationIndex());
-	}
-	else
-	{
-		throw runtime_error("Invalid faction index in getStartLocation: " + intToStr(factionIndex));
+	} else {
+		ScriptManager::addErrorMessage("Invalid faction index in getStartLocation: " + intToStr(factionIndex));
 	}
 }
 
 Vec2i World::getUnitPosition(int unitId){
 	Unit* unit= findUnitById(unitId);
 	if(unit==NULL){
-		throw runtime_error("Can not find unit to get position");
+		ScriptManager::addErrorMessage("Can not find unit=" + intToStr(unitId) + " to get position");
 	}
 	return unit->getPos();
 }
@@ -1030,7 +1020,7 @@ Vec2i World::getUnitPosition(int unitId){
 int World::getUnitFactionIndex(int unitId){
 	Unit* unit= findUnitById(unitId);
 	if(unit==NULL){
-		throw runtime_error("Can not find unit to get position");
+		ScriptManager::addErrorMessage("Can not find unit=" + intToStr(unitId) + " to get faction index");
 	}
 	return unit->getFactionIndex();
 }
@@ -1047,9 +1037,8 @@ int World::getUnitCount(int factionIndex){
 			}
 		}
 		return count;
-	}
-	else {
-		throw runtime_error("Invalid faction index in getUnitCount: " + intToStr(factionIndex));
+	} else {
+		ScriptManager::addErrorMessage("Invalid faction index in getUnitCount: " + intToStr(factionIndex));
 	}
 }
 
@@ -1065,10 +1054,8 @@ int World::getUnitCountOfType(int factionIndex, const string &typeName){
 			}
 		}
 		return count;
-	}
-	else
-	{
-		throw runtime_error("Invalid faction index in getUnitCountOfType: " + intToStr(factionIndex));
+	} else {
+		ScriptManager::addErrorMessage("Invalid faction index in getUnitCountOfType: " + intToStr(factionIndex));
 	}
 }
 

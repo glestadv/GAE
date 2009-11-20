@@ -24,6 +24,7 @@
 
 #include "components.h"
 #include "game_constants.h"
+#include "logger.h"
 
 using namespace std;
 using Shared::Graphics::Vec2i;
@@ -174,6 +175,7 @@ public:
 	void unitDied(const Unit *unit);
 	
 	void addUnitIdTrigger(int unitId, const string &eventName) {
+		theLogger.add("adding unit="+intToStr(unitId)+ ", event=" + eventName + " trigger");
 		unitIdTriggers.insert(pair<int,string>(unitId,eventName));
 	}
 	void addFactionTrigger(int ndx, const string &eventName ) {
@@ -276,10 +278,15 @@ public:
 
 	static void unitMoved(Unit *unit) { locationEventManager.unitMoved(unit); }
 
+	static void addErrorMessage(const char *txt=NULL);
+	static void addErrorMessage(const string &txt) {
+		addErrorMessage(txt.c_str());
+	}
+
+
 private:
 	static string wrapString(const string &str, int wrapCount);
 	static bool extractArgs(LuaArguments &args, const char *caller, const char *format, ...);
-
 	//
 	// LUA callbacks
 	//

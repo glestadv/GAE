@@ -46,6 +46,7 @@ class LuaScript{
 private:
 	LuaHandle *luaState;
 	int argumentCount;
+	string lastError;
 
 public:
 	LuaScript();
@@ -53,11 +54,13 @@ public:
 
 	void startUp();
 
-	void loadCode(const string &code, const string &name);
+	bool loadCode(const string &code, const string &name);
 
 	bool isDefined(const string &functionName);
 	bool luaCallback(const string &func, int id);
 	bool luaCall(const string& functionName);
+
+	string& getLastError() { return lastError; }
 
 	void registerFunction(LuaFunction luaFunction, const string &functionName);
 
