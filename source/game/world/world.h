@@ -68,9 +68,10 @@ private:
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
-	Scenario scenario;
 	Game &game;
 	const GameSettings &gs;
+
+	Scenario *scenario;
 
 	UnitUpdater unitUpdater;
 	WaterEffects waterEffects;
@@ -121,7 +122,7 @@ public:
 	const Map *getMap() const 						{return &map;}
 	const Tileset *getTileset() const 				{return &tileset;}
 	const TechTree *getTechTree() const 			{return &techTree;}
-	const Scenario* getScenario () const			{return &scenario;}
+	const Scenario* getScenario () const			{return scenario;}
 	const TimeFlow *getTimeFlow() const				{return &timeFlow;}
 	Tileset *getTileset() 							{return &tileset;}
 	Map *getMap() 									{return &map;}

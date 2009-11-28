@@ -107,7 +107,7 @@ Game::~Game() {
 	Renderer &renderer= Renderer::getInstance();
 
 	logger.setState(Lang::getInstance().get("Deleting"));
-	logger.add("Game", true);
+	logger.add("Game", !Program::getInstance()->isTerminating());
 
 	renderer.endGame();
 	SoundRenderer::getInstance().stopAllSounds();
@@ -193,7 +193,9 @@ void Game::init() {
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
-	ScriptManager::init(this);
+	if ( world.getScenario() ) {
+		ScriptManager::init(this);
+	}
 
 	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
 		gui.load(savedGame->getChild("gui"));

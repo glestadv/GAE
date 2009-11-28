@@ -63,6 +63,7 @@ World::World(Game *game)
 	frameCount = 0;
 	nextUnitId = 0;
 	scriptManager = NULL;
+	scenario = NULL;
 	assert(!singleton);
 	singleton = this;
 	alive = false;
@@ -75,6 +76,7 @@ void World::end() {
 	for (int i = 0; i < factions.size(); ++i) {
 		factions[i].end();
 	}
+	delete scenario;
 	//stats will be deleted by BattleEnd
 }
 
@@ -195,8 +197,10 @@ bool World::loadMap(Checksum &checksum) {
 }
 
 bool World::loadScenario(const string &path, Checksum *checksum) {
+	assert(!scenario);
+	scenario = new Scenario();
 	checksum->addFile(path, true);
-	scenario.load(path);
+	scenario->load(path);
 	return true;
 }
 

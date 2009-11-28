@@ -312,37 +312,46 @@ void ScriptManager::init(Game *g) {
 	assert(!luaScript.isDefined("startup")); // making sure old code is gone
 
 	//register functions
+
+	// Game control
+	LUA_FUNC(disableAi);
+	LUA_FUNC(setPlayerAsWinner);
+	LUA_FUNC(endGame);
+
+	// Gui control
+	LUA_FUNC(lockInput);
+	LUA_FUNC(unlockInput);
+	LUA_FUNC(setCameraPosition);
+	LUA_FUNC(unfogMap);
+
+	// messaging
+	LUA_FUNC(showMessage);
+	LUA_FUNC(setDisplayText);
+	LUA_FUNC(clearDisplayText);
+
+	// create and give ...
+	LUA_FUNC(createUnit);
+	LUA_FUNC(giveResource);
+
+	// commands
+	LUA_FUNC(givePositionCommand);
+	LUA_FUNC(giveProductionCommand);
+	LUA_FUNC(giveStopCommand);
+	LUA_FUNC(giveTargetCommand);
+	LUA_FUNC(giveUpgradeCommand);
+
+	// timers
 	LUA_FUNC(setTimer);
 	LUA_FUNC(stopTimer);
 
+	// regions, events and triggers
 	LUA_FUNC(registerRegion);
 	LUA_FUNC(registerEvent);
 	LUA_FUNC(setUnitTrigger);
 	LUA_FUNC(setUnitTriggerX);
 	LUA_FUNC(setFactionTrigger);
 	
-	LUA_FUNC(showMessage);
-	LUA_FUNC(setDisplayText);
-	LUA_FUNC(clearDisplayText);
-
-	LUA_FUNC(lockInput);
-	LUA_FUNC(unlockInput);
-	LUA_FUNC(setCameraPosition);
-	LUA_FUNC(unfogMap);
-
-	LUA_FUNC(createUnit);
-	LUA_FUNC(giveResource);
-	LUA_FUNC(givePositionCommand);
-	LUA_FUNC(giveProductionCommand);
-	LUA_FUNC(giveStopCommand);
-	LUA_FUNC(giveTargetCommand);
-	LUA_FUNC(giveUpgradeCommand);
-	LUA_FUNC(disableAi);
-	LUA_FUNC(setPlayerAsWinner);
-	LUA_FUNC(endGame);
-	LUA_FUNC(debugLog);
-	LUA_FUNC(consoleMsg);
-
+	// queries
 	LUA_FUNC(playerName);
 	LUA_FUNC(factionTypeName);
 	LUA_FUNC(scenarioDir);
@@ -357,6 +366,10 @@ void ScriptManager::init(Game *g) {
 	LUA_FUNC(unitCount);
 	LUA_FUNC(unitCountOfType);
 	
+	// debug
+	LUA_FUNC(debugLog);
+	LUA_FUNC(consoleMsg);
+
 #	if DEBUG_RENDERING_ENABLED
 
 	LUA_FUNC(hilightRegion);
@@ -543,13 +556,12 @@ void ScriptManager::doSomeLua(string &code) {
 // =============== Error handling bits ===============
 
 void ScriptManager::addErrorMessage(const char *txt, bool quietly) {
-	theGame.pause();
-	
 	string err = txt ? txt : luaScript.getLastError();
 	theLogger.getErrorLog().add(err);
 	theConsole.addLine(err);
 	
 	if ( !quietly ) {
+		theGame.pause();
 		ScriptManagerMessage msg(err, "Error");
 		messageQueue.push(msg);
 		if ( !messageBox.getEnabled() ) {
