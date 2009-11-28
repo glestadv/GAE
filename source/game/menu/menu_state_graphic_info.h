@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MENUSTATEGRAPHICINFO_H_
-#define _GAME_MENUSTATEGRAPHICINFO_H_
+#ifndef _GLEST_GAME_MENUSTATEGRAPHICINFO_H_
+#define _GLEST_GAME_MENUSTATEGRAPHICINFO_H_
 
 #include "main_menu.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // ===============================
 // 	class MenuStateGraphicInfo  
@@ -36,6 +36,6 @@ public:
 	void render();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

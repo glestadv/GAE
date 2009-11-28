@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_TILESET_H_
-#define _GAME_TILESET_H_
+#ifndef _GLEST_GAME_TILESET_H_
+#define _GLEST_GAME_TILESET_H_
 
 #include <map>
 
@@ -22,7 +22,7 @@
 #include "surface_atlas.h"
 #include "checksum.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Xml::XmlNode;
 using Shared::Sound::StaticSound;
@@ -32,7 +32,7 @@ using Shared::Graphics::Vec3f;
 using Shared::Graphics::Texture2D;
 using Shared::Graphics::Texture3D;
 using Shared::Util::Random;
-using Shared::Util::Checksums;
+using Shared::Util::Checksum;
 
 using std::map;
 
@@ -48,7 +48,7 @@ enum Weather{
 };
 
 class Renderer;
-class SurfaceCell;
+class Tile;
 
 // =====================================================
 //	class AmbientSounds
@@ -130,7 +130,7 @@ private:
 
 public:
     ~Tileset();
-	void load(const string &dir, Checksums &checksums);
+	void load(const string &dir, Checksum &checksum);
 
     //get
 	const SurfaceAtlas *getSurfaceAtlas() const		{return &surfaceAtlas;}
@@ -154,6 +154,6 @@ public:
 	AmbientSounds *getAmbientSounds() {return &ambientSounds;}
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

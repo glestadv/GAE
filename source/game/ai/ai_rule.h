@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_AIRULE_H_
-#define _GAME_AIRULE_H_
+#ifndef _GLEST_GAME_AIRULE_H_
+#define _GLEST_GAME_AIRULE_H_
 
 #include <string>
 
@@ -21,7 +21,7 @@ using std::string;
 
 using Shared::Graphics::Vec2i;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 class Ai;
 class Unit;
@@ -32,13 +32,13 @@ class UpgradeTask;
 class ResourceType;
 
 // =====================================================
-// class AiRule
+//	class AiRule
 //
-/// An action that the AI will perform periodically
+///	An action that the AI will perform periodically
 /// if the test succeeds
 // =====================================================
 
-class AiRule {
+class AiRule{
 protected:
 	Ai *ai;
 
@@ -46,19 +46,19 @@ public:
 	AiRule(Ai *ai);
 	virtual ~AiRule() {}
 
-	virtual int getTestInterval() const = 0; //in milliseconds
-	virtual string getName() const = 0;
+	virtual int getTestInterval() const= 0;	//in milliseconds
+	virtual string getName() const= 0;
 
 	/** Returns true if the rule should be executed. */
-	virtual bool test() = 0;
-	virtual void execute() = 0;
+	virtual bool test()= 0;
+	virtual void execute()= 0;
 };
 
 // =====================================================
-// class AiRuleWorkerHarvest
+//	class AiRuleWorkerHarvest
 // =====================================================
 
-class AiRuleWorkerHarvest: public AiRule {
+class AiRuleWorkerHarvest: public AiRule{
 private:
 	int stoppedWorkerIndex;
 
@@ -73,10 +73,10 @@ public:
 };
 
 // =====================================================
-// class AiRuleRefreshHarvester
+//	class AiRuleRefreshHarvester
 // =====================================================
 
-class AiRuleRefreshHarvester: public AiRule {
+class AiRuleRefreshHarvester: public AiRule{
 private:
 	int workerIndex;
 
@@ -91,10 +91,10 @@ public:
 };
 
 // =====================================================
-// class AiRuleScoutPatrol
+//	class AiRuleScoutPatrol
 // =====================================================
 
-class AiRuleScoutPatrol: public AiRule {
+class AiRuleScoutPatrol: public AiRule{
 public:
 	AiRuleScoutPatrol(Ai *ai);
 
@@ -106,10 +106,10 @@ public:
 };
 
 // =====================================================
-// class AiRuleRepair
+//	class AiRuleRepair
 // =====================================================
 
-class AiRuleRepair: public AiRule {
+class AiRuleRepair: public AiRule{
 private:
 	typedef vector<const Unit *> Units;
 	Units repairable;
@@ -125,10 +125,10 @@ public:
 };
 
 // =====================================================
-// class AiRuleReturnBase
+//	class AiRuleReturnBase
 // =====================================================
 
-class AiRuleReturnBase: public AiRule {
+class AiRuleReturnBase: public AiRule{
 private:
 	int stoppedUnitIndex;
 public:
@@ -142,12 +142,12 @@ public:
 };
 
 // =====================================================
-// class AiRuleMassiveAttack
+//	class AiRuleMassiveAttack
 // =====================================================
 
-class AiRuleMassiveAttack: public AiRule {
+class AiRuleMassiveAttack: public AiRule{
 private:
-	static const int baseRadius = 25;
+	static const int baseRadius= 25;
 
 private:
 	Vec2i attackPos;
@@ -165,10 +165,10 @@ public:
 };
 
 // =====================================================
-// class AiRuleAddTasks
+//	class AiRuleAddTasks
 // =====================================================
 
-class AiRuleAddTasks: public AiRule {
+class AiRuleAddTasks: public AiRule{
 public:
 	AiRuleAddTasks(Ai *ai);
 
@@ -180,10 +180,10 @@ public:
 };
 
 // =====================================================
-// class AiRuleBuildOneFarm
+//	class AiRuleBuildOneFarm
 // =====================================================
 
-class AiRuleBuildOneFarm: public AiRule {
+class AiRuleBuildOneFarm: public AiRule{
 private:
 	const UnitType *farm;
 
@@ -198,14 +198,14 @@ public:
 };
 
 // =====================================================
-// class AiRuleProduceResourceProducer
+//	class AiRuleProduceResourceProducer
 // =====================================================
 
-class AiRuleProduceResourceProducer: public AiRule {
+class AiRuleProduceResourceProducer: public AiRule{
 private:
-	static const int minStaticResources = 20;
-	static const int longInterval = 60000;
-	static const int shortInterval = 5000;
+	static const int minStaticResources= 20;
+	static const int longInterval=	60000;
+	static const int shortInterval= 5000;
 	const ResourceType *rt;
 	int interval;
 
@@ -220,10 +220,10 @@ public:
 };
 
 // =====================================================
-// class AiRuleProduce
+//	class AiRuleProduce
 // =====================================================
 
-class AiRuleProduce: public AiRule {
+class AiRuleProduce: public AiRule{
 private:
 	const ProduceTask *produceTask;
 
@@ -241,10 +241,10 @@ private:
 	void produceSpecific(const ProduceTask *pt);
 };
 // =====================================================
-// class AiRuleBuild
+//	class AiRuleBuild
 // =====================================================
 
-class AiRuleBuild: public AiRule {
+class AiRuleBuild: public AiRule{
 private:
 	const BuildTask *buildTask;
 
@@ -268,10 +268,10 @@ private:
 };
 
 // =====================================================
-// class AiRuleUpgrade
+//	class AiRuleUpgrade
 // =====================================================
 
-class AiRuleUpgrade: public AiRule {
+class AiRuleUpgrade: public AiRule{
 private:
 	const UpgradeTask *upgradeTask;
 
@@ -290,12 +290,12 @@ private:
 };
 
 // =====================================================
-// class AiRuleExpand
+//	class AiRuleExpand
 // =====================================================
 
-class AiRuleExpand: public AiRule {
+class AiRuleExpand: public AiRule{
 private:
-	static const int expandDistance = 30;
+	static const int expandDistance= 30;
 
 private:
 	Vec2i expandPos;
@@ -311,6 +311,6 @@ public:
 	virtual void execute();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

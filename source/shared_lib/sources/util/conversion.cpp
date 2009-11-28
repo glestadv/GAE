@@ -2,6 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -11,12 +12,6 @@
 
 #include "pch.h"
 #include "conversion.h"
-
-#include <stdexcept>
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>
-
 #include "leak_dumper.h"
 
 using namespace std;

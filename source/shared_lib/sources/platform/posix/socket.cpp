@@ -2,7 +2,6 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2005 Matthias Braun <matze@braunis.de>
-//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -11,17 +10,14 @@
 // ==============================================================
 
 #include "pch.h"
-
 #include <stdexcept>
 #include <sstream>
-
 #if defined(HAVE_SYS_IOCTL_H)
-#	define BSD_COMP /* needed for FIONREAD on Solaris2 */
-#	include <sys/ioctl.h>
+#define BSD_COMP /* needed for FIONREAD on Solaris2 */
+#include <sys/ioctl.h>
 #endif
-
 #if defined(HAVE_SYS_FILIO_H) /* needed for FIONREAD on Solaris 2.5 */
-#	include <sys/filio.h>
+#include <sys/filio.h>
 #endif
 
 #include "socket.h"
@@ -32,30 +28,80 @@
 using namespace std;
 using namespace Shared::Util;
 
-namespace Shared { namespace Platform {
+namespace Shared{ namespace Platform{
 
-// ===============================================
-// class Socket
-// ===============================================
+// =====================================================
+//	class Ip
+// =====================================================
 
-
-/**
- * Closes the socket ignoring any errors in the attempt.
- */
-void Socket::close() throw() {
-	::close(sock);
-	sock = 0;
+Ip::Ip(){
+	bytes[0]= 0;
+	bytes[1]= 0;
+	bytes[2]= 0;
+	bytes[3]= 0;
 }
 
-int Socket::getDataToRead() {
+Ip::Ip(unsigned char byte0, unsigned char byte1, unsigned char byte2, unsigned char byte3){
+	bytes[0]= byte0;
+	bytes[1]= byte1;
+	bytes[2]= byte2;
+	bytes[3]= byte3;
+}
+
+
+Ip::Ip(const string& ipString){
+	int offset= 0;
+	int byteIndex= 0;
+
+	for(byteIndex= 0; byteIndex<4; ++byteIndex){
+		int dotPos= ipString.find_first_of('.', offset);
+
+		bytes[byteIndex]= atoi(ipString.substr(offset, dotPos-offset).c_str());
+		offset= dotPos+1;
+	}
+}
+
+string Ip::getString() const{
+	return intToStr(bytes[0]) + "." + intToStr(bytes[1]) + "." + intToStr(bytes[2]) + "." + intToStr(bytes[3]);
+}
+
+// ===============================================
+//	class Socket
+// ===============================================
+
+Socket::Socket(int sock){
+	this->sock= sock;
+}
+
+Socket::Socket(){
+	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if(sock < 0) {
+		throwException("Error creating socket");
+	}
+	// some basic sanity checks on our types
+	assert(sizeof(int8) == 1);
+	assert(sizeof(uint8) == 1);
+	assert(sizeof(int16) == 2);
+	assert(sizeof(uint16) == 2);
+	assert(sizeof(int32) == 4);
+	assert(sizeof(uint32) == 4);
+	assert(sizeof(int64) == 8);
+	assert(sizeof(uint64) == 8);
+}
+
+Socket::~Socket() {
+	::close(sock);
+}
+
+int Socket::getDataToRead(){
 	unsigned long size;
 
 	/* ioctl isn't posix, but the following seems to work on all modern
 	* unixes */
-	int err = ::ioctl(sock, FIONREAD, &size);
+	int err= ioctl(sock, FIONREAD, &size);
 
-	if (err < 0 && errno != EAGAIN) {
-		throw SocketException("Can not get data to read", "ioctl", NULL, __FILE__, __LINE__);
+	if(err < 0 && errno != EAGAIN){
+		throwException("Can not get data to read");
 	}
 
 	return static_cast<int>(size);
@@ -64,149 +110,179 @@ int Socket::getDataToRead() {
 int Socket::send(const void *data, int dataSize) {
 	ssize_t bytesSent = ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
 
-	if (bytesSent != dataSize) {
-		throw SocketException("failed to send data on socket", "send", NULL, __FILE__, __LINE__);
+	if(bytesSent != dataSize) {
+		throwException("failed to send data on socket");
 	}
 
 	return static_cast<int>(bytesSent);
 }
 
 int Socket::receive(void *data, int dataSize) {
-	ssize_t bytesReceived = ::recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_DONTWAIT);
+	ssize_t bytesReceived = recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_DONTWAIT);
 
-	if (bytesReceived < 0) {
-		if (errno == EAGAIN) {
-			bytesReceived = 0;
-		} else {
-			throw SocketException("error while receiving socket data", "recv", NULL, __FILE__, __LINE__);
-		}
+	if(bytesReceived < 0 && errno != EAGAIN) {
+		throwException("error while receiving socket data");
 	}
 
 	return static_cast<int>(bytesReceived);
 }
 
 int Socket::peek(void *data, int dataSize) {
-	ssize_t bytesReceived = ::recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_PEEK);
+	ssize_t bytesReceived = recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_PEEK);
 
-	if (bytesReceived < 0) {
-		if (errno == EAGAIN) {
-			bytesReceived = 0;
-		} else {
-			throw SocketException("Can not receive data", "recv", NULL, __FILE__, __LINE__);
-		}
+	if(bytesReceived < 0 && errno != EAGAIN) {
+		throwException("Can not receive data");
 	}
 
 	return static_cast<int>(bytesReceived);
 }
 
+
 void Socket::setBlock(bool block) {
-	if (::fcntl(sock, F_SETFL, block ? 0 : O_NONBLOCK) < 0) {
-		throw SocketException("Error setting I/O mode for socket", "fcntl", NULL, __FILE__, __LINE__);
+	int err = fcntl(sock, F_SETFL, block ? 0 : O_NONBLOCK);
+
+	if(err < 0) {
+		throwException("Error setting I/O mode for socket");
 	}
 }
 
-bool Socket::isReadable() {
+bool Socket::isReadable(){
 	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 10;
+	tv.tv_sec= 0;
+	tv.tv_usec= 10;
 
 	fd_set set;
 	FD_ZERO(&set);
 	FD_SET(sock, &set);
 
-	int i = ::select(sock + 1, &set, NULL, NULL, &tv);
-	if (i < 0) {
-		throw SocketException("Error selecting socket", "select", NULL, __FILE__, __LINE__);
+	int i= select(sock+1, &set, NULL, NULL, &tv);
+	if(i<0){
+		throwException("Error selecting socket");
 	}
-	return i == 1;
+	return i==1;
 }
 
-bool Socket::isWritable() {
+bool Socket::isWritable(){
 	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 10;
+	tv.tv_sec= 0;
+	tv.tv_usec= 10;
 
 	fd_set set;
 	FD_ZERO(&set);
 	FD_SET(sock, &set);
 
-	int i = ::select(sock + 1, NULL, &set, NULL, &tv);
-	if (i < 0) {
-		throw SocketException("Error selecting socket", "select", NULL, __FILE__, __LINE__);
+	int i= select(sock+1, NULL, &set, NULL, &tv);
+	if(i<0){
+		throwException("Error selecting socket");
 	}
-	return i == 1;
+	return i==1;
+}
+
+bool Socket::isConnected(){
+
+	//if the socket is not writable then it is not conencted
+	if(!isWritable()){
+		return false;
+	}
+
+	//if the socket is readable it is connected if we can read a byte from it
+	if(isReadable()){
+		char tmp;
+		return recv(sock, &tmp, sizeof(tmp), MSG_PEEK) > 0;
+	}
+
+	//otherwise the socket is connected
+	return true;
+}
+
+string Socket::getHostName() const {
+	const int strSize= 256;
+	char hostname[strSize];
+	gethostname(hostname, strSize);
+	return hostname;
+}
+
+string Socket::getIp() const{
+	hostent* info= gethostbyname(getHostName().c_str());
+	unsigned char* address;
+
+	if(info==NULL){
+		throw runtime_error("Error getting host by name");
+	}
+
+	address= reinterpret_cast<unsigned char*>(info->h_addr_list[0]);
+
+	if(address==NULL){
+		throw runtime_error("Error getting host ip");
+	}
+
+	return
+		intToStr(address[0]) + "." +
+		intToStr(address[1]) + "." +
+		intToStr(address[2]) + "." +
+		intToStr(address[3]);
+}
+
+void Socket::throwException(const char *str){
+	std::stringstream msg;
+	msg << str << " (Error: " << strerror(errno) << ")";
+	throw runtime_error(msg.str());
 }
 
 // ===============================================
-// class ClientSocket
+//	class ClientSocket
 // ===============================================
 
-ClientSocket::ClientSocket(const IpAddress &remoteAddr, unsigned short remotePort)
-		: Socket(SOCKET_TYPE_CLIENT)
-		, remoteAddr(remoteAddr)
-		, remotePort(remotePort) {
-
+void ClientSocket::connect(const Ip &ip, int port){
 	sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = remoteAddr.get();
-	addr.sin_port = htons(remotePort);
+    addr.sin_family= AF_INET;
+	addr.sin_addr.s_addr= inet_addr(ip.getString().c_str());
+	addr.sin_port= htons(port);
 
-	int ret = ::connect(sock, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
-	if (isError(ret)) {
-		int err = getLastSocketError();
-		if(err != EINPROGRESS) {
-			throw SocketException("Error connecting socket", "connect", NULL, __FILE__, __LINE__);
-		}
+	int err= ::connect(sock, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
+	if(err < 0) {
+		throwException("Error connecting socket");
 	}
 }
 
 // ===============================================
-// class ServerSocket
+//	class ServerSocket
 // ===============================================
 
-void ServerSocket::bind(unsigned short port) {
+void ServerSocket::bind(int port){
 	//sockaddr structure
 	sockaddr_in addr;
-	memset(&addr, 0, sizeof(addr));
-
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(port);
+	addr.sin_family= AF_INET;
+	addr.sin_addr.s_addr= INADDR_ANY;
+	addr.sin_port= htons(port);
 
 	int val = 1;
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
-	int err = ::bind(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
-	if (err < 0) {
-		throw SocketException("Error binding socket", "bind", NULL, __FILE__, __LINE__);
+	int err= ::bind(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+	if(err < 0) {
+		throwException("Error binding socket");
 	}
 }
 
-void ServerSocket::listen(int connectionQueueSize) {
-	int err = ::listen(sock, connectionQueueSize);
-	if (err < 0) {
-		throw SocketException("Error listening socket", "listen", NULL, __FILE__, __LINE__);
+void ServerSocket::listen(int connectionQueueSize){
+	int err= ::listen(sock, connectionQueueSize);
+	if(err < 0) {
+		throwException("Error listening socket");
 	}
 }
 
-ClientSocket *ServerSocket::accept() {
-	sockaddr_in addr;
-	socklen_t addr_len = sizeof(addr);
-	memset(&addr, 0, sizeof(addr));
-
-	int newSock = ::accept(sock, reinterpret_cast<sockaddr*>(&addr), &addr_len);
-	if (newSock < 0) {
-		int err = errno;
-		if (err == EWOULDBLOCK) {
+Socket *ServerSocket::accept(){
+	int newSock= ::accept(sock, NULL, NULL);
+	if(newSock < 0) {
+		if(errno == EAGAIN)
 			return NULL;
- 		}
 
-		throw SocketException("Error accepting socket connection", "accept", NULL, __FILE__, __LINE__, err);
+		throwException("Error accepting socket connection");
 	}
-
-	return new ClientSocket(newSock, addr);
+	return new Socket(newSock);
 }
 
 }}//end namespace

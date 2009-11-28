@@ -31,7 +31,7 @@ using namespace Shared::Graphics;
 // 	class AiInterface
 // =====================================================
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex){
 	this->world= game.getWorld();
@@ -71,7 +71,7 @@ void AiInterface::update(){
 
 void AiInterface::printLog(int logLevel, const string &s){
     if(this->logLevel>=logLevel){
-		string logString= "(" + Conversion::toStr(factionIndex) + ") " + s;
+		string logString= "(" + intToStr(factionIndex) + ") " + s;
 
 		//print log to file
 		FILE *f= fopen(getLogFilename().c_str(), "at");
@@ -110,7 +110,7 @@ CommandResult AiInterface::giveCommand(int unitIndex, const CommandType *command
 // ==================== get data ====================
 
 int AiInterface::getMapMaxPlayers(){
-     return world->getMaxFactions();
+     return world->getMaxPlayers();
 }
 
 Vec2i AiInterface::getHomeLocation(){
@@ -138,7 +138,7 @@ int AiInterface::onSightUnitCount(){
 	Map *map= world->getMap();
 	for(int i=0; i<world->getFactionCount(); ++i){
 		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(world->getFaction(i)->getUnit(j)->getPos()));
+			Tile *sc= map->getTile(Map::toTileCoords(world->getFaction(i)->getUnit(j)->getPos()));
 			if(sc->isVisible(teamIndex)){
 				count++;
 			}
@@ -163,7 +163,7 @@ const Unit *AiInterface::getOnSightUnit(int unitIndex){
 	for(int i=0; i<world->getFactionCount(); ++i){
         for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
             Unit *u= world->getFaction(i)->getUnit(j);
-            if(map->getSurfaceCell(Map::toSurfCoords(u->getPos()))->isVisible(teamIndex)){
+            if(map->getTile(Map::toTileCoords(u->getPos()))->isVisible(teamIndex)){
 				if(count==unitIndex){
 					return u;
 				}
@@ -194,11 +194,11 @@ bool AiInterface::getNearestSightedResource(const ResourceType *rt, const Vec2i 
 
 	for(int i=0; i<map->getW(); ++i){
 		for(int j=0; j<map->getH(); ++j){
-			Vec2i surfPos= Map::toSurfCoords(Vec2i(i, j));
+			Vec2i surfPos= Map::toTileCoords(Vec2i(i, j));
 
 			//if explored cell
-			if(map->getSurfaceCell(surfPos)->isExplored(teamIndex)){
-				Resource *r= map->getSurfaceCell(surfPos)->getResource();
+			if(map->getTile(surfPos)->isExplored(teamIndex)){
+				Resource *r= map->getTile(surfPos)->getResource();
 
 				//if resource cell
 				if(r!=NULL && r->getType()==rt){
@@ -230,8 +230,8 @@ bool AiInterface::checkCosts(const ProducibleType *pt){
 	return world->getFaction(factionIndex)->checkCosts(pt);
 }
 
-bool AiInterface::isFreeCells(const Vec2i &pos, int size, Field field){
-    return world->getMap()->isFreeCells(pos, size, field);
+bool AiInterface::areFreeCells(const Vec2i &pos, int size, Field field){
+    return world->getMap()->areFreeCells(pos, size, field);
 }
 
-} // end namespace
+}}//end namespace

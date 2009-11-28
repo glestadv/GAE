@@ -22,6 +22,7 @@
 #include "types.h"
 #include "socket.h"
 #include "map.h"
+#include "program.h"
 
 #include "leak_dumper.h"
 
@@ -29,7 +30,7 @@ using namespace Shared::Graphics;
 using Shared::Platform::uint8;
 using Shared::Platform::NetworkDataBuffer;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class Minimap
@@ -41,6 +42,7 @@ Minimap::Minimap(){
 	fowPixmap0= NULL;
 	fowPixmap1= NULL;
 	fogOfWar= Config::getInstance().getGsFogOfWarEnabled();
+	shroudOfDarkness = Config::getInstance().getGsShroudOfDarknessEnabled();
 }
 
 void Minimap::init(int w, int h, const World *world){
@@ -60,7 +62,7 @@ void Minimap::init(int w, int h, const World *world){
 	fowTex= renderer.newTexture2D(rsGame);
 	fowTex->setMipmap(false);
 	fowTex->setPixmapInit(false);
-	fowTex->setFormat(Texture::FORMAT_ALPHA);
+	fowTex->setFormat(Texture::fAlpha);
 	fowTex->getPixmap()->init(next2Power(scaledW), next2Power(scaledH), 1);
 	fowTex->getPixmap()->setPixels(&f);
 
@@ -73,7 +75,7 @@ void Minimap::init(int w, int h, const World *world){
 }
 
 Minimap::~Minimap(){
-	Logger::getInstance().add("Minimap", true);
+	Logger::getInstance().add("Minimap", !Program::getInstance()->isTerminating());
 	delete fowPixmap0;
 	delete fowPixmap1;
 }
@@ -285,13 +287,13 @@ void Minimap::write(NetworkDataBuffer &buf) const {
  * Alpha states from the cell being visible will be calculated later, so visilbity is ignored here.
  */
 void Minimap::synthesize(const Map *map, int team) {
-	int h = map->getSurfaceH();
-	int w = map->getSurfaceW();
+	int h = map->getTileH();
+	int w = map->getTileW();
 
 	// smooth edges of fow alpha
 	for(int x = 0; x < w; ++x) {
 		for(int y = 0; y < h; ++y) {
-			if(!map->getSurfaceCell(x, y)->isExplored(team)) {
+			if(!map->getTile(x, y)->isExplored(team)) {
 				continue;
 			}
 			int exploredNeighbors = 0;
@@ -300,7 +302,7 @@ void Minimap::synthesize(const Map *map, int team) {
 					Vec2i pos(x + xoff, y + yoff);
 
 					// we'll count out of bounds as explored so edges aren't messed up
-					if(!map->isInsideSurface(pos) || (map->getSurfaceCell(pos)->isExplored(team)
+					if(!map->isInsideTile(pos) || (map->getTile(pos)->isExplored(team)
 							&& (xoff || yoff))) {
 						++exploredNeighbors;
 					}
@@ -328,10 +330,10 @@ void Minimap::computeTexture(const World *world){
 
 	for(int j=0; j<tex->getPixmap()->getH(); ++j){
 		for(int i=0; i<tex->getPixmap()->getW(); ++i){
-			SurfaceCell *sc= map->getSurfaceCell(i, j);
+			Tile *sc= map->getTile(i, j);
 
 			if(sc->getObject()==NULL || sc->getObject()->getType()==NULL){
-				const Pixmap2D *p= world->getTileset()->getSurfPixmap(sc->getSurfaceType(), 0);
+				const Pixmap2D *p= world->getTileset()->getSurfPixmap(sc->getTileType(), 0);
 				color= p->getPixel3f(p->getW()/2, p->getH()/2);
 				color= color * static_cast<float>(sc->getVertex().y/6.f);
 
@@ -351,4 +353,4 @@ void Minimap::computeTexture(const World *world){
 	}
 }
 
-} // end namespace
+}}//end namespace

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_AIINTERFACE_H_
-#define _GAME_AIINTERFACE_H_
+#ifndef _GLEST_GAME_AIINTERFACE_H_
+#define _GLEST_GAME_AIINTERFACE_H_
 
 #include "world.h"
 #include "commander.h"
@@ -18,9 +18,9 @@
 #include "conversion.h"
 #include "ai.h"
 
-using Shared::Util::Conversion;
+using Shared::Util::intToStr;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class AiInterface
@@ -81,13 +81,13 @@ public:
 	bool reqsOk(const RequirableType *rt);
 	bool reqsOk(const CommandType *ct);
     bool checkCosts(const ProducibleType *pt);
-	bool isFreeCells(const Vec2i &pos, int size, Field field);
+	bool areFreeCells(const Vec2i &pos, int size, Field field);
 	bool isUltra() const {return world->getFaction(factionIndex)->getCpuUltraControl();}
 
 private:
-	string getLogFilename() const	{return "ai" + Conversion::toStr(factionIndex) + ".log";}
+	string getLogFilename() const	{return "ai"+intToStr(factionIndex)+".log";}
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

@@ -25,7 +25,7 @@
 using namespace Shared::Xml;
 using namespace Shared::Graphics;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class ParticleSystemType
@@ -38,12 +38,24 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 
 	Renderer &renderer = Renderer::getInstance();
 
+	const XmlNode *blendFuncNode = particleSystemNode->getChild("blend-func", 0, false);
+	if(blendFuncNode) {
+		srcBlendFactor = Particle::getBlendFactor(blendFuncNode->getRestrictedAttribute("src"));
+		destBlendFactor = Particle::getBlendFactor(blendFuncNode->getRestrictedAttribute("dest"));
+	}
+
+	const XmlNode *blendEquationNode = particleSystemNode->getChild("blend-equation", 0, false);
+	if(blendEquationNode) {
+		blendEquationMode = Particle::getBlendEquation(blendEquationNode->getRestrictedAttribute("mode"));
+	}
+
 	//texture
 	const XmlNode *textureNode = particleSystemNode->getChild("texture");
+    //texture enabled
 	if (textureNode->getAttribute("value")->getBoolValue()) {
 		Texture2D *texture = renderer.newTexture2D(rsGame);
 		if (textureNode->getAttribute("luminance")->getBoolValue()) {
-			texture->setFormat(Texture::FORMAT_ALPHA);
+			texture->setFormat(Texture::fAlpha);
 			texture->getPixmap()->init(1);
 		} else {
 			texture->getPixmap()->init(4);
@@ -56,6 +68,7 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 
 	//model
 	const XmlNode *modelNode = particleSystemNode->getChild("model");
+    //model enabled
 	if (modelNode->getAttribute("value")->getBoolValue()) {
 		string path = modelNode->getAttribute("path")->getRestrictedValue();
 		model = renderer.newModel(rsGame);
@@ -260,4 +273,4 @@ ParticleSystem *ParticleSystemTypeSplash::create(){
 	return ps;
 }
 
-} // end namespace
+}}//end mamespace

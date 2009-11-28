@@ -20,7 +20,6 @@
 #include "conversion.h"
 #include "config.h"
 #include "lang.h"
-#include "protocol_exception.h"
 
 #include "leak_dumper.h"
 
@@ -29,276 +28,129 @@ using namespace std;
 using namespace Shared::Platform;
 using namespace Shared::Util;
 
-#define THROW_PROTOCOL_EXCEPTION(description) \
-	throw ProtocolException(source, &msg, description, NULL, __FILE__, __LINE__)
+namespace Glest{ namespace Game{
 
-namespace Game { namespace Net {
+
+ClientInterface::FileReceiver::FileReceiver(const NetworkMessageFileHeader &msg, const string &outdir) :
+		name(outdir + "/" + msg.getName()),
+		out(name.c_str(), ios::binary | ios::out | ios::trunc) {
+	if(out.bad()) {
+		throw runtime_error("Failed to open new file for output: " + msg.getName());
+	}
+	compressed = msg.isCompressed();
+	finished = false;
+	nextseq = 0;
+}
+
+ClientInterface::FileReceiver::~FileReceiver() {
+}
+
+bool ClientInterface::FileReceiver::processFragment(const NetworkMessageFileFragment &msg) {
+    int zstatus;
+
+	assert(!finished);
+	if(finished) {
+		throw runtime_error(string("Received file fragment after download of file ")
+				+ name + " was already completed.");
+	}
+
+	if(!compressed) {
+		out.write(msg.getData(), msg.getDataSize());
+		if(out.bad()) {
+			throw runtime_error("Error while writing file " + name);
+		}
+	}
+
+	if(nextseq == 0){
+		z.zalloc = Z_NULL;
+		z.zfree = Z_NULL;
+		z.opaque = Z_NULL;
+		z.avail_in = 0;
+		z.next_in = Z_NULL;
+
+		if(inflateInit(&z) != Z_OK) {
+			throw runtime_error(string("Failed to initialize zstream: ") + z.msg);
+		}
+	}
+
+	if(nextseq++ != msg.getSeq()) {
+		throw runtime_error("File fragments arrived out of sequence, which isn't "
+				"supposed to happen with stream sockets.  Did somebody change "
+				"the socket implementation to datagrams?");
+	}
+
+	z.avail_in = msg.getDataSize();
+	z.next_in = (Bytef*)msg.getData();
+	do {
+		z.avail_out = sizeof(buf);
+		z.next_out = (Bytef*)buf;
+		zstatus = inflate(&z, Z_NO_FLUSH);
+		assert(zstatus != Z_STREAM_ERROR);	// state not clobbered
+		switch (zstatus) {
+		case Z_NEED_DICT:
+			zstatus = Z_DATA_ERROR;
+			// intentional fall-through
+		case Z_DATA_ERROR:
+		case Z_MEM_ERROR:
+			throw runtime_error(string("error in zstream: ") + z.msg);
+		}
+		out.write(buf, sizeof(buf) - z.avail_out);
+		if(out.bad()) {
+			throw runtime_error("Error while writing file " + name);
+		}
+	} while (z.avail_out == 0);
+
+	if(msg.isLast() && zstatus != Z_STREAM_END) {
+		throw runtime_error("Unexpected end of zstream data.");
+	}
+
+	if(msg.isLast() || zstatus == Z_STREAM_END) {
+		finished = true;
+		inflateEnd(&z);
+	}
+
+	return msg.isLast();
+}
+
 
 // =====================================================
 //	class ClientInterface
 // =====================================================
 
-ClientInterface::ClientInterface(unsigned short port)
-		: GameInterface(NR_CLIENT, port)
-		, server(*this)
-		, updates()
-		, updateRequests()
-		, fullUpdateRequests()
-		, savedGame(NULL) {
-	getLogger().clear();
+const int ClientInterface::messageWaitTimeout= 10000;	//10 seconds
+const int ClientInterface::waitSleepTime= 5;
+
+ClientInterface::ClientInterface(){
+	clientSocket = NULL;
+	launchGame = false;
+	introDone = false;
+	playerIndex = -1;
+	fileReceiver = NULL;
+	savedGameFile = "";
 }
 
-ClientInterface::~ClientInterface() {
-}
-
-void ClientInterface::accept() {
-	ClientSocket *s = getServerSocket().accept();
-
-	if(s) {
-		RemotePeerInterface *peer = new RemotePeerInterface(*this, s, getTemporaryPeerId(), 0);
-		addPeer(peer);
-		NetworkMessageHandshake msg1(*this);
-		peer->send(msg1, true);
+ClientInterface::~ClientInterface(){
+	delete clientSocket;
+	if(fileReceiver) {
+		delete fileReceiver;
 	}
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageHandshake &msg) {
-	MutexLock lock(mutex);
-	if(&source == &server) {
-		assert(getState() < STATE_NEGOTIATED);
-		setState(STATE_NEGOTIATED);
-		setId(msg.getPlayerId());
-		setUid(msg.getUid());
-		NetworkMessageHandshake msg1(*this);
-		NetworkMessagePlayerInfo msg2(*this);
-		source.send(msg1, false);
-		msg2.getDoc().writeXml();
-		msg2.getDoc().compress();
-		source.send(msg2, true);
-	} else {
-		int id = msg.getPlayerId();
-		uint64 uid = msg.getUid();
-#ifndef NO_PARINOID_NETWORK_CHECKS
-		const Player *p = getGameSettings()->getPlayer(id);
-		if(!p) {
-			THROW_PROTOCOL_EXCEPTION("Unknown peer (no such id).");
-		}
-
-		if(p->getType() != PLAYER_TYPE_HUMAN) {
-			THROW_PROTOCOL_EXCEPTION("Peer attempting to connect as non-human player type");
-		}
-
-		const HumanPlayer &hp = static_cast<const HumanPlayer &>(*p);
-		if(hp.getNetworkInfo().getUid() != uid) {
-			THROW_PROTOCOL_EXCEPTION("Peer uid does not match server settings.");
-		}
-#endif
-		if(source.getId() < 0) {
-			static_cast<RemotePeerInterface&>(source).init(id, uid);
-			NetworkMessageHandshake msg1(*this);
-			source.send(msg1, true);
-		} else if(source.getId() != uid) {
-			THROW_PROTOCOL_EXCEPTION("Peer id mismatch.");
-		}
-	}
+void ClientInterface::connect(const Ip &ip, int port){
+	delete clientSocket;
+	clientSocket = new ClientSocket();
+	clientSocket->connect(ip, port);
+	clientSocket->setBlock(false);
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
-#ifndef NO_PARINOID_NETWORK_CHECKS
-	THROW_PROTOCOL_EXCEPTION("ClientInterface doesn't accept NetworkMessagePlayerInfo.");
-#endif
+void ClientInterface::reset(){
+	delete clientSocket;
+	clientSocket = NULL;
 }
 
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageGameInfo &msg) {
-#ifndef NO_PARINOID_NETWORK_CHECKS
-	if(&source != &server) {
-		THROW_PROTOCOL_EXCEPTION("naughty peer tried to send NetworkMessageGameInfo");
-	}
-#endif
-	MutexLock lock(mutex);
-	try {
-		setGameSettings(msg.getGameSettings());
-	} catch (runtime_error &e) {
-		string s = string("Failed to read game-settings from NetworkMessageGameInfo: ") + e.what();
-		THROW_PROTOCOL_EXCEPTION(s.c_str());
-	}
+void ClientInterface::update() {
+	NetworkMessageCommandList networkMessageCommandList(-1);
 
-	// Update Player information for each RemoteInterface
-	foreach(const GameSettings::PlayerMap::value_type &pair, getGameSettings()->getPlayers()) {
-		assert(pair.first == pair.second->getId());
-		if(pair.second->getType() != PLAYER_TYPE_HUMAN) {
-			continue;
-		}
-		const HumanPlayer &p = static_cast<const HumanPlayer &>(*pair.second);
-		int id = p.getId();
-
-		if(id == Host::getId()) {
-#ifndef NO_PARINOID_NETWORK_CHECKS
-			// make sure that the server doesn't try to change things it shouldn't
-			// get local player object
-			const HumanPlayer &lp = getPlayer();
-			if(		   p.getName()								!= lp.getName()
-					|| p.getAutoRepairEnabled()					!= lp.getAutoRepairEnabled()
-					|| p.getAutoReturnEnabled()					!= lp.getAutoReturnEnabled()
-					|| p.getNetworkInfo().getLocalHostName()	!= getLocalHostName()
-					|| p.getNetworkInfo().getUid()				!= getUid()
-					|| p.getNetworkInfo().getGameVersion()		!= getGameVersion()
-					|| p.getNetworkInfo().getProtocolVersion()	!= getProtocolVersion()) {
-				stringstream str;
-				str << "In NetworkMessageGameInfo, server attempted to change one or more fields "
-						"of local player information that it shouldn't." << endl
-						<< "Local player: " << getPlayer().toString() << endl
-						<< "Server sent: " << p.toString();
-				THROW_PROTOCOL_EXCEPTION(str.str().c_str());
-			}
-#endif
-			setResolvedHostName(p.getNetworkInfo().getResolvedHostName());
-			getProtectedPlayer().setSpectator(p.isSpectator());
-		} else {
-			RemoteInterface *peer = getPeer(id);
-			if(peer) {
-				peer->updatePlayerInfo(p, msg);
-			}
-			// If state is STATE_NEGOTIATED then this is the first time we've received this message.
-			// Thus, we are the client responsible for connecting with each peer.
-			if(getState() == STATE_NEGOTIATED) {
-				// TODO: Store a list of all peers (i.e., other clients to the server) and set a
-				// timer for one or two seconds to allow other clients to receive the server's
-				// message.  Then attempt to connect to all of the players that I don't have a
-				// connection (which should be all of them).  This should be attempted once and
-				// perhaps re-attempted every minute or so.  Upon a successful connection to a peer,
-				// the NetworkMessageStatus should be broadcast.
-				// Note: by storing a list of the peers at this time, we avoid confusion later if
-				// another client connects very shortly after we do and another game info message
-				// goes out.
-			}
-		}
-	}
-
-	/*
-	foreach(NetworkMessageGameInfo::Statuses, msg.getPlayerStatuses()) {
-		RemoteInterface *peer = getPeer(id);
-
-	}*/
-	if(getState() == STATE_NEGOTIATED) {
-		setState(STATE_INITIALIZED);
-	}
-
-	if(getState() >= STATE_LAUNCHING) {
-		// TODO: manage a late change in game info.  This will happen when somebody drops. A change
-		// in game settings after lanuching will require
-	}
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageStatus &msg) {
-	const NetworkPlayerStatus &status = msg.getNetworkPlayerStatus();
-	if(&source == &server) {
-		switch(status.getState()) {
-			case STATE_LAUNCHING:
-				if(source.getState() < STATE_LAUNCHING) {
-					if(getState() == STATE_LAUNCH_READY) {
-						THROW_PROTOCOL_EXCEPTION(
-								"Server is launching, but I'm not in STATE_LAUNCH_READY!");
-					}
-				}
-				break;
-
-			case STATE_QUIT:
-				setState(STATE_QUIT);
-				break;
-
-			default:
-				break;
-		}
-	}
-	// TODO: check for and handle game parameter change
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageText &msg) {
-	THROW_PROTOCOL_EXCEPTION("not yet implemented");
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageFileHeader &msg) {
-	THROW_PROTOCOL_EXCEPTION("not yet implemented");
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageFileFragment &msg) {
-	THROW_PROTOCOL_EXCEPTION("not yet implemented");
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageReady &msg) {
-	THROW_PROTOCOL_EXCEPTION("not yet implemented");
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageCommandList &msg) {
-	THROW_PROTOCOL_EXCEPTION("not yet implemented");
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageUpdate &msg) {
-	THROW_PROTOCOL_EXCEPTION("not yet implemented");
-}
-
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkMessageUpdateRequest &msg) {
-	THROW_PROTOCOL_EXCEPTION("ClientInterface doesn't accept NetworkMessageUpdateRequest.");
-}
-void ClientInterface::_onReceive(RemoteInterface &source, NetworkPlayerStatus &status, NetworkMessage &msg) {
-	bool isServer = &source == &server;
-	switch(status.getState()) {
-		case STATE_UNCONNECTED:
-		case STATE_LISTENING:
-		case STATE_CONNECTED:
-		case STATE_NEGOTIATED:
-		case STATE_INITIALIZED:
-		case STATE_LAUNCH_READY:
-			break;
-		case STATE_LAUNCHING:
-			if(isServer) {
-				setState(STATE_LAUNCH_READY);
-			}
-		case STATE_READY:
-		case STATE_PLAY:
-		case STATE_PAUSED:
-			break;
-		case STATE_QUIT:
-		case STATE_END:
-			if(isServer) {
-				setState(STATE_QUIT);
-			}
-		default:
-			break;
-	}
-}
-
-/* * True if world updates should proceed, false otherwise.  This is set to false if a key frame is
- * due but not yet recieved.
- *//*
-bool ClientInterface::isReady() {
-	MutexLock localLock(mutex);
-	return ready;
-}
-*/
-/**
- * Process the local request for a command.  All commands generated locally are processed locally.
- * However, only non-auto commands generated by the human player are transmitted accross the
- * network.
- */
-void ClientInterface::requestCommand(Command *command) {
-	MutexLock localLock(mutex);
-	if(!command->isAuto() && command->getCommandedUnit()->getFaction()->isThisFaction()) {
-		copyCommandToNetwork(command);
-	}
-	futureCommands[getLastFrame() + getGameSettings()->getCommandDelay()].push(command);
-}
-
-void ClientInterface::beginUpdate(int frame, bool isKeyFrame) {
-	MutexLock lock(mutex);
-	GameInterface::beginUpdate(frame, isKeyFrame);
-}
-
-void ClientInterface::endUpdate() {
-	NetworkMessageCommandList networkMessageCommandList(*this);
-	NetworkMessage *msg;
-#if 0
 	//send as many commands as we can
 	while(!requestedCommands.empty()
 			&& networkMessageCommandList.addCommand(requestedCommands.front())) {
@@ -306,50 +158,31 @@ void ClientInterface::endUpdate() {
 	}
 
 	if(networkMessageCommandList.getCommandCount() > 0) {
-		server.send(&networkMessageCommandList);
+		send(&networkMessageCommandList);
+		flush();
 	}
 
-	while((genericMsg = nextMsg())) {
-		try {
-			if(processMessage(genericMsg)) {
-				delete genericMsg;
-				genericMsg = NULL;
-				continue;
-			}
-			switch(genericMsg->getType()) {
-			case NMT_UPDATE:
-				updates.push_back(reinterpret_cast<NetworkMessageUpdate*>(genericMsg));
-				// do not delete
-				genericMsg = NULL;
-				break;
+	//clear chat variables
+	chatText.clear();
+	chatSender.clear();
+	chatTeamIndex = -1;
 
-			default:
-				throw SocketException("Unexpected message in client interface: " + intToStr(genericMsg->getType()));
+	if(isConnected()) {
+		receive();
+		MsgQueue newQ;
+
+		// pull out updates for immediate processing
+		for(MsgQueue::iterator i = q.begin(); i != q.end(); ++i) {
+			if((*i)->getType() == nmtUpdate) {
+				updates.push_back((NetworkMessageUpdate*)*i);
+			} else {
+				newQ.push_back(*i);
 			}
-			flush();
-		} catch(runtime_error &e) {
-			if(genericMsg) {
-				delete genericMsg;
-			}
-			throw e;
 		}
+		q.swap(newQ);
+		NetworkStatus::update();
 	}
-#endif
-}
-
-void ClientInterface::connectToServer(const IpAddress &ipAddress, unsigned short port) {
-	MutexLock lock(mutex);
-	assert(getState() <= STATE_LISTENING);
-	server.connect(ipAddress, port);
-	setState(STATE_CONNECTED);
-	addPeer(&server);
-}
-
-void ClientInterface::disconnectFromServer() {
-	MutexLock lock(mutex);
-	server.quit();
-	removePeer(&server);
-	setState(STATE_LISTENING);
+	flush();
 }
 
 void ClientInterface::sendUpdateRequests() {
@@ -362,117 +195,23 @@ void ClientInterface::sendUpdateRequests() {
 		for(i = fullUpdateRequests.begin(); i != fullUpdateRequests.end(); ++i) {
 			msg.addUnit(*i, true);
 		}
-		msg.getDoc().writeXml();
-		msg.getDoc().compress();
-		server.send(msg, true);
+		msg.writeXml();
+		msg.compress();
+		send(&msg, true);
 		updateRequests.clear();
 	}
 }
 
-string ClientInterface::getStatus() const {
-	stringstream str;
-	str << server.getStatus();
-	foreach(const PeerMap::value_type &v, getPeers()) {
-		if(v.second->getId() != 0) {
-			str << endl << v.second->getStatus();
-		}
-	}
-	return str.str();
-}
 
-void ClientInterface::print(ObjectPrinter &op) const {
-	GameInterface::print(op.beginClass("ClientInterface"));
-	op		.endClass();
-}
-
-void ClientInterface::update() {
-
-}
-
-/*
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageUpdate &msg) {
-	updates.push_back(&msg);
-	// do not delete
-	return false;
-}
-
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageUpdateRequest &msg) {
-	throw runtime_error("unexpected message");
-}
-
-bool ClientInterface::vProcess(RemoteInterface &source, NetworkMessageHandshake &msg) {
-	// clients don't have clients
-	assert(source.getRole() == NR_SERVER || source.getRole() == NR_PEER);
-
-	//reply with handshake and player info
-	source.send(NetworkMessageHandshake());
-	source.send(NetworkMessagePlayerInfo(*this));
-
-	return true;
-}
-
-bool ClientInterface::process(RemoteInterface &source, NetworkMessagePlayerInfo &msg) {
-	throw runtime_error("unexpected message");
-}
-
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageGameInfo &msg) {
-	// clients don't have clients
-	assert(source.getRole() == NR_SERVER || source.getRole() == NR_PEER);
-
-}
-*/
-/*
-void ClientInterface::process(RemoteInterface &source, const NetworkMessageIntro &msg, bool versionsMatch) {
-}*//*
-bool ClientInterface::process(RemoteInterface &source, NetworkMessageIntro &msg) {
-//	const Version protoVersion = getNetworkVersionString();
-//	bool versionsMatch = msg.getVersionString() == version;
-
-	if(role == NR_CLIENT) {
-		switch(source->getRole()) {
-		case NR_SERVER:
-			if (state >= STATE_INTRODUCED) {
-				throw runtime_error("Network error: already introduced to server, but received new intro message.");
-			}
-			break;
-		case NR_PEER:
-			// hi, go take a flea dip
-			if (state >= STATE_INTRODUCED) {
-				// Jesus! I already know who you are, shut up.
-				return true;
-			}
-			break;
-		default:
-			throw runtime_error("I don't like you");
-	}
-
-	//check consistency
-	if(Config::getInstance().getNetConsistencyChecks() && versionsMatch) {
-		throw runtime_error("Server and client versions do not match (" + version + ").");
-	}
-
-	//send intro message
-	NetworkMessageIntro sendNetworkMessageIntro(*this, getNetworkVersionString(), false);
-	state = STATE_INTRODUCED;
-
-	Host::id = msg.getPlayerId();
-	source->setRemoteNames(msg.getHostName(), msg.getPlayerName());
-	source->send(sendNetworkMessageIntro);
-
-	assert(Host::id >= 0 && Host::id < GameConstants::maxPlayers);
-
-	return true;
-}*/
-#if 0
-void ClientInterface::updateLobby() {
-	NetworkMessage *genericMsg = nextMsg();
+void ClientInterface::updateLobby(){
+	NetworkMessage *genericMsg= nextMsg();
 	if(!genericMsg) {
 		return;
 	}
 
 	try {
-		switch(genericMsg->getType()) {
-			case NMT_INTRO: {
+		switch(genericMsg->getType()){
+			case nmtIntro: {
 				NetworkMessageIntro *msg = (NetworkMessageIntro *)genericMsg;
 
 				//check consistency
@@ -493,7 +232,7 @@ void ClientInterface::updateLobby() {
 			}
 			break;
 
-			case NMT_FILE_HEADER: {
+			case nmtFileHeader: {
 				NetworkMessageFileHeader *msg = (NetworkMessageFileHeader *)genericMsg;
 
 				if(fileReceiver) {
@@ -513,7 +252,7 @@ void ClientInterface::updateLobby() {
 			}
 			break;
 
-			case NMT_FILE_FRAGMENT: {
+			case nmtFileFragment: {
 				NetworkMessageFileFragment *msg = (NetworkMessageFileFragment*)genericMsg;
 
 				if(!fileReceiver) {
@@ -527,7 +266,7 @@ void ClientInterface::updateLobby() {
 			}
 			break;
 
-			case NMT_LAUNCH: {
+			case nmtLaunch: {
 				NetworkMessageLaunch *msg = (NetworkMessageLaunch*)genericMsg;
 
 				msg->buildGameSettings(&gameSettings);
@@ -536,11 +275,11 @@ void ClientInterface::updateLobby() {
 				for(int i = 0; i < gameSettings.getFactionCount(); ++i){
 
 					//replace by network
-					if(gameSettings.getFactionControl(i) == CT_HUMAN){
-						gameSettings.setFactionControl(i, CT_NETWORK);
+					if(gameSettings.getFactionControl(i) == ctHuman){
+						gameSettings.setFactionControl(i, ctNetwork);
 					}
 				}
-				gameSettings.setFactionControl(playerIndex, CT_HUMAN);
+				gameSettings.setFactionControl(playerIndex, ctHuman);
 				gameSettings.setThisFactionIndex(playerIndex);
 				launchGame= true;
 			}
@@ -557,9 +296,69 @@ void ClientInterface::updateLobby() {
 	delete genericMsg;
 }
 
-void ClientInterface::waitUntilReady(Checksums &checksums) {
+void ClientInterface::updateKeyframe(int frameCount){
+	bool done = false;
+
+	while(!done) {
+		//wait for the next message
+		NetworkMessage *genericMsg = waitForMessage();
+
+		try {
+			switch(genericMsg->getType()) {
+				case nmtCommandList: {
+					//make sure we read the message
+					NetworkMessageCommandList *msg = (NetworkMessageCommandList*)genericMsg;
+
+					//check that we are in the right frame
+					if(msg->getFrameCount() != frameCount){
+						throw SocketException("Network synchronization error, frame counts do not match");
+					}
+
+					// give all commands
+					for(int i= 0; i < msg->getCommandCount(); ++i){
+						pendingCommands.push_back(msg->getCommand(i));
+					}
+
+					done = true;
+					delete msg;
+				}
+				break;
+
+				case nmtQuit: {
+					quit = true;
+					done=  true;
+					delete genericMsg;
+				}
+				break;
+
+				case nmtText:{
+					NetworkMessageText *msg = (NetworkMessageText*)genericMsg;
+					chatText = msg->getText();
+					chatSender = msg->getSender();
+					chatTeamIndex = msg->getTeamIndex();
+					delete msg;
+				}
+				break;
+
+				case nmtUpdate: {
+					updates.push_back((NetworkMessageUpdate*)genericMsg);
+				}
+				break;
+
+				default:
+					throw SocketException("Unexpected message in client interface: " + intToStr(genericMsg->getType()));
+			}
+			flush();
+		} catch(runtime_error &e) {
+			delete genericMsg;
+			throw e;
+		}
+	}
+}
+
+void ClientInterface::waitUntilReady(Checksum &checksum){
 	NetworkMessage *msg = NULL;
-	NetworkMessageReady networkMessageReady(&checksums);
+	NetworkMessageReady networkMessageReady(checksum.getSum());
 	Chrono chrono;
 
 	chrono.start();
@@ -570,15 +369,15 @@ void ClientInterface::waitUntilReady(Checksums &checksums) {
 	try {
 		//wait until we get a ready message from the server
 		while(!(msg = nextMsg())) {
-			if(chrono.getMillis() > READY_WAIT_TIMEOUT){
+			if(chrono.getMillis() > readyWaitTimeout){
 				throw SocketException("Timeout waiting for server");
 			}
 
 			// sleep a bit
-			sleep(1);
+			sleep(waitSleepTime);
 		}
 
-		if(msg->getType() != NMT_READY) {
+		if(msg->getType() != nmtReady) {
 			SocketException("Unexpected network message: " + intToStr(msg->getType()));
 		}
 
@@ -595,24 +394,32 @@ void ClientInterface::waitUntilReady(Checksums &checksums) {
 		throw e;
 	}
 
-	//delay the start a bit, so clients have more room to get messages
+	//delay the start a bit, so clients have nore room to get messages
 	sleep(GameConstants::networkExtraLatency);
 	delete msg;
 }
-#endif
-/*
+
+void ClientInterface::sendTextMessage(const string &text, int teamIndex) {
+	NetworkMessageText networkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex);
+	send(&networkMessageText);
+}
+
+string ClientInterface::getStatus() const {
+	return getRemotePlayerName() + ": " + NetworkStatus::getStatus();
+}
+
 NetworkMessage *ClientInterface::waitForMessage() {
 	NetworkMessage *msg = NULL;
 	Chrono chrono;
 
 	chrono.start();
 
-	while (!(msg = nextMsg())) {
-		if (!isConnected()) {
+	while(!(msg = nextMsg())) {
+		if(!isConnected()){
 			throw SocketException("Disconnected");
 		}
 
-		if (chrono.getMillis() > messageWaitTimeout) {
+		if(chrono.getMillis()>messageWaitTimeout){
 			throw SocketException("Timeout waiting for message");
 		}
 
@@ -620,6 +427,12 @@ NetworkMessage *ClientInterface::waitForMessage() {
 	}
 	return msg;
 }
-*/
-}} // end namespace
 
+void ClientInterface::requestCommand(Command *command) {
+	if(!command->isAuto()) {
+		requestedCommands.push_back(new Command(*command));
+	}
+	pendingCommands.push_back(command);
+}
+
+}}//end namespace

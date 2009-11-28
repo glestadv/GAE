@@ -74,17 +74,9 @@ rule Application
         Depends install_bin : $($(<)_INSTALLTARGET) ;
     }
 
-	local app_objects ;
-
-	for i in $(objects) {
-	 if [ MATCH (\.o) : $(i) ] {
-	    app_objects += $(i) ;
-	  }
-	}
-
     # Link
     MakeLocate $(target) : $(LOCATE_TARGETS) ;
-    SystemLinkApplication $(<) : $(app_objects) : $(3) ;
+    SystemLinkApplication $(<) : $(objects) : $(3) ;
 
     # Import default flags
     CppFlags $(<) : $(APPLICTION_CPPFLAGS) ;

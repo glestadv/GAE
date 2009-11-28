@@ -2,7 +2,7 @@
 //	This file is part of Glest (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
-//				  2008 Daniel Santos <daniel.santos@pobox.com>
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -13,12 +13,12 @@
 // This file is auto-generated from config.h.template using ../config.db and the script
 // ../mkconfig.sh.  To modify actual config settings, edit config.db and re-run ../mkconfig.sh.
 
-#ifndef _GAME_CONFIG_H_
-#define _GAME_CONFIG_H_
+#ifndef _GLEST_GAME_CONFIG_H_
+#define _GLEST_GAME_CONFIG_H_
 
 #include "properties.h"
 
-namespace Game {
+namespace Glest { namespace Game {
 
 using Shared::Util::Properties;
 
@@ -36,7 +36,7 @@ private:
 CONFIG_VARIABLES
 
 	Config(const char* fileName);
-	
+
 	static bool isWindows() {
 #if defined(WIN32) || defined(WIN64)
 		return true;
@@ -66,7 +66,7 @@ CONFIG_GETTERS
 CONFIG_SETTERS
 };
 
-} // end namespace
+}}//end namespace
 
 #endif
 

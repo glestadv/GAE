@@ -12,8 +12,6 @@
 #include "pch.h"
 #include "renderer.h"
 
-#include <sstream>
-
 #include "texture_gl.h"
 #include "main_menu.h"
 #include "config.h"
@@ -35,7 +33,7 @@ using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest { namespace Game{
 
 // =====================================================
 // 	class MeshCallbackTeamColor
@@ -357,6 +355,30 @@ void Renderer::reloadResources(){
 
 // ==================== engine interface ====================
 
+Model *Renderer::newModel(ResourceScope rs){
+	return modelManager[rs]->newModel();
+}
+
+Texture2D *Renderer::newTexture2D(ResourceScope rs){
+	return textureManager[rs]->newTexture2D();
+}
+
+Texture3D *Renderer::newTexture3D(ResourceScope rs){
+	return textureManager[rs]->newTexture3D();
+}
+
+Font2D *Renderer::newFont(ResourceScope rs){
+	return fontManager[rs]->newFont2D();
+}
+
+void Renderer::manageParticleSystem(ParticleSystem *particleSystem, ResourceScope rs){
+	particleManager[rs]->manage(particleSystem);
+}
+
+void Renderer::updateParticleManager(ResourceScope rs){
+	particleManager[rs]->update();
+}
+
 void Renderer::renderParticleManager(ResourceScope rs){
 	glPushAttrib(GL_DEPTH_BUFFER_BIT  | GL_STENCIL_BUFFER_BIT);
 	glDepthFunc(GL_LESS);
@@ -531,12 +553,12 @@ void Renderer::renderMouse3d(){
 				glEnable(GL_COLOR_MATERIAL);
 				glDepthMask(GL_FALSE);
 
-				Vec3f pos3f= Vec3f((*i).x, map->getCell(*i)->getHeight(), (*i).y);
+				Vec3f pos3f= Vec3f( (float)(*i).x, map->getCell(*i)->getHeight(), (float)(*i).y );
 
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
 				//choose color
-				if(map->isFreeCellsOrHasUnit(*i, building->getSize(), fLand, units)) {
+				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), FieldWalkable, units)) {
 					color= Vec4f(1.f, 1.f, 1.f, 0.5f);
 				} else {
 					color= Vec4f(1.f, 0.f, 0.f, 0.5f);
@@ -565,7 +587,7 @@ void Renderer::renderMouse3d(){
 			glDepthMask(GL_FALSE);
 
 			Vec2i pos= mouse3d->getPos();
-			Vec3f pos3f= Vec3f(pos.x, map->getCell(pos)->getHeight(), pos.y);
+			Vec3f pos3f= Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
 
 			//standard mouse
 			glDisable(GL_TEXTURE_2D);
@@ -638,7 +660,6 @@ void Renderer::renderConsole(const Console *console){
 			CoreData::getInstance().getConsoleFont(),
 			20, i*20+20);
 	}
-
 	glPopAttrib();
 }
 
@@ -666,7 +687,6 @@ void Renderer::renderChatManager(const ChatManager *chatManager){
 void Renderer::renderResourceStatus(){
 
 	const Metrics &metrics= Metrics::getInstance();
-	const Gui *gui= game->getGui();
 	const World *world= game->getWorld();
 	const Faction *thisFaction= world->getFaction(world->getThisFactionIndex());
 	int subfaction = thisFaction->getSubfaction();
@@ -698,20 +718,20 @@ void Renderer::renderResourceStatus(){
 		//draw resource status
 		if(showResource){
 
-			string str= Conversion::toStr(r->getAmount());
+			string str= intToStr(r->getAmount());
 
 			glEnable(GL_TEXTURE_2D);
 			renderQuad(j*100+200, metrics.getVirtualH()-30, 16, 16, rt->getImage());
 
 			if(rt->getClass()!=rcStatic){
-				str+= "/" + Conversion::toStr(thisFaction->getStoreAmount(rt));
+				str+= "/" + intToStr(thisFaction->getStoreAmount(rt));
 			}
 			if(rt->getClass()==rcConsumable){
 				str+= "(";
 				if(r->getBalance()>0){
 					str+= "+";
 				}
-				str+= Conversion::toStr(r->getBalance()) + ")";
+				str+= intToStr(r->getBalance()) + ")";
 			}
 
 			glDisable(GL_TEXTURE_2D);
@@ -797,7 +817,7 @@ void Renderer::renderTextShadow(const string &text, const Font2D *font, int x, i
 
 	textRenderer->begin(font);
 	glColor3f(0.0f, 0.0f, 0.0f);
-	textRenderer->render(text, pos.x-1.0f, pos.y-1.0f);
+	textRenderer->render( text, pos.x-1, pos.y-1);
 	glColor3f(1.0f, 1.0f, 1.0f);
 	textRenderer->render(text, pos.x, pos.y);
 	textRenderer->end();
@@ -854,16 +874,16 @@ void Renderer::renderButton(const GraphicButton *button){
 
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2f(0.f, 0.f);
-		glVertex2f(x, y);
+		glVertex2f( (float)x, (float)y );
 
 		glTexCoord2f(0.f, 1.f);
-		glVertex2f(x, y+h);
+		glVertex2f( (float)x, (float)(y+h) );
 
 		glTexCoord2f(1.f, 0.f);
-		glVertex2f(x+w, y);
+		glVertex2f( (float)(x+w), (float)y );
 
 		glTexCoord2f(1.f, 1.f);
-		glVertex2f(x+w, y+h);
+		glVertex2f( (float)(x+w), (float)(y+h) );
 
 	glEnd();
 
@@ -881,34 +901,32 @@ void Renderer::renderButton(const GraphicButton *button){
 		glBegin(GL_TRIANGLE_FAN);
 
 		glColor4fv(color2.ptr());
-		glVertex2f(x+w/2, y+h/2);
+		glVertex2f( (float)(x+w/2), (float)(y+h/2) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y-lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y+h+lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glEnd();
 	}
 
 	Vec2i textPos= Vec2i(x+w/2, y+h/2);
 
-	renderText(
-		button->getText(), button->getFont(), GraphicButton::getFade(),
-		x+w/2, y+h/2, true);
+	renderText( button->getText(), button->getFont(), GraphicButton::getFade(), x+w/2, y+h/2, true);
 
     glPopAttrib();
 }
@@ -935,13 +953,42 @@ void Renderer::renderMessageBox(const GraphicMessageBox *messageBox){
 	//background
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
 	glEnable(GL_BLEND);
-	glColor4f(0.5f, 0.5f, 0.5f, 0.2f) ;
+	glColor4f( 0.f, 0.f, 0.f, 0.5f );
 
 	glBegin(GL_TRIANGLE_STRIP);
-		glVertex2i(messageBox->getX(), messageBox->getY()+messageBox->getH());
+		glVertex2i(messageBox->getX(), messageBox->getY()+9*messageBox->getH()/10);
 		glVertex2i(messageBox->getX(), messageBox->getY());
-		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + messageBox->getH());
+		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + 9*messageBox->getH()/10);
 		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY());
+	glEnd();
+	glColor4f(0.0f, 0.0f, 0.0f, 0.8f) ;   
+	glBegin(GL_TRIANGLE_STRIP);
+		glVertex2i(messageBox->getX(), messageBox->getY()+messageBox->getH());
+		glVertex2i(messageBox->getX(), messageBox->getY()+9*messageBox->getH()/10);
+		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY() + messageBox->getH());
+		glVertex2i(messageBox->getX() + messageBox->getW(), messageBox->getY()+9*messageBox->getH()/10);
+	glEnd();
+ 
+	glBegin(GL_LINE_LOOP);
+		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
+		glVertex2i(messageBox->getX(), messageBox->getY());
+		
+		glColor4f(0.0f, 0.0f, 0.0f, 0.25f) ;   
+		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY());
+		
+		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
+		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY() + messageBox->getH());
+		
+		glColor4f(0.25f, 0.25f, 0.25f, 0.25f) ;   
+		glVertex2i(messageBox->getX(), messageBox->getY() + messageBox->getH());
+	glEnd();
+
+	glBegin(GL_LINE_STRIP);
+		glColor4f(1.0f, 1.0f, 1.0f, 0.25f) ;   
+		glVertex2i(messageBox->getX(), messageBox->getY() + 90*messageBox->getH()/100);
+		
+		glColor4f(0.5f, 0.5f, 0.5f, 0.25f) ;   
+		glVertex2i(messageBox->getX()+ messageBox->getW(), messageBox->getY() + 90*messageBox->getH()/100);
 	glEnd();
 
 	glPopAttrib();
@@ -953,11 +1000,16 @@ void Renderer::renderMessageBox(const GraphicMessageBox *messageBox){
 	}
 
 	//text
-	GraphicLabel label;
-	label.init(messageBox->getX(), messageBox->getY()+messageBox->getH()/2, messageBox->getW(), messageBox->getH()/2, true);
-	label.setText(messageBox->getText());
-	label.setFont(messageBox->getFont());
-	renderLabel(&label);
+	renderText(
+		messageBox->getText(), messageBox->getFont(), Vec3f(1.0f, 1.0f, 1.0f), 
+		messageBox->getX()+15, messageBox->getY()+7*messageBox->getH()/10, 
+		false );
+
+	renderText(
+		messageBox->getHeader(), messageBox->getFont(),Vec3f(1.0f, 1.0f, 1.0f), 
+		messageBox->getX()+15, messageBox->getY()+93*messageBox->getH()/100, 
+		false );
+
 }
 
 void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
@@ -983,16 +1035,16 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 
 	glBegin(GL_TRIANGLE_STRIP);
 		glTexCoord2f(0.f, 0.f);
-		glVertex2f(x, y);
+		glVertex2f( (float)x, (float)y );
 
 		glTexCoord2f(0.f, 1.f);
-		glVertex2f(x, y+h);
+		glVertex2f( (float)x, (float)(y+h) );
 
 		glTexCoord2f(1.f, 0.f);
-		glVertex2f(x+w, y);
+		glVertex2f( (float)(x+w), (float)y);
 
 		glTexCoord2f(1.f, 1.f);
-		glVertex2f(x+w, y+h);
+		glVertex2f( (float)(x+w), (float)(y+h) );
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
@@ -1009,25 +1061,25 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 		glBegin(GL_TRIANGLE_FAN);
 
 		glColor4fv(color2.ptr());
-		glVertex2f(x+w/2, y+h/2);
+		glVertex2f( (float)(x+w/2), (float)(y+h/2) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y-lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y-lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)(x+w+lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x+w+lightSize, y+h+lightSize);
+		glVertex2f( (float)( x+w+lightSize ), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y+h+lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y+h+lightSize) );
 
 		glColor4fv(color1.ptr());
-		glVertex2f(x-lightSize, y-lightSize);
+		glVertex2f( (float)(x-lightSize), (float)(y-lightSize) );
 
 		glEnd();
 	}
@@ -1075,12 +1127,11 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 // ==================== complex rendering ====================
 
 void Renderer::renderSurface() {
-
 	int lastTex=-1;
 	int currTex;
 	const World *world= game->getWorld();
 	const Map *map= world->getMap();
-	const Rect2i mapBounds(0, 0, map->getSurfaceW()-1, map->getSurfaceH()-1);
+	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
 	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
 
 	assertGl();
@@ -1115,7 +1166,7 @@ void Renderer::renderSurface() {
 
 	glActiveTexture(baseTexUnit);
 
-	Quad2i scaledQuad= visibleQuad/Map::cellScale;
+	Quad2i scaledQuad = visibleQuad/Map::cellScale;
 
 	PosQuadIterator pqi(scaledQuad);
 	while(pqi.next()){
@@ -1124,16 +1175,16 @@ void Renderer::renderSurface() {
 
 		if(mapBounds.isInside(pos)){
 
-			SurfaceCell *tc00= map->getSurfaceCell(pos.x, pos.y);
-			SurfaceCell *tc10= map->getSurfaceCell(pos.x+1, pos.y);
-			SurfaceCell *tc01= map->getSurfaceCell(pos.x, pos.y+1);
-			SurfaceCell *tc11= map->getSurfaceCell(pos.x+1, pos.y+1);
+			Tile *tc00= map->getTile(pos.x, pos.y);
+			Tile *tc10= map->getTile(pos.x+1, pos.y);
+			Tile *tc01= map->getTile(pos.x, pos.y+1);
+			Tile *tc11= map->getTile(pos.x+1, pos.y+1);
 
 			triangleCount+= 2;
 			pointCount+= 4;
 
 			//set texture
-			currTex= static_cast<const Texture2DGl*>(tc00->getSurfaceTexture())->getHandle();
+			currTex= static_cast<const Texture2DGl*>(tc00->getTileTexture())->getHandle();
 			if(currTex!=lastTex){
 				lastTex=currTex;
 				glBindTexture(GL_TEXTURE_2D, lastTex);
@@ -1167,7 +1218,7 @@ void Renderer::renderSurface() {
 			glEnd();
 		}
 	}
-	glEnd();
+	//glEnd();
 
 	//Restore
 	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
@@ -1176,6 +1227,9 @@ void Renderer::renderSurface() {
 	//assert
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
+#	if DEBUG_RENDERING_ENABLED
+		debugRenderer.renderRegionHilight(visibleQuad);
+#	endif
 }
 
 void Renderer::renderObjects(){
@@ -1184,7 +1238,7 @@ void Renderer::renderObjects(){
 
     assertGl();
 	const Texture2D *fowTex= world->getMinimap()->getFowTexture();
-	Vec3f baseFogColor= world->getTileset()->getFogColor()*computeLightColor(world->getTimeFlow()->getTime());
+	Vec3f baseFogColor= world->getTileset()->getFogColor() * computeLightColor( world->getTimeFlow()->getTime() );
 
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_FOG_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
 
@@ -1209,20 +1263,26 @@ void Renderer::renderObjects(){
 	PosQuadIterator pqi(visibleQuad, Map::cellScale);
 	while(pqi.next()){
 		const Vec2i &pos= pqi.getPos();
-
 		if(map->isInside(pos)){
 
-			SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(pos));
+			Tile *sc= map->getTile(Map::toTileCoords(pos));
 			Object *o= sc->getObject();
 			if(o && sc->isExplored(thisTeamIndex)){
 
 				const Model *objModel= sc->getObject()->getModel();
 				Vec3f v= o->getPos();
+            
+            // QUICK-FIX: Objects/Resources drawn out of place...
+            // Why do we need this ??? are the tileset objects / techtree resources defined out of position ??
+            v.x += Map::mapScale / 2; // == 1
+            v.z += Map::mapScale / 2;
 
 				//ambient and diffuse color is taken from cell color
 				float fowFactor= fowTex->getPixmap()->getPixelf(pos.x/Map::cellScale, pos.y/Map::cellScale);
 				Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
 				glColor4fv(color.ptr());
+				// FIXME: I was tired when I edited this code and it could be as broken as our
+				// economy.
 				Vec4f color2 = color * ambFactor;
 				glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color2.ptr());
 				color2 = Vec4f(baseFogColor) * fowFactor;
@@ -1244,7 +1304,6 @@ void Renderer::renderObjects(){
 			}
 		}
 	}
-
 	modelRenderer->end();
 
 	//restore
@@ -1293,7 +1352,7 @@ void Renderer::renderWater(){
 
 	Rect2i boundingRect= visibleQuad.computeBoundingRect();
 	Rect2i scaledRect= boundingRect/Map::cellScale;
-	scaledRect.clamp(0, 0, map->getSurfaceW()-1, map->getSurfaceH()-1);
+	scaledRect.clamp(0, 0, map->getTileW()-1, map->getTileH()-1);
 
 	float waterLevel= world->getMap()->getWaterLevel();
     for(int j=scaledRect.p[0].y; j<scaledRect.p[1].y; ++j){
@@ -1301,8 +1360,8 @@ void Renderer::renderWater(){
 
 		for(int i=scaledRect.p[0].x; i<=scaledRect.p[1].x; ++i){
 
-			SurfaceCell *tc0= map->getSurfaceCell(i, j);
-            SurfaceCell *tc1= map->getSurfaceCell(i, j+1);
+			Tile *tc0= map->getTile(i, j);
+            Tile *tc1= map->getTile(i, j+1);
 
 			int thisTeamIndex= world->getThisTeamIndex();
 			if(tc0->getNearSubmerged() && (tc0->isExplored(thisTeamIndex) || tc1->isExplored(thisTeamIndex))){
@@ -1317,7 +1376,7 @@ void Renderer::renderWater(){
 					GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 					computeWaterColor(waterLevel, tc1->getHeight()).ptr());
 				glMultiTexCoord2fv(GL_TEXTURE1, tc1->getFowTexCoord().ptr());
-                glTexCoord3f(i, 1.f, waterAnim);
+                glTexCoord3f( (float)i, 1.f, waterAnim );
 				glVertex3f(
 					static_cast<float>(i)*Map::mapScale,
 					waterLevel,
@@ -1328,7 +1387,7 @@ void Renderer::renderWater(){
 					GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 					computeWaterColor(waterLevel, tc0->getHeight()).ptr());
 				glMultiTexCoord2fv(GL_TEXTURE1, tc0->getFowTexCoord().ptr());
-                glTexCoord3f(i, 0.f, waterAnim);
+                glTexCoord3f( (float)i, 0.f, waterAnim );
                 glVertex3f(
 					static_cast<float>(i)*Map::mapScale,
 					waterLevel,
@@ -1345,7 +1404,7 @@ void Renderer::renderWater(){
 						GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 						computeWaterColor(waterLevel, tc1->getHeight()).ptr());
 					glMultiTexCoord2fv(GL_TEXTURE1, tc1->getFowTexCoord().ptr());
-					glTexCoord3f(i, 1.f, waterAnim);
+					glTexCoord3f( (float)i, 1.f, waterAnim );
 					glVertex3f(
 						static_cast<float>(i)*Map::mapScale,
 						waterLevel,
@@ -1356,7 +1415,7 @@ void Renderer::renderWater(){
 						GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE,
 						computeWaterColor(waterLevel, tc0->getHeight()).ptr());
 					glMultiTexCoord2fv(GL_TEXTURE1, tc0->getFowTexCoord().ptr());
-					glTexCoord3f(i, 0.f, waterAnim);
+					glTexCoord3f( (float)i, 0.f, waterAnim );
 					glVertex3f(
 						static_cast<float>(i)*Map::mapScale,
 						waterLevel,
@@ -1452,6 +1511,20 @@ void Renderer::renderUnits(){
 
 			//translate
 			Vec3f currVec= unit->getCurrVectorFlat();
+			
+			//TODO: floating units should maintain their 'y' coord properly...
+			// Quick fix: float boats
+			const Field f = unit->getCurrField ();
+			const Map *map = world->getMap ();
+			if ( f == FieldAmphibious ) {
+				SurfaceType st = map->getCell(unit->getPos())->getType();
+				if ( st == SurfaceTypeDeepWater || st == SurfaceTypeFordable ) {
+					currVec.y = map->getWaterLevel ();
+				}
+			}
+			if ( f == FieldDeepWater || f == FieldAnyWater ) {
+				currVec.y = map->getWaterLevel ();
+			}
 
 			// let dead units start sinking before they go away
 			if(framesUntilDead <= 200 && !ut->isOfClass(ucBuilding)) {
@@ -1607,7 +1680,7 @@ void Renderer::renderSelectionEffects(){
 				}
 				else{
 					Vec2i pos= c->getPos();
-					arrowTarget= Vec3f(pos.x, map->getCell(pos)->getHeight(), pos.y);
+					arrowTarget= Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
 				}
 
 				renderArrow(unit->getCurrVectorFlat(), arrowTarget, arrowColor, 0.3f);
@@ -1617,7 +1690,7 @@ void Renderer::renderSelectionEffects(){
 		//meeting point arrow
 		if(unit->getType()->hasMeetingPoint()){
 			Vec2i pos= unit->getMeetingPos();
-			Vec3f arrowTarget= Vec3f(pos.x, map->getCell(pos)->getHeight(), pos.y);
+			Vec3f arrowTarget= Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
 			renderArrow(unit->getCurrVectorFlat(), arrowTarget, Vec3f(0.f, 0.f, 1.f), 0.3f);
 		}
 
@@ -1675,7 +1748,7 @@ void Renderer::renderWaterEffects(){
 
 			//render only if visible
 			Vec2i intPos= Vec2i(static_cast<int>(ws->getPos().x), static_cast<int>(ws->getPos().y));
-			if(map->getSurfaceCell(Map::toSurfCoords(intPos))->isVisible(world->getThisTeamIndex())){
+			if(map->getTile(Map::toTileCoords(intPos))->isVisible(world->getThisTeamIndex())){
 
 				float scale= ws->getAnim();
 
@@ -1768,7 +1841,7 @@ void Renderer::renderMinimap(){
 	for(int i=0; i<world->getFactionCount(); ++i){
 		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
 			Unit *unit= world->getFaction(i)->getUnit(j);
-			if(world->toRenderUnit(unit)){
+			if ( world->toRenderUnit(unit) && unit->isAlive() ) {
 				Vec2i pos= unit->getPos()/Map::cellScale;
 				int size= unit->getType()->getSize();
 				Vec3f color=  world->getFaction(i)->getTexture()->getPixmap()->getPixel3f(0, 0);
@@ -1980,9 +2053,9 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 			glBegin(GL_TRIANGLE_STRIP);
 			for(int j=1; j<waterTesselation; ++j){
 				glTexCoord2i(1, 2 % j);
-				glVertex3f(-waterSize+i*waterQuadSize, waterHeight, -waterSize+j*waterQuadSize);
+				glVertex3f( (float)(-waterSize+i*waterQuadSize), waterHeight, (float)(-waterSize+j*waterQuadSize) );
 				glTexCoord2i(0, 2 % j);
-				glVertex3f(-waterSize+(i+1)*waterQuadSize, waterHeight, -waterSize+j*waterQuadSize);
+				glVertex3f( (float)(-waterSize+(i+1)*waterQuadSize), waterHeight, (float)(-waterSize+j*waterQuadSize) );
 			}
 			glEnd();
 		}
@@ -2180,7 +2253,7 @@ void Renderer::renderShadowsToTexture() {
 				glRotatef(90, 0, 1, 0);
 				Vec3f pos = game->getGameCamera()->getPos();
 
-				glTranslatef(static_cast<int>(-pos.x), 0, static_cast<int>(-pos.z));
+				glTranslatef( (float)(static_cast<int>(-pos.x)), 0, (float)(static_cast<int>(-pos.z)) );
 
 			} else {
 				//non directional light
@@ -2253,55 +2326,64 @@ void Renderer::renderShadowsToTexture() {
 // ==================== gl wrap ====================
 
 string Renderer::getGlInfo(){
+	string infoStr;
 	Lang &lang= Lang::getInstance();
-	stringstream str;
 
-	str << lang.get("OpenGlInfo") << ":" << endl
-		<< "   " << lang.get("OpenGlVersion") << ": " << getGlVersion() << endl
-		<< "   " << lang.get("OpenGlRenderer") << ": " <<  getGlRenderer() << endl
-		<< "   " << lang.get("OpenGlVendor") << ": " << getGlVendor() << endl
-		<< "   " << lang.get("OpenGlMaxLights") << ": " << getGlMaxLights() << endl
-		<< "   " << lang.get("OpenGlMaxTextureSize") << ": " << getGlMaxTextureSize() << endl
-		<< "   " << lang.get("OpenGlMaxTextureUnits") << ": " << getGlMaxTextureUnits() << endl
-		<< "   " << lang.get("OpenGlModelviewStack") << ": " << getGlModelviewMatrixStackDepth() << endl
-		<< "   " << lang.get("OpenGlProjectionStack") << ": " << getGlProjectionMatrixStackDepth() << endl;
+	infoStr+= lang.get("OpenGlInfo")+":\n";
+	infoStr+= "   "+lang.get("OpenGlVersion")+": ";
+    infoStr+= string(getGlVersion())+"\n";
+    infoStr+= "   "+lang.get("OpenGlRenderer")+": ";
+    infoStr+= string(getGlRenderer())+"\n";
+    infoStr+= "   "+lang.get("OpenGlVendor")+": ";
+    infoStr+= string(getGlVendor())+"\n";
+	infoStr+= "   "+lang.get("OpenGlMaxLights")+": ";
+    infoStr+= intToStr(getGlMaxLights())+"\n";
+	infoStr+= "   "+lang.get("OpenGlMaxTextureSize")+": ";
+    infoStr+= intToStr(getGlMaxTextureSize())+"\n";
+	infoStr+= "   "+lang.get("OpenGlMaxTextureUnits")+": ";
+    infoStr+= intToStr(getGlMaxTextureUnits())+"\n";
+	infoStr+= "   "+lang.get("OpenGlModelviewStack")+": ";
+    infoStr+= intToStr(getGlModelviewMatrixStackDepth())+"\n";
+	infoStr+= "   "+lang.get("OpenGlProjectionStack")+": ";
+    infoStr+= intToStr(getGlProjectionMatrixStackDepth())+"\n";
 
-	return str.str();
+	return infoStr;
 }
 
 string Renderer::getGlMoreInfo(){
+	string infoStr;
 	Lang &lang= Lang::getInstance();
-	stringstream str;
 
 	//gl extensions
-	str << lang.get("OpenGlExtensions") << ":" << endl << "   ";
+	infoStr+= lang.get("OpenGlExtensions")+":\n   ";
 
 	string extensions= getGlExtensions();
 	int charCount= 0;
-	for(int i=0; i<extensions.size(); ++i) {
-		str << extensions[i];
+	for(int i=0; i<extensions.size(); ++i){
+		infoStr+= extensions[i];
 		if(charCount>120 && extensions[i]==' '){
-			str << endl << "   ";
+			infoStr+= "\n   ";
 			charCount= 0;
 		}
 		++charCount;
 	}
 
 	//platform extensions
-	str << endl << endl << lang.get("OpenGlPlatformExtensions") << ":" << endl << "   ";
+	infoStr+= "\n\n";
+	infoStr+= lang.get("OpenGlPlatformExtensions")+":\n   ";
 
 	charCount= 0;
 	string platformExtensions= getGlPlatformExtensions();
 	for(int i=0; i<platformExtensions.size(); ++i){
-		str << platformExtensions[i];
+		infoStr+= platformExtensions[i];
 		if(charCount>120 && platformExtensions[i]==' '){
-			str << endl << "   ";
+			infoStr+= "\n   ";
 			charCount= 0;
 		}
 		++charCount;
 	}
 
-	return str.str();
+	return infoStr;
 }
 
 void Renderer::autoConfig(){
@@ -2571,7 +2653,7 @@ void Renderer::renderObjectsFast(){
 
 		if(map->isInside(pos)){
 
-			SurfaceCell *sc= map->getSurfaceCell(Map::toSurfCoords(pos));
+			Tile *sc= map->getTile(Map::toTileCoords(pos));
 			Object *o= sc->getObject();
 			if(sc->isExplored(thisTeamIndex) && o!=NULL){
 
@@ -2864,20 +2946,20 @@ void Renderer::enableProjectiveTexturing(){
 
 // ==================== private aux drawing ====================
 
-void Renderer::renderSelectionCircle(Vec3f v, int size, float radius) {
+void Renderer::renderSelectionCircle(Vec3f v, int size, float radius){
 	GLUquadricObj *disc;
 
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
+    glPushMatrix();
 
 	glTranslatef(v.x, v.y, v.z);
 	glRotatef(90.f, 1.f, 0.f, 0.f);
-	disc = gluNewQuadric();
+	disc= gluNewQuadric();
 	gluQuadricDrawStyle(disc, GLU_FILL);
-	gluCylinder(disc, radius * (size - 0.2f), radius * size, 0.2f, 30, 1);
+	gluCylinder(disc, radius*(size-0.2f), radius*size, 0.2f, 30, 1);
 	gluDeleteQuadric(disc);
 
-	glPopMatrix();
+    glPopMatrix();
 }
 
 void Renderer::renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width){
@@ -2951,7 +3033,7 @@ void Renderer::renderProgressBar(int size, int x, int y, Font2D *font){
 	//text
 	glColor3fv(defColor.ptr());
 	textRenderer->begin(font);
-	textRenderer->render(Conversion::toStr(static_cast<int>(size))+"%", x+maxProgressBar/2, y, true);
+	textRenderer->render(intToStr(static_cast<int>(size))+"%", x+maxProgressBar/2, y, true);
 	textRenderer->end();
 }
 
@@ -3041,14 +3123,15 @@ string Renderer::shadowsToStr(Shadows shadows){
 	}
 }
 
-Texture2D::Filter Renderer::strToTextureFilter(const string &s) {
-	if (s == "Bilinear") {
-		return Texture2D::FILTER_BILINEAR;
-	} else if (s == "Trilinear") {
-		return Texture2D::FILTER_TRILINEAR;
+Texture2D::Filter Renderer::strToTextureFilter(const string &s){
+	if(s=="Bilinear"){
+		return Texture2D::fBilinear;
+	}
+	else if(s=="Trilinear"){
+		return Texture2D::fTrilinear;
 	}
 
-	throw runtime_error("Error converting from string to FilterType, found: " + s);
+	throw runtime_error("Error converting from string to FilterType, found: "+s);
 }
 
-} // end namespace
+}}//end namespace

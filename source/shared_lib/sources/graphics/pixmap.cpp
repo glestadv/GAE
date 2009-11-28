@@ -352,9 +352,7 @@ void Pixmap1D::init(int w, int components){
 }
 
 Pixmap1D::~Pixmap1D(){
-	if(pixels) {
-		delete [] pixels;
-	}
+	delete [] pixels;
 }
 
 void Pixmap1D::load(const string &path){
@@ -371,7 +369,6 @@ void Pixmap1D::load(const string &path){
 }
 
 void Pixmap1D::loadBmp(const string &path){
-
 	PixmapIoBmp plb;
 	plb.openRead(path);
 
@@ -462,9 +459,7 @@ void Pixmap2D::init(int w, int h, int components){
 }
 
 Pixmap2D::~Pixmap2D(){
-	if(pixels) {
-		delete[] pixels;
-	}
+	delete[] pixels;
 }
 
 void Pixmap2D::load(const string &path){
@@ -726,10 +721,20 @@ void Pixmap2D::subCopy(int x, int y, const Pixmap2D *sourcePixmap){
 		throw runtime_error("Pixmap2D::subCopy(), bad dimensions");
 	}
 
-	const size_t chunkSize = sourcePixmap->getW() * sourcePixmap->getComponents();
-	for (int yy = 0; yy < sourcePixmap->getH(); ++yy) {
-		memcpy(getPixel(x, y + yy), sourcePixmap->getPixel(0, yy), chunkSize);
+	uint8 *pixel= new uint8[components];
+
+	for(int i=0; i<sourcePixmap->getW(); ++i){
+		for(int j=0; j<sourcePixmap->getH(); ++j){
+			sourcePixmap->getPixel(i, j, pixel);
+			setPixel(i+x, j+y, pixel);
+		}
 	}
+
+	delete pixel;
+}
+
+bool Pixmap2D::doDimensionsAgree(const Pixmap2D *pixmap){
+	return pixmap->getW() == w && pixmap->getH() == h;
 }
 
 // =====================================================
@@ -768,9 +773,7 @@ void Pixmap3D::init(int d, int components){
 }
 
 Pixmap3D::~Pixmap3D(){
-	if(pixels) {
-		delete[] pixels;
-	}
+	delete[] pixels;
 }
 
 void Pixmap3D::loadSlice(const string &path, int slice){

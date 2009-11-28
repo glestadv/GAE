@@ -37,7 +37,7 @@ using namespace Shared::Util;
 using namespace Shared::Graphics;
 using namespace Shared::Xml;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 //  class MainMenu
@@ -94,7 +94,7 @@ void MainMenu::render() {
 
 	if (config.getMiscDebugMode()) {
 		renderer.renderText(
-				"FPS: " + Conversion::toStr(lastFps),
+				"FPS: " + intToStr(lastFps),
 				coreData.getMenuFontNormal(), Vec3f(1.f), 10, 10, false);
 	}
 
@@ -180,4 +180,4 @@ MenuState::MenuState(Program &program, MainMenu *mainMenu, const string &stateNa
 			degToRad(startRotation.z))));
 }
 
-} // end namespace
+}}//end namespace

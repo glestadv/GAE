@@ -28,7 +28,7 @@ using namespace Shared::Util;
 using namespace Shared::Xml;
 using namespace Shared::Graphics;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class MenuBackground
@@ -110,7 +110,7 @@ MenuBackground::MenuBackground(){
 	//models
 	for(int i=0; i<5; ++i){
 		characterModels[i]= renderer.newModel(rsMenu);
-		characterModels[i]->load("data/core/menu/about_models/character"+Conversion::toStr(i)+".g3d");
+		characterModels[i]->load("data/core/menu/about_models/character"+intToStr(i)+".g3d");
 	}
 
 	//about position
@@ -179,5 +179,5 @@ Vec2f MenuBackground::computeRaindropPos(){
 	return Vec2f(random.randRange(-f, f), random.randRange(-f, f));
 }
 
-} // end namespace
+}}//end namespace
 

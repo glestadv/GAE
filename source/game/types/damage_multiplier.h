@@ -9,21 +9,21 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_DAMAGEMULTIPLIER_H_
-#define _GAME_DAMAGEMULTIPLIER_H_
+#ifndef _GLEST_GAME_DAMAGEMULTIPLIER_H_
+#define _GLEST_GAME_DAMAGEMULTIPLIER_H_
 
 #include <string>
 #include "element_type.h"
 
 using std::string;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // ===============================
 //  class AttackType
 // ===============================
 
-class AttackType : public IdNamePair {
+class AttackType : public NameIdPair {
 public:
 	void setName(const string &name)	{this->name = name;}
 	void setId(int id)					{this->id = id;}
@@ -33,7 +33,7 @@ public:
 //  class ArmorType
 // ===============================
 
-class ArmorType : public IdNamePair {
+class ArmorType : public NameIdPair {
 public:
 	void setName(const string &name)	{this->name = name;}
 	void setId(int id)					{this->id = id;}
@@ -61,6 +61,6 @@ public:
 	void setDamageMultiplier(const AttackType *att, const ArmorType *art, float value);
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

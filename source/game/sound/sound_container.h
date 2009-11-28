@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_SOUNDCONTAINER_H_
-#define _GAME_SOUNDCONTAINER_H_
+#ifndef _GLEST_GAME_SOUNDCONTAINER_H_
+#define _GLEST_GAME_SOUNDCONTAINER_H_
 
 #include <vector>
 
@@ -21,7 +21,7 @@ using std::vector;
 using Shared::Util::Random;
 using Shared::Sound::StaticSound;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class SoundContainer
@@ -48,6 +48,6 @@ public:
 	StaticSound *getRandSound() const;
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

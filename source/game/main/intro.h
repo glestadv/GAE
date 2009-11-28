@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_INTRO_H_
-#define _GAME_INTRO_H_
+#ifndef _GLEST_GAME_INTRO_H_
+#define _GLEST_GAME_INTRO_H_
 
 #include <vector>
 
@@ -27,7 +27,7 @@ using Shared::Graphics::Vec3f;
 using Shared::Graphics::Font2D;
 using Shared::Graphics::Texture2D;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 //	class Text
@@ -79,6 +79,6 @@ public:
 	virtual void mouseUpLeft(int x, int y);
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

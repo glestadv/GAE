@@ -74,6 +74,11 @@ public:
 		return x != v.x || y != v.y;
 	}
 
+   bool operator < ( const Vec2<T> &v ) const
+   {
+      return x < v.x || ( x == v.x && y < v.y );
+   }
+
 	Vec2<T> operator +(const Vec2<T> &v) const {
 		return Vec2(x + v.x, y + v.y);
 	}
@@ -949,19 +954,7 @@ public:
 };
 
 inline Vec3f::Vec3f(const Vec4f &v): SSE2Vec4f(v) {}
-#endif // USE_SSE2_INTRINSICS
-
-inline Vec2i round(const Vec2f &v) {
-	return Vec2i(static_cast<int>(roundf(v.x)), static_cast<int>(roundf(v.x)));
-}
-
-inline Vec3i round(const Vec3f &v) {
-	return Vec3i(static_cast<int>(roundf(v.x)), static_cast<int>(roundf(v.x)), static_cast<int>(roundf(v.z)));
-}
-
-inline Vec4i round(const Vec4f &v) {
-	return Vec4i(static_cast<int>(roundf(v.x)), static_cast<int>(roundf(v.x)), static_cast<int>(roundf(v.z)), static_cast<int>(roundf(v.w)));
-}
+#endif // USE_SSE2
 
 }} //end namespace
 

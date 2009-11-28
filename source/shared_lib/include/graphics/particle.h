@@ -52,23 +52,53 @@ public:
 //	class Particle
 // =====================================================
 
+
 class Particle {
 public:
-	enum BlendMode {
-		bmOne,
-		bmOneMinusAlpha
+	enum BlendFactor {
+		BLEND_FUNC_ZERO,
+		BLEND_FUNC_ONE,
+		BLEND_FUNC_SRC_COLOR,
+		BLEND_FUNC_ONE_MINUS_SRC_COLOR,
+		BLEND_FUNC_DST_COLOR,
+		BLEND_FUNC_ONE_MINUS_DST_COLOR,
+		BLEND_FUNC_SRC_ALPHA,
+		BLEND_FUNC_ONE_MINUS_SRC_ALPHA,
+		BLEND_FUNC_DST_ALPHA,
+		BLEND_FUNC_ONE_MINUS_DST_ALPHA,
+		BLEND_FUNC_CONSTANT_COLOR,
+		BLEND_FUNC_ONE_MINUS_CONSTANT_COLOR,
+		BLEND_FUNC_CONSTANT_ALPHA,
+		BLEND_FUNC_ONE_MINUS_CONSTANT_ALPHA,
+		BLEND_FUNC_SRC_ALPHA_SATURATE,
+
+		BLEND_FUNC_COUNT
 	};
+
+	static const char* blendFactorNames[BLEND_FUNC_COUNT];
+
+	enum BlendEquation {
+		BLEND_EQUATION_FUNC_ADD,
+		BLEND_EQUATION_FUNC_SUBTRACT,
+		BLEND_EQUATION_FUNC_REVERSE_SUBTRACT,
+		BLEND_EQUATION_MIN,
+		BLEND_EQUATION_MAX,
+
+		BLEND_EQUATION_COUNT
+	};
+
+	static const char* blendEquationNames[BLEND_EQUATION_COUNT];
 
 	enum PrimitiveType {
 		ptQuad,
 		ptLine
 	};
-/*
+
 	enum ProjectileStart {
 		psSelf,
 		psTarget,
 		psSky
-	};*/
+	};
 
 public:
 	//attributes
@@ -85,6 +115,9 @@ public:
 	//void init(const ParticleSystem &ps, const Vec3f &pos, const Vec3f &speed, const Vec3f &accel);
 	//void init2(const ParticleSystem &ps, const Vec3f &pos, const Vec3f &speed, const Vec3f &accel);
 
+	static BlendFactor getBlendFactor(const string &);
+	static BlendEquation getBlendEquation(const string &);
+
 	//get
 	Vec3f getPos() const		{return pos;}
 	Vec3f getLastPos() const	{return lastPos;}
@@ -94,6 +127,7 @@ public:
 	Vec4f getColor2() const		{return color2;}
 	float getSize() const		{return size;}
 	int getEnergy()	const		{return energy;}
+
 };
 
 class ParticleSystem;
@@ -117,7 +151,9 @@ class ParticleSystemBase {
 protected:
 	Random random;
 
-	Particle::BlendMode blendMode;
+	Particle::BlendFactor srcBlendFactor;
+	Particle::BlendFactor destBlendFactor;
+	Particle::BlendEquation blendEquationMode;
 	Particle::PrimitiveType primitiveType;
 	Texture *texture;
 	Model *model;
@@ -149,7 +185,9 @@ public:
 	virtual ~ParticleSystemBase(){}
 
 	//get
-	Particle::BlendMode getBlendMode() const			{return blendMode;}
+	Particle::BlendFactor getSrcBlendFactor() const		{return srcBlendFactor;}
+	Particle::BlendFactor getDestBlendFactor() const	{return destBlendFactor;}
+	Particle::BlendEquation getBlendEquationMode() const{return blendEquationMode;}
 	Particle::PrimitiveType getPrimitiveType() const	{return primitiveType;}
 	Texture *getTexture() const							{return texture;}
 	Model *getModel() const								{return model;}
@@ -171,31 +209,35 @@ public:
 	int getDrawCount() const							{return drawCount;}
 
 	//set
-	void setBlendMode(Particle::BlendMode blendMode)			{this->blendMode = blendMode;}
-	void setPrimitiveType(Particle::PrimitiveType primitiveType){this->primitiveType = primitiveType;}
-	void setTexture(Texture *texture)							{this->texture = texture;}
-	void setModel(Model *model)									{this->model = model;}
-	void setOffset(const Vec3f &offset)							{this->offset = offset;}
-	void setColor(const Vec4f &color)							{this->color = color;}
-	void setColor2(const Vec4f &color2)							{this->color2 = color2;}
-	void setColorNoEnergy(const Vec4f &colorNoEnergy)			{this->colorNoEnergy = colorNoEnergy;}
-	void setColor2NoEnergy(const Vec4f &color2NoEnergy)			{this->color2NoEnergy = color2NoEnergy;}
-	void setSize(float size)									{this->size = size;}
-	void setSizeNoEnergy(float sizeNoEnergy)					{this->sizeNoEnergy = sizeNoEnergy;}
-	void setSpeed(float speed)									{this->speed = speed;}
-	void setGravity(float gravity)								{this->gravity = gravity;}
-	void setMass(float mass)									{this->mass = mass;}
-	void setEmissionRate(int emissionRate)						{this->emissionRate = emissionRate;}
-	void setEnergy(int energy)									{this->energy = energy;}
-	void setEnergyVar(int energyVar)							{this->energyVar = energyVar;}
-	void setRadius(float radius)								{this->radius = radius;}
-	void setDrawCount(int drawCount)							{this->drawCount = drawCount;}
+	void setSrcBlendFactor(Particle::BlendFactor v)		{srcBlendFactor = v;}
+	void setDestBlendFactor(Particle::BlendFactor v)	{destBlendFactor = v;}
+	void setBlendEquationMode(Particle::BlendEquation v){blendEquationMode = v;}
+	void setPrimitiveType(Particle::PrimitiveType v)	{primitiveType = v;}
+	void setTexture(Texture *v)							{texture = v;}
+	void setModel(Model *v)								{model = v;}
+	void setOffset(const Vec3f &v)						{offset = v;}
+	void setColor(const Vec4f &v)						{color = v;}
+	void setColor2(const Vec4f &v)						{color2 = v;}
+	void setColorNoEnergy(const Vec4f &v)				{colorNoEnergy = v;}
+	void setColor2NoEnergy(const Vec4f &v)				{color2NoEnergy = v;}
+	void setSize(float v)								{size = v;}
+	void setSizeNoEnergy(float v)						{sizeNoEnergy = v;}
+	void setSpeed(float v)								{speed = v;}
+	void setGravity(float v)							{gravity = v;}
+	void setMass(float v)								{mass = v;}
+	void setEmissionRate(int v)							{emissionRate = v;}
+	void setEnergy(int v)								{energy = v;}
+	void setEnergyVar(int v)							{energyVar = v;}
+	void setRadius(float v)								{radius = v;}
+	void setDrawCount(int v)							{drawCount = v;}
 
 //	void load(const XmlNode *particleSystemNode, const string &dir);
 //	virtual ParticleSystem *create() = 0;
 	int getRandEnergy() 				{return energy + random.randRange(-energyVar, energyVar);}
 	void fudgeGravity()					{gravity = mass * density;}
 	void fudgeMassDensity()				{mass = 1.f; density = gravity;}
+
+	virtual bool isProjectile() const	{ return false; }
 };
 
 // =====================================================
@@ -319,11 +361,18 @@ public:
 
 // ===========================================================================
 //  AttackParticleSystem
+//
+/// Base class for Projectiles and Splashes
 // ===========================================================================
 
-/** Base class for Projectiles and Splashes. */
 class AttackParticleSystem: public ParticleSystem {
 protected:
+//	Model *model;
+//	Primitive primitive;
+//	Vec3f offset;
+//	float sizeNoEnergy;
+//	float gravity;
+
 	Vec3f direction;
 
 public:
@@ -332,7 +381,16 @@ public:
 
 	virtual void render(ParticleRenderer *pr, ModelRenderer *mr);
 
+//	Model *getModel() const			{return model;}
 	Vec3f getDirection() const		{return direction;}
+
+//	void setModel(Model *model)					{this->model= model;}
+//	void setOffset(Vec3f offset)				{this->offset= offset;}
+//	void setSizeNoEnergy(float sizeNoEnergy)	{this->sizeNoEnergy= sizeNoEnergy;}
+//	void setGravity(float gravity)				{this->gravity= gravity;}
+//	void setPrimitive(Primitive primitive)		{this->primitive= primitive;}
+
+//	static Primitive strToPrimitive(const string &str);
 };
 
 // =====================================================
@@ -388,7 +446,10 @@ public:
 	void setTrajectoryScale(float trajectoryScale)			{this->trajectoryScale= trajectoryScale;}
 	void setTrajectoryFrequency(float trajectoryFrequency)	{this->trajectoryFrequency= trajectoryFrequency;}
 	void setPath(Vec3f startPos, Vec3f endPos);
+
 	void setTarget(const Entity *target)					{this->target = target;}
+	const Entity* getTarget() const							{return this->target; }
+	virtual bool isProjectile() const						{ return true; }
 
 	static Trajectory strToTrajectory(const string &str);
 };
@@ -444,6 +505,18 @@ public:
 		while(!particleSystems.empty()) {
 			delete particleSystems.front();
 			particleSystems.pop_front();
+		}
+	}
+	
+	void checkTargets(const Entity *dead) {
+		list<ParticleSystem*>::iterator it = particleSystems.begin();
+		for ( ; it != particleSystems.end(); ++it ) {
+			if ( *it && (*it)->isProjectile() ) {
+				ProjectileParticleSystem* pps = static_cast<ProjectileParticleSystem*>(*it);
+				if ( pps->getTarget() == dead ) {
+					pps->setTarget(NULL);
+				}
+			}
 		}
 	}
 

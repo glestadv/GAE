@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MENUSTATENEWGAME_H_
-#define _GAME_MENUSTATENEWGAME_H_
+#ifndef _GLEST_GAME_MENUSTATENEWGAME_H_
+#define _GLEST_GAME_MENUSTATENEWGAME_H_
 
 #include "menu_state_start_game_base.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // ===============================
 // 	class MenuStateNewGame
@@ -47,7 +47,7 @@ private:
 	//MapInfo mapInfo;
 	GraphicLabel labelRandomize;
 	GraphicListBox listBoxRandomize;
-	bool dirty;
+	//GraphicMessageBox *msgBox;
 
 
 public:
@@ -58,15 +58,15 @@ public:
 	void render();
 	void update();
 
-protected:
-	void updateGameSettings();
-	
 private:
+    void loadGameSettings(GameSettings *gameSettings);
+	//void loadMapInfo(string file, MapInfo *mapInfo);
 	void reloadFactions();
 	void updateControlers();
 	bool isUnconnectedSlots();
+	void updateNetworkSlots();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

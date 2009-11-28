@@ -11,53 +11,47 @@
 
 #include "pch.h"
 #include "network_manager.h"
-#include "config.h"
 
 #include "leak_dumper.h"
 
-using Game::Config;
-
-namespace Game { namespace Net {
+namespace Glest{ namespace Game{
 
 // =====================================================
-// class NetworkManager
+//	class NetworkManager
 // =====================================================
-/*
+
 NetworkManager &NetworkManager::getInstance() {
 	static NetworkManager networkManager;
 	return networkManager;
 }
-*/
 
-NetworkManager::NetworkManager() : gameInterface(NULL), networkRole(NR_IDLE) {
-}
-
-NetworkManager::~NetworkManager() {
-	if (gameInterface) {
-		delete gameInterface;
-	}
+NetworkManager::NetworkManager() {
+	gameNetworkInterface = NULL;
+	networkRole = nrIdle;
 }
 
 void NetworkManager::init(NetworkRole networkRole) {
-	Config &config = Config::getInstance();
-	assert(gameInterface == NULL);
+	assert(gameNetworkInterface == NULL);
 
 	this->networkRole = networkRole;
 
-	if (networkRole == NR_SERVER) {
-		gameInterface = new ServerInterface(config.getNetServerPort());
+	if(networkRole == nrServer) {
+		gameNetworkInterface = new ServerInterface();
 	} else {
-		gameInterface = new ClientInterface(config.getNetClientPort());
+		gameNetworkInterface = new ClientInterface();
+	}
+}
+
+NetworkManager::~NetworkManager() {
+	if(gameNetworkInterface) {
+		delete gameNetworkInterface;
 	}
 }
 
 void NetworkManager::end() {
-	if(gameInterface) {
-		gameInterface->end();
-		delete gameInterface;
-		gameInterface = NULL;
-		networkRole = NR_IDLE;
-	}
+	delete gameNetworkInterface;
+	gameNetworkInterface = NULL;
+	networkRole = nrIdle;
 }
 
-}} // end namespace
+}}//end namespace

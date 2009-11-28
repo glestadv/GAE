@@ -30,7 +30,6 @@
 #include "sdl_private.h"
 #include "window.h"
 #include "noimpl.h"
-#include "platform_exception.h"
 
 #include "leak_dumper.h"
 
@@ -51,29 +50,11 @@ namespace Private {
 
 PlatformExceptionHandler *PlatformExceptionHandler::singleton = NULL;
 
-PlatformExceptionHandler::PlatformExceptionHandler() : installed(false) {
-	memset(&old_sigill, 0, sizeof(old_sigill));
-	memset(&old_sigsegv, 0, sizeof(old_sigsegv));
-	memset(&old_sigabrt, 0, sizeof(old_sigabrt));
-	memset(&old_sigfpe, 0, sizeof(old_sigfpe));
-	memset(&old_sigbus, 0, sizeof(old_sigbus));
-	assert(!singleton);
-	singleton = this;
-}
-
-PlatformExceptionHandler::~PlatformExceptionHandler() {
-	assert(singleton == this);
-	if(installed) {
-		uninstall();
-	}
-	singleton = NULL;
-}
+//PlatformExceptionHandler::~PlatformExceptionHandler(){}
 
 void PlatformExceptionHandler::install() {
-	// FIXME: check return values of sigaction calls and report any errors (throw a nice PosixException)
 	assert(this);
 	assert(singleton == this);
-	assert(!installed);
 	struct sigaction action;
 	memset(&action, 0, sizeof(action));
 	action.sa_handler = NULL;
@@ -82,26 +63,12 @@ void PlatformExceptionHandler::install() {
 	action.sa_sigaction = PlatformExceptionHandler::handler;
 #ifndef DEBUG	
 #endif
-	sigaction(SIGILL, &action, &old_sigill);
-	sigaction(SIGSEGV, &action, &old_sigsegv);
-	sigaction(SIGABRT, &action, &old_sigabrt);
-	sigaction(SIGFPE, &action, &old_sigfpe);
-	sigaction(SIGBUS, &action, &old_sigbus);
-	installed = true;
-}
+	sigaction(SIGILL, &action, NULL);
+	sigaction(SIGSEGV, &action, NULL);
+	sigaction(SIGABRT, &action, NULL);
+	sigaction(SIGFPE, &action, NULL);
+	sigaction(SIGBUS, &action, NULL);
 
-void PlatformExceptionHandler::uninstall() {
-	assert(this);
-	assert(singleton == this);
-	assert(installed);
-#ifndef DEBUG	
-#endif
-	sigaction(SIGILL, &old_sigill, NULL);
-	sigaction(SIGSEGV, &old_sigsegv, NULL);
-	sigaction(SIGABRT, &old_sigabrt, NULL);
-	sigaction(SIGFPE, &old_sigfpe, NULL);
-	sigaction(SIGBUS, &old_sigbus, NULL);
-	installed = false;
 }
 
 void PlatformExceptionHandler::handler(int signo, siginfo_t *info, void *context) {
@@ -297,48 +264,28 @@ void PlatformExceptionHandler::handler(int signo, siginfo_t *info, void *context
 	exit(1);
 }
 
-// =====================================================
-// class DirectoryListing
-// =====================================================
-
-DirectoryListing::DirectoryListing(const string &path_param)
-		: path(path_param)
-		, exists(false)
-		, i(-1) {
-	bzero(&globbuf, sizeof(globbuf));
-
-	/* Stupid windows is searching for all files without extension when *. is
-	 * specified as wildcard, so we have to make this behave the same
-	 */
-	if(path.compare(path.size() - 2, 2, "*.") == 0) {
-		path = path.substr(0, path.size() - 2);
-		path += "*";
-	}
-
-	if(glob(path.c_str(), 0, 0, &globbuf) < 0) {
-		throw PosixException(
-				("Error searching for files in directory '" + path + "'.  errno may be zero, in this case, please report as a bug.").c_str(),
-				"glob(path.c_str(), 0, 0, &globbuf)",
-				NULL, __FILE__, __LINE__);
-	}
-	exists = true;
-}
-
-DirectoryListing::~DirectoryListing() {
-	if(exists) {
-		globfree(&globbuf);
-	}
-}
-
-const char *DirectoryListing::getNext() {
-	return ++i < globbuf.gl_pathc ? globbuf.gl_pathv[i] : NULL;
-}
-
 
 // =====================================
 //         Misc
 // =====================================
 
+char *initDirIterator(const string &path, DirIterator &di) {
+	string mypath = path;
+	di.i = 0;
+
+	/* Stupid win32 is searching for all files without extension when *. is
+	 * specified as wildcard
+	 */
+	if(mypath.compare(mypath.size() - 2, 2, "*.") == 0) {
+		mypath = mypath.substr(0, mypath.size() - 2);
+		mypath += "*";
+	}
+
+	if(glob(mypath.c_str(), 0, 0, &di.globbuf) < 0) {
+		throw runtime_error("Error searching for files '" + path + "': " + strerror(errno));
+	}
+	return di.globbuf.gl_pathc ? di.globbuf.gl_pathv[di.i] : NULL;
+}
 
 void mkdir(const string &path, bool ignoreDirExists) {
 	if(::mkdir(path.c_str(), S_IRWXU | S_IROTH | S_IXOTH)) {
@@ -382,10 +329,6 @@ bool ask(string message) {
 	int res;
 	std::cin >> res;
 	return res != 0;
-}
-
-void exceptionMessage(const exception &excp) {
-	std::cerr << "Exception: " << excp.what() << std::endl;
 }
 
 }}//end namespace

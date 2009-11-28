@@ -31,26 +31,39 @@ using namespace Shared::Xml;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // ===============================
 // 	class Level
 // ===============================
 
-void Level::load(const XmlNode *levelNode, const string &dir, const TechTree *tt, const FactionType *ft) {
-	name = levelNode->getAttribute("name")->getRestrictedValue();
-	kills = levelNode->getAttribute("kills")->getIntValue();
-
-	const XmlAttribute *defaultsAtt = levelNode->getAttribute("defaults", 0);
-	if(defaultsAtt && !defaultsAtt->getBoolValue()) {
-		maxHpMult = 1.f;
-		maxEpMult = 1.f;
-		sightMult = 1.f;
-		armorMult = 1.f;
-		effectStrength = 0.0f;
+bool Level::load(const XmlNode *levelNode, const string &dir, const TechTree *tt, const FactionType *ft) {
+	bool loadOk = true;
+	try { name = levelNode->getAttribute("name")->getRestrictedValue(); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what() );
+		loadOk = false;
 	}
 
-	EnhancementTypeBase::load(levelNode, dir, tt, ft);
+	try { 
+		kills = levelNode->getAttribute("kills")->getIntValue(); 
+		const XmlAttribute *defaultsAtt = levelNode->getAttribute("defaults", 0);
+		if(defaultsAtt && !defaultsAtt->getBoolValue()) {
+			maxHpMult = 1.f;
+			maxEpMult = 1.f;
+			sightMult = 1.f;
+			armorMult = 1.f;
+			effectStrength = 0.0f;
+		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError ( dir, e.what() );
+		loadOk = false;
+	}
+
+	if ( ! EnhancementTypeBase::load(levelNode, dir, tt, ft) )
+		loadOk = false;
+	return loadOk;
 }
 
 // ===============================
@@ -58,9 +71,9 @@ void Level::load(const XmlNode *levelNode, const string &dir, const TechTree *tt
 // ===============================
 /*
 void PetRule::load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft){
-	string unitTypeName = prn->getAttribute("type")->getRestrictedValue();
-	type = ft->getUnitType(unitTypeName);
-	count = prn->getAttribute("count")->getIntValue();
+string unitTypeName = prn->getAttribute("type")->getRestrictedValue();
+type = ft->getUnitType(unitTypeName);
+count = prn->getAttribute("count")->getIntValue();
 }
 */
 
@@ -75,7 +88,7 @@ void PetRule::load(const XmlNode *prn, const string &dir, const TechTree *tt, co
 
 UnitType::UnitType(){
 	reset();
-    multiSelect= false;
+	multiSelect= false;
 	cellMap= NULL;
 }
 
@@ -88,58 +101,89 @@ UnitType::~UnitType(){
 }
 
 void UnitType::preLoad(const string &dir){
-	name= lastDir(dir);
+	name= basename(dir);
 }
 
-void UnitType::load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums){
+bool UnitType::load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum){
 	this->id = id;
 	string path;
 
+	Logger::getInstance().add("Unit type: " + dir, true);
+	bool loadOk = true;
+	//file load
+	path= dir+"/"+name+".xml";
+
+	checksum.addFile(path, true);
+
+	XmlTree xmlTree;
+	try { xmlTree.load(path); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		return false; // bail
+	}
+	const XmlNode *unitNode;
+	try { unitNode = xmlTree.getRootNode(); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		return false;
+	}
+	const XmlNode *parametersNode;
+	try { parametersNode = unitNode->getChild("parameters"); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		return false; // bail out
+	}
+	if ( ! UnitStatsBase::load(parametersNode, dir, techTree, factionType) )
+		loadOk = false;
+	halfSize = size / 2.f;
+	halfHeight = height / 2.f;
+	//prod time
+	try { productionTime= parametersNode->getChildIntValue("time"); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//multi-build
+	try { multiBuild = parametersNode->getOptionalBoolValue("multi-build"); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//multi selection
+	try { multiSelect= parametersNode->getChildBoolValue("multi-selection"); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//cellmap
 	try {
-		Logger::getInstance().add("Unit type: " + dir, true);
-
-		//file load
-		path= dir+"/"+name+".xml";
-
-		checksums.addFile(path, true);
-
-		XmlTree xmlTree;
-		xmlTree.load(path);
-		const XmlNode *unitNode= xmlTree.getRootNode();
-
-		const XmlNode *parametersNode= unitNode->getChild("parameters");
-
-		UnitStatsBase::load(parametersNode, dir, techTree, factionType);
-		
-		halfSize = size / 2.f;
-		halfHeight = height / 2.f;
-
-		//prod time
-		productionTime= parametersNode->getChildIntValue("time");
-
-		//multi-build
-		multiBuild = parametersNode->getOptionalBoolValue("multi-build");
-
-		//multi selection
-		multiSelect= parametersNode->getChildBoolValue("multi-selection");
-
-		//cellmap
 		const XmlNode *cellMapNode= parametersNode->getChild("cellmap", 0, false);
 		if(cellMapNode && cellMapNode->getAttribute("value")->getBoolValue()){
 			cellMap= new bool[size*size];
 			for(int i=0; i<size; ++i){
-				const XmlNode *rowNode= cellMapNode->getChild("row", i);
-				string row= rowNode->getAttribute("value")->getRestrictedValue();
-				if(row.size()!=size){
-					throw runtime_error("Cellmap row has not the same length as unit size");
+				try {
+					const XmlNode *rowNode= cellMapNode->getChild("row", i);
+					string row= rowNode->getAttribute("value")->getRestrictedValue();
+					if(row.size()!=size){
+						throw runtime_error("Cellmap row has not the same length as unit size");
+					}
+					for(int j=0; j<row.size(); ++j){
+						cellMap[i*size+j]= row[j]=='0'? false: true;
+					}
 				}
-				for(int j=0; j<row.size(); ++j){
-					cellMap[i*size+j]= row[j]=='0'? false: true;
+				catch ( runtime_error e ) {
+					Logger::getErrorLog().addXmlError(path, e.what());
+					loadOk = false;
 				}
 			}
 		}
-
-		//levels
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//levels
+	try {
 		const XmlNode *levelsNode= parametersNode->getChild("levels", 0, false);
 		if(levelsNode) {
 			levels.resize(levelsNode->getChildCount());
@@ -148,17 +192,31 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 				levels[i].load(levelNode, dir, techTree, factionType);
 			}
 		}
-
-		//fields
-		fields.load(parametersNode->getChild("fields"), dir, techTree, factionType);
-
-		//properties
-		properties.load(parametersNode->getChild("properties"), dir, techTree, factionType);
-
-		//ProducibleType parameters
-		ProducibleType::load(parametersNode, dir, techTree, factionType);
-
-		//resources stored
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//fields
+	try { fields.load(parametersNode->getChild("fields"), dir, techTree, factionType); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//properties
+	try { properties.load(parametersNode->getChild("properties"), dir, techTree, factionType); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//ProducibleType parameters
+	try { ProducibleType::load(parametersNode, dir, techTree, factionType); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//resources stored
+	try {
 		const XmlNode *resourcesStoredNode= parametersNode->getChild("resources-stored", 0, false);
 		if(resourcesStoredNode) {
 			storedResources.resize(resourcesStoredNode->getChildCount());
@@ -169,24 +227,43 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 				storedResources[i].init(techTree->getResourceType(name), amount);
 			}
 		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//image
+	try { DisplayableType::load(parametersNode, dir); }
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
 
-		//image
-		DisplayableType::load(parametersNode, dir);
-
-		//image cancel
+	//image cancel
+	try {
 		const XmlNode *imageCancelNode= parametersNode->getChild("image-cancel");
 		cancelImage= Renderer::getInstance().newTexture2D(rsGame);
 		cancelImage->load(dir+"/"+imageCancelNode->getAttribute("path")->getRestrictedValue());
-
-		//meeting point
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//meeting point
+	try {
 		const XmlNode *meetingPointNode= parametersNode->getChild("meeting-point");
 		meetingPoint= meetingPointNode->getAttribute("value")->getBoolValue();
 		if(meetingPoint){
 			meetingPointImage= Renderer::getInstance().newTexture2D(rsGame);
 			meetingPointImage->load(dir+"/"+meetingPointNode->getAttribute("image-path")->getRestrictedValue());
 		}
-
-		//selection sounds
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//selection sounds
+	try {
 		const XmlNode *selectionSoundNode= parametersNode->getChild("selection-sounds");
 		if(selectionSoundNode->getAttribute("enabled")->getBoolValue()){
 			selectionSounds.resize(selectionSoundNode->getChildCount());
@@ -198,8 +275,13 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 				selectionSounds[i]= sound;
 			}
 		}
-
-		//command sounds
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//command sounds
+	try {
 		const XmlNode *commandSoundNode= parametersNode->getChild("command-sounds");
 		if(commandSoundNode->getAttribute("enabled")->getBoolValue()){
 			commandSounds.resize(commandSoundNode->getChildCount());
@@ -211,8 +293,14 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 				commandSounds[i]= sound;
 			}
 		}
-
-		//skills
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	//skills
+	try
+	{
 		const XmlNode *skillsNode= unitNode->getChild("skills");
 		skillTypes.resize(skillsNode->getChildCount());
 		for(int i=0; i<skillTypes.size(); ++i){
@@ -223,8 +311,14 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 			skillType->load(sn, dir, techTree, factionType);
 			skillTypes[i]= skillType;
 		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		return false; // if skills are screwy, stop
+	}
 
-		//commands
+	//commands
+	try {
 		const XmlNode *commandsNode = unitNode->getChild("commands");
 		commandTypes.resize(commandsNode->getChildCount());
 		for (int i = 0; i < commandTypes.size(); ++i) {
@@ -235,68 +329,85 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 			commandType->load(commandNode, dir, techTree, factionType);
 			commandTypes[i] = commandType;
 		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
 
-		// if type has a meeting point, add a SetMeetingPoint command
-		if(meetingPoint) {
-			commandTypes.push_back(new SetMeetingPointCommandType());
-			commandTypes.back()->setUnitTypeAndIndex(this, commandTypes.size() - 1);
-		}
+	if ( !loadOk ) return false; // unsafe to keep going...
 
-		computeFirstStOfClass();
-		computeFirstCtOfClass();
+	// if type has a meeting point, add a SetMeetingPoint command
+	if(meetingPoint) {
+		commandTypes.push_back(new SetMeetingPointCommandType());
+		commandTypes.back()->setUnitTypeAndIndex(this, commandTypes.size() - 1);
+	}
 
+	computeFirstStOfClass();
+	computeFirstCtOfClass();
+	try { // Logger::addXmlError() expects a char*, so it's easier just to throw & catch ;)
 		if(!getFirstStOfClass(scStop)) {
 			throw runtime_error("Every unit must have at least one stop skill: "+ path);
 		}
 		if(!getFirstStOfClass(scDie)) {
 			throw runtime_error("Every unit must have at least one die skill: "+ path);
 		}
+	}
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
+	}
+	// if it's mobile and doesn't have a fall down skill, give it one
+	if(!firstSkillTypeOfClass[scFallDown] && firstSkillTypeOfClass[scMove]) {
+		skillTypes.push_back(new FallDownSkillType(firstSkillTypeOfClass[scDie]));
+	}
 
-		// if it's mobile and doesn't have a fall down skill, give it one
-		if(!firstSkillTypeOfClass[scFallDown] && firstSkillTypeOfClass[scMove]) {
-			skillTypes.push_back(new FallDownSkillType(firstSkillTypeOfClass[scDie]));
-		}
+	if(!firstSkillTypeOfClass[scGetUp] && firstSkillTypeOfClass[scMove]) {
+		skillTypes.push_back(new GetUpSkillType(firstSkillTypeOfClass[scMove]));
+	}
 
-		if(!firstSkillTypeOfClass[scGetUp] && firstSkillTypeOfClass[scMove]) {
-			skillTypes.push_back(new GetUpSkillType(firstSkillTypeOfClass[scMove]));
-		}
+	//push dummy wait for server skill type and recalculate first of skill cache
+	skillTypes.push_back(new WaitForServerSkillType(getFirstStOfClass(scStop)));
+	computeFirstStOfClass();
 
-		//push dummy wait for server skill type and recalculate first of skill cache
-		skillTypes.push_back(new WaitForServerSkillType(getFirstStOfClass(scStop)));
-		computeFirstStOfClass();
+	/*
+	//petRules
+	const XmlNode *petRulesNode= unitNode->getChild("pet-rules", 0, false);
+	if(petRulesNode) {
+	PetRule *petRule;
+	petRules.resize(petRulesNode->getChildCount());
+	for(int i=0; i<petRules.size(); ++i) {
+	const XmlNode *n= petRulesNode->getChild("pet-rule", i);
+	petRules.push_back(petRule = new PetRule());
+	petRule->load(n, dir, techTree, factionType);
+	}
+	}
+	*/
 
-		/*
-		//petRules
-		const XmlNode *petRulesNode= unitNode->getChild("pet-rules", 0, false);
-		if(petRulesNode) {
-			PetRule *petRule;
-			petRules.resize(petRulesNode->getChildCount());
-			for(int i=0; i<petRules.size(); ++i) {
-				const XmlNode *n= petRulesNode->getChild("pet-rule", i);
-				petRules.push_back(petRule = new PetRule());
-				petRule->load(n, dir, techTree, factionType);
-			}
-		}
-		*/
-
-		//emanations
+	//emanations
+	try {
 		const XmlNode *emanationsNode = parametersNode->getChild("emanations", 0, false);
-
 		if (emanationsNode) {
 			emanations.resize(emanationsNode->getChildCount());
-
 			for (int i = 0; i < emanationsNode->getChildCount(); ++i) {
-				const XmlNode *emanationNode = emanationsNode->getChild("emanation", i);
-				Emanation *emanation = new Emanation();
-				emanation->load(emanationNode, dir, techTree, factionType);
-				emanations[i] = emanation;
+				try {
+					const XmlNode *emanationNode = emanationsNode->getChild("emanation", i);
+					Emanation *emanation = new Emanation();
+					emanation->load(emanationNode, dir, techTree, factionType);
+					emanations[i] = emanation;
+				}
+				catch ( runtime_error e ) {
+					Logger::getErrorLog().addXmlError(path, e.what());
+					loadOk = false;
+				}
 			}
 		}
 	}
-	//Exception handling (conversions and so on);
-	catch(const exception &e){
-		throw runtime_error("Error loading UnitType: " + path + "\n" + e.what());
+	catch ( runtime_error e ) {
+		Logger::getErrorLog().addXmlError(path, e.what());
+		loadOk = false;
 	}
+	return loadOk;   
 }
 
 // ==================== get ====================
@@ -304,19 +415,19 @@ void UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 
 
 const CommandType *UnitType::getCommandType(const string &name) const {
-	for (CommandTypes::const_iterator i = commandTypes.begin(); i != commandTypes.end(); ++i) {
-		if ((*i)->getName() == name) {
+	for(CommandTypes::const_iterator i = commandTypes.begin(); i != commandTypes.end(); ++i) {
+		if((*i)->getName() == name) {
 			return (*i);
 		}
 	}
 	return NULL;
 }
 
-const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *resourceType) const {
-	for (int i = 0; i < commandTypes.size(); ++i) {
-		if (commandTypes[i]->getClass() == ccHarvest) {
-			const HarvestCommandType *hct = static_cast<const HarvestCommandType*>(commandTypes[i]);
-			if (hct->canHarvest(resourceType)) {
+const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *resourceType) const{
+	for(int i=0; i<commandTypes.size(); ++i){
+		if(commandTypes[i]->getClass()== ccHarvest){
+			const HarvestCommandType *hct= static_cast<const HarvestCommandType*>(commandTypes[i]);
+			if(hct->canHarvest(resourceType)){
 				return hct;
 			}
 		}
@@ -324,11 +435,11 @@ const HarvestCommandType *UnitType::getFirstHarvestCommand(const ResourceType *r
 	return NULL;
 }
 
-const AttackCommandType *UnitType::getFirstAttackCommand(Field field) const {
-	for (int i = 0; i < commandTypes.size(); ++i) {
-		if (commandTypes[i]->getClass() == ccAttack) {
-			const AttackCommandType *act = static_cast<const AttackCommandType*>(commandTypes[i]);
-			if (act->getAttackSkillTypes()->getField(field)) {
+const AttackCommandType *UnitType::getFirstAttackCommand(Zone zone) const{
+	for(int i=0; i<commandTypes.size(); ++i){
+		if(commandTypes[i]->getClass()== ccAttack){
+			const AttackCommandType *act= static_cast<const AttackCommandType*>(commandTypes[i]);
+			if(act->getAttackSkillTypes()->getZone(zone)){
 				return act;
 			}
 		}
@@ -336,11 +447,11 @@ const AttackCommandType *UnitType::getFirstAttackCommand(Field field) const {
 	return NULL;
 }
 
-const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaired) const {
-	for (int i = 0; i < commandTypes.size(); ++i) {
-		if (commandTypes[i]->getClass() == ccRepair) {
-			const RepairCommandType *rct = static_cast<const RepairCommandType*>(commandTypes[i]);
-			if (rct->isRepairableUnitType(repaired)) {
+const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaired) const{
+	for(int i=0; i<commandTypes.size(); ++i){
+		if(commandTypes[i]->getClass()== ccRepair){
+			const RepairCommandType *rct= static_cast<const RepairCommandType*>(commandTypes[i]);
+			if(rct->isRepairableUnitType(repaired)){
 				return rct;
 			}
 		}
@@ -348,66 +459,70 @@ const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaire
 	return NULL;
 }
 
-int UnitType::getStore(const ResourceType *rt) const {
-	for (int i = 0; i < storedResources.size(); ++i) {
-		if (storedResources[i].getType() == rt) {
+int UnitType::getStore(const ResourceType *rt) const{
+	for(int i=0; i<storedResources.size(); ++i){
+		if(storedResources[i].getType()==rt){
 			return storedResources[i].getAmount();
 		}
 	}
 	return 0;
 }
 
-const SkillType *UnitType::getSkillType(const string &skillName, SkillClass skillClass) const {
-	for (int i = 0; i < skillTypes.size(); ++i) {
-		if (skillTypes[i]->getName() == skillName) {
-			if (skillTypes[i]->getClass() == skillClass || skillClass == scCount) {
+const SkillType *UnitType::getSkillType(const string &skillName, SkillClass skillClass) const{
+	for(int i=0; i<skillTypes.size(); ++i){
+		if(skillTypes[i]->getName()==skillName){
+			if(skillTypes[i]->getClass() == skillClass || skillClass == scCount){
 				return skillTypes[i];
-			} else {
-				throw runtime_error("Skill \"" + skillName + "\" is not of class \""
-						+ SkillType::skillClassToStr(skillClass));
+			}
+			else{
+				throw runtime_error("Skill \""+skillName+"\" is not of class \""+SkillType::skillClassToStr(skillClass));
 			}
 		}
 	}
-	throw runtime_error("No skill named \"" + skillName + "\"");
+	throw runtime_error("No skill named \""+skillName+"\"");
 }
 
 
 // ==================== has ====================
 
-bool UnitType::hasSkillClass(SkillClass skillClass) const {
-	return firstSkillTypeOfClass[skillClass] != NULL;
+bool UnitType::hasSkillClass(SkillClass skillClass) const{
+	return firstSkillTypeOfClass[skillClass]!=NULL;
 }
 
-bool UnitType::hasCommandType(const CommandType *commandType) const {
-	assert(commandType != NULL);
-	for (int i = 0; i < commandTypes.size(); ++i) {
-		if (commandTypes[i] == commandType) {
+bool UnitType::hasCommandType(const CommandType *commandType) const{
+	assert(commandType!=NULL);
+	for(int i=0; i<commandTypes.size(); ++i){
+		if(commandTypes[i]==commandType){
 			return true;
 		}
 	}
 	return false;
 }
 
-bool UnitType::hasCommandClass(CommandClass commandClass) const {
-	return firstCommandTypeOfClass[commandClass] != NULL;
+bool UnitType::hasCommandClass(CommandClass commandClass) const{
+	return firstCommandTypeOfClass[commandClass]!=NULL;
 }
 
-bool UnitType::hasSkillType(const SkillType *skillType) const {
-	assert(skillType != NULL);
-	for (int i = 0; i < skillTypes.size(); ++i) {
-		if (skillTypes[i] == skillType) {
+bool UnitType::hasSkillType(const SkillType *skillType) const{
+	assert(skillType!=NULL);
+	for(int i=0; i<skillTypes.size(); ++i){
+		if(skillTypes[i]==skillType){
 			return true;
 		}
 	}
 	return false;
 }
 
-bool UnitType::isOfClass(UnitClass uc) const {
-	switch (uc) {
-	case ucWarrior:		return hasSkillClass(scAttack) && !hasSkillClass(scHarvest);
-	case ucWorker:		return hasSkillClass(scBuild) || hasSkillClass(scRepair);
-	case ucBuilding:	return hasSkillClass(scBeBuilt) && !hasSkillClass(scMove);
-	default:		assert(false);
+bool UnitType::isOfClass(UnitClass uc) const{
+	switch(uc){
+case ucWarrior:
+	return hasSkillClass(scAttack) && !hasSkillClass(scHarvest);
+case ucWorker:
+	return hasSkillClass(scBuild) || hasSkillClass(scRepair);
+case ucBuilding:
+	return hasSkillClass(scBeBuilt) && !hasSkillClass(scMove);
+default:
+	assert(false);
 	}
 	return false;
 }
@@ -416,26 +531,26 @@ bool UnitType::isOfClass(UnitClass uc) const {
 
 void UnitType::computeFirstStOfClass(){
 	for(int j= 0; j<scCount; ++j){
-        firstSkillTypeOfClass[j]= NULL;
-        for(int i= 0; i<skillTypes.size(); ++i){
-            if(skillTypes[i]->getClass()== SkillClass(j)){
-                firstSkillTypeOfClass[j]= skillTypes[i];
-                break;
-            }
-        }
-    }
+		firstSkillTypeOfClass[j]= NULL;
+		for(int i= 0; i<skillTypes.size(); ++i){
+			if(skillTypes[i]->getClass()== SkillClass(j)){
+				firstSkillTypeOfClass[j]= skillTypes[i];
+				break;
+			}
+		}
+	}
 }
 
 void UnitType::computeFirstCtOfClass(){
-    for(int j=0; j<ccCount; ++j){
-        firstCommandTypeOfClass[j]= NULL;
-        for(int i=0; i<commandTypes.size(); ++i){
-            if(commandTypes[i]->getClass()== CommandClass(j)){
-                firstCommandTypeOfClass[j]= commandTypes[i];
-                break;
-            }
-        }
-    }
+	for(int j=0; j<ccCount; ++j){
+		firstCommandTypeOfClass[j]= NULL;
+		for(int i=0; i<commandTypes.size(); ++i){
+			if(commandTypes[i]->getClass()== CommandClass(j)){
+				firstCommandTypeOfClass[j]= commandTypes[i];
+				break;
+			}
+		}
+	}
 }
 
 const CommandType* UnitType::findCommandTypeById(int id) const{
@@ -448,4 +563,4 @@ const CommandType* UnitType::findCommandTypeById(int id) const{
 	return NULL;
 }
 
-} // end namespace
+}}//end namespace

@@ -12,9 +12,7 @@
 #ifndef _SHARED_GRAPHICS_GRAPHICSINTERFACE_H_
 #define _SHARED_GRAPHICS_GRAPHICSINTERFACE_H_
 
-#include "patterns.h"
-
-namespace Shared { namespace Graphics {
+namespace Shared{ namespace Graphics{
 
 class GraphicsFactory;
 class Context;
@@ -25,7 +23,7 @@ class Context;
 ///	Interface for the graphic engine
 // =====================================================
 
-class GraphicsInterface : Uncopyable {
+class GraphicsInterface{
 private:
 	GraphicsFactory *graphicsFactory;
 	Context *currentContext;
@@ -36,6 +34,8 @@ private:
 
 private:
 	GraphicsInterface();
+	GraphicsInterface(GraphicsInterface &);
+	void operator=(GraphicsInterface &);
 
 public:
 	static GraphicsInterface &getInstance();

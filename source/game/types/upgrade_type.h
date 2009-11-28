@@ -9,18 +9,18 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_UPGRADETYPE_H_
-#define _GAME_UPGRADETYPE_H_
+#ifndef _GLEST_GAME_UPGRADETYPE_H_
+#define _GLEST_GAME_UPGRADETYPE_H_
 
 #include "element_type.h"
 #include "checksum.h"
 #include "xml_parser.h"
 #include "unit_stats_base.h"
 
-using Shared::Util::Checksums;
+using Shared::Util::Checksum;
 using namespace Shared::Xml;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 class UnitType;
 class Unit;
@@ -39,8 +39,8 @@ private:
     vector<const UnitType*> effects;
 
 public:
-	void preLoad(const string &dir)			{name=lastDir(dir);}
-	virtual void load(const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums);
+	void preLoad(const string &dir)			{name=basename(dir);}
+	virtual bool load(const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum);
 
     //get all
 	int getEffectCount() const				{return effects.size();}
@@ -53,6 +53,6 @@ public:
 	string getDesc() const;
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

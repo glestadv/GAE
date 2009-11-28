@@ -22,7 +22,7 @@
 
 using namespace std;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class Selection
@@ -226,6 +226,11 @@ void Selection::update() {
 
 		meetable = uniform && commandable && frontUT->hasMeetingPoint();
 	}
+
+	//in case Game::init() isn't called, eg crash at loading data
+	if (gui) {
+		gui->onSelectionUpdated();
+	}
 }
 
 void Selection::load(const XmlNode *node) {
@@ -261,4 +266,4 @@ void Selection::save(XmlNode *node) const {
 	}
 }
 
-} // end namespace
+}}//end namespace

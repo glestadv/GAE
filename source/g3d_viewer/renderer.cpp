@@ -8,7 +8,7 @@
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 
-namespace Shared { namespace G3dViewer {
+namespace Shared{ namespace G3dViewer{
 
 // ===============================================
 // 	class MeshCallbackTeamColor

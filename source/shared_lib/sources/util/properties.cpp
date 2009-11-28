@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <sstream>
+#include <locale>
 
 #include "conversion.h"
 
@@ -33,6 +34,7 @@ namespace Shared { namespace Util {
 Properties::Properties() {}
 
 void Properties::load(const string &path, bool trim) {
+	locale loc;
 	ifstream fileStream;
 	char lineBuffer[maxLine];
 	string line, key, value;
@@ -49,6 +51,8 @@ void Properties::load(const string &path, bool trim) {
 	propertyMap.clear();
 	while (!fileStream.eof()) {
 		fileStream.getline(lineBuffer, maxLine);
+
+		lineBuffer[maxLine-1] = '\0';
 
 		if (lineBuffer[0] == ';' || lineBuffer[0] == '#') {
 			continue;
@@ -70,16 +74,16 @@ void Properties::load(const string &path, bool trim) {
 		key = line.substr(0, pos);
 		value = line.substr(pos + 1);
 		if(trim) {
-			while(!key.empty() && isspace(key[0])) {
+			while (!key.empty() && isspace( key[0], loc )) {
 				key.erase(0, 1);
 			}
-			while(!key.empty() && isspace(key[key.size() - 1])) {
+			while (!key.empty() && isspace( key[key.size() - 1], loc )) {
 				key.erase(key.size() - 1);
 			}
-			while(!value.empty() && isspace(value[0])) {
+			while (!value.empty() && isspace( value[0], loc )) {
 				value.erase(0, 1);
 			}
-			while(!value.empty() && isspace(value[value.size() - 1])) {
+			while (!value.empty() && isspace( value[value.size() - 1], loc )) {
 				value.erase(value.size() - 1);
 			}
 		}
@@ -103,6 +107,11 @@ void Properties::save(const string &path) {
 	}
 
 	fileStream.close();
+}
+
+void Properties::clear(){
+	propertyMap.clear();
+	propertyVector.clear();
 }
 
 const string *Properties::_getString(const string &key, bool required) const {
@@ -197,7 +206,7 @@ const string &Properties::_getString(const string &key, const string *pDef) cons
 string Properties::toString() const {
 	stringstream str;
 
-	for (PropertyMap::const_iterator pi = propertyMap.begin(); pi != propertyMap.end(); pi++)
+	for (PropertyMap::const_iterator pi = propertyMap.begin(); pi != propertyMap.end(); ++pi)
 		str << pi->first << "=" << pi->second << endl;
 
 	return str.str();

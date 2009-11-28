@@ -21,7 +21,7 @@
 
 #include "leak_dumper.h"
 
-namespace Game {
+namespace Glest { namespace Game {
 
 using namespace Shared::Util;
 
@@ -75,7 +75,7 @@ void Effect::save(XmlNode *node) const {
 	node->addChild("actualHpRegen", actualHpRegen);
 }
 /*
-class EffectReference : public NetSerializable {
+class EffectReference : public NetworkWriteable {
 	UnitReference source;
 	int32 typeId;
 	float strength;
@@ -213,19 +213,19 @@ struct EffectSummary {
 	int count;
 };
 
-void Effects::getDesc(stringstream &str) const {
+void Effects::getDesc(string &str) const {
 	map<const EffectType*, EffectSummary> uniqueEffects;
 	map<const EffectType*, EffectSummary>::iterator uei;
 	bool printedFirst = false;
-	Lang &lang = Lang::getInstance();
+	Lang &lang= Lang::getInstance();
 
-	for (const_iterator i = begin(); i != end(); i++) {
+	for(const_iterator i = begin(); i != end(); i++) {
 		const EffectType *type = (*i)->getType();
-		if (type->isDisplay()) {
+		if(type->isDisplay()) {
 			uei = uniqueEffects.find(type);
-			if (uei != uniqueEffects.end()) {
+			if(uei != uniqueEffects.end()) {
 				uniqueEffects[type].count++;
-				if (uniqueEffects[type].maxDuration < (*i)->getDuration()) {
+				if(uniqueEffects[type].maxDuration < (*i)->getDuration()) {
 					uniqueEffects[type].maxDuration = (*i)->getDuration();
 				}
 			} else {
@@ -235,16 +235,15 @@ void Effects::getDesc(stringstream &str) const {
 		}
 	}
 
-	for (uei = uniqueEffects.begin(); uei != uniqueEffects.end(); uei++) {
-		str << endl;
-		if (printedFirst) {
-			str << "    ";
+	for(uei = uniqueEffects.begin(); uei != uniqueEffects.end(); uei++) {
+		if(printedFirst){
+			str += "\n    ";
 		} else {
-			str << lang.get("Effects") << ": ";
+			str += "\n" + lang.get("Effects") + ": ";
 		}
-		str << (*uei).first->getName() << " (" << (*uei).second.maxDuration << ")";
-		if ((*uei).second.count > 1) {
-			str << " x" << (*uei).second.count;
+		str += (*uei).first->getName() + " (" + intToStr((*uei).second.maxDuration) + ")";
+		if((*uei).second.count > 1) {
+			str += " x" + intToStr((*uei).second.count);
 		}
 		printedFirst = true;
 	}
@@ -275,4 +274,4 @@ void Effects::save(XmlNode *node) const {
 }
 
 
-} // end namespace
+}}//end namespace

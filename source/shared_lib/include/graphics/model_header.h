@@ -19,11 +19,11 @@ using Shared::Platform::uint16;
 using Shared::Platform::uint32;
 using Shared::Platform::float32;
 
-namespace Shared { namespace Graphics {
+namespace Shared{ namespace Graphics{
 
 #pragma pack(push, 1) 
 
-struct FileHeader {
+struct FileHeader{
 	uint8 id[3];
 	uint8 version;
 };

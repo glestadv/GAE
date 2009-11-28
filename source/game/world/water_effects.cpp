@@ -17,7 +17,7 @@
 
 #include "leak_dumper.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 //	class WaterSplash
@@ -67,4 +67,4 @@ void WaterEffects::addWaterSplash(const Vec2f &pos){
 	waterSplashes.push_back(WaterSplash(pos));
 }
 
-} // end namespace
+}}//end namespace

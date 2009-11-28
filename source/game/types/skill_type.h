@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_SKILLTYPE_H_
-#define _GAME_SKILLTYPE_H_
+#ifndef _GLEST_GAME_SKILLTYPE_H_
+#define _GLEST_GAME_SKILLTYPE_H_
 
 #include "sound.h"
 #include "vec.h"
@@ -30,7 +30,7 @@ using Shared::Xml::XmlNode;
 using Shared::Graphics::Vec3f;
 using Shared::Graphics::Model;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Util::MultiFactory;
 
@@ -42,7 +42,7 @@ class EnhancementTypeBase;
 class Unit;
 class EarthquakeType;
 
-enum SkillClass {
+enum SkillClass{
 	scStop,
 	scMove,
 	scAttack,
@@ -123,7 +123,7 @@ public:
 
 	void descEpCost(string &str, const Unit *unit) const {
 		if(epCost){
-			str+= Lang::getInstance().get("EpCost") + ": " + Conversion::toStr(epCost) + "\n";
+			str+= Lang::getInstance().get("EpCost") + ": " + intToStr(epCost) + "\n";
 		}
 	}
 
@@ -147,7 +147,7 @@ public:
 	//other
 	virtual string toString() const		{return Lang::getInstance().get(typeName);}
 	static string skillClassToStr(SkillClass skillClass);
-	static string fieldToStr(Field field);
+	static string fieldToStr(Zone field);
 
 	// get removing effects
 	int getEffectsRemoved() const			{return effectsRemoved;}
@@ -165,8 +165,7 @@ public:
 	bool getSplash() const										{return splash;}
 	bool getSplashDamageAll() const								{return splashDamageAll;}
 	int getSplashRadius() const									{return splashRadius;}
-	ParticleSystemTypeSplash * getSplashParticleType() const	{return splashParticleSystemType;}
-};
+	ParticleSystemTypeSplash * getSplashParticleType() const	{return splashParticleSystemType;}};
 
 // ===============================
 // 	class StopSkillType
@@ -177,7 +176,7 @@ public:
 	StopSkillType() : SkillType(scStop, "Stop"){}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		Lang &lang= Lang::getInstance();
-		str+= lang.get("ReactionSpeed")+": "+ Conversion::toStr(speed)+"\n";
+		str+= lang.get("ReactionSpeed")+": "+ intToStr(speed)+"\n";
 		descEpCost(str, unit);
 	}
 };
@@ -220,7 +219,7 @@ public:
 
 class TargetBasedSkillType: public SkillType {
 protected:
-	Fields fields;
+	Zones zones;
 
 public:
 	TargetBasedSkillType(SkillClass skillClass, const char* typeName);
@@ -229,8 +228,8 @@ public:
 	virtual void getDesc(string &str, const Unit *unit) const	{getDesc(str, unit, "Range");}
 	virtual void getDesc(string &str, const Unit *unit, const char* rangeDesc) const;
 
-	Fields getFields() const				{return fields;}
-	bool getField(Field field) const		{return fields.get(field);}
+	Zones getZones () const				{return zones;}
+	bool getZone ( const Zone zone ) const		{return zones.get(zone);}
 };
 
 // ===============================
@@ -247,7 +246,9 @@ private:
 	EarthquakeType *earthquakeType;
 
 public:
-	AttackSkillType() : TargetBasedSkillType(scAttack, "Attack"), attackType(NULL) {}
+	AttackSkillType() : TargetBasedSkillType(scAttack, "Attack"), attackType(NULL), earthquakeType(NULL) {}
+	virtual ~AttackSkillType();
+
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 
@@ -298,6 +299,8 @@ private:
 
 public:
 	RepairSkillType();
+	virtual ~RepairSkillType() { delete splashParticleSystemType; }
+
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
 
@@ -449,6 +452,6 @@ public:
 	static SkillTypeFactory &getInstance();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

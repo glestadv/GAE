@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_STATS_H_
-#define _GAME_STATS_H_
+#ifndef _GLEST_GAME_STATS_H_
+#define _GLEST_GAME_STATS_H_
 
 #include <string>
 
@@ -22,7 +22,7 @@
 using std::string;
 using Shared::Xml::XmlNode;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 // 	class Stats
@@ -31,8 +31,8 @@ namespace Game {
 /** Player statistics that are shown after the game ends */
 class Stats {
 public:
-	struct FactionStats {
-		FactionStats();
+	struct PlayerStats {
+		PlayerStats();
 
 		bool victory;
 		int kills;
@@ -42,34 +42,33 @@ public:
 	};
 
 private:
-	// FIXME: this guy gets deleted
-	const GameSettings &gs;
-	FactionStats factionStats[GameConstants::maxFactions];
+	GameSettings gs;
+	PlayerStats playerStats[GameConstants::maxPlayers];
 
 public:
-	Stats(const GameSettings &gs) : gs(gs), factionStats() {}
+	Stats(const GameSettings &gs) : gs(gs), playerStats() {}
 	void load(const XmlNode *n);
 	void save(XmlNode *n) const;
 
-	const GameSettings &getGameSettings() const		{return gs;}
-	bool getVictory(int i) const					{return factionStats[i].victory;}
-	int getKills(int i) const						{return factionStats[i].kills;}
-	int getDeaths(int i) const						{return factionStats[i].deaths;}
-	int getUnitsProduced(int i) const				{return factionStats[i].unitsProduced;}
-	int getResourcesHarvested(int i) const			{return factionStats[i].resourcesHarvested;}
+	const GameSettings & getGameSettings() const	{return gs;}
+	bool getVictory(int i) const					{return playerStats[i].victory;}
+	int getKills(int i) const						{return playerStats[i].kills;}
+	int getDeaths(int i) const						{return playerStats[i].deaths;}
+	int getUnitsProduced(int i) const				{return playerStats[i].unitsProduced;}
+	int getResourcesHarvested(int i) const			{return playerStats[i].resourcesHarvested;}
 
 
-	void setVictorious(int i)						{factionStats[i].victory = true;}
-	void produce(int i)								{factionStats[i].unitsProduced++;}
-	void harvest(int i, int amount)					{factionStats[i].resourcesHarvested += amount;}
+	void setVictorious(int i)						{playerStats[i].victory = true;}
+	void produce(int i)								{playerStats[i].unitsProduced++;}
+	void harvest(int i, int amount)					{playerStats[i].resourcesHarvested += amount;}
 	void kill(int killerIndex, int killedIndex) {
 		if(killerIndex != killedIndex) {
-			factionStats[killerIndex].kills++;
+			playerStats[killerIndex].kills++;
 		}
-		factionStats[killedIndex].deaths++;
+		playerStats[killedIndex].deaths++;
 	}
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

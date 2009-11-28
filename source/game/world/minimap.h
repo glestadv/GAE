@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MINIMAP_H_
-#define _GAME_MINIMAP_H_
+#ifndef _GLEST_GAME_MINIMAP_H_
+#define _GLEST_GAME_MINIMAP_H_
 
 #include <cassert>
 
@@ -21,7 +21,7 @@ namespace Shared { namespace Platform {
 	class NetworkDataBuffer;
 }}
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Graphics::Vec4f;
 using Shared::Graphics::Vec3f;
@@ -51,7 +51,7 @@ private:
 	Pixmap2D *fowPixmap1;
 	Texture2D *tex;
 	Texture2D *fowTex;    //Fog Of War Texture2D
-	bool fogOfWar;
+	bool fogOfWar, shroudOfDarkness;
 
 private:
 	static const float exploredAlpha;
@@ -84,6 +84,6 @@ private:
 	static void writeRepition(NetworkDataBuffer &buf, uint8 lastResult, uint32 count, int x, int y);
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

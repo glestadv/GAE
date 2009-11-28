@@ -17,7 +17,7 @@ using Shared::Graphics::MeshCallback;
 using Shared::Graphics::Mesh;
 using Shared::Graphics::Texture;
 
-namespace Shared { namespace G3dViewer {
+namespace Shared{ namespace G3dViewer{
 
 // ===============================================
 // 	class MeshCallbackTeamColor

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_GUI_H_
-#define _GAME_GUI_H_
+#ifndef _GLEST_GAME_GUI_H_
+#define _GLEST_GAME_GUI_H_
 
 #include "resource.h"
 #include "command_type.h"
@@ -30,7 +30,7 @@ namespace Shared { namespace Xml {
 
 using Shared::Xml::XmlNode;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 class Unit;
 class World;
@@ -100,14 +100,15 @@ public:
 
 class Gui {
 public:
-	static const int maxSelBuff = 128 * 5;
-	static const int upgradeDisplayIndex = 8;
-	static const int cancelPos = 15;
-	static const int meetingPointPos = 14;
-	static const int autoRepairPos = 12;
-	static const int imageCount = 16;
-	static const int invalidPos = -1;
-	static const int doubleClickSelectionRadius = 20;
+	static const int maxSelBuff= 128*5;
+	static const int upgradeDisplayIndex= 8;
+	static const int cancelPos= 15;
+	static const int meetingPointPos= 14;
+	static const int autoRepairPos= 12;
+	static const int imageCount= 16;
+	static const int invalidPos= -1;
+	static const int doubleClickSelectionRadius= 20;
+	static const int invalidGroupIndex= -1;
 
 	typedef vector<Vec2i> BuildPositions;
 
@@ -150,6 +151,7 @@ private:
 	bool selectingPos;
 	bool selectingMeetingPoint;
 	bool needSelectionUpdate;
+	int currentGroup;
 	
 	static Gui* currentGui;
 
@@ -203,6 +205,10 @@ public:
 		computeDisplay();
 	}
 
+	void onSelectionUpdated(){
+		currentGroup= invalidGroupIndex;
+	}
+
 	void mouseDownLeft(int x, int y);
 	void mouseDownRight(int x, int y);
 	void mouseUpLeft(int x, int y);
@@ -211,6 +217,7 @@ public:
 
 	void mouseMoveDisplay(int x, int y);
 //	void mouseDownLeftGraphics(int x, int y);
+//	void mouseDownRightGraphics(int x, int y);
 	void mouseUpLeftGraphics(int x, int y);
 	void mouseMoveGraphics(int x, int y);
 	void mouseDoubleClickLeftGraphics(int x, int y);
@@ -223,9 +230,8 @@ public:
 	}
 
 	//misc
-	void switchToNextDisplayColor() {
-		display.switchColor();
-	}
+
+	void switchToNextDisplayColor() {display.switchColor();}
 
 	void onSelectionChanged() {
 		selection.update();
@@ -247,7 +253,6 @@ public:
 	}
 
 	bool getMinimapCell(int x, int y, Vec2i &cell);
-	void updateSelection(bool doubleClick, Selection::UnitContainer &units);
 
 	void load(const XmlNode *node);
 	void save(XmlNode *node) const;
@@ -275,10 +280,13 @@ private:
 	void computeInfoString(int posDisplay);
 	void addOrdersResultToConsole(CommandClass cc, CommandResult rr);
 	bool isSharedCommandClass(CommandClass commandClass);
+public:
+	void updateSelection(bool doubleClick, Selection::UnitContainer &units);
+private:
 	bool computeTarget(const Vec2i &screenPos, Vec2i &worldPos, Selection::UnitContainer &units);
 	void computeBuildPositions(const Vec2i &end);
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

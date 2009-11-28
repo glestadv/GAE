@@ -28,27 +28,27 @@ class TextureParams;
 //	class Texture
 // =====================================================
 
-class Texture {
+class Texture{
 public:
-	static const int defaultSize = 256;
+	static const int defaultSize;
 
-	enum WrapMode {
-		WRAP_MODE_REPEAT,
-		WRAP_MODE_CLAMP,
-		WRAP_MODE_CLAMP_TO_EDGE
+	enum WrapMode{
+		wmRepeat,
+		wmClamp,
+		wmClampToEdge
 	};
 
-	enum Filter {
-		FILTER_BILINEAR,
-		FILTER_TRILINEAR
+	enum Filter{
+		fBilinear,
+		fTrilinear
 	};
 
-	enum Format {
-		FORMAT_AUTO,
-		FORMAT_ALPHA,
-		FORMAT_LUMINANCE,
-		FORMAT_RGB,
-		FORMAT_RGBA
+	enum Format{
+		fAuto,
+		fAlpha,
+		fLuminance,
+		fRgb,
+		fRgba
 	};
 
 protected:
@@ -60,33 +60,24 @@ protected:
 
 	bool inited;
 
-protected:
-	Texture();
-
 public:
-	virtual ~Texture();
-
-	// getters
-	const string getPath() const	{return path;}
+	Texture();
+	virtual ~Texture(){};
+	
 	bool getMipmap() const			{return mipmap;}
 	WrapMode getWrapMode() const	{return wrapMode;}
-	bool isPixmapInit() const		{return pixmapInit;}
+	bool getPixmapInit() const		{return pixmapInit;}
 	Format getFormat() const		{return format;}
-	bool isInitialized() const		{return inited;}
+	const string getPath() const	{return path;}
 
-	// setters
-	void setMipmap(bool v)			{mipmap = v;}
-	void setWrapMode(WrapMode v)	{wrapMode = v;}
-	void setPixmapInit(bool v)		{pixmapInit = v;}
-	void setFormat(Format v)		{format = v;}
+	void setMipmap(bool mipmap)			{this->mipmap= mipmap;}
+	void setWrapMode(WrapMode wrapMode)	{this->wrapMode= wrapMode;}
+	void setPixmapInit(bool pixmapInit)	{this->pixmapInit= pixmapInit;}
+	void setFormat(Format format)		{this->format= format;}
 
-	virtual void init(Filter filter = FILTER_BILINEAR, int maxAnisotropy = 1) = 0;
-	virtual void end() = 0;
-	
-protected:
-	void setInitialized(bool v)		{inited = v;}
+	virtual void init(Filter filter= fBilinear, int maxAnisotropy= 1)=0;
+	virtual void end()=0;
 };
-
 
 // =====================================================
 //	class Texture1D

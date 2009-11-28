@@ -29,20 +29,25 @@
 
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 //  class BattleEnd
 // =====================================================
 
-BattleEnd::BattleEnd(Program &program, const shared_ptr<GameSettings> &gs, const Stats &stats)
-		: ProgramState(program)
-		, gs(gs)
-		, stats(stats) {
+BattleEnd::BattleEnd(Program &program, const Stats &stats) : ProgramState(program), stats(stats) {
 }
 
 BattleEnd::~BattleEnd() {
 	SoundRenderer::getInstance().playMusic(CoreData::getInstance().getMenuMusic());
+}
+
+void BattleEnd::update(){
+	//TOOD: add AutoTest to config
+	/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateBattleEnd(program);
+	}*/
 }
 
 void BattleEnd::render() {
@@ -59,49 +64,49 @@ void BattleEnd::render() {
 	int lm = 80;
 	int bm = 100;
 	
-	foreach(const shared_ptr<GameSettings::Faction> &f, gs->getFactions()) {
-		int id = f->getId();
+	const GameSettings &gs = stats.getGameSettings();
 
-		int textX = lm + 300 + id * 120;
-		int team = f->getTeam().getId() + 1;
-		int kills = stats.getKills(id);
-		int deaths = stats.getDeaths(id);
-		int unitsProduced = stats.getUnitsProduced(id);
-		int resourcesHarvested = stats.getResourcesHarvested(id);
+	for (int i = 0; i < gs.getFactionCount(); ++i) {
+
+		int textX = lm + 300 + i * 120;
+		int team = gs.getTeam(i) + 1;
+		int kills = stats.getKills(i);
+		int deaths = stats.getDeaths(i);
+		int unitsProduced = stats.getUnitsProduced(i);
+		int resourcesHarvested = stats.getResourcesHarvested(i);
 
 		int score = kills * 100 + unitsProduced * 50 + resourcesHarvested / 10;
 		string controlString;
 
-		switch (f->getControlType()) {
-		case CT_CPU:
+		switch (gs.getFactionControl(i)) {
+		case ctCpu:
 			controlString = lang.get("Cpu");
 			break;
-		case CT_CPU_ULTRA:
+		case ctCpuUltra:
 			controlString = lang.get("CpuUltra");
 			break;
-		case CT_NETWORK:
+		case ctNetwork:
 			controlString = lang.get("Network");
 			break;
-		case CT_HUMAN:
+		case ctHuman:
 			controlString = lang.get("Human");
 			break;
 		default:
 			assert(false);
 		};
 
-		string playerName = f->getPrimaryPlayer()->getName();
-		if(playerName.empty()) {
-			playerName = lang.get("Player") + " " + Conversion::toStr(team);
-		}
-		if(gs->getThisFactionId() == id) {
+		string playerName = gs.getPlayerName(i).empty()
+				? (lang.get("Player") + " " + intToStr(i + 1))
+				: gs.getPlayerName(i);
+		if(gs.getThisFactionIndex() == i) {
 			playerName = Config::getInstance().getNetPlayerName();
 		}
 //		textRenderer->render((lang.get("Player") + " " + intToStr(i + 1)).c_str(), textX, bm + 400);
 //		textRenderer->render(gs.getPlayerName(i), textX, bm + 400);
 		textRenderer->render(playerName, textX, bm + 400);
-		textRenderer->render(stats.getVictory(id) ? lang.get("Victory").c_str() : lang.get("Defeat").c_str(), textX, bm + 360);
+		textRenderer->render(stats.getVictory(i) ? lang.get("Victory").c_str() : lang.get("Defeat").c_str(), textX, bm + 360);
 		textRenderer->render(controlString, textX, bm + 320);
-		textRenderer->render(f->getTypeName(), textX, bm + 280);
+		textRenderer->render(gs.getFactionTypeName(i), textX, bm + 280);
 		textRenderer->render(intToStr(team).c_str(), textX, bm + 240);
 		textRenderer->render(intToStr(kills).c_str(), textX, bm + 200);
 		textRenderer->render(intToStr(deaths).c_str(), textX, bm + 160);
@@ -124,9 +129,9 @@ void BattleEnd::render() {
 
 	textRenderer->begin(CoreData::getInstance().getMenuFontVeryBig());
 
-	string header = gs->getDescription() + " - ";
+	string header = gs.getDescription() + " - ";
 
-	if (stats.getVictory(gs->getThisFactionId())) {
+	if (stats.getVictory(gs.getThisFactionIndex())) {
 		header += lang.get("Victory");
 	} else {
 		header += lang.get("Defeat");
@@ -148,4 +153,4 @@ void BattleEnd::mouseDownLeft(int x, int y) {
 	program.setState(new MainMenu(program));
 }
 
-} // end namespace
+}}//end namespace

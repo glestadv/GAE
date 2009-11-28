@@ -2,6 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -16,13 +17,21 @@
 #include <stdexcept>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 
 #include "types.h"
 
 using std::string;
 using std::runtime_error;
+using std::stringstream;
 using Shared::Platform::int64;
 using Shared::Platform::uint64;
+
+#if defined(WIN32) || defined(WIN64)
+#	define strtoull(np,ep,b) _strtoui64(np,ep,b)
+#	define strtof(np,ep) ((float)strtod(np,ep))
+#	define strtold(np,ep) ((long double)strtod(np,ep))
+#endif
 
 namespace Shared { namespace Util {
 
@@ -50,19 +59,21 @@ private:
 	static const string str_double;
 	static const string str_float;
 	static const string str_longdouble;
+
 private:
 	Conversion();
 
 public:
+
 	static bool strToBool(const string &s) {
 		if (s == str_zero || s == str_false) {
 			return false;
 		}
-
 		if (s == str_one || s == str_true) {
 			return true;
 		}
 		throwException(str_bool, s, 1);
+		return false;
 	}
 
 	static int strToInt(const string &s, int base = 10) {
@@ -99,26 +110,26 @@ public:
 			*b = false;
 			return true;
 		}
-	
+
 		if (s == "1" || s == "true") {
 			*b = true;
 			return true;
 		}
-	
+
 		return false;
 	}
-	
+
 	inline bool strToInt(const string &s, int *i) {
 		char *endChar;
 		*i = strtol(s.c_str(), &endChar, 10);
-	
+
 		return !*endChar;
 	}
-	
+
 	inline bool strToFloat(const string &s, float *f) {
 		char *endChar;
 		*f = static_cast<float>(strtod(s.c_str(), &endChar));
-	
+
 		return !*endChar;
 	}
 	*/
@@ -143,7 +154,7 @@ public:
 		sprintf(str, "%lld", static_cast<long long int>(i));
 		return str;
 	}
-	
+
 	static string toStr(uint64 i) {
 		char str[32];
 		sprintf(str, "%llu", static_cast<unsigned long long int>(i));
@@ -178,6 +189,14 @@ public:
 		char str[24];
 		sprintf(str, "%.2f", f);
 		return str;
+	}
+
+	// ugly (i.e., fat) catch-all
+	template<typename T>
+	static string toStr(T v) {
+		stringstream str;
+		str << v;
+		return str.str();
 	}
 
 	static int hexChar2Int(char c);
@@ -216,15 +235,18 @@ private:
 		dest = strtold(nptr, endptr);
 	}
 
-	template<typename T> static T strToX(const string &s, int base, const string &typeName) {
+	template<typename T>
+	static T strToX(const string &s, int base, const string &typeName) {
 		char *endChar;
 		T ret;
 		strto_(s.c_str(), &endChar, base, ret);
-	
+
 		if (*endChar) {
+			// make an actual function call to throw exception so we can keep the size of this
+			// inline smaller
 			throwException(typeName, s, base);
 		}
-	
+
 		return ret;
 	}
 

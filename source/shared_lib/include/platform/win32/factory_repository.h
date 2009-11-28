@@ -20,7 +20,6 @@
 #include "graphics_factory_gl.h"
 #include "graphics_factory_gl2.h"
 #include "sound_factory_ds8.h"
-#include "patterns.h"
 
 using std::string;
 
@@ -30,15 +29,17 @@ using Shared::Graphics::Gl::GraphicsFactoryGl;
 using Shared::Graphics::Gl::GraphicsFactoryGl2;
 using Shared::Sound::Ds8::SoundFactoryDs8;
 
-namespace Shared { namespace Platform {
+namespace Shared{ namespace Platform{
 
 // =====================================================
 //	class FactoryRepository
 // =====================================================
 
-class FactoryRepository : Uncopyable {
+class FactoryRepository{
 private:
 	FactoryRepository(){};
+	FactoryRepository(FactoryRepository &);
+	void operator=(FactoryRepository &);
 
 private:
 	GraphicsFactoryGl graphicsFactoryGl;

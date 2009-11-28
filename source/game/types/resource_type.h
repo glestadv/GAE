@@ -9,14 +9,14 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_RESOURCETYPE_H_
-#define _GAME_RESOURCETYPE_H_
+#ifndef _GLEST_GAME_RESOURCETYPE_H_
+#define _GLEST_GAME_RESOURCETYPE_H_
 
 #include "element_type.h"
 #include "model.h"
 #include "checksum.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Graphics::Model;
 using Shared::Util::Checksum;
@@ -48,7 +48,7 @@ private:
 	bool display;
 
 public:
-    void load(const string &dir, int id, Checksums &checksums);
+    bool load(const string &dir, int id, Checksum &checksum);
 
     //get
 	int getClass() const			{return resourceClass;}
@@ -62,6 +62,6 @@ public:
 	static ResourceClass strToRc(const string &s);
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

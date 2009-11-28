@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_UPGRADE_H_
-#define _GAME_UPGRADE_H_
+#ifndef _GLEST_GAME_UPGRADE_H_
+#define _GLEST_GAME_UPGRADE_H_
 
 #include <vector>
 #include "xml_parser.h"
@@ -18,13 +18,13 @@
 using std::vector;
 using Shared::Xml::XmlNode;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 class Unit;
 class UpgradeType;
 class Game;
 
-enum UpgradeState {
+enum UpgradeState{
 	usUpgrading,
 	usUpgraded,
 
@@ -36,12 +36,12 @@ class EnhancementTypeBase;
 class FactionType;
 
 // =====================================================
-//  class Upgrade
+// 	class Upgrade
 //
 /// A bonus to an UnitType
 // =====================================================
 
-class Upgrade {
+class Upgrade{
 private:
 	UpgradeState state;
 	int factionIndex;
@@ -54,24 +54,25 @@ public:
 	Upgrade(const UpgradeType *upgradeType, int factionIndex);
 
 	//get
-	const UpgradeType *getType() const	{return type;}
-	UpgradeState getState() const		{return state;}
+	const UpgradeType * getType() const;
+	UpgradeState getState() const;
 
 	void save(XmlNode *node) const;
 
 private:
 	//get
-	int getFactionIndex() const			{return factionIndex;}
+	int getFactionIndex() const;
 
 	//set
-	void setState(UpgradeState state)	{this->state = state;}
+	void setState(UpgradeState state);
 };
 
+
 // ===============================
-//  class UpgradeManager
+// 	class UpgradeManager
 // ===============================
 
-class UpgradeManager {
+class UpgradeManager{
 private:
 	typedef vector<Upgrade*> Upgrades;
 	Upgrades upgrades;
@@ -79,7 +80,7 @@ private:
 public:
 	~UpgradeManager();
 
-	int getUpgradeCount() const				{return upgrades.size();}
+	int getUpgradeCount() const		{return upgrades.size();}
 	const Upgrade &getUpgrade(int i) const	{return *upgrades[i];}
 
 	void startUpgrade(const UpgradeType *upgradeType, int factionIndex);
@@ -95,6 +96,6 @@ public:
 	void save(XmlNode *node) const;
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

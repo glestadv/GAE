@@ -28,7 +28,7 @@ using namespace std;
 using namespace Shared::Platform;
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class ExceptionHandler
@@ -47,7 +47,7 @@ public:
 		char *timeString = asctime(localtime(&t));
 
 		fprintf(f, "Crash\n");
-		fprintf(f, "Version: Advanced Engine %s\n", getGaeVersion().toString().c_str());
+		fprintf(f, "Version: Advanced Engine %s\n", gaeVersionString.c_str());
 		fprintf(f, "Time: %s", timeString);
 		if(description) {
 			fprintf(f, "Description: %s\n", description);
@@ -81,7 +81,7 @@ public:
 		Shared::Platform::message(
 				"An error ocurred and Glest will close.\n"
 				"Crash info has been saved in the crash.txt file\n"
-				"Please report this bug to " + getGaeMailString());
+				"Please report this bug to " + gaeMailString);
 	}
 };
 
@@ -121,6 +121,6 @@ int glestMain(int argc, char** argv) {
 	return 0;
 }
 
-} // end namespace
+}}//end namespace
 
-MAIN_FUNCTION(Game::glestMain)
+MAIN_FUNCTION(Glest::Game::glestMain)

@@ -14,31 +14,6 @@
 
 #include "leak_dumper.h"
 
-namespace Game { namespace Net {
-/*
-template<int S> 
-size_t NetworkString::getNetSize() const {
-	//return s.size() + sizeof(uint16);
-	return sizeof(size) + size;
-}
+namespace Glest { namespace Game {
 
-template<int S> 
-size_t NetworkString::getMaxNetSize() const {
-	return sizeof(size) + sizeof(buffer);
-}
-
-template<int S> 
-void NetworkString::write(NetworkDataBuffer &buf) const {
-	buf.write(size);
-	buf.write(buffer, size);
-}
-
-template<int S> 
-void NetworkString::read(NetworkDataBuffer &buf) {
-	buf.read(size);
-	assert(size < S);
-	buf.read(buffer, size);
-	buffer[size] = 0;
-}
-*/
-}} // end namespace
+}}//end namespace

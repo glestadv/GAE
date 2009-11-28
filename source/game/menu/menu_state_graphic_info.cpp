@@ -20,7 +20,7 @@
 #include "leak_dumper.h"
 
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class MenuStateGraphicInfo
@@ -67,4 +67,4 @@ void MenuStateGraphicInfo::render(){
 	renderer.renderLabel(&labelMoreInfo);
 }
 
-} // end namespace
+}}//end namespace

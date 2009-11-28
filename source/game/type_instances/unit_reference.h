@@ -9,13 +9,13 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_UNIT_REFERENCE_H_
-#define _GAME_UNIT_REFERENCE_H_
+#ifndef _GLEST_GAME_UNIT_REFERENCE_H_
+#define _GLEST_GAME_UNIT_REFERENCE_H_
 
 #include "xml_parser.h"
 #include "socket.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Xml::XmlNode;
 using Shared::Platform::NetworkDataBuffer;
@@ -41,7 +41,7 @@ public:
 	UnitReference(const Unit* unit)			{*this = unit;}
 //	UnitReference(int id, Faction *faction): id(id), faction(faction) {}
 
-	UnitReference &operator=(const Unit *unit);
+	void operator=(const Unit *unit);
 	operator Unit *() const					{return getUnit();}
 	int getUnitId() const					{return id;}
 	Faction *getFaction() const				{return faction;}
@@ -54,6 +54,6 @@ public:
 };
 
 
-} // end namespace
+}}//end namespace
 
 #endif

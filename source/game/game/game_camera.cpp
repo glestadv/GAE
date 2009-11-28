@@ -24,7 +24,7 @@
 using namespace Shared::Graphics;
 using Shared::Xml::XmlNode;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 // 	class GameCamera
@@ -327,4 +327,4 @@ void GameCamera::moveUp(float d){
 	destPos.y += d;
 }
 
-} // end namespace
+}}//end namespace

@@ -18,7 +18,7 @@
 
 #include "leak_dumper.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class TimeFlow
@@ -105,4 +105,4 @@ bool TimeFlow::isAproxTime(float time){
 	return (this->time>=time) && (this->time<time+timeInc);
 }
 
-} // end namespace
+}}//end namespace

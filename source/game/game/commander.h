@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_COMMANDER_H_
-#define _GAME_COMMANDER_H_
+#ifndef _GLEST_GAME_COMMANDER_H_
+#define _GLEST_GAME_COMMANDER_H_
 
 #include <vector>
 
@@ -21,7 +21,7 @@
 
 using std::vector;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 using Shared::Graphics::Vec2i;
 
@@ -42,7 +42,7 @@ private:
 
 public:
     void init(World *world)		{this->world = world;}
-	void getNetworkData();
+	void updateNetwork();
 
 	CommandResult tryGiveCommand(
 		const Selection &selection,
@@ -63,6 +63,6 @@ private:
     CommandResult computeResult(const CommandResultContainer &results) const;
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

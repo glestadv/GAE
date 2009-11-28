@@ -10,25 +10,20 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MENUSTATELOADGAME_H_
-#define _GAME_MENUSTATELOADGAME_H_
+#ifndef _GLEST_GAME_MENUSTATELOADGAME_H_
+#define _GLEST_GAME_MENUSTATELOADGAME_H_
 
 #include "menu_state_start_game_base.h"
 #include "thread.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 class MenuStateLoadGame;
 
 // ===============================
 // 	class SavedGamePreviewLoader
 // ===============================
-/**
- * SavedGamePreviewLoader is a background thread loader for saved game previews.  This prevents the
- * UI thread from having to completely load a saved game and generate a preview before processing
- * user input again, thus potentially causing the user to wait WAY too much time just to find the
- * saved game they want to load.
- */
+
 class SavedGamePreviewLoader : public Thread {
 	MenuStateLoadGame &menu;
 	string *fileName;		//only modify with mutex locked
@@ -42,13 +37,13 @@ public:
 		start();
 	}
 
-	/** Tells this SavedGamePreviewLoader to stop executing and prepare to be deleted. */
+	virtual void execute();
+
 	void goAway() {
 		MutexLock lock(mutex);
 		seeJaneRun = false;
 	}
 
-	/** Sets the name of the file to generate a preview for. */
 	void setFileName(const string &fileName) {
 		MutexLock lock(mutex);
 		if(!this->fileName) {
@@ -56,12 +51,7 @@ public:
 		}
 	}
 
-protected:
-	/** Main thread loop (called by Thread). */
-	virtual void execute();
-
 private:
-	/** Called only by private thread: Called to load a preview of the specified saved game file. */
 	void loadPreview(string *fileName);
 };
 
@@ -70,7 +60,7 @@ private:
 // 	class MenuStateLoadGame
 // ===============================
 
-class MenuStateLoadGame : public MenuStateStartGameBase, Uncopyable {
+class MenuStateLoadGame: public MenuStateStartGameBase {
 private:
 	SavedGamePreviewLoader loaderThread;
 	//GraphicButton buttonReturn;
@@ -87,18 +77,22 @@ private:
 	ControlType controlTypes[GameConstants::maxPlayers];
 	string fileName;
 	const XmlNode *savedGame;
-	// Note: gs is defined in base class, but in MenuStateLoadGame, should only be read or modified
-	// with mutex locked
+	GameSettings *gs;
 	// <== only modify with mutex locked
 
 	GraphicListBox listBoxGames;
 	GraphicLabel labelNetwork;
 
 	GraphicMessageBox *confirmMessageBox;
+	//GraphicMessageBox *msgBox;
 	bool criticalError;
 	Mutex mutex;
 	vector<string> fileNames;
 	vector<string> prettyNames;
+
+private:
+	MenuStateLoadGame(const MenuStateLoadGame &);
+	const MenuStateLoadGame &operator =(const MenuStateLoadGame &);
 
 public:
 	MenuStateLoadGame(Program &program, MainMenu *mainMenu);
@@ -111,9 +105,6 @@ public:
 
 	/** returns the name of the new file name if the user moved along since the load started. */
 	string *setGameInfo(const string &fileName, const XmlNode *root, const string &err);
-	
-protected:
-	void updateGameSettings() {}
 
 private:
 	bool loadGameList();
@@ -121,9 +112,10 @@ private:
 	string getFileName();
 	void selectionChanged();
 	void initGameInfo();
+	void updateNetworkSlots();
 };
 
 
-} // end namespace
+}}//end namespace
 
 #endif

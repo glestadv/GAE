@@ -36,7 +36,6 @@
 
 #include "types.h"
 #include "vec.h"
-#include "patterns.h"
 
 using std::map;
 using std::string;
@@ -68,9 +67,13 @@ enum MouseEvent {
 	meMove
 };
 
-class MouseState : Uncopyable {
+class MouseState {
 private:
 	bool states[mbCount];
+
+private:
+	MouseState(const MouseState &);
+	MouseState &operator=(const MouseState &);
 
 public:
 	MouseState() {
@@ -401,7 +404,7 @@ public:
 
 };
 */
-class Input : Uncopyable {
+class Input {
 public:
 #ifdef USE_SDL
 	static const size_t NATIVE_MOUSE_BUTTON_START = SDL_BUTTON_LEFT;
@@ -516,7 +519,7 @@ public:
 	bool isShiftDown() const	{return GetAsyncKeyState(VK_SHIFT);}
 	bool isCtrlDown() const		{return GetAsyncKeyState(VK_CONTROL);}
 	bool isAltDown() const		{return GetAsyncKeyState(VK_MENU);}
-	bool isMetaDown() const		{return GetAsyncKeyState(VK_LWIN) || GetKeyState(VK_RWIN);}
+	bool isMetaDown() const		{return GetAsyncKeyState(VK_LWIN) || GetAsyncKeyState(VK_RWIN);}
 	bool isNumOn() const		{return GetAsyncKeyState(VK_NUMLOCK);}
 	bool isCapsOn() const		{return GetAsyncKeyState(VK_CAPITAL);}
 //	bool isModeOn() const		{return GetKeyState(0);}

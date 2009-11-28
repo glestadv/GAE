@@ -26,7 +26,7 @@
 
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 
 // =====================================================
@@ -64,4 +64,4 @@ void Object::setResource(const ResourceType *resourceType, const Vec2i &pos){
 	resource->init(resourceType, pos);
 }
 
-} // end namespace
+}}//end namespace

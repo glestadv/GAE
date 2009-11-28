@@ -2,53 +2,44 @@ SubDir TOP ;
 
 UseAutoconf ;
 
-if $(USE_PCH) = "yes" {
-	CPPFLAGS += -DUSE_PCH=1 ;
-	SHARED_PCH = shared_lib/include/pch.h ;
-	SHARED_PCH_INCLUDE =  $(LOCATE_TARGET)/shared_lib/include ;
-	GAME_PCH = game/pch.h ;
-	GAME_PCH_INCLUDE =  $(LOCATE_TARGET)/game ;
-}
-
 Package license.txt readme.txt ;
 
-local EXTERNAL_LIBS = SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL Z ;
+#### Library ####
+SubDir TOP shared_lib ;
 
-#### Shared Library ####
-SubDir TOP ;
-
-SHARED_DIRS =
+LIB_DIRS =
 	platform
-	platform/posix
 	platform/sdl
+	platform/posix
 	util
 	graphics
 	graphics/gl
 	sound
 	sound/openal
 	xml
+	lua
+	tinyxml
 ;
 
-for i in $(SHARED_DIRS)  {
-	SHARED_SOURCES += [ Wildcard shared_lib/sources/$(i) : *.c *.cpp *.h ] ;
+for i in $(LIB_DIRS) {
+	LIB_SOURCES += [ Wildcard sources/$(i) : *.c *.cpp *.h ] ;
 }
 
-for i in shared_lib/include shared_lib/include/$(SHARED_DIRS)  {
-	# There is no include/platform/posix directory, just a source/platform/posix
-	if ! [ MATCH (platform/posix) : $(i) ] {
-		SHARED_INCLUDE_DIRS += $(i) ;
-	}
+LIB_INCLUDE_DIRS = include include/$(LIB_DIRS) ;
+
+if $(USE_PCH) = "yes" {
+	LIB_PCH = include/pch.h ;
+	CPPFLAGS += -DUSE_PCH=1 [ CreateIncludeFlags $(LOCATE_TARGET)/include ] ;
 }
 
-Library glestlib : $(SHARED_SOURCES) : : $(SHARED_PCH) ;
-ExternalLibs glestlib : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL Z ;
-IncludeDir glestlib : $(SHARED_PCH_INCLUDE) $(SHARED_INCLUDE_DIRS) ;
-
+Library glestlib : $(LIB_SOURCES) : : $(LIB_PCH) ;
+ExternalLibs glestlib : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL LUA Z ;
+IncludeDir glestlib : $(LIB_INCLUDE_DIRS) ;
 
 #### Game ####
-SubDir TOP ;
+SubDir TOP game ;
 
-GAME_DIRS =
+GLEST_DIRS =
 	.
 	ai
 	facilities
@@ -59,62 +50,39 @@ GAME_DIRS =
 	main
 	menu
 	network
+	path_finder
 	sound
 	type_instances
 	types
 	world
 ;
 
-GAME_DIRS = game/$(GAME_DIRS) ;
-
-for i in $(GAME_DIRS) {
-	GAME_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
+for i in $(GLEST_DIRS) {
+  GLEST_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
 }
 
-if $(BUILD_UNIT_TESTS) != "yes" {
-	Application glestadv : $(GAME_SOURCES) : : $(GAME_PCH) ;
-	LinkWith glestadv : glestlib ;
-	ExternalLibs glestadv : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL Z ;
-	IncludeDir glestadv : $(GAME_PCH_INCLUDE) $(GAME_DIRS) $(SHARED_INCLUDE_DIRS) ;
-
-#### Test ####
-} else {
-	SubDir TOP ;
-
-	TEST_DIRS = test ;
-	for i in $(TEST_DIRS) {
-		TEST_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
-	}
-	
-	for i in $(GAME_SOURCES) {
-		if ! [ MATCH (main.cpp) : $(i) ] {
-			TEST_SOURCES += $(i) ;
-		}
-	}
-	
-	LDFLAGS += "-lcppunit" ;
-	
-	# Includes all game sources
-	Application testgae : $(TEST_SOURCES) : console : $(GAME_PCH) ;
-	LinkWith testgae : glestlib ;
-	ExternalLibs testgae : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL Z ;
-	IncludeDir testgae : $(GAME_PCH_INCLUDE) $(TEST_DIRS) $(SHARED_INCLUDE_DIRS) $(GAME_DIRS) ;
+if $(USE_PCH) = "yes" {
+	GLEST_PCH = pch.h ;
+#	CPPFLAGS += -DUSE_PCH=1 [ CreateIncludeFlags $(LOCATE_TARGET)/include ] ;
 }
 
+Application glestadv : $(GLEST_SOURCES) : : $(GLEST_PCH) ;
+LinkWith glestadv : glestlib ;
+ExternalLibs glestadv : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL LUA Z ;
+IncludeDir glestadv : ../shared_lib/$(LIB_INCLUDE_DIRS) $(GLEST_DIRS) ;
 
 #### Editor ####
 if $(WX_AVAILABLE) = "yes" {
-	SubDir TOP ;
+  SubDir TOP map_editor ;
 
-	MAP_EDITOR_DIRS = map_editor ;
-	for i in $(MAP_EDITOR_DIRS) {
-		MAP_EDITOR_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
-	}
+  GLEST_MAP_DIRS = . ;
+  for i in $(GLEST_DIRS) {
+    GLEST_MAP_SOURCES += [ Wildcard $(i) : *.cpp *.h ] ;
+  }
 
-	Application glest_editor : $(MAP_EDITOR_SOURCES) ;
-	LinkWith glest_editor : glestlib ;
-	ExternalLibs glest_editor : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL WX ;
-	IncludeDir glest_editor : $(SHARED_PCH_INCLUDE) $(MAP_EDITOR_DIRS) $(SHARED_INCLUDE_DIRS) ;
+  Application editor : $(GLEST_MAP_SOURCES) ;
+  LinkWith editor : glestlib ;
+  ExternalLibs editor : SDL GL GLU XERCES VORBIS VORBISFILE OGG OPENAL WX ;
+  IncludeDir editor : ../shared_lib/$(LIB_INCLUDE_DIRS) $(GLEST_MAP_DIRS) ;
 }
-
 

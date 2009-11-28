@@ -17,7 +17,7 @@
 #include "unit_reference.h"
 #include "socket.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 class EffectState;
 class Unit;
@@ -171,12 +171,12 @@ public:
 
 	/**
 	 * Appends a string description/summary of all of the effects in this
-	 * collection.
+	 * collection and returns the supplied string object.
 	 */
-	void getDesc(stringstream &str) const;
+	void getDesc(string &str) const;
 	void save(XmlNode *node) const;
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

@@ -21,7 +21,7 @@
 #include "leak_dumper.h"
 
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class MenuStateAbout
@@ -91,4 +91,4 @@ void MenuStateAbout::render(){
 	}
 }
 
-} // end namespace
+}}//end namespace

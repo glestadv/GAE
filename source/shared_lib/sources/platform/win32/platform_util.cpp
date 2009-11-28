@@ -11,7 +11,6 @@
 
 #include "pch.h"
 #include "platform_util.h"
-#include "platform_exception.h"
 
 #include <io.h>
 #include <cassert>
@@ -32,19 +31,6 @@ namespace Shared { namespace Platform {
 // =====================================================
 
 PlatformExceptionHandler *PlatformExceptionHandler::singleton = NULL;
-
-PlatformExceptionHandler::PlatformExceptionHandler() : installed(false), old_filter(NULL) {
-	assert(!singleton);
-	singleton = this;
-}
-
-PlatformExceptionHandler::~PlatformExceptionHandler() {
-	assert(singleton == this);
-	if(installed) {
-		uninstall();
-	}
-	singleton = NULL;
-}
 
 LONG WINAPI PlatformExceptionHandler::handler(LPEXCEPTION_POINTERS pointers) {
 
@@ -67,18 +53,8 @@ LONG WINAPI PlatformExceptionHandler::handler(LPEXCEPTION_POINTERS pointers) {
 
 void PlatformExceptionHandler::install() {
 	assert(this);
-	assert(!installed);
 	assert(singleton == this);
-	old_filter = SetUnhandledExceptionFilter(handler);
-	installed = true;
-}
-
-void PlatformExceptionHandler::uninstall() {
-	assert(this);
-	assert(installed);
-	assert(singleton == this);
-	SetUnhandledExceptionFilter(old_filter);
-	installed = false;
+	SetUnhandledExceptionFilter(handler);
 }
 
 string PlatformExceptionHandler::codeToStr(DWORD code) {
@@ -104,50 +80,6 @@ string PlatformExceptionHandler::codeToStr(DWORD code) {
 	case EXCEPTION_SINGLE_STEP:				return "Single step";
 	case EXCEPTION_STACK_OVERFLOW:			return "Stack overflow";
 	default:								return "Unknown exception code";
-	}
-}
-
-// =====================================================
-// class DirectoryListing
-// =====================================================
-
-DirectoryListing::DirectoryListing(const string &path)
-		: path(path)
-		, exists(false)
-		, count(0)
-		, handle(NULL) {
-	bzero(&fi, sizeof(fi));
-	handle = _findfirst64(path.c_str(), &fi);
-
-	if(handle != -1) {
-		exists = true;
-	} else if(errno != ENOENT) {
-		throw PosixException(
-				("Error searching for files in directory '" + path + "'").c_str(),
-				"_findfirst64(path.c_str(), &fi)",
-				NULL, __FILE__, __LINE__);
-	}
-}
-
-DirectoryListing::~DirectoryListing() {
-	if(handle != -1) {
-		_findclose(handle);
-	}
-}
-
-const char *DirectoryListing::getNext() {
-	// ok, this works fine and is concise, but is probably too obscure
-	//return exists && (!count++ || !_findnext64(handle, &fi)) ? fi.name : NULL;
-
-	if(!exists) {
-		return NULL;
-	}
-
-	// if this is the 1st element, just return fi.name, otherwise, get the next element.
-	if(!count++) {
-		return fi.name;
-	} else {
-		return !_findnext64(handle, &fi) ? fi.name : NULL;
 	}
 }
 

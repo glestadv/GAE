@@ -14,18 +14,76 @@
 
 #include <cassert>
 #include <algorithm>
+#include <sstream>
+#include <exception>
 
 #include "util.h"
 #include "particle_renderer.h"
 #include "math_util.h"
+#include "lang_features.h"
 
 #include "leak_dumper.h"
 
 
 using namespace Shared::Util;
+using namespace std;
 
 namespace Shared{ namespace Graphics{
 
+const char* Particle::blendFactorNames[BLEND_FUNC_COUNT] = {
+	"zero",
+	"one",
+	"src_color",
+	"one_minus_src_color",
+	"dst_color",
+	"one_minus_dst_color",
+	"src_alpha",
+	"one_minus_src_alpha",
+	"dst_alpha",
+	"one_minus_dst_alpha",
+	"constant_color",
+	"one_minus_constant_color",
+	"constant_alpha",
+	"one_minus_constant_alpha",
+	"src_alpha_saturate"
+};
+
+const char* Particle::blendEquationNames[BLEND_EQUATION_COUNT] = {
+	"func_add",
+	"func_subtract",
+	"func_reverse_subtract",
+	"min",
+	"max"
+};
+
+static __cold __noreturn void puke(const char*options[], size_t optionCount,
+		const string &badValue, const string &typeDesc) {
+	stringstream str;
+	str << "\"" << badValue << "\" is not a valid " << typeDesc << ".  Valid values are: ";
+	for(size_t i = 0; i < optionCount; ++i) {
+		str << (i ? ", " : "") << options[i];
+	}
+	str << ".";
+	throw range_error(str.str());
+}
+
+Particle::BlendFactor Particle::getBlendFactor(const string &s) {
+	for(size_t i = 0; i < BLEND_FUNC_COUNT; ++i) {
+		if(s == blendFactorNames[i]) {
+			return static_cast<Particle::BlendFactor>(i);
+		}
+	}
+	puke(blendFactorNames, BLEND_FUNC_COUNT, s, "blend function factor");
+}
+
+Particle::BlendEquation Particle::getBlendEquation(const string &s) {
+	for(size_t i = 0; i < BLEND_EQUATION_COUNT; ++i) {
+		if(s == blendEquationNames[i]) {
+			return static_cast<Particle::BlendEquation>(i);
+		}
+	}
+	puke(blendEquationNames, BLEND_EQUATION_COUNT, s, "blend equation mode");
+}
 
 // =====================================================
 //	class ParticleSystemBase
@@ -37,7 +95,9 @@ namespace Shared{ namespace Graphics{
 
 ParticleSystemBase::ParticleSystemBase() :
 		random((intptr_t)this & 0xffffffff),
-		blendMode(Particle::bmOne),
+		srcBlendFactor(Particle::BLEND_FUNC_SRC_ALPHA),
+		destBlendFactor(Particle::BLEND_FUNC_ONE),
+		blendEquationMode(Particle::BLEND_EQUATION_FUNC_ADD),
 		primitiveType(Particle::ptQuad),
 		texture(NULL),
 		model(NULL),
@@ -61,7 +121,9 @@ ParticleSystemBase::ParticleSystemBase() :
 
 ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &model) :
 		random((intptr_t)this & 0xffffffff),
-		blendMode(model.blendMode),
+		srcBlendFactor(model.srcBlendFactor),
+		destBlendFactor(model.destBlendFactor),
+		blendEquationMode(model.blendEquationMode),
 		primitiveType(model.primitiveType),
 		texture(model.texture),
 		model(model.model),
@@ -574,7 +636,7 @@ ProjectileParticleSystem::Trajectory ProjectileParticleSystem::strToTrajectory(c
 	} else if(str == "random") {
 		return tRandom;
 	} else {
-		throw runtime_error("Unknown projectile particle system trajectory: " + str);
+		throw runtime_error("Unknown particle system trajectory: " + str);
 	}
 }
 
@@ -661,7 +723,7 @@ ParticleManager::~ParticleManager(){
 void ParticleManager::render(ParticleRenderer *pr, ModelRenderer *mr) const{
 	list<ParticleSystem*>::const_iterator it;
 
-	for (it=particleSystems.begin(); it!=particleSystems.end(); it++){
+	for (it=particleSystems.begin(); it!=particleSystems.end(); ++it){
 		if((*it)->getVisible()){
 			(*it)->render(pr, mr);
 		}
@@ -671,7 +733,7 @@ void ParticleManager::render(ParticleRenderer *pr, ModelRenderer *mr) const{
 void ParticleManager::update(){
 	list<ParticleSystem*>::iterator it;
 
-	for (it = particleSystems.begin(); it != particleSystems.end(); it++) {
+	for (it = particleSystems.begin(); it != particleSystems.end(); ++it) {
 		(*it)->update();
 		if ((*it)->isEmpty()) {
 			delete *it;

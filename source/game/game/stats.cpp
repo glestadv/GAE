@@ -15,9 +15,9 @@
 #include "leak_dumper.h"
 
 
-namespace Game {
+namespace Glest { namespace Game {
 
-Stats::FactionStats::FactionStats() :
+Stats::PlayerStats::PlayerStats() :
 		victory(false),
 		kills(0),
 		deaths(0),
@@ -31,24 +31,24 @@ Stats::FactionStats::FactionStats() :
 
 void Stats::load(const XmlNode *node) {
 	for(int i = 0; i < gs.getFactionCount(); ++i) {
-		const XmlNode *n = node->getChild("faction", i);
-		factionStats[i].victory = n->getChildBoolValue("victory");
-		factionStats[i].kills = n->getChildIntValue("kills");
-		factionStats[i].deaths = n->getChildIntValue("deaths");
-		factionStats[i].unitsProduced = n->getChildIntValue("unitsProduced");
-		factionStats[i].resourcesHarvested = n->getChildIntValue("resourcesHarvested");
+		const XmlNode *n = node->getChild("player", i);
+		playerStats[i].victory = n->getChildBoolValue("victory");
+		playerStats[i].kills = n->getChildIntValue("kills");
+		playerStats[i].deaths = n->getChildIntValue("deaths");
+		playerStats[i].unitsProduced = n->getChildIntValue("unitsProduced");
+		playerStats[i].resourcesHarvested = n->getChildIntValue("resourcesHarvested");
 	}
 }
 
 void Stats::save(XmlNode *node) const {
 	for(int i = 0; i < gs.getFactionCount(); ++i) {
-		XmlNode *n = node->addChild("faction");
-		n->addChild("victory", factionStats[i].victory);
-		n->addChild("kills", factionStats[i].kills);
-		n->addChild("deaths", factionStats[i].deaths);
-		n->addChild("unitsProduced", factionStats[i].unitsProduced);
-		n->addChild("resourcesHarvested", factionStats[i].resourcesHarvested);
+		XmlNode *n = node->addChild("player");
+		n->addChild("victory", playerStats[i].victory);
+		n->addChild("kills", playerStats[i].kills);
+		n->addChild("deaths", playerStats[i].deaths);
+		n->addChild("unitsProduced", playerStats[i].unitsProduced);
+		n->addChild("resourcesHarvested", playerStats[i].resourcesHarvested);
 	}
 }
 
-} // end namespace
+}}//end namespace

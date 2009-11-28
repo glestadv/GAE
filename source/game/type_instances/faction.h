@@ -10,8 +10,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_FACTION_H_
-#define _GAME_FACTION_H_
+#ifndef _GLEST_GAME_FACTION_H_
+#define _GLEST_GAME_FACTION_H_
 
 #include <vector>
 #include <map>
@@ -21,14 +21,13 @@
 #include "texture.h"
 #include "resource.h"
 #include "game_constants.h"
-#include "game_settings.h"
 #include "element_type.h"
 #include "vec.h"
 
 using std::map;
 using std::vector;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Graphics::Texture2D;
 using Shared::Graphics::Vec3f;
@@ -48,45 +47,40 @@ class World;
 ///	Each of the game players
 // =====================================================
 
-class Faction : public IdNamePair {
+class Faction : public NameIdPair {
 public:
 	typedef vector<const ResourceType *> ResourceTypes;
 
 private:
-	typedef vector<Resource> Resources;
-	typedef vector<Resource> Store;
-	
+    typedef vector<Resource> Resources;
+    typedef vector<Resource> Store;
+
 	UpgradeManager upgradeManager;
-	
-	Resources resources;
-	Store store;
+
+    Resources resources;
+    Store store;
 	Units units;
 	UnitMap unitMap;
-	
-	ControlType control;
-	
+
+    ControlType control;
+
 	Texture2D *texture;
 	const FactionType *factionType;
-	
+
 	int teamIndex;
 	int startLocationIndex;
-	const Players &players;
-//	PlayerInfo playerInfo;
-	
+
 	bool thisFaction;
 	int subfaction;			// the current subfaction index starting at zero
 	time_t lastAttackNotice;
 	time_t lastEnemyNotice;
 	Vec3f lastEventLoc;
-	
+
 	static ResourceTypes neededResources;
 
 public:
-	Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction);
-	/*
     void init(const FactionType *factionType, ControlType control, TechTree *techTree,
-			int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction,
-			bool autoRepairEnabled, bool autoReturnEnabled);*/
+         int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources);
 	void end();
 
     //get
@@ -94,25 +88,24 @@ public:
 	const Resource *getResource(int i) const			{assert(i < resources.size()); return &resources[i];}
 	int getStoreAmount(const ResourceType *rt) const;
 	const FactionType *getType() const					{return factionType;}
-	int getIndex() const								{return getId();}
+	int getIndex() const								{return id;}
 	int getTeam() const									{return teamIndex;}
-	bool getCpuControl() const							{return control == CT_CPU_ULTRA || control == CT_CPU;}
-	bool getCpuUltraControl() const						{return control == CT_CPU_ULTRA;}
+	bool getCpuControl() const							{return control == ctCpuUltra || control == ctCpu;}
+	bool getCpuUltraControl() const						{return control == ctCpuUltra;}
 	Unit *getUnit(int i) const							{assert(units.size() == unitMap.size()); assert(i < units.size()); return units[i];}
 	int getUnitCount() const							{return units.size();}
 	const Units &getUnits() const						{return units;}
 	const UpgradeManager *getUpgradeManager() const		{return &upgradeManager;}
 	const Texture2D *getTexture() const					{return texture;}
 	int getStartLocationIndex() const					{return startLocationIndex;}
-	const Player &getPrimaryPlayer() const				{return *players.front();}
-	bool isThisFaction() const							{return thisFaction;}
 	int getSubfaction() const							{return subfaction;}
 	Vec3f getLastEventLoc() const						{return lastEventLoc;}
 	static const ResourceTypes &getNeededResources() 	{return neededResources;}
+	bool isThisFaction() const							{return thisFaction;}
 
 	//upgrades
-	void startUpgrade(const UpgradeType *ut)	{upgradeManager.startUpgrade(ut, id);}
-	void cancelUpgrade(const UpgradeType *ut)	{upgradeManager.cancelUpgrade(ut);}
+	void startUpgrade(const UpgradeType *ut);
+	void cancelUpgrade(const UpgradeType *ut);
 	void finishUpgrade(const UpgradeType *ut);
 
 	//cost application
@@ -122,6 +115,7 @@ public:
 	void applyStaticProduction(const ProducibleType *p);
 	void deApplyCosts(const ProducibleType *p);
 	void deApplyStaticCosts(const ProducibleType *p);
+   void deApplyStaticConsumption(const ProducibleType *p);
 	void applyCostsOnInterval();
 	bool checkCosts(const ProducibleType *pt);
 
@@ -132,7 +126,7 @@ public:
 	bool isAvailable(const RequirableType *rt) const	{return rt->isAvailableInSubfaction(subfaction);}
 
 	//diplomacy
-	bool isAlly(const Faction *faction)					{return teamIndex == faction->getTeam();}
+	bool isAlly(const Faction *faction)	const			{return teamIndex == faction->getTeam();}
 
     //other
 	Unit *findUnit(int id) {
@@ -165,6 +159,6 @@ private:
 	void resetResourceAmount(const ResourceType *rt);
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

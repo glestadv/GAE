@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MENUSTATEOPTIONS_H_
-#define _GAME_MENUSTATEOPTIONS_H_
+#ifndef _GLEST_GAME_MENUSTATEOPTIONS_H_
+#define _GLEST_GAME_MENUSTATEOPTIONS_H_
 
 #include "main_menu.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // ===============================
 // 	class MenuStateOptions  
@@ -44,6 +44,16 @@ private:
 	GraphicListBox listBoxVolumeMusic;
 	GraphicListBox listBoxMusicSelect;
 
+   GraphicLabel labelMaxPathNodes;
+   GraphicListBox listBoxMaxPathNodes;
+   GraphicLabel labelPFAlgorithm;
+   GraphicListBox listBoxPFAlgorithm;
+#  ifdef _GAE_DEBUG_EDITION_
+      GraphicLabel labelPFTexturesOn;
+      GraphicLabel labelPFTextureMode;
+      GraphicListBox listBoxPFTexturesOn;
+      GraphicListBox listBoxPFTextureMode;
+#  endif
 private:
 	MenuStateOptions(const MenuStateOptions &);
 	const MenuStateOptions &operator =(const MenuStateOptions &);
@@ -59,6 +69,6 @@ private:
 	void saveConfig();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

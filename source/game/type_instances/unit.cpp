@@ -13,7 +13,6 @@
 #include "faction.h"
 
 #include <cassert>
-#include <sstream>
 
 #include "unit.h"
 #include "world.h"
@@ -25,6 +24,7 @@
 #include "skill_type.h"
 #include "core_data.h"
 #include "renderer.h"
+#include "script_manager.h"
 
 #include "leak_dumper.h"
 
@@ -32,14 +32,14 @@
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class UnitPath
 // =====================================================
 
 const int UnitPath::maxBlockCount= 10;
-
+	
 void UnitPath::read(const XmlNode *node) {
 	clear();
 	string str = node->getStringValue();
@@ -59,10 +59,10 @@ void UnitPath::read(const XmlNode *node) {
 		p = z + 1;
 		pathQueue.push_back(Vec2i(x, y));
 	} while(true);
-
+	
 	blockCount = node->getIntAttribute("blockCount");
-
-
+  
+	
 	/*
  	char *x, *y, *saveptr;
 	char *buf = strcpy(new char [str.size() + 1], str.c_str());
@@ -109,6 +109,9 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 		lastPos(pos),
 		nextPos(pos),
 		targetPos(0),
+		commandCallback(NULL),
+		hp_below_trigger(0),
+		hp_above_trigger(0),
 		targetVec(0.0f),
 		meetingPos(pos),
 		lastCommandUpdate(0),
@@ -131,11 +134,14 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(fAir)) currField = fAir;
-//	if(getType()->getField(fWater)) currField = fWater;
-//	if(getType()->getField(fSubterranean)) currField = fSubterranean;
-	if(type->getField(fLand)) currField = fLand;
-	targetField = fLand;		// init just to keep it pretty in memory
+	if(type->getField(FieldWalkable)) currField = FieldWalkable;
+	else if(type->getField(FieldAir)) currField = FieldAir;
+
+	if ( type->getField (FieldAmphibious) ) currField = FieldAmphibious;
+	else if ( type->getField (FieldAnyWater) ) currField = FieldAnyWater;
+	else if ( type->getField (FieldDeepWater) ) currField = FieldDeepWater;
+
+	targetField = FieldWalkable;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -153,7 +159,7 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 
 	toBeUndertaken = false;
 //	alive= true;
-	autoRepairEnabled = faction->getPrimaryPlayer().getAutoRepairEnabled();
+	autoRepairEnabled = true;
 
 	computeTotalUpgrade();
 	hp = type->getMaxHp() / 20;
@@ -204,7 +210,7 @@ void Unit::save(XmlNode *node, bool morphed) const {
 	node->addChild("targetVec", targetVec);
 	node->addChild("meetingPos", meetingPos);
 	node->addChild("faceTarget", faceTarget);
-	node->addChild("useNearestOccupiedCell", useNearestOccupiedCell);
+	node->addChild("useNearestOccupiedCell", useNearestOccupiedCell);	
 	node->addChild("lastRotation", lastRotation);
 	node->addChild("targetRotation", targetRotation);
 	node->addChild("rotation", rotation);
@@ -251,7 +257,7 @@ void Unit::writeMinorUpdate(XmlNode *node) const {
 	node->addChild("targetPos", targetPos);
 	node->addChild("targetVec", targetVec);
 	node->addChild("faceTarget", faceTarget);
-	node->addChild("useNearestOccupiedCell", useNearestOccupiedCell);
+	node->addChild("useNearestOccupiedCell", useNearestOccupiedCell);	
 	node->addChild("loadType", loadType ? loadType->getName() : "null_value");
 	node->addChild("currSkill", currSkill ? currSkill->getName() : "null_value");
 //	node->addChild("alive", alive);
@@ -281,7 +287,7 @@ void Unit::updateMinor(const XmlNode *node) {
 
 		s = node->getChildStringValue("currSkill");
 		currSkill = s == "null_value" ? NULL : type->getSkillType(s);
-
+	
 		unitPath.read(node->getChild("unitPath"));
 	}
 
@@ -295,7 +301,7 @@ void Unit::updateMinor(const XmlNode *node) {
 		// FIXME: Is this the best way to do this?
 		decHp(0);
 	}
-
+	
 }
 
 Unit::Unit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld) :
@@ -341,7 +347,7 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 	loadCount = node->getChildIntValue("loadCount");
 	deadCount = node->getChildIntValue("deadCount");
 	// these fields updated later
-	//progress
+	//progress 
 	//lastAnimProgress
 	//animProgress
 	//highlight
@@ -373,7 +379,7 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 		useNearestOccupiedCell = node->getChildBoolValue("useNearestOccupiedCell");
 		s = node->getChildStringValue("currSkill");
 		currSkill = s == "null_value" ? NULL : type->getSkillType(s);
-
+	
 		progress = node->getChildFloatValue("progress");
 	}
 
@@ -395,11 +401,7 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 		for(int i = 0; i < n->getChildCount(); ++i) {
 			commands.push_back(new Command(n->getChild("command", i), type, faction->getType()));
 		}
-
-		if(!commands.empty()){
-			applyCommand(*commands.front());
-		}
-
+	
 		unitPath.read(node->getChild("unitPath"));
 		setNextUpdateFrames(nextAdvanceFrames);
 	}
@@ -636,7 +638,7 @@ void Unit::setPos(const Vec2i &pos){
 	this->lastPos = this->pos;
 	this->pos = pos;
 	this->meetingPos = pos - Vec2i(1);
-
+	
 	// make sure it's not invalid if they build at 0,0
 	if(pos.x == 0 && pos.y == 0) {
 		this->meetingPos = pos + Vec2i(size);
@@ -645,7 +647,7 @@ void Unit::setPos(const Vec2i &pos){
 
 void Unit::face(const Vec2i &nextPos) {
 	Vec2i relPos = nextPos - pos;
-	Vec2f relPosf = Vec2f(static_cast<float>(relPos.x), static_cast<float>(relPos.y));
+	Vec2f relPosf = Vec2f(relPos.x, relPos.y);
 	targetRotation = radToDeg(atan2f(relPosf.x, relPosf.y));
 }
 
@@ -683,10 +685,9 @@ const CommandType *Unit::getFirstAvailableCt(CommandClass commandClass) const {
 //give one command (clear, and push back)
 CommandResult Unit::giveCommand(Command *command) {
 	const CommandType *ct = command->getType();
-	bool queue = command->isQueue() || ct->isQueuable();
 
 	if(ct->getClass() == ccSetMeetingPoint) {
-		if(queue && !commands.empty()) {
+		if(command->isQueue() && !commands.empty()) {
 			commands.push_back(command);
 		} else {
 			meetingPos = command->getPos();
@@ -695,12 +696,10 @@ CommandResult Unit::giveCommand(Command *command) {
 		return crSuccess;
 	}
 
-	if(ct->getClass() == ccAttack && pets.size() > 0 && !queue) {
+	if(ct->getClass() == ccAttack && pets.size() > 0) {
 		// pets don't attack the master's actual target, just to the pos
-		Vec2i pos;
-		if(command->hasPos()) {
-			pos = command->getPos();
-		} else {
+		Vec2i pos = command->getPos();
+		if(pos.x == 0 && pos.y == 0) {
 			assert(command->getUnit());
 			pos = command->getUnit()->getPos();
 		}
@@ -709,25 +708,31 @@ CommandResult Unit::giveCommand(Command *command) {
 			const CommandType *ct = pet->getType()->getFirstCtOfClass(ccAttack);
 			if(ct) {
 				// ignore result
-				pet->giveCommand(new Command(ct, CommandFlags(), pos));
+				pet->giveCommand(new Command(ct, CommandFlags(cpQueue, command->isQueue()), pos));
 			}
+		}
+	}
+
+	if(ct->isQueuable() || command->isQueue()) {
+		//cancel current command if it is not queuable or marked to be queued
+		if(!commands.empty() && !commands.front()->getType()->isQueuable() && !command->isQueue()) {
+			cancelCommand();
+			unitPath.clear();
+		}
+	} else {
+		//empty command queue
+		clearCommands();
+		unitPath.clear();
+
+		//for patrol commands, remember where we started from
+		if(ct->getClass() == ccPatrol) {
+			command->setPos2(pos);
 		}
 	}
 
 	//check command
 	CommandResult result = checkCommand(*command);
-	if(result == crSuccess) {
-		if(commands.empty() || !queue) {
-			//empty command queue
-			clearCommands();
-			unitPath.clear();
-
-			//for patrol commands, remember where we started from
-			if(ct->getClass() == ccPatrol) {
-				command->setPos2(pos);
-			}
-		}
-
+	if(result == crSuccess){
 		applyCommand(*command);
 		commands.push_back(command);
 
@@ -846,6 +851,7 @@ void Unit::born(){
 void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	assert(hp <= 0);
 	hp = 0;
+
 	World::getCurrWorld()->hackyCleanUp(this);
 
 	if(fire != NULL) {
@@ -863,15 +869,16 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	}
 	setCurrSkill(scDie);
 
+	//no longer needs static resources
+	if(isBeingBuilt())
+		faction->deApplyStaticConsumption(type);
+	else
+		faction->deApplyStaticCosts(type);
+
 	notifyObservers(UnitObserver::eKill);
 
 	//clear commands
 	clearCommands();
-
-	//no longer needs static resources
-	if(!isBeingBuilt()) {
-		faction->deApplyStaticCosts(type);
-	}
 
 	//kill or free pets
 	killPets();
@@ -881,6 +888,9 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 		master.getUnit()->petDied(this);
 	}
 
+	// hack... 
+	Renderer::getInstance().getParticleManager()->checkTargets(this);
+	
 	// random decay time
 	//deadCount = Random(id).randRange(-256, 256);
 	deadCount = 0;
@@ -894,12 +904,12 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
 	const CommandType *commandType = NULL;
-	SurfaceCell *sc = map->getSurfaceCell(Map::toSurfCoords(pos));
+	Tile *sc = map->getTile(Map::toTileCoords(pos));
 
 	if (targetUnit) {
 		//attack enemies
 		if (!isAlly(targetUnit)) {
-			commandType = type->getFirstAttackCommand(targetUnit->getCurrField());
+			commandType = type->getFirstAttackCommand(targetUnit->getCurrZone());
 
 		//repair allies
 		} else {
@@ -1019,12 +1029,11 @@ bool Unit::doRegen(int hpRegeneration, int epRegeneration) {
 	}
 
 	//hp regen/degen
-	if(hpRegeneration > 0) {
+	if(hpRegeneration > 0)
 		repair(hpRegeneration);
-	} else if(hpRegeneration < 0) {
-		if(decHp(-hpRegeneration)) {
+	else if(hpRegeneration < 0) {
+		if(decHp(-hpRegeneration))
 			return true;
-		}
 	}
 
 	//ep regen/degen
@@ -1116,6 +1125,10 @@ bool Unit::repair(int amount, float multiplier) {
 
 	//increase hp
 	hp += amount;
+	if ( hp_above_trigger && hp > hp_above_trigger ) {
+		hp_above_trigger = 0;
+		ScriptManager::onHPAboveTrigger(this);
+	}
 	if (hp > getMaxHp()) {
 		hp = getMaxHp();
 		if (!isBuilt()) {
@@ -1145,6 +1158,10 @@ bool Unit::decHp(int i) {
 	// we shouldn't ever go negative
 	assert(hp > 0);
 	hp -= i;
+	if ( hp_below_trigger && hp < hp_below_trigger ) {
+		hp_below_trigger = 0;
+		ScriptManager::onHPBelowTrigger(this);
+	}
 
 	//fire
 	if (type->getProperty(pBurnable) && hp < type->getMaxHp() / 2 && fire == NULL) {
@@ -1188,9 +1205,9 @@ int Unit::killPets() {
 }
 
 
-string Unit::getDesc() const {
-	Lang &lang= Lang::getInstance();
-	stringstream str;
+string Unit::getDesc(bool full) const {
+
+	Lang &lang = Lang::getInstance();
 	int armorBonus = getArmor() - type->getArmor();
 	int sightBonus = getSight() - type->getSight();
 
@@ -1198,77 +1215,86 @@ string Unit::getDesc() const {
 	//str+="Pos: "+v2iToStr(pos)+"\n";
 
 	//hp
-	str << endl << lang.get("Hp") << ": " << hp << "/" << getMaxHp();
-	if(getHpRegeneration()!=0){
-		str << " (" << lang.get("Regeneration") << ": " << getHpRegeneration() << ")";
+	string str = "\n" + lang.get("Hp") + ": " + intToStr(hp) + "/" + intToStr(getMaxHp());
+	if (getHpRegeneration() != 0) {
+		str += " (" + lang.get("Regeneration") + ": " + intToStr(getHpRegeneration()) + ")";
 	}
 
 	//ep
-	if(getMaxEp()!=0){
-		str << endl << lang.get("Ep") << ": " << ep << "/" << getMaxEp();
-		if(getEpRegeneration()!=0){
-			str << " (" << lang.get("Regeneration") << ": " << getEpRegeneration() << ")";
+	if (getMaxEp() != 0) {
+		str += "\n" + lang.get("Ep") + ": " + intToStr(ep) + "/" + intToStr(getMaxEp());
+		if (getEpRegeneration() != 0) {
+			str += " (" + lang.get("Regeneration") + ": " + intToStr(getEpRegeneration()) + ")";
 		}
+	}
+
+	if (!full) {
+		// Show only current command being executed and effects
+		if (!commands.empty()) {
+			str += "\n" + commands.front()->getType()->getName();
+		}
+		effects.getDesc(str);
+		return str;
 	}
 
 	//armor
-	str << endl << lang.get("Armor") << ": " << type->getArmor();
-	if(armorBonus) {
-		if(armorBonus > 0) {
-			str << "+";
+	str += "\n" + lang.get("Armor") + ": " + intToStr(type->getArmor());
+	if (armorBonus) {
+		if (armorBonus > 0) {
+			str += "+";
 		}
-		str << armorBonus;
+		str += intToStr(armorBonus);
 	}
-	str << " (" << type->getArmorType()->getName() << ")";
+	str += " (" + type->getArmorType()->getName() + ")";
 
 	//sight
-	str << "\n" << lang.get("Sight") << ": " << type->getSight();
-	if(sightBonus) {
-		if(sightBonus > 0) {
-			str << "+";
+	str += "\n" + lang.get("Sight") + ": " + intToStr(type->getSight());
+	if (sightBonus) {
+		if (sightBonus > 0) {
+			str += "+";
 		}
-		str << sightBonus;
+		str += intToStr(sightBonus);
 	}
 
 	//kills
 	const Level *nextLevel = getNextLevel();
-	if(kills > 0 || nextLevel) {
-		str << endl << lang.get("Kills") << ": " << kills;
-		if(nextLevel) {
-			str << " (" << nextLevel->getName() << ": " << nextLevel->getKills() << ")";
+	if (kills > 0 || nextLevel != NULL) {
+		str += "\n" + lang.get("Kills") + ": " + intToStr(kills);
+		if (nextLevel != NULL) {
+			str += " (" + nextLevel->getName() + ": " + intToStr(nextLevel->getKills()) + ")";
 		}
 	}
 
 	//str+= "\nskl: "+scToStr(currSkill->getClass());
 
 	//load
-	if(loadCount) {
-		str << "\n" << lang.get("Load") << ": " << loadCount << "  " << loadType->getName();
+	if (loadCount) {
+		str += "\n" + lang.get("Load") + ": " + intToStr(loadCount) + "  " + loadType->getName();
 	}
 
 	//consumable production
-	for(int i=0; i<type->getCostCount(); ++i){
-		const Resource *r= getType()->getCost(i);
-		if(r->getType()->getClass()==rcConsumable){
-			str << endl;
-			str << lang.get(r->getAmount() < 0 ? "Produce" : "Consume") << ": ";
-			str << abs(r->getAmount()) << " " << r->getType()->getName();
+	for (int i = 0; i < type->getCostCount(); ++i) {
+		const Resource *r = getType()->getCost(i);
+		if (r->getType()->getClass() == rcConsumable) {
+			str += "\n";
+			str += r->getAmount() < 0 ? lang.get("Produce") + ": " : lang.get("Consume") + ": ";
+			str += intToStr(abs(r->getAmount())) + " " + r->getType()->getName();
 		}
 	}
 
 	//command info
-	if(!commands.empty()) {
-		str << endl << commands.front()->getType()->getName();
-		if(commands.size() > 1) {
-			str << endl << lang.get("OrdersOnQueue") << ": " << commands.size();
+	if (!commands.empty()) {
+		str += "\n" + commands.front()->getType()->getName();
+		if (commands.size() > 1) {
+			str += "\n" + lang.get("OrdersOnQueue") + ": " + intToStr(commands.size());
 		}
 	} else {
 		//can store
-		if(type->getStoredResourceCount()>0) {
-			for(int i=0; i<type->getStoredResourceCount(); ++i){
-				const Resource *r= type->getStoredResource(i);
-				str << endl << lang.get("Store") << ": ";
-				str << r->getAmount() << " " << r->getType()->getName();
+		if (type->getStoredResourceCount() > 0) {
+			for (int i = 0; i < type->getStoredResourceCount(); ++i) {
+				const Resource *r = type->getStoredResource(i);
+				str += "\n" + lang.get("Store") + ": ";
+				str += intToStr(r->getAmount()) + " " + r->getType()->getName();
 			}
 		}
 	}
@@ -1276,7 +1302,7 @@ string Unit::getDesc() const {
 	//effects
 	effects.getDesc(str);
 
-	return str.str();
+	return str;
 }
 
 void Unit::applyUpgrade(const UpgradeType *upgradeType){
@@ -1315,14 +1341,30 @@ void Unit::incKills() {
 bool Unit::morph(const MorphCommandType *mct) {
 	const UnitType *morphUnitType = mct->getMorphUnit();
 
-	if (map->isFreeCellsOrHasUnit(pos, morphUnitType->getSize(), currField, this)) {
+	// redo field
+	Field newField;
+	if ( morphUnitType->getField( FieldWalkable ) ) {
+		newField = FieldWalkable;
+	} else if ( morphUnitType->getField( FieldAir ) ) {
+		newField = FieldAir;
+	}
+	if ( morphUnitType->getField( FieldAmphibious ) ) {
+		newField = FieldAmphibious;
+	} else if ( morphUnitType->getField( FieldAnyWater ) ) {
+		newField = FieldAnyWater;
+	} else if ( morphUnitType->getField( FieldDeepWater ) ) {
+		newField = FieldDeepWater;
+	}
+
+	if (map->areFreeCellsOrHasUnit(pos, morphUnitType->getSize(), newField, this)) {
 		map->clearUnitCells(this, pos);
 		faction->deApplyStaticCosts(type);
 		type = morphUnitType;
+		currField = newField;
 		computeTotalUpgrade();
 		map->putUnitCells(this, pos);
 		faction->applyDiscount(morphUnitType, mct->getDiscount());
-
+		
 		// reprocess commands
 		Commands newCommands;
 		Commands::const_iterator i;
@@ -1342,10 +1384,7 @@ bool Unit::morph(const MorphCommandType *mct) {
 				newCmdType = type->getFirstCtOfClass((*i)->getType()->getClass());
 			}
 			// if still not found, we drop the comand, otherwise, we add it to the new list
-			if(!newCmdType) {
-				undoCommand(**i);
-				delete *i;
-			} else {
+			if(newCmdType) {
 				(*i)->setType(newCmdType);
 				newCommands.push_back(*i);
 			}
@@ -1420,7 +1459,7 @@ void Unit::effectExpired(Effect *e){
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
-	if (currField == fAir) {
+	if (currField == FieldAir) {
 		height += World::airHeight;
 	}
 
@@ -1434,14 +1473,14 @@ void Unit::updateTarget(const Unit *target) {
 
 	//find a free pos in cellmap
 //	setTargetPos(unit->getCellPos());
-
+	
 	if(target) {
 		targetPos = useNearestOccupiedCell
 				? target->getNearestOccupiedCell(pos)
 				: targetPos = target->getCenteredPos();
 		targetField = target->getCurrField();
 		targetVec = target->getCurrVector();
-
+		
 		if(faceTarget) {
 			face(target->getCenteredPos());
 		}
@@ -1459,10 +1498,10 @@ void Unit::clearCommands() {
 CommandResult Unit::checkCommand(const Command &command) const {
 	const CommandType *ct = command.getType();
 
-	if (command.getArchetype() != CAT_GIVE_COMMAND) {
+	if (command.getArchetype() != catGiveCommand) {
 		return crSuccess;
 	}
-
+	
 	if(ct->getClass() == ccSetMeetingPoint) {
 		return type->hasMeetingPoint() ? crSuccess : crFailUndefined;
 	}
@@ -1490,7 +1529,7 @@ CommandResult Unit::checkCommand(const Command &command) const {
 
 	//if this is a pet, make sure we don't have more pets of this type than allowed.
 	if (ct->getClass() == ccProduce) {
-		const ProduceCommandType *pct = dynamic_cast<const ProduceCommandType*>(ct);
+		const ProduceCommandType *pct = reinterpret_cast<const ProduceCommandType*>(ct);
 		const ProduceSkillType *pst = pct->getProduceSkillType();
 		if(pst->isPet()) {
 			const UnitType *ut = pct->getProducedUnit();
@@ -1498,7 +1537,7 @@ CommandResult Unit::checkCommand(const Command &command) const {
 			for(Commands::const_iterator i = commands.begin(); i != commands.end(); ++i) {
 				const CommandType *ct2 = (*i)->getType();
 				if(*i != &command && ct2->getClass() == ccProduce) {
-					const ProduceCommandType* pct2 = dynamic_cast<const ProduceCommandType*>(ct2);
+					const ProduceCommandType* pct2 = reinterpret_cast<const ProduceCommandType*>(ct2);
 					if(pct2->getProducedUnit() == ut) {
 						++totalPets;
 					}
@@ -1692,4 +1731,4 @@ int Unit::getPetCount(const UnitType *unitType) const {
 	return count;
 }
 
-} // end namespace
+}}//end namespace

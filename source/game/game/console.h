@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_CONSOLE_H_
-#define _GAME_CONSOLE_H_
+#ifndef _GLEST_GAME_CONSOLE_H_
+#define _GLEST_GAME_CONSOLE_H_
 
 #include <utility>
 #include <string>
@@ -20,17 +20,17 @@ using std::string;
 using std::vector;
 using std::pair;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
-//  class Console
+// 	class Console
 //
-/// In-game console that shows various types of messages
+//	In-game console that shows various types of messages
 // =====================================================
 
-class Console {
+class Console{
 private:
-	static const int consoleLines = 5;
+	static const int consoleLines= 5;
 
 public:
 	typedef pair<string, float> StringTimePair;
@@ -51,17 +51,17 @@ private:
 public:
 	Console();
 
-	int getLineCount() const	{return lines.size();}
-	string getLine(int i) const	{return lines[i].first;}
+	int getLineCount() const		{return lines.size();}
+	string getLine(int i) const		{return lines[i].first;}
 
 
 	void addStdMessage(const string &s);
 	void addStdMessage(const string &s, const string &param1, const string &param2 = "", const string &param3 = "");
-	void addLine(string line);
+	void addLine(string line, bool playSound=false );
 	void update();
 	bool isEmpty();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

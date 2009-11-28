@@ -9,7 +9,8 @@
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
-
+#include "../platform/window.h"
+/*
 #ifndef _SHARED_PLATFORM_WINDOW_H_
 #define _SHARED_PLATFORM_WINDOW_H_
 
@@ -17,63 +18,25 @@
 #include <string>
 
 #include "types.h"
+#include "input.h"
 #include "platform_menu.h"
+#include "timer.h"
 
 using std::map;
 using std::string;
 
-namespace Shared{ namespace Platform{
+namespace Shared { namespace Platform {
 
 class Timer;
 class PlatformContextGl;
 
-enum MouseButton{
-	mbLeft,
-	mbRight,
-	mbCenter,
-	mbWheelUp,
-	mbWheelDown
-};
-
-enum SizeState{
+enum SizeState {
 	ssMaximized,
 	ssMinimized,
 	ssRestored
 };
 
-const int vkAdd= VK_ADD;
-const int vkSubtract= VK_SUBTRACT;
-const int vkAlt= VK_MENU;
-const int vkControl= VK_CONTROL;
-const int vkShift= VK_SHIFT;
-const int vkEscape= VK_ESCAPE;
-const int vkUp= VK_UP;
-const int vkLeft= VK_LEFT;
-const int vkRight= VK_RIGHT;
-const int vkDown= VK_DOWN;
-const int vkReturn= VK_RETURN;
-const int vkBack= VK_BACK;
-const int vkDelete= VK_DELETE;
-const char vkF1 = VK_F1;
-const char vkF2 = VK_F2;
-const char vkF3 = VK_F3;
-const char vkF4 = VK_F4;
-const char vkF5 = VK_F5;
-const char vkF6 = VK_F6;
-const char vkF7 = VK_F7;
-const char vkF8 = VK_F8;
-const char vkF9 = VK_F9;
-const char vkF10 = VK_F10;
-const char vkF11 = VK_F11;
-const char vkF12 = VK_F12;
-
-struct MouseState{
-	bool leftMouse;
-	bool rightMouse;
-	bool centerMouse;
-};
-
-enum WindowStyle{
+enum WindowStyle {
 	wsFullscreen,
 	wsWindowedFixed,
 	wsWindowedResizeable
@@ -83,11 +46,10 @@ enum WindowStyle{
 //	class Window
 // =====================================================
 
-class Window{
+class Window {
 private:
 	typedef map<WindowHandle, Window*> WindowMap;
 
-private:
 	static const DWORD fullscreenStyle;
 	static const DWORD windowedFixedStyle;
 	static const DWORD windowedResizeableStyle;
@@ -109,9 +71,6 @@ protected:
 	bool ownDc;
 
 public:
-	static bool handleEvent();
-
-	//contructor & destructor
 	Window();
 	virtual ~Window();
 
@@ -143,16 +102,17 @@ public:
 	void showPopupMenu(Menu *menu, int x, int y);
 	void destroy();
 	void toggleFullscreen();
+	bool handleEvent();
 
 protected:
 	virtual void eventCreate(){}
 	virtual void eventMouseDown(int x, int y, MouseButton mouseButton){}
 	virtual void eventMouseUp(int x, int y, MouseButton mouseButton){}
-	virtual void eventMouseMove(int x, int y, const MouseState *mouseState){}
+	virtual void eventMouseMove(int x, int y, const MouseState &mouseState){}
 	virtual void eventMouseDoubleClick(int x, int y, MouseButton mouseButton){}
 	virtual void eventMouseWheel(int x, int y, int zDelta){}
-	virtual void eventKeyDown(char key){}
-	virtual void eventKeyUp(char key){}
+	virtual void eventKeyDown(const Key &key){}
+	virtual void eventKeyUp(const Key &key){}
 	virtual void eventKeyPress(char c){};
 	virtual void eventResize(){};
 	virtual void eventPaint(){}
@@ -173,3 +133,4 @@ private:
 }}//end namespace
 
 #endif
+*/

@@ -21,7 +21,7 @@
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class Resource
@@ -59,9 +59,9 @@ string Resource::getDescription() const{
 
      str+= type->getName();
      str+="\n";
-     str+= Conversion::toStr(amount);
+     str+= intToStr(amount);
      str+="/";
-     str+= Conversion::toStr(type->getDefResPerPatch());
+     str+= intToStr(type->getDefResPerPatch());
 
      return str;
 }
@@ -74,4 +74,4 @@ bool Resource::decAmount(int i){
 }
 
 
-} // end namespace
+}}//end namespace

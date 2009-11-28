@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_RENDERER_H_
-#define _GAME_RENDERER_H_
+#ifndef _GLEST_GAME_RENDERER_H_
+#define _GLEST_GAME_RENDERER_H_
 
 #include "vec.h"
 #include "math_util.h"
@@ -27,26 +27,15 @@
 #include "font_manager.h"
 #include "camera.h"
 
-namespace Game {
+#if DEBUG_RENDERING_ENABLED
+#	include "debug_renderer.h"
+#endif
 
-using Shared::Graphics::Texture2D;
-using Shared::Graphics::Texture3D;
-using Shared::Graphics::ModelRenderer;
-using Shared::Graphics::TextRenderer2D;
-using Shared::Graphics::ParticleRenderer;
-using Shared::Graphics::ParticleManager;
-using Shared::Graphics::ModelManager;
-using Shared::Graphics::TextureManager;
-using Shared::Graphics::FontManager;
-using Shared::Graphics::Font2D;
-using Shared::Graphics::Matrix4f;
-using Shared::Graphics::Vec2i;
-using Shared::Graphics::Quad2i;
-using Shared::Graphics::Vec3f;
-using Shared::Graphics::Model;
-using Shared::Graphics::ParticleSystem;
-using Shared::Graphics::Pixmap2D;
-using Shared::Graphics::Camera;
+#include "profiler.h"
+
+namespace Glest{ namespace Game{
+
+using namespace Shared::Graphics;
 
 //non shared classes
 class Config;
@@ -193,19 +182,19 @@ public:
 	void reloadResources();
 
 	//engine interface
-	Model *newModel(ResourceScope rs)								{return modelManager[rs]->newModel();}
-	Texture2D *newTexture2D(ResourceScope rs)						{return textureManager[rs]->newTexture2D();}
-	Texture3D *newTexture3D(ResourceScope rs)						{return textureManager[rs]->newTexture3D();}
-	Texture2D *loadTexture2D(ResourceScope rs, const XmlNode &node)	{return textureManager[rs]->loadTexture2D(node);}
-	Texture3D *loadTexture3D(ResourceScope rs, const XmlNode &node)	{return textureManager[rs]->loadTexture3D(node);}
-	Font2D *newFont(ResourceScope rs)								{return fontManager[rs]->newFont2D();}
-	void manageParticleSystem(ParticleSystem *ps, ResourceScope rs)	{particleManager[rs]->manage(ps);}
-	void updateParticleManager(ResourceScope rs)					{particleManager[rs]->update();}
-	TextRenderer2D *getTextRenderer() const							{return textRenderer;}
+	Model *newModel(ResourceScope rs);
+	Texture2D *newTexture2D(ResourceScope rs);
+	Texture3D *newTexture3D(ResourceScope rs);
+	Font2D *newFont(ResourceScope rs);
+	TextRenderer2D *getTextRenderer() const	{return textRenderer;}
+	void manageParticleSystem(ParticleSystem *particleSystem, ResourceScope rs);
+	void updateParticleManager(ResourceScope rs);
 	void renderParticleManager(ResourceScope rs);
 	void swapBuffers();
 
-    //lights and camera
+	ParticleManager* getParticleManager() { return particleManager[rsGame]; }
+
+	//lights and camera
 	void setupLighting();
 	void loadGameCameraMatrix();
 	void loadCameraMatrix(const Camera *camera);
@@ -242,7 +231,9 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
-
+#if DEBUG_RENDERING_ENABLED
+	DebugRenderer debugRenderer;
+#endif
 	//computing
     bool computePosition(const Vec2i &screenPos, Vec2i &worldPos);
 	void computeSelected(Selection::UnitContainer &units, const Vec2i &posDown, const Vec2i &posUp);
@@ -306,6 +297,6 @@ private:
     static Texture2D::Filter strToTextureFilter(const string &s);
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

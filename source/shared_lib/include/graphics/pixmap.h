@@ -192,14 +192,8 @@ public:
 	void copy(const Pixmap2D *sourcePixmap);
 	void subCopy(int x, int y, const Pixmap2D *sourcePixmap);
 
-protected:
-	const uint8 *getPixel(int x, int y) const					{return &pixels[(x + y * w) * components];}
-	const uint8 *getComponent(int x, int y, int component) const{return &pixels[(x + y * w) * components + component];}
-	uint8 *getPixel(int x, int y)								{return const_cast<uint8 *>(static_cast<const Pixmap2D*>(this)->getPixel(x, y));}
-	uint8 *getComponent(int x, int y, int component)			{return const_cast<uint8 *>(static_cast<const Pixmap2D*>(this)->getComponent(x, y, component));}
-
 private:
-	bool doDimensionsAgree(const Pixmap2D *other) {return other->getW() == w && other->getH() == h;}
+	bool doDimensionsAgree(const Pixmap2D *pixmap);
 };
 
 // =====================================================

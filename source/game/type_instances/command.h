@@ -2,7 +2,6 @@
 //	This file is part of Glest (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
-//				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -10,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_COMMAND_H_
-#define _GAME_COMMAND_H_
+#ifndef _GLEST_GAME_COMMAND_H_
+#define _GLEST_GAME_COMMAND_H_
 
 #include <cstdlib>
 
@@ -21,7 +20,7 @@
 #include "flags.h"
 #include "socket.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Graphics::Vec2i;
 using Shared::Platform::int16;
@@ -29,22 +28,21 @@ using Shared::Platform::int16;
 class CommandType;
 
 enum CommandProperties {
-	CP_QUEUE,
-	CP_AUTO,
-	CP_DONT_RESERCE_RESOURCES,
-	CP_AUTO_REPAIR_ENABLED,
+	cpQueue,
+	cpAuto,
+	cpDontReserveResources,
+	cpAutoRepairEnabled,
 
-	CP_COUNT
+	cpCount
 };
 
-typedef Flags<CommandProperties, CP_COUNT, uint8> CommandFlags;
+typedef Flags<CommandProperties, cpCount, uint8> CommandFlags;
 
 enum CommandArchetype {
-	CAT_GIVE_COMMAND,
-	CAT_CANCEL_COMMAND,
-	CAT_SET_AUTO_REPAIR,
-
-	CAT_COUNT
+	catGiveCommand,
+	catCancelCommand,
+//	catSetMeetingPoint,
+	catSetAutoRepair
 };
 
 // =====================================================
@@ -53,21 +51,21 @@ enum CommandArchetype {
 ///	A unit command
 // =====================================================
 
-class Command : public NetSerializable {
+class Command : public NetworkWriteable {
 public:
 
 	static const Vec2i invalidPos;
 
 private:
-	CommandArchetype archetype;	/** Archetype */
+	CommandArchetype archetype;
     const CommandType *type;
 	CommandFlags flags;
-    Vec2i pos;					/** map position */
-    Vec2i pos2;					/** Secondary map position -- for patrol command, the position traveling away from initially. */
-	UnitReference unitRef;		/** Target unit, used to move and attack optionally */
-	UnitReference unitRef2;		/** for patrol command, the unit traveling away from. */
-	const UnitType *unitType;	/** used for build  */
-	Unit *commandedUnit;		/** (transient) Unit being commanded */
+    Vec2i pos;
+    Vec2i pos2;					//for patrol command, the position traveling away from.
+	UnitReference unitRef;		//target unit, used to move and attack optinally
+	UnitReference unitRef2;		//for patrol command, the unit traveling away from.
+	const UnitType *unitType;	//used for build
+	Unit *commandedUnit;
 
 public:
     //constructor
@@ -84,10 +82,10 @@ public:
 	CommandArchetype getArchetype() const		{return archetype;}
 	const CommandType *getType() const			{return type;}
 	CommandFlags getFlags() const				{return flags;}
-	bool isQueue() const						{return flags.get(CP_QUEUE);}
-	bool isAuto() const							{return flags.get(CP_AUTO);}
-	bool isReserveResources() const				{return !flags.get(CP_DONT_RESERCE_RESOURCES);}
-	bool isAutoRepairEnabled() const			{return flags.get(CP_AUTO_REPAIR_ENABLED);}
+	bool isQueue() const						{return flags.get(cpQueue);}
+	bool isAuto() const							{return flags.get(cpAuto);}
+	bool isReserveResources() const				{return !flags.get(cpDontReserveResources);}
+	bool isAutoRepairEnabled() const			{return flags.get(cpAutoRepairEnabled);}
 	Vec2i getPos() const						{return pos;}
 	Vec2i getPos2() const						{return pos2;}
 	Unit* getUnit() const						{return unitRef.getUnit();}
@@ -101,10 +99,10 @@ public:
     //set
 	void setType(const CommandType *type)				{this->type= type;}
 	void setFlags(CommandFlags flags)					{this->flags = flags;}
-	void setQueue(bool queue)							{flags.set(CP_QUEUE, queue);}
-	void setAuto(bool _auto)							{flags.set(CP_AUTO, _auto);}
-	void setReserveResources(bool reserveResources)		{flags.set(CP_DONT_RESERCE_RESOURCES, !reserveResources);}
-	void setAutoRepairEnabled(bool enabled)				{flags.set(CP_AUTO_REPAIR_ENABLED, enabled);}
+	void setQueue(bool queue)							{flags.set(cpQueue, queue);}
+	void setAuto(bool _auto)							{flags.set(cpAuto, _auto);}
+	void setReserveResources(bool reserveResources)		{flags.set(cpDontReserveResources, !reserveResources);}
+	void setAutoRepairEnabled(bool enabled)				{flags.set(cpAutoRepairEnabled, enabled);}
 	void setPos(const Vec2i &pos)						{this->pos = pos;}
 	void setPos2(const Vec2i &pos2)						{this->pos2 = pos2;}
 
@@ -118,7 +116,7 @@ public:
 	void popPos()										{pos = pos2; pos2 = invalidPos;}
 	void save(XmlNode *node) const;
 
-	// NetSerializable methods
+	// NetworkWriteable methods
 	void write(NetworkDataBuffer &buf) const;
 	void read(NetworkDataBuffer &buf);
 	size_t getNetSize() const;
@@ -136,6 +134,6 @@ public:
 	}
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

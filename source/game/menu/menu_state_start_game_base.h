@@ -9,12 +9,12 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MENUSTATESTARTGAMEBASE_H_
-#define _GAME_MENUSTATESTARTGAMEBASE_H_
+#ifndef _GLEST_GAME_MENUSTATESTARTGAMEBASE_H_
+#define _GLEST_GAME_MENUSTATESTARTGAMEBASE_H_
 
 #include "main_menu.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // ===============================
 // 	class MenuStateNewGame
@@ -31,24 +31,25 @@ protected:
 	GraphicLabel labelNetStatus[GameConstants::maxPlayers];
 	MapInfo mapInfo;
 	GraphicMessageBox *msgBox;
-	shared_ptr<GameSettings> gs;
-//	bool dirty;
 
 public:
 	MenuStateStartGameBase(Program &program, MainMenu *mainMenu, const string &stateName);
-	virtual ~MenuStateStartGameBase();
-//	bool isDirty() const						{return dirty;}
-	//virtual const shared_ptr<GameSettings> &getGameSettings() = 0;
+
+	//void mouseClick(int x, int y, MouseButton mouseButton);
+	//void mouseMove(int x, int y, const MouseState &mouseState);
+	//void render();
+	//void update();
 
 protected:
-//	void setDirty(bool v)						{dirty = v;}
-	virtual void updateGameSettings() = 0;
-	//shared_ptr<GameSettings> &getGameSettings()	{return gs;}
-	void initGameSettings(GameInterface &gi);
+//	void loadGameSettings(GameSettings *gameSettings);
 	void loadMapInfo(string file, MapInfo *mapInfo);
-	void updateNetworkSlots();
+//	void reloadFactions();
+//	void updateControlers();
+
+//	bool isUnconnectedSlots();
+//	void updateNetworkSlots();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

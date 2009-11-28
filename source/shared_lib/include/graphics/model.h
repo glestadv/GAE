@@ -34,9 +34,9 @@ class InterpolationData;
 class TextureManager;
 
 // =====================================================
-//	class Mesh
+// class Mesh
 //
-///	Part of a 3D model (may contain more than one frame)
+// Part of a 3D model
 // =====================================================
 
 class Mesh {
@@ -115,9 +115,6 @@ public:
 	void loadV3(const string &dir, FILE *f, TextureManager *textureManager);
 	void load(const string &dir, FILE *f, TextureManager *textureManager);
 	void save(const string &dir, FILE *f);
-	
-	//misc
-	void resize(float scale);
 
 private:
 	void computeTangents();
@@ -126,8 +123,7 @@ private:
 // =====================================================
 // class Model
 //
-///	3D Model or models (animation sequence), than can
-/// be loaded from a g3d file
+// 3D Model, than can be loaded from a g3d file
 // =====================================================
 
 class Model {
@@ -162,17 +158,17 @@ public:
 
 
 	//get
-	uint8 getFileVersion() const		{return fileVersion;}
-	uint32 getMeshCount() const			{return meshCount;}
-	const Mesh *getMesh(int i) const	{return &meshes[i];}
+	uint8 getFileVersion() const  {return fileVersion;}
+	uint32 getMeshCount() const   {return meshCount;}
+	const Mesh *getMesh(int i) const {return &meshes[i];}
 
 	uint32 getTriangleCount() const;
 	uint32 getVertexCount() const;
 
 	//io
-	void load(const string &path, float scale = 1.f);
+	void load(const string &path);
 	void save(const string &path);
-	void loadG3d(const string &path, float scale = 1.f);
+	void loadG3d(const string &path);
 	void saveS3d(const string &path);
 
 	void setTextureManager(TextureManager *textureManager) {this->textureManager = textureManager;}

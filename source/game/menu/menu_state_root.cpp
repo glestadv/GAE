@@ -26,10 +26,11 @@
 #include "network_manager.h"
 #include "network_message.h"
 #include "socket.h"
+#include "auto_test.h"
 
 #include "leak_dumper.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class MenuStateRoot
@@ -56,7 +57,7 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
 	buttonOptions.setText(lang.get("Options"));
 	buttonAbout.setText(lang.get("About"));
 	buttonExit.setText(lang.get("Exit"));
-	labelVersion.setText("Advanced Engine " + getGaeVersion().toString());
+	labelVersion.setText("Advanced Engine " + gaeVersionString);
 
 	// end network interface
 	NetworkManager::getInstance().end();
@@ -128,4 +129,10 @@ void MenuStateRoot::render(){
 	renderer.renderLabel(&labelVersion);
 }
 
-} // end namespace
+void MenuStateRoot::update(){
+	if (Config::getInstance().getMiscAutoTest()) {
+		AutoTest::getInstance().updateRoot(program, mainMenu);
+	}
+}
+
+}}//end namespace

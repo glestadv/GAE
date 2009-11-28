@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_EFFECTTYPE_H
-#define _GAME_EFFECTTYPE_H
+#ifndef _GLEST_GAME_EFFECTTYPE_H
+#define _GLEST_GAME_EFFECTTYPE_H
 
 #include "sound.h"
 #include "vec.h"
@@ -25,7 +25,7 @@ using Shared::Sound::StaticSound;
 using Shared::Xml::XmlNode;
 using Shared::Graphics::Vec3f;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 class FactionType;
 class TechTree;
@@ -140,8 +140,8 @@ private:
 
 public:
 	EffectType();
-	virtual ~EffectType() {}
-	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual ~EffectType() { delete sound; }
+	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 
 	EffectBias getBias() const				{return bias;}
 	EffectStacking getStacking() const		{return stacking;}
@@ -181,13 +181,13 @@ private:
 
 public:
 	virtual ~Emanation() {}
-	virtual void load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	int getRadius() const	{return radius;}
 };
 
 typedef vector<Emanation*> Emanations;
 
-} // end namespace
+}}//end namespace
 
 
 #endif

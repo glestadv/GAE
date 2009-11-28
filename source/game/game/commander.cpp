@@ -30,7 +30,7 @@ using namespace Shared::Graphics;
 using namespace Shared::Util;
 using namespace Shared::Platform;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class Commander
@@ -101,7 +101,7 @@ CommandResult Commander::tryGiveCommand(
 CommandResult Commander::tryCancelCommand(const Selection *selection) const{
 	const Selection::UnitContainer &units = selection->getUnits();
 	for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
-		pushCommand(new Command(CAT_CANCEL_COMMAND, CommandFlags(), Command::invalidPos, *i));
+		pushCommand(new Command(catCancelCommand, CommandFlags(), Command::invalidPos, *i));
 	}
 
 	return crSuccess;
@@ -110,7 +110,7 @@ CommandResult Commander::tryCancelCommand(const Selection *selection) const{
 void Commander::trySetAutoRepairEnabled(const Selection &selection, CommandFlags flags, bool enabled) const{
 	const Selection::UnitContainer &units = selection.getUnits();
 	for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
-		pushCommand(new Command(CAT_SET_AUTO_REPAIR, CommandFlags(CP_AUTO_REPAIR_ENABLED, enabled),
+		pushCommand(new Command(catSetAutoRepair, CommandFlags(cpAutoRepairEnabled, enabled),
 				Command::invalidPos, *i));
 	}
 }
@@ -173,33 +173,29 @@ CommandResult Commander::computeResult(const CommandResultContainer &results) co
 }
 
 CommandResult Commander::pushCommand(Command *command) const {
-	NetworkManager &netman = NetworkManager::getInstance();
 	assert(command->getCommandedUnit());
+	GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
 	CommandResult result = command->getCommandedUnit()->checkCommand(*command);
-	if(netman.isNetworkGame()) {
-		netman.getGameInterface()->requestCommand(command);
-	} else {
-		giveCommand(command);
-	}
+	gameNetworkInterface->requestCommand(command);
 	return result;
 }
 
-void Commander::getNetworkData() {
-	NetworkManager &netman = NetworkManager::getInstance();
-		//FIXME needs total rework
-/*
-	// on network games, we need to get recently recieved commands from the network interface.
-	if(netman.isNetworkGame()) {
-		GameInterface *gameInterface = netman.getGameInterface();
-		MutexLock lock(gameInterface->getMutex());
+void Commander::updateNetwork() {
+	NetworkManager &networkManager = NetworkManager::getInstance();
+	GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
 
-		//give pending commands locally
-		for(int i = 0; i < gameInterface->getPendingCommandCount(); ++i) {
-			giveCommand(gameInterface->getPendingCommand(i));
+	//check that this is a keyframe
+	if(!networkManager.isNetworkGame() || (world->getFrameCount() % GameConstants::networkFramePeriod) == 0) {
+
+		//update the keyframe
+		gameNetworkInterface->updateKeyframe(world->getFrameCount());
+
+		//give pending commands
+		for(int i = 0; i < gameNetworkInterface->getPendingCommandCount(); ++i) {
+			giveCommand(gameNetworkInterface->getPendingCommand(i));
 		}
-
-		gameInterface->clearPendingCommands();
-	}*/
+		gameNetworkInterface->clearPendingCommands();
+	}
 }
 
 void Commander::giveCommand(Command *command) const {
@@ -208,15 +204,15 @@ void Commander::giveCommand(Command *command) const {
 	//execute command, if unit is still alive and non-deleted
 	if(unit && unit->isAlive()) {
 		switch(command->getArchetype()) {
-			case CAT_GIVE_COMMAND:
+			case catGiveCommand:
 				assert(command->getType());
 				unit->giveCommand(command);
 				break;
-			case CAT_CANCEL_COMMAND:
+			case catCancelCommand:
 				unit->cancelCommand();
 				delete command;
 				break;
-			case CAT_SET_AUTO_REPAIR:
+			case catSetAutoRepair:
 				unit->setAutoRepairEnabled(command->isAutoRepairEnabled());
 				delete command;
 				break;
@@ -226,4 +222,4 @@ void Commander::giveCommand(Command *command) const {
 	}
 }
 
-} // end namespace
+}}//end namespace

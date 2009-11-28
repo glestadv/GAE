@@ -9,13 +9,13 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_TIMEFLOW_H_
-#define _GAME_TIMEFLOW_H_
+#ifndef _GLEST_GAME_TIMEFLOW_H_
+#define _GLEST_GAME_TIMEFLOW_H_
 
 #include "tileset.h"
 #include "sound.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Sound::StrSound;
 using Shared::Sound::StrSound;
@@ -56,6 +56,6 @@ private:
 	bool isAproxTime(float time);
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_COREDATA_H_
-#define _GAME_COREDATA_H_
+#ifndef _GLEST_GAME_COREDATA_H_
+#define _GLEST_GAME_COREDATA_H_
 
 #include <string>
 
@@ -19,7 +19,7 @@
 #include "texture.h"
 #include "sound_container.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 using Shared::Graphics::Texture2D;
 using Shared::Graphics::Texture3D;
@@ -30,10 +30,10 @@ using Shared::Sound::StaticSound;
 // =====================================================
 // 	class CoreData  
 //
-/// Data shared ammongst all the ProgramStates
+/// Data shared ammont all the ProgramStates
 // =====================================================
 
-class CoreData {
+class CoreData{
 private:
     StrSound introMusic;
     StrSound menuMusic;
@@ -95,6 +95,6 @@ private:
 	int computeFontSize(int size);
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

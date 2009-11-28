@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_WORLD_H_
-#define _GAME_WORLD_H_
+#ifndef _GLEST_GAME_WORLD_H_
+#define _GLEST_GAME_WORLD_H_
 
 #include "vec.h"
 #include "math_util.h"
@@ -19,6 +19,7 @@
 #include "tileset.h"
 #include "console.h"
 #include "map.h"
+#include "scenario.h"
 #include "minimap.h"
 #include "logger.h"
 #include "stats.h"
@@ -31,18 +32,19 @@
 #include "game_constants.h"
 #include "pos_iterator.h"
 
+namespace Glest{ namespace Game{
+
 using Shared::Graphics::Quad2i;
 using Shared::Graphics::Rect2i;
 using Shared::Util::Random;
-using Game::Util::PosCircularIteratorFactory;
-
-namespace Game {
+using Glest::Game::Util::PosCircularIteratorFactory;
 
 class Faction;
 class Unit;
 class Config;
 class Game;
 class GameSettings;
+class ScriptManager;
 
 // =====================================================
 // 	class World
@@ -50,9 +52,10 @@ class GameSettings;
 ///	The game world: Map + Tileset + TechTree
 // =====================================================
 
-class World {
-public:
-	typedef vector<Faction*> Factions;
+class World{
+private:
+	typedef vector<Faction> Factions;
+	typedef std::map< string,set<string> > UnitTypes;
 
 public:
 	static const int generationArea= 100;
@@ -60,22 +63,25 @@ public:
 	static const int indirectSightRange= 5;
 
 private:
+
 	Map map;
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
+	Scenario scenario;
 	Game &game;
 	const GameSettings &gs;
 
 	UnitUpdater unitUpdater;
-    WaterEffects waterEffects;
+	WaterEffects waterEffects;
 	Minimap minimap;
-    Stats stats;
+	Stats stats;
 
 	Factions factions;
-//	UnitMap units;		commented out for now, but we need units mapped here and not in the factions
 
 	Random random;
+
+	ScriptManager *scriptManager;
 
 	int thisFactionIndex;
 	int thisTeamIndex;
@@ -83,38 +89,44 @@ private:
 	int nextUnitId;
 
 	//config
-	bool fogOfWar;
+	bool fogOfWar, shroudOfDarkness;
 	int fogOfWarSmoothingFrameSkip;
 	bool fogOfWarSmoothing;
 
+	bool unfogActive;
+	int unfogTTL;
+	Vec4i unfogArea;
+
 	static World *singleton;
 	bool alive;
-	
+
+	UnitTypes unitTypes;
+
 	Units newlydead;
 	PosCircularIteratorFactory posIteratorFactory;
 
 public:
 	World(Game *game);
-	~World();
+	~World()										{singleton = NULL;}
 	void end(); //to die before selection does
 
-	//get
-	const Factions &getFactions() const				{return factions;}
-//	const UnitMap &getUnits() const					{return units;}
+	static World& getInstance () { return *singleton; }
 
-	int getMaxFactions() const						{return map.getMaxFactions();}
+	//get
+	int getMaxPlayers() const						{return map.getMaxPlayers();}
 	int getThisFactionIndex() const					{return thisFactionIndex;}
 	int getThisTeamIndex() const					{return thisTeamIndex;}
-	const Faction *getThisFaction() const			{return factions[thisFactionIndex];}
+	const Faction *getThisFaction() const			{return &factions[thisFactionIndex];}
 	int getFactionCount() const						{return factions.size();}
 	const Map *getMap() const 						{return &map;}
 	const Tileset *getTileset() const 				{return &tileset;}
 	const TechTree *getTechTree() const 			{return &techTree;}
+	const Scenario* getScenario () const			{return &scenario;}
 	const TimeFlow *getTimeFlow() const				{return &timeFlow;}
 	Tileset *getTileset() 							{return &tileset;}
 	Map *getMap() 									{return &map;}
-	const Faction *getFaction(int i) const			{return factions[i];}
-	Faction *getFaction(int i) 						{return factions[i];}
+	const Faction *getFaction(int i) const			{return &factions[i];}
+	Faction *getFaction(int i) 						{return &factions[i];}
 	const Minimap *getMinimap() const				{return &minimap;}
 //	const Stats &getStats() const					{return stats;}
 	Stats &getStats() 								{return stats;}
@@ -127,13 +139,14 @@ public:
 
 	//init & load
 	void init(const XmlNode *worldNode = NULL);
-	void loadTileset(Checksums &checksums);
-	void loadTech(Checksums &checksums);
-	void loadMap(Checksums &checksums);
+	bool loadTileset(Checksum &checksum);
+	bool loadTech(Checksum &checksum);
+	bool loadMap(Checksum &checksum);
+	bool loadScenario(const string &path, Checksum *checksum);
+
 	void save(XmlNode *node) const;
 
 	//misc
-	//void preUpdate();
 	void update();
 	void moveUnitCells(Unit *unit);
 	Unit* findUnitById(int id);
@@ -149,12 +162,35 @@ public:
 		//a unit is rendered if it is in a visible cell or is attacking a unit in a visible cell
 		return visibleQuad.isInside(unit->getCenteredPos()) && toRenderUnit(unit);
 	}
-	
+
 	bool toRenderUnit(const Unit *unit) const {
-		return map.getSurfaceCell(Map::toSurfCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
+		return map.getTile(Map::toTileCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
 			|| (unit->getCurrSkill()->getClass() == scAttack
-			&& map.getSurfaceCell(Map::toSurfCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
+			&& map.getTile(Map::toTileCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
 	}
+
+	//scripting interface
+	int createUnit(const string &unitName, int factionIndex, const Vec2i &pos);
+	int givePositionCommand(int unitId, const string &commandName, const Vec2i &pos);
+	int giveTargetCommand ( int unitId, const string &commandName, int targetId );
+	int giveStopCommand ( int unitId, const string &commandName );
+	int giveProductionCommand(int unitId, const string &producedName);
+	int giveUpgradeCommand(int unitId, const string &upgradeName);
+	int giveResource(const string &resourceName, int factionIndex, int amount);
+	int getResourceAmount(const string &resourceName, int factionIndex);
+	Vec2i getStartLocation(int factionIndex);
+	Vec2i getUnitPosition(int unitId);
+	int getUnitFactionIndex(int unitId);
+	int getUnitCount(int factionIndex);
+	int getUnitCountOfType(int factionIndex, const string &typeName);
+
+	void unfogMap(const Vec4i &rect, int time);
+
+#ifdef _GAE_DEBUG_EDITION_
+	void loadPFDebugTextures ();
+	Texture2D *PFDebugTextures[18];
+	//int getNumPathPos () { return map.PathPositions.size (); }
+#endif
 
 private:
 	void initCells();
@@ -171,16 +207,16 @@ private:
 	void updateEarthquakes(float seconds);
 	void tick();
 	void computeFow();
+	void doUnfog();
 	void exploreCells(const Vec2i &newPos, int sightRange, int teamIndex);
 	void loadSaved(const XmlNode *worldNode);
 	void moveAndEvict(Unit *unit, vector<Unit*> &evicted, Vec2i *oldPos);
 	void doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, float nextAdvanceFrames);
 	bool isNetworkServer() {return NetworkManager::getInstance().isNetworkServer();}
 	bool isNetworkClient() {return NetworkManager::getInstance().isNetworkClient();}
-	bool isNetworkGame() {return NetworkManager::getInstance().isNetworkGame();}
 	void doHackyCleanUp();
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

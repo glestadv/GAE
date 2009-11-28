@@ -10,8 +10,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_GAME_H_
-#define _GAME_GAME_H_
+#ifndef _GLEST_GAME_GAME_H_
+#define _GLEST_GAME_GAME_H_
 
 #include <vector>
 
@@ -21,6 +21,7 @@
 #include "ai_interface.h"
 #include "program.h"
 #include "chat_manager.h"
+#include "script_manager.h"
 #include "game_settings.h"
 #include "config.h"
 #include "keymap.h"
@@ -30,7 +31,7 @@
 
 using std::vector;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 class GraphicMessageBox;
 class GraphicTextEntryBox;
@@ -42,6 +43,21 @@ class GraphicTextEntryBox;
 // =====================================================
 
 class Game: public ProgramState {
+public:
+	enum Speed {
+		sSlowest,
+		sVerySlow,
+		sSlow,
+		sNormal,
+		sFast,
+		sVeryFast,
+		sFastest,
+
+  		sCount
+	};
+
+	static const char*SpeedDesc[sCount];
+
 private:
 	typedef vector<Ai*> Ais;
 	typedef vector<AiInterface*> AiInterfaces;
@@ -50,7 +66,7 @@ private:
 	static Game *singleton;
 
 	//main data
-	shared_ptr<GameSettings> gs;
+	GameSettings gameSettings;
 	XmlNode *savedGame;
 	Keymap &keymap;
 	const Input &input;
@@ -64,34 +80,35 @@ private:
 	ChatManager chatManager;
 
 	//misc
-	Checksums checksums;
+	Checksum checksum;
     string loadingText;
     int mouse2d;
     int mouseX, mouseY; //coords win32Api
 	int updateFps, lastUpdateFps;
 	int renderFps, lastRenderFps;
 	bool paused;
+	bool noInput;
 	bool gameOver;
 	bool renderNetworkStatus;
 	float scrollSpeed;
-	GameSpeed speed;
+	Speed speed;
 	float fUpdateLoops;
 	float lastUpdateLoopsFraction;
-	GraphicMessageBox *exitMessageBox;
+	GraphicMessageBox mainMessageBox;
+
 	GraphicTextEntryBox *saveBox;
 	Vec2i lastMousePos;
 
 	//misc ptr
 	ParticleSystem *weatherParticleSystem;
-	
+
 public:
-	Game(Program &program, const shared_ptr<GameSettings> &gs, XmlNode *savedGame = NULL);
+	Game(Program &program, const GameSettings &gs, XmlNode *savedGame = NULL);
     ~Game();
 	static Game *getInstance()				{return singleton;}
 
     //get
-//	const shared_ptr<GameSettings> &getGameSettings()	{return gs;}
-	const GameSettings &getGameSettings()	{return *gs;}
+	GameSettings &getGameSettings()			{return gameSettings;}
 	const Keymap &getKeymap() const			{return keymap;}
 	const Input &getInput() const			{return input;}
 
@@ -113,24 +130,30 @@ public:
 	virtual void render();
 	virtual void tick();
 
+	void lockInput()	{ noInput = true;	}
+	void unlockInput()	{ noInput = false;	}
+
+
     //Event managing
     virtual void keyDown(const Key &key);
     virtual void keyUp(const Key &key);
     virtual void keyPress(char c);
     virtual void mouseDownLeft(int x, int y);
-    virtual void mouseDownRight(int x, int y);
-    virtual void mouseUpLeft(int x, int y);
-    virtual void mouseUpRight(int x, int y);
-	virtual void mouseDownCenter(int x, int y);
-	virtual void mouseUpCenter(int x, int y);
+    virtual void mouseDownRight(int x, int y)			{gui.mouseDownRight(x, y);}
+    virtual void mouseUpLeft(int x, int y)				{gui.mouseUpLeft(x, y);}
+    virtual void mouseUpRight(int x, int y)				{gui.mouseUpRight(x, y);}
+    virtual void mouseDownCenter(int x, int y)			{gameCamera.stop();}
+    virtual void mouseUpCenter(int x, int y)			{}
     virtual void mouseDoubleClickLeft(int x, int y);
 	virtual void eventMouseWheel(int x, int y, int zDelta);
     virtual void mouseMove(int x, int y, const MouseState &mouseState);
 
-	void setCameraCell(int x, int y)	{
+	void setCameraCell(int x, int y) {
 		gameCamera.setPos(Vec2f(static_cast<float>(x), static_cast<float>(y)));
 	}
-	void autoSaveAndPrompt(string msg, string remotePlayerName, int slot = -1);
+	void quitGame();
+	void pause()							{paused = true;}
+	void resume()							{paused = false;}
 
 private:
 	//render
@@ -140,20 +163,27 @@ private:
 	//misc
 	void _init();
 	void checkWinner();
+	void checkWinnerStandard();
+	void checkWinnerScripted();
 	bool hasBuilding(const Faction *faction);
 	void incSpeed();
 	void decSpeed();
 	void resetSpeed();
 	void updateSpeed();
 	int getUpdateLoops();
-	void showExitMessageBox(const string &text, bool toggle);
+
+	void showLoseMessageBox();
+	void showWinMessageBox();
+	void showMessageBox(const string &text, const string &header, bool toggle);
+
+//	void showExitMessageBox(const string &text, bool toggle);
 	string controllerTypeToStr(ControlType ct);
 	Unit *findUnit(int id);
 	char getStringFromFile(ifstream *fileStream, string *str);
 	void saveGame(string name) const;
-//	void displayError(SocketException &e);
+	void displayError(SocketException &e);
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

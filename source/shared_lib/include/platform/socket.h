@@ -3,7 +3,7 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa,
 //				  2005 Matthias Braun <matze@braunis.de>,
-//				  2008-2009 Daniel Santos <daniel.santos@pobox.com>
+//				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -14,14 +14,12 @@
 #ifndef _SHARED_PLATFORM_SOCKET_H_
 #define _SHARED_PLATFORM_SOCKET_H_
 
-#ifdef DEBUG_NETWORK_DELAY
-#	define DEBUG_NETWORK_DELAY_BOOL true
-#else
-#	define DEBUG_NETWORK_DELAY_BOOL false
-#endif
 #include <string>
 #include <cassert>
-#include <vector>
+
+#ifdef HAVE_BYTESWAP_H
+#	include <byteswap.h>
+#endif
 
 #ifdef USE_POSIX_SOCKETS
 #	include <unistd.h>
@@ -29,83 +27,131 @@
 #	include <sys/socket.h>
 #	include <sys/types.h>
 #	include <netinet/in.h>
+#	include <arpa/inet.h>
 #	include <netdb.h>
 #	include <fcntl.h>
-#
-#	define SOCKET_ERROR -1
-#	define SocketException PosixException
+
+#	include "types.h"
+#	include "util.h"
+
 #elif defined(WIN32) || defined(WIN64)
-#	define SocketException WinsockException
+#	include <winsock.h>
+
+#	include "types.h"
+#	include "util.h"
+
+#	define uint16_t uint16
+#	define uint32_t uint32
+#	define uint64_t uint64
 #endif
 
-#include "types.h"
-#include "util.h"
-#include "net_util.h"
-#include "platform_exception.h"
-
 using std::string;
-using std::vector;
+using Shared::Util::SimpleDataBuffer;
 
 namespace Shared { namespace Platform {
+
+// we need ntohll & htonll functions
+#ifdef WORDS_BIGENDIAN
+#	define ntohll(x) (x)
+#	define htonll(x) (x)
+#else
+#	ifndef HAVE_BYTESWAP_H
+		// note: _bswap_constant_64 from GNU C Library, copyright Free Software Foundation, Inc.
+#		define _bswap_constant_64(x)				\
+			 ((((x) & 0xff00000000000000ull) >> 56)	\
+			| (((x) & 0x00ff000000000000ull) >> 40)	\
+			| (((x) & 0x0000ff0000000000ull) >> 24)	\
+			| (((x) & 0x000000ff00000000ull) >> 8)	\
+			| (((x) & 0x00000000ff000000ull) << 8)	\
+			| (((x) & 0x0000000000ff0000ull) << 24)	\
+			| (((x) & 0x000000000000ff00ull) << 40)	\
+			| (((x) & 0x00000000000000ffull) << 56))
+		inline int64 bswap_64(int64 x)	 {int64 v = (x); return _bswap_constant_64(v);}
+#	endif
+#	define ntohll(x) bswap_64(x)
+#	define htonll(x) bswap_64(x)
+#endif
 
 // =====================================================
 //	class IP
 // =====================================================
 
-/**
- * An IPv4 address.  Note that this is not IPv6 compliant in the slightest.
- */
-class IpAddress : public NetSerializable {
+class Ip {
 private:
-	in_addr_t addr;
+	unsigned char bytes[4];
 
 public:
-	/** Create an empty IPv4 address (i.e., 0.0.0.0). */
-	IpAddress() : addr(0) {}
-	
- 	IpAddress(const sockaddr_in &addr) : addr(addr.sin_addr.s_addr) {
-		assert(addr.sin_family == AF_INET);
-	}
-	
-	IpAddress(in_addr_t addr) : addr(addr) {}
-	
-	/** Create a new IPv4 address by parsing the string ipString. */
-	IpAddress(const string& ipString);
+	Ip();
+	Ip(unsigned char byte0, unsigned char byte1, unsigned char byte2, unsigned char byte3);
+	Ip(const string& ipString);
 
-	/** Returns true if this address is 0.0.0.0. */
-	bool isZero() const							{return !addr;}
-	
-	/** Converts this address to a string. */
-	string toString() const;
-	in_addr_t get() const						{return addr;}
-
-	// NetSerializable member functions
-	size_t getNetSize() const					{return sizeof(addr);}
-	size_t getMaxNetSize() const				{return sizeof(addr);}
-	void read(NetworkDataBuffer &buf)			{buf.read(addr);}
-	void write(NetworkDataBuffer &buf) const	{buf.write(addr);}
+	unsigned char getByte(int byteIndex)	{return bytes[byteIndex];}
+	string getString() const;
 };
 
-enum SocketTest {
-	SOCKET_TEST_NONE	= 0x00,
-	SOCKET_TEST_READ	= 0x01,
-	SOCKET_TEST_WRITE	= 0x02,
-	SOCKET_TEST_ERROR	= 0x04
-};
-
-class Socket;
-template<typename T> class SocketTestData {
+class SocketException : public runtime_error {
 public:
-	Socket *socket;
-	int test;
-	int result;
-	T value;
-	SocketTestData(Socket *socket, int test, T value)
-			: socket(socket)
-			, test(test)
-			, result(0)
-			, value(value) {
-	}
+	SocketException(const string &msg) : runtime_error(msg){}
+};
+
+
+
+/**
+ * Implementation Notes: The reason for the *reinterpret_cast<uint16_t *>(&data) type of operations
+ * you see in these functions is to cause a cast of the data type without any integeral promotion
+ * or other changes to the underlying data as a result of differences in signedness.
+ */
+class NetworkDataBuffer : public SimpleDataBuffer {
+public:
+	NetworkDataBuffer() : SimpleDataBuffer(0x400) {}
+	NetworkDataBuffer(size_t initial) : SimpleDataBuffer(initial) {}
+	virtual ~NetworkDataBuffer() {}
+
+	void peek(void *dest, size_t count) const	{SimpleDataBuffer::peek(dest, count);}
+	void read(void *dest, size_t count)			{SimpleDataBuffer::read(dest, count);}
+	void write(const void *src, size_t count)	{SimpleDataBuffer::write(src, count);}
+
+	void read(int8 &data)	{read(&data, 1);}
+	void read(uint8 &data)	{read(&data, 1);}
+	void read(int16 &data)	{uint16_t a; read(&a, 2); *reinterpret_cast<uint16_t *>(&data) = ntohs(a);}
+	void read(uint16 &data)	{uint16_t a; read(&a, 2); *reinterpret_cast<uint16_t *>(&data) = ntohs(a);}
+	void read(int32 &data)	{uint32_t a; read(&a, 4); *reinterpret_cast<uint32_t *>(&data) = ntohl(a);}
+	void read(uint32 &data)	{uint32_t a; read(&a, 4); *reinterpret_cast<uint32_t *>(&data) = ntohl(a);}
+	void read(float32 &data){uint32_t a; read(&a, 4); *reinterpret_cast<uint32_t *>(&data) = ntohl(a);}
+	void read(int64 &data)	{uint64_t a; read(&a, 8); *reinterpret_cast<uint64_t *>(&data) = ntohll(a);}
+	void read(uint64 &data)	{uint64_t a; read(&a, 8); *reinterpret_cast<uint64_t *>(&data) = ntohll(a);}
+	void read(float64 &data){uint64_t a; read(&a, 8); *reinterpret_cast<uint64_t *>(&data) = ntohll(a);}
+
+	void peek(int8 &data) const		{peek(&data, 1);}
+	void peek(uint8 &data) const	{peek(&data, 1);}
+	void peek(int16 &data) const	{uint16_t a; peek(&a, 2); *reinterpret_cast<uint16_t *>(&data) = ntohs(a);}
+	void peek(uint16 &data) const	{uint16_t a; peek(&a, 2); *reinterpret_cast<uint16_t *>(&data) = ntohs(a);}
+	void peek(int32 &data) const	{uint32_t a; peek(&a, 4); *reinterpret_cast<uint32_t *>(&data) = ntohl(a);}
+	void peek(uint32 &data) const	{uint32_t a; peek(&a, 4); *reinterpret_cast<uint32_t *>(&data) = ntohl(a);}
+	void peek(float32 &data) const	{uint32_t a; peek(&a, 4); *reinterpret_cast<uint32_t *>(&data) = ntohl(a);}
+	void peek(int64 &data) const	{uint64_t a; peek(&a, 8); *reinterpret_cast<uint64_t *>(&data) = ntohll(a);}
+	void peek(uint64 &data) const	{uint64_t a; peek(&a, 8); *reinterpret_cast<uint64_t *>(&data) = ntohll(a);}
+	void peek(float64 &data) const	{uint64_t a; peek(&a, 8); *reinterpret_cast<uint64_t *>(&data) = ntohll(a);}
+
+	void write(int8 data)	{write(&data, 1);}
+	void write(uint8 data)	{write(&data, 1);}
+	void write(int16 data)	{uint16_t a = htons(*reinterpret_cast<uint16_t *>(&data)); write(&a, 2);}
+	void write(uint16 data)	{uint16_t a = htons(*reinterpret_cast<uint16_t *>(&data)); write(&a, 2);}
+	void write(int32 data)	{uint32_t a = htonl(*reinterpret_cast<uint32_t *>(&data)); write(&a, 4);}
+	void write(uint32 data)	{uint32_t a = htonl(*reinterpret_cast<uint32_t *>(&data)); write(&a, 4);}
+	void write(float32 data){uint32_t a = htonl(*reinterpret_cast<uint32_t *>(&data)); write(&a, 4);}
+	void write(int64 data)	{uint64_t a = htonll(*reinterpret_cast<uint64_t *>(&data)); write(&a, 8);}
+	void write(uint64 data)	{uint64_t a = htonll(*reinterpret_cast<uint64_t *>(&data)); write(&a, 8);}
+	void write(float64 data){uint64_t a = htonll(*reinterpret_cast<uint64_t *>(&data)); write(&a, 8);}
+};
+
+class NetworkWriteable {
+public:
+	virtual ~NetworkWriteable() {}
+	virtual size_t getNetSize() const = 0;
+	virtual size_t getMaxNetSize() const = 0;
+	//virtual void read(NetworkDataBuffer &buf) = 0;
+	virtual void write(NetworkDataBuffer &buf) const = 0;
 };
 
 // =====================================================
@@ -113,12 +159,6 @@ public:
 // =====================================================
 
 class Socket {
-public:
-	enum SocketType {
-		SOCKET_TYPE_CLIENT,
-		SOCKET_TYPE_SERVER
-	};
-
 #if defined(WIN32) || defined(WIN64)
 	class LibraryManager {
 	public:
@@ -131,94 +171,47 @@ public:
 
 protected:
 	SOCKET sock;
-	SocketType type;
-
-	Socket(SOCKET sock, SocketType type)
-		: sock(sock)
-		, type(type) {
-	}
-	Socket(SocketType type);
 
 public:
-	virtual ~Socket() throw();
+	Socket(SOCKET sock);
+	Socket();
+	~Socket();
 
-	//TODO: Move read & write functions to ClientSocket since they can never be called with a
-	// ServerSocket?
 	int getDataToRead();
 	int send(const void *data, int dataSize);
 	int receive(void *data, int dataSize);
 	int peek(void *data, int dataSize);
-	void close() throw();
-	bool isOpen() const		{return sock;}
 
 	void setBlock(bool block);
 	bool isReadable();
 	bool isWritable();
 	bool isConnected();
-	bool isClient() const	{return type == SOCKET_TYPE_CLIENT;}
-	bool isServer() const	{return type == SOCKET_TYPE_SERVER;}
 
-	string getLocalHostName() const;
-	string getIpAddress() const;
+	string getHostName() const;
+	string getIp() const;
 
-	sockaddr_in getsockname() const;
-	unsigned int getLocalPort() const	{return ntohs(getsockname().sin_port);}
-	IpAddress getLocalAddress() const	{return IpAddress(getsockname());}
-	
-//	void close() {::close(sock);}
-
-	template<typename T>
-	static void wait(vector<SocketTestData<T> > &sockets, size_t millis);
-
-#if defined(WIN32) || defined(WIN64)
-	static bool isValid(SOCKET s)		{return s != INVALID_SOCKET;}
-	static bool isError(int result)		{return result == SOCKET_ERROR;}
-	static int getLastSocketError()		{return WSAGetLastError();}
-#else
-	static bool isValid(SOCKET s)		{return s >= 0;}
-	static bool isError(int result)		{return result < 0;}
-	static int getLastSocketError()		{return errno;}
-#endif
+protected:
+	static void throwException(const char *msg);
 };
 
 // =====================================================
 //	class ClientSocket
 // =====================================================
 
-class ClientSocket : public Socket {
-protected:
-	ClientSocket(SOCKET sock, const sockaddr_in &addr)
-			: Socket(sock, SOCKET_TYPE_CLIENT)
-			, remoteAddr(addr)
-			, remotePort(ntohs(addr.sin_port)) {
-	}
-
-	IpAddress remoteAddr;
-	unsigned short remotePort;
-
+class ClientSocket: public Socket {
 public:
-	ClientSocket(const IpAddress &remoteAddr, unsigned short remotePort);
-	~ClientSocket() throw() {}
-
-	string getRemoteHostName() const;
-	const IpAddress getRemoteAddr() const	{return remoteAddr;}
-	unsigned short getRemotePort() const	{return remotePort;}
-
-	friend class ServerSocket;
+	void connect(const Ip &ip, int port);
 };
 
 // =====================================================
 //	class ServerSocket
 // =====================================================
 
-class ServerSocket : public Socket {
+class ServerSocket: public Socket {
 public:
-	ServerSocket() : Socket(SOCKET_TYPE_SERVER) {};
-	~ServerSocket() throw() {}
-
-	void bind(unsigned short localPort);
-	void listen(int connectionQueueSize = SOMAXCONN);
-	ClientSocket *accept();
+	void bind(int port);
+	void listen(int connectionQueueSize= SOMAXCONN);
+	Socket *accept();
 };
 
 }}//end namespace

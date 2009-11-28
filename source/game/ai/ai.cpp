@@ -27,7 +27,7 @@
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class ProduceTask
@@ -151,7 +151,7 @@ void Ai::update() {
 		if ((aiInterface->getTimer() % ((*it)->getTestInterval() * Config::getInstance().getGsWorldUpdateFps() / 1000)) == 0) {
 			if ((*it)->test()) {
 				aiInterface->printLog(3,
-						Conversion::toStr(1000 * aiInterface->getTimer() / Config::getInstance().getGsWorldUpdateFps())
+						intToStr(1000 * aiInterface->getTimer() / Config::getInstance().getGsWorldUpdateFps())
 						+ ": Executing rule: " + (*it)->getName() + '\n');
 				(*it)->execute();
 			}
@@ -219,7 +219,7 @@ bool Ai::beingAttacked(Vec2i &pos, Field &field, int radius) {
 			field = unit->getCurrField();
 			if (pos.dist(aiInterface->getHomeLocation()) < radius) {
 				baseSeen = true;
-				aiInterface->printLog(2, "Being attacked at pos " + Conversion::toStr(pos.x) + "," + Conversion::toStr(pos.y) + "\n");
+				aiInterface->printLog(2, "Being attacked at pos " + intToStr(pos.x) + "," + intToStr(pos.y) + "\n");
 				return true;
 			}
 		}
@@ -286,7 +286,7 @@ bool Ai::findPosForBuilding(const UnitType* building, const Vec2i &searchPos, Ve
 		for (int i = searchPos.x - currRadius; i < searchPos.x + currRadius; ++i) {
 			for (int j = searchPos.y - currRadius; j < searchPos.y + currRadius; ++j) {
 				outPos = Vec2i(i, j);
-				if (aiInterface->isFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, fLand)) {
+				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, FieldWalkable)) {
 					return true;
 				}
 			}
@@ -476,7 +476,7 @@ void Ai::sendScoutPatrol(){
 	if(aiInterface->getFactionIndex()!=startLoc){
 		if(findAbleUnit(&unit, ccAttack, false)){
 			aiInterface->giveCommand(unit, ccAttack, pos);
-			aiInterface->printLog(2, "Scout patrol sent to: " + Conversion::toStr(pos.x)+","+Conversion::toStr(pos.y)+"\n");
+			aiInterface->printLog(2, "Scout patrol sent to: " + intToStr(pos.x)+","+intToStr(pos.y)+"\n");
 		}
 	}
 }
@@ -485,7 +485,7 @@ void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
 
     for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
         const Unit *unit= aiInterface->getMyUnit(i);
-		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field);
+		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field==FieldAir?ZoneAir:ZoneSurface);
 		bool isWarrior= !unit->getType()->hasCommandClass(ccHarvest) && !unit->getType()->hasCommandClass(ccProduce);
 		bool alreadyAttacking= unit->getCurrSkill()->getClass()==scAttack;
 		if(!alreadyAttacking && act!=NULL && (ultraAttack || isWarrior)){
@@ -495,7 +495,7 @@ void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
     if(minWarriors<maxMinWarriors){
 		minWarriors+= 3;
 	}
-	aiInterface->printLog(2, "Massive attack to pos: "+ Conversion::toStr(pos.x)+", "+Conversion::toStr(pos.y)+"\n");
+	aiInterface->printLog(2, "Massive attack to pos: "+ intToStr(pos.x)+", "+intToStr(pos.y)+"\n");
 }
 
 void Ai::returnBase(int unitIndex){
@@ -527,4 +527,4 @@ void Ai::harvest(int unitIndex){
 	}
 }
 
-} // end namespace
+}}//end namespace

@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_PROGRAM_H_
-#define _GAME_PROGRAM_H_
+#ifndef _GLEST_GAME_PROGRAM_H_
+#define _GLEST_GAME_PROGRAM_H_
 
 #include "context.h"
 #include "timer.h"
@@ -27,11 +27,11 @@ using Shared::Platform::WindowGl;
 using Shared::Platform::SizeState;
 using Shared::Platform::MouseState;
 using Shared::Platform::PerformanceTimer;
-using Shared::Platform::IpAddress;
+using Shared::Platform::Ip;
 */
 using namespace Shared::Platform;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 class Program;
 class MainWindow;
@@ -99,13 +99,14 @@ private:
 	static const int maxTimes;
 	static Program *singleton;
 
-	FixedIntervalTimer renderTimer;
-	FixedIntervalTimer tickTimer;
-	FixedIntervalTimer updateTimer;
-	FixedIntervalTimer updateCameraTimer;
+	PerformanceTimer renderTimer;
+	PerformanceTimer tickTimer;
+	PerformanceTimer updateTimer;
+	PerformanceTimer updateCameraTimer;
 
     ProgramState *programState;
-    ProgramState *preCrashState;	// program state prior to a crash
+	bool crashed;
+	bool terminating;
 	Keymap keymap;
 
 private:
@@ -117,6 +118,7 @@ public:
     ~Program();
 	static Program *getInstance()	{return singleton;}
 
+	bool isTerminating() const		{ return terminating; }
 	Keymap &getKeymap() 			{return keymap;}
 
 	virtual void eventMouseDown(int x, int y, MouseButton mouseButton) {
@@ -226,7 +228,7 @@ public:
 	void crash(const exception *e);
 	void loop();
 	void exit();
-	void setMaxUpdateBacklog(bool enabled, size_t maxBacklog)	{updateTimer.setBacklogRestrictions(enabled, maxBacklog);}
+	void setMaxUpdateBacklog(int maxBacklog)	{updateTimer.setMaxBacklog(maxBacklog);}
 	void resetTimers();
 
 private:
@@ -234,6 +236,6 @@ private:
 	void restoreDisplaySettings();
 };
 
-} // end namespace
+}} //end namespace
 
 #endif

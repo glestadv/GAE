@@ -16,119 +16,82 @@
 
 #include "graphics_interface.h"
 #include "graphics_factory.h"
-#include "util.h"
 
 #include "leak_dumper.h"
 
-namespace Shared { namespace Graphics {
+namespace Shared{ namespace Graphics{
 
 // =====================================================
-// class TextureManager
+//	class TextureManager
 // =====================================================
 
-TextureManager::TextureManager()
-		: textures()
-		, textureFilter(Texture::FILTER_BILINEAR)
-		, maxAnisotropy(1)
-		, factory(*GraphicsInterface::getInstance().getFactory()) {
+TextureManager::TextureManager(){
+	textureFilter= Texture::fBilinear;
+	maxAnisotropy= 1;
 }
 
-TextureManager::~TextureManager() {
+TextureManager::~TextureManager(){
 	end();
 }
 
-void TextureManager::init() {
-	foreach(Textures::value_type &v, textures) {
-		v->init(textureFilter, maxAnisotropy);
+void TextureManager::init(){
+	for(int i=0; i<textures.size(); ++i){
+		textures[i]->init(textureFilter, maxAnisotropy);
 	}
 }
 
-void TextureManager::end() {
-	foreach(Textures::value_type &v, textures) {
-		v->end();
+void TextureManager::end(){
+	for(int i=0; i<textures.size(); ++i){
+		textures[i]->end();
+		delete textures[i];
 	}
-	/*for(int i=0; i<textures.size(); ++i){
-	 textures[i]->end();
-	 delete textures[i];
-	}*/
 	textures.clear();
 }
 
-void TextureManager::setFilter(Texture::Filter textureFilter) {
-	this->textureFilter = textureFilter;
+void TextureManager::setFilter(Texture::Filter textureFilter){
+	this->textureFilter= textureFilter;
 }
 
-void TextureManager::setMaxAnisotropy(int maxAnisotropy) {
-	this->maxAnisotropy = maxAnisotropy;
+void TextureManager::setMaxAnisotropy(int maxAnisotropy){
+	this->maxAnisotropy= maxAnisotropy;
 }
 
-Texture *TextureManager::getTexture(const string &path) {
-	foreach(Textures::value_type &v, textures) {
-		if (v->getPath() == path) {
-			return v.get();
+Texture *TextureManager::getTexture(const string &path){
+	for(int i=0; i<textures.size(); ++i){
+		if(textures[i]->getPath()==path){
+			return textures[i];
 		}
 	}
-
 	return NULL;
 }
 
-Texture1D *TextureManager::newTexture1D() {
-	Texture1D *t = factory.newTexture1D();
-	textures.push_back(shared_ptr<Texture>(t));
+Texture1D *TextureManager::newTexture1D(){
+	Texture1D *texture1D= GraphicsInterface::getInstance().getFactory()->newTexture1D();
+	textures.push_back(texture1D);
 
-	return t;
+	return texture1D;
 }
 
-Texture2D *TextureManager::newTexture2D() {
-	Texture2D *t = factory.newTexture2D();
-	textures.push_back(shared_ptr<Texture>(t));
+Texture2D *TextureManager::newTexture2D(){
+	Texture2D *texture2D= GraphicsInterface::getInstance().getFactory()->newTexture2D();
+	textures.push_back(texture2D);
 
-	return t;
+	return texture2D;
 }
 
-Texture3D *TextureManager::newTexture3D() {
-	Texture3D *t = factory.newTexture3D();
-	textures.push_back(shared_ptr<Texture>(t));
+Texture3D *TextureManager::newTexture3D(){
+	Texture3D *texture3D= GraphicsInterface::getInstance().getFactory()->newTexture3D();
+	textures.push_back(texture3D);
 
-	return t;
-}
-
-TextureCube *TextureManager::newTextureCube() {
-	TextureCube *t = factory.newTextureCube();
-	textures.push_back(shared_ptr<Texture>(t));
-
-	return t;
+	return texture3D;
 }
 
 
-/*
-Texture1D *TextureManager::loadTexture1D(const XmlNode &node) {
-	Texture1D *t = factory.loadTexture1D(node);
-	textures.push_back(shared_ptr<Texture>(t));
+TextureCube *TextureManager::newTextureCube(){
+	TextureCube *textureCube= GraphicsInterface::getInstance().getFactory()->newTextureCube();
+	textures.push_back(textureCube);
 
-	return t;
+	return textureCube;
 }
-
-Texture2D *TextureManager::loadTexture2D(const XmlNode &node) {
-	Texture2D *t = factory.loadTexture2D(node);
-	textures.push_back(shared_ptr<Texture>(t));
-
-	return t;
-}
-
-Texture3D *TextureManager::loadTexture3D(const XmlNode &node) {
-	Texture3D *t = factory.loadTexture3D(node);
-	textures.push_back(shared_ptr<Texture>(t));
-
-	return t;
-}
-
-TextureCube *TextureManager::loadTextureCube(const XmlNode &node) {
-	TextureCube *t = factory.loadTextureCube(node);
-	textures.push_back(shared_ptr<Texture>(t));
-
-	return t;
-}
-*/
 
 }}//end namespace

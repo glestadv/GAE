@@ -15,7 +15,7 @@
 
 #include "vec.h"
 
-namespace Shared { namespace Graphics {
+namespace Shared{ namespace Graphics{
 
 class Entity {
 public:

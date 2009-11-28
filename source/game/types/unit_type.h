@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_UNITTYPE_H_
-#define _GAME_UNITTYPE_H_
+#ifndef _GLEST_GAME_UNITTYPE_H_
+#define _GLEST_GAME_UNITTYPE_H_
 
 #include "element_type.h"
 #include "command_type.h"
@@ -20,10 +20,10 @@
 #include "unit_stats_base.h"
 #include "particle_type.h"
 
-using Shared::Sound::StaticSound;
-using Shared::Util::Checksums;
+namespace Glest{ namespace Game{
 
-namespace Game {
+using Shared::Sound::StaticSound;
+using Shared::Util::Checksum;
 
 class UpgradeType;
 class UnitType;
@@ -35,7 +35,7 @@ class FactionType;
 // 	class Level
 // ===============================
 
-class Level: public EnhancementTypeBase, public IdNamePair {
+class Level: public EnhancementTypeBase, public NameIdPair {
 private:
 	int kills;
 
@@ -48,7 +48,7 @@ public:
 		effectStrength = 0.1f;
 	}
 
-	virtual void load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load(const XmlNode *prn, const string &dir, const TechTree *tt, const FactionType *ft);
 	int getKills() const			{return kills;}
 };
 
@@ -119,7 +119,7 @@ public:
     UnitType();
     virtual ~UnitType();
 	void preLoad(const string &dir);
-    void load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksums &checksums);
+    bool load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum);
 
 	//get
 	bool getMultiSelect() const							{return multiSelect;}
@@ -136,7 +136,11 @@ public:
 	bool isMultiBuild() const							{return multiBuild;}
 	float getHalfSize() const							{return halfSize;}
 	float getHalfHeight() const							{return halfHeight;}
-
+   bool isMobile () const
+   {
+      const SkillType *st = getFirstStOfClass(scMove);
+      return st && st->getSpeed() > 0 ? true: false;
+   }
 	//cellmap
 	bool *cellMap;
 
@@ -154,7 +158,7 @@ public:
 	const CommandType *getFirstCtOfClass(CommandClass commandClass) const {return firstCommandTypeOfClass[commandClass];}
 	const SkillType *getFirstStOfClass(SkillClass skillClass) const {return firstSkillTypeOfClass[skillClass];}
     const HarvestCommandType *getFirstHarvestCommand(const ResourceType *resourceType) const;
-	const AttackCommandType *getFirstAttackCommand(Field field) const;
+	const AttackCommandType *getFirstAttackCommand(Zone zone) const;
 	const RepairCommandType *getFirstRepairCommand(const UnitType *repaired) const;
 
 	//has
@@ -176,7 +180,7 @@ private:
 };
 
 
-} // end namespace
+}}//end namespace
 
 
 #endif

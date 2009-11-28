@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_DISPLAY_H_
-#define _GAME_DISPLAY_H_
+#ifndef _GLEST_GAME_DISPLAY_H_
+#define _GLEST_GAME_DISPLAY_H_
 
 #include <string>
 
@@ -27,7 +27,7 @@ using Shared::Graphics::Texture2D;
 using Shared::Graphics::Vec3f;
 using Shared::Util::replaceBy;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class Display
@@ -94,9 +94,7 @@ public:
 	//misc
 	void clear();
 	int computeDownIndex(int x, int y);
-	void switchColor() {
-		currentColor = (currentColor + 1) % colorCount;
-	}
+	void switchColor() {currentColor = (currentColor + 1) % colorCount;}
 
 	int computeDownX(int index) const {
 		return (index % cellSideCount) * imageSize;
@@ -115,6 +113,6 @@ public:
 	}
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

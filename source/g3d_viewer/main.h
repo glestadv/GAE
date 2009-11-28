@@ -16,7 +16,7 @@ using Shared::Platform::MouseState;
 
 using std::string;
 
-namespace Shared { namespace G3dViewer {
+namespace Shared{ namespace G3dViewer{
 
 class GlCanvas;
 

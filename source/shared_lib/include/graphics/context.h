@@ -14,10 +14,9 @@
 
 #include "types.h"
 
-using Shared::Platform::uint32;
+namespace Shared{ namespace Graphics{
 
-namespace Shared { namespace Graphics {
-
+using Platform::uint32;
 
 // =====================================================
 //	class Context

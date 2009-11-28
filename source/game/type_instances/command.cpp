@@ -2,7 +2,6 @@
 //	This file is part of Glest (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
-//				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -13,18 +12,13 @@
 #include "pch.h"
 #include "command.h"
 
-#include <sstream>
-
 #include "world.h"
 #include "command_type.h"
 #include "faction_type.h"
 
 #include "leak_dumper.h"
 
-using std::stringstream;
-using std::ios;
-
-namespace Game {
+namespace Glest{ namespace Game{
 
 
 // =====================================================
@@ -46,7 +40,7 @@ Command::Command(CommandArchetype archetype, CommandFlags flags, const Vec2i &po
 }
 
 Command::Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, Unit *commandedUnit) :
-		archetype(CAT_GIVE_COMMAND),
+		archetype(catGiveCommand),
 		type(type),
 		flags(flags),
 		pos(pos),
@@ -58,7 +52,7 @@ Command::Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, 
 }
 
 Command::Command(const CommandType *type, CommandFlags flags, Unit* unit, Unit *commandedUnit) :
-		archetype(CAT_GIVE_COMMAND),
+		archetype(catGiveCommand),
 		type(type),
 		flags(flags),
 		pos(-1),
@@ -71,7 +65,7 @@ Command::Command(const CommandType *type, CommandFlags flags, Unit* unit, Unit *
 		pos = unit->getCenteredPos();
 	}
 
-	if(unit && !isAuto()) {
+	if(unit && !isAuto() && unit->getFaction()->isThisFaction()) {
 		unit->resetHighlight();
 		//pos = unit->getCellPos();
 	}
@@ -79,7 +73,7 @@ Command::Command(const CommandType *type, CommandFlags flags, Unit* unit, Unit *
 
 
 Command::Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, const UnitType *unitType, Unit *commandedUnit) :
-		archetype(CAT_GIVE_COMMAND),
+		archetype(catGiveCommand),
 		type(type),
 		flags(flags),
 		pos(pos),
@@ -104,7 +98,7 @@ Command::Command(const XmlNode *node, const UnitType *ut, const FactionType *ft)
 }
 
 Command::Command(NetworkDataBuffer &buf) :
-		archetype(CAT_GIVE_COMMAND),
+		archetype(catGiveCommand),
 		type(NULL),
 		flags(0),
 		pos(-1),
@@ -119,7 +113,7 @@ Command::Command(NetworkDataBuffer &buf) :
 void Command::save(XmlNode *node) const {
 	node->addChild("archetype", archetype);
 	node->addChild("type", type->getName());
-	node->addChild("flags", flags.flags);
+	node->addChild("flags", (int)flags.flags);
 	node->addChild("pos", pos);
 	node->addChild("pos2", pos2);
 	unitRef.save(node->addChild("unitRef"));
@@ -139,7 +133,7 @@ void Command::swap() {
 	pos2 = tmpPos;
 }
 
-// =============== NetSerializable ===============
+// =============== NetworkWriteable ===============
 
 size_t Command::getNetSize() const {
 	return	  sizeof(uint16)		// id of unit command is being issued to
@@ -199,15 +193,7 @@ void Command::read(NetworkDataBuffer &buf) {
 	uint16 commandedUnitId;
 	uint8 archetypeAndFlags;
 	uint8 fieldsPresent;
-	World *world = World::getCurrWorld();
-
-	// debug related
-	NetworkManager &netman = NetworkManager::getInstance();
-#ifdef DEBUG_NETWORK
-	bool debug = Config::getInstance().getMiscDebugMode() && netman.isNetworkGame();
-#else
-	bool debug = false; // let optimizer remove dead code
-#endif
+	World * world = World::getCurrWorld();
 
 	// commandedUnit
 	buf.read(commandedUnitId);
@@ -220,54 +206,12 @@ void Command::read(NetworkDataBuffer &buf) {
 
 	// fields present
 	buf.read(fieldsPresent);
-	
-	if(debug) {
-		stringstream str;
-		bool delimit = false;
-		netman.getLogger().printf("=== Command::read() ==>\n");
-		netman.getLogger().printf("  commandedUnitId   = %hd\n", commandedUnitId);
-		netman.getLogger().printf("  archetypeAndFlags = 0x%02hhx (%hhu, 0x%1hhx)\n",
-				archetypeAndFlags, (unsigned int)archetype, flags.flags);
-		
-		if(fieldsPresent & 0x01) {
-			str << "commandType";
-			delimit = true;
-		}
-		if(fieldsPresent & 0x02) {
-			if(delimit) str << ", ";
-			str << "pos";
-			delimit = true;
-		}
-		if(fieldsPresent & 0x04) {
-			if(delimit) str << ", ";
-			str << "pos2";
-			delimit = true;
-		}
-		if(fieldsPresent & 0x08) {
-			if(delimit) str << ", ";
-			str << "unitRef";
-			delimit = true;
-		}
-		if(fieldsPresent & 0x10) {
-			if(delimit) str << ", ";
-			str << "unitRef2";
-			delimit = true;
-		}
-		if(fieldsPresent & 0x20) {
-			if(delimit) str << ", ";
-			str << "unitType";
-		}
-		netman.getLogger().printf("  fieldsPresent     = 0x%02hhx (%s)\n", fieldsPresent, str.str().c_str());
-	}
 
 	// commandType
 	if(fieldsPresent & 0x01) {
 		uint8 commandTypeIndex;
 		buf.read(commandTypeIndex);
 		type = commandedUnit->getType()->getCommandType(commandTypeIndex);
-		if(debug) {
-			netman.getLogger().printf("  commandTypeIndex  = %hhd (%s)\n", commandTypeIndex, type->getName().c_str());
-		}
 	}
 
 	// pos
@@ -276,9 +220,6 @@ void Command::read(NetworkDataBuffer &buf) {
 		buf.read(x);
 		buf.read(y);
 		pos = Vec2i(x, y);
-		if(debug) {
-			netman.getLogger().printf("  pos               = (%d, %d)\n", pos.x, pos.y);
-		}
 	}
 
 	// pos2
@@ -287,9 +228,6 @@ void Command::read(NetworkDataBuffer &buf) {
 		buf.read(x);
 		buf.read(y);
 		pos2 = Vec2i(x, y);
-		if(debug) {
-			netman.getLogger().printf("  pos2              = (%d, %d)\n", pos2.x, pos2.y);
-		}
 	}
 
 	// unitRef
@@ -297,9 +235,6 @@ void Command::read(NetworkDataBuffer &buf) {
 		uint16 unitId;
 		buf.read(unitId);
 		unitRef = world->findUnitById(unitId);
-		if(debug) {
-			netman.getLogger().printf("  unitRef           = %hd\n", unitId);
-		}
 	}
 
 	// unitRef2
@@ -307,9 +242,6 @@ void Command::read(NetworkDataBuffer &buf) {
 		uint16 unitId;
 		buf.read(unitId);
 		unitRef2 = world->findUnitById(unitId);
-		if(debug) {
-			netman.getLogger().printf("  unitRef2          = %hd\n", unitId);
-		}
 	}
 
 	// unitType
@@ -317,13 +249,7 @@ void Command::read(NetworkDataBuffer &buf) {
 		uint8 unitTypeId;
 		buf.read(unitTypeId);
 		unitType = commandedUnit->getFaction()->getType()->getUnitType(unitTypeId);
-		if(debug) {
-			netman.getLogger().printf("  unitTypeId         = %hhd (%s)\n", unitTypeId, unitType->getName().c_str());
-		}
-	}/*
-	if(debug) {
-		netman.getLogger().add("<== Command::read ===");
-	}*/
+	}
 }
 
-} // end namespace
+}}//end namespace

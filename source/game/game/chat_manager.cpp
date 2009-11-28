@@ -17,27 +17,20 @@
 #include "network_manager.h"
 #include "lang.h"
 #include "keymap.h"
+#include "script_manager.h"
 
 #include "leak_dumper.h"
 
 
 using namespace Shared::Platform;
 
-namespace Game {
-
-// =====================================================
-// class ChatMessage
-// =====================================================
-
-ChatMessage::ChatMessage(const string &text, const string &sender, int teamIndex)
-		: text(text)
-		, sender(sender)
-		, teamIndex(teamIndex) {
-}
+namespace Glest { namespace Game {
 
 // =====================================================
 // class ChatManager
 // =====================================================
+
+const int ChatManager::maxTextLenght = 256;
 
 ChatManager::ChatManager(const Keymap &keymap) :
 		keymap(keymap),
@@ -92,9 +85,15 @@ bool ChatManager::keyDown(const Key &key) {
 	if (key == keyReturn && editEnabled) {
 		editEnabled = false;
 		if (!text.empty()) {
-			Net::GameInterface *gameInterface = NetworkManager::getInstance().getGameInterface();
-			console->addLine(gameInterface->getPlayer().getName() + ": " + text);
-			gameInterface->sendTextMessage(text, teamMode ? thisTeamIndex : -1);
+			if ( text[0] == '~' ) {
+				string codeline = text.substr(1);
+				console->addLine("Lua > " + codeline);
+				ScriptManager::doSomeLua(codeline);
+			} else {
+				GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
+				console->addLine(gameNetworkInterface->getHostName() + ": " + text);
+				gameNetworkInterface->sendTextMessage(text, teamMode ? thisTeamIndex : -1);
+			}
 		}
 	} else if (key == keyBackspace) {
 		if (!text.empty()) {
@@ -118,16 +117,17 @@ void ChatManager::keyPress(char c) {
 }
 
 void ChatManager::updateNetwork() {
-	Net::GameInterface *gameInterface = NetworkManager::getInstance().getGameInterface();
-	ChatMessage *msg;
-	while((msg = gameInterface->getNextChatMessage())) {
-		int teamIndex = msg->getTeamIndex();
+	GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
+	string text;
+	string sender;
+
+	if (!gameNetworkInterface->getChatText().empty()) {
+		int teamIndex = gameNetworkInterface->getChatTeamIndex();
 
 		if (teamIndex == -1 || teamIndex == thisTeamIndex) {
-			console->addLine(msg->getSender() + ": " + msg->getText());
+			console->addLine(gameNetworkInterface->getChatSender() + ": " + gameNetworkInterface->getChatText(), true);
 		}
-		delete msg;
 	}
 }
 
-} // end namespace
+}}//end namespace

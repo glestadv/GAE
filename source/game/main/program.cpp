@@ -37,7 +37,7 @@ using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 // 	class Program::CrashProgramState
@@ -51,8 +51,7 @@ Program::CrashProgramState::CrashProgramState(Program &program, const exception 
 		msgBox.setText(string("Exception: ") + e->what());
 	} else {
 		msgBox.setText("Glest Advanced Engine has crashed.  Please help us improve GAE by emailing "
-				" the file gae-crash.txt to " + getGaeMailString()
-				+ " or reporting your bug at http://bugs.codemonger.org.");
+				" the file gae-crash.txt to " + gaeMailString + ".");
 	}
 	mouse2dAnim = mouseY = mouseX = 0;
 	this->e = e;
@@ -95,13 +94,14 @@ Program *Program::singleton = NULL;
 Program::Program(Config &config, int argc, char** argv) :
 		renderTimer(config.getRenderFpsMax(), 1),
 		tickTimer(1.f, maxTimes, -1),
-		updateTimer(static_cast<float>(config.getGsWorldUpdateFps()), maxTimes, 2),
-		updateCameraTimer(static_cast<float>(GameConstants::cameraFps), maxTimes, 10),
+		updateTimer(config.getGsWorldUpdateFps(), maxTimes, 2),
+		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10),
 		programState(NULL),
-		preCrashState(NULL),
+		crashed(false),
+		terminating(false),
 		keymap(getInput(), "keymap.ini") {
 
-    //set video mode
+	//set video mode
 	setDisplaySettings();
 
 	//window
@@ -111,16 +111,17 @@ Program::Program(Config &config, int argc, char** argv) :
 	setSize(config.getDisplayWidth(), config.getDisplayHeight());
 	create();
 
-    //log start
+	//log start
 	Logger &logger= Logger::getInstance();
 	//logger.setFile("glest.log");
 	logger.clear();
 	Logger::getServerLog().clear();
 	Logger::getClientLog().clear();
+	Logger::getErrorLog().clear();
 
 	//lang
 	Lang &lang= Lang::getInstance();
-	lang.load("data/lang/" + config.getUiLang());
+	lang.setLocale(config.getUiLocale());
 
 	//render
 	Renderer &renderer= Renderer::getInstance();
@@ -130,7 +131,7 @@ Program::Program(Config &config, int argc, char** argv) :
 
 	//coreData, needs renderer, but must load before renderer init
 	CoreData &coreData= CoreData::getInstance();
-    coreData.load();
+	coreData.load();
 
 	//init renderer (load global textures)
 	renderer.init();
@@ -138,8 +139,9 @@ Program::Program(Config &config, int argc, char** argv) :
 	//sound
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 	soundRenderer.init(this);
-	
+
 	keymap.save("keymap.ini");
+	keymap.load("keymap.ini");
 
 	// startup and immediately host a game
 	if(argc == 2 && string(argv[1]) == "-server") {
@@ -151,7 +153,7 @@ Program::Program(Config &config, int argc, char** argv) :
 	} else if(argc == 3 && string(argv[1]) == "-client") {
 		MainMenu* mainMenu = new MainMenu(*this);
 		setState(mainMenu);
-		mainMenu->setState(new MenuStateJoinGame(*this, mainMenu, true, IpAddress(argv[2])));
+		mainMenu->setState(new MenuStateJoinGame(*this, mainMenu, true, Ip(argv[2])));
 
 	// normal startup
 	} else {
@@ -162,65 +164,51 @@ Program::Program(Config &config, int argc, char** argv) :
 }
 
 Program::~Program() {
-	singleton = NULL;
-
 	if(programState) {
 		delete programState;
 	}
-
-	if(preCrashState) {
-		delete preCrashState;
-	}
-
 	Renderer::getInstance().end();
-
 	//restore video mode
 	restoreDisplaySettings();
+	singleton = NULL;
 }
 
 void Program::loop() {
 	while(handleEvent()) {
-		// determine the soonest time that any of the timers are due.
-		int64 nextExec = renderTimer.getNextExecution();
-		if(nextExec > updateCameraTimer.getNextExecution()) {
-			nextExec = updateCameraTimer.getNextExecution();
+		size_t sleepTime = renderTimer.timeToWait();
+	
+		sleepTime = sleepTime < updateCameraTimer.timeToWait() ? sleepTime : updateCameraTimer.timeToWait();
+		sleepTime = sleepTime < updateTimer.timeToWait() ? sleepTime : updateTimer.timeToWait();
+		sleepTime = sleepTime < tickTimer.timeToWait() ? sleepTime : tickTimer.timeToWait();
+	
+		if(sleepTime) {
+			Shared::Platform::sleep(sleepTime);
 		}
-		if(nextExec > updateTimer.getNextExecution()) {
-			nextExec = updateTimer.getNextExecution();
-		}
-		if(nextExec > tickTimer.getNextExecution()) {
-			nextExec = tickTimer.getNextExecution();
-		}
-
-		// If the difference is positive, sleep for that amount of time.
-		int sleepTime = static_cast<int>((nextExec - Chrono::getCurMicros()) / 1000);
-		if(sleepTime > 0) {
-			Shared::Platform::sleep(sleepTime / 1000);
-		}
-
+	
 		//render
-		while(renderTimer.isTime()) {
+		while(renderTimer.isTime()){
 			programState->render();
 		}
 	
 		//update camera
-		while(updateCameraTimer.isTime()) {
+		while(updateCameraTimer.isTime()){
 			programState->updateCamera();
 		}
-
+	
 		//update world
-		while(updateTimer.isTime()) {
+		while(updateTimer.isTime()){
 			GraphicComponent::update();
-//			NetworkManager::getInstance().beginUpdate();
 			programState->update();
 			SoundRenderer::getInstance().update();
+			NetworkManager::getInstance().update();
 		}
-
+	
 		//tick timer
-		while(tickTimer.isTime()) {
+		while(tickTimer.isTime()){
 			programState->tick();
 		}
 	}
+	terminating = true;
 }
 
 void Program::eventResize(SizeState sizeState) {
@@ -285,7 +273,7 @@ void Program::setDisplaySettings(){
 		{
 			throw runtime_error(
 				"Error setting video mode: " +
-				Conversion::toStr(screenWidth) + "x" + Conversion::toStr(screenHeight) + "x" + Conversion::toStr(colorBits));
+				intToStr(screenWidth) + "x" + intToStr(screenHeight) + "x" + intToStr(colorBits));
 		}
 	}
 }
@@ -300,14 +288,18 @@ void Program::restoreDisplaySettings(){
 
 void Program::crash(const exception *e) {
 	// if we've already crashed then we just try to exit
-	if(!preCrashState) {
-		preCrashState = programState;
-		programState = new CrashProgramState(*this, e);
+	if(!crashed) {
+		crashed = true;
 
+		if(programState) {
+			delete programState;
+		}
+
+		programState = new CrashProgramState(*this, e);
 		loop();
 	} else {
 		exit();
 	}
 }
 
-} // end namespace
+}}//end namespace

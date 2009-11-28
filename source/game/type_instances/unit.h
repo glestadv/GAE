@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_UNIT_H_
-#define _GAME_UNIT_H_
+#ifndef _GLEST_GAME_UNIT_H_
+#define _GLEST_GAME_UNIT_H_
 
 #include <map>
 
@@ -26,7 +26,7 @@
 #include "entity.h"
 #include "timer.h"
 
-namespace Game {
+namespace Glest { namespace Game {
 
 using Shared::Graphics::ParticleSystem;
 using Shared::Graphics::Vec4f;
@@ -210,7 +210,10 @@ private:
 	Pets pets;
 	UnitReference master;
 	
-	
+	const Command *commandCallback; // for script 'command callbacks'
+	int hp_below_trigger;		// if non-zero, call the Trigger manager when HP falls below this
+	int hp_above_trigger;		// if non-zero, call the Trigger manager when HP rises above this
+ 	
 	int64 lastCommandUpdate;	// microseconds
 	int64 lastUpdated;			// microseconds
 	int64 lastCommanded;		// milliseconds
@@ -224,6 +227,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
+	Zone getCurrZone() const					{return currField == FieldAir ? ZoneAir : ZoneSurface;}
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}
@@ -271,12 +275,17 @@ public:
 	const int64 &getLastUpdated() const			{return lastUpdated;}
 	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
 	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
-	
+	bool isMobile ()							{ return type->isMobile(); }
 
 	void addPet(Unit *u)						{pets.push_back(u);}
 	void petDied(Unit *u)						{pets.remove(u);}
 	int killPets();
 
+	void setCommandCallback()					{ commandCallback = commands.front(); }
+	void clearCommandCallback()					{ commandCallback = NULL; }
+	const Command* getCommandCallback() const	{ return commandCallback; }
+	void setHPBelowTrigger(int i)				{ hp_below_trigger = i; }
+	void setHPAboveTrigger(int i)				{ hp_above_trigger = i; }
 
 	/**
 	 * Returns the total attack strength (base damage) for this unit using the
@@ -351,7 +360,7 @@ public:
 	void setTargetVec(const Vec3f &targetVec)			{this->targetVec = targetVec;}
 	void setMeetingPos(const Vec2i &meetingPos)			{this->meetingPos = meetingPos;}
 	void setAutoRepairEnabled(bool autoRepairEnabled) {
-		this->autoRepairEnabled = autoRepairEnabled && faction->getPrimaryPlayer().getAutoRepairEnabled();
+		this->autoRepairEnabled = autoRepairEnabled;
 		notifyObservers(UnitObserver::eStateChange);
 	}
 	void setDirty(bool dirty)							{this->dirty = dirty;}
@@ -413,7 +422,7 @@ public:
 	//other
 	void resetHighlight()								{highlight= 1.f;}
 	const CommandType *computeCommandType(const Vec2i &pos, const Unit *targetUnit= NULL) const;
-	string getDesc() const;
+	string getDesc(bool full) const;
 	bool computeEp();
 	bool repair(int amount = 0, float multiplier = 1.0f);
 	bool decHp(int i);
@@ -472,7 +481,7 @@ public:
 	Unit *getNearest(SkillClass skillClass = scCount, float pctHealth = 0.0f) {
 		Unit *nearest = NULL;
 		int dist = 0x10000;
-		for(iterator i = begin(); i != end(); i++) {
+		for(iterator i = begin(); i != end(); ++i) {
 			Unit * u = i->first;
 			if(i->second < dist
 					&& (skillClass == scCount || u->getType()->hasSkillClass(skillClass))
@@ -486,6 +495,6 @@ public:
 };
 
 
-} // end namespace
+}}// end namespace
 
 #endif

@@ -13,20 +13,21 @@
 #define _SHARED_SOUND_SOUNDINTERFACE_H_
 
 #include "sound_factory.h"
-#include "patterns.h"
 
-namespace Shared { namespace Sound {
+namespace Shared{ namespace Sound{
 
 // =====================================================
 //	class SoundInterface
 // =====================================================
 
-class SoundInterface : Uncopyable {
+class SoundInterface{
 private:
 	SoundFactory *soundFactory;
 
 private:
 	SoundInterface(){}
+	SoundInterface(SoundInterface &);
+	void operator=(SoundInterface &);
 
 public:
 	static SoundInterface &getInstance();
@@ -36,6 +37,6 @@ public:
 	SoundPlayer *newSoundPlayer();
 };
 
-}} // end namespace
+}}//end namespace
 
 #endif

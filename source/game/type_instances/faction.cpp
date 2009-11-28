@@ -29,56 +29,37 @@
 
 using namespace Shared::Util;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 // =====================================================
 //  class Faction
 // =====================================================
 Faction::ResourceTypes Faction::neededResources;
 
-Faction::Faction(const GameSettings &gs, const GameSettings::Faction &gsFaction, const TechTree &tt, bool thisFaction)
-		: IdNamePair(gsFaction.getId(), gsFaction.getName())
-		, upgradeManager()
-		, resources()
-		, store()
-		, units()
-		, unitMap()
-		, control(gsFaction.getControlType())
-		, texture(Renderer::getInstance().newTexture2D(rsGame))
-		, factionType(tt.getFactionType(gsFaction.getTypeName()))
-		, teamIndex(gsFaction.getTeam().getId())
-		, startLocationIndex(gsFaction.getMapSlot())
-		, players(gsFaction.getPlayers())
-		, thisFaction(thisFaction)
-		, subfaction(0)
-		, lastAttackNotice(0)
-		, lastEnemyNotice(0)
-		, lastEventLoc(-1.f) {
-	
+void Faction::init(const FactionType *factionType, ControlType control, TechTree *techTree,
+      int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources ) {
+	this->control = control;
+	this->factionType = factionType;
+	this->startLocationIndex = startLocationIndex;
+	this->id = factionIndex;
+	this->teamIndex = teamIndex;
+	this->thisFaction = thisFaction;
+	this->subfaction = 0;
+	this->lastAttackNotice = 0;
+	this->lastEnemyNotice = 0;
+	lastEventLoc.x = -1.0f;  // -1 x indicates uninitialized, no last event
 
-	//const GameSettings::Faction &gsFaction = gs.getFaction(factionIndex);
-
-/*
-    void init(const FactionType *factionType, ControlType control, TechTree *techTree,
-			int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction,
-			bool autoRepairEnabled, bool autoReturnEnabled);
-
-		const GameSettings::Faction &f = gs.getFaction(i);
-		const FactionType *ft = techTree.getFactionType(f.getTypeName());
-		factions[i].init(
-			ft, f.getControlType(), &techTree, i, f.getTeam().getId(),
-			f.getMapSlot(), i == thisFactionIndex);
-*/
-
-	resources.resize(tt.getResourceTypeCount());
-	store.resize(tt.getResourceTypeCount());
-	for (int i = 0; i < tt.getResourceTypeCount(); ++i) {
-		const ResourceType *rt = tt.getResourceType(i);
-		resources[i].init(rt, factionType->getStartingResourceAmount(rt));
+	resources.resize(techTree->getResourceTypeCount());
+	store.resize(techTree->getResourceTypeCount());
+	for (int i = 0; i < techTree->getResourceTypeCount(); ++i) {
+		const ResourceType *rt = techTree->getResourceType(i);
+		int resourceAmount= giveResources? factionType->getStartingResourceAmount(rt): 0;
+		resources[i].init(rt, resourceAmount);
 		store[i].init(rt, 0);
 	}
 
-	texture->load("data/core/faction_textures/faction" + Conversion::toStr(id) + ".tga");
+	texture = Renderer::getInstance().newTexture2D(rsGame);
+	texture->load("data/core/faction_textures/faction" + intToStr(id) + ".tga");
 }
 
 void Faction::load(const XmlNode *node, World *world, const FactionType *ft, ControlType control,
@@ -123,7 +104,7 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 
 	subfaction = node->getChildIntValue("subfaction"); //reset in case unit construction changed it
 	texture = Renderer::getInstance().newTexture2D(rsGame);
-	texture->load("data/core/faction_textures/faction" + Conversion::toStr(id) + ".tga");
+	texture->load("data/core/faction_textures/faction" + intToStr(id) + ".tga");
 	assert(units.size() == unitMap.size());
 }
 
@@ -168,8 +149,8 @@ void Faction::writeUpdate(XmlNode *node) const {
 
 		XmlNode *resourceNode = n->addChild("resource");
 		resourceNode->addAttribute("type", resources[i].getType()->getName());
-		resourceNode->addAttribute("amount", resources[i].getAmount());
-		resourceNode->addAttribute("store", store[i].getAmount());
+		resourceNode->addAttribute("amount", intToStr(resources[i].getAmount()));
+		resourceNode->addAttribute("store", intToStr(store[i].getAmount()));
 	}
 }
 
@@ -220,6 +201,14 @@ int Faction::getStoreAmount(const ResourceType *rt) const {
 
 // ==================== upgrade manager ====================
 
+void Faction::startUpgrade(const UpgradeType *ut) {
+	upgradeManager.startUpgrade(ut, id);
+}
+
+void Faction::cancelUpgrade(const UpgradeType *ut) {
+	upgradeManager.cancelUpgrade(ut);
+}
+
 void Faction::finishUpgrade(const UpgradeType *ut) {
 	upgradeManager.finishUpgrade(ut);
 
@@ -268,7 +257,7 @@ bool Faction::reqsOk(const CommandType *ct) const {
 	if(ct->getClass() == ccSetMeetingPoint) {
 		return true;
 	}
-
+	
 	if ((ct->getProduced() != NULL && !reqsOk(ct->getProduced())) || !isAvailable(ct)) {
 		return false;
 	}
@@ -404,6 +393,21 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 			incResourceAmount(rt, cost);
 		}
 	}
+}
+
+//deapply static costs, but not negative costs, for when building gets killed
+void Faction::deApplyStaticConsumption(const ProducibleType *p){
+   
+    //decrease resources
+	for(int i=0; i<p->getCostCount(); ++i){
+		const ResourceType *rt= p->getCost(i)->getType();
+		if(rt->getClass()==rcStatic){
+            int cost= p->getCost(i)->getAmount();
+			if(cost>0){
+				incResourceAmount(rt, cost);
+			}
+        }    
+    }
 }
 
 //apply resource on interval (cosumable resouces)
@@ -601,4 +605,4 @@ void Faction::checkAdvanceSubfaction(const ProducibleType *pt, bool finished) {
 		}
 	}
 }
-} // end namespace
+}}//end namespace

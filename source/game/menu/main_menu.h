@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_MAINMENU_H_
-#define _GAME_MAINMENU_H_
+#ifndef _GLEST_GAME_MAINMENU_H_
+#define _GLEST_GAME_MAINMENU_H_
 
 #include "lang.h"
 #include "console.h"
@@ -21,7 +21,7 @@
 #include "menu_background.h"
 #include "game_settings.h"
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 //misc consts
 struct MapInfo {
@@ -30,16 +30,25 @@ struct MapInfo {
 	string desc;
 };
 
-struct ScenarioInfo
-{
+struct ScenarioInfo {
 	int difficulty;
-    ControlType factionControls[GameConstants::maxFactions];
-    int teams[GameConstants::maxFactions];
-    string factionTypeNames[GameConstants::maxFactions];
+    ControlType factionControls[GameConstants::maxPlayers];
+    int teams[GameConstants::maxPlayers];
+    string factionTypeNames[GameConstants::maxPlayers];
+	string playerNames[GameConstants::maxPlayers];
+	float resourceMultipliers[GameConstants::maxPlayers];
 
     string mapName;
     string tilesetName;
     string techTreeName;
+    string scenarioName;
+
+	bool defaultUnits;
+	bool defaultResources;
+	bool defaultVictoryConditions;
+
+	bool fogOfWar;
+	bool shroudOfDarkness;
 
     string desc;
 };
@@ -101,7 +110,7 @@ protected:
 	Camera camera;
 
 private:
-	MenuState(const MenuState &);
+	//MenuState(const MenuState &);
 	const MenuState &operator =(const MenuState &);
 
 public:
@@ -117,6 +126,6 @@ public:
 	const Camera *getCamera() const			{return &camera;}
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

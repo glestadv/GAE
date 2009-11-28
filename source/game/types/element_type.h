@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_ELEMENTTYPE_H_
-#define _GAME_ELEMENTTYPE_H_
+#ifndef _GLEST_GAME_ELEMENTTYPE_H_
+#define _GLEST_GAME_ELEMENTTYPE_H_
 
 #include <vector>
 #include <map>
@@ -20,7 +20,6 @@
 #include "texture.h"
 #include "resource.h"
 #include "xml_parser.h"
-#include "util.h"
 
 using std::vector;
 using std::map;
@@ -29,7 +28,7 @@ using std::string;
 
 using Shared::Graphics::Texture2D;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 using namespace Shared::Xml;
 
@@ -49,53 +48,45 @@ typedef vector<Faction*> Factions;
 typedef map<int, Faction*> FactionMap;
 
 // =====================================================
-// 	class IdNamePair
+// 	class NameIdPair
+//
+/// Base class for anything that has both a name and id 
 // =====================================================
 
-/** Base class for anything that has both a name and id */
-class IdNamePair : public Printable, public XmlWritable {
+class NameIdPair {
 protected:
-	int id;
-	string name;
+	int id;				//id
+	string name;		//name
 
 public:
 	static const int invalidId = -1;
 
 public:
-	IdNamePair() : id(invalidId) {}
-	IdNamePair(int id, const char *name) : id(id), name(name) {}
-	IdNamePair(int id, const string &name) : id(id), name(name) {}
-	IdNamePair(const XmlNode &node);
-	virtual ~IdNamePair() {}
+	NameIdPair() : id(invalidId) {}
+	NameIdPair(int id, const char *name) : id(id), name(name) {}
+	virtual ~NameIdPair() {}
 
 	int getId() const					{return id;}
 	string getName() const				{return name;}
-	
-	virtual void print(ObjectPrinter &op) const;
-	virtual void write(XmlNode &node) const;
-
-protected:
-	void setId(int v)					{id = v;}
-	void setName(const string &v)		{name = v;}
 };
 
 // =====================================================
 // 	class DisplayableType
+//
+/// Base class for anything that has a name, id and a portrait.
 // =====================================================
 
-/** Base class for anything that has a name, id and a portrait. */
-class DisplayableType : public IdNamePair {
+class DisplayableType : public NameIdPair {
 protected:
-	Texture2D* image;	//portrait
+	Texture2D *image;	//portrait
 
 public:
 	DisplayableType() : image(NULL) {}
-	DisplayableType(const XmlNode &node, const string &dir);
 	DisplayableType(int id, const char *name, Texture2D *image) :
-			IdNamePair(id, name), image(image) {}
+			NameIdPair(id, name), image(image) {}
 	virtual ~DisplayableType() {};
 
-	virtual void load(const XmlNode *baseNode, const string &dir);
+	virtual bool load(const XmlNode *baseNode, const string &dir);
 
 	//get
 	const Texture2D *getImage() const	{return image;}
@@ -132,7 +123,7 @@ public:
 
     //other
     virtual string getReqDesc() const;
-	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
 };
 
 // =====================================================
@@ -174,11 +165,11 @@ public:
 
     //varios
     void checkCostStrings(TechTree *techTree);
-	virtual void load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType);
+	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType);
 
 	virtual string getReqDesc() const;
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

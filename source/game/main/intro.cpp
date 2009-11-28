@@ -27,7 +27,7 @@
 
 using namespace Shared::Graphics;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class Text
@@ -66,7 +66,7 @@ Intro::Intro(Program &program) : ProgramState(program) {
 	timer=0;
 
 	texts.push_back(Text(coreData.getLogoTexture(), Vec2i(w/2-128, h/2-64), Vec2i(256, 128), 4000));
-	texts.push_back(Text("Advanced Engine v" + getGaeVersion().toString(), Vec2i(w / 2 + 80, h / 2 - 32), 4000, coreData.getMenuFontNormal()));
+	texts.push_back(Text("Advanced Engine " + gaeVersionString, Vec2i(w / 2 + 80, h / 2 - 32), 4000, coreData.getMenuFontNormal()));
 	texts.push_back(Text("www.glest.org", Vec2i(w/2, h/2), 12000, coreData.getMenuFontVeryBig()));
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 	soundRenderer.playMusic(CoreData::getInstance().getIntroMusic());
@@ -77,6 +77,13 @@ void Intro::update(){
 	if(timer>introTime * Config::getInstance().getGsWorldUpdateFps() / 1000){
 		program.setState(new MainMenu(program));
 	}
+
+	//TOOD: add AutoTest to config
+	/*
+	if(Config::getInstance().getBool("AutoTest")){
+		AutoTest::getInstance().updateIntro(program);
+	}
+	*/
 }
 
 void Intro::render(){
@@ -129,4 +136,4 @@ void Intro::mouseUpLeft(int x, int y){
 	program.setState(new MainMenu(program));
 }
 
-} // end namespace
+}}//end namespace

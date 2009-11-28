@@ -9,42 +9,86 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_NET_NETWORKTYPES_H_
-#define _GAME_NET_NETWORKTYPES_H_
+#ifndef _GLEST_GAME_NETWORKTYPES_H_
+#define _GLEST_GAME_NETWORKTYPES_H_
 
 #include <string>
+#include <limits.h>
 
-#include "net_util.h"
+#include "types.h"
+#include "vec.h"
+#include "command.h"
+#include "socket.h"
 
 using std::string;
-using Shared::Platform::NetSerializable;
-using Shared::Platform::NetworkDataBuffer;
+using Shared::Platform::int8;
+using Shared::Platform::int16;
+using Shared::Platform::int32;
+using Shared::Graphics::Vec2i;
 
-namespace Game { namespace Net {
+namespace Glest { namespace Game {
+
+class NetworkException : public runtime_error {
+public:
+	NetworkException(const string &msg) : runtime_error(msg) {}
+	NetworkException(const char *msg) : runtime_error(msg) {}
+};
 	
 // =====================================================
 //	class NetworkString
 // =====================================================
 
-template<size_t S> class NetworkString : public NetSerializable {
+template<int S> class NetworkString : public NetworkWriteable {
 private:
+	uint16 size;	//size excluding null terminator, max of S - 1
+	char buffer[S];
 	string s;
 
 public:
-	NetworkString() : s()						{}
-	NetworkString(const string &s) : s(s)		{clamp();}
-	NetworkString &operator=(const string &s)	{this->s = s; clamp(); return *this;}
-//	const string &getString() const				{return s;}
-	operator const string &() const				{return s;}
-	size_t getNetSize() const					{return s.size() + 1;}
-	size_t getMaxNetSize() const				{return S + 1;}	
-	void write(NetworkDataBuffer &buf) const	{buf.SimpleDataBuffer::write(s);}
-	void read(NetworkDataBuffer &buf)			{buf.SimpleDataBuffer::read(s); clamp();}
+	NetworkString() /*: s() */{
+		assert(S && S < USHRT_MAX);
+		size = 0;
+		*buffer = 0;
+	}
+	NetworkString(const string &str) {
+		assert(S && S < USHRT_MAX);
+		(*this) = str;
+	}
+	string getString() const			{return buffer;}
+	void operator=(const string &str) {
+		/*
+		s = str;
+		if(s.size() > S) {
+			s.resize(S);
+		}
+		*/
+		size = (uint16)(str.size() < S ? str.size() : S - 1);
+		strncpy(buffer, str.c_str(), size);
+		buffer[size] = 0;
+	}
 
-private:
-	void clamp()								{if(s.size() > S) s.resize(S);}
+	size_t getNetSize() const {
+		//return s.size() + sizeof(uint16);
+		return sizeof(size) + size;
+	}
+
+	size_t getMaxNetSize() const {
+		return sizeof(size) + sizeof(buffer);
+	}
+
+	void write(NetworkDataBuffer &buf) const {
+		buf.write(size);
+		buf.write(buffer, size);
+	}
+
+	void read(NetworkDataBuffer &buf) {
+		buf.read(size);
+		assert(size < S);
+		buf.read(buffer, size);
+		buffer[size] = 0;
+	}
 };
 
-}} // end namespace
+}}//end namespace
 
 #endif

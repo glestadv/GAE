@@ -18,6 +18,7 @@
 #include "logger.h"
 #include "util.h"
 #include "renderer.h"
+#include "program.h"
 
 #include "leak_dumper.h"
 
@@ -25,7 +26,7 @@ using namespace Shared::Util;
 using namespace Shared::Xml;
 using namespace Shared::Graphics;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 // 	class AmbientSounds
@@ -90,15 +91,13 @@ void AmbientSounds::load(const string &dir, const XmlNode *xmlNode){
 // 	class Tileset
 // =====================================================
 
-void Tileset::load(const string &dir, Checksums &checksums) {
-
+void Tileset::load(const string &dir, Checksum &checksum){
 	random.init(time(NULL));
+	string path= dir+"/"+basename(dir)+".xml";
 
-	string path= dir + "/" + lastDir(dir) + ".xml";
+	checksum.addFile(path, true);
 
-	checksums.addFile(path, true);
-
-	try {
+	try{
 		Logger::getInstance().add("Tileset: "+dir, true);
 		Renderer &renderer= Renderer::getInstance();
 
@@ -109,7 +108,7 @@ void Tileset::load(const string &dir, Checksums &checksums) {
 
 		//surfaces
 		const XmlNode *surfacesNode= tilesetNode->getChild("surfaces");
-		for(int i=0; i<surfCount; ++i) {
+		for(int i=0; i<surfCount; ++i){
 			const XmlNode *surfaceNode= surfacesNode->getChild("surface", i);
 
 			int childCount= surfaceNode->getChildCount();
@@ -125,11 +124,11 @@ void Tileset::load(const string &dir, Checksums &checksums) {
 
 		//object models
 		const XmlNode *objectsNode= tilesetNode->getChild("objects");
-		for(int i=0; i<objCount; ++i) {
+		for(int i=0; i<objCount; ++i){
 			const XmlNode *objectNode= objectsNode->getChild("object", i);
 			int childCount= objectNode->getChildCount();
 			objectTypes[i].init(childCount, i, objectNode->getAttribute("walkable")->getBoolValue());
-			for(int j=0; j<childCount; ++j) {
+			for(int j=0; j<childCount; ++j){
 				const XmlNode *modelNode= objectNode->getChild("model", j);
 				const XmlAttribute *pathAttribute= modelNode->getAttribute("path");
 				objectTypes[i].loadModel(dir +"/"+ pathAttribute->getRestrictedValue());
@@ -146,7 +145,7 @@ void Tileset::load(const string &dir, Checksums &checksums) {
 		const XmlNode *waterNode= parametersNode->getChild("water");
 		waterTex= renderer.newTexture3D(rsGame);
 		waterTex->setMipmap(false);
-		waterTex->setWrapMode(Texture::WRAP_MODE_REPEAT);
+		waterTex->setWrapMode(Texture::wmRepeat);
 		waterEffects= waterNode->getAttribute("effects")->getBoolValue();
 
 		int waterFrameCount= waterNode->getChildCount();
@@ -159,7 +158,7 @@ void Tileset::load(const string &dir, Checksums &checksums) {
 		//fog
 		const XmlNode *fogNode= parametersNode->getChild("fog");
 		fog= fogNode->getAttribute("enabled")->getBoolValue();
-		if(fog) {
+		if(fog){
 			fogMode= fogNode->getAttribute("mode")->getIntValue(1, 2);
 			fogDensity= fogNode->getAttribute("density")->getFloatValue();
 			fogColor.x= fogNode->getAttribute("color-red")->getFloatValue(0.f, 1.f);
@@ -169,16 +168,14 @@ void Tileset::load(const string &dir, Checksums &checksums) {
 
 		//sun and moon light colors
 		const XmlNode *sunLightColorNode= parametersNode->getChild("sun-light");
-		sunLightColor = sunLightColorNode->getColor3Value();/*
 		sunLightColor.x= sunLightColorNode->getAttribute("red")->getFloatValue();
 		sunLightColor.y= sunLightColorNode->getAttribute("green")->getFloatValue();
-		sunLightColor.z= sunLightColorNode->getAttribute("blue")->getFloatValue();*/
+		sunLightColor.z= sunLightColorNode->getAttribute("blue")->getFloatValue();
 
 		const XmlNode *moonLightColorNode= parametersNode->getChild("moon-light");
-		moonLightColor = moonLightColorNode->getColor3Value();/*
 		moonLightColor.x= moonLightColorNode->getAttribute("red")->getFloatValue();
 		moonLightColor.y= moonLightColorNode->getAttribute("green")->getFloatValue();
-		moonLightColor.z= moonLightColorNode->getAttribute("blue")->getFloatValue();*/
+		moonLightColor.z= moonLightColorNode->getAttribute("blue")->getFloatValue();
 
 
 		//weather
@@ -205,7 +202,7 @@ void Tileset::load(const string &dir, Checksums &checksums) {
 }
 
 Tileset::~Tileset(){
-	Logger::getInstance().add("Tileset", true);
+	Logger::getInstance().add("Tileset", !Program::getInstance()->isTerminating());
 }
 
 const Pixmap2D *Tileset::getSurfPixmap(int type, int var) const{
@@ -251,4 +248,4 @@ void Tileset::addSurfTex(int leftUp, int rightUp, int leftDown, int rightDown, V
 
 }
 
-} // end namespace
+}}// end namespace

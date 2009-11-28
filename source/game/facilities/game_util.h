@@ -9,35 +9,33 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_GAMEUTIL_H_
-#define _GAME_GAMEUTIL_H_
+#ifndef _GLEST_GAME_GAMEUTIL_H_
+#define _GLEST_GAME_GAMEUTIL_H_
 
 #include <string>
 #include <vector>
-#include <sstream>
 
-#include "socket.h"
 #include "util.h"
 
 using std::string;
-using std::stringstream;
-using namespace Shared::Util;
+using Shared::Util::sharedLibVersionString;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
-const string &getGlestMailString();
-const string &getGaeMailString();
-const Version &getGlestVersion();
-const Version &getGaeVersion();
-const Version &getNetProtocolVersion();
+extern const string mailString;
+extern const string gaeMailString;
+extern const string glestVersionString;
+extern const string gaeVersionString;
+extern const string networkVersionString;
 
+string getNetworkVersionString();
 string getAboutString1(int i);
 string getAboutString2(int i);
 string getTeammateName(int i);
 string getTeammateRole(int i);
-
+string getCrashDumpFileName();
 string formatString(const string &str);
 
-} // end namespace
+}}//end namespace
 
 #endif

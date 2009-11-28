@@ -9,8 +9,8 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _GAME_SELECTION_
-#define _GAME_SELECTION_
+#ifndef _GLEST_GAME_SELECTION_
+#define _GLEST_GAME_SELECTION_
 
 #include <vector>
 
@@ -18,7 +18,7 @@
 
 using std::vector;
 
-namespace Game {
+namespace Glest { namespace Game {
 
 class Gui;
 
@@ -108,6 +108,6 @@ protected:
 	void unSelect(int unitIndex);
 };
 
-} // end namespace
+}}//end namespace
 
 #endif

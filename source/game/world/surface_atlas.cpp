@@ -25,7 +25,7 @@ using namespace std;
 using namespace Shared::Util;
 using namespace Shared::Graphics;
 
-namespace Game {
+namespace Glest{ namespace Game{
 
 // =====================================================
 //	class PixmapInfo
@@ -82,7 +82,7 @@ void SurfaceAtlas::addSurface(SurfaceInfo *si){
 	if(it==surfaceInfos.end()){
 		//add new texture
 		Texture2D *t= Renderer::getInstance().newTexture2D(rsGame);
-		t->setWrapMode(Texture::WRAP_MODE_CLAMP_TO_EDGE);
+		t->setWrapMode(Texture::wmClampToEdge);
 		t->getPixmap()->init(surfaceSize, surfaceSize, 3);
 
 		si->setCoord(Vec2f(0.f, 0.f));
@@ -116,4 +116,4 @@ void SurfaceAtlas::checkDimensions(const Pixmap2D *p){
 	}
 }
 
-} // end namespace
+}}//end namespace
