@@ -193,23 +193,20 @@ void Game::init() {
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
-	if ( world.getScenario() ) {
-		ScriptManager::init(this);
-	}
-
+	ScriptManager::init(this);
+	
 	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
 		gui.load(savedGame->getChild("gui"));
 	}
 
 	//create IAs
 	aiInterfaces.resize(world.getFactionCount());
-	for(int i=0; i<world.getFactionCount(); ++i){
+	for ( int i=0; i < world.getFactionCount(); ++i ) {
 		Faction *faction= world.getFaction(i);
-		if(faction->getCpuControl()&& ScriptManager::getPlayerModifiers(i)->getAiEnabled()){
+		if ( faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled() ) {
 			aiInterfaces[i]= new AiInterface(*this, i, faction->getTeam());
 			logger.add("Creating AI for faction " + intToStr(i), true);
-		}
-		else{
+		} else {
 			aiInterfaces[i]= NULL;
 		}
 	}
@@ -221,8 +218,7 @@ void Game::init() {
 		weatherParticleSystem->setSpeed(12.f / config.getGsWorldUpdateFps());
 		weatherParticleSystem->setPos(gameCamera.getPos());
 		renderer.manageParticleSystem(weatherParticleSystem, rsGame);
-	}
-	else if(world.getTileset()->getWeather() == wSnowy){
+	} else if(world.getTileset()->getWeather() == wSnowy){
 		logger.add("Creating snow particle system", true);
 		weatherParticleSystem= new SnowParticleSystem(1200);
 		weatherParticleSystem->setSpeed(1.5f / config.getGsWorldUpdateFps());
@@ -269,11 +265,11 @@ void Game::init() {
 	logger.add("Launching game");
 	program.resetTimers();
 
-	if(savedGame) {
+	if ( savedGame ) {
 		delete savedGame;
 		savedGame = NULL;
 	}
-	logger.setLoading ( false );
+	logger.setLoading(false);
 }
 
 
@@ -360,7 +356,7 @@ void Game::displayError(SocketException &e) {
 	mainMessageBox.setEnabled ( true );
 }
 
-void Game::updateCamera(){
+void Game::updateCamera() {
 	gameCamera.update();
 }
 
@@ -397,31 +393,30 @@ void Game::mouseDownLeft(int x, int y){
 	bool messageBoxClick= false;
 
 	//script message box, only if the exit box is not enabled
-	if(!mainMessageBox.getEnabled() && ScriptManager::getMessageBox()->getEnabled()){
+	if ( !mainMessageBox.getEnabled() && ScriptManager::getMessageBox()->getEnabled() ) {
 		int button= 1;
-		if(ScriptManager::getMessageBox()->mouseClick(x, y, button)){
+		if ( ScriptManager::getMessageBox()->mouseClick(x, y, button) ) {
 			ScriptManager::onMessageBoxOk();
 			messageBoxClick= true;
 		}
 	}
 
 	//exit message box, has to be the last thing to do in this function
-	if(mainMessageBox.getEnabled()){
+	if ( mainMessageBox.getEnabled() ) {
 		int button= 1;
-		if(mainMessageBox.mouseClick(x, y, button)){
-			if(button==1){
+		if ( mainMessageBox.mouseClick(x, y, button) ) {
+			if ( button == 1 ) {
 				networkManager.getGameNetworkInterface()->quitGame();
 				quitGame();
-			}
-			else{
+			} else {
 				//close message box
 				mainMessageBox.setEnabled(false);
 			}
 		}
 	//save box
-	} else if(saveBox) {
+	} else if ( saveBox ) {
 		int button;
-		if (saveBox->mouseClick(x, y, button)) {
+		if ( saveBox->mouseClick(x, y, button) ) {
 			if (button == 1) {
 				saveGame(saveBox->getEntry()->getText());
 			}

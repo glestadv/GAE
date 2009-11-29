@@ -506,7 +506,7 @@ void Gui::hotKey(UserCommand cmd) {
  	// Repair / Heal / Replenish
 	case ucReplenish:
 		clickCommonCommand(ccRepair);
-		break;	
+		break;
 
  	// Guard
 	case ucGuard:
@@ -924,7 +924,7 @@ void Gui::computeDisplay() {
 		display.setDownSelectedPos(activePos);
 	}
 
-	if (selection.isComandable() 
+	if (selection.isComandable()
 	&& selection.getFrontUnit()->getFaction()->getTeam() == thisTeam ) {
 		if (!selectingBuilding) {
 

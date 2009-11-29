@@ -306,7 +306,14 @@ void ScriptManager::init(Game *g) {
 	game = g;
 	world = game->getWorld();
 	const Scenario*	scenario = world->getScenario();
-	assert(scenario);
+
+	//setup message box
+	messageBox.init("", Lang::getInstance().get("Ok"));
+	messageBox.setEnabled(false);
+
+	if ( !scenario ) {
+		return;
+	}
 	luaScript.startUp();
 	luaScript.atPanic(panicFunc);
 	assert(!luaScript.isDefined("startup")); // making sure old code is gone
@@ -377,10 +384,6 @@ void ScriptManager::init(Game *g) {
 	LUA_FUNC(clearHilights);
 
 #	endif
-
-	//setup message box
-	messageBox.init("", Lang::getInstance().get("Ok"));
-	messageBox.setEnabled(false);
 
 	//last created unit
 	latestCreated.id = -1;
