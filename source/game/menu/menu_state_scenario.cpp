@@ -74,7 +74,7 @@ MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu):
 	listBoxCategory.setSelectedItemIndex(match);
 	updateScenarioList(categories[listBoxCategory.getSelectedItemIndex()], true);
 
-	networkManager.init(nrServer);
+	//networkManager.init(nrServer);
 }
 
 

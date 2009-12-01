@@ -22,6 +22,8 @@ namespace Glest{ namespace Game{
 
 class MenuStateOptions: public MenuState{
 private:
+	GraphicPanel mainPanel;
+
 	GraphicButton buttonReturn;	
 	GraphicButton buttonAutoConfig;	
 	GraphicButton buttonOpenglInfo;
@@ -69,7 +71,12 @@ public:
 	void render();
 
 private:
+	void addComponentsToMainPanel();
 	void saveConfig();
+	void setupListBoxLang();
+	void initLabels();
+	void initListBoxes();
+	void setTexts();
 };
 
 }}//end namespace

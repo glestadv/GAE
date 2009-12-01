@@ -74,12 +74,40 @@ public:
 	
 	virtual bool mouseMove(int x, int y);
 	virtual bool mouseClick(int x, int y);
+	virtual void render() {}
 	
 	static void update();
 	static void resetFade();
 	static float getAnim()	{return anim;}
 	static float getFade()	{return fade;}
 };
+
+// ===========================================================
+// 	class GraphicPanel
+
+/// This is mainly to clean up the gui code to allow easier 
+/// migration to a third party GUI by having a single
+/// component perform several common actions on others.
+// ===========================================================
+
+class GraphicPanel : public GraphicComponent {
+public:
+	
+private:
+	vector<GraphicComponent*> components;
+
+public:
+	GraphicPanel() : GraphicComponent() {}
+
+	void init(int x, int y, int w, int h);
+	void addComponent(GraphicComponent *gc);
+	
+	// common actions
+	virtual bool mouseMove(int x, int y);
+	void update();
+	virtual void render();
+};
+
 
 // ===========================================================
 // 	class GraphicLabel
@@ -100,6 +128,7 @@ public:
 	bool getCentered() const	{return centered;}
 
 	void setCentered(bool centered)	{this->centered= centered;}
+	virtual void render();
 };
 
 // ===========================================================
@@ -122,6 +151,7 @@ public:
 
 	void setLighted(bool lighted)	{this->lighted= lighted;}
 	virtual bool mouseMove(int x, int y);
+	virtual void render();
 };
 
 // ===========================================================
@@ -155,6 +185,7 @@ public:
 	
 	virtual bool mouseMove(int x, int y);
 	virtual bool mouseClick(int x, int y);
+	virtual void render();
 };
 
 // ===========================================================
@@ -186,6 +217,8 @@ public:
 	virtual bool mouseMove(int x, int y);
 	virtual bool mouseClick(int x, int y);
 	bool mouseClick(int x, int y, int &clickedButton);
+
+	virtual void render();
 	
 	void setText(const string &text) {
 		GraphicComponent::setText(text);
@@ -217,6 +250,7 @@ public:
 
 	virtual bool mouseMove(int x, int y);
 	virtual bool mouseClick(int x, int y);
+	virtual void render();
 	void keyPress(char c);
 	void keyDown(const Key &key);
 	void setFocus()				{activated1 = true;}
@@ -249,6 +283,7 @@ public:
 	virtual bool mouseMove(int x, int y);
 	virtual bool mouseClick(int x, int y);
 	bool mouseClick(int x, int y, int &clickedButton);
+	virtual void render();
 	void keyPress(char c)					{entry.keyPress(c);}
 	void keyDown(const Key &key);
 	void setFocus()							{entry.setFocus();}

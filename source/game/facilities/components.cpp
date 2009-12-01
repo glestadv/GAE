@@ -16,6 +16,7 @@
 #include <cassert>
 #include <algorithm>
 
+#include "renderer.h"
 #include "metrics.h"
 #include "core_data.h"
 #include "platform_util.h"
@@ -78,6 +79,47 @@ void GraphicComponent::resetFade() {
 }
 
 // =====================================================
+// class GraphicPanel
+// =====================================================
+
+void GraphicPanel::init(int x, int y, int w, int h) {
+	GraphicComponent::init(x, y, w, h);
+}
+
+void GraphicPanel::addComponent(GraphicComponent *gc) {
+	components.push_back(gc);
+}
+	
+// common actions
+bool GraphicPanel::mouseMove(int x, int y) {
+	// only relevant to components if within the contained
+	// panel.
+	// TODO: uncommentwhen everything works
+	bool b = GraphicComponent::mouseMove(x, y);
+	//if (b) {
+		vector<GraphicComponent*>::iterator iter;
+		for (iter = components.begin(); iter != components.end(); ++iter) {
+			(*iter)->mouseMove(x,y);
+		}
+	//}
+	return b;
+}
+
+void GraphicPanel::update() {
+	vector<GraphicComponent*>::iterator iter;
+	for (iter = components.begin(); iter != components.end(); ++iter) {
+		(*iter)->update();
+	}
+}
+
+void GraphicPanel::render() {
+	vector<GraphicComponent*>::iterator iter;
+	for (iter = components.begin(); iter != components.end(); ++iter) {
+		(*iter)->render();
+	}
+}
+
+// =====================================================
 // class GraphicLabel
 // =====================================================
 
@@ -87,6 +129,10 @@ const int GraphicLabel::defW = 70;
 void GraphicLabel::init(int x, int y, int w, int h, bool centered) {
 	GraphicComponent::init(x, y, w, h);
 	this->centered = centered;
+}
+
+void GraphicLabel::render() {
+	Renderer::getInstance().renderLabel(this);
 }
 
 // =====================================================
@@ -105,6 +151,10 @@ bool GraphicButton::mouseMove(int x, int y) {
 	bool b = GraphicComponent::mouseMove(x, y);
 	lighted = b;
 	return b;
+}
+
+void GraphicButton::render() {
+	Renderer::getInstance().renderButton(this);
 }
 
 // =====================================================
@@ -186,6 +236,10 @@ bool GraphicListBox::mouseClick(int x, int y) {
 	return false;
 }
 
+void GraphicListBox::render() {
+	Renderer::getInstance().renderListBox(this);
+}
+
 // =====================================================
 // class GraphicMessageBox
 // =====================================================
@@ -252,6 +306,10 @@ bool GraphicMessageBox::mouseClick(int x, int y, int &clickedButton) {
 	return false;
 }
 
+void GraphicMessageBox::render() {
+	Renderer::getInstance().renderMessageBox(this);
+}
+
 // ===========================================================
 //  class GraphicTextEntry
 // ===========================================================
@@ -279,6 +337,10 @@ bool GraphicTextEntry::mouseMove(int x, int y) {
 bool GraphicTextEntry::mouseClick(int x, int y) {
 	activated2 = mouseMove(x, y);
 	return activated2;
+}
+
+void GraphicTextEntry::render() {
+	Renderer::getInstance().renderTextEntry(this);
 }
 
 void GraphicTextEntry::keyPress(char c) {
@@ -371,6 +433,10 @@ bool GraphicTextEntryBox::mouseClick(int x, int y, int &clickedButton) {
 		return true;
 	}
 	return false;
+}
+
+void GraphicTextEntryBox::render() {
+	Renderer::getInstance().renderTextEntryBox(this);
 }
 
 void GraphicTextEntryBox::keyDown(const Key &key) {
