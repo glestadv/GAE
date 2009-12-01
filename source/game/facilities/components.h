@@ -42,6 +42,7 @@ protected:
 	string text;
 	const Font2D *font;
 	bool enabled;
+	bool visible;
 
 	static float anim;
 	static float fade;
@@ -56,8 +57,11 @@ public:
 	int getY() const					{return y;}
 	int getW() const					{return w;}
 	int getH() const					{return h;}
-   bool getEnabled () const { return enabled; }
-   void setEnabled ( bool enable ) { enabled = enable; }
+	bool getEnabled() const { return enabled; }
+	void setEnabled(bool enable) { enabled = enable; }
+	void show() { visible = true; }
+	void hide() { visible = false; }
+	bool isVisible() { return visible; }
 	const string &getText() const		{return text;}
 	const Font2D *getFont() const		{return font;}
 	bool isInBounds(int x, int y) const {

@@ -284,6 +284,8 @@ void MenuStateOptions::setupListBoxLang() {
 		}
 	}
 
+	fclose(fp);
+
 	// insert the values for langNames
 	vector<string> langNames;
 	for ( vector<string>::iterator it = langResults.begin(); it != langResults.end(); ++it ) {

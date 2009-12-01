@@ -44,6 +44,7 @@ const float GraphicComponent::fadeSpeed = 0.01f;
 GraphicComponent::GraphicComponent() : x(0), y(0), w(0), h(0), text(), font(NULL) 
 { 
    enabled = true;
+   visible = true;
 }
 
 void GraphicComponent::init(int x, int y, int w, int h) {
@@ -53,6 +54,7 @@ void GraphicComponent::init(int x, int y, int w, int h) {
 	this->h = h;
 	font = CoreData::getInstance().getMenuFontNormal();
    enabled = true;
+   visible = true;
 }
 
 bool GraphicComponent::mouseMove(int x, int y) {
@@ -115,7 +117,10 @@ void GraphicPanel::update() {
 void GraphicPanel::render() {
 	vector<GraphicComponent*>::iterator iter;
 	for (iter = components.begin(); iter != components.end(); ++iter) {
-		(*iter)->render();
+		GraphicComponent *gc = (*iter);
+		if (gc->isVisible()) {
+			gc->render();
+		}
 	}
 }
 
