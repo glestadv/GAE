@@ -26,6 +26,7 @@
 #include "renderer.h"
 #include "patterns.h"
 #include "program.h"
+#include "factory_repository.h"
 
 
 /*
@@ -38,6 +39,15 @@ using Shared::Platform::IpAddress;
 */
 using namespace Shared::Platform;
 
+namespace Shared {
+	namespace Graphics {
+		class GraphicsFactory;
+	}
+	namespace Sound {
+		class SoundFactory;
+	}
+}
+
 namespace Glest { namespace Game {
 
 class GuiProgramState;
@@ -46,12 +56,15 @@ class GuiProgramState;
 // 	class GuiProgram
 // ===============================
 
-class GuiProgram : public Program, public WindowGl, public FactoryRepository {
+class GuiProgram : public Program, public WindowGl {
 private:
     GuiProgramState *state;					/**< The current programState this Project object is executing. */
     GuiProgramState *preCrashState;			/**< The program state prior to a crash or NULL if no crash has occured.  This is also used to determine if the CrashProgramState has crashed (re-entered the crash handler) so we know not to try that again. */
 
 	Keymap keymap;							/**< The keymap that maps key presses to commands */
+	FactoryRepository factoryRepository;
+	GraphicsFactory &graphicsFactory;
+	SoundFactory &soundFactory;
 	Metrics metrics;
 	Renderer renderer;
 	SoundRenderer soundRenderer;
@@ -75,12 +88,14 @@ public:
 	}
 
 	// getters
-	Keymap &getKeymap() 				{return keymap;}
-	const Metrics &getMetrics() const	{return metrics;}
-	Renderer &getRenderer()				{return renderer;}
-	SoundRenderer &getSoundRenderer()	{return soundRenderer;}
-	CoreData &getCoreData()				{return coreData;}
-	const Lang &getLang() const			{return getLang();}
+	Keymap &getKeymap() 					{return keymap;}
+	GraphicsFactory &getGraphicsFactory()	{return graphicsFactory;}
+	SoundFactory &getSoundFactory()			{return soundFactory;}
+	const Metrics &getMetrics() const		{return metrics;}
+	Renderer &getRenderer()					{return renderer;}
+	SoundRenderer &getSoundRenderer()		{return soundRenderer;}
+	const CoreData &getCoreData() const		{return coreData;}
+	const Lang &getLang() const				{return getLang();}
 
 	// functions of Shared::Platform::Window
 	virtual void eventMouseDown(int x, int y, MouseButton mouseButton);
@@ -131,8 +146,8 @@ public:
 
 	virtual void render() = 0;
 	virtual void update() = 0;
-	virtual void updateCamera() = 0;
-	virtual void tick() = 0;
+	virtual void updateCamera();
+	virtual void tick();
 	virtual void init();
 	virtual void load();
 	virtual void end();
@@ -153,19 +168,21 @@ public:
 
 	// slutty singletons
 	// Program members
-	Config &getConfig()					{return program.getConfig();}
-	const Lang &getLang() const			{return program.getLang();}
-	Console &getConsole()				{return program.getConsole();}
+	Config &getConfig()						{return program.getConfig();}
+	const Lang &getLang() const				{return program.getLang();}
+	Console &getConsole()					{return program.getConsole();}
 
 	// GuiProgram members
-	Keymap &getKeymap()					{return program.getKeymap();}
-	const Metrics &getMetrics() const	{return program.getMetrics();}
-	Renderer &getRenderer()				{return program.getRenderer();}
-	SoundRenderer &getSoundRenderer()	{return program.getSoundRenderer();}
-	CoreData &getCoreData()				{return program.getCoreData();}
+	Keymap &getKeymap()						{return program.getKeymap();}
+	GraphicsFactory &getGraphicsFactory()	{return program.getGraphicsFactory();}
+	SoundFactory &getSoundFactory()			{return program.getSoundFactory();}
+	const Metrics &getMetrics() const		{return program.getMetrics();}
+	Renderer &getRenderer()					{return program.getRenderer();}
+	SoundRenderer &getSoundRenderer()		{return program.getSoundRenderer();}
+	const CoreData &getCoreData()			{return program.getCoreData();}
 
 protected:
-	GuiProgram &getProgram()	{return program;}
+	GuiProgram &getGuiProgram()				{return program;}
 };
 
 /**
@@ -180,7 +197,7 @@ class CrashProgramState : public GuiProgramState {
 	const exception *e;
 
 public:
-	CrashProgramState(GuiProgram &program, const exception *e);
+	CrashProgramState(GuiProgram &guiProgram, const exception *e);
 
 	virtual void render();
 	virtual void mouseDownLeft(int x, int y);

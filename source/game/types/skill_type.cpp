@@ -84,9 +84,7 @@ void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, c
 		for(int i=0; i<soundNode->getChildCount(); ++i){
 			const XmlNode *soundFileNode= soundNode->getChild("sound-file", i);
 			string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-			StaticSound *sound= new StaticSound();
-			sound->load(dir + "/" + path);
-			sounds[i]= sound;
+			sounds[i]= new StaticSound(dir + "/" + path);
 		}
 	}
 
@@ -135,9 +133,7 @@ void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, c
 			for(int i=0; i<soundNode->getChildCount(); ++i){
 				const XmlNode *soundFileNode= soundNode->getChild("sound-file", i);
 				string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-				StaticSound *sound= new StaticSound();
-				sound->load(dir + "/" + path);
-				projSounds[i]= sound;
+				projSounds[i]= new StaticSound(dir + "/" + path);
 			}
 		}
 	}

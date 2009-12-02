@@ -23,6 +23,7 @@
 #include "metrics.h"
 #include "game_util.h"
 #include "platform_util.h"
+#include "console_program.h"
 
 using namespace std;
 using namespace Shared::Platform;
@@ -36,11 +37,11 @@ namespace Glest{ namespace Game{
 
 class ExceptionHandler: public PlatformExceptionHandler {
 private:
-	Program *program;
+	GuiProgram *program;
 
 public:
 	ExceptionHandler() : program(NULL)	{}
-	void setProgram(Program *v)			{program = v;}
+	void setProgram(GuiProgram *v)			{program = v;}
 
 	__cold void log(const char *description, void *address, const char **backtrace, size_t count, const exception *e) {
 		bool closeme = true;
@@ -89,7 +90,7 @@ public:
 };
 
 static void showUsage(const vector<const string> &args) {
-	cout << "Usage: " << args[0] << " [--dedicated|--server|--client ip_addr]" << endl
+	cout << "Usage: " << args.front() << " [--dedicated|--server|--client ip_addr]" << endl
 		 << "  --dedicated      Run a dedicated server" << endl
 		 << "  --server         Start up and immediate host a new network game." << endl
 		 << "  --client ip_addr Start up and immediate join the game hosted at" << endl
@@ -102,7 +103,7 @@ static void showUsage(const vector<const string> &args) {
 
 int main(int argc, char** argv) {
 
-	vector<const string> args;
+	vector<string> args;
 	Program::LaunchType launchType;
 	string ipAddress;
 	bool catchExceptions;
@@ -137,7 +138,7 @@ int main(int argc, char** argv) {
 
 	if(launchType != Program::START_OPTION_DEDICATED) {
 		// run the dedicated server.
-		ConsoleProgram program(launchType);
+		ConsoleProgram program();
 		return program.main();
 	} else {
 
@@ -166,7 +167,7 @@ int main(int argc, char** argv) {
 				return -1;
 			}
 		} else {
-			Program program(launchType, ipAddress);
+			GuiProgram program(launchType, ipAddress);
 			showCursor(program.getConfig().getDisplayWindowed());
 			return program.main();
 		}

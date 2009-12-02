@@ -407,9 +407,7 @@ bool BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 		   for(int i=0; i<startSoundNode->getChildCount(); ++i){
 			   const XmlNode *soundFileNode= startSoundNode->getChild("sound-file", i);
 			   string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-			   StaticSound *sound= new StaticSound();
-			   sound->load(dir + "/" + path);
-			   startSounds[i]= sound;
+			   startSounds[i]= new StaticSound(dir + "/" + path);
 		   }
 	   }
    }
@@ -426,9 +424,7 @@ bool BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 		   for(int i=0; i<builtSoundNode->getChildCount(); ++i){
 			   const XmlNode *soundFileNode= builtSoundNode->getChild("sound-file", i);
 			   string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-			   StaticSound *sound= new StaticSound();
-			   sound->load(dir + "/" + path);
-			   builtSounds[i]= sound;
+			   builtSounds[i] = new StaticSound(dir + "/" + path);
 		   }
 	   }
    }

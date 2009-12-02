@@ -20,7 +20,7 @@
 using std::string;
 using Shared::Platform::uint8;
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
 
 class TextureParams;
 class Context;

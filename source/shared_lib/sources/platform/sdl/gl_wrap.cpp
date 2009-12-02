@@ -22,10 +22,10 @@
 #include <GL/glx.h>
 #endif
 
+#include "exception_base.h"
 #include "opengl.h"
 //#include "sdl_private.h"
 #include "noimpl.h"
-#include "exception_base.h"
 
 #include "leak_dumper.h"
 

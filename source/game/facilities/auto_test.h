@@ -20,7 +20,7 @@ using Shared::Util::Random;
 
 namespace Glest { namespace Game {
 
-class Program;
+class GuiProgram;
 class MainMenu;
 class MenuStateScenario;
 class Game;
@@ -44,12 +44,12 @@ public:
 	static AutoTest & getInstance();
 	AutoTest();
 
-	void updateIntro(Program &program);
-	void updateRoot(Program &program, MainMenu *mainMenu);
-	void updateNewGame(Program &program, MainMenu *mainMenu);
-	void updateScenario(MenuStateScenario *menuStateScenario);
-	void updateGame(Game *game);
-	void updateBattleEnd(Program &program);
+	void updateIntro(GuiProgram &program);
+	void updateRoot(GuiProgram &program, MainMenu &mainMenu);
+	void updateNewGame(GuiProgram &program, MainMenu &mainMenu);
+	void updateScenario(MenuStateScenario &menuStateScenario);
+	void updateGame(Game &game);
+	void updateBattleEnd(GuiProgram &program);
 };
 
 }}//end namespace

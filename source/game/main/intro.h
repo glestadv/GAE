@@ -76,11 +76,11 @@ private:
 	int timer;
 
 public:
-	Intro(GuiProgram &guiProgram);
-	virtual void update();
-	virtual void render();
-	virtual void keyDown(const Key &key);
-	virtual void mouseUpLeft(int x, int y);
+	Intro(GuiProgram &program);
+	void update();
+	void render();
+	void keyDown(const Key &key);
+	void mouseUpLeft(int x, int y);
 };
 
 }}//end namespace

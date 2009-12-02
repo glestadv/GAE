@@ -136,10 +136,9 @@ ClientInterface::~ClientInterface(){
 	}
 }
 
-void ClientInterface::connect(const Ip &ip, int port){
+void ClientInterface::connect(const IpAddress &ip, int port){
 	delete clientSocket;
-	clientSocket = new ClientSocket();
-	clientSocket->connect(ip, port);
+	clientSocket = new ClientSocket(ip, port);
 	clientSocket->setBlock(false);
 }
 
@@ -215,12 +214,13 @@ void ClientInterface::updateLobby(){
 				NetworkMessageIntro *msg = (NetworkMessageIntro *)genericMsg;
 
 				//check consistency
-				if(Config::getInstance().getNetConsistencyChecks() && msg->getVersionString() != getNetworkVersionString()) {
-					throw SocketException("Server and client versions do not match (" + msg->getVersionString() + ").");
+				if(Config::getInstance().getNetConsistencyChecks() && msg->getVersionString() != getNetProtocolVersion().toString()) {
+					throw SocketException("Server and client versions do not match ("
+							+ msg->getVersionString() + ").", "(none)", NULL, __FILE__, __LINE__);
 				}
 
 				//send intro message
-				NetworkMessageIntro sendNetworkMessageIntro(getNetworkVersionString(),
+				NetworkMessageIntro sendNetworkMessageIntro(getNetProtocolVersion().toString(),
 						getLocalHostName(), Config::getInstance().getNetPlayerName(), -1, false);
 
 				playerIndex = msg->getPlayerIndex();
@@ -244,7 +244,7 @@ void ClientInterface::updateLobby(){
 				}
 
 				if(strchr(msg->getName().c_str(), '/') || strchr(msg->getName().c_str(), '\\')) {
-					throw SocketException("Server tried to send a file name with a path component, which is not allowed.");
+					throw SocketException("Server tried to send a file name with a path component, which is not allowed.", "(none)", NULL, __FILE__, __LINE__);
 				}
 
 				Shared::Platform::mkdir("incoming", true);
@@ -286,7 +286,7 @@ void ClientInterface::updateLobby(){
 			break;
 
 			default:
-				throw SocketException("Unexpected network message: " + intToStr(genericMsg->getType()));
+				throw SocketException("Unexpected network message: " + intToStr(genericMsg->getType()), "(none)", NULL, __FILE__, __LINE__);
 		}
 		flush();
 	} catch (runtime_error &e) {
@@ -311,7 +311,7 @@ void ClientInterface::updateKeyframe(int frameCount){
 
 					//check that we are in the right frame
 					if(msg->getFrameCount() != frameCount){
-						throw SocketException("Network synchronization error, frame counts do not match");
+						throw SocketException("Network synchronization error, frame counts do not match", "(none)", NULL, __FILE__, __LINE__);
 					}
 
 					// give all commands
@@ -346,7 +346,7 @@ void ClientInterface::updateKeyframe(int frameCount){
 				break;
 
 				default:
-					throw SocketException("Unexpected message in client interface: " + intToStr(genericMsg->getType()));
+					throw SocketException("Unexpected message in client interface: " + intToStr(genericMsg->getType()), "(none)", NULL, __FILE__, __LINE__);
 			}
 			flush();
 		} catch(runtime_error &e) {
@@ -370,7 +370,7 @@ void ClientInterface::waitUntilReady(Checksum &checksum){
 		//wait until we get a ready message from the server
 		while(!(msg = nextMsg())) {
 			if(chrono.getMillis() > readyWaitTimeout){
-				throw SocketException("Timeout waiting for server");
+				throw SocketException("Timeout waiting for server", "(none)", NULL, __FILE__, __LINE__);
 			}
 
 			// sleep a bit
@@ -378,13 +378,13 @@ void ClientInterface::waitUntilReady(Checksum &checksum){
 		}
 
 		if(msg->getType() != nmtReady) {
-			SocketException("Unexpected network message: " + intToStr(msg->getType()));
+			SocketException("Unexpected network message: " + intToStr(msg->getType()), "(none)", NULL, __FILE__, __LINE__);
 		}
 
 		//check checksum
 		if(Config::getInstance().getNetConsistencyChecks()
 				&& ((NetworkMessageReady*)msg)->getChecksum() != checksum.getSum()) {
-			throw SocketException("Checksum error, you don't have the same data as the server");
+			throw SocketException("Checksum error, you don't have the same data as the server", "(none)", NULL, __FILE__, __LINE__);
 		}
 		flush();
 	} catch (runtime_error &e) {
@@ -416,11 +416,11 @@ NetworkMessage *ClientInterface::waitForMessage() {
 
 	while(!(msg = nextMsg())) {
 		if(!isConnected()){
-			throw SocketException("Disconnected");
+			throw SocketException("Disconnected", "(none)", NULL, __FILE__, __LINE__);
 		}
 
 		if(chrono.getMillis()>messageWaitTimeout){
-			throw SocketException("Timeout waiting for message");
+			throw SocketException("Timeout waiting for message", "(none)", NULL, __FILE__, __LINE__);
 		}
 
 		sleep(waitSleepTime);

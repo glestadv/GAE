@@ -49,7 +49,7 @@ void ConnectionSlot::update() {
 
 		//send intro message when connected
 		if(socket) {
-			NetworkMessageIntro networkMessageIntro(getNetworkVersionString(), socket->getLocalHostName(),
+			NetworkMessageIntro networkMessageIntro(getNetProtocolVersion().toString(), socket->getLocalHostName(),
 					Config::getInstance().getNetPlayerName(), playerIndex, resumeSaved);
 			send(&networkMessageIntro, true);
 		}

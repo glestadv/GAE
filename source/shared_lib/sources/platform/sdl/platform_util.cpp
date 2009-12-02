@@ -39,12 +39,6 @@ using namespace std;
 
 namespace Shared{ namespace Platform{
 
-namespace Private {
-	bool shouldBeFullscreen = false;
-	int ScreenWidth;
-	int ScreenHeight;
-}
-
 // =====================================================
 //	class PlatformExceptionHandler
 // =====================================================
@@ -363,10 +357,12 @@ size_t getFileSize(const string &path) {
 	return s.st_size;
 }
 
+#if 0
 bool changeVideoMode(int resW, int resH, int colorBits, int ) {
 	Private::shouldBeFullscreen = true;
 	return true;
 }
+#endif
 
 void restoreVideoMode() {
 }

@@ -23,82 +23,83 @@ struct OggVorbis_File;
 using std::string;
 using std::ifstream;
 
-namespace Shared{ namespace Sound{
+namespace Shared { namespace Sound {
 
 using Platform::uint32;
 using Platform::int8;
 using Util::MultiFactory;
 
-class SoundInfo;
+class Sound;
 
 // =====================================================
-//	class SoundFileLoader
+// class SoundFileLoader
 //
-///	Interface that all SoundFileLoaders will implement
+/// Interface that all SoundFileLoaders will implement
 // =====================================================
 
-class SoundFileLoader{
+class SoundFileLoader {
 public:
-	virtual ~SoundFileLoader(){}
+    virtual ~SoundFileLoader() {}
 
-	virtual void open(const string &path, SoundInfo *soundInfo)= 0;
-	virtual uint32 read(int8 *samples, uint32 size)= 0;
-	virtual void close()= 0;
-	virtual void restart()= 0;
+    virtual void open(const string &path, Sound &sound) = 0;
+    virtual uint32 read(int8 *samples, uint32 size) = 0;
+    virtual void close() = 0;
+    virtual void restart() = 0;
 };
 
 // =====================================================
-//	class WavSoundFileLoader
+// class WavSoundFileLoader
 //
-///	Wave file loader
+/// Wave file loader
 // =====================================================
 
-class WavSoundFileLoader: public SoundFileLoader{
+class WavSoundFileLoader: public SoundFileLoader {
 private:
-	static const int maxDataRetryCount= 10;
+    static const int maxDataRetryCount = 10;
 
 private:
-	uint32 dataOffset;
-	uint32 dataSize;
-	uint32 bytesPerSecond;
-	ifstream f;
+    uint32 dataOffset;
+    uint32 dataSize;
+    uint32 bytesPerSecond;
+    ifstream f;
 
 public:
-	virtual void open(const string &path, SoundInfo *soundInfo);
-	virtual uint32 read(int8 *samples, uint32 size);
-	virtual void close();
-	virtual void restart();
+    virtual void open(const string &path, Sound &sound);
+    virtual uint32 read(int8 *samples, uint32 size);
+    virtual void close();
+    virtual void restart();
 };
 
 // =====================================================
-//	class OggSoundFileLoader
+// class OggSoundFileLoader
 //
-///	OGG sound file loader, uses ogg-vorbis library
+/// OGG sound file loader, uses ogg-vorbis library
 // =====================================================
 
-class OggSoundFileLoader: public SoundFileLoader{
+class OggSoundFileLoader: public SoundFileLoader {
 private:
-	OggVorbis_File *vf;
-	FILE *f;
+    OggVorbis_File *vf;
+    FILE *f;
 
 public:
-	OggSoundFileLoader() : vf(NULL), f(NULL) {}
-	virtual ~OggSoundFileLoader() {close();}
-	virtual void open(const string &path, SoundInfo *soundInfo);
-	virtual uint32 read(int8 *samples, uint32 size);
-	virtual void close();
-	virtual void restart();
+    OggSoundFileLoader() : vf(NULL), f(NULL) {}
+    virtual ~OggSoundFileLoader() {close();}
+    virtual void open(const string &path, Sound &sound);
+    virtual uint32 read(int8 *samples, uint32 size);
+    virtual void close();
+    virtual void restart();
 };
 
 // =====================================================
-//	class SoundFileLoaderFactory
+// class SoundFileLoaderFactory
 // =====================================================
 
-class SoundFileLoaderFactory: public MultiFactory<SoundFileLoader>{
+class SoundFileLoaderFactory: public MultiFactory<SoundFileLoader> {
 private:
-	SoundFileLoaderFactory();
+    SoundFileLoaderFactory();
+
 public:
-	static SoundFileLoaderFactory * getInstance();
+    static SoundFileLoaderFactory * getInstance();
 };
 
 }}//end namespace

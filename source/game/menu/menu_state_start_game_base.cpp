@@ -30,7 +30,7 @@ using namespace Shared::Util;
 // 	class MenuStateStartGameBase
 // =====================================================
 
-MenuStateStartGameBase::MenuStateStartGameBase(Program &program, MainMenu *mainMenu, const string &stateName) :
+MenuStateStartGameBase::MenuStateStartGameBase(GuiProgram &program, MainMenu &mainMenu, const string &stateName) :
 		MenuState(program, mainMenu, stateName) {
 	msgBox = NULL;
 }
@@ -50,7 +50,7 @@ void MenuStateStartGameBase::loadMapInfo(string file, MapInfo *mapInfo) {
 		int8 title[128];
 	};
 
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 
 	try {
 		FILE *f = fopen(file.c_str(), "rb");

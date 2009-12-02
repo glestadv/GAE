@@ -271,9 +271,7 @@ namespace Glest{ namespace Game{
 				for(int i=0; i<selectionSounds.getSounds().size(); ++i){
 					const XmlNode *soundNode= selectionSoundNode->getChild("sound", i);
 					string path= soundNode->getAttribute("path")->getRestrictedValue();
-					StaticSound *sound= new StaticSound();
-					sound->load(dir + "/" + path);
-					selectionSounds[i]= sound;
+					selectionSounds[i]= new StaticSound(dir + "/" + path);
 				}
 			}
 		}
@@ -289,9 +287,7 @@ namespace Glest{ namespace Game{
 				for(int i=0; i<commandSoundNode->getChildCount(); ++i){
 					const XmlNode *soundNode= commandSoundNode->getChild("sound", i);
 					string path= soundNode->getAttribute("path")->getRestrictedValue();
-					StaticSound *sound= new StaticSound();
-					sound->load(dir + "/" + path);
-					commandSounds[i]= sound;
+					commandSounds[i]= new StaticSound(dir + "/" + path);
 				}
 			}
 		}

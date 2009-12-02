@@ -60,12 +60,11 @@ private:
 	ContextGl &context;
 	string graphicsFactoryName;
 	string soundFactoryName;
-	GraphicsFactory *graphicsFactory;
-	SoundFactory *soundFactory;
+	shared_ptr<GraphicsFactory> graphicsFactory;
+	shared_ptr<SoundFactory> soundFactory;
 
 public:
 	FactoryRepository(ContextGl &context, const string &graphicsFactoryName, const string &soundFactoryName);
-	~FactoryRepository();
 
 	GraphicsFactory &getGraphicsFactory()	{return *graphicsFactory;}
 	SoundFactory &getSoundFactory()			{return *soundFactory;}

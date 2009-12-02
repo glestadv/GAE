@@ -48,6 +48,8 @@ namespace Glest { namespace Game {
 GuiProgramState::~GuiProgramState() {
 }
 
+void GuiProgramState::updateCamera() {}
+void GuiProgramState::tick() {}
 void GuiProgramState::init() {}
 void GuiProgramState::load() {}
 void GuiProgramState::end() {}
@@ -81,16 +83,18 @@ GuiProgram::GuiProgram(Program::LaunchType launchType, const string &ipAddress)
 			getConfig().getRenderDepthBits(),
 			getConfig().getRenderStencilBits(),
 			"Glest Advanced Engine")
-		, FactoryRepository(
+		, state(NULL)
+		, preCrashState(NULL)
+		, keymap(getInput(), "keymap.ini")
+		, factoryRepository(
 			getContext(),
 			getConfig().getRenderGraphicsFactory(),
 			getConfig().getSoundFactory())
-		, programState(NULL)
-		, preCrashState(NULL)
-		, keymap(getInput(), "keymap.ini")
-		, metrics()
-		, renderer()
-		, soundRenderer(getConfig(), this)
+		, graphicsFactory(factoryRepository.getGraphicsFactory())
+		, soundFactory(factoryRepository.getSoundFactory())
+		, metrics(getConfig().getDisplayWidth(), getConfig().getDisplayHeight())
+		, renderer(graphicsFactory, getConfig(), getContext())
+		, soundRenderer(getConfig(), soundFactory)
 		, coreData(getConfig(), renderer)
 		, renderTimer(getConfig().getRenderFpsMax(), 1)
 		, tickTimer(1.f, maxTimes, -1)
@@ -119,13 +123,13 @@ GuiProgram::GuiProgram(Program::LaunchType launchType, const string &ipAddress)
 	if(launchType == Program::START_OPTION_SERVER) {
 		MainMenu* mainMenu = new MainMenu(*this);
 		setState(mainMenu);
-		mainMenu->setState(new MenuStateNewGame(*this, mainMenu, true));
+		mainMenu->setState(new MenuStateNewGame(*this, *mainMenu, true));
 
 	// startup and immediately connect to server
 	} else if(launchType == Program::START_OPTION_CLIENT) {
 		MainMenu* mainMenu = new MainMenu(*this);
 		setState(mainMenu);
-		mainMenu->setState(new MenuStateJoinGame(*this, mainMenu, true, IpAddress(ipAddress)));
+		mainMenu->setState(new MenuStateJoinGame(*this, *mainMenu, true, IpAddress(ipAddress)));
 
 	// normal startup
 	} else {
@@ -134,8 +138,8 @@ GuiProgram::GuiProgram(Program::LaunchType launchType, const string &ipAddress)
 }
 
 GuiProgram::~GuiProgram() {
-	if(programState) {
-		delete programState;
+	if(state) {
+		delete state;
 	}
 
 	if(preCrashState) {
@@ -153,7 +157,7 @@ GuiProgram::~GuiProgram() {
  * SDL implementation, this is when the SDL_QUIT event is sent to the application, for windows, it's
  * the WM_QUIT message.  This function effectively "runs" multiple sub-processes (in the logical
  * sense, they aren't operating system processes) by calling various member functions of the
- * programState object when their timers are due.
+ * state object when their timers are due.
  *
  * Each iteration the status of each timer is checked to determine the soonest that any are due.  If
  * none are currently due, then it will enter a sleep state until one is due.  Then, each timer is
@@ -181,25 +185,25 @@ int GuiProgram::main() {
 
 		//render
 		while(renderTimer.isTime()) {
-			programState->render();
+			state->render();
 		}
 
 		//update camera
 		while(updateCameraTimer.isTime()) {
-			programState->updateCamera();
+			state->updateCamera();
 		}
 
 		//update world
 		while(updateTimer.isTime()) {
 			GraphicComponent::update();
 //			NetworkManager::getInstance().beginUpdate();
-			programState->update();
+			state->update();
 			theSoundRenderer.update();
 		}
 
 		//tick timer
 		while(tickTimer.isTime()) {
-			programState->tick();
+			state->tick();
 		}
 	}
 	return 0;
@@ -216,13 +220,13 @@ void GuiProgram::eventMouseDown(int x, int y, MouseButton mouseButton) {
 
 	switch(mouseButton) {
 	case mbLeft:
-		programState->mouseDownLeft(vx, vy);
+		state->mouseDownLeft(vx, vy);
 		break;
 	case mbRight:
-		programState->mouseDownRight(vx, vy);
+		state->mouseDownRight(vx, vy);
 		break;
 	case mbCenter:
-		programState->mouseDownCenter(vx, vy);
+		state->mouseDownCenter(vx, vy);
 		break;
 	default:
 		break;
@@ -236,13 +240,13 @@ void GuiProgram::eventMouseUp(int x, int y, MouseButton mouseButton) {
 
 	switch(mouseButton) {
 	case mbLeft:
-		programState->mouseUpLeft(vx, vy);
+		state->mouseUpLeft(vx, vy);
 		break;
 	case mbRight:
-		programState->mouseUpRight(vx, vy);
+		state->mouseUpRight(vx, vy);
 		break;
 	case mbCenter:
-		programState->mouseUpCenter(vx, vy);
+		state->mouseUpCenter(vx, vy);
 		break;
 	default:
 		break;
@@ -254,7 +258,7 @@ void GuiProgram::eventMouseMove(int x, int y, const MouseState &ms) {
 	int vx = metrics.toVirtualX(x);
 	int vy = metrics.toVirtualY(getH() - y);
 
-	programState->mouseMove(vx, vy, ms);
+	state->mouseMove(vx, vy, ms);
 }
 
 void GuiProgram::eventMouseDoubleClick(int x, int y, MouseButton mouseButton) {
@@ -264,13 +268,13 @@ void GuiProgram::eventMouseDoubleClick(int x, int y, MouseButton mouseButton) {
 
 	switch(mouseButton){
 	case mbLeft:
-		programState->mouseDoubleClickLeft(vx, vy);
+		state->mouseDoubleClickLeft(vx, vy);
 		break;
 	case mbRight:
-		programState->mouseDoubleClickRight(vx, vy);
+		state->mouseDoubleClickRight(vx, vy);
 		break;
 	case mbCenter:
-		programState->mouseDoubleClickCenter(vx, vy);
+		state->mouseDoubleClickCenter(vx, vy);
 		break;
 	default:
 		break;
@@ -282,21 +286,21 @@ void GuiProgram::eventMouseWheel(int x, int y, int zDelta) {
 	int vx = metrics.toVirtualX(x);
 	int vy = metrics.toVirtualY(getH() - y);
 
-	programState->eventMouseWheel(vx, vy, zDelta);
+	state->eventMouseWheel(vx, vy, zDelta);
 }
 
 // FIXME: using both left & right alt/control/shift at the same time will cause these to be
 // incorrect on some platforms (not sure that anybody cares though).
 void GuiProgram::eventKeyDown(const Key &key) {
-	programState->keyDown(key);
+	state->keyDown(key);
 }
 
 void GuiProgram::eventKeyUp(const Key &key) {
-	programState->keyUp(key);
+	state->keyUp(key);
 }
 
 void GuiProgram::eventKeyPress(char c) {
-	programState->keyPress(c);
+	state->keyPress(c);
 }
 
 void GuiProgram::eventCreate() {}
@@ -330,15 +334,15 @@ void GuiProgram::eventTimer(int timerId) {}
 
 // ==================== misc ====================
 
-void GuiProgram::setState(GuiProgramState *programState){
+void GuiProgram::setState(GuiProgramState *state){
 
-	if(programState) {
-		delete this->programState;
+	if(state) {
+		delete this->state;
 	}
 
-	this->programState= programState;
-	programState->load();
-	programState->init();
+	this->state= state;
+	state->load();
+	state->init();
 
 	renderTimer.reset();
 	updateTimer.reset();
@@ -390,8 +394,8 @@ void GuiProgram::restoreDisplaySettings(){
 void GuiProgram::crash(const exception *e) {
 	// if we've already crashed then we just try to exit
 	if(!preCrashState) {
-		preCrashState = programState;
-		programState = new CrashProgramState(*this, e);
+		preCrashState = state;
+		state = new CrashProgramState(*this, e);
 
 		main();
 	} else {
@@ -432,7 +436,7 @@ void CrashProgramState::render() {
 
 void CrashProgramState::mouseDownLeft(int x, int y) {
 	if(msgBox.mouseClick(x,y)) {
-		program.exit();
+		getGuiProgram().exit();
 	}
 }
 

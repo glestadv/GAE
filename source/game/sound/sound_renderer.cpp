@@ -16,6 +16,7 @@
 #include "config.h"
 #include "sound_interface.h"
 #include "factory_repository.h"
+#include "gui_program.h"
 
 #include "leak_dumper.h"
 
@@ -23,31 +24,26 @@
 using namespace Shared::Graphics;
 using namespace Shared::Sound;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 // =====================================================
 //  class SoundRenderer
 // =====================================================
 
-SoundRenderer::SoundRenderer(const Config &config, Window *window)
-		: fxVolume(config.getSoundVolumeFx() / 100.f)
-		, musicVolume(config.getSoundVolumeMusic() / 100.f)
-		, ambientVolume(config.getSoundVolumeAmbient() / 100.f)
-		, soundPlayer(NULL) {
-	SoundInterface &si = SoundInterface::getInstance();
-	FactoryRepository &fr = FactoryRepository::getInstance();
-
-	si.setFactory(fr.getSoundFactory(config.getSoundFactory()));
-	soundPlayer = si.newSoundPlayer();
-
+SoundRenderer::SoundRenderer(const Config &config, SoundFactory &soundFactory)
+		: config(config)
+//		, fxVolume(config.getSoundVolumeFx() / 100.f)
+//		, musicVolume(config.getSoundVolumeMusic() / 100.f)
+//		, ambientVolume(config.getSoundVolumeAmbient() / 100.f)
+		, soundPlayer(soundFactory.newSoundPlayer()) {
 	SoundPlayerParams soundPlayerParams;
 	soundPlayerParams.staticBufferCount = config.getSoundStaticBuffers();
 	soundPlayerParams.strBufferCount = config.getSoundStreamingBuffers();
-	soundPlayer->init(&soundPlayerParams);
+	soundPlayer->init(soundPlayerParams);
 }
 
-SoundRenderer::~SoundRenderer() {
-	delete soundPlayer;
+SoundRenderer &SoundRenderer::getInstance() {
+	return GuiProgram::getInstance().getSoundRenderer();
 }
 
 void SoundRenderer::update() {
@@ -56,46 +52,47 @@ void SoundRenderer::update() {
 
 // ======================= Music ============================
 
-void SoundRenderer::playMusic(StrSound *strSound) {
-	strSound->setVolume(musicVolume);
-	strSound->restart();
-	soundPlayer->play(strSound);
+void SoundRenderer::playMusic(const StrSound &strSound) {
+	//strSound->setVolume(musicVolume);
+	//strSound->restart();
+#warning	soundPlayer->restart();
+	soundPlayer->play(strSound, getMusicVolume());
 }
 
-void SoundRenderer::stopMusic(StrSound *strSound) {
+void SoundRenderer::stopMusic(const StrSound &strSound) {
 	soundPlayer->stop(strSound);
 }
 
 // ======================= Fx ============================
 
-void SoundRenderer::playFx(StaticSound *staticSound, Vec3f soundPos, Vec3f camPos) {
-	if (staticSound != NULL) {
+void SoundRenderer::playFx(const StaticSound &staticSound, const Vec3f &soundPos, const Vec3f &camPos) {
+	//if (staticSound != NULL) {
 		float d = soundPos.dist(camPos);
 
 		if (d < audibleDist) {
-			float vol = (1.f - d / audibleDist) * fxVolume;
+			float vol = (1.f - d / audibleDist) * getFxVolume();
 			float correctedVol = log10(log10(vol * 9 + 1) * 9 + 1);
-			staticSound->setVolume(correctedVol);
-			soundPlayer->play(staticSound);
+			//staticSound->setVolume(correctedVol);
+			soundPlayer->play(staticSound, correctedVol);
 		}
-	}
+	//}
 }
 
-void SoundRenderer::playFx(StaticSound *staticSound) {
-	if (staticSound != NULL) {
-		staticSound->setVolume(fxVolume);
-		soundPlayer->play(staticSound);
-	}
+void SoundRenderer::playFx(const StaticSound &staticSound) {
+	//if (staticSound != NULL) {
+	//	staticSound->setVolume(fxVolume);
+		soundPlayer->play(staticSound, getFxVolume());
+	//}
 }
 
 // ======================= Ambient ============================
 
-void SoundRenderer::playAmbient(StrSound *strSound) {
-	strSound->setVolume(ambientVolume);
-	soundPlayer->play(strSound, ambientFade);
+void SoundRenderer::playAmbient(const StrSound &strSound) {
+	//strSound->setVolume(ambientVolume);
+	soundPlayer->play(strSound, getAmbientVolume(), ambientFade);
 }
 
-void SoundRenderer::stopAmbient(StrSound *strSound) {
+void SoundRenderer::stopAmbient(const StrSound &strSound) {
 	soundPlayer->stop(strSound, ambientFade);
 }
 

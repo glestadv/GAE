@@ -60,8 +60,8 @@ const int Intro::appearTime= 2500;
 const int Intro::showTime= 2500;
 const int Intro::disapearTime= 2500;
 
-Intro::Intro(GuiProgram &program) : GuiProgramState(guiProgram) {
-	CoreData &coreData = getCoreData();
+Intro::Intro(GuiProgram &program) : GuiProgramState(program) {
+	const CoreData &coreData = getCoreData();
 	const Metrics &metrics = getMetrics();
 	int w= metrics.getVirtualW();
 	int h= metrics.getVirtualH();
@@ -77,7 +77,7 @@ Intro::Intro(GuiProgram &program) : GuiProgramState(guiProgram) {
 void Intro::update(){
 	timer++;
 	if(timer>introTime * theConfig.getGsWorldUpdateFps() / 1000){
-		program.setState(new MainMenu(program));
+		getGuiProgram().setState(new MainMenu(getGuiProgram()));
 	}
 
 	//TOOD: add AutoTest to config
@@ -135,7 +135,7 @@ void Intro::mouseUpLeft(int x, int y){
 	SoundRenderer &soundRenderer= theSoundRenderer;
 	soundRenderer.stopMusic(theCoreData.getIntroMusic());
 	soundRenderer.playMusic(theCoreData.getMenuMusic());
-	getProgram().setState(new MainMenu(program));
+	getGuiProgram().setState(new MainMenu(getGuiProgram()));
 }
 
 }}//end namespace

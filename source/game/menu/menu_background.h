@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -28,33 +28,36 @@ using Shared::Graphics::Texture2D;
 using Shared::Graphics::Model;
 using Shared::Util::Random;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
+
+class Config;
 
 // ===========================================================
-// 	class MenuBackground  
+// 	class MenuBackground
 //
-///	Holds the data to display the 3D environment 
+///	Holds the data to display the 3D environment
 /// in the MenuState
 // ===========================================================
 
-class MenuBackground{
+class MenuBackground {
 public:
-	static const int meshSize= 32;
-	static const int raindropCount= 1000;
-	static const int characterCount= 5;
+	static const int meshSize = 32;
+	static const int raindropCount = 1000;
+	static const int characterCount = 5;
 
 private:
+	const Config &config;
 	Model *mainModel;
-	
+
 	//water
 	bool water;
 	float waterHeight;
 	Texture2D *waterTexture;
-	
+
 	//fog
 	bool fog;
 	float fogDensity;
-	
+
 	//rain
 	bool rain;
 	Vec2f raindropPos[raindropCount];
@@ -74,7 +77,7 @@ private:
 	Vec3f aboutPosition;
 
 public:
-	MenuBackground();
+	MenuBackground(const Config &config);
 
 	bool getWater() const						{return water;}
 	float getWaterHeight() const				{return waterHeight;}
@@ -90,15 +93,16 @@ public:
 	float getRaindropState(int i) const			{return raindropStates[i];}
 	float getAnim() const						{return anim;}
 	const Vec3f &getAboutPosition() const		{return aboutPosition;}
-	
+
 	void setTargetCamera(const Camera *targetCamera);
 	void update();
 
 private:
 	Vec2f computeRaindropPos();
+	const Config &getConfig() const				{return config;}
 };
 
-}} //end namespace
+}} // end namespace
 
 #endif
 

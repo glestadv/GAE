@@ -106,7 +106,7 @@ void ServerInterface::process(NetworkMessageUpdateRequest &msg) {
 		Unit *unit = UnitReference(unitNode).getUnit();
 
 		if(!unit) {
-			throw SocketException("Client out of sync");
+			throw GlestException("Client out of sync");
 		}
 
 		if(unitNode->getAttribute("full")->getBoolValue()) {
@@ -387,8 +387,8 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 				string errmsg = slot->getDescription() + " (" + lang.get("Player") + " "
 						+ intToStr(slot->getPlayerIndex() + 1) + ") " + lang.get("Disconnected");
 				removeSlot(i);
-				
-				Game::getInstance()->getConsole()->addLine(errmsg);
+
+				Game::getInstance()->getConsole().addLine(errmsg);
 				//throw SocketException(errmsg);
 			}
 		}

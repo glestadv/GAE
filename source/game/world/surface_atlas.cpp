@@ -82,7 +82,7 @@ void SurfaceAtlas::addSurface(SurfaceInfo *si){
 	if(it==surfaceInfos.end()){
 		//add new texture
 		Texture2D *t= Renderer::getInstance().newTexture2D(rsGame);
-		t->setWrapMode(Texture::wmClampToEdge);
+		t->setWrapMode(Texture::WRAP_MODE_CLAMP_TO_EDGE);
 		t->getPixmap()->init(surfaceSize, surfaceSize, 3);
 
 		si->setCoord(Vec2f(0.f, 0.f));

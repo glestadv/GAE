@@ -37,11 +37,11 @@ using namespace Shared::Util;
 //  class MenuStateNewGame
 // =====================================================
 
-MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots) :
+MenuStateNewGame::MenuStateNewGame(GuiProgram &program, MainMenu &mainMenu, bool openNetworkSlots) :
 		MenuStateStartGameBase(program, mainMenu, "new-game") {
 
-	Lang &lang = Lang::getInstance();
-	Config &config = Config::getInstance();
+	const Lang &lang = getLang();
+	const Config &config = getConfig();
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	vector<string> results;
 	vector<string> teamItems;
@@ -123,8 +123,8 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	buttonReturn.setText(lang.get("Return"));
 	buttonPlayNow.setText(lang.get("PlayNow"));
 
-	for (int i = 0; i < ctCount; ++i) {
-		controlItems.push_back(lang.get(controlTypeNames[i]));
+	for (int i = 0; i < CT_COUNT; ++i) {
+		controlItems.push_back(lang.get(enumControlTypeDesc[i]));
 	}
 	teamItems.push_back("1");
 	teamItems.push_back("2");
@@ -190,10 +190,11 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 
 
 void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
-	Config &config = Config::getInstance();
-	CoreData &coreData = CoreData::getInstance();
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	Config &config = getConfig();
+	const CoreData &coreData = getCoreData();
+	SoundRenderer &soundRenderer = getSoundRenderer();
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
+	const Lang &lang = getLang();
 
 	if (msgBox) {
 		if (msgBox->mouseClick(x, y)) {
@@ -204,12 +205,12 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 	} else if (buttonReturn.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundA());
 		config.save();
-		mainMenu->setState(new MenuStateRoot(program, mainMenu));
+		changeState<MenuStateRoot>();
 	} else if (buttonPlayNow.mouseClick(x, y)) {
 		if (isUnconnectedSlots()) {
 			buttonPlayNow.mouseMove(1, 1);
 			msgBox = new GraphicMessageBox();
-			msgBox->init(Lang::getInstance().get("WaitingForConnections"), Lang::getInstance().get("Ok"));
+			msgBox->init(lang.get("WaitingForConnections"), lang.get("Ok"));
 		} else {
 			GameSettings gameSettings;
 
@@ -217,7 +218,7 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 			soundRenderer.playFx(coreData.getClickSoundC());
 			loadGameSettings(&gameSettings);
 			serverInterface->launchGame(&gameSettings);
-			program.setState(new Game(program, gameSettings));
+			getGuiProgram().setState(new Game(getGuiProgram(), gameSettings));
 		}
 	} else if (listBoxMap.mouseClick(x, y)) {
 		string mapBaseName = mapFiles[listBoxMap.getSelectedItemIndex()];
@@ -293,7 +294,7 @@ void MenuStateNewGame::mouseMove(int x, int y, const MouseState &ms) {
 
 void MenuStateNewGame::render() {
 
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = getRenderer();
 
 	int i;
 
@@ -330,12 +331,12 @@ void MenuStateNewGame::render() {
 }
 
 void MenuStateNewGame::update() {
-	if (Config::getInstance().getMiscAutoTest()) {
-		AutoTest::getInstance().updateNewGame(program, mainMenu);
-	}
-
 	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
-	Lang& lang = Lang::getInstance();
+	const Lang& lang = getLang();
+
+	if (getConfig().getMiscAutoTest()) {
+		AutoTest::getInstance().updateNewGame(getGuiProgram(), getMainMenu());
+	}
 
 	for (int i = 0; i < mapInfo.players; ++i) {
 		if (listBoxControls[i].getSelectedItemIndex() == CT_NETWORK) {
@@ -417,7 +418,7 @@ void MenuStateNewGame::reloadFactions() {
 	}
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 		listBoxFactions[i].setItems(results);
-		listBoxFactions[i].pushBackItem(Lang::getInstance().get("Random"));
+		listBoxFactions[i].pushBackItem(getLang().get("Random"));
 		listBoxFactions[i].setSelectedItemIndex(i % results.size());
 	}
 }

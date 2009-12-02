@@ -77,7 +77,6 @@ private:
     Gui gui;
     GameCamera gameCamera;
     Commander commander;
-    Console console;
 	ChatManager chatManager;
 
 	//misc
@@ -103,7 +102,7 @@ private:
 	ParticleSystem *weatherParticleSystem;
 
 public:
-	Game(Program &program, const GameSettings &gs, XmlNode *savedGame = NULL);
+	Game(GuiProgram &program, const GameSettings &gs, XmlNode *savedGame = NULL);
     ~Game();
 	static Game *getInstance()				{return singleton;}
 
@@ -118,7 +117,7 @@ public:
 	Gui *getGui()							{return &gui;}
 	const Gui *getGui() const				{return &gui;}
 	Commander *getCommander()				{return &commander;}
-	Console *getConsole()					{return &console;}
+//	Console *getConsole()					{return &console;}
 	World *getWorld()						{return &world;}
 	const World *getWorld() const			{return &world;}
 

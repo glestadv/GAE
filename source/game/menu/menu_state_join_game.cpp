@@ -39,10 +39,10 @@ using namespace Shared::Util;
 const int MenuStateJoinGame::newServerIndex = 0;
 const string MenuStateJoinGame::serverFileName = "servers.ini";
 
-MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool connect, Ip serverIp):
-		MenuState(program, mainMenu, "join-game") {
-	Lang &lang = Lang::getInstance();
-	Config &config = Config::getInstance();
+MenuStateJoinGame::MenuStateJoinGame(GuiProgram &program, MainMenu &mainMenu, bool connect, IpAddress serverIp)
+		: MenuState(program, mainMenu, "join-game") {
+	const Lang &lang = getLang();
+	const Config &config = getConfig();
 	NetworkManager &networkManager = NetworkManager::getInstance();
 
 	servers.load(serverFileName);
@@ -90,7 +90,7 @@ MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool 
 
 	//server ip
 	if (connect) {
-		labelServerIp.setText(serverIp.getString() + "_");
+		labelServerIp.setText(serverIp.toString() + "_");
 		connectToServer();
 	} else {
 		labelServerIp.setText(config.getNetServerIp() + "_");
@@ -99,8 +99,8 @@ MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool 
 
 void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
 
-	CoreData &coreData = CoreData::getInstance();
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	const CoreData &coreData = getCoreData();
+	SoundRenderer &soundRenderer = getSoundRenderer();
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	ClientInterface* clientInterface = networkManager.getClientInterface();
 
@@ -122,7 +122,7 @@ void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
 	//return
 	if (buttonReturn.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundA());
-		mainMenu->setState(new MenuStateRoot(program, mainMenu));
+		changeState<MenuStateRoot>();
 
 	//connect
 	} else if (buttonConnect.mouseClick(x, y)) {
@@ -153,7 +153,7 @@ void MenuStateJoinGame::mouseMove(int x, int y, const MouseState &ms) {
 }
 
 void MenuStateJoinGame::render() {
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = getRenderer();
 
 	renderer.renderButton(&buttonReturn);
 	renderer.renderLabel(&labelServer);
@@ -172,7 +172,7 @@ void MenuStateJoinGame::render() {
 
 void MenuStateJoinGame::update() {
 	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 
 	//update status label
 	if (clientInterface->isConnected()) {
@@ -193,11 +193,12 @@ void MenuStateJoinGame::update() {
 		//intro
 		if (clientInterface->getIntroDone()) {
 			labelInfo.setText(lang.get("WaitingHost"));
-			servers.setString(clientInterface->getDescription(), Ip(labelServerIp.getText()).getString());
+			servers.setString(clientInterface->getDescription(), IpAddress(labelServerIp.getText()).toString());
 		}
 
 		//launch
 		if (clientInterface->getLaunchGame()) {
+			GuiProgram &program = getGuiProgram();
 			servers.save(serverFileName);
 			if (clientInterface->getSavedGameFile() == "") {
 				program.setState(new Game(program, *clientInterface->getGameSettings()));
@@ -225,7 +226,7 @@ void MenuStateJoinGame::keyDown(const Key &key) {
 	}
 
 	if(key == keyEscape) {
-		mainMenu->setState(new MenuStateRoot(program, mainMenu));
+		changeState<MenuStateRoot>();
 	}
 }
 
@@ -258,15 +259,18 @@ void MenuStateJoinGame::keyPress(char c) {
 
 void MenuStateJoinGame::connectToServer() {
 	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
-	Config& config = Config::getInstance();
-	Ip serverIp(labelServerIp.getText());
+	Config& config = getConfig();
+	string ipString = labelServerIp.getText();
+	// remove annoying trailing underscore
+	ipString.resize(ipString.size() - 1);
+	IpAddress serverIp(ipString);
 
 	clientInterface->connect(serverIp, GameConstants::serverPort);
-	labelServerIp.setText(serverIp.getString() + '_');
+	labelServerIp.setText(serverIp.toString() + '_');
 	labelInfo.setText("");
 
 	//save server ip
-	config.setNetServerIp(serverIp.getString());
+	config.setNetServerIp(serverIp.toString());
 	config.save();
 }
 

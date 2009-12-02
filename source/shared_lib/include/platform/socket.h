@@ -29,9 +29,11 @@
 #
 #	define SOCKET_ERROR -1
 #	define SocketException PosixException
+//	typedef PosixException SocketException;
 #elif defined(WIN32) || defined(WIN64)
 #	define SocketException WinsockException
 #	include <Ws2tcpip.h>
+//	typedef WinsockException SocketException;
 	typedef int in_addr_t;
 #endif
 

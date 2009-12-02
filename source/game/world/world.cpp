@@ -58,7 +58,7 @@ World::World(Game *game)
 
 		, unitUpdater(*game)
 		, waterEffects()
-		, minimap(game->getRenderer())
+		, minimap(game->getRenderer(), config.getGsFogOfWarEnabled())
 		, stats(game->getGameSettings())
 		, factions()
 
@@ -167,7 +167,7 @@ void World::initNetworkServer() {
 	// For network games, we want to randomize this so we don't send all updates at
 	// once.
 	int64 now = Chrono::getCurMicros();
-	int64 interval = Config::getInstance().getNetMinFullUpdateInterval() * 1000LL;
+	int64 interval = config.getNetMinFullUpdateInterval() * 1000LL;
 
 	for (Factions::iterator f = factions.begin(); f != factions.end(); ++f) {
 		const Units &units = f->getUnits();
@@ -179,7 +179,7 @@ void World::initNetworkServer() {
 
 //load tileset
 bool World::loadTileset(Checksum &checksum) {
-	tileset.load(game.getGameSettings().getTilesetPath(), checksum);
+	tileset.load(game.getGameSettings().getTilesetPath(), checksum, game.getGraphicsFactory());
 	timeFlow.init(&tileset);
 	return true;
 }

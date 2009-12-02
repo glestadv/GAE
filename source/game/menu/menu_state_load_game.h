@@ -95,7 +95,7 @@ private:
 	const MenuStateLoadGame &operator =(const MenuStateLoadGame &);
 
 public:
-	MenuStateLoadGame(Program &program, MainMenu *mainMenu);
+	MenuStateLoadGame(GuiProgram &program, MainMenu &mainMenu);
 	~MenuStateLoadGame();
 
 	void mouseClick(int x, int y, MouseButton mouseButton);

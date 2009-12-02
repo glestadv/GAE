@@ -21,34 +21,33 @@
 #include "leak_dumper.h"
 
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 // =====================================================
-// 	class MenuStateAbout
+//  class MenuStateAbout
 // =====================================================
 
-MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu):
-	MenuState(program, mainMenu, "about")
-{
-	const Lang &lang= getLang();
+MenuStateAbout::MenuStateAbout(GuiProgram &program, MainMenu &mainMenu)
+		: MenuState(program, mainMenu, "about") {
+	const Lang &lang = getLang();
 
 	//init
 	buttonReturn.init(460, 100, 125);
 	buttonReturn.setText(lang.get("Return"));
 
-	for(int i= 0; i<aboutStringCount1; ++i){
-		labelAbout1[i].init(100, 650-i*20);
+	for (int i = 0; i < aboutStringCount1; ++i) {
+		labelAbout1[i].init(100, 650 - i*20);
 		labelAbout1[i].setText(getAboutString1(i));
 	}
 
-	for(int i= 0; i<aboutStringCount2; ++i){
-		labelAbout2[i].init(460, 650-i*20);
+	for (int i = 0; i < aboutStringCount2; ++i) {
+		labelAbout2[i].init(460, 650 - i*20);
 		labelAbout2[i].setText(getAboutString2(i));
 	}
 
-	for(int i= 0; i<teammateCount; ++i){
-		labelTeammateName[i].init(100+i*180, 500);
-		labelTeammateRole[i].init(100+i*180, 520);
+	for (int i = 0; i < teammateCount; ++i) {
+		labelTeammateName[i].init(100 + i*180, 500);
+		labelTeammateRole[i].init(100 + i*180, 520);
 		labelTeammateName[i].setText(getTeammateName(i));
 		labelTeammateRole[i].setText(getTeammateRole(lang, i));
 	}
@@ -59,33 +58,32 @@ MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu):
 	labelTeammateRole[6].init(540, 180);
 }
 
-void MenuStateAbout::mouseClick(int x, int y, MouseButton mouseButton){
+void MenuStateAbout::mouseClick(int x, int y, MouseButton mouseButton) {
 
-	CoreData &coreData=  theCoreData;
-	SoundRenderer &soundRenderer= theSoundRenderer;
+	const CoreData &coreData =  theCoreData;
+	SoundRenderer &soundRenderer = theSoundRenderer;
 
-	if(buttonReturn.mouseClick(x, y)){
+	if (buttonReturn.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundA());
-		mainMenu->setState(new MenuStateRoot(program, mainMenu));
-    }
-
+		changeState<MenuStateRoot>();
+	}
 }
 
-void MenuStateAbout::mouseMove(int x, int y, const MouseState &ms){
+void MenuStateAbout::mouseMove(int x, int y, const MouseState &ms) {
 	buttonReturn.mouseMove(x, y);
 }
 
-void MenuStateAbout::render(){
-	Renderer &renderer= theRenderer;
+void MenuStateAbout::render() {
+	Renderer &renderer = theRenderer;
 
 	renderer.renderButton(&buttonReturn);
-	for(int i= 0; i<aboutStringCount1; ++i){
+	for (int i = 0; i < aboutStringCount1; ++i) {
 		renderer.renderLabel(&labelAbout1[i]);
 	}
-	for(int i= 0; i<aboutStringCount2; ++i){
+	for (int i = 0; i < aboutStringCount2; ++i) {
 		renderer.renderLabel(&labelAbout2[i]);
 	}
-	for(int i= 0; i<teammateCount; ++i){
+	for (int i = 0; i < teammateCount; ++i) {
 		renderer.renderLabel(&labelTeammateName[i]);
 		renderer.renderLabel(&labelTeammateRole[i]);
 	}

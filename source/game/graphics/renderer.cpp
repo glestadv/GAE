@@ -27,6 +27,7 @@
 #include "opengl.h"
 #include "faction.h"
 #include "factory_repository.h"
+#include "gui_program.h"
 
 #include "leak_dumper.h"
 
@@ -145,20 +146,23 @@ const float Renderer::maxLightDist= 50.f;
 
 // ==================== constructor and destructor ====================
 
-Renderer::Renderer(const Config &config)
+Renderer::Renderer(GraphicsFactory &graphicsFactory, const Config &config, const Context &context)
 		: config(config)
-		,
-{
-	GraphicsInterface &gi= GraphicsInterface::getInstance();
-	FactoryRepository &fr= FactoryRepository::getInstance();
+		, context(context)
+		, world(NULL)
+		, map(NULL)
+		, camera(NULL)
+		, modelRenderer(graphicsFactory.newModelRenderer())
+		, textRenderer(graphicsFactory.newTextRenderer2D())
+		, particleRenderer(graphicsFactory.newParticleRenderer())
 
-	gi.setFactory(fr.getGraphicsFactory(config.getRenderGraphicsFactory()));
-	GraphicsFactory *graphicsFactory= GraphicsInterface::getInstance().getFactory();
-
-	modelRenderer= graphicsFactory->newModelRenderer();
-	textRenderer= graphicsFactory->newTextRenderer2D();
-	particleRenderer= graphicsFactory->newParticleRenderer();
-
+		, perspFov(config.getRenderFov())
+		, perspNearPlane(config.getRenderDistanceMin())
+		, perspFarPlane(config.getRenderDistanceMax())
+#ifdef _GAE_DEBUG_EDITION_
+		, debugField(FieldWalkable)
+#endif
+		{
 	//resources
 	for(int i=0; i<rsCount; ++i){
 		modelManager[i]= graphicsFactory->newModelManager();
@@ -167,19 +171,9 @@ Renderer::Renderer(const Config &config)
 		particleManager[i]= graphicsFactory->newParticleManager();
 		fontManager[i]= graphicsFactory->newFontManager();
 	}
-	perspFov = config.getRenderFov();
-	perspNearPlane = config.getRenderDistanceMin();
-	perspFarPlane = config.getRenderDistanceMax();
-#ifdef _GAE_DEBUG_EDITION_
-	debugField = FieldWalkable;
-#endif
 }
 
-Renderer::~Renderer(){
-	delete modelRenderer;
-	delete textRenderer;
-	delete particleRenderer;
-
+Renderer::~Renderer() {
 	//resources
 	for(int i=0; i<rsCount; ++i){
 		delete modelManager[i];
@@ -187,6 +181,10 @@ Renderer::~Renderer(){
 		delete particleManager[i];
 		delete fontManager[i];
 	}
+}
+
+Renderer &Renderer::getInstance()
+	return GuiProgram::getInstance().getRenderer();
 }
 
 /*
@@ -271,7 +269,7 @@ void Renderer::initGame(Game *game){
 	init3dList();
 }
 
-void Renderer::initMenu(MainMenu *mm){
+void Renderer::initMenu(MainMenu &mm) {
 	modelManager[rsMenu]->init();
 	textureManager[rsMenu]->init();
 	fontManager[rsMenu]->init();
@@ -840,7 +838,7 @@ void Renderer::renderButton(const GraphicButton *button){
 	glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT);
 
 	//background
-	CoreData &coreData= theCoreData;
+	const CoreData &coreData= theCoreData;
 	Texture2D *backTexture= w>3*h/2? coreData.getButtonBigTexture(): coreData.getButtonSmallTexture();
 
 	glEnable(GL_TEXTURE_2D);
@@ -1003,7 +1001,7 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 	glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT);
 
 	//background
-	CoreData &coreData= theCoreData;
+	const CoreData &coreData= theCoreData;
 	Texture2D *backTexture= coreData.getTextEntryTexture();
 
 	glEnable(GL_TEXTURE_2D);
@@ -2043,7 +2041,7 @@ void Renderer::renderMinimap(){
 
 void Renderer::renderDisplay(){
 
-	CoreData &coreData= theCoreData;
+	const CoreData &coreData= theCoreData;
 	const Metrics &metrics= theMetrics;
 	const Display *display= game->getGui()->getDisplay();
 
@@ -2226,7 +2224,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 			glDepthMask(GL_FALSE);
 
 			//splashes
-			CoreData &coreData= theCoreData;
+			const CoreData &coreData= theCoreData;
 			glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
 			for(int i=0; i<MenuBackground::raindropCount; ++i){
 
@@ -2997,7 +2995,7 @@ void Renderer::init2dList(){
 	assertGl();
 }
 
-void Renderer::init3dListMenu(MainMenu *mm){
+void Renderer::init3dListMenu(MainMenu &mm) {
     assertGl();
 
 	const Metrics &metrics= theMetrics;
@@ -3283,7 +3281,7 @@ void Renderer::renderLoadingScreen(const vector<string> &lines) {
 	//TODO: Added rendering of network status of all peers: normal stats plus ready or not
 	//TODO progress for local and remote hosts would be nice
 	//FIXME: This code doesn't belong here :(
-	CoreData &coreData = theCoreData;
+	const CoreData &coreData = theCoreData;
 	const Metrics &metrics = theMetrics;
 	bool loadingGame = true;
 

@@ -529,7 +529,7 @@ public:
 		clamp(min.x, min.y, min.z, min.w, max.x, max.y, max.z, max.w);
 	}
 
-#ifdef ALIGN_16BYTE_VECTORS
+#if ALIGN_16BYTE_VECTORS
 	static void* operator new(size_t size)		{return _mm_malloc(size, 16);}
 	static void* operator new[](size_t size)	{return _mm_malloc(size, 16);}
 	static void operator delete(void* ptr)		{_mm_free(ptr);}

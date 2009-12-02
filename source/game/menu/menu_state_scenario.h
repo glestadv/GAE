@@ -47,7 +47,7 @@ private:
     ScenarioInfo scenarioInfo;
 
 public:
-	MenuStateScenario(Program &program, MainMenu *mainMenu);
+	MenuStateScenario(GuiProgram &program, MainMenu &mainMenu);
 
     void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);

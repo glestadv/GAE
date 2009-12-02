@@ -18,57 +18,44 @@
 #include "leak_dumper.h"
 
 namespace Shared{ namespace Sound{
-// =====================================================
-//	class SoundInfo
-// =====================================================
-
-SoundInfo::SoundInfo(){
-	channels= 0;
-	samplesPerSecond= 0;
-	bitsPerSample= 0;
-	size= 0;
-}
 
 // =====================================================
 //	class Sound
 // =====================================================
 
-Sound::Sound(){
-	volume= 0.0f;
+Sound::Sound()
+	: channels(0)
+	, samplesPerSecond(0)
+	, bitsPerSample(0)
+	, size(0){
 }
 
 // =====================================================
 //	class StaticSound
 // =====================================================
 
-StaticSound::StaticSound(){
-	samples= NULL;
-}
-
-StaticSound::~StaticSound(){
-	delete [] samples;
-}
-
-void StaticSound::load(const string &path){
+StaticSound::StaticSound(const string &path){
 	string ext= path.substr(path.find_last_of('.')+1);
 
-	soundFileLoader= SoundFileLoaderFactory::getInstance()->newInstance(ext);
+	SoundFileLoader *soundFileLoader= SoundFileLoaderFactory::getInstance()->newInstance(ext);
 
-	soundFileLoader->open(path, &info);
-	samples= new int8[info.getSize()];
-	soundFileLoader->read(samples, info.getSize());
+	soundFileLoader->open(path, *this);
+	samples.resize(size);
+	soundFileLoader->read(&samples.begin(), size);
 	soundFileLoader->close();
 
 	delete soundFileLoader;
 }
+
+StaticSound::~StaticSound() {
+}
+
 
 // =====================================================
 //	class StrSound
 // =====================================================
 
 StrSound::StrSound(){
-	soundFileLoader= NULL;
-	next= NULL;
 }
 
 StrSound::~StrSound(){

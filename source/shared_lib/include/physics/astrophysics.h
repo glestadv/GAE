@@ -57,7 +57,7 @@ namespace Shared { namespace Physics { namespace Cosmology {
 class CelestialBody {
 private:
 	double mass;					/**< Total mass in kilograms (kg).  (Earth = ~5.9742e+24, Sun = ~1.9891e+30) */
-	float meanDesntity;				/**< Mean desnsity of in kilograms per cubic meter (Earth = ~5515, Sun = ~1408). */
+	float meanDesntity;				/**< Mean desnsity of in kilograms per cubic meter (kg/m3) (Earth = ~5515, Sun = ~1408). */
 	double meanRadius;				/**< Mean radius of the celestial body in meters (m). (Earth = ~6.371e+6, Sun = ~6.96e+8)*/
 	float eccentricity;				/**< How non-circular the celestial body is (i.e., flattening).  Perfectly circular = 0.  Eliptical > 0 and < 1. (Earth = ~0.0033528, Sun = ~9e-6) */
 	float meanSurfaceTemperature;	/**< The mean temperature on the surface in kelvin (K). (Earth =, Sun =)*/
@@ -184,33 +184,16 @@ class NonStellarBody : public CelestialBody {
 		 * 1.2041 on Earth.
 		 */
 		double desnsity;
-
-		/** The pressure of the atmosphere at sea level in kilopascals. (~101.3 kPa on Earth) */
-		double pressure;
-
-		/** Total dry mass in kilograms. (~5.1352e+18 on Earth) */
-		double meanMass;
-
-		/** Mean mass of vaporized hydrospheric liquid that resides in the atmposphere. (1.27e+12)*/
-		double meanHydroVaporMass;
-
-		/** How much of the visible light spectrum is absorbed by the atmosphere at sea level (i.e.,
-		 * inverse of the color of the sky). */
-		Vec3d visibleLightOpacity;
+		double pressure;			/**< The pressure of the atmosphere at sea level in kilopascals. (~101.3 kPa on Earth) */
+		double meanMass;			/**< Total dry mass in kilograms. (~5.1352e+18 on Earth) */
+		double meanHydroVaporMass;	/**< Mean mass of vaporized hydrospheric liquid that resides in the atmposphere. (1.27e+12 on Earth)*/
+		Vec3d visibleLightOpacity;	/**< How much of the visible light spectrum is absorbed by the atmosphere at sea level (i.e.,inverse of the color of the sky). */
 	};
 
 	class Hydrosphere {
-		/**
-		 * The desnsity of the hydrosphere at sea level in kilograms per cubic meter at a
-		 * temperature of 20 degress celcius
-		 */
-		double meanDesnsity;
-
-		/** */
+		double meanDesnsity;		/**< The desnsity of the hydrosphere at sea level in kilograms per cubic meter at a temperature of 20 degress celcius. */
 		double meanMass;
-
-		/** Mean mass of disolved atmosphere that resides in the oceans (hydrosphere). */
-		double meanAtmosphericMass;
+		double meanAtmosphericMass;	/**< Mean mass of disolved atmosphere that resides in the oceans (hydrosphere). */
 	};
 
 	float meanTemperature;

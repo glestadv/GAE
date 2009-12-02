@@ -26,38 +26,28 @@ FactoryRepository::FactoryRepository(ContextGl &context, const string &graphicsF
 		: context(context)
 		, graphicsFactoryName(graphicsFactoryName)
 		, soundFactoryName(soundFactoryName)
-		, graphicsFactory(NULL)
-		, soundFactory(NULL) {
+		, graphicsFactory()
+		, soundFactory() {
 
 	if (graphicsFactoryName == "OpenGL") {
-		graphicsFactory = new GraphicsFactoryGl(context);
+		graphicsFactory = shared_ptr<GraphicsFactory>(new GraphicsFactoryGl(context));
 	} else {
-		throw runtime_error("Unknown graphics factory: " + graphicsFactory);
+		throw runtime_error("Unknown graphics factory: " + graphicsFactoryName);
 	}
 
 	if(0) {
 #if USE_OPENAL
 	} else if (soundFactoryName == "OpenAL") {
-		soundFactory = new SoundFactoryOpenAL;
+		soundFactory = shared_ptr<SoundFactory>(new SoundFactoryOpenAL);
 #endif
 
 #if USE_DS8
 	} else if (soundFactoryName == "DirectSound8") {
-		soundFactory = new SoundFactoryDs8;
+		soundFactory = shared_ptr<SoundFactory>(new SoundFactoryDs8);
 #endif
 
 	} else {
 		throw runtime_error("Unknown sound factory: " + soundFactoryName);
-	}
-}
-
-FactoryRepository::~FactoryRepository() {
-	if(graphicsFactory) {
-		delete graphicsFactory;
-	}
-
-	if(soundFactory) {
-		delete soundFactory;
 	}
 }
 

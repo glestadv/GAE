@@ -29,6 +29,10 @@
 #include "game_camera.h"
 #include "gl_wrap.h"
 
+namespace Shared { namespace Graphics {
+class Context;
+}}
+
 
 namespace Glest{ namespace Game{
 
@@ -50,6 +54,7 @@ using Shared::Graphics::Model;
 using Shared::Graphics::ParticleSystem;
 using Shared::Graphics::Pixmap2D;
 using Shared::Graphics::Camera;
+using Shared::Graphics::Context;
 
 //non shared classes
 class Config;
@@ -124,9 +129,15 @@ public:
 private:
 	// foreign references
 	const Config &config;
+	const Context &context;
 	const World *world;
 	const Map *map;
 	const GameCamera *camera;
+
+	//renderers
+	shared_ptr<ModelRenderer> modelRenderer;
+	shared_ptr<TextRenderer2D> textRenderer;
+	shared_ptr<ParticleRenderer> particleRenderer;
 
 	//config
 	int maxLights;
@@ -143,11 +154,6 @@ private:
 	int pointCount;
 	Quad2i visibleQuad;
 	Vec4f nearestLightPos;
-
-	//renderers
-	ModelRenderer *modelRenderer;
-	TextRenderer2D *textRenderer;
-	ParticleRenderer *particleRenderer;
 
 	//texture managers
 	ModelManager *modelManager[rsCount];
@@ -174,16 +180,16 @@ private:
 	float perspFarPlane;
 
 private:
-	Renderer(const Config &config);
+	Renderer(GraphicsFactory &graphicsFactory, const Config &config, const Context &context);
 	~Renderer();
 
 public:
-//	static Renderer &getInstance();
+	static Renderer &getInstance();
 
     //init
 	void init();
 	void initGame(Game *game);
-	void initMenu(MainMenu *mm);
+	void initMenu(MainMenu &mm);
 	void reset3d();
 	void reset2d();
 	void reset3dMenu();
@@ -209,7 +215,7 @@ public:
 	Font2D *newFont(ResourceScope rs)								{return fontManager[rs]->newFont2D();}
 	void manageParticleSystem(ParticleSystem *ps, ResourceScope rs)	{particleManager[rs]->manage(ps);}
 	void updateParticleManager(ResourceScope rs)					{particleManager[rs]->update();}
-	TextRenderer2D *getTextRenderer() const							{return textRenderer;}
+	TextRenderer2D *getTextRenderer() const							{return textRenderer.get();}
 	void renderParticleManager(ResourceScope rs);
 	void swapBuffers();
 
@@ -304,7 +310,7 @@ private:
 	//gl init
 	void init3dList();
     void init2dList();
-	void init3dListMenu(MainMenu *mm);
+	void init3dListMenu(MainMenu &mm);
 
 	//misc
 	void loadProjectionMatrix();

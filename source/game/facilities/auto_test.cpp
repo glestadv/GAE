@@ -31,53 +31,52 @@ const time_t AutoTest::gameTime = 60*20;
 
 // ===================== PUBLIC ========================
 
-AutoTest::AutoTest(){
+AutoTest::AutoTest() {
 	gameStartTime = invalidTime;
 	random.init(time(NULL));
 }
 
-AutoTest & AutoTest::getInstance(){
+AutoTest & AutoTest::getInstance() {
 	static AutoTest autoTest;
 	return autoTest;
 }
 
-void AutoTest::updateIntro(Program &program){
+void AutoTest::updateIntro(GuiProgram &program) {
 	program.setState(new MainMenu(program));
 }
 
-void AutoTest::updateRoot(Program &program, MainMenu *mainMenu){
+void AutoTest::updateRoot(GuiProgram &program, MainMenu &mainMenu) {
 	mainMenu->setState(new MenuStateNewGame(program, mainMenu));
 }
 
-void AutoTest::updateNewGame(Program &program, MainMenu *mainMenu){
+void AutoTest::updateNewGame(GuiProgram &program, MainMenu &mainMenu) {
 	mainMenu->setState(new MenuStateScenario(program, mainMenu/*, "scenarios"*/));
 }
 
-void AutoTest::updateScenario(MenuStateScenario *menuStateScenario){
+void AutoTest::updateScenario(MenuStateScenario &menuStateScenario) {
 	gameStartTime = invalidTime;
 
-	int scenarioIndex = random.randRange(0, menuStateScenario->getScenarioCount()-1);
-	menuStateScenario->setScenario(scenarioIndex);
+	int scenarioIndex = random.randRange(0, menuStateScenario->getScenarioCount() - 1);
+	menuStateScenario.setScenario(scenarioIndex);
 
-	menuStateScenario->launchGame();
+	menuStateScenario.launchGame();
 }
 
-void AutoTest::updateGame(Game *game){
+void AutoTest::updateGame(Game &game) {
 
 	// record start time
-	if(gameStartTime==invalidTime)
-	{
+	if (gameStartTime == invalidTime) {
 		gameStartTime = time(NULL);
 	}
 
 	// quit if we've espend enough time in the game
-	if(time(NULL)-gameStartTime>gameTime){
-		game->quitGame();
+	if (time(NULL) - gameStartTime > gameTime) {
+		game.quitGame();
 	}
 }
 
-void AutoTest::updateBattleEnd(Program &program){
+void AutoTest::updateBattleEnd(GuiProgram &program) {
 	program.setState(new MainMenu(program));
 }
 
-}}//end namespace
+}} // end namespace

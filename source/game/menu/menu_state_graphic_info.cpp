@@ -20,51 +20,49 @@
 #include "leak_dumper.h"
 
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 // =====================================================
-// 	class MenuStateGraphicInfo
+//  class MenuStateGraphicInfo
 // =====================================================
 
-MenuStateGraphicInfo::MenuStateGraphicInfo(Program &program, MainMenu *mainMenu):
-	MenuState(program, mainMenu, "info")
-{
-	buttonReturn.init(387, 100, 125);
-	labelInfo.init(100, 700);
-	labelMoreInfo.init(100, 500);
-	labelMoreInfo.setFont(CoreData::getInstance().getMenuFontSmall());
+MenuStateGraphicInfo::MenuStateGraphicInfo(GuiProgram &program, MainMenu &mainMenu)
+        : MenuState(program, mainMenu, "info") {
+    buttonReturn.init(387, 100, 125);
+    labelInfo.init(100, 700);
+    labelMoreInfo.init(100, 500);
+    labelMoreInfo.setFont(getCoreData().getMenuFontSmall());
 
-	Renderer &renderer= Renderer::getInstance();
-	glInfo= renderer.getGlInfo();
-	glMoreInfo= renderer.getGlMoreInfo(program.getContext());
+    Renderer &renderer = getRenderer();
+    glInfo = renderer.getGlInfo();
+    glMoreInfo = renderer.getGlMoreInfo();
 }
 
-void MenuStateGraphicInfo::mouseClick(int x, int y, MouseButton mouseButton){
-	CoreData &coreData= CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+void MenuStateGraphicInfo::mouseClick(int x, int y, MouseButton mouseButton) {
+    const CoreData &coreData = getCoreData();
+    SoundRenderer &soundRenderer = getSoundRenderer();
 
-	if(buttonReturn.mouseClick(x,y)){
-		soundRenderer.playFx(coreData.getClickSoundA());
-		mainMenu->setState(new MenuStateOptions(program, mainMenu));
+    if (buttonReturn.mouseClick(x, y)) {
+        soundRenderer.playFx(coreData.getClickSoundA());
+        changeState<MenuStateOptions>();
     }
 }
 
-void MenuStateGraphicInfo::mouseMove(int x, int y, const MouseState &ms){
-	buttonReturn.mouseMove(x, y);
+void MenuStateGraphicInfo::mouseMove(int x, int y, const MouseState &ms) {
+    buttonReturn.mouseMove(x, y);
 }
 
-void MenuStateGraphicInfo::render(){
+void MenuStateGraphicInfo::render() {
+    Renderer &renderer = getRenderer();
+    const Lang &lang = getLang();
 
-	Renderer &renderer= Renderer::getInstance();
-	Lang &lang= Lang::getInstance();
+    buttonReturn.setText(lang.get("Return"));
+    labelInfo.setText(glInfo);
+    labelMoreInfo.setText(glMoreInfo);
 
-	buttonReturn.setText(lang.get("Return"));
-	labelInfo.setText(glInfo);
-	labelMoreInfo.setText(glMoreInfo);
-
-	renderer.renderButton(&buttonReturn);
-	renderer.renderLabel(&labelInfo);
-	renderer.renderLabel(&labelMoreInfo);
+    renderer.renderButton(&buttonReturn);
+    renderer.renderLabel(&labelInfo);
+    renderer.renderLabel(&labelMoreInfo);
 }
 
 }}//end namespace

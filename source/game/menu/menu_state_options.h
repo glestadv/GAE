@@ -59,7 +59,7 @@ private:
 	const MenuStateOptions &operator =(const MenuStateOptions &);
 
 public:
-	MenuStateOptions(Program &program, MainMenu *mainMenu);
+	MenuStateOptions(GuiProgram &program, MainMenu &mainMenu);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);

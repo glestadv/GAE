@@ -256,8 +256,7 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 		   soundStartTime = soundNode->getAttribute("start-time")->getFloatValue();
 		   loopSound = soundNode->getAttribute("loop")->getBoolValue();
 		   string path = soundNode->getAttribute("path")->getRestrictedValue();
-		   sound = new StaticSound();
-		   sound->load(dir + "/" + path);
+		   sound = new StaticSound(dir + "/" + path);
 	   }
    }
    catch ( runtime_error e ) {

@@ -27,7 +27,7 @@ NetworkManager &NetworkManager::getInstance() {
 
 NetworkManager::NetworkManager() {
 	gameNetworkInterface = NULL;
-	networkRole = nrIdle;
+	networkRole = NR_IDLE;
 }
 
 void NetworkManager::init(NetworkRole networkRole) {
@@ -51,7 +51,7 @@ NetworkManager::~NetworkManager() {
 void NetworkManager::end() {
 	delete gameNetworkInterface;
 	gameNetworkInterface = NULL;
-	networkRole = nrIdle;
+	networkRole = NR_IDLE;
 }
 
 }}//end namespace

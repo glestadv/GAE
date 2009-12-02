@@ -45,17 +45,17 @@ namespace Glest { namespace Game {
 
 // ===================== PUBLIC ========================
 
-MainMenu::MainMenu(Program &program) : GuiProgramState(program) {
-	mouseX = 100;
-	mouseY = 100;
-
-	state = NULL;
-	//this->program = program;
-
-	fps = 0;
-	lastFps = 0;
-
-	setState(new MenuStateRoot(program, this));
+MainMenu::MainMenu(GuiProgram &program)
+		: GuiProgramState(program)
+		, gameSettings()
+		, menuBackground(program.getConfig())
+		, state(NULL)
+		, mouseX(100)
+		, mouseY(100)
+		, mouse2dAnim()
+		, fps(0)
+		, lastFps(0) {
+	setState(new MenuStateRoot(program, *this));
 }
 
 MainMenu::~MainMenu() {
@@ -66,15 +66,15 @@ MainMenu::~MainMenu() {
 }
 
 void MainMenu::init() {
-	theRenderer.initMenu(this);
+	theRenderer.initMenu(*this);
 }
 
 //asynchronus render update
 void MainMenu::render() {
 
-	Config &config = theConfig;
+	const Config &config = theConfig;
+	const CoreData &coreData = theCoreData;
 	Renderer &renderer = theRenderer;
-	CoreData &coreData = theCoreData;
 
 	fps++;
 
@@ -146,7 +146,7 @@ void MainMenu::setState(MenuState *state) {
 	this->state = state;
 	GraphicComponent::resetFade();
 
-	menuBackground.setTargetCamera(state->getCamera());
+	menuBackground.setTargetCamera(&state->getCamera());
 }
 
 
@@ -154,8 +154,8 @@ void MainMenu::setState(MenuState *state) {
 //  class MenuState
 // =====================================================
 
-MenuState::MenuState(Program &program, MainMenu *mainMenu, const string &stateName)
-		: program(program), mainMenu(mainMenu), camera() {
+MenuState::MenuState(GuiProgram &program, MainMenu &mainMenu, const string &stateName)
+		: program(program), mainMenu(mainMenu), stateName(stateName), camera() {
 
 	//camera
 	XmlTree xmlTree;

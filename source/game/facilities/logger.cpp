@@ -92,7 +92,7 @@ void Logger::addXmlError ( const string &path, const char *error )
 void Logger::renderLoadingScreen(){
 
 	Renderer &renderer= Renderer::getInstance();
-	CoreData &coreData= CoreData::getInstance();
+	const CoreData &coreData= CoreData::getInstance();
 	const Metrics &metrics= Metrics::getInstance();
 
 	renderer.reset2d();

@@ -185,9 +185,7 @@ bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 		attackNotice->resize(attackNoticeNode->getChildCount());
 		for(int i=0; i<attackNoticeNode->getChildCount(); ++i){
 			string path= attackNoticeNode->getChild("sound-file", i)->getAttribute("path")->getRestrictedValue();
-			StaticSound *sound= new StaticSound();
-			sound->load(dir + "/" + path);
-			(*attackNotice)[i]= sound;
+			(*attackNotice)[i] = new StaticSound(dir + "/" + path);
 		}
 		if(attackNotice->getSounds().size() == 0) {
 			throw runtime_error("An enabled attack-notice must contain at least one sound-file: "+ dir);
@@ -202,9 +200,7 @@ bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 		enemyNotice->resize(enemyNoticeNode->getChildCount());
 		for(int i=0; i<enemyNoticeNode->getChildCount(); ++i){
 			string path= enemyNoticeNode->getChild("sound-file", i)->getAttribute("path")->getRestrictedValue();
-			StaticSound *sound= new StaticSound();
-			sound->load(dir + "/" + path);
-			(*enemyNotice)[i]= sound;
+			(*enemyNotice)[i]= new StaticSound(dir + "/" + path);
 		}
 		if(enemyNotice->getSounds().size() == 0) {
 			throw runtime_error("An enabled enemy-notice must contain at least one sound-file: "+ dir);

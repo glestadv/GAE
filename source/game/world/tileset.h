@@ -81,12 +81,12 @@ public:
 	bool getAlwaysPlayDay() const		{return alwaysPlayDay;}
 	bool getAlwaysPlayNight() const		{return alwaysPlayNight;}
 
-	StrSound *getDay() 				{return &day;}
-	StrSound *getNight() 			{return &night;}
-	StrSound *getRain() 			{return &rain;}
-	StrSound *getSnow() 			{return &snow;}
-	StaticSound *getDayStart()		{return &dayStart;}
-	StaticSound *getNightStart()	{return &nightStart;}
+	const StrSound &getDay() const				{return day;}
+	const StrSound &getNight() const			{return night;}
+	const StrSound &getRain() const				{return rain;}
+	const StrSound &getSnow() const				{return snow;}
+	const StaticSound &getDayStart() const		{return dayStart;}
+	const StaticSound &getNightStart() const	{return nightStart;}
 
 	void load(const string &dir, const XmlNode *xmlNode);
 };
@@ -97,7 +97,7 @@ public:
 ///	Containt textures, models and parameters for a tileset
 // =====================================================
 
-class Tileset{
+class Tileset : Uncopyable {
 public:
 	static const int waterTexCount= 1;
 	static const int surfCount= 5;
@@ -129,8 +129,9 @@ private:
 	AmbientSounds ambientSounds;
 
 public:
+	Tileset();
     ~Tileset();
-	void load(const string &dir, Checksum &checksum);
+	void load(const string &dir, Checksum &checksum, GraphicsFactory &graphicsFactory);
 
     //get
 	const SurfaceAtlas *getSurfaceAtlas() const		{return &surfaceAtlas;}

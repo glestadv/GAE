@@ -36,10 +36,9 @@ namespace Glest{ namespace Game{
 // 	class MenuStateRoot
 // =====================================================
 
-MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
-	MenuState(program, mainMenu, "root")
-{
-	Lang &lang= Lang::getInstance();
+MenuStateRoot::MenuStateRoot(GuiProgram &program, MainMenu &mainMenu)
+		: MenuState(program, mainMenu, "root") {
+	const Lang &lang = getLang();
 
 	buttonNewGame.init(425, 370, 150);
     buttonJoinGame.init(425, 330, 150);
@@ -57,44 +56,44 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
 	buttonOptions.setText(lang.get("Options"));
 	buttonAbout.setText(lang.get("About"));
 	buttonExit.setText(lang.get("Exit"));
-	labelVersion.setText("Advanced Engine " + gaeVersionString);
+	labelVersion.setText("Advanced Engine " + getGaeVersion().toString());
 
 	// end network interface
 	NetworkManager::getInstance().end();
 }
 
-void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton){
+void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton) {
 
-	CoreData &coreData=  CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	const CoreData &coreData = getCoreData();
+	SoundRenderer &soundRenderer= getSoundRenderer();
 
 	if(buttonNewGame.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateNewGame(program, mainMenu));
+		changeState<MenuStateNewGame>();
     }
 	else if(buttonJoinGame.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateJoinGame(program, mainMenu));
+		changeState<MenuStateJoinGame>();
     }
 	else if(buttonScenario.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateScenario(program, mainMenu));
+		changeState<MenuStateScenario>();
     }
     else if(buttonOptions.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateOptions(program, mainMenu));
+		changeState<MenuStateOptions>();
     }
 	else if(buttonLoadGame.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateLoadGame(program, mainMenu));
+		changeState<MenuStateLoadGame>();
 	}
     else if(buttonAbout.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateAbout(program, mainMenu));
+		changeState<MenuStateAbout>();
     }
     else if(buttonExit.mouseClick(x, y)){
 		soundRenderer.playFx(coreData.getClickSoundA());
-		program.exit();
+		getGuiProgram().exit();
     }
 }
 
@@ -109,9 +108,9 @@ void MenuStateRoot::mouseMove(int x, int y, const MouseState &ms){
 }
 
 void MenuStateRoot::render(){
-	Renderer &renderer= Renderer::getInstance();
-	CoreData &coreData= CoreData::getInstance();
-	const Metrics &metrics= Metrics::getInstance();
+	Renderer &renderer= getRenderer();
+	const CoreData &coreData= getCoreData();
+	const Metrics &metrics= getMetrics();
 
 	int w= 300;
 	int h= 150;
@@ -130,8 +129,8 @@ void MenuStateRoot::render(){
 }
 
 void MenuStateRoot::update(){
-	if (Config::getInstance().getMiscAutoTest()) {
-		AutoTest::getInstance().updateRoot(program, mainMenu);
+	if (getConfig().getMiscAutoTest()) {
+		AutoTest::getInstance().updateRoot(getGuiProgram(), getMainMenu());
 	}
 }
 

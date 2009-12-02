@@ -31,8 +31,7 @@ void Font2DGl::init(){
 
 	if(!inited){
 		handle= glGenLists(charCount);
-#warning FIXME
-		//createGlFontBitmaps(handle, type, size, width, charCount, metrics);
+#warning FIXME createGlFontBitmaps(handle, type, size, width, charCount, metrics);
 		inited= true;
 	}
 
@@ -60,8 +59,7 @@ void Font3DGl::init(){
 
 	if(!inited){
 		handle= glGenLists(charCount);
-#warning FIXME
-		//createGlFontOutlines(handle, type, width, depth, charCount, metrics);
+#warning FIXME createGlFontOutlines(handle, type, width, depth, charCount, metrics);
 		inited= true;
 	}
 

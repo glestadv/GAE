@@ -32,6 +32,7 @@ using Shared::Platform::NetworkDataBuffer;
 
 class World;
 class Map;
+class Renderer;
 
 enum ExplorationState{
     esNotExplored,
@@ -45,20 +46,22 @@ enum ExplorationState{
 /// State of the in-game minimap
 // =====================================================
 
-class Minimap{
+class Minimap {
 private:
+	Renderer &renderer;	// possibly remove this later and have it accesed dynamically in case it changes
+	bool fogOfWar;
+
 	Pixmap2D *fowPixmap0;
 	Pixmap2D *fowPixmap1;
 	Texture2D *tex;
-	Texture2D *fowTex;    //Fog Of War Texture2D
-	bool fogOfWar;
+	Texture2D *fowTex;		/**< Fog Of War Texture2D */
 
 private:
 	static const float exploredAlpha;
 
 public:
     void init(int x, int y, const World *world);
-	Minimap();
+	Minimap(Renderer &renderer, bool fogOfWar);
 	~Minimap();
 
 	const Texture2D *getFowTexture() const	{return fowTex;}
@@ -69,7 +72,7 @@ public:
 	// heavy use function
 	void incFowTextureAlphaSurface(const Vec2i &sPos, float alpha) {
 		assert(sPos.x < fowPixmap1->getW() && sPos.y < fowPixmap1->getH());
-	
+
 		if(fowPixmap1->getPixelf(sPos.x, sPos.y) < alpha) {
 			fowPixmap1->setPixel(sPos.x, sPos.y, alpha);
 		}

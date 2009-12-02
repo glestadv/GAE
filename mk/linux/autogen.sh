@@ -1,19 +1,26 @@
 #!/bin/sh
 
+die() {
+	if [ $# -gt 0 ]; then
+		echo "ERROR: $@"
+	else
+		echo "ERROR"
+	fi
+	exit 1
+}
+
 # Correct working directory?
-if test ! -f configure.ac ; then
-  echo "*** Please invoke this script from directory containing configure.ac."
-  exit 1
-fi
+test -f configure.ac || die "*** Please invoke this script from directory containing configure.ac."
 
 # Perform cleanup activities
 if [ -d build ]; then
 	rm -rf build
 fi
 
-rm -f configure Jamconfig.in build aclocal.m4 \
+rm -f configure Jamconfig Jamconfig.in build aclocal.m4 \
 	  data docs gae maps techs tilesets \
-	  configurator g3d_viewer game map_editor shared_lib test
+	  configurator g3d_viewer game map_editor shared_lib test \
+	  config.log config.status
 
 if [ "$1" = "clean" ]; then
 	exit
@@ -37,20 +44,20 @@ buildDir="/tmp/$(whoami || echo "build")/gae/${branchSubDir}"
 
 echo "aclocal..."
 #autoheader
-aclocal -I mk/autoconf
+aclocal -I mk/autoconf || die
 
 # generate Jamconfig.in
 echo "generating Jamconfig.in ..."
-autoconf --trace=AC_SUBST \
-  | sed -e 's/configure.ac:[0-9]*:AC_SUBST:\([^:]*\).*/\1 ?= "@\1@" ;/g' \
-  > Jamconfig.in
-sed -e 's/.*BACKSLASH.*//' -i~ Jamconfig.in
+autoconf --trace=AC_SUBST |
+  sed -e 's/configure.ac:[0-9]*:AC_SUBST:\([^:]*\).*/\1 ?= "@\1@" ;/g' \
+  > Jamconfig.in || die
+sed -e 's/.*BACKSLASH.*//' -i~ Jamconfig.in || die "sed failed"
 rm Jamconfig.in~ 
 echo 'INSTALL ?= "@INSTALL@" ;' >> Jamconfig.in
 echo 'JAMCONFIG_READ = yes ;' >> Jamconfig.in
 
 echo "autoconf"
-autoconf
+autoconf || die
 
 rm -rf autom4te.cache
 
@@ -71,6 +78,6 @@ for f in data docs gae maps techs tilesets; do
 	ln -sf ../../data/game/$f .;
 done
 
-for f in configurator g3d_viewer game map_editor shared_lib features.h test; do
+for f in configurator g3d_viewer game map_editor shared_lib test; do
 	ln -sf ../../source/$f .;
 done

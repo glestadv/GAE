@@ -63,7 +63,7 @@ UnitUpdater::UnitUpdater(Game &game)
 		, gui(*(game.getGui()))
 		, world(*(game.getWorld()))
 		, map(NULL)
-		, console(*(game.getConsole()))
+		, console(game.getConsole())
 		, scriptManager(NULL)
 		, pathFinder(NULL)
 		, random() // note, should be initialized identically on all nodes of a network game!
@@ -80,7 +80,7 @@ void UnitUpdater::init(Game &game) {
 
 //skill dependent actions
 void UnitUpdater::updateUnit(Unit *unit) {
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	SoundRenderer &soundRenderer = theSoundRenderer;
 
 	//play skill sound
 	const SkillType *currSkill = unit->getCurrSkill();
@@ -1092,7 +1092,7 @@ void UnitUpdater::updateMorph(Unit *unit) {
 			unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), false);
 		} else {
 			if (unit->getFactionIndex() == world.getThisFactionIndex())
-				Game::getInstance()->getConsole()->addStdMessage("InvalidPosition");
+				Game::getInstance()->getConsole().addStdMessage("InvalidPosition");
 			unit->cancelCurrCommand();
 		}
 	} else {

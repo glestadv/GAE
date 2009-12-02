@@ -76,7 +76,7 @@ private:
 	const MainMenu &operator =(const MainMenu &);
 
 public:
-	MainMenu(Program &program);
+	MainMenu(GuiProgram &program);
     ~MainMenu();
 
 	MenuBackground *getMenuBackground()	{return &menuBackground;}
@@ -100,11 +100,11 @@ public:
 // 	class MenuState
 // ===============================
 
-class MenuState {
-protected:
-	Program &program;
-
-	MainMenu *mainMenu;
+class MenuState : Uncopyable {
+private:
+	GuiProgram &program;
+	MainMenu &mainMenu;
+	const string stateName;
 	Camera camera;
 
 private:
@@ -112,16 +112,31 @@ private:
 	const MenuState &operator =(const MenuState &);
 
 public:
-	MenuState(Program &program, MainMenu *mainMenu, const string &stateName);
-	virtual ~MenuState(){}
+	MenuState(GuiProgram &program, MainMenu &mainMenu, const string &stateName);
+	virtual ~MenuState() {}
 	virtual void mouseClick(int x, int y, MouseButton mouseButton) = 0;
 	virtual void mouseMove(int x, int y, const MouseState &mouseState) = 0;
 	virtual void render() = 0;
-	virtual void update(){}
-	virtual void keyDown(const Key &key){}
-	virtual void keyPress(char c){}
+	virtual void update() {}
+	virtual void keyDown(const Key &key) {}
+	virtual void keyPress(char c) {}
 
-	const Camera *getCamera() const			{return &camera;}
+	const Camera &getCamera() const			{return camera;}
+	const string &getStateName() const		{return stateName;}
+
+protected:
+	GuiProgram &getGuiProgram()				{return program;}
+	MainMenu &getMainMenu()					{return mainMenu;}
+	Config &getConfig() const				{return program.getConfig();}
+//	Config &getNonConstConfig()				{return program.getConfig();}
+	const Lang &getLang() const				{return program.getLang();}
+	const Console &getConsole() const		{return program.getConsole();}
+	const Metrics &getMetrics() const		{return program.getMetrics();}
+	Renderer &getRenderer()					{return program.getRenderer();}
+	SoundRenderer &getSoundRenderer()		{return program.getSoundRenderer();}
+	const CoreData &getCoreData()			{return program.getCoreData();}
+
+	template<class T> void changeState()	{mainMenu.setState(new T(program, mainMenu));}
 };
 
 }} // end namespace

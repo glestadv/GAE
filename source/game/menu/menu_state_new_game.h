@@ -51,7 +51,7 @@ private:
 
 
 public:
-	MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots = false);
+	MenuStateNewGame(GuiProgram &program, MainMenu &mainMenu, bool openNetworkSlots = false);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);

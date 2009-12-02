@@ -31,16 +31,16 @@ using namespace Shared::Xml;
 //  class MenuStateScenario
 // =====================================================
 
-MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu):
+MenuStateScenario::MenuStateScenario(GuiProgram &program, MainMenu &mainMenu):
 		MenuState(program, mainMenu, "scenario") {
-	Config &config = Config::getInstance();
-	Lang &lang = Lang::getInstance();
+	const Config &config = getConfig();
+	const Lang &lang = getLang();
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	vector<string> results;
 	int match = 0;
 
 	labelInfo.init(350, 350);
-	labelInfo.setFont(CoreData::getInstance().getMenuFontNormal());
+	labelInfo.setFont(getCoreData().getMenuFontNormal());
 
 	buttonReturn.init(350, 200, 125);
 	buttonPlayNow.init(525, 200, 125);
@@ -79,14 +79,14 @@ MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu):
 
 
 void MenuStateScenario::mouseClick(int x, int y, MouseButton mouseButton) {
-	Config &config = Config::getInstance();
-	CoreData &coreData = CoreData::getInstance();
-	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	Config &config = getConfig();
+	const CoreData &coreData = getCoreData();
+	SoundRenderer &soundRenderer = getSoundRenderer();
 
 	if (buttonReturn.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundA());
 		config.save();
-		mainMenu->setState(new MenuStateRoot(program, mainMenu)); //TO CHANGE
+		changeState<MenuStateRoot>(); //TO CHANGE
 	} else if (buttonPlayNow.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundC());
 		config.save();
@@ -117,7 +117,7 @@ void MenuStateScenario::mouseMove(int x, int y, const MouseState &ms) {
 
 void MenuStateScenario::render() {
 
-	Renderer &renderer = Renderer::getInstance();
+	Renderer &renderer = getRenderer();
 
 	renderer.renderLabel(&labelInfo);
 
@@ -132,12 +132,13 @@ void MenuStateScenario::render() {
 }
 
 void MenuStateScenario::update() {
-	if (Config::getInstance().getMiscAutoTest()) {
-		AutoTest::getInstance().updateScenario(this);
+	if (getConfig().getMiscAutoTest()) {
+		AutoTest::getInstance().updateScenario(*this);
 	}
 }
 
 void MenuStateScenario::launchGame() {
+	GuiProgram &program = getGuiProgram();
 	GameSettings gameSettings;
 	loadGameSettings(&scenarioInfo, &gameSettings);
 	program.setState(new Game(program, gameSettings));
@@ -149,7 +150,7 @@ void MenuStateScenario::setScenario(int i) {
 }
 
 void MenuStateScenario::updateScenarioList(const string &category, bool selectDefault) {
-	const Config &config = Config::getInstance();
+	const Config &config = getConfig();
 	vector<string> results;
 	int match = 0;
 
@@ -180,7 +181,7 @@ void MenuStateScenario::updateScenarioList(const string &category, bool selectDe
 
 void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo) {
 
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 
 	XmlTree xmlTree;
 	//gae/scenarios/[category]/[scenario]/[scenario].xml
@@ -208,7 +209,7 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo
 			if (nameAttrib) {
 				scenarioInfo->playerNames[i] = nameAttrib->getValue();
 			} else if (factionControl == CT_HUMAN) {
-				scenarioInfo->playerNames[i] = Config::getInstance().getNetPlayerName();
+				scenarioInfo->playerNames[i] = getConfig().getNetPlayerName();
 			} else {
 				scenarioInfo->playerNames[i] = "CPU Player";
 			}

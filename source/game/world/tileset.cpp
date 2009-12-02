@@ -90,15 +90,34 @@ void AmbientSounds::load(const string &dir, const XmlNode *xmlNode){
 // 	class Tileset
 // =====================================================
 
-void Tileset::load(const string &dir, Checksum &checksum){
-	random.init(time(NULL));
-	string path= dir+"/"+basename(dir)+".xml";
+Tileset::Tileset()
+		: surfaceAtlas()
+		//ObjectType objectTypes[objCount];
+		//SurfProbs surfProbs[surfCount];
+		//SurfPixmaps surfPixmaps[surfCount];
+		, random(time(NULL))
+		, waterTex()
+		, waterEffects()
+		, fog()
+		, fogMode()
+		, fogDensity()
+		, fogColor()
+		, sunLightColor()
+		, moonLightColor()
+		, weather()
+		, ambientSounds() {
+}
 
+Tileset::~Tileset() {
+	Logger::getInstance().add("Tileset", true);
+}
+
+void Tileset::load(const string &dir, Checksum &checksum, GraphicsFactory &graphicsFactory) {
+	string path= dir+"/"+basename(dir)+".xml";
 	checksum.addFile(path, true);
 
-	try{
-		Logger::getInstance().add("Tileset: "+dir, true);
-		Renderer &renderer= theRenderer;
+	try {
+		Logger::getInstance().add("Tileset: " + dir, true);
 
 		//parse xml
 		XmlTree xmlTree;
@@ -142,7 +161,7 @@ void Tileset::load(const string &dir, Checksum &checksum){
 
 		//water
 		const XmlNode *waterNode= parametersNode->getChild("water");
-		waterTex= renderer.newTexture3D(rsGame);
+		waterTex= graphicsFactory.newTexture3D(rsGame);
 		waterTex->setMipmap(false);
 		waterTex->setWrapMode(Texture::WRAP_MODE_REPEAT);
 		waterEffects= waterNode->getAttribute("effects")->getBoolValue();
@@ -198,10 +217,6 @@ void Tileset::load(const string &dir, Checksum &checksum){
 	catch(const exception &e){
 		throw runtime_error("Error: " + path + "\n" + e.what());
 	}
-}
-
-Tileset::~Tileset(){
-	Logger::getInstance().add("Tileset", true);
 }
 
 const Pixmap2D *Tileset::getSurfPixmap(int type, int var) const{

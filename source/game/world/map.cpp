@@ -1455,8 +1455,7 @@ void EarthquakeType::load(const XmlNode *n, const string &dir, const TechTree *t
 	const XmlNode *soundFileNode= n->getChild("sound-file", 0, false);
 	if(soundFileNode) {
 		string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-		sound= new StaticSound();
-		sound->load(dir + "/" + path);
+		sound= new StaticSound(dir + "/" + path);
 	} else {
 		sound = NULL;
 	}

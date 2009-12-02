@@ -16,6 +16,8 @@
 #include "sound_player.h"
 #include "window.h"
 #include "vec.h"
+#include "sound_factory.h"
+#include "config.h"
 
 namespace Glest{ namespace Game{
 
@@ -23,9 +25,10 @@ using Shared::Sound::StrSound;
 using Shared::Sound::StaticSound;
 using Shared::Sound::SoundPlayer;
 using Shared::Graphics::Vec3f;
-using Shared::Platform::Window;
+using Shared::Sound::SoundFactory;
 
-class Config;
+//class Config;
+class GuiProgram;
 
 // =====================================================
 // 	class SoundRenderer
@@ -39,32 +42,43 @@ public:
 	static const float audibleDist = 50.f;
 
 private:
+	const Config &config;
 	//volume
-	float fxVolume;
-	float musicVolume;
-	float ambientVolume;
+	//float fxVolume;
+	//float musicVolume;
+	//float ambientVolume;
 
-	SoundPlayer *soundPlayer;
+	shared_ptr<SoundPlayer> soundPlayer;
 
 public:
-	SoundRenderer(const Config &config, Window *window);
+	SoundRenderer(const Config &config, SoundFactory &soundFactory);
 	~SoundRenderer();
+
+	static SoundRenderer &getInstance();
+
+
+	float getFxVolume() const			{return config.getSoundVolumeFx() / 100.f;}
+	float getMusicVolume() const		{return config.getSoundVolumeMusic() / 100.f;}
+	float getAmbientVolume() const		{return config.getSoundVolumeAmbient() / 100.f;}
 
 	void update();
 	SoundPlayer &getSoundPlayer() const	{return *soundPlayer;}
 
 	//music
-	void playMusic(StrSound *strSound);
-	void stopMusic(StrSound *strSound);
+	void playMusic(const StrSound &strSound);
+	void stopMusic(const StrSound &strSound);
 
 	//fx
-	void playFx(StaticSound *staticSound, Vec3f soundPos, Vec3f camPos);
-	void playFx(StaticSound *staticSound);
+	void playFx(const StaticSound &staticSound, const Vec3f &soundPos, const Vec3f &camPos);
+	void playFx(const StaticSound &staticSound);
+
+	void playFx(const StaticSound *staticSound, const Vec3f &soundPos, const Vec3f &camPos) {if(staticSound) playFx(*staticSound, soundPos, camPos);}
+	void playFx(const StaticSound *staticSound)												{if(staticSound) playFx(*staticSound);}
 
 	//ambient
-	//void playAmbient(StaticSound *staticSound);
-	void playAmbient(StrSound *strSound);
-	void stopAmbient(StrSound *strSound);
+	//void playAmbient(const StaticSound &staticSound);
+	void playAmbient(const StrSound &strSound);
+	void stopAmbient(const StrSound &strSound);
 
 	//misc
 	void stopAllSounds();

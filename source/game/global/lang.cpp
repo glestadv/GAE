@@ -16,6 +16,7 @@
 #include "lang.h"
 #include "logger.h"
 #include "util.h"
+#include "program.h"
 
 #include "leak_dumper.h"
 
@@ -39,6 +40,10 @@ Lang::Lang()
 #endif
 		, strings()
 		, scenarioStrings() {
+}
+
+static Lang &Lang::getInstance() {
+	return Program::getInstance().getLang();
 }
 
 void Lang::setLocale(const string &locale) {

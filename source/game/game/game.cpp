@@ -37,14 +37,6 @@ using namespace Shared::Platform;
 
 namespace Glest{ namespace Game{
 
-const char *controlTypeNames[ctCount] = {
-	"Closed",
-	"Cpu",
-	"CpuUltra",
-	"Network",
-	"Human"
-};
-
 // =====================================================
 // 	class Game
 // =====================================================
@@ -53,7 +45,7 @@ const char *controlTypeNames[ctCount] = {
 
 Game *Game::singleton = NULL;
 
-Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
+Game::Game(GuiProgram &program, const GameSettings &gs, XmlNode *savedGame) :
 		//main data
 		GuiProgramState(program),
 		gameSettings(gs),
@@ -66,7 +58,6 @@ Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
 		gui(*this),
 		gameCamera(),
 		commander(),
-		console(),
 		chatManager(keymap/*, console, world.getThisTeamIndex()*/),
 
 		//misc
@@ -159,9 +150,9 @@ void Game::load(){
 }
 
 void Game::init() {
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 	Logger &logger= Logger::getInstance();
-	CoreData &coreData= CoreData::getInstance();
+	const CoreData &coreData= CoreData::getInstance();
 	Renderer &renderer= Renderer::getInstance();
 	Map *map= world.getMap();
 	NetworkManager &networkManager= NetworkManager::getInstance();
@@ -187,7 +178,7 @@ void Game::init() {
 
 	world.init(savedGame ? savedGame->getChild("world") : NULL);
 	gui.init();
-	chatManager.init(&console, world.getThisTeamIndex());
+	chatManager.init(&getConsole(), world.getThisTeamIndex());
 	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
@@ -264,7 +255,7 @@ void Game::init() {
 	soundRenderer.playMusic(gameMusic);
 
 	logger.add("Launching game");
-	program.resetTimers();
+	getGuiProgram().resetTimers();
 
 	if(savedGame) {
 		delete savedGame;
@@ -285,7 +276,7 @@ void Game::update() {
 	mouse2d = (mouse2d + 1) % Renderer::maxMouse2dAnim;
 
 	//console
-	console.update();
+	getConsole().update();
 
 	// b) Updates depandant on speed
 
@@ -516,7 +507,7 @@ void Game::keyDown(const Key &key) {
 		if (cmd != ucNone) {
 			str << " = " << Keymap::getCommandName(cmd);
 		}
-		console.addLine(str.str());
+		getConsole().addLine(str.str());
 	}
 
 	if (saveBox && saveBox->getEntry()->isActivated()) {
@@ -580,7 +571,7 @@ void Game::keyDown(const Key &key) {
 		}
 
 		if (i > MAX_SCREENSHOTS) {
-			console.addLine(lang.get("ScreenshotDirectoryFull"));
+			getConsole().addLine(lang.get("ScreenshotDirectoryFull"));
 		}
 
 	//move camera left
@@ -607,7 +598,7 @@ void Game::keyDown(const Key &key) {
 	} else if (cmd == ucCameraCycleMode) {
 		gameCamera.switchState();
 		string stateString = gameCamera.getState() == GameCamera::sGame ? lang.get("GameCamera") : lang.get("FreeCamera");
-		console.addLine(lang.get("CameraModeSet") + " " + stateString);
+		getConsole().addLine(lang.get("CameraModeSet") + " " + stateString);
 
 	//pause
 	} else if (speedChangesAllowed) {
@@ -624,9 +615,9 @@ void Game::keyDown(const Key &key) {
 		}
 		if (prevPausedValue != paused) {
 			if (paused) {
-				console.addLine(lang.get("GamePaused"));
+				getConsole().addLine(lang.get("GamePaused"));
 			} else {
-				console.addLine(lang.get("GameResumed"));
+				getConsole().addLine(lang.get("GameResumed"));
 			}
 			return;
 		}
@@ -758,7 +749,7 @@ void Game::keyPress(char c) {
 }
 
 void Game::quitGame(){
-	program.setState(new BattleEnd(program, world.getStats()));
+	program.setState(new BattleEnd(getGuiProgram(), world.getStats()));
 }
 
 // ==================== PRIVATE ====================
@@ -806,8 +797,8 @@ void Game::render3d(){
 
 void Game::render2d(){
 	Renderer &renderer= Renderer::getInstance();
-	Config &config= Config::getInstance();
-	CoreData &coreData= CoreData::getInstance();
+	const Config &config= Config::getInstance();
+	const CoreData &coreData= CoreData::getInstance();
 	NetworkManager &networkManager= NetworkManager::getInstance();
 
 	//init

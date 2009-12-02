@@ -66,29 +66,31 @@ public:
 	CoreData(const Config &config, Renderer &renderer);
 	~CoreData();
 
-	Texture2D *getBackgroundTexture() const		{return backgroundTexture;}
-	Texture2D *getFireTexture() const			{return fireTexture;}
-	Texture2D *getSnowTexture() const			{return snowTexture;}
-	Texture2D *getLogoTexture() const			{return logoTexture;}
-	Texture2D *getWaterSplashTexture() const	{return waterSplashTexture;}
-	Texture2D *getCustomTexture() const			{return customTexture;}
-	Texture2D *getButtonSmallTexture() const	{return buttonSmallTexture;}
-	Texture2D *getButtonBigTexture() const		{return buttonBigTexture;}
-	Texture2D *getTextEntryTexture() const		{return textEntryTexture;}
+	static const CoreData &getInstance();
 
-	StrSound *getIntroMusic() 				{return &introMusic;}
-	StrSound *getMenuMusic() 				{return &menuMusic;}
-    StaticSound *getClickSoundA()			{return &clickSoundA;}
-    StaticSound *getClickSoundB()			{return &clickSoundB;}
-    StaticSound *getClickSoundC()			{return &clickSoundC;}
-	StaticSound *getWaterSound()			{return waterSounds.getRandSound();}
+	const Texture2D *getBackgroundTexture() const	{return backgroundTexture;}
+	const Texture2D *getFireTexture() const			{return fireTexture;}
+	const Texture2D *getSnowTexture() const			{return snowTexture;}
+	const Texture2D *getLogoTexture() const			{return logoTexture;}
+	const Texture2D *getWaterSplashTexture() const	{return waterSplashTexture;}
+	const Texture2D *getCustomTexture() const		{return customTexture;}
+	const Texture2D *getButtonSmallTexture() const	{return buttonSmallTexture;}
+	const Texture2D *getButtonBigTexture() const	{return buttonBigTexture;}
+	const Texture2D *getTextEntryTexture() const	{return textEntryTexture;}
 
-	Font2D *getDisplayFont() const			{return displayFont;}
-    Font2D *getMenuFontSmall() const		{return menuFontSmall;}
-    Font2D *getMenuFontNormal() const		{return menuFontNormal;}
-    Font2D *getMenuFontBig() const			{return menuFontBig;}
-	Font2D *getMenuFontVeryBig() const		{return menuFontVeryBig;}
-    Font2D *getConsoleFont() const			{return consoleFont;}
+	const StrSound &getIntroMusic() const			{return introMusic;}
+	const StrSound &getMenuMusic() const			{return menuMusic;}
+    const StaticSound &getClickSoundA() const		{return clickSoundA;}
+    const StaticSound &getClickSoundB() const		{return clickSoundB;}
+    const StaticSound &getClickSoundC() const		{return clickSoundC;}
+	const StaticSound &getWaterSound() const		{return *waterSounds.getRandSound();}
+
+	const Font2D *getDisplayFont() const			{return displayFont;}
+    const Font2D *getMenuFontSmall() const			{return menuFontSmall;}
+    const Font2D *getMenuFontNormal() const			{return menuFontNormal;}
+    const Font2D *getMenuFontBig() const			{return menuFontBig;}
+	const Font2D *getMenuFontVeryBig() const		{return menuFontVeryBig;}
+    const Font2D *getConsoleFont() const			{return consoleFont;}
 
 private:
 	int computeFontSize(int size);

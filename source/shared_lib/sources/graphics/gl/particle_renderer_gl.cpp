@@ -121,7 +121,7 @@ void ParticleRendererGl::renderSystem(ParticleSystem *ps) {
 
 	// set state
 	if (ps->getTexture() != NULL) {
-		glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(ps->getTexture())->getHandle());
+		glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(ps->getTexture())->getHandle());
 	} else {
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}

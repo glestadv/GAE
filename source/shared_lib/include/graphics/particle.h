@@ -156,7 +156,7 @@ protected:
 	Particle::BlendFactor destBlendFactor;
 	Particle::BlendEquation blendEquationMode;
 	Particle::PrimitiveType primitiveType;
-	Texture *texture;
+	const Texture *texture;
 	Model *model;
 	Vec3f offset;
 	Vec4f color;
@@ -190,7 +190,7 @@ public:
 	Particle::BlendFactor getDestBlendFactor() const	{return destBlendFactor;}
 	Particle::BlendEquation getBlendEquationMode() const{return blendEquationMode;}
 	Particle::PrimitiveType getPrimitiveType() const	{return primitiveType;}
-	Texture *getTexture() const							{return texture;}
+	const Texture *getTexture() const					{return texture;}
 	Model *getModel() const								{return model;}
 	const Vec3f &getOffset() const						{return offset;}
 	const Vec4f &getColor() const						{return color;}
@@ -214,7 +214,7 @@ public:
 	void setDestBlendFactor(Particle::BlendFactor v)	{destBlendFactor = v;}
 	void setBlendEquationMode(Particle::BlendEquation v){blendEquationMode = v;}
 	void setPrimitiveType(Particle::PrimitiveType v)	{primitiveType = v;}
-	void setTexture(Texture *v)							{texture = v;}
+	void setTexture(const Texture *v)					{texture = v;}
 	void setModel(Model *v)								{model = v;}
 	void setOffset(const Vec3f &v)						{offset = v;}
 	void setColor(const Vec4f &v)						{color = v;}

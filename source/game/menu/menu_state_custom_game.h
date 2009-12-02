@@ -46,7 +46,7 @@ private:
 	MapInfo mapInfo;
 
 public:
-	MenuStateCustomGame(Program *program, MainMenu *mainMenu, bool openNetworkSlots= false);
+	MenuStateCustomGame(GuiProgram &program, MainMenu &mainMenu, bool openNetworkSlots= false);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState *mouseState);

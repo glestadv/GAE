@@ -68,8 +68,9 @@ void SavedGamePreviewLoader::loadPreview(string *fileName) {
 // 	class MenuStateLoadGame
 // =====================================================
 
-MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu) :
-		MenuStateStartGameBase(program, mainMenu, "loadgame"), loaderThread(*this) {
+MenuStateLoadGame::MenuStateLoadGame(GuiProgram &program, MainMenu &mainMenu)
+		: MenuStateStartGameBase(program, mainMenu, "loadgame")
+		, loaderThread(*this) {
 	confirmMessageBox = NULL;
 	//msgBox = NULL;
 	savedGame = NULL;
@@ -77,7 +78,7 @@ MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu) :
 
 	Shared::Platform::mkdir("savegames", true);
 
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= getLang();
 
 	//create
 	buttonReturn.init(350, 200, 100);
@@ -88,7 +89,7 @@ MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu) :
 	listBoxGames.init(400, 300, 225);
 	if(!loadGameList()) {
 		msgBox = new GraphicMessageBox();
-		msgBox->init(Lang::getInstance().get("NoSavedGames"), Lang::getInstance().get("Ok"));
+		msgBox->init(lang.get("NoSavedGames"), lang.get("Ok"));
 		criticalError = true;
 		return;
 	}
@@ -134,9 +135,9 @@ MenuStateLoadGame::~MenuStateLoadGame() {
 
 void MenuStateLoadGame::mouseClick(int x, int y, MouseButton mouseButton){
 
-	CoreData &coreData= CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
-	Lang &lang= Lang::getInstance();
+	const CoreData &coreData= getCoreData();
+	const Lang &lang= getLang();
+	SoundRenderer &soundRenderer= getSoundRenderer();
 
 	if (confirmMessageBox != NULL){
 		int button = 1;
@@ -144,7 +145,7 @@ void MenuStateLoadGame::mouseClick(int x, int y, MouseButton mouseButton){
 			if (button == 1){
 				remove(getFileName().c_str());
 				if(!loadGameList()) {
-					mainMenu->setState(new MenuStateRoot(program, mainMenu));
+					changeState<MenuStateRoot>();
 					return;
 				}
 				selectionChanged();
@@ -157,7 +158,7 @@ void MenuStateLoadGame::mouseClick(int x, int y, MouseButton mouseButton){
 
 	if((msgBox && criticalError && msgBox->mouseClick(x,y)) || buttonReturn.mouseClick(x,y)){
 		soundRenderer.playFx(coreData.getClickSoundA());
-		mainMenu->setState(new MenuStateRoot(program, mainMenu));
+		changeState<MenuStateRoot>();
 		return;
 	}
 
@@ -179,7 +180,7 @@ void MenuStateLoadGame::mouseClick(int x, int y, MouseButton mouseButton){
 		if(!loadGame()) {
 			buttonPlayNow.mouseMove(1, 1);
 			msgBox = new GraphicMessageBox();
-			msgBox->init(Lang::getInstance().get("WaitingForConnections"), Lang::getInstance().get("Ok"));
+			msgBox->init(lang.get("WaitingForConnections"), lang.get("Ok"));
 			criticalError = false;
 		}
 	}
@@ -208,7 +209,7 @@ void MenuStateLoadGame::mouseMove(int x, int y, const MouseState &ms){
 }
 
 void MenuStateLoadGame::render(){
-	Renderer &renderer= Renderer::getInstance();
+	Renderer &renderer= getRenderer();
 	if(msgBox && criticalError) {
 		renderer.renderMessageBox(msgBox);
 		return;
@@ -244,12 +245,12 @@ void MenuStateLoadGame::render(){
 }
 
 void MenuStateLoadGame::update(){
+	const Lang& lang = getLang();
+	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
+
 	if (!gs) {
 		return;
 	}
-
-	ServerInterface* serverInterface = NetworkManager::getInstance().getServerInterface();
-	Lang& lang = Lang::getInstance();
 
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 		if (gs->getFactionControl(i) == CT_NETWORK) {
@@ -343,7 +344,7 @@ bool MenuStateLoadGame::loadGame() {
 	if(serverInterface) {
 		serverInterface->launchGame(gs, getFileName());
 	}
-	program.setState(new Game(program, *gs, root));
+	getGuiProgram().setState(new Game(getGuiProgram(), *gs, root));
 	return true;
 }
 
@@ -424,13 +425,13 @@ void MenuStateLoadGame::initGameInfo() {
 				int control = gs->getFactionControl(i);
 				//beware the buffer overflow -- it's possible for others to send
 				//saved game files that are intended to exploit buffer overruns
-				if(control >= ctCount || control < 0) {
+				if(control >= CT_COUNT || control < 0) {
 					throw runtime_error("Invalid control type (" + intToStr(control)
 							+ ") in saved game.");
 				}
 
 				labelPlayers[i].setText(string("Player ") + intToStr(i));
-				labelControls[i].setText(controlTypeNames[gs->getFactionControl(i)]);
+				labelControls[i].setText(enumControlTypeDesc[gs->getFactionControl(i)]);
 				labelFactions[i].setText(gs->getFactionTypeName(i));
 				labelTeams[i].setText(intToStr(gs->getTeam(i)));
 				labelNetStatus[i].setText("");

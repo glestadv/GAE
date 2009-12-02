@@ -29,7 +29,7 @@ private:
 	string glInfo;
 	string glMoreInfo;
 public:
-	MenuStateGraphicInfo(Program &program, MainMenu *mainMenu);
+	MenuStateGraphicInfo(GuiProgram &program, MainMenu &mainMenu);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);

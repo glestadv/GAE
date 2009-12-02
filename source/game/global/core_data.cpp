@@ -18,6 +18,7 @@
 #include "graphics_interface.h"
 #include "config.h"
 #include "util.h"
+#include "gui_program.h"
 
 #include "leak_dumper.h"
 
@@ -122,13 +123,16 @@ CoreData::CoreData(const Config &config, Renderer &renderer) {
 
 	waterSounds.resize(6);
 	for (int i = 0; i < 6; ++i) {
-		waterSounds[i] = new StaticSound();
-		waterSounds[i]->load(dir + "/water_sounds/water" + Conversion::toStr(i) + ".wav");
+		waterSounds[i] = new StaticSound(dir + "/water_sounds/water" + Conversion::toStr(i) + ".wav");
 	}
 }
 
 CoreData::~CoreData() {
 	deleteValues(waterSounds.getSounds().begin(), waterSounds.getSounds().end());
+}
+
+const CoreData &CoreData::getInstance() {
+	return GuiProgram::getInstance().getCoreData();
 }
 
 int CoreData::computeFontSize(int size) {

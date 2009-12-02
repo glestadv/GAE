@@ -15,7 +15,7 @@
 #include "gui_program.h"
 //#include "stats.h"
 
-namespace Shared { namespace Platform
+namespace Shared { namespace Platform {
 	class Key;
 }}
 
