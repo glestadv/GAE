@@ -23,7 +23,6 @@
 
 namespace Glest { namespace Game { namespace Search {
 
-class AbstractMap;
 class ClusterMap;
 
 /** A map containing a visility counter and explored flag for every map tile. */
@@ -35,21 +34,22 @@ class ExplorationMap {
 		}; // max 32768 units per _team_
 #	pragma pack(pop)
 	ExplorationState *state; /**< The Data */
+	Map *cellMap;
 public:
-	ExplorationMap() { /**< Construct ExplorationMap, sets everything to zero */
-		state = new ExplorationState[theMap.getTileW() * theMap.getTileH()];
-		memset( state, 0, sizeof(ExplorationState) * theMap.getTileW() * theMap.getTileH() );
+	ExplorationMap(Map *cMap) : cellMap(cMap) { /**< Construct ExplorationMap, sets everything to zero */
+		state = new ExplorationState[cellMap->getTileW() * cellMap->getTileH()];
+		memset( state, 0, sizeof(ExplorationState) * cellMap->getTileW() * cellMap->getTileH() );
 	}
 	/** @param pos cell coordinates @return number of units that can see this tile */
-	int  getVisCounter(const Vec2i &pos) const	{ return state[pos.y * theMap.getTileH() + pos.x].visCounter; }
+	int  getVisCounter(const Vec2i &pos) const	{ return state[pos.y * cellMap->getTileH() + pos.x].visCounter; }
 	/** @param pos tile coordinates to increase visibilty on */
-	void incVisCounter(const Vec2i &pos) const	{ state[pos.y * theMap.getTileH() + pos.x].visCounter ++;		}
+	void incVisCounter(const Vec2i &pos) const	{ state[pos.y * cellMap->getTileH() + pos.x].visCounter ++;		}
 	/** @param pos tile coordinates to decrease visibilty on */
-	void decVisCounter(const Vec2i &pos) const	{ state[pos.y * theMap.getTileH() + pos.x].visCounter --;		}
+	void decVisCounter(const Vec2i &pos) const	{ state[pos.y * cellMap->getTileH() + pos.x].visCounter --;		}
 	/** @param pos tile coordinates @return true if explored. */
-	bool isExplored(const Vec2i &pos)	 const	{ return state[pos.y * theMap.getTileH() + pos.x].explored;	}
+	bool isExplored(const Vec2i &pos)	 const	{ return state[pos.y * cellMap->getTileH() + pos.x].explored;	}
 	/** @param pos coordinates of tile to set as explored */
-	void setExplored(const Vec2i &pos)	 const	{ state[pos.y * theMap.getTileH() + pos.x].explored = 1;		}
+	void setExplored(const Vec2i &pos)	 const	{ state[pos.y * cellMap->getTileH() + pos.x].explored = 1;		}
 
 };
 
@@ -60,9 +60,9 @@ class Cartographer {
 	/** Master annotated map, always correct */
 	AnnotatedMap *masterMap;
 	/** Team annotateded maps, 'foggy' */
-	map< int, AnnotatedMap* > teamMaps;
+	//map< int, AnnotatedMap* > teamMaps;
 	/**  */
-	AbstractMap *abstractMap;
+	//AbstractMap *abstractMap;
 	ClusterMap *clusterMap;
 	/** The locations of each and every resource on the map */
 	map< const ResourceType*, vector< Vec2i > > resourceLocations;
@@ -73,6 +73,9 @@ class Cartographer {
 
 	NodeMap *nodeMap;
 	SearchEngine<NodeMap,GridNeighbours> *nmSearchEngine;
+
+	World *world;
+	Map *cellMap;
 
 	void initResourceMap( int team, const ResourceType *rt, TypeMap<float> *iMap );
 
@@ -111,7 +114,7 @@ class Cartographer {
 	void maintainUnitVisibility(Unit *unit, bool add);
 
 public:
-	Cartographer();
+	Cartographer(World *world);
 	~Cartographer();
 	void updateResourceMaps();
 
@@ -153,7 +156,7 @@ public:
 		return teamResourceMaps[unit->getTeam()][rt];
 	}
 
-	AbstractMap* getAbstractMap() const	{ return abstractMap; }
+//	AbstractMap* getAbstractMap() const	{ return abstractMap; }
 	ClusterMap* getClusterMap() const { return clusterMap; }
 
 	AnnotatedMap* getMasterMap()				const	{ return masterMap;							  }

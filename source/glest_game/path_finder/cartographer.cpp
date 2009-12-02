@@ -36,38 +36,41 @@ namespace Glest { namespace Game { namespace Search {
 
 /** Construct Cartographer object. Requires game settings, factions & cell map to have been loaded.
   */
-Cartographer::Cartographer() {
+Cartographer::Cartographer(World *world)
+		: world(world) {
 	theLogger.add("Cartographer", true);
-	int w = theMap.getW(), h = theMap.getH();
+
+	cellMap = world->getMap();
+	int w = cellMap->getW(), h = cellMap->getH();
 	nodeMap = new NodeMap(w,h);
 	nmSearchEngine = new SearchEngine<NodeMap,GridNeighbours>();
 	nmSearchEngine->setStorage(nodeMap);
 	nmSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
-	masterMap = new AnnotatedMap();
+	masterMap = new AnnotatedMap(world);
 	//abstractMap = new AbstractMap(this);
 	clusterMap = new ClusterMap(masterMap,this);
 
 	// team search and visibility maps
 	set<int> teams;
-	//theLogger.add( "Factions: " + intToStr(theWorld.getFactionCount()));
-	for ( int i=0; i < theWorld.getFactionCount(); ++i ) {
-		const Faction *f = theWorld.getFaction(i);
+	//theLogger.add( "Factions: " + intToStr(world->getFactionCount()));
+	for ( int i=0; i < world->getFactionCount(); ++i ) {
+		const Faction *f = world->getFaction(i);
 		int team = f->getTeam();
 		//theLogger.add( "Faction " + intToStr(i) + " team: " + intToStr(f->getTeam()));
 		if ( teams.find(team) == teams.end() ) {
 			teams.insert(team);
 			theLogger.add("Team : " + intToStr(team));
 			// AnnotatedMap needs to be 'bound' to explored status
-			explorationMaps[team] = new ExplorationMap();
-			teamMaps[team] = new AnnotatedMap(explorationMaps[team]);
+			explorationMaps[team] = new ExplorationMap(cellMap);
+			//teamMaps[team] = new AnnotatedMap(world, explorationMaps[team]);
 		}
 	}
-
+	/*
 	// find and catalog all resources...
-	for ( int x=0; x < theMap.getTileW() - 1; ++x ) {
-		for ( int y=0; y < theMap.getTileH() - 1; ++y ) {
-			const Resource * const r = theMap.getTile(x,y)->getResource();
+	for ( int x=0; x < cellMap->getTileW() - 1; ++x ) {
+		for ( int y=0; y < cellMap->getTileH() - 1; ++y ) {
+			const Resource * const r = cellMap->getTile(x,y)->getResource();
 			if ( r ) {
 				resourceLocations[r->getType()].push_back(Vec2i(x,y));
 			}
@@ -75,17 +78,18 @@ Cartographer::Cartographer() {
 	}
 
 	// construct resource influence maps for each team
-	for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
-		const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
+	for ( int i=0; i < world->getTechTree()->getResourceTypeCount(); ++i ) {
+		const ResourceType* rt = world->getTechTree()->getResourceType( i );
 		if ( rt->getClass() == ResourceClass::TECH || rt->getClass() == ResourceClass::TILESET ) {
-			for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
-				int team = theWorld.getFaction(j)->getTeam();
+			for ( int j=0; j < world->getFactionCount(); ++j ) {
+				int team = world->getFaction(j)->getTeam();
 				if ( teamResourceMaps[team].find(rt) == teamResourceMaps[team].end() ) {
-					teamResourceMaps[team][rt] = new TypeMap<float>(Rect(0,0,theMap.getW(),theMap.getH()), -1.f);
+					teamResourceMaps[team][rt] = new TypeMap<float>(Rect(0,0,cellMap->getW(),cellMap->getH()), -1.f);
 				}
 			}
 		}
 	}
+	*/
 }
 
 /** Destruct */
@@ -94,17 +98,22 @@ Cartographer::~Cartographer() {
 	delete nmSearchEngine;
 	delete nodeMap;
 
-	map<int,AnnotatedMap*>::iterator aMapIt = teamMaps.begin();
+	// Team Annotated Maps
+	/*map<int,AnnotatedMap*>::iterator aMapIt = teamMaps.begin();
 	for ( ; aMapIt != teamMaps.end(); ++aMapIt ) {
 		delete aMapIt->second;
 	}
-	teamMaps.clear();
+	teamMaps.clear();*/
+
+	// Exploration Maps
 	map<int,ExplorationMap*>::iterator eMapIt = explorationMaps.begin();
 	for ( ; eMapIt != explorationMaps.end(); ++eMapIt ) {
 		delete eMapIt->second;
 	}
 	explorationMaps.clear();
-
+	
+	// Resource Maps
+	/*
 	map<int,map<const ResourceType*, TypeMap<float>*>>::iterator teamIt;
 	map<const ResourceType*, TypeMap<float>*>::iterator iMapIt;
 	teamIt = teamResourceMaps.begin();
@@ -114,29 +123,30 @@ Cartographer::~Cartographer() {
 			delete iMapIt->second;
 		}
 	}
-	teamResourceMaps.clear();
+	teamResourceMaps.clear();*/
 }
 
 /** WIP */
 void Cartographer::updateResourceMaps() {
-	set< int > seen;
-	for ( int j=0; j < theWorld.getFactionCount(); ++j ) {
-		int team = theWorld.getFaction( j )->getTeam();
+	/*set< int > seen;
+	for ( int j=0; j < world->getFactionCount(); ++j ) {
+		int team = world->getFaction( j )->getTeam();
 		if ( seen.find( team ) != seen.end() ) {
 			continue;
 		}
 		seen.insert( team );
-		for ( int i=0; i < theWorld.getTechTree()->getResourceTypeCount(); ++i ) {
-			const ResourceType* rt = theWorld.getTechTree()->getResourceType( i );
+		for ( int i=0; i < world->getTechTree()->getResourceTypeCount(); ++i ) {
+			const ResourceType* rt = world->getTechTree()->getResourceType( i );
 			if ( rt->getClass() == ResourceClass::TECH || rt->getClass() == ResourceClass::TILESET ) {
 				initResourceMap( team, rt, teamResourceMaps[team][rt] );
 			}
 		}
-	}
+	}*/
 }
 
 /** WIP */
 void Cartographer::initResourceMap(int team, const ResourceType *rt, TypeMap<float> *iMap) {
+	/*
 	//DEBUG
 	static char buf[1024];
 	char *ptr = buf;
@@ -146,7 +156,7 @@ void Cartographer::initResourceMap(int team, const ResourceType *rt, TypeMap<flo
 	vector<Vec2i> knownResources;
 	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
 	for ( ; it != resourceLocations[rt].end(); ++it ) {
-		if ( theMap.getTile(*it)->isExplored(team) ) {
+		if ( cellMap->getTile(*it)->isExplored(team) ) {
 			knownResources.push_back(*it);
 		}
 	}
@@ -164,9 +174,10 @@ void Cartographer::initResourceMap(int team, const ResourceType *rt, TypeMap<flo
 	time = Chrono::getCurMillis() - time;
 	ptr += sprintf(ptr, "Used %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time);
 	theLogger.add(buf);
-	//if ( team == theWorld.getThisTeamIndex() && rt->getName() == "gold" ) {
+	//if ( team == world->getThisTeamIndex() && rt->getName() == "gold" ) {
 	//	iMap->log();
 	//}
+	*/
 }
 
 /** Initialise annotated maps for each team, call after initial units visibility is applied */
@@ -177,7 +188,6 @@ void Cartographer::initTeamMaps() {
 		ExplorationMap *eMap = it->second;
 
 	}
-
 }
 
 /** Maintains visibility on a per team basis. Adds or removes a unit's visibility
@@ -192,8 +202,7 @@ void Cartographer::maintainUnitVisibility(Unit *unit, bool add) {
 	GridNeighbours::setSearchSpace(SearchSpace::TILEMAP);
 	nmSearchEngine->setNodeLimit(-1);
 	nmSearchEngine->reset();
-	///@todo take unit size into account?
-	nmSearchEngine->setOpen(Map::toTileCoords(unit->getPos()), 0.f);
+	nmSearchEngine->setOpen(Map::toTileCoords(unit->getCenteredPos()), 0.f);
 	// zap
 	nmSearchEngine->aStar<VisibilityMaintainerGoal,DistanceCost,ZeroHeuristic>
 						 (goalFunc,DistanceCost(),ZeroHeuristic());

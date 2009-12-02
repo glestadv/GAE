@@ -50,8 +50,8 @@ class ExplorationMap;
   */
 struct CellMetrics {
 	CellMetrics() { memset ( this, 0, sizeof(*this) ); }
-	/** get metrics for field */
-	uint16 get(const Field field) const {
+	
+	uint16 get(const Field field) const { /**< get metrics for field */
 		switch ( field ) {
 			case Field::LAND:		return field0;
 			case Field::AIR:		return field1;
@@ -61,8 +61,8 @@ struct CellMetrics {
 			default: throw runtime_error ( "Unknown Field passed to CellMetrics::get()" );
 		}
 	}
-	/** set metrics for field */
-	void set(const Field field, uint16 val) {
+	
+	void set(const Field field, uint16 val) { /**< set metrics for field */
 		switch ( field ) {
 			case Field::LAND:		field0 = val; return;
 			case Field::AIR:		field1 = val; return;
@@ -72,20 +72,21 @@ struct CellMetrics {
 			default: throw runtime_error ( "Unknown Field passed to CellMetrics::set()" );
 		}
 	}
-	/** set clearance of all fields to val */
-	void setAll(uint16 val)				{ field0 = field1 = field2 = field3 = field4 = val; }
-	/** comparison, ignoring dirty bit */
-	bool operator!=(CellMetrics &that)	const { 
+	
+	void setAll(uint16 val)	{ /**< set clearance of all fields to val */
+		field0 = field1 = field2 = field3 = field4 = val; 
+	}
+
+	bool operator!=(CellMetrics &that)	const { /**< comparison, ignoring dirty bit */
 		if ( field0 == that.field0 && field1 == that.field1 
 		&&  field2 == that.field2 && field3 == that.field3 && field4 == that.field4 ) {
 			return false;
 		}
 		return true;
 	}
-	/** is this cell dirty */
-	bool isDirty() const				{ return dirty; }
-	/** set dirty flag */
-	void setDirty(const bool val)		{ dirty = val; }
+	
+	bool isDirty() const				{ return dirty; } /**< is this cell dirty */
+	void setDirty(const bool val)		{ dirty = val;	} /**< set dirty flag */	
 
 private:
 	uint16 field0 : 3; /**< Field::LAND = land + shallow water */
@@ -137,15 +138,19 @@ class AnnotatedMap {
 #	endif
 	int width, height;
 
+	Map *cellMap;
+
 public:
-	AnnotatedMap(ExplorationMap *eMap=NULL);
+	AnnotatedMap(World *world, ExplorationMap *eMap=NULL);
 	~AnnotatedMap();
 
 	int getWidth()	{ return width;		}
 	int getHeight()	{ return height;	}
 
-	/** Maximum clearance allowed. Hence, also maximum moveable unit size supported. */
-	static const int maxClearanceValue = 7;
+	/** Maximum clearance allowed by the game. Hence, also maximum moveable unit size supported. */
+	static const int maxClearanceValue = 7; // don't change me without also changing CellMetrics
+
+	int maxClearance[Field::COUNT]; // maximum clearances need for this world
 
 	void initMapMetrics();
 
@@ -160,7 +165,7 @@ public:
 	  * @return true if position can be occupied, else false
 	  */
 	bool canOccupy(const Vec2i &pos, int size, Field field) const {
-		assert(theMap.isInside(pos));
+		assert(cellMap->isInside(pos));
 		return metrics[pos].get(field) >= size ? true : false;
 	}
 

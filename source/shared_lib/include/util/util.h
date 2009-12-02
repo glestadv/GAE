@@ -50,7 +50,7 @@ const string sharedLibVersionString= "v0.4.1";
 #define WRAPPED_ENUM(Name,...)							\
 	struct Name {										\
 		enum Enum { INVALID = -1, __VA_ARGS__, COUNT };	\
-		Name() : value(COUNT) {}						\
+		Name() : value(INVALID) {}						\
 		Name(Enum val) : value(val) {}					\
 		operator Enum() { return value; }				\
 		operator Enum() const { return value; }			\
@@ -81,7 +81,7 @@ const string sharedLibVersionString= "v0.4.1";
 
 template<typename E>
 E enum_cast(unsigned i) {
-	return i < E::COUNT ? static_cast<typename E::Enum>(i) : E::COUNT;
+	return i < E::COUNT ? static_cast<typename E::Enum>(i) : E::INVALID;
 }
 
 // =====================================================

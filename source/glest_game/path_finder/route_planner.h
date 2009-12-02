@@ -68,7 +68,7 @@ private:
 	bool findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
 
 	World *world;
-	SearchEngine<NodeStore,GridNeighbours>	 *nsgSearchEngine;
+	SearchEngine<NodeStore>	 *nsgSearchEngine;
 	NodeStore *nodeStore;
 	//AbstractNodeStorage *abstractNodeStore;
 	//SearchEngine<AbstractNodeStorage,BorderNeighbours,const Border*> *nsbSearchEngine;
@@ -89,13 +89,14 @@ private:
 		return false;
 	}
 
-
 #if DEBUG_SEARCH_TEXTURES
 public:
 	enum { SHOW_PATH_ONLY, SHOW_OPEN_CLOSED_SETS, SHOW_LOCAL_ANNOTATIONS } debug_texture_action;
 #endif
 }; // class RoutePlanner
 
+
+//TODO: put these somewhere sensible
 class TransitionHeuristic {
 	DiagonalDistance dd;
 public:
@@ -105,6 +106,7 @@ public:
 	}
 };
 
+#if 0 == 1
 //
 // just use DiagonalDistance to waypoint ??
 class AbstractAssistedHeuristic {
@@ -127,6 +129,7 @@ public:
 
 	}
 };
+#endif
 
 }}}//end namespace
 

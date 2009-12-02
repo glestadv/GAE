@@ -49,16 +49,6 @@ int GridNeighbours::width = 0;
 
 // ===================== PUBLIC ========================
 
-/** The RoutePlanner */
-//RoutePlanner* RoutePlanner::singleton = NULL;
-
-/** @return a pointer to the RoutePlanner instance */
-//RoutePlanner* RoutePlanner::getInstance() {
-//	if ( ! singleton )
-//		singleton = new RoutePlanner();
-//	return singleton;
-//}
-
 /** Construct RoutePlanner object */
 RoutePlanner::RoutePlanner(World *world)
 		: world(world)
@@ -70,8 +60,8 @@ RoutePlanner::RoutePlanner(World *world)
 		, nsgSearchEngine(NULL) {
 	theLogger.add( "Initialising SearchEngine", true );
 
-	nsgSearchEngine = new SearchEngine<NodeStore,GridNeighbours>();
-	nodeStore = new NodeStore(theMap.getW(),theMap.getH());
+	nsgSearchEngine = new SearchEngine<NodeStore>();
+	nodeStore = new NodeStore(world->getMap()->getW(),world->getMap()->getH());
 	nsgSearchEngine->setStorage(nodeStore);
 	nsgSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
@@ -119,7 +109,7 @@ RoutePlanner::~RoutePlanner() {
   * @return true if move may proceed, false if not legal.
   */
 bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
-	assert(theMap.isInside(pos2));
+	assert(world->getMap()->isInside(pos2));
 	//assert(unit->getPos().dist(pos2) < 1.5);
 	if ( unit->getPos().dist(pos2) > 1.5 ) {
 		//TODO: figure out why we need this!  because blocked paths are popping...
@@ -131,24 +121,32 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 	Zone zone = field == Field::AIR ? Zone::AIR : Zone::LAND;
 
 	AnnotatedMap *annotatedMap = world->getCartographer()->getMasterMap();
-	if ( ! annotatedMap->canOccupy(pos2, size, field) )
+	if ( ! annotatedMap->canOccupy(pos2, size, field) ) {
 		return false; // obstruction in field
+	}
 	if ( pos1.x != pos2.x && pos1.y != pos2.y ) {
 		// Proposed move is diagonal, check if cells either 'side' are free.
+		//  eg..  XXXX
+		//        X1FX  The Cells marked 'F' must both be free
+		//        XF2X  for the move 1->2 to be legit
+		//        XXXX
 		Vec2i diag1, diag2;
 		getDiags(pos1, pos2, size, diag1, diag2);
-		if ( ! annotatedMap->canOccupy(diag1, 1, field) 
-		||   ! annotatedMap->canOccupy(diag2, 1, field) ) 
+		if ( !annotatedMap->canOccupy(diag1, 1, field) 
+		||	 !annotatedMap->canOccupy(diag2, 1, field)
+		||	 !world->getMap()->getCell(diag1)->isFree(zone)
+		||	 !world->getMap()->getCell(diag2)->isFree(zone) ) {
 			return false; // obstruction, can not move to pos2
-		if ( ! world->getMap()->getCell(diag1)->isFree(zone)
-		||   ! world->getMap()->getCell(diag2)->isFree(zone) )
-			return false; // other unit in the way
+		}
 	}
-	for ( int i = pos2.x; i < unit->getSize() + pos2.x; ++i )
-		for ( int j = pos2.y; j < unit->getSize() + pos2.y; ++j )
+	for ( int i = pos2.x; i < unit->getSize() + pos2.x; ++i ) {
+		for ( int j = pos2.y; j < unit->getSize() + pos2.y; ++j ) {
 			if ( world->getMap()->getCell(i,j)->getUnit(zone) != unit
-			&&   ! world->getMap()->isFreeCell(Vec2i(i, j), field) )
+			&&   !world->getMap()->isFreeCell(Vec2i(i, j), field) ) {
 				return false; // blocked by another unit
+			}
+		}
+	}
 	// pos2 is free, and nothing is in the way
 	return true;
 }
@@ -395,18 +393,18 @@ bool RoutePlanner::refinePath(Unit *unit) {
 	// pop waypoint
 	wpPath.pop();
 	// back-up, to smooth out the path
-	if ( !wpPath.empty() ) {
-		for ( int i=0; i < 5 && !path.empty(); ++i ) {
-			path.pop_back();
-		}
-	}
+	//if ( !wpPath.empty() ) {
+	//	for ( int i=0; i < 5 && !path.empty(); ++i ) {
+	//		path.pop_back();
+	//	}
+	//}
 	return true;
 }
 
 /** Find a path to a location.
   * @param unit the unit requesting the path
   * @param finalPos the position the unit desires to go to
-  * @return SearchResult::ARRIVED, SearchResult::MOVING or SearchResult::BLOCKED
+  * @return ARRIVED, MOVING, BLOCKED or IMPOSSIBLE
   */
 TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) {
 	UnitPath &path = *unit->getPath();
@@ -441,7 +439,7 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 			DebugRenderer::clearWaypoints();
 			WaypointPath::iterator it = wpPath.begin();
 			for ( ; it != wpPath.end(); ++it ) {
-				Vec3f vert = theMap.getTile(Map::toTileCoords(*it))->getVertex();
+				Vec3f vert = world->getMap()->getTile(Map::toTileCoords(*it))->getVertex();
 				vert.x += it->x % Map::cellScale + 0.5f;
 				vert.z += it->y % Map::cellScale + 0.5f;
 				vert.y += 0.25f;
@@ -476,7 +474,7 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		// this is the 'straight' A* using the NodeMap (no node limit)
 
 		AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
-		SearchEngine<NodeMap,GridNeighbours> *se = theWorld.getCartographer()->getSearchEngine();
+		SearchEngine<NodeMap> *se = theWorld.getCartographer()->getSearchEngine();
 		DiagonalDistance dd(target);
 		MoveCost cost(unit, aMap);
 		PosGoal goal(target);
@@ -484,10 +482,11 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		se->setStart(unit->getPos(), dd(unit->getPos()));
 		AStarResult res = se->ASTAR_TO_POS(goal,cost,dd);
 		list<Vec2i>::iterator it;
-//#		if DEBUG_SEARCH_TEXTURES
-//			list<Vec2i> *nodes = NULL;
-//			NodeMap* nm = se->getStorage();
-//#		endif
+		IF_DEBUG_TEXTURES
+		( 
+			list<Vec2i> *nodes = NULL;
+			NodeMap* nm = se->getStorage();
+		)
 		Vec2i goalPos, pos;
 		switch ( res ) {
 			case AStarResult::COMPLETE:
@@ -495,9 +494,7 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 				pos = goalPos;
 				while ( pos.x != 65535 ) {
 					path.push(pos);
-//#					if DEBUG_SEARCH_TEXTURES
-//						PathFinderTextureCallBack::pathSet.insert(pos);
-//#					endif
+//					IF_DEBUG_TEXTURES( PathFinderTextureCallBack::pathSet.insert(pos); )
 					pos = se->getPreviousPos(pos);
 				}
 				if ( path.size() ) path.pop();
@@ -615,7 +612,7 @@ Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPo
 	int teamIndex= unit->getTeam();
 
 	//if finalPos is free return it
-	if ( theMap.areAproxFreeCells(finalPos, size, field, teamIndex) ) {
+	if ( world->getMap()->areAproxFreeCells(finalPos, size, field, teamIndex) ) {
 		return finalPos;
 	}
 
@@ -635,7 +632,7 @@ Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPo
 	for ( int i = -maxFreeSearchRadius; i <= maxFreeSearchRadius; ++i ) {
 		for ( int j = -maxFreeSearchRadius; j <= maxFreeSearchRadius; ++j ) {
 			Vec2i currPos = finalPos + Vec2i(i, j);
-			if ( theMap.areAproxFreeCells(currPos, size, field, teamIndex) ){
+			if ( world->getMap()->areAproxFreeCells(currPos, size, field, teamIndex) ){
 				float dist = currPos.dist(finalPos);
 
 				//if nearer from finalPos

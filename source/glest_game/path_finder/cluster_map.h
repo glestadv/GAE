@@ -20,6 +20,7 @@ namespace Glest { namespace Game { namespace Search {
 class Cartographer;
 struct Transition;
 
+/** uni-directional edge, is owned by the source transition, contains pointer to dest */
 struct Edge : pair<Transition*, vector<float>> {
 	Edge(Transition *t)  { first = t; }
 	Transition* transition() const { return first; }
@@ -28,6 +29,7 @@ struct Edge : pair<Transition*, vector<float>> {
 };
 typedef vector<Edge*> Edges;
 
+/**  */
 struct Transition {
 	int clearance;
 	Vec2i nwPos;

@@ -154,7 +154,7 @@ public:
 /** Wrapper for generic (templated) A*
   * @param NodeStorage templated NodeStorage, must conform to implicit interface, see elsewhere
   */
-template< typename NodeStorage, typename NeighbourFunc, typename DomainKey = Vec2i >
+template< typename NodeStorage, typename NeighbourFunc = GridNeighbours, typename DomainKey = Vec2i >
 class SearchEngine {
 private:
 	NodeStorage *nodeStorage; /**< NodeStorage for this SearchEngine */

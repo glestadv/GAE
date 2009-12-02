@@ -115,7 +115,7 @@ void World::init(const XmlNode *worldNode) {
 
 	initSplattedTextures();
 
-	cartographer = new Cartographer();
+	cartographer = new Cartographer(this);
 	cartographer->updateResourceMaps();
 	routePlanner = new RoutePlanner(this);
 
@@ -190,7 +190,7 @@ bool World::loadTech(Checksum &checksum) {
 	set<string> names;
 	for ( int i = 0; i < gs.getFactionCount(); ++i ) {
 		if ( gs.getFactionTypeName(i).size() && gs.getFactionTypeName(i) != "observer" ) {
-			names.insert ( gs.getFactionTypeName(i) );
+			names.insert(gs.getFactionTypeName(i));
 		}
 	}
 	return techTree.load(gs.getTechPath(), names, checksum);
