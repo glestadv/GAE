@@ -255,6 +255,26 @@ public:
 
 };
 
+// ===========================================================
+// 	class GraphicProgressBar
+/// Non-interactive component that displays progress using a 
+/// changing image
+// ===========================================================
+
+class GraphicProgressBar: public GraphicComponent {
+private:
+	int progress;
+
+public:
+	GraphicProgressBar();
+	void init(int x, int y/*, int w, int h*/);
+
+	void setProgress(int v) { progress = v; }
+	int getProgress() { return progress; }
+	void render();
+
+};
+
 }}//end namespace
 
 #endif

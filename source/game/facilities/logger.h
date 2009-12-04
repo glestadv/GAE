@@ -23,6 +23,8 @@ using std::deque;
 
 namespace Glest { namespace Game {
 
+class GraphicProgressBar;
+
 // =====================================================
 // class Logger
 //
@@ -46,10 +48,13 @@ private:
 	bool loadingGame;
 	static char errorBuf[];
 
+	GraphicProgressBar *progressBar;
+
 private:
 	Logger( const char *fileName )
 		: fileName( fileName )
-		, loadingGame(true) {
+		, loadingGame(true)
+		, progressBar(NULL) {
 	}
 
 public:
@@ -79,6 +84,7 @@ public:
 	void setState( const string &state );
 	void setSubtitle( const string &v )		{subtitle = v;}
 	void setLoading( bool v )				{loadingGame = v;}
+	void setProgressBar(GraphicProgressBar *v) { progressBar = v; }
 
 	void add( const string &str, bool renderScreen = false );
 	void renderLoadingScreen();

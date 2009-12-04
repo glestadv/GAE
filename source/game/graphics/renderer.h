@@ -220,6 +220,7 @@ public:
 	void renderMessageBox(const GraphicMessageBox *listBox);
 	void renderTextEntry(const GraphicTextEntry *textEntry);
 	void renderTextEntryBox(const GraphicTextEntryBox *textEntryBox);
+	void renderProgressBar(int size, int x, int y, Font2D *font);
 
     //complex rendering
     void renderSurface();
@@ -289,7 +290,6 @@ private:
 	//private aux drawing
 	void renderSelectionCircle(Vec3f v, int size, float radius);
 	void renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width);
-	void renderProgressBar(int size, int x, int y, Font2D *font);
 	void renderTile(const Vec2i &pos);
 	void renderQuad(int x, int y, int w, int h, const Texture2D *texture);
 

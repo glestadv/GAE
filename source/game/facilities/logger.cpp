@@ -17,6 +17,7 @@
 #include "core_data.h"
 #include "metrics.h"
 #include "lang.h"
+#include "components.h"
 
 #include "leak_dumper.h"
 
@@ -90,7 +91,6 @@ void Logger::addXmlError ( const string &path, const char *error )
 // ==================== PRIVATE ====================
 
 void Logger::renderLoadingScreen(){
-
 	Renderer &renderer= Renderer::getInstance();
 	CoreData &coreData= CoreData::getInstance();
 	const Metrics &metrics= Metrics::getInstance();
@@ -115,6 +115,9 @@ void Logger::renderLoadingScreen(){
 				70*metrics.getVirtualH()/100 - offset*(font->getSize()+4),
 				false);
 			++offset;
+		}
+		if (progressBar) {
+			progressBar->render();
 		}
 	}
 	else

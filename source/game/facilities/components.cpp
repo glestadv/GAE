@@ -22,6 +22,7 @@
 #include "window.h"
 #include "font.h"
 #include "math_util.h"
+#include "renderer.h"
 
 #include "leak_dumper.h"
 
@@ -375,6 +376,22 @@ bool GraphicTextEntryBox::mouseClick(int x, int y, int &clickedButton) {
 
 void GraphicTextEntryBox::keyDown(const Key &key) {
 	entry.keyDown(key);
+}
+
+// ===========================================================
+// 	class GraphicProgressBar
+// ===========================================================
+
+GraphicProgressBar::GraphicProgressBar() : GraphicComponent(), progress(0) {}
+
+void GraphicProgressBar::init(int x, int y/*, int w, int h*/) {
+	GraphicComponent::init(x, y, 0, 0);
+}
+
+void GraphicProgressBar::render() {
+	CoreData &coreData = CoreData::getInstance();
+
+	Renderer::getInstance().renderProgressBar(progress,	x, y, coreData.getMenuFontSmall());
 }
 
 }}//end namespace
