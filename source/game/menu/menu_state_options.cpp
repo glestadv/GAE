@@ -36,78 +36,24 @@ MenuStateOptions::MenuStateOptions(Program &program, MainMenu *mainMenu) :
 	Lang &lang= Lang::getInstance();
 	Config &config= Config::getInstance();
 
-	//create
+	//buttons
 	buttonReturn.init(200, 150, 100);
 	buttonAutoConfig.init(320, 150, 100);
 	buttonOpenglInfo.init(440, 150, 100);
 
 	//labels
-	labelVolumeFx.init(200, 530);
-	labelVolumeAmbient.init(200, 500);
-	labelVolumeMusic.init(200, 470);
+	initLabels();
 
-	labelLang.init(200, 400);
-
-	labelFilter.init(200, 340);
-	labelShadows.init(200, 310);
-	labelTextures3D.init(200, 280);
-	labelLights.init(200, 250);
-
-   labelMaxPathNodes.init ( 500, 560 );
-   labelPFAlgorithm.init ( 500, 530 );
-#  ifdef _GAE_DEBUG_EDITION_
-      labelPFTexturesOn.init ( 500, 500 );
-      labelPFTextureMode.init ( 500, 470 );
-#  endif
 	//list boxes
-	listBoxVolumeFx.init(350, 530, 80);
-	listBoxVolumeAmbient.init(350, 500, 80);
-	listBoxVolumeMusic.init(350, 470, 80);
-	listBoxMusicSelect.init(350, 440, 150);
+	initListBoxes();
 
-	listBoxLang.init(350, 400, 170);
+	//set text for the above components
+	setTexts();
 
-	listBoxFilter.init(350, 340, 170);
-	listBoxShadows.init(350, 310, 170);
-	listBoxTextures3D.init(350, 280, 80);
-	listBoxLights.init(350, 250, 80);
-
-   listBoxMaxPathNodes.init ( 650, 560, 80 );
-   listBoxPFAlgorithm.init ( 650, 530, 180 );
-#  ifdef _GAE_DEBUG_EDITION_
-      listBoxPFTexturesOn.init ( 650, 500, 180 );
-      listBoxPFTextureMode.init ( 650, 470, 180 );
-#  endif
-
-	//set text
-	buttonReturn.setText(lang.get("Return"));
-	buttonAutoConfig.setText(lang.get("AutoConfig"));
-	buttonOpenglInfo.setText(lang.get("GraphicInfo"));
-	labelLang.setText(lang.get("Language"));
-	labelShadows.setText(lang.get("Shadows"));
-	labelFilter.setText(lang.get("Filter"));
-	labelTextures3D.setText(lang.get("Textures3D"));
-	labelLights.setText(lang.get("MaxLights"));
-	labelVolumeFx.setText(lang.get("FxVolume"));
-	labelVolumeAmbient.setText(lang.get("AmbientVolume"));
-	labelVolumeMusic.setText(lang.get("MusicVolume"));
-
-   labelMaxPathNodes.setText ( lang.get("MaxPathNodes") );
-   labelPFAlgorithm.setText ( "SearchAlgorithm" );
-#  ifdef _GAE_DEBUG_EDITION_
-      labelPFTexturesOn.setText ( "DebugTextures" );
-      labelPFTextureMode.setText ( "TextureMode" );
-#  endif
 	//sound
 
 	//lang
-	vector<string> langResults;
-	findAll("gae/data/lang/*.lng", langResults, true);
-	if(langResults.empty()){
-        throw runtime_error("There is no lang file");
-	}
-    listBoxLang.setItems(langResults);
-	listBoxLang.setSelectedItem(config.getUiLocale());
+	setupListBoxLang();
 
 	//shadows
 	for(int i= 0; i<Renderer::sCount; ++i){
@@ -189,7 +135,14 @@ void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
 		mainMenu->setState(new MenuStateGraphicInfo(program, mainMenu));
 	}
 	else if(listBoxLang.mouseClick(x, y)){
-		config.setUiLocale(listBoxLang.getSelectedItem());
+		map<string,string>::iterator it = langMap.find(listBoxLang.getSelectedItem());
+		string lng;
+		if ( it != langMap.end() ) {
+			lng = it->second;
+		} else {
+			lng = listBoxLang.getSelectedItem();
+		}
+		config.setUiLocale(lng);
 		lang.setLocale(config.getUiLocale());
 		saveConfig();
 		mainMenu->setState(new MenuStateOptions(program, mainMenu));
@@ -224,29 +177,22 @@ void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton){
 		CoreData::getInstance().getMenuMusic()->setVolume(Conversion::strToInt(listBoxVolumeMusic.getSelectedItem())/100.f);
 		config.setSoundVolumeMusic(atoi(listBoxVolumeMusic.getSelectedItem().c_str()));
 		saveConfig();
+	} else if ( listBoxMaxPathNodes.mouseClick(x, y) ) {
+		config.setPathFinderMaxNodes(Conversion::strToInt(this->listBoxMaxPathNodes.getSelectedItem()));
+		saveConfig();
+	} else if ( listBoxPFAlgorithm.mouseClick(x, y) ) {
+		config.setPathFinderUseAStar(listBoxPFAlgorithm.getSelectedItemIndex() ? false : true);
+		saveConfig();
 	}
-   else if ( listBoxMaxPathNodes.mouseClick ( x,y ) )
-   {
-      config.setPathFinderMaxNodes ( Conversion::strToInt ( this->listBoxMaxPathNodes.getSelectedItem () ) );
-      saveConfig ();
-   }
-   else if ( listBoxPFAlgorithm.mouseClick ( x,y ) )
-   {
-      config.setPathFinderUseAStar( listBoxPFAlgorithm.getSelectedItemIndex () ? false : true );
-      saveConfig ();
-   }
-#  ifdef _GAE_DEBUG_EDITION_
-   else if ( listBoxPFTexturesOn.mouseClick ( x,y ) )
-   {
-      config.setMiscDebugTextures ( listBoxPFTexturesOn.getSelectedItemIndex () == 0 ? true : false );
-      saveConfig ();
-   }
-   else if ( listBoxPFTextureMode.mouseClick ( x,y ) )
-   {
-      config.setMiscDebugTextureMode( listBoxPFTextureMode.getSelectedItemIndex () );
-      saveConfig ();
-   }
-#  endif
+#	ifdef _GAE_DEBUG_EDITION_
+	else if ( listBoxPFTexturesOn.mouseClick ( x,y ) ) {
+		config.setMiscDebugTextures(listBoxPFTexturesOn.getSelectedItemIndex() == 0 ? true : false);
+		saveConfig();
+	} else if ( listBoxPFTextureMode.mouseClick ( x,y ) ) {
+		config.setMiscDebugTextureMode(listBoxPFTextureMode.getSelectedItemIndex());
+		saveConfig();
+	}
+#	endif
 }
 
 void MenuStateOptions::mouseMove(int x, int y, const MouseState &ms){
@@ -306,12 +252,131 @@ void MenuStateOptions::render(){
 #  endif
 }
 
+// private
+
 void MenuStateOptions::saveConfig(){
 	Config &config= Config::getInstance();
 
 	config.save();
 	Renderer::getInstance().loadConfig();
 	SoundRenderer::getInstance().loadConfig();
+}
+
+//TODO: could use some more cleanup - hailstone 1/DEC/2009
+void MenuStateOptions::setupListBoxLang() {
+	Lang &lang= Lang::getInstance();
+	Config &config= Config::getInstance();
+
+	const string langDir = "gae/data/lang/";
+	vector<string> langResults;
+	findAll(langDir + "*.lng", langResults, true);
+	if(langResults.empty()){
+        throw runtime_error("No lang files in " + langDir);
+	}
+
+	const string langListPath = langDir + "langlist.txt";
+	FILE *fp = fopen(langListPath.c_str(), "r");
+	if ( !fp ) {
+		throw runtime_error("Failed to open " + langListPath);
+	}
+	
+	// insert values into table from file
+	map<string,string> langTable;
+	char buf[128];
+	while ( fgets(buf, 128, fp) ) {
+		char *code = strtok(buf, "=");
+		char *lang = strtok(NULL, "=");
+		if ( code && lang ) {
+			langTable[string(code)] = string(lang);
+		}
+	}
+	fclose(fp);
+
+	// insert the values for langNames
+	vector<string> langNames;
+	for ( vector<string>::iterator it = langResults.begin(); it != langResults.end(); ++it ) {
+		map<string,string>::iterator lcit = langTable.find(*it);
+		if ( lcit != langTable.end() ) {
+			langNames.push_back(lcit->second);
+			langMap[lcit->second] = *it;
+		} else {
+			langNames.push_back(*it);
+		}
+	}
+
+	// insert values and initial value for listBoxLang
+    listBoxLang.setItems(langNames);
+	const string &loc = config.getUiLocale();
+	if ( langTable.find(loc) != langTable.end() ) {
+		listBoxLang.setSelectedItem(langTable[loc]);
+	} else {
+		listBoxLang.setSelectedItem(loc);
+	}
+}
+
+void MenuStateOptions::initLabels() {
+	labelVolumeFx.init(200, 530);
+	labelVolumeAmbient.init(200, 500);
+	labelVolumeMusic.init(200, 470);
+
+	labelLang.init(200, 400);
+
+	labelFilter.init(200, 340);
+	labelShadows.init(200, 310);
+	labelTextures3D.init(200, 280);
+	labelLights.init(200, 250);
+
+	labelMaxPathNodes.init(500, 560);
+	labelPFAlgorithm.init(500, 530);
+#  ifdef _GAE_DEBUG_EDITION_
+	labelPFTexturesOn.init(500, 500);
+	labelPFTextureMode.init(500, 470);
+#  endif
+}
+
+void MenuStateOptions::initListBoxes() {
+	listBoxVolumeFx.init(350, 530, 80);
+	listBoxVolumeAmbient.init(350, 500, 80);
+	listBoxVolumeMusic.init(350, 470, 80);
+	listBoxMusicSelect.init(350, 440, 150);
+
+	listBoxLang.init(350, 400, 170);
+
+	listBoxFilter.init(350, 340, 170);
+	listBoxShadows.init(350, 310, 170);
+	listBoxTextures3D.init(350, 280, 80);
+	listBoxLights.init(350, 250, 80);
+
+	listBoxMaxPathNodes.init(650, 560, 80);
+	listBoxPFAlgorithm.init(650, 530, 180);
+#	ifdef _GAE_DEBUG_EDITION_
+	listBoxPFTexturesOn.init(650, 500, 180);
+	listBoxPFTextureMode.init(650, 470, 180);
+#	endif
+}
+
+void MenuStateOptions::setTexts() {
+	Lang &lang= Lang::getInstance();
+
+	buttonReturn.setText(lang.get("Return"));
+	buttonAutoConfig.setText(lang.get("AutoConfig"));
+	buttonOpenglInfo.setText(lang.get("GraphicInfo"));
+
+	labelLang.setText(lang.get("Language"));
+	labelShadows.setText(lang.get("Shadows"));
+	labelFilter.setText(lang.get("Filter"));
+	labelTextures3D.setText(lang.get("Textures3D"));
+	labelLights.setText(lang.get("MaxLights"));
+	labelVolumeFx.setText(lang.get("FxVolume"));
+	labelVolumeAmbient.setText(lang.get("AmbientVolume"));
+	labelVolumeMusic.setText(lang.get("MusicVolume"));
+
+	labelMaxPathNodes.setText(lang.get("MaxPathNodes"));
+	labelPFAlgorithm.setText("SearchAlgorithm");
+#	ifdef _GAE_DEBUG_EDITION_
+	labelPFTexturesOn.setText("DebugTextures");
+	labelPFTextureMode.setText("TextureMode");
+#	endif
 }
 
 }}//end namespace
