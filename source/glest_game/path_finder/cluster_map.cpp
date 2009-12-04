@@ -22,8 +22,6 @@
 
 namespace Glest { namespace Game { namespace Search {
 
-const int ClusterMap::clusterSize = 16;
-
 ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto) 
 		: aMap(aMap) , carto(carto) {
 	w = aMap->getWidth() / clusterSize;
@@ -53,6 +51,7 @@ void ClusterMap::initCluster(Vec2i cluster) {
 		int max_pos = -1; // position of max clearance for current Transition
 		int cx = (cluster.x + 1) * clusterSize - clusterSize / 2;
 		for ( Field f = enum_cast<Field>(0); f < Field::COUNT; ++f ) {
+			if ( !aMap->maxClearance[f] ) continue;
 			clear = false;
 			max_clear = -1;
 			max_pos = -1;
@@ -99,6 +98,7 @@ void ClusterMap::initCluster(Vec2i cluster) {
 		int max_pos = -1; // position of max clearance for current Transition
 		int cy = (cluster.y + 1) * clusterSize - clusterSize / 2;
 		for ( Field f = enum_cast<Field>(0); f < Field::COUNT; ++f ) {
+			if ( !aMap->maxClearance[f] ) continue;
 			clear = false;
 			max_clear = -1;
 			max_pos = -1;
@@ -155,13 +155,13 @@ float ClusterMap::aStarPathLength(Field f, int size, Vec2i &start, Vec2i &dest) 
 		return numeric_limits<float>::infinity();
 	}
 #	if DEBUG_PATHFINDER_CLUSTER_OVERLAY
-	if ( f == Field::LAND && size == 1 ) {
-		Vec2i aPos = se->getPreviousPos(goalPos);
-		while ( aPos != start ) {
-			PathfinderClusterOverlay::pathCells.insert(aPos);
-			aPos = se->getPreviousPos(aPos);
+		if ( f == Field::LAND && size == 1 ) {
+			Vec2i aPos = se->getPreviousPos(goalPos);
+			while ( aPos != start ) {
+				PathfinderClusterOverlay::pathCells.insert(aPos);
+				aPos = se->getPreviousPos(aPos);
+			}
 		}
-	}
 #	endif
 	return se->getCostTo(goalPos);
 }
@@ -185,15 +185,11 @@ void ClusterMap::getTransitions(Vec2i cluster, Field f, Transitions &t) {
 		t.push_back(*it);
 }
 
-void ClusterMap::setClusterSearchSpace(Transition *t, Transition *t2) {
-
-}
-
 void ClusterMap::evalCluster(Vec2i cluster) {
 	GridNeighbours::setSearchCluster(cluster);
 	Transitions transitions;
-	//for ( Field f = enum_cast<Field>(0); f < Field::COUNT; ++f ) {
-		Field f = Field::LAND;
+	for ( Field f = enum_cast<Field>(0); f < Field::COUNT; ++f ) {
+		if ( !aMap->maxClearance[f] ) continue;
 		transitions.clear();
 		getTransitions(cluster, f, transitions);
 		Transitions::iterator it = transitions.begin();
@@ -223,7 +219,7 @@ void ClusterMap::evalCluster(Vec2i cluster) {
 				}
 			}
 		}
-	//}
+	}
 }
 
 // ========================================================

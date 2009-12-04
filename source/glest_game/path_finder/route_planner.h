@@ -41,6 +41,7 @@ const int maxFreeSearchRadius = 10;
 const int pathFindNodesMax = 2048;
 
 typedef SearchEngine<TransitionNodeStore,TransitionNeighbours,const Transition*> TransitionSearchEngine;
+
 // =====================================================
 // 	class RoutePlanner
 // =====================================================
@@ -81,7 +82,7 @@ private:
 
 	bool attemptMove(Unit *unit) const {
 		Vec2i pos = unit->getPath()->peek(); 
-		if ( isLegalMove(unit, pos) ) {
+		if (isLegalMove(unit, pos)) {
 			unit->setNextPos(pos);
 			unit->getPath()->pop();
 			return true;

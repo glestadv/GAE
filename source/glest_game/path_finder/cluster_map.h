@@ -122,7 +122,7 @@ public:
 		delete [] horizBorders;
 	}
 
-	static const int clusterSize;// = 16;
+	static const int clusterSize = 16;
 
 	static Vec2i cellToCluster (const Vec2i &cellPos) {
 		return Vec2i(cellPos.x / clusterSize, cellPos.y / clusterSize);
@@ -140,34 +140,20 @@ public:
 	ClusterBorder* getWestBorder(Vec2i cluster) { 
 		return ( cluster.x == 0 ) ? &sentinel : &vertBorders[cluster.y * (w - 1) + cluster.x - 1]; 
 	}
-	/*
-	void getBorders(Vec2i cluster, vector<ClusterBorder*> &borders, ClusterBorder *exclude = NULL) {
-		ClusterBorder *b = getNorthBorder(cluster);
-		if ( b != &sentinel && b != exclude ) borders.push_back(getNorthBorder(cluster));
-		b = getEastBorder(cluster);
-		if ( b != &sentinel && b != exclude ) borders.push_back(getEastBorder(cluster));
-		b = getSouthBorder(cluster);
-		if ( b != &sentinel && b != exclude ) borders.push_back(getSouthBorder(cluster));
-		b = getWestBorder(cluster);
-		if ( b != &sentinel && b != exclude ) borders.push_back(getWestBorder(cluster));
-	}*/
 
 	void initCluster(Vec2i cluster);
 	void evalCluster(Vec2i cluster);
 	float aStarPathLength(Field f, int size, Vec2i &start, Vec2i &dest);
 	void getTransitions(Vec2i cluster, Field f, Transitions &t);
-	void setClusterSearchSpace(Transition *t, Transition *t2);
 };
 
 struct TransitionAStarNode {
 	const Transition *pos, *prev;
-	float heuristic;			  /**< estimate of distance to goal	  */
-	float distToHere;			 /**< cost from origin to this node	 */
-	//bool startBorder;
-
-	float est()	const	{ 
+	float heuristic;			  /**< estimate of distance to goal		*/
+	float distToHere;			 /**< cost from origin to this node	   */
+	float est()	const	{		/**< estimate, costToHere + heuristic */
 		return distToHere + heuristic;	
-	}										 /**< estimate, costToHere + heuristic */
+	}
 };
 
 // ========================================================

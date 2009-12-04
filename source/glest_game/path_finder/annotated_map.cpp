@@ -100,11 +100,11 @@ void AnnotatedMap::initMapMetrics(const ExplorationMap *eMap) {
 	for ( int y = cellMap->getTileH() - 2; y >= 0; --y ) {
 		for ( int x = cellMap->getTileW() - 2; x >= 0; --x ) {
 			// check eMap explored...
-			if ( eMap->isExplored(Vec2i(x,y) ) {
+			if ( eMap->isExplored(Vec2i(x,y)) ) {
 				const int &scale = Map::cellScale;
 				for ( int cy = y * scale + scale - 1; cy >= y * scale; --cy ) {
 					for ( int cx = x * scale + scale - 1; cx >= x * scale; --cx ) {
-						computeClearances(Vec2i(cx,cy);
+						computeClearances(Vec2i(cx,cy));
 					}
 				}
 			}
@@ -162,8 +162,8 @@ void AnnotatedMap::cascadingUpdate(const Vec2i &pos, const int size,  const Fiel
 	}
 	// the cell to the nothwest...
 	Vec2i *corner = NULL;
-	Vec2i cornerHolder(pos.x-1, pos.y-1);
-	if ( pos.x-1 >= 0 && pos.y-1 >= 0 ) {
+	Vec2i cornerHolder(pos.x - 1, pos.y - 1);
+	if ( pos.x - 1 >= 0 && pos.y - 1 >= 0 ) {
 		corner = &cornerHolder;
 	}
 	while ( !leftList->empty() || !aboveList->empty() || corner ) {
