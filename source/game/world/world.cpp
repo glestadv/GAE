@@ -181,10 +181,11 @@ bool World::loadTileset(Checksum &checksum) {
 //load tech
 bool World::loadTech(Checksum &checksum) {
 	set<string> names;
-	for (int i = 0; i < gs.getFactionCount(); ++i)
+	for (int i = 0; i < gs.getFactionCount(); ++i) {
 		if (gs.getFactionTypeName(i).size()) {
 			names.insert(gs.getFactionTypeName(i));
 		}
+	}
 	return techTree.load(gs.getTechPath(), names, checksum);
 }
 

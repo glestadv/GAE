@@ -15,11 +15,11 @@
 #include <string>
 #include <deque>
 #include <time.h>
+#include <iomanip>
 
 #include "timer.h"
 
-using std::string;
-using std::deque;
+using namespace std;
 
 namespace Glest { namespace Game {
 
@@ -47,6 +47,7 @@ private:
 	string current;
 	bool loadingGame;
 	static char errorBuf[];
+	int totalUnits, unitsLoaded;
 
 	GraphicProgressBar *progressBar;
 
@@ -81,14 +82,18 @@ public:
 	void addXmlError( const string &path, const char *error );
 
 	//void setFile(const string &fileName) {this->fileName= fileName;}
-	void setState( const string &state );
-	void setSubtitle( const string &v )		{subtitle = v;}
-	void setLoading( bool v )				{loadingGame = v;}
+	void setState(const string &state);
+	void resetState(const string &s)	{state= s;}
+	void setSubtitle(const string &v)	{subtitle = v;}
+	void setLoading(bool v)				{loadingGame = v;}
 	void setProgressBar(GraphicProgressBar *v) { progressBar = v; }
 
 	void add( const string &str, bool renderScreen = false );
 	void renderLoadingScreen();
 	void clear();
+
+	void setUnitCount(int count) { totalUnits = count; unitsLoaded = 0; }
+	void unitLoaded();
 };
 
 #if defined(WIN32) | defined(WIN64)

@@ -125,7 +125,7 @@ Game::~Game() {
 // ==================== init and load ====================
 
 void Game::load(){
-	Logger::getInstance().setState(Lang::getInstance().get("Loading"));
+	//Logger::getInstance().setState(Lang::getInstance().get("Loading"));
 	Logger &logger= Logger::getInstance();
 	string mapName= gameSettings.getMapPath();
 	string tilesetName= gameSettings.getTilesetPath();
@@ -142,11 +142,11 @@ void Game::load(){
 		logger.setSubtitle(formatString(scenarioName));
 
 	//tileset
-	if ( ! world.loadTileset(checksum) )
+	if (!world.loadTileset(checksum))
 		throw runtime_error ( "The tileset could not be loaded. See glestadv-error.log" );
 
 	//tech, load before map because of resources
-	if ( ! world.loadTech(checksum) )
+	if (!world.loadTech(checksum))
 		throw runtime_error ( "The techtree could not be loaded. See glestadv-error.log" );
 
 	//map

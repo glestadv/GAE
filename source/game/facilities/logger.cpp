@@ -39,6 +39,15 @@ void Logger::setState(const string &state){
 	logLines.clear();
 }
 
+void Logger::unitLoaded() {
+	++unitsLoaded;
+	float pcnt = ((float)unitsLoaded) / ((float)totalUnits) * 100.f;
+	stringstream ss;
+	ss << "Loading : " << fixed << setprecision(2) << pcnt << " %";
+	resetState(ss.str());
+	progressBar->setProgress(int(pcnt));
+}
+
 void Logger::add(const string &str,  bool renderScreen){
 	FILE *f=fopen(fileName.c_str(), "at+");
 	if ( f )

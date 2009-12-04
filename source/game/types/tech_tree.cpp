@@ -36,6 +36,7 @@ namespace Glest{ namespace Game{
 // =====================================================
 
 bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum &checksum){
+	Logger &logger = Logger::getInstance();
 	GraphicProgressBar progressBar;
 	progressBar.init(425, 390);
 
@@ -43,7 +44,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 
 	string str;
 	vector<string> filenames;
-	Logger::getInstance().add("TechTree: "+ dir, true);
+	logger.add("TechTree: "+ dir, true);
 	bool loadOk = true;
 	//load resources
 	str= dir + "/resources/*.";
@@ -55,10 +56,17 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	catch(const exception &e) {
 		throw runtime_error("Error loading Resource Types: "+ dir + "\n" + e.what());
 	}
-	for(int i=0; i<filenames.size(); ++i){
-		str=dir+"/resources/"+filenames[i];
-		if ( ! resourceTypes[i].load(str, i, checksum) ) loadOk = false;
-		resourceTypeMap[filenames[i]] = &resourceTypes[i];
+	if(resourceTypes.size() > 256) {
+		Logger::getErrorLog().addXmlError(str, "Glest Advanced Engine currently only supports 256 resource types.");
+		loadOk = false;
+	} else {
+		for(int i=0; i<filenames.size(); ++i){
+			str=dir+"/resources/"+filenames[i];
+			if ( ! resourceTypes[i].load(str, i, checksum) ) {
+				loadOk = false;
+			}
+			resourceTypeMap[filenames[i]] = &resourceTypes[i];
+		}
 	}
 
 	//load tech tree xml info
@@ -132,7 +140,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	try { //damage multipliers
 		damageMultiplierTable.init(attackTypes.size(), armorTypes.size());
 		const XmlNode *damageMultipliersNode= techTreeNode->getChild("damage-multipliers");
-		for(int i=0; i<damageMultipliersNode->getChildCount(); ++i){
+		for (int i = 0; i < damageMultipliersNode->getChildCount(); ++i) {
 			try {
 				const XmlNode *dmNode= damageMultipliersNode->getChild("damage-multiplier", i);
 				const AttackType *attackType= getAttackType(dmNode->getRestrictedAttribute("attack"));
@@ -140,18 +148,19 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 				float multiplier= dmNode->getFloatAttribute("value");
 				damageMultiplierTable.setDamageMultiplier(attackType, armorType, multiplier);
 			}
-			catch ( runtime_error e ) {
-				Logger::getErrorLog().addXmlError ( path, e.what() );
+			catch (runtime_error e) {
+				Logger::getErrorLog().addXmlError(path, e.what());
 				loadOk = false;
 			}
 		}
 	}
-	catch ( runtime_error &e ) {
-		Logger::getErrorLog().addXmlError ( path, e.what() );
+	catch (runtime_error &e) {
+		Logger::getErrorLog().addXmlError(path, e.what());
 		loadOk = false;
 	}
 
 	progressBar.setProgress(30);
+
 
 	// this must be set before any unit types are loaded
 	UnitStatsBase::setDamageMultiplierCount(getArmorTypeCount());
@@ -160,14 +169,22 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	factionTypes.resize(factionNames.size());
 	int i = 0;
 	set<string>::const_iterator fn;
-	for(fn = factionNames.begin(); fn != factionNames.end(); ++fn, ++i) {
-		if ( ! factionTypes[i].load(dir + "/factions/" + *fn, this, checksum) )
+
+	int numUnitTypes = 0;
+	for (fn = factionNames.begin(); fn != factionNames.end(); ++fn, ++i) {
+		if (!factionTypes[i].preLoad(dir + "/factions/" + *fn, this)) {
 			loadOk = false;
-		else
+		} else {
+			numUnitTypes += factionTypes[i].getUnitTypeCount();
+		}
+	}
+	logger.setUnitCount(numUnitTypes);
+	for (i = 0, fn = factionNames.begin(); fn != factionNames.end(); ++fn, ++i) {
+		if (!factionTypes[i].load(dir + "/factions/" + *fn, this, checksum)) {
+			loadOk = false;
+		} else {
 			factionTypeMap[*fn] = &factionTypes[i];
-		
-		// TODO: make the values match what is actually happening
-		progressBar.setProgress(progressBar.getProgress() + 30);
+		}
 	}
 
 	// finished loading tech tree
@@ -203,8 +220,7 @@ const ResourceType *TechTree::getFirstTechResourceType() const{
           if(rt->getResourceNumber()==1 && rt->getClass()==rcTech)
                return getResourceType(i);
      }
-
-	 throw runtime_error("This tech tree has not tech resources, one at least is required");
+	 throw runtime_error("This tech tree has no tech resources, one at least is required");
 }
 
 int TechTree::addEffectType(EffectType *et) {
