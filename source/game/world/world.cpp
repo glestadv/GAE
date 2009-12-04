@@ -872,8 +872,9 @@ int World::givePositionCommand(int unitId, const string &commandName, const Vec2
 			}
 		}
 	} else if ( commandName == "patrol" ) {
-		//TODO insert code
-		return 0;
+		cmdType = unit->getType()->getFirstCtOfClass(ccPatrol);
+	} else if (commandName == "guard") {
+		cmdType = unit->getType()->getFirstCtOfClass(ccGuard);
 	} else {
 		return -3; // unknown position command
 	}
@@ -893,6 +894,7 @@ int World::giveTargetCommand ( int unitId, const string & cmdName, int targetId 
 	if ( !unit || !target ) {
 		return -1;
 	}
+	const CommandType *cmdType = NULL;
 	if ( cmdName == "attack" ) {
 		for ( int i=0; i < unit->getType()->getCommandTypeCount(); ++i ) {
 			if ( unit->getType()->getCommandType ( i )->getClass () == ccAttack ) {
@@ -921,12 +923,16 @@ int World::giveTargetCommand ( int unitId, const string & cmdName, int targetId 
 		}
 		return -2;
 	} else if ( cmdName == "guard" ) {
-		//TODO add code
-		return 0;
+		cmdType = unit->getType()->getFirstCtOfClass(ccGuard);
+	} else if ( cmdName == "patrol" ) {
+		cmdType = unit->getType()->getFirstCtOfClass(ccPatrol);
 	} else {
 		return -3;
 	}
-
+	if ( unit->giveCommand(new Command(cmdType, CommandFlags(), target)) ) {
+		return 0; // ok
+	}
+	return 1; // command fail
 }
 /** return 0 if ok, -1 if bad unit id, -2 if unit has no stop command, -3 illegal cmd name */
 int World::giveStopCommand(int unitId, const string &cmdName) {
