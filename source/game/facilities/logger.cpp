@@ -43,8 +43,9 @@ void Logger::unitLoaded() {
 	++unitsLoaded;
 	float pcnt = ((float)unitsLoaded) / ((float)totalUnits) * 100.f;
 	stringstream ss;
-	ss << "Loading : " << fixed << setprecision(2) << pcnt << " %";
-	resetState(ss.str());
+	//output value for testing
+	//ss << "Loading : " << fixed << setprecision(2) << pcnt << " %";
+	//resetState(ss.str());
 	progressBar->setProgress(int(pcnt));
 }
 

@@ -37,10 +37,6 @@ namespace Glest{ namespace Game{
 
 bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum &checksum){
 	Logger &logger = Logger::getInstance();
-	GraphicProgressBar progressBar;
-	progressBar.init(425, 390);
-
-	Logger::getInstance().setProgressBar(&progressBar);
 
 	string str;
 	vector<string> filenames;
@@ -159,9 +155,6 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 		loadOk = false;
 	}
 
-	progressBar.setProgress(30);
-
-
 	// this must be set before any unit types are loaded
 	UnitStatsBase::setDamageMultiplierCount(getArmorTypeCount());
 
@@ -186,9 +179,6 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 			factionTypeMap[*fn] = &factionTypes[i];
 		}
 	}
-
-	// finished loading tech tree
-	progressBar.setProgress(100);
 
 	if(resourceTypes.size() > 256) {
 		throw runtime_error("Glest Advanced Engine currently only supports 256 resource types.");

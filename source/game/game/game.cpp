@@ -25,6 +25,7 @@
 #include "network_manager.h"
 #include "checksum.h"
 #include "auto_test.h"
+#include "profiler.h"
 
 #include "leak_dumper.h"
 #ifdef _MSC_VER
@@ -133,6 +134,9 @@ void Game::load(){
 	string scenarioPath= gameSettings.getScenarioPath();
 	string scenarioName= basename(scenarioPath);
 
+	GraphicProgressBar progressBar;
+	progressBar.init(365, 560);
+	logger.setProgressBar(&progressBar);
 
 	logger.setState(Lang::getInstance().get("Loading"));
 
@@ -157,6 +161,10 @@ void Game::load(){
 		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
 		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksum);
 	}
+
+	// finished loading
+	progressBar.setProgress(100);
+	logger.setProgressBar(NULL);
 }
 
 void Game::init() {
@@ -365,9 +373,15 @@ void Game::updateCamera() {
 //render
 void Game::render(){
 	renderFps++;
+	profileBegin("game-render3d");
 	render3d();
+	profileEnd("game-render3d");
+	profileBegin("game-render2d");
 	render2d();
+	profileEnd("game-render2d");
+	profileBegin("game-swapBuffers");
 	Renderer::getInstance().swapBuffers();
+	profileEnd("game-swapBuffers");
 }
 
 // ==================== tick ====================
