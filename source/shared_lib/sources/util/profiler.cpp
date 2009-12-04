@@ -26,7 +26,8 @@ namespace Shared{ namespace Util{
 
 Section::Section(const string &name){
 	this->name= name;
-	milisElapsed= 0;
+	microsElapsed= 0;
+	calls = 0;
 	parent= NULL;
 }
 
@@ -42,16 +43,35 @@ Section *Section::getChild(const string &name){
 }
 
 void Section::print(FILE *outStream, int tabLevel){
-
-	float percent= (parent==NULL || parent->milisElapsed==0)? 100.0f: 100.0f*milisElapsed/parent->milisElapsed;
+	float percent = ( parent == NULL || parent->microsElapsed == 0 ) 
+					? 100.0f : 100.0f * microsElapsed / parent->microsElapsed;
 	string pname= parent==NULL? "": parent->getName();
 
 	for(int i=0; i<tabLevel; ++i)
 		fprintf(outStream, "\t");
 
 	fprintf(outStream, "%s: ", name.c_str());
-	fprintf(outStream, "%d ms, ", milisElapsed);
-	fprintf(outStream, "%.1f%s\n", percent, "%");
+
+	if ( microsElapsed ) {
+		fprintf(outStream, "%d us", microsElapsed );
+		unsigned int milliseconds = microsElapsed / 1000;
+		unsigned int seconds = milliseconds / 1000;
+		unsigned int minutes = seconds / 60;
+		if ( minutes ) {
+			fprintf ( outStream, " (%dmin %dsec)", minutes, seconds % 60 );
+		}
+		else if ( seconds ) {
+			fprintf ( outStream, " (%dsec %dms)", seconds, milliseconds % 1000 );
+		}
+		else if ( milliseconds ) {
+			fprintf ( outStream, " (%dms)", milliseconds );
+		}
+		fprintf(outStream, ", %.1f%%", percent );
+	}
+	if ( calls ) {
+		fprintf(outStream, ", %u calls", calls );
+	}
+	fprintf( outStream, "\n" );
 
 	SectionContainer::iterator it;
 	for(it= children.begin(); it!=children.end(); ++it){
@@ -71,6 +91,7 @@ Profiler::Profiler(){
 
 Profiler::~Profiler(){
 	rootSection->stop();
+
 	FILE *f= fopen("profiler.log", "w");
 	if ( f ) {
 		fprintf(f, "Profiler Results\n\n");
@@ -84,7 +105,17 @@ Profiler &Profiler::getInstance(){
 	return profiler;
 }
 
-void Profiler::sectionBegin(const string &name){
+void Profiler::addChildCall( const string &name ) {
+	Section *childSection= currSection->getChild(name);
+	if(childSection==NULL){
+		childSection= new Section(name);
+		currSection->addChild(childSection);
+		childSection->setParent(currSection);
+	}
+	childSection->incCalls();
+}
+
+void Profiler::sectionBegin(const string &name ){
 	Section *childSection= currSection->getChild(name);
 	if(childSection==NULL){
 		childSection= new Section(name);
