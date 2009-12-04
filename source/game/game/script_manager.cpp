@@ -125,6 +125,16 @@ int TriggerManager::addHPAboveTrigger(int unitId, int threshold, const string &e
 	return 0;
 }
 
+int TriggerManager::addAttackedTrigger(int unitId, const string &eventName, int userData) {
+	Unit *unit = theWorld.findUnitById(unitId);
+	if ( !unit ) return -1;
+	if ( !unit->isAlive() ) return -2;
+	attackedTriggers[unitId].evnt = eventName;
+	attackedTriggers[unitId].user_dat = userData;
+	unit->setAttackedTrigger(true);
+	return 0;
+}
+
 int TriggerManager::addDeathTrigger(int unitId, const string &eventName, int userData) {
 	Unit *unit = theWorld.findUnitById(unitId);
 	if ( !unit ) return -1;
@@ -133,6 +143,7 @@ int TriggerManager::addDeathTrigger(int unitId, const string &eventName, int use
 	deathTriggers[unitId].user_dat = userData;
 	return 0;
 }
+
 void TriggerManager::unitMoved(const Unit *unit) {
 	// check id
 	int id = unit->getId();
@@ -215,6 +226,17 @@ void TriggerManager::onHPAbove(const Unit *unit) {
 	string evnt = it->second.evnt;
 	int ud = it->second.user_dat;
 	hpAboveTriggers.erase(it);
+	ScriptManager::onTrigger(evnt, unit->getId(), ud);
+}
+
+void TriggerManager::onAttacked(const Unit *unit) {
+	TriggerMap::iterator it = attackedTriggers.find(unit->getId());
+	if ( it == attackedTriggers.end() ) {
+		return;
+	}
+	string evnt = it->second.evnt;
+	int ud = it->second.user_dat;
+	attackedTriggers.erase(it);
 	ScriptManager::onTrigger(evnt, unit->getId(), ud);
 }
 
@@ -750,8 +772,11 @@ int ScriptManager::setUnitTrigger(LuaHandle* luaHandle) {
 
 void ScriptManager::doUnitTrigger(int id, string &cond, string &evnt, int ud) {
 	bool did_something = false;
-	if ( cond == "attacked" ) { // nop
+	if ( cond == "attacked" ) { 
+		triggerManager.addAttackedTrigger(id, evnt, ud);
+		did_something = true;
 	} else if ( cond == "death" ) { // nop
+		triggerManager.addDeathTrigger(id, evnt, ud);
 		did_something = true;
 	} else if ( cond == "enemy_sighted" ) { // nop
 	} else if ( cond == "command_callback") {

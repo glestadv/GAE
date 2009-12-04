@@ -180,6 +180,7 @@ public:
 	int  addCommandCallback(int unitId, const string &eventName, int userData=0);
 	int  addHPBelowTrigger(int unitId, int threshold, const string &eventName, int userData=0);
 	int  addHPAboveTrigger(int unitId, int threshold, const string &eventName, int userData=0);
+	int  addAttackedTrigger(int unitId, const string &eventName, int userData=0);
 	int  addDeathTrigger(int unitId, const string &eventName, int userData=0);
 
 	// must be called any time a unit is 'put' in cells (created, moved, 
@@ -188,6 +189,7 @@ public:
 	void commandCallback(const Unit *unit);
 	void onHPBelow(const Unit *unit);
 	void onHPAbove(const Unit *unit);
+	void onAttacked(const Unit *unit);
 };
 
 // =====================================================
@@ -282,6 +284,7 @@ public:
 	static void commandCallback(const Unit *unit) { triggerManager.commandCallback(unit); }
 	static void onHPBelowTrigger(const Unit *unit) { triggerManager.onHPBelow(unit); }
 	static void onHPAboveTrigger(const Unit *unit) { triggerManager.onHPAbove(unit); }
+	static void onAttackedTrigger(const Unit *unit){ triggerManager.onAttacked(unit); }
 
 	static void addErrorMessage(const char *txt=NULL, bool quietly = false);
 	static void addErrorMessage(const string &txt) {

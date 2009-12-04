@@ -213,6 +213,7 @@ private:
 	const Command *commandCallback; // for script 'command callbacks'
 	int hp_below_trigger;		// if non-zero, call the Trigger manager when HP falls below this
 	int hp_above_trigger;		// if non-zero, call the Trigger manager when HP rises above this
+	bool attacked_trigger;
  	
 	int64 lastCommandUpdate;	// microseconds
 	int64 lastUpdated;			// microseconds
@@ -286,6 +287,8 @@ public:
 	const Command* getCommandCallback() const	{ return commandCallback; }
 	void setHPBelowTrigger(int i)				{ hp_below_trigger = i; }
 	void setHPAboveTrigger(int i)				{ hp_above_trigger = i; }
+	void setAttackedTrigger(bool val)			{ attacked_trigger = val; }
+	bool getAttackedTrigger() const				{ return attacked_trigger; }
 
 	/**
 	 * Returns the total attack strength (base damage) for this unit using the

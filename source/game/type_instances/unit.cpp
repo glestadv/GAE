@@ -104,18 +104,19 @@ const int Unit::invalidId= -1;
 
 // ============================ Constructor & destructor =============================
 
-Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master):
-		pos(pos),
-		lastPos(pos),
-		nextPos(pos),
-		targetPos(0),
-		commandCallback(NULL),
-		hp_below_trigger(0),
-		hp_above_trigger(0),
-		targetVec(0.0f),
-		meetingPos(pos),
-		lastCommandUpdate(0),
-		lastCommanded(0) {
+Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master)
+		: pos(pos)
+		, lastPos(pos)
+		, nextPos(pos)
+		, targetPos(0)
+		, commandCallback(NULL)
+		, hp_below_trigger(0)
+		, hp_above_trigger(0)
+		, attacked_trigger(false)
+		, targetVec(0.0f)
+		, meetingPos(pos)
+		, lastCommandUpdate(0)
+		, lastCommanded(0) {
 	Random random;
 
 	this->faction = faction;
