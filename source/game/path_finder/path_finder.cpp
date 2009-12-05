@@ -123,7 +123,7 @@ bool PathFinder::isLegalMove ( Unit *unit, const Vec2i &pos2 ) const {
 	const Vec2i &pos1 = unit->getPos ();
 	const int &size = unit->getSize ();
 	const Field &field = unit->getCurrField ();
-	Zone zone = field == FieldAir ? ZoneAir : ZoneSurface;
+	Zone zone = field == Field::AIR ? Zone::AIR : Zone::LAND;
 
 	if ( ! annotatedMap->canOccupy ( pos2, size, field ) )
 		return false; // obstruction in field
@@ -165,16 +165,16 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	//route cache
 	UnitPath &path = *unit->getPath ();
 	if( finalPos == unit->getPos () ) {	//if arrived (where we wanted to go)
-		unit->setCurrSkill ( scStop );
+		unit->setCurrSkill ( SkillClass::STOP );
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsArrived;
+		return TravelState::ARRIVED;
 	}
 	else if( ! path.isEmpty () ) {	//route cache
 		Vec2i pos = path.pop();
 		if ( isLegalMove ( unit, pos ) ) {
 			unit->setNextPos ( pos );
 			//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-			return tsOnTheWay;
+			return TravelState::MOVING;
 		}
 	}
 	//route cache miss
@@ -182,9 +182,9 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 
 	//if arrived (as close as we can get to it)
 	if ( targetPos == unit->getPos () ) {
-		unit->setCurrSkill(scStop);
+		unit->setCurrSkill(SkillClass::STOP);
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsArrived;
+		return TravelState::ARRIVED;
 	}
 
 	bool useAStar = Config::getInstance().getPathFinderUseAStar ();
@@ -193,19 +193,19 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	/* goal based pathing removes the need for this..
 	* Should probably adapt this to check the entire resource 'patch'
 	float dist = unit->getPos().dist ( targetPos );
-	if ( unit->getCurrField () == FieldWalkable 
+	if ( unit->getCurrField () == Field::LAND 
 	&&   map->getTile (Map::toTileCoords ( targetPos ))->isVisible (unit->getTeam ()) ) {
 		int radius;
 		if ( dist < 5 ) radius = 2;
 		else if ( dist < 10 ) radius = 3;
 		else if ( dist < 15 ) radius = 4;
 		else radius = 5;
-		if( ( useAStar  && !search->canPathOut ( targetPos, radius, FieldWalkable ) )
-		||  ( !useAStar && !search->canPathOut_Greedy ( targetPos, radius, FieldWalkable ) ) ) {
+		if( ( useAStar  && !search->canPathOut ( targetPos, radius, Field::LAND ) )
+		||  ( !useAStar && !search->canPathOut_Greedy ( targetPos, radius, Field::LAND ) ) ) {
 			unit->getPath()->incBlockCount ();
-			unit->setCurrSkill(scStop);
+			unit->setCurrSkill(SkillClass::STOP);
 			//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-			return tsBlocked;
+			return TravelState::BLOCKED;
 		}
 	}*/
 	SearchParams params (unit);
@@ -223,28 +223,28 @@ TravelState PathFinder::findPathToGoal(Unit *unit, const Vec2i &finalPos, bool (
 	annotatedMap->clearLocalAnnotations ( unit->getCurrField () );
 	if ( ! result ) {
 		unit->getPath()->incBlockCount ();
-		unit->setCurrSkill(scStop);
+		unit->setCurrSkill(SkillClass::STOP);
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsBlocked;
+		return TravelState::BLOCKED;
 	}
 	else if ( pathList.size() < 2 ) { // goal might be closer than targetPos.
-		unit->setCurrSkill(scStop);
+		unit->setCurrSkill(SkillClass::STOP);
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsArrived;
+		return TravelState::ARRIVED;
 	}
 	else //TODO: UnitPath to inherit from list<Vec2i> and then be passed directly
 		copyToPath ( pathList, unit->getPath () ); // to the search algorithm
 
 	Vec2i pos = path.pop();
 	if ( ! isLegalMove ( unit, pos ) ) {
-		unit->setCurrSkill(scStop);
+		unit->setCurrSkill(SkillClass::STOP);
 		unit->getPath()->incBlockCount ();
 		//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-		return tsBlocked;
+		return TravelState::BLOCKED;
 	}
 	unit->setNextPos(pos);
 	//Logger::getInstance ().add ( "findPathToGoal() returning..." );
-	return tsOnTheWay;
+	return TravelState::MOVING;
 }
 
 //TODO: Make UnitPath inherit from list<Vec2i> then remove all this nonsense...
@@ -263,7 +263,7 @@ Vec2i PathFinder::computeNearestFreePos (const Unit *unit, const Vec2i &finalPos
 	//unit data
 	Vec2i unitPos= unit->getPos();
 	int size= unit->getType()->getSize();
-	Field field = unit->getCurrField();// == FieldAir ? ZoneAir : ZoneSurface;
+	Field field = unit->getCurrField();// == Field::AIR ? Zone::AIR : Zone::LAND;
 	int teamIndex= unit->getTeam();
 
 	//if finalPos is free return it
@@ -309,12 +309,12 @@ public:
 	int w;
 	char *cells;
 
-	ValidationMap(int h, int w) : h(h), w(w), cells(new char[h * w * ZoneCount]) {
+	ValidationMap(int h, int w) : h(h), w(w), cells(new char[h * w * Zone::COUNT]) {
 		reset();
 	}
 
 	void reset() {
-		memset(cells, 0, h * w * ZoneCount);
+		memset(cells, 0, h * w * Zone::COUNT);
 	}
 
 	void validate(int x, int y, Zone zone) {
@@ -325,7 +325,7 @@ public:
 	char &getCell(int x, int y, Zone zone) {
 		assert(x >= 0 && x < w);
 		assert(y >= 0 && y < h);
-		assert(zone >= 0 && zone < ZoneCount);
+		assert(zone >= 0 && zone < Zone::COUNT);
 		return cells[zone * h * w + x * w + y];
 	}
 };
@@ -355,7 +355,7 @@ void World::assertConsistiency() {
 				assert(false);
 			}
 */
-			if(unit->isDead() && unit->getCurrSkill()->getClass() == scDie) {
+			if(unit->isDead() && unit->getCurrSkill()->getClass() == SkillClass::DIE) {
 				continue;
 			}
 
@@ -377,7 +377,7 @@ void World::assertConsistiency() {
 									<< "(type = " << unit->getType()->getName() << ")"
 									<< " not in cells (" << currPos.x << ", " << currPos.y << ", " << zone << ")";
 							if(unitInCell == NULL && !unit->getHp()) {
-								cerr << " but has zero HP and is not executing scDie." << endl;
+								cerr << " but has zero HP and is not executing SkillClass::DIE." << endl;
 							} else {
 								cerr << endl;
 								assert(false);
@@ -393,7 +393,7 @@ void World::assertConsistiency() {
 	// make sure that every cell that was not validated is empty
 	for(int x = 0; x < map.getW(); ++x) {
 		for(int y = 0; y < map.getH(); ++y ) {
-			for(int zone = 0; zone < ZoneCount; ++zone) {
+			for(int zone = 0; zone < Zone::COUNT; ++zone) {
 				if(!validationMap.getCell(x, y, (Zone)zone)) {
 					Cell *cell = map.getCell(x, y);
 					if(cell->getUnit((Zone)zone)) {

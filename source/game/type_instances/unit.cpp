@@ -135,14 +135,14 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
-	if(type->getField(FieldWalkable)) currField = FieldWalkable;
-	else if(type->getField(FieldAir)) currField = FieldAir;
+	if(type->getField(Field::LAND)) currField = Field::LAND;
+	else if(type->getField(Field::AIR)) currField = Field::AIR;
 
-	if ( type->getField (FieldAmphibious) ) currField = FieldAmphibious;
-	else if ( type->getField (FieldAnyWater) ) currField = FieldAnyWater;
-	else if ( type->getField (FieldDeepWater) ) currField = FieldDeepWater;
+	if ( type->getField (Field::AMPHIBIOUS) ) currField = Field::AMPHIBIOUS;
+	else if ( type->getField (Field::ANY_WATER) ) currField = Field::ANY_WATER;
+	else if ( type->getField (Field::DEEP_WATER) ) currField = Field::DEEP_WATER;
 
-	targetField = FieldWalkable;		// init just to keep it pretty in memory
+	targetField = Field::LAND;		// init just to keep it pretty in memory
 	level= NULL;
 
 	float rot = 0.f;
@@ -155,7 +155,7 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 
 	this->type = type;
 	loadType = NULL;
-	currSkill = getType()->getFirstStOfClass(scStop);	//starting skill
+	currSkill = getType()->getFirstStOfClass(SkillClass::STOP);	//starting skill
 //	lastSkill = currSkill;
 
 	toBeUndertaken = false;
@@ -366,8 +366,8 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 
 	if(!recentlyCommanded) {
 		progress2 = node->getChildIntValue("progress2");
-		currField = (Field)node->getChildIntValue("currField");
-		targetField = (Field)node->getChildIntValue("targetField");
+		currField = enum_cast<Field>(node->getChildIntValue("currField"));
+		targetField = enum_cast<Field>(node->getChildIntValue("targetField"));
 
 
 		pos = node->getChildVec2iValue("pos");		//map->putUnitCells() will set this, so we reload it later
@@ -433,7 +433,7 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 		map->putUnitCells(this, node->getChildVec2iValue("pos"));
 	}
 
-	if(!netClient && type->hasSkillClass(scBeBuilt) && !type->hasSkillClass(scMove)) {
+	if(!netClient && type->hasSkillClass(SkillClass::BE_BUILT) && !type->hasSkillClass(SkillClass::MOVE)) {
 		map->flatternTerrain(this);
 	}
 
@@ -513,7 +513,7 @@ Vec2i Unit::getCellPos() const {
 
 /*
 float Unit::getVerticalRotation() const{
-	/ *if(type->getProperty(UnitType::pRotatedClimb) && currSkill->getClass()==scMove){
+	/ *if(type->getProperty(UnitType::pRotatedClimb) && currSkill->getClass()==SkillClass::MOVE){
 		float heightDiff= map->getCell(pos)->getHeight() - map->getCell(targetPos)->getHeight();
 		float dist= pos.dist(targetPos);
 		return radToDeg(atan2(heightDiff, dist));
@@ -559,24 +559,24 @@ string Unit::getFullName() const{
 
 bool Unit::isInteresting(InterestingUnitType iut) const{
 	switch(iut){
-	case iutIdleHarvester:
-		if(type->hasCommandClass(ccHarvest)) {
+	case InterestingUnitType::IDLE_HARVESTER:
+		if(type->hasCommandClass(CommandClass::HARVEST)) {
 			if(!commands.empty()) {
 				const CommandType *ct = commands.front()->getType();
 				if(ct) {
-					return ct->getClass() == ccStop;
+					return ct->getClass() == CommandClass::STOP;
 				}
 			}
 		}
 		return false;
 
-	case iutBuiltBuilding:
-		return type->hasSkillClass(scBeBuilt) && isBuilt();
-	case iutProducer:
-		return type->hasSkillClass(scProduce);
-	case iutDamaged:
+	case InterestingUnitType::BUILT_BUILDING:
+		return type->hasSkillClass(SkillClass::BE_BUILT) && isBuilt();
+	case InterestingUnitType::PRODUCER:
+		return type->hasSkillClass(SkillClass::PRODUCE);
+	case InterestingUnitType::DAMAGED:
 		return isDamaged();
-	case iutStore:
+	case InterestingUnitType::STORE:
 		return type->getStoredResourceCount() > 0;
 	default:
 		return false;
@@ -595,7 +595,7 @@ bool Unit::isPet(const Unit *u) const {
 const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 	for(int i = 0; i < type->getCommandTypeCount(); i++) {
 		const CommandType *ct = type->getCommandType(i);
-		if(ct->getClass() == ccRepair) {
+		if(ct->getClass() == CommandClass::REPAIR) {
 			const RepairCommandType *rct = (const RepairCommandType *)ct;
 			const RepairSkillType *rst = rct->getRepairSkillType();
 			if((!rst->isPetOnly() || isPet(u))
@@ -613,7 +613,7 @@ const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 
 void Unit::setCurrSkill(const SkillType *currSkill) {
 	assert(currSkill);
-	if (currSkill->getClass() == scStop && this->currSkill->getClass() == scStop) {
+	if (currSkill->getClass() == SkillClass::STOP && this->currSkill->getClass() == SkillClass::STOP) {
 		return;
 	}
 	if (currSkill->getClass() != this->currSkill->getClass()) {
@@ -657,7 +657,7 @@ void Unit::face(const Vec2i &nextPos) {
 Vec3f Unit::getCurrVectorFlat() const {
 	Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
 
-	if (currSkill->getClass() == scMove) {
+	if (currSkill->getClass() == SkillClass::MOVE) {
 		Vec3f last(static_cast<float>(lastPos.x),
 				computeHeight(lastPos),
 				static_cast<float>(lastPos.y));
@@ -687,17 +687,17 @@ const CommandType *Unit::getFirstAvailableCt(CommandClass commandClass) const {
 CommandResult Unit::giveCommand(Command *command) {
 	const CommandType *ct = command->getType();
 
-	if(ct->getClass() == ccSetMeetingPoint) {
+	if(ct->getClass() == CommandClass::SET_MEETING_POINT) {
 		if(command->isQueue() && !commands.empty()) {
 			commands.push_back(command);
 		} else {
 			meetingPos = command->getPos();
 			delete command;
 		}
-		return crSuccess;
+		return CommandResult::SUCCESS;
 	}
 
-	if(ct->getClass() == ccAttack && pets.size() > 0) {
+	if(ct->getClass() == CommandClass::ATTACK && pets.size() > 0) {
 		// pets don't attack the master's actual target, just to the pos
 		Vec2i pos = command->getPos();
 		if(pos.x == 0 && pos.y == 0) {
@@ -706,10 +706,10 @@ CommandResult Unit::giveCommand(Command *command) {
 		}
 		for(Pets::const_iterator i = pets.begin(); i != pets.end(); i++) {
 			Unit *pet = i->getUnit();
-			const CommandType *ct = pet->getType()->getFirstCtOfClass(ccAttack);
+			const CommandType *ct = pet->getType()->getFirstCtOfClass(CommandClass::ATTACK);
 			if(ct) {
 				// ignore result
-				pet->giveCommand(new Command(ct, CommandFlags(cpQueue, command->isQueue()), pos));
+				pet->giveCommand(new Command(ct, CommandFlags(CommandProperties::QUEUE, command->isQueue()), pos));
 			}
 		}
 	}
@@ -726,14 +726,14 @@ CommandResult Unit::giveCommand(Command *command) {
 		unitPath.clear();
 
 		//for patrol commands, remember where we started from
-		if(ct->getClass() == ccPatrol) {
+		if(ct->getClass() == CommandClass::PATROL) {
 			command->setPos2(pos);
 		}
 	}
 
 	//check command
 	CommandResult result = checkCommand(*command);
-	if(result == crSuccess){
+	if(result == CommandResult::SUCCESS){
 		applyCommand(*command);
 		commands.push_back(command);
 
@@ -756,7 +756,7 @@ Command *Unit::popCommand() {
 	Command *command = commands.empty() ? NULL : commands.front();
 
 	// we don't let hacky set meeting point commands actually get anywhere
-	while(command && command->getType()->getClass() == ccSetMeetingPoint) {
+	while(command && command->getType()->getClass() == CommandClass::SET_MEETING_POINT) {
 		setMeetingPos(command->getPos());
 		delete command;
 		commands.erase(commands.begin());
@@ -770,13 +770,13 @@ CommandResult Unit::finishCommand() {
 
 	//is empty?
 	if(commands.empty()) {
-		return crFailUndefined;
+		return CommandResult::FAIL_UNDEFINED;
 	}
 
 	Command *command = popCommand();
 
 	//for patrol command, remember where we started from
-	if(command && command->getType()->getClass() == ccPatrol) {
+	if(command && command->getType()->getClass() == CommandClass::PATROL) {
 		command->setPos2(pos);
 	}
 
@@ -786,7 +786,7 @@ CommandResult Unit::finishCommand() {
 		networkManager.getServerInterface()->unitUpdate(this);
 	}
 
-	return crSuccess;
+	return CommandResult::SUCCESS;
 }
 
 /** cancel command on back of queue */
@@ -794,7 +794,7 @@ CommandResult Unit::cancelCommand() {
 
 	//is empty?
 	if(commands.empty()){
-		return crFailUndefined;
+		return CommandResult::FAIL_UNDEFINED;
 	}
 
 	//undo command
@@ -807,14 +807,14 @@ CommandResult Unit::cancelCommand() {
 	//clear routes
 	unitPath.clear();
 
-	return crSuccess;
+	return CommandResult::SUCCESS;
 }
 
 /** cancel current command */
 CommandResult Unit::cancelCurrCommand() {
 	//is empty?
 	if(commands.empty()) {
-		return crFailUndefined;
+		return CommandResult::FAIL_UNDEFINED;
 	}
 
 	//undo command
@@ -822,7 +822,7 @@ CommandResult Unit::cancelCurrCommand() {
 
 	Command *command = popCommand();
 
-	return crSuccess;
+	return CommandResult::SUCCESS;
 }
 
 // =================== route stack ===================
@@ -838,7 +838,7 @@ void Unit::create(bool startingUnit) {
 void Unit::born(){
 	faction->addStore(type);
 	faction->applyStaticProduction(type);
-	setCurrSkill(scStop);
+	setCurrSkill(SkillClass::STOP);
 	computeTotalUpgrade();
 	recalculateStats();
 	hp= type->getMaxHp();
@@ -868,7 +868,7 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	if(!isBeingBuilt()) {
 		faction->removeStore(type);
 	}
-	setCurrSkill(scDie);
+	setCurrSkill(SkillClass::DIE);
 
 	//no longer needs static resources
 	if(isBeingBuilt())
@@ -926,11 +926,11 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 
 	//default command is move command
 	if (!commandType) {
-		commandType = type->getFirstCtOfClass(ccMove);
+		commandType = type->getFirstCtOfClass(CommandClass::MOVE);
 	}
 
 	if (!commandType && type->hasMeetingPoint()) {
-		commandType = type->getFirstCtOfClass(ccSetMeetingPoint);
+		commandType = type->getFirstCtOfClass(CommandClass::SET_MEETING_POINT);
 	}
 
 	return commandType;
@@ -951,7 +951,7 @@ bool Unit::update() {
 	float animationSpeed = currSkill->getAnimSpeed() * speedModifier;
 
 	//speed modifiers
-	if(currSkill->getClass() == scMove) {
+	if(currSkill->getClass() == SkillClass::MOVE) {
 
 		//if moving in diagonal move slower
 		Vec2i dest = pos - lastPos;
@@ -976,10 +976,10 @@ bool Unit::update() {
 	updateTarget();
 
 	//rotation
-	if(currSkill->getClass() != scStop) {
+	if(currSkill->getClass() != SkillClass::STOP) {
 		const int rotFactor = 2;
 		if(progress < 1.f / rotFactor) {
-			if(type->getFirstStOfClass(scMove)) {
+			if(type->getFirstStOfClass(SkillClass::MOVE)) {
 				if(abs(lastRotation - targetRotation) < 180) {
 					rotation = lastRotation + (targetRotation - lastRotation) * progress * rotFactor;
 				} else {
@@ -992,14 +992,14 @@ bool Unit::update() {
 
 	//checks
 	if(animProgress > 1.f) {
-		animProgress = currSkill->getClass() == scDie ? 1.f : 0.f;
+		animProgress = currSkill->getClass() == SkillClass::DIE ? 1.f : 0.f;
 	}
 
 	//checks
 	if(progress >= 1.f) {
 		lastRotation = targetRotation;
 
-		if(currSkill->getClass() != scDie) {
+		if(currSkill->getClass() != SkillClass::DIE) {
 			progress = 0.f;
 			return true;
 		} else {
@@ -1058,10 +1058,10 @@ Unit* Unit::tick() {
 	//deletion for some commands
 	for(Commands::iterator i = commands.begin(); i != commands.end(); i++) {
 		switch((*i)->getType()->getClass()) {
-			case ccMove:
-			case ccRepair:
-			case ccGuard:
-			case ccPatrol:
+			case CommandClass::MOVE:
+			case CommandClass::REPAIR:
+			case CommandClass::GUARD:
+			case CommandClass::PATROL:
 				break;
 			default:
 				continue;
@@ -1165,7 +1165,7 @@ bool Unit::decHp(int i) {
 	}
 
 	//fire
-	if (type->getProperty(pBurnable) && hp < type->getMaxHp() / 2 && fire == NULL) {
+	if (type->getProperty(Property::BURNABLE) && hp < type->getMaxHp() / 2 && fire == NULL) {
 		FireParticleSystem *fps;
 		fps = new FireParticleSystem(200);
 		fps->setSpeed(2.5f / Config::getInstance().getGsWorldUpdateFps());
@@ -1276,7 +1276,7 @@ string Unit::getDesc(bool full) const {
 	//consumable production
 	for (int i = 0; i < type->getCostCount(); ++i) {
 		const Resource *r = getType()->getCost(i);
-		if (r->getType()->getClass() == rcConsumable) {
+		if (r->getType()->getClass() == ResourceClass::CONSUMABLE) {
 			str += "\n";
 			str += r->getAmount() < 0 ? lang.get("Produce") + ": " : lang.get("Consume") + ": ";
 			str += intToStr(abs(r->getAmount())) + " " + r->getType()->getName();
@@ -1344,17 +1344,17 @@ bool Unit::morph(const MorphCommandType *mct) {
 
 	// redo field
 	Field newField;
-	if ( morphUnitType->getField( FieldWalkable ) ) {
-		newField = FieldWalkable;
-	} else if ( morphUnitType->getField( FieldAir ) ) {
-		newField = FieldAir;
+	if ( morphUnitType->getField( Field::LAND ) ) {
+		newField = Field::LAND;
+	} else if ( morphUnitType->getField( Field::AIR ) ) {
+		newField = Field::AIR;
 	}
-	if ( morphUnitType->getField( FieldAmphibious ) ) {
-		newField = FieldAmphibious;
-	} else if ( morphUnitType->getField( FieldAnyWater ) ) {
-		newField = FieldAnyWater;
-	} else if ( morphUnitType->getField( FieldDeepWater ) ) {
-		newField = FieldDeepWater;
+	if ( morphUnitType->getField( Field::AMPHIBIOUS ) ) {
+		newField = Field::AMPHIBIOUS;
+	} else if ( morphUnitType->getField( Field::ANY_WATER ) ) {
+		newField = Field::ANY_WATER;
+	} else if ( morphUnitType->getField( Field::DEEP_WATER ) ) {
+		newField = Field::DEEP_WATER;
 	}
 
 	if (map->areFreeCellsOrHasUnit(pos, morphUnitType->getSize(), newField, this)) {
@@ -1371,7 +1371,7 @@ bool Unit::morph(const MorphCommandType *mct) {
 		Commands::const_iterator i;
 
 		// add current command, which should be the morph command
-		assert(commands.size() > 0 && commands.front()->getType()->getClass() == ccMorph);
+		assert(commands.size() > 0 && commands.front()->getType()->getClass() == CommandClass::MORPH);
 		newCommands.push_back(commands.front());
 		i = commands.begin();
 		++i;
@@ -1460,7 +1460,7 @@ void Unit::effectExpired(Effect *e){
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
-	if (currField == FieldAir) {
+	if (currField == Field::AIR) {
 		height += World::airHeight;
 	}
 
@@ -1499,37 +1499,37 @@ void Unit::clearCommands() {
 CommandResult Unit::checkCommand(const Command &command) const {
 	const CommandType *ct = command.getType();
 
-	if (command.getArchetype() != catGiveCommand) {
-		return crSuccess;
+	if (command.getArchetype() != CommandArchetype::GIVE_COMMAND) {
+		return CommandResult::SUCCESS;
 	}
 	
-	if(ct->getClass() == ccSetMeetingPoint) {
-		return type->hasMeetingPoint() ? crSuccess : crFailUndefined;
+	if(ct->getClass() == CommandClass::SET_MEETING_POINT) {
+		return type->hasMeetingPoint() ? CommandResult::SUCCESS : CommandResult::FAIL_UNDEFINED;
 	}
 
 	//if not operative or has not command type => fail
 	if (!isOperative() || command.getUnit() == this || !getType()->hasCommandType(ct)) {
-		return crFailUndefined;
+		return CommandResult::FAIL_UNDEFINED;
 	}
 
 	//if pos is not inside the world
 	if (command.getPos() != Command::invalidPos && !map->isInside(command.getPos())) {
-		return crFailUndefined;
+		return CommandResult::FAIL_UNDEFINED;
 	}
 
 	//check produced
 	const ProducibleType *produced = ct->getProduced();
 	if (produced) {
 		if (!faction->reqsOk(produced)) {
-			return crFailReqs;
+			return CommandResult::FAIL_REQUIREMENTS;
 		}
 		if (!faction->checkCosts(produced)) {
-			return crFailRes;
+			return CommandResult::FAIL_RESOURCES;
 		}
 	}
 
 	//if this is a pet, make sure we don't have more pets of this type than allowed.
-	if (ct->getClass() == ccProduce) {
+	if (ct->getClass() == CommandClass::PRODUCE) {
 		const ProduceCommandType *pct = reinterpret_cast<const ProduceCommandType*>(ct);
 		const ProduceSkillType *pst = pct->getProduceSkillType();
 		if(pst->isPet()) {
@@ -1537,7 +1537,7 @@ CommandResult Unit::checkCommand(const Command &command) const {
 			int totalPets = getPetCount(ut);
 			for(Commands::const_iterator i = commands.begin(); i != commands.end(); ++i) {
 				const CommandType *ct2 = (*i)->getType();
-				if(*i != &command && ct2->getClass() == ccProduce) {
+				if(*i != &command && ct2->getClass() == CommandClass::PRODUCE) {
 					const ProduceCommandType* pct2 = reinterpret_cast<const ProduceCommandType*>(ct2);
 					if(pct2->getProducedUnit() == ut) {
 						++totalPets;
@@ -1546,29 +1546,29 @@ CommandResult Unit::checkCommand(const Command &command) const {
 			}
 
 			if(totalPets >= pst->getMaxPets()) {
-				return crFailPetLimit;
+				return CommandResult::FAIL_PET_LIMIT;
 			}
 		}
 
 	//build command specific, check resources and requirements for building
-	} else if(ct->getClass() == ccBuild) {
+	} else if(ct->getClass() == CommandClass::BUILD) {
 		const UnitType *builtUnit = command.getUnitType();
 		if(!faction->reqsOk(builtUnit)) {
-			return crFailReqs;
+			return CommandResult::FAIL_REQUIREMENTS;
 		}
 		if(command.isReserveResources() && !faction->checkCosts(builtUnit)) {
-			return crFailRes;
+			return CommandResult::FAIL_RESOURCES;
 		}
 
 	//upgrade command specific, check that upgrade is not upgraded
-	} else if(ct->getClass() == ccUpgrade){
+	} else if(ct->getClass() == CommandClass::UPGRADE){
 		const UpgradeCommandType *uct = static_cast<const UpgradeCommandType*>(ct);
 		if(faction->getUpgradeManager()->isUpgradingOrUpgraded(uct->getProducedUpgrade())) {
-			return crFailUndefined;
+			return CommandResult::FAIL_UNDEFINED;
 		}
 	}
 
-	return crSuccess;
+	return CommandResult::SUCCESS;
 }
 
 void Unit::applyCommand(const Command &command) {
@@ -1581,11 +1581,11 @@ void Unit::applyCommand(const Command &command) {
 	}
 
 	//build command specific
-	if(ct->getClass() == ccBuild && command.isReserveResources()) {
+	if(ct->getClass() == CommandClass::BUILD && command.isReserveResources()) {
 		faction->applyCosts(command.getUnitType());
 
 	//upgrade command specific
-	} else if(ct->getClass() == ccUpgrade) {
+	} else if(ct->getClass() == CommandClass::UPGRADE) {
 		const UpgradeCommandType *uct = static_cast<const UpgradeCommandType*>(ct);
 		faction->startUpgrade(uct->getProducedUpgrade());
 	}
@@ -1601,19 +1601,19 @@ CommandResult Unit::undoCommand(const Command &command) {
 	}
 
 	//return building cost if not already building it or dead
-	if(ct->getClass() == ccBuild && command.isReserveResources()) {
-		if(currSkill->getClass() != scBuild && currSkill->getClass() != scDie){
+	if(ct->getClass() == CommandClass::BUILD && command.isReserveResources()) {
+		if(currSkill->getClass() != SkillClass::BUILD && currSkill->getClass() != SkillClass::DIE){
 			faction->deApplyCosts(command.getUnitType());
 		}
 	}
 
 	//upgrade command cancel from list
-	if(ct->getClass() == ccUpgrade) {
+	if(ct->getClass() == CommandClass::UPGRADE) {
 		const UpgradeCommandType *uct = static_cast<const UpgradeCommandType*>(ct);
 		faction->cancelUpgrade(uct->getProducedUpgrade());
 	}
 
-	return crSuccess;
+	return CommandResult::SUCCESS;
 }
 
 /**
@@ -1686,37 +1686,37 @@ void Unit::recalculateStats() {
 int Unit::getSpeed(const SkillType *st) const {
 	float speed = (float)st->getSpeed();
 	switch(st->getClass()) {
-		case scMove:
-		case scGetUp:
+		case SkillClass::MOVE:
+		case SkillClass::GET_UP:
 			speed = speed * moveSpeedMult + moveSpeed;
 			break;
 
-		case scAttack:
+		case SkillClass::ATTACK:
 			speed =  speed * attackSpeedMult + attackSpeed;
 			break;
 
-		case scProduce:
-		case scUpgrade:
-		case scMorph:
+		case SkillClass::PRODUCE:
+		case SkillClass::UPGRADE:
+		case SkillClass::MORPH:
 			speed =  speed * prodSpeedMult + prodSpeed;
 			break;
 
-		case scBuild:
-		case scRepair:
+		case SkillClass::BUILD:
+		case SkillClass::REPAIR:
 			speed =  speed * repairSpeedMult + repairSpeed;
 			break;
 
-		case scHarvest:
+		case SkillClass::HARVEST:
 			speed =  speed * harvestSpeedMult + harvestSpeed;
 			break;
 
-		case scBeBuilt:
-		case scStop:
-		case scDie:
-		case scCastSpell:
-		case scFallDown:
-		case scWaitForServer:
-		case scCount:
+		case SkillClass::BE_BUILT:
+		case SkillClass::STOP:
+		case SkillClass::DIE:
+		case SkillClass::CAST_SPELL:
+		case SkillClass::FALL_DOWN:
+		case SkillClass::WAIT_FOR_SERVER:
+		case SkillClass::COUNT:
 			break;
 	}
 	return (int)(speed > 0.0f ? speed : 0.0f);

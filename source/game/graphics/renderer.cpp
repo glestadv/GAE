@@ -558,7 +558,7 @@ void Renderer::renderMouse3d(){
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
 				//choose color
-				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), FieldWalkable, units)) {
+				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), Field::LAND, units)) {
 					color= Vec4f(1.f, 1.f, 1.f, 0.5f);
 				} else {
 					color= Vec4f(1.f, 0.f, 0.f, 0.5f);
@@ -567,7 +567,7 @@ void Renderer::renderMouse3d(){
 				modelRenderer->begin(true, true, false);
 				glColor4fv(color.ptr());
 				glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color.ptr());
-				const Model *buildingModel= building->getFirstStOfClass(scStop)->getAnimation();
+				const Model *buildingModel= building->getFirstStOfClass(SkillClass::STOP)->getAnimation();
 				buildingModel->updateInterpolationData(0.f, false);
 				modelRenderer->render(buildingModel);
 				glDisable(GL_COLOR_MATERIAL);
@@ -723,10 +723,10 @@ void Renderer::renderResourceStatus(){
 			glEnable(GL_TEXTURE_2D);
 			renderQuad(j*100+200, metrics.getVirtualH()-30, 16, 16, rt->getImage());
 
-			if(rt->getClass()!=rcStatic){
+			if(rt->getClass()!=ResourceClass::STATIC){
 				str+= "/" + intToStr(thisFaction->getStoreAmount(rt));
 			}
-			if(rt->getClass()==rcConsumable){
+			if(rt->getClass()==ResourceClass::CONSUMABLE){
 				str+= "(";
 				if(r->getBalance()>0){
 					str+= "+";
@@ -1500,18 +1500,18 @@ void Renderer::renderUnits(){
 			// Quick fix: float boats
 			const Field f = unit->getCurrField ();
 			const Map *map = world->getMap ();
-			if ( f == FieldAmphibious ) {
+			if ( f == Field::AMPHIBIOUS ) {
 				SurfaceType st = map->getCell(unit->getPos())->getType();
-				if ( st == SurfaceTypeDeepWater || st == SurfaceTypeFordable ) {
+				if ( st == SurfaceType::DEEP_WATER || st == SurfaceType::FORDABLE ) {
 					currVec.y = map->getWaterLevel ();
 				}
 			}
-			if ( f == FieldDeepWater || f == FieldAnyWater ) {
+			if ( f == Field::DEEP_WATER || f == Field::ANY_WATER ) {
 				currVec.y = map->getWaterLevel ();
 			}
 
 			// let dead units start sinking before they go away
-			if(framesUntilDead <= 200 && !ut->isOfClass(ucBuilding)) {
+			if(framesUntilDead <= 200 && !ut->isOfClass(UnitClass::BUILDING)) {
 				float baseline = logf(20.125f) / 5.f;
 				float adjust = logf((float)framesUntilDead / 10.f + 0.125f) / 5.f;
 				currVec.y += adjust - baseline;
@@ -1526,7 +1526,7 @@ void Renderer::renderUnits(){
 			float alpha= 1.0f;
 			const SkillType *st= unit->getCurrSkill();
 			bool fade = false;
-			if(st->getClass() == scDie) {
+			if(st->getClass() == SkillClass::DIE) {
 				const DieSkillType *dst = (const DieSkillType*)st;
 				if(dst->getFade()) {
 					alpha= 1.0f - unit->getAnimProgress();
@@ -1640,16 +1640,16 @@ void Renderer::renderSelectionEffects(){
 		//comand arrow
 		if(focusArrows && unit->anyCommand()){
 			const CommandType *ct= unit->getCurrCommand()->getType();
-			if(ct->getClicks()!=cOne){
+			if(ct->getClicks()!=Clicks::ONE){
 
 				//arrow color
 				Vec3f arrowColor;
 				switch(ct->getClass()){
-				case ccMove:
+				case CommandClass::MOVE:
 					arrowColor= Vec3f(0.f, 1.f, 0.f);
 					break;
-				case ccAttack:
-				case ccAttackStopped:
+				case CommandClass::ATTACK:
+				case CommandClass::ATTACK_STOPPED:
 					arrowColor= Vec3f(1.f, 0.f, 0.f);
 					break;
 				default:
@@ -2466,7 +2466,7 @@ void Renderer::renderUnitsFast(bool renderingShadows) {
 
 					//dead alpha
 					const SkillType *st = unit->getCurrSkill();
-					if(st->getClass() == scDie) {
+					if(st->getClass() == SkillClass::DIE) {
 						const DieSkillType *dst = (const DieSkillType*)st;
 						if(dst->getFade()) {
 							color *= 1.0f - unit->getAnimProgress();

@@ -166,7 +166,7 @@ public:
 
 	bool toRenderUnit(const Unit *unit) const {
 		return map.getTile(Map::toTileCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
-			|| (unit->getCurrSkill()->getClass() == scAttack
+			|| (unit->getCurrSkill()->getClass() == SkillClass::ATTACK
 			&& map.getTile(Map::toTileCoords(unit->getTargetPos()))->isVisible(thisTeamIndex));
 	}
 

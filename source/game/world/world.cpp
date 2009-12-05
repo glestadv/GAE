@@ -365,13 +365,13 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 	}
 
 	// were they alive or not killed before?
-	if (lastHp || lastSkill->getClass() != scDie) {
+	if (lastHp || lastSkill->getClass() != SkillClass::DIE) {
 		// are they alive now?
 		if (unit->getHp()) {
 			moveAndEvict(unit, evicted, (wasEvicted || morphed) ? NULL : &lastPos);
 		} else {
 			if (!unit->getHp()) {
-				assert(lastSkill->getClass() != scDie);
+				assert(lastSkill->getClass() != SkillClass::DIE);
 				// we kill them here so their cells are freed and we don't have to relocate them if
 				// there's another unit (in this update) where they used to be.
 				unit->kill(lastPos, !(wasEvicted || morphed));
@@ -433,7 +433,7 @@ void World::updateClient() {
 				if (Config::getInstance().getMiscDebugMode()) {
 					logUnit(unit, "new unit", NULL, NULL);
 				}
-				if (unit->getType()->hasSkillClass(scBeBuilt)) {
+				if (unit->getType()->hasSkillClass(SkillClass::BE_BUILT)) {
 					map.prepareTerrain(unit);
 				}
 				map.assertUnitCells(unit);
@@ -519,7 +519,7 @@ void World::updateEarthquakes(float seconds) {
 				}
 
 				const FallDownSkillType *fdst = (const FallDownSkillType *)
-												dri->first->getType()->getFirstStOfClass(scFallDown);
+												dri->first->getType()->getFirstStOfClass(SkillClass::FALL_DOWN);
 
 				if (fdst && dri->first->getCurrSkill() != fdst
 						&& random.randRange(0.f, 1.f) + fdst->getAgility() < intensity / count / 0.25f) {
@@ -573,7 +573,7 @@ void World::update() {
 	//consumable resource (e.g., food) costs
 	for (int i = 0; i < techTree.getResourceTypeCount(); ++i) {
 		const ResourceType *rt = techTree.getResourceType(i);
-		if (rt->getClass() == rcConsumable && frameCount % (rt->getInterval()*Config::getInstance().getGsWorldUpdateFps()) == 0) {
+		if (rt->getClass() == ResourceClass::CONSUMABLE && frameCount % (rt->getInterval()*Config::getInstance().getGsWorldUpdateFps()) == 0) {
 			for (int i = 0; i < getFactionCount(); ++i) {
 				getFaction(i)->applyCostsOnInterval();
 			}
@@ -620,7 +620,7 @@ void World::doKill(Unit *killer, Unit *killed) {
 		}
 	}
 
-	if (killed->getCurrSkill()->getClass() != scDie) {
+	if (killed->getCurrSkill()->getClass() != SkillClass::DIE) {
 		killed->kill();
 	}
 	if ( !killed->isMobile() ) {
@@ -658,7 +658,7 @@ void World::tick() {
 			const ResourceType *rt = techTree.getResourceType(i);
 
 			//if consumable
-			if (rt->getClass() == rcConsumable) {
+			if (rt->getClass() == ResourceClass::CONSUMABLE) {
 				int balance = 0;
 				for (int j = 0; j < faction->getUnitCount(); ++j) {
 
@@ -747,7 +747,7 @@ void World::moveUnitCells(Unit *unit) {
 		if (!map.canMove(unit, unit->getPos(), newPos)) {
 			fprintf(stderr, "Unit %d needs a new path and I'm stopping.\n", unit->getId());
 			unit->getPath()->clear();
-			unit->setCurrSkill(scStop);
+			unit->setCurrSkill(SkillClass::STOP);
 			return;
 		}
 	}*/
@@ -757,7 +757,7 @@ void World::moveUnitCells(Unit *unit) {
 	map.putUnitCells(unit, newPos);
 
 	//water splash
-	if (tileset.getWaterEffects() && unit->getCurrField() == FieldWalkable) {
+	if (tileset.getWaterEffects() && unit->getCurrField() == Field::LAND) {
 		if (map.getCell(unit->getLastPos())->isSubmerged()) {
 			for (int i = 0; i < 3; ++i) {
 				waterEffects.addWaterSplash(
@@ -845,21 +845,21 @@ int World::givePositionCommand(int unitId, const string &commandName, const Vec2
 	const CommandType *cmdType = NULL;
 
 	if ( commandName == "move" ) {
-		cmdType = unit->getType()->getFirstCtOfClass(ccMove);
+		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::MOVE);
 	} else if ( commandName == "attack" ) {
-		cmdType = unit->getType()->getFirstCtOfClass(ccAttack);
+		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::ATTACK);
 	} else if ( commandName == "harvest" ) {
 		Resource *r = map.getTile(Map::toTileCoords(pos))->getResource();
 		bool found = false;
-		if ( ! unit->getType()->getFirstCtOfClass(ccHarvest) ) {
+		if ( ! unit->getType()->getFirstCtOfClass(CommandClass::HARVEST) ) {
 			return -2; // unit has no appropriate command
 		}
 		if ( !r ) {
-			cmdType = unit->getType()->getFirstCtOfClass(ccHarvest);
+			cmdType = unit->getType()->getFirstCtOfClass(CommandClass::HARVEST);
 		} else {
 			for ( int i=0; i < unit->getType()->getCommandTypeCount(); ++i ) {
 				cmdType = unit->getType()->getCommandType(i);
-				if ( cmdType->getClass() == ccHarvest ) {
+				if ( cmdType->getClass() == CommandClass::HARVEST ) {
 					HarvestCommandType *hct = (HarvestCommandType*)cmdType;
 					if ( hct->canHarvest(r->getType()) ) {
 						found = true;
@@ -868,20 +868,20 @@ int World::givePositionCommand(int unitId, const string &commandName, const Vec2
 				}
 			}
 			if ( !found ) {
-				cmdType = unit->getType()->getFirstCtOfClass(ccHarvest);
+				cmdType = unit->getType()->getFirstCtOfClass(CommandClass::HARVEST);
 			}
 		}
 	} else if ( commandName == "patrol" ) {
-		cmdType = unit->getType()->getFirstCtOfClass(ccPatrol);
+		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::PATROL);
 	} else if (commandName == "guard") {
-		cmdType = unit->getType()->getFirstCtOfClass(ccGuard);
+		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::GUARD);
 	} else {
 		return -3; // unknown position command
 	}
 	if ( !cmdType ) {
 		return -2; // unit has no appropriate command
 	}
-	if ( unit->giveCommand(new Command(cmdType, CommandFlags(), pos)) == crSuccess ) {
+	if ( unit->giveCommand(new Command(cmdType, CommandFlags(), pos)) == CommandResult::SUCCESS ) {
 		return 0; // Ok
 	}
 	return 1; // command fail
@@ -897,7 +897,7 @@ int World::giveTargetCommand ( int unitId, const string & cmdName, int targetId 
 	const CommandType *cmdType = NULL;
 	if ( cmdName == "attack" ) {
 		for ( int i=0; i < unit->getType()->getCommandTypeCount(); ++i ) {
-			if ( unit->getType()->getCommandType ( i )->getClass () == ccAttack ) {
+			if ( unit->getType()->getCommandType ( i )->getClass () == CommandClass::ATTACK ) {
 				const AttackCommandType *act = (AttackCommandType *)unit->getType()->getCommandType ( i );
 				const AttackSkillTypes *asts = act->getAttackSkillTypes ();
 				if ( asts->getZone(target->getCurrZone()) ) {
@@ -911,7 +911,7 @@ int World::giveTargetCommand ( int unitId, const string & cmdName, int targetId 
 		return -2;
 	} else if ( cmdName == "repair" ) {
 		for ( int i=0; i < unit->getType()->getCommandTypeCount(); ++i ) {
-			if ( unit->getType()->getCommandType( i )->getClass () == ccRepair ) {
+			if ( unit->getType()->getCommandType( i )->getClass () == CommandClass::REPAIR ) {
 				RepairCommandType *rct = (RepairCommandType*)unit->getType()->getCommandType ( i );
 				if ( rct->isRepairableUnitType ( target->getType() ) ) {
 					if ( unit->giveCommand(new Command(rct, CommandFlags(), target)) ) {
@@ -923,9 +923,9 @@ int World::giveTargetCommand ( int unitId, const string & cmdName, int targetId 
 		}
 		return -2;
 	} else if ( cmdName == "guard" ) {
-		cmdType = unit->getType()->getFirstCtOfClass(ccGuard);
+		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::GUARD);
 	} else if ( cmdName == "patrol" ) {
-		cmdType = unit->getType()->getFirstCtOfClass(ccPatrol);
+		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::PATROL);
 	} else {
 		return -3;
 	}
@@ -941,9 +941,9 @@ int World::giveStopCommand(int unitId, const string &cmdName) {
 		return -1;
 	}
 	if ( cmdName == "stop" ) {
-		const StopCommandType *sct = (StopCommandType *)unit->getType()->getFirstCtOfClass(ccStop);
+		const StopCommandType *sct = (StopCommandType *)unit->getType()->getFirstCtOfClass(CommandClass::STOP);
 		if ( sct ) {
-			if ( unit->giveCommand(new Command(sct, CommandFlags())) == crSuccess ) {
+			if ( unit->giveCommand(new Command(sct, CommandFlags())) == CommandResult::SUCCESS ) {
 				return 0; // ok
 			}
 			return 1; // command fail
@@ -952,9 +952,9 @@ int World::giveStopCommand(int unitId, const string &cmdName) {
 		}
 	} else if ( cmdName == "attack-stopped" ) {
 		const AttackStoppedCommandType *asct = 
-			(AttackStoppedCommandType *)unit->getType()->getFirstCtOfClass(ccAttackStopped);
+			(AttackStoppedCommandType *)unit->getType()->getFirstCtOfClass(CommandClass::ATTACK_STOPPED);
 		if ( asct ) {
-			if ( unit->giveCommand(new Command(asct, CommandFlags())) == crSuccess ) {
+			if ( unit->giveCommand(new Command(asct, CommandFlags())) == CommandResult::SUCCESS ) {
 				return 0;
 			}
 			return 1;
@@ -986,23 +986,23 @@ int World::giveProductionCommand(int unitId, const string &producedName){
 	for(int i= 0; i<ut->getCommandTypeCount(); ++i){
 		const CommandType* ct= ut->getCommandType(i);
 		// if we find a suitable Produce Command, execute and return
-		if(ct->getClass()==ccProduce){
+		if(ct->getClass()==CommandClass::PRODUCE){
 			const ProduceCommandType *pct= static_cast<const ProduceCommandType*>(ct);
 			if ( pct->getProducedUnit() == put ) {
 				CommandResult res = unit->giveCommand(new Command(pct, CommandFlags()));
-				if ( res == crSuccess ) {
+				if ( res == CommandResult::SUCCESS ) {
 					//theConsole.addLine("produce command success");
 					return 0; //Ok
-				//} else if ( res == crFailRes ) {
+				//} else if ( res == CommandResult::FAIL_RESOURCES ) {
 				//	theConsole.addLine("produce command failed, resources");
-				//} else if ( res == crFailReqs ) {
+				//} else if ( res == CommandResult::FAIL_REQUIREMENTS ) {
 				//	theConsole.addLine("produce command failed, requirements");
 				//} else {
 				//	theConsole.addLine("produce command failed");
 				}
 				return 1; // command fail	
 			}
-		} else if ( ct->getClass() == ccMorph ) { // Morph Command ?
+		} else if ( ct->getClass() == CommandClass::MORPH ) { // Morph Command ?
 			if ( ((MorphCommandType*)ct)->getMorphUnit()->getName() == producedName ) {
 				// just record it for now, and keep looking for a Produce Command
 				mct = (MorphCommandType*)ct; 
@@ -1013,7 +1013,7 @@ int World::giveProductionCommand(int unitId, const string &producedName){
 	// didn't find a Produce Command, was there are Morph Command?
 	if ( mct ) {
 		CommandResult res = unit->giveCommand(new Command (mct, CommandFlags()));
-		if ( res == crSuccess ) {
+		if ( res == CommandResult::SUCCESS ) {
 			theConsole.addLine("morph command success");
 			return 0; // ok
 		} else {
@@ -1042,10 +1042,10 @@ int World::giveUpgradeCommand(int unitId, const string &upgradeName){
 	//Search for a command that can produce the upgrade
 	for(int i= 0; i<ut->getCommandTypeCount(); ++i){
 		const CommandType* ct= ut->getCommandType(i);
-		if(ct->getClass()==ccUpgrade){
+		if(ct->getClass()==CommandClass::UPGRADE){
 			const UpgradeCommandType *uct= static_cast<const UpgradeCommandType*>(ct);
 			if ( uct->getProducedUpgrade() == upgrd ) {
-				if ( unit->giveCommand(new Command(uct, CommandFlags())) == crSuccess ) {
+				if ( unit->giveCommand(new Command(uct, CommandFlags())) == CommandResult::SUCCESS ) {
 					return 0;
 				}
 				return 1;
@@ -1242,7 +1242,7 @@ void World::initUnits() {
 										"is no enough place to put the units near its start location, make a "
 										"better map: " + unit->getType()->getName() + " Faction: " + intToStr(i));
 				}
-				if (unit->getType()->hasSkillClass(scBeBuilt)) {
+				if (unit->getType()->hasSkillClass(SkillClass::BE_BUILT)) {
 					map.flatternTerrain(unit);
 					unitUpdater.pathFinder->updateMapMetrics(unit->getPos(), unit->getSize());
 				}

@@ -16,8 +16,6 @@
 
 #include "world.h"
 
-#define theMap (*World::getCurrWorld()->getMap())
-
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;

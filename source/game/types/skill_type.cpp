@@ -207,36 +207,37 @@ void SkillType::descSpeed(string &str, const Unit *unit, const char* speedType) 
 	str+="\n";
 }
 
+/** obsolete??? use SkillClassNames[sc] ?? */
 string SkillType::skillClassToStr(SkillClass skillClass){
 	switch(skillClass){
-	case scStop: return "Stop";
-	case scMove: return "Move";
-	case scAttack: return "Attack";
-	case scHarvest: return "Harvest";
-	case scRepair: return "Repair";
-	case scBuild: return "Build";
-	case scDie: return "Die";
-	case scBeBuilt: return "Be Built";
-	case scProduce: return "Produce";
-	case scUpgrade: return "Upgrade";
-	case scCastSpell: return "Cast Spell";
-	default:
-		assert(false);
-		return "";
+		case SkillClass::STOP: return "Stop";
+		case SkillClass::MOVE: return "Move";
+		case SkillClass::ATTACK: return "Attack";
+		case SkillClass::HARVEST: return "Harvest";
+		case SkillClass::REPAIR: return "Repair";
+		case SkillClass::BUILD: return "Build";
+		case SkillClass::DIE: return "Die";
+		case SkillClass::BE_BUILT: return "Be Built";
+		case SkillClass::PRODUCE: return "Produce";
+		case SkillClass::UPGRADE: return "Upgrade";
+		case SkillClass::CAST_SPELL: return "Cast Spell";
+		default:
+			assert(false);
+			return "";
 	};
 }
 
+/** obsolete??? use FieldNames[f] ?? */
 string SkillType::fieldToStr(Zone field){
-	switch(field)
-   {
-   case ZoneSurfaceProp: return "SurfaceProp";
-	case ZoneSurface: return "Surface";
-	case ZoneAir: return "Air";
-//	case fSubsurface: return "Subsurface";
+	switch (field) {
+		case Zone::SURFACE_PROP: return "SurfaceProp";
+		case Zone::LAND: return "Surface";
+		case Zone::AIR: return "Air";
+			//	case fSubsurface: return "Subsurface";
 
 		default:
-		assert(false);
-		return "";
+			assert(false);
+			return "";
 	};
 }
 // ===============================
@@ -324,8 +325,8 @@ void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* ra
 
 	//fields
 	str+= lang.get("Zones") + ": ";
-	for(int i= 0; i < ZoneCount; i++){
-		Zone zone = static_cast<Zone>(i);
+	for(int i= 0; i < Zone::COUNT; i++){
+		Zone zone = enum_cast<Zone>(i);
 		if(zones.get(zone)){
 			str+= fieldToStr(zone) + " ";
 		}
@@ -425,7 +426,7 @@ void DieSkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt
 // 	class RepairSkillType
 // ===============================
 
-RepairSkillType::RepairSkillType() : SkillType(scRepair, "Repair"), splashParticleSystemType(NULL) {
+RepairSkillType::RepairSkillType() : SkillType(SkillClass::REPAIR, "Repair"), splashParticleSystemType(NULL) {
 	amount = 0;
 	multiplier = 1.0f;
 	petOnly = false;
@@ -497,7 +498,7 @@ void RepairSkillType::getDesc(string &str, const Unit *unit) const {
 // 	class ProduceSkillType
 // =====================================================
 
-ProduceSkillType::ProduceSkillType() : SkillType(scProduce, "Produce") {
+ProduceSkillType::ProduceSkillType() : SkillType(SkillClass::PRODUCE, "Produce") {
 	pet = false;
 	maxPets = 0;
 }
@@ -516,7 +517,7 @@ void ProduceSkillType::load(const XmlNode *sn, const string &dir, const TechTree
 // 	class FallDownSkillType
 // ===============================
 
-FallDownSkillType::FallDownSkillType(const SkillType *model) : SkillType(scFallDown, "Fall down") {
+FallDownSkillType::FallDownSkillType(const SkillType *model) : SkillType(SkillClass::FALL_DOWN, "Fall down") {
     speed = model->getSpeed();
     animSpeed = model->getAnimSpeed();
     animations.push_back((Model *)model->getAnimation());
@@ -533,7 +534,7 @@ void FallDownSkillType::load(const XmlNode *sn, const string &dir, const TechTre
 // 	class GetUpSkillType
 // ===============================
 
-GetUpSkillType::GetUpSkillType(const SkillType *model) : SkillType(scGetUp, "Get up") {
+GetUpSkillType::GetUpSkillType(const SkillType *model) : SkillType(SkillClass::GET_UP, "Get up") {
     speed = 50;//model->getSpeed();
     animSpeed = model->getAnimSpeed();
     animations.push_back((Model *)model->getAnimation());
@@ -548,7 +549,7 @@ void GetUpSkillType::load(const XmlNode *sn, const string &dir, const TechTree *
 // =====================================================
 
 WaitForServerSkillType::WaitForServerSkillType(const SkillType *model) :
-		SkillType(scWaitForServer, "Waiting for server...") {
+		SkillType(SkillClass::WAIT_FOR_SERVER, "Waiting for server...") {
     speed = model->getSpeed();
     animSpeed = model->getAnimSpeed();
     animations.push_back((Model *)model->getAnimation());

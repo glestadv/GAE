@@ -199,7 +199,7 @@ const ResourceType *Ai::getNeededResource() {
 	for (int i = 0; i < tt->getResourceTypeCount(); ++i) {
 		const ResourceType *rt = tt->getResourceType(i);
 		const Resource *r = aiInterface->getResource(rt);
-		if (rt->getClass() != rcStatic && rt->getClass() != rcConsumable && (r->getAmount() < amount || amount == -1)) {
+		if (rt->getClass() != ResourceClass::STATIC && rt->getClass() != ResourceClass::CONSUMABLE && (r->getAmount() < amount || amount == -1)) {
 			amount = r->getAmount();
 			neededResource = rt;
 		}
@@ -228,7 +228,7 @@ bool Ai::beingAttacked(Vec2i &pos, Field &field, int radius) {
 }
 
 bool Ai::isStableBase() {
-	if (getCountOfClass(ucWarrior) > minWarriors) {
+	if (getCountOfClass(UnitClass::WARRIOR) > minWarriors) {
 		aiInterface->printLog(4, "Base is stable\n");
 		return true;
 	} else {
@@ -244,7 +244,7 @@ bool Ai::findAbleUnit(int *unitIndex, CommandClass ability, bool idleOnly) {
 	for (int i = 0; i < aiInterface->getMyUnitCount(); ++i) {
 		const Unit *unit = aiInterface->getMyUnit(i);
 		if (unit->getType()->hasCommandClass(ability)) {
-			if ((!idleOnly || !unit->anyCommand() || unit->getCurrCommand()->getType()->getClass() == ccStop) && !unit->isAPet()) {
+			if ((!idleOnly || !unit->anyCommand() || unit->getCurrCommand()->getType()->getClass() == CommandClass::STOP) && !unit->isAPet()) {
 				units.push_back(i);
 			}
 		}
@@ -286,7 +286,7 @@ bool Ai::findPosForBuilding(const UnitType* building, const Vec2i &searchPos, Ve
 		for (int i = searchPos.x - currRadius; i < searchPos.x + currRadius; ++i) {
 			for (int j = searchPos.y - currRadius; j < searchPos.y + currRadius; ++j) {
 				outPos = Vec2i(i, j);
-				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, FieldWalkable)) {
+				if (aiInterface->areFreeCells(outPos - Vec2i(spacing), building->getSize() + spacing*2, Field::LAND)) {
 					return true;
 				}
 			}
@@ -329,7 +329,7 @@ void Ai::updateStatistics() {
 		//all commands for UnitType
 		for(int i = 0; i < uti->first->getCommandTypeCount(); ++i) {
 			const CommandType *ct = uti->first->getCommandType(i);
-			if(ct->getClass() == ccBuild) {
+			if(ct->getClass() == CommandClass::BUILD) {
 				const BuildCommandType *bct = (const BuildCommandType *)ct;
 
 				//all buildings that we can build now
@@ -345,7 +345,7 @@ void Ai::updateStatistics() {
 						}
 					}
 				}
-			} else if (ct->getClass() == ccUpgrade) {
+			} else if (ct->getClass() == CommandClass::UPGRADE) {
 				const UpgradeCommandType *uct = (const UpgradeCommandType*)ct;
 				const UpgradeType *upgrade = uct->getProducedUpgrade();
 
@@ -355,7 +355,7 @@ void Ai::updateStatistics() {
 			}
 		}
 
-		if(uti->first->hasSkillClass(scBeBuilt)) {
+		if(uti->first->hasSkillClass(SkillClass::BE_BUILT)) {
 			buildingTypeCount[uti->first] = uti->second;
 		}
 	}
@@ -474,8 +474,8 @@ void Ai::sendScoutPatrol(){
 	pos= aiInterface->getStartLocation(startLoc);
 
 	if(aiInterface->getFactionIndex()!=startLoc){
-		if(findAbleUnit(&unit, ccAttack, false)){
-			aiInterface->giveCommand(unit, ccAttack, pos);
+		if(findAbleUnit(&unit, CommandClass::ATTACK, false)){
+			aiInterface->giveCommand(unit, CommandClass::ATTACK, pos);
 			aiInterface->printLog(2, "Scout patrol sent to: " + intToStr(pos.x)+","+intToStr(pos.y)+"\n");
 		}
 	}
@@ -485,9 +485,9 @@ void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
 
     for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
         const Unit *unit= aiInterface->getMyUnit(i);
-		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field==FieldAir?ZoneAir:ZoneSurface);
-		bool isWarrior= !unit->getType()->hasCommandClass(ccHarvest) && !unit->getType()->hasCommandClass(ccProduce);
-		bool alreadyAttacking= unit->getCurrSkill()->getClass()==scAttack;
+		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field==Field::AIR?Zone::AIR:Zone::LAND);
+		bool isWarrior= !unit->getType()->hasCommandClass(CommandClass::HARVEST) && !unit->getType()->hasCommandClass(CommandClass::PRODUCE);
+		bool alreadyAttacking= unit->getCurrSkill()->getClass()==SkillClass::ATTACK;
 		if(!alreadyAttacking && act!=NULL && (ultraAttack || isWarrior)){
 			aiInterface->giveCommand(i, act, pos);
 		}
@@ -507,7 +507,7 @@ void Ai::returnBase(int unitIndex){
     pos= Vec2i(
 		random.randRange(-villageRadius, villageRadius), random.randRange(-villageRadius, villageRadius)) +
 		getRandomHomePosition();
-    r= aiInterface->giveCommand(unitIndex, ccMove, pos);
+    r= aiInterface->giveCommand(unitIndex, CommandClass::MOVE, pos);
 
     //aiInterface->printLog(1, "Order return to base pos:" + intToStr(pos.x)+", "+intToStr(pos.y)+": "+rrToStr(r)+"\n");
 }

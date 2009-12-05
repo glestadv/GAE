@@ -112,6 +112,8 @@
 	#include <dsound.h>
 #endif
 
+#include "game_constants.h"
+
 #endif // USE_PCH
 #endif // _SHARED_PCH_H_
 

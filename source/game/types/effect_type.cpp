@@ -20,35 +20,6 @@
 namespace Glest{ namespace Game{
 
 // =====================================================
-// 	class EffectTypeFlags
-// =====================================================
-
-const char *EffectTypeFlags::names[etfCount] = {
-	"effects-ally",				// etfAlly
-	"effects-foe",				// etfFoe
-	"not-effects-normal-units", // etfNoNormalUnits
-	"effects-buildings",		// etfBuildings
-	"pets-only",				// eftPetsOnly
- 	"effects-non-living",		// etfNonLiving
-	"apply-splash-strength",	// etfScaleSplashStrength
-	"ends-with-source",			// etfEndsWhenSourceDies
-	"recourse-ends-with-target",// etfRecourseEndsWithRoot
-	"permanent",				// etfPermanent
-	"allow-negative-speed",		// etfAllowNegativeSpeed
-	"tick-immediately",			// etfTickImmediately
-	"damaged",					// etfAIDamaged
-	"ranged",					// etfAIRanged
-	"melee",					// etfAIMelee
-	"worker",					// etfAIWorker
-	"building",					// etfAIBuilding
-	"heavy",					// etfAIHeavy
-	"scout",					// etfAIScout
-	"combat",					// etfAICombat
-	"use-sparingly",			// etfAIUseSparingly
-	"use-liberally"				// etfAIUseLiberally
-};
-
-// =====================================================
 // 	class EffectType
 // =====================================================
 
@@ -122,23 +93,23 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			tmp = attr->getRestrictedValue();
 
 			if(tmp == "ally")
-				flags.set(etfAlly, true);
+				flags.set(EffectTypeFlag::ALLY, true);
 			else if(tmp == "foe")
-				flags.set(etfFoe, true);
+				flags.set(EffectTypeFlag::FOE, true);
 			else if(tmp == "pet") {
-				flags.set(etfAlly, true);
-				flags.set(eftPetsOnly, true);
+				flags.set(EffectTypeFlag::ALLY, true);
+				flags.set(EffectTypeFlag::PETS_ONLY, true);
 			}
 			else if(tmp == "all") {
-				flags.set(etfAlly, true);
-				flags.set(etfFoe, true);
+				flags.set(EffectTypeFlag::ALLY, true);
+				flags.set(EffectTypeFlag::FOE, true);
 			} else {
 				throw runtime_error("Not a valid value for units-effected: " + tmp + ": " + dir);
 			}
 		} else {
 			//default value
-			flags.set(etfAlly, true);
-			flags.set(etfFoe, true);
+			flags.set(EffectTypeFlag::ALLY, true);
+			flags.set(EffectTypeFlag::FOE, true);
 		}
 	} catch ( runtime_error e ) {
 		Logger::getErrorLog().addXmlError ( dir, e.what () );
