@@ -166,12 +166,6 @@ Renderer::Renderer(){
 	perspFov = config.getRenderFov();
 	perspNearPlane = config.getRenderDistanceMin();
 	perspFarPlane = config.getRenderDistanceMax();
-#if DEBUG_SEARCH_TEXTURES
-	PathFinderTextureCallBack::debugField = Field::LAND;
-#endif
-#if DEBUG_RENDERER_VISIBLEQUAD
-	captureQuad = false;
-#endif
 }
 
 Renderer::~Renderer(){
@@ -1122,8 +1116,8 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 // ==================== complex rendering ====================
 
 void Renderer::renderSurface() {
-#	if DEBUG_SEARCH_TEXTURES
-	if ( Config::getInstance().getMiscDebugTextures() ) {
+#	if _GAE_DEBUG_EDITION_
+	if ( debugRenderer.AAStarTextures ) {
 		debugRenderer.renderPFDebug( visibleQuad );
 	} else {
 #	endif	
@@ -1170,15 +1164,16 @@ void Renderer::renderSurface() {
 
 	Quad2i scaledQuad = visibleQuad/Map::cellScale;
 
-#	if DEBUG_RENDERER_VISIBLEQUAD		
-		if ( captureQuad ) {
+#	if _GAE_DEBUG_EDITION_		
+		if ( debugRenderer.captureVisibleQuad ) {
 			VisibleQuadColourCallback::quadSet.clear();
 			PosQuadIterator vqi(visibleQuad);
 			while(vqi.next()){
 				const Vec2i &pos= vqi.getPos();
 				VisibleQuadColourCallback::quadSet.insert( pos );
 			}
-			captureQuad = false;
+			debugRenderer.captureVisibleQuad = false;
+			debugRenderer.showVisibleQuad = true;
 		}
 #	endif
 	PosQuadIterator pqi(scaledQuad);
@@ -1240,24 +1235,23 @@ void Renderer::renderSurface() {
 	//assert
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
-#	if DEBUG_SEARCH_TEXTURES
-	}
-#	endif
-#	if DEBUG_RENDERING_ENABLED
+#	if _GAE_DEBUG_EDITION_
+	} // end else, if not renderering textures instead of terrain
+
+	if (debugRenderer.regionHilights ) {
 		debugRenderer.renderRegionHilight(visibleQuad);
-#	endif
-#	if DEBUG_RESOURCE_MAP_OVERLAYS
-		renderGoldInfluence();
-#	endif
-#	if DEBUG_RENDERER_VISIBLEQUAD
+	}
+	if (debugRenderer.showVisibleQuad ) {
 		debugRenderer.renderCapturedQuad( visibleQuad );
-#	endif
-#	if DEBUG_VISIBILITY_OVERLAY
+	}
+	if (debugRenderer.teamSight ) {
 		debugRenderer.renderTeamSightOverlay(visibleQuad);
-#	endif
-#	if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+	}
+	if (debugRenderer.HAAStarOverlay ) {
 		debugRenderer.renderClusterOverlay(visibleQuad);
-#	endif	debugRenderer.renderPathOverlay();
+		debugRenderer.renderPathOverlay();
+	}
+#	endif	
 }
 
 void Renderer::renderObjects(){

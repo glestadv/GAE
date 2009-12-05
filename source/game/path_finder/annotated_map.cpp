@@ -376,7 +376,7 @@ void AnnotatedMap::clearLocalAnnotations(Field field) {
 	PROFILE_LVL2_STOP("Local Annotations");
 }
 
-#if DEBUG_SEARCH_TEXTURES
+#if _GAE_DEBUG_EDITION_
 
 list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations() {
 	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>>();

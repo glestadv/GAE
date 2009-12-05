@@ -173,7 +173,7 @@ private:
 	/** Debug */
 	void logOpen();
 
-#ifdef DEBUG_SEARCH_TEXTURES
+#ifdef _GAE_DEBUG_EDITION_
 public:
 	list<Vec2i>* getOpenNodes ();
 	list<Vec2i>* getClosedNodes ();

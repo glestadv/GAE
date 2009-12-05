@@ -45,7 +45,7 @@ void NodeStore::reset() {
 	leastH = NULL;
 	markerArray.newSearch();
 	openHeap.clear();
-#	if DEBUG_SEARCH_TEXTURES
+#	if _GAE_DEBUG_EDITION_
 		listedNodes.clear();
 #	endif
 }
@@ -119,7 +119,7 @@ void NodeStore::updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost
 	}
 }
 
-#if DEBUG_SEARCH_TEXTURES
+#if _GAE_DEBUG_EDITION_
 
 list<Vec2i>* NodeStore::getOpenNodes() {
 	list<Vec2i> *ret = new list<Vec2i>();
@@ -139,6 +139,6 @@ list<Vec2i>* NodeStore::getClosedNodes() {
 	return ret;
 }
 
-#endif // DEBUG_SEARCH_TEXTURES
+#endif // _GAE_DEBUG_EDITION_
 
 }}}

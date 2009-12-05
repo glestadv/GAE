@@ -199,7 +199,7 @@ private:
 	void addOpenNode(AStarNode *node);
 	AStarNode*	newNode()	{ return ( counter < size ? &stock[counter++] : NULL ); } 
 
-#if DEBUG_SEARCH_TEXTURES
+#if _GAE_DEBUG_EDITION_
 public:
 	// interface to support debugging textures
 	list<Vec2i>* getOpenNodes();

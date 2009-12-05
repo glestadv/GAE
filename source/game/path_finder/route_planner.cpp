@@ -82,14 +82,6 @@ RoutePlanner::RoutePlanner(World *world)
 */
 	//abstractMap = world->getCartographer()->getAbstractMap();
 
-#if DEBUG_SEARCH_TEXTURES
-	if ( Config::getInstance ().getMiscDebugTextures() ) {
-		int foo = theConfig.getMiscDebugTextureMode ();
-		debug_texture_action = foo == 0 ? RoutePlanner::SHOW_PATH_ONLY
-							 : foo == 1 ? RoutePlanner::SHOW_OPEN_CLOSED_SETS
-										: RoutePlanner::SHOW_LOCAL_ANNOTATIONS;
-	}
-#endif
 }
 
 /** delete SearchEngine objects and NodePool array */
@@ -324,7 +316,7 @@ bool RoutePlanner::findAbstractPath(const Unit *unit, const Vec2i &dest, Waypoin
 #define ASTAR_ASSISTED aStar<RangeGoal,MoveCost,DiagonalDistance>
 //AbstractAssistedHeuristic>
 
-#if DEBUG_SEARCH_TEXTURES
+#if _GAE_DEBUG_EDITION_
 void collectOpenClosed(SearchEngine<NodeMap,GridNeighbours> *se) {
 	NodeMap* nm = se->getStorage();
 	list<Vec2i> *nodes = nm->getOpenNodes();
@@ -347,7 +339,7 @@ void clearOpenClosed(const Vec2i &start, const Vec2i &target) {
 }
 #endif
 
-#if DEBUG_SEARCH_TEXTURES
+#if _GAE_DEBUG_EDITION_
 #	define IF_DEBUG_TEXTURES(x) { x }
 #else
 #	define IF_DEBUG_TEXTURES(x) {}

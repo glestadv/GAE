@@ -1,6 +1,6 @@
 
-#if ! DEBUG_RENDERING_ENABLED
-#	error debug_renderer.h included without DEBUG_RENDERING_ENABLED
+#if ! _GAE_DEBUG_EDITION_
+#	error debug_renderer.h included without _GAE_DEBUG_EDITION_
 #endif
 
 #ifndef _GLEST_GAME_DEBUG_RENDERER_
@@ -16,6 +16,7 @@
 #include "pixmap.h"
 #include "texture.h"
 #include "graphics_factory_gl.h"
+#include "game.h"
 
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
@@ -23,9 +24,7 @@ using namespace Shared::Util;
 using Glest::Game::Search::InfluenceMap;
 using Glest::Game::Search::Cartographer;
 
-namespace Glest { namespace Game{
-
-#if DEBUG_SEARCH_TEXTURES
+namespace Glest { namespace Game {
 
 class PathFinderTextureCallBack {
 public:
@@ -51,10 +50,6 @@ public:
    }
 };
 
-#endif // DEBUG_SEARCH_TEXTURES
-
-
-
 class RegionHilightCallback {
 public:
 	static set<Vec2i> cells;
@@ -69,24 +64,6 @@ public:
 		return colour;
 	}
 };
-
-#if DEBUG_RESOURCE_MAP_OVERLAYS
-
-class ResourceInfluenceColourCallback {
-public:
-	static InfluenceMap *iMap;
-	static float scale;
-	static Vec4f colour;
-
-	Vec4f operator() ( const Vec2i &cell ) {
-		colour.w = clamp( iMap->getInfluence(cell) / scale, 0.f, 1.f );
-		return Vec4f(colour);
-	}
-};
-
-#endif // DEBUG_RESOURCE_MAP_OVERLAYS
-
-#if DEBUG_RENDERER_VISIBLEQUAD
 
 class VisibleQuadColourCallback {
 public:
@@ -103,37 +80,29 @@ public:
 	}
 };
 
-#endif // DEBUG_RENDERER_VISIBLEQUAD
-
-#if DEBUG_VISIBILITY_OVERLAY
-
 class TeamSightColourCallback {
 public:
 	Vec4f operator()( const Vec2i &cell ) {
 		Vec4f colour(0.f);
 		Vec2i &tile = Map::toTileCoords(cell);
-		int vis = theWorld.getCartographer().getTeamVisibility(theWorld.getThisTeamIndex(), tile);
+		int vis = theWorld.getCartographer()->getTeamVisibility(theWorld.getThisTeamIndex(), tile);
 		if ( !vis ) {
 			colour.x = 1.0f;
 			colour.w = 0.1f;
 		} else {
 			colour.z = 1.0f;
 			switch ( vis ) {
-				case 1:  colour.w = 0.05f; break;
-				case 2:  colour.w = 0.1f; break;
-				case 3:  colour.w = 0.15f; break;
-				case 4:  colour.w = 0.2f; break;
-				case 5:  colour.w = 0.25f; break;
+				case 1:  colour.w = 0.05f;	break;
+				case 2:  colour.w = 0.1f;	break;
+				case 3:  colour.w = 0.15f;	break;
+				case 4:  colour.w = 0.2f;	break;
+				case 5:  colour.w = 0.25f;	break;
 				default: colour.w = 0.3f;
 			}
 		}
 		return colour;
 	}
 };
-
-#endif
-
-#if DEBUG_PATHFINDER_CLUSTER_OVERLAY
 
 class PathfinderClusterOverlay {
 public:
@@ -157,12 +126,67 @@ public:
 	}
 };
 
-#endif
-
-
 class DebugRenderer {
 public:
-	DebugRenderer () {}
+	bool AAStarTextures, HAAStarOverlay, showVisibleQuad, captureVisibleQuad,
+		regionHilights, teamSight;
+
+	DebugRenderer () {
+		AAStarTextures = HAAStarOverlay = true;
+		showVisibleQuad = captureVisibleQuad = regionHilights = teamSight = false;
+		PathFinderTextureCallBack::debugField = Field::LAND;
+	}
+
+	void commandLine(string &line) {
+		string key, val;
+		size_t n = line.find('=');
+		if ( n != string::npos ) {
+			key = line.substr(0, n);
+			val = line.substr(n+1);
+		} else {
+			key = line;
+		}
+		if ( key == "AStarTextures" ) {
+			if ( val == "" ) { // no val supplied, toggle
+				AAStarTextures = !AAStarTextures;
+			} else {
+				if ( val == "on" || val == "On" ) {
+					AAStarTextures = true;
+				} else {
+					AAStarTextures = false;
+				}
+			}
+		} else if ( key == "ClusterOverlay" ) {
+			if ( val == "" ) { // no val supplied, toggle
+				HAAStarOverlay = !HAAStarOverlay;
+			} else {
+				if ( val == "on" || val == "On" ) {
+					HAAStarOverlay = true;
+				} else {
+					HAAStarOverlay = false;
+				}
+			}
+		} else if ( key == "CaptuereQuad" ) {
+			captureVisibleQuad = true;
+		} else if ( key == "RegionColouring" ) {
+			if ( val == "" ) { // no val supplied, toggle
+				regionHilights = !regionHilights;
+			} else {
+				if ( val == "on" || val == "On" ) {
+					regionHilights = true;
+				} else {
+					regionHilights = false;
+				}
+			}
+		} else if ( key == "DebugField" ) {
+			Field f = FieldNames.match(val.c_str());
+			if ( f != Field::INVALID ) {
+				PathFinderTextureCallBack::debugField = f;
+			} else {
+				theConsole.addLine("Bad field: " + val);
+			}
+		}
+	}
 
 	template< typename CellTextureCallback >
 	void renderCellTextures ( Quad2i &visibleQuad ) {
@@ -178,6 +202,7 @@ public:
 
 		Quad2i scaledQuad = visibleQuad / Map::cellScale;
 		PosQuadIterator pqi( scaledQuad );
+		CellTextureCallback callback;
 		while ( pqi.next() ) {
 			const Vec2i &pos= pqi.getPos();
 			int cx, cy;
@@ -191,16 +216,16 @@ public:
 				Vec3f tc = tl + (tr - tl) / 2,  ml = tl + (bl - tl) / 2,
 					mr = tr + (br - tr) / 2, mc = ml + (mr - ml) / 2, bc = bl + (br - bl) / 2;
 				Vec2i cPos ( cx, cy );
-				const Texture2DGl *tex = CellTextureCallback()( cPos );
+				const Texture2DGl *tex = callback( cPos );
 				renderCellTextured( tex, tc00->getNormal(), tl, tc, mc, ml );
 				cPos = Vec2i( cx+1, cy );
-				tex = CellTextureCallback()( cPos );
+				tex = callback( cPos );
 				renderCellTextured( tex, tc00->getNormal(), tc, tr, mr, mc );
 				cPos = Vec2i( cx, cy + 1 );
-				tex = CellTextureCallback()( cPos );
+				tex = callback( cPos );
 				renderCellTextured( tex, tc00->getNormal(), ml, mc, bc, bl );
 				cPos = Vec2i( cx + 1, cy + 1 );
-				tex = CellTextureCallback()( cPos );
+				tex = callback( cPos );
 				renderCellTextured( tex, tc00->getNormal(), mc, mr, br, bc );
 			}
 		}
@@ -212,7 +237,7 @@ public:
 
 	} // renderCellTextures ()
 
-	template< typename CellOverlayColourCallback >
+	template< typename CellColourCallback >
 	void renderCellOverlay ( Quad2i &visibleQuad ) {
 		const Rect2i mapBounds( 0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1 );
 		float coordStep = theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
@@ -226,6 +251,7 @@ public:
 		glDisable( GL_TEXTURE_2D );
 		Quad2i scaledQuad = visibleQuad / Map::cellScale;
 		PosQuadIterator pqi( scaledQuad );
+		CellColourCallback callback;
 		while ( pqi.next() ){
 			const Vec2i &pos = pqi.getPos();
 			int cx, cy;
@@ -240,48 +266,38 @@ public:
 				Vec3f tc = tl + (tr - tl) / 2,	ml = tl + (bl - tl) / 2,	mr = tr + (br - tr) / 2,
 					  mc = ml + (mr - ml) / 2,	bc = bl + (br - bl) / 2;
 
-				colour = CellOverlayColourCallback()( Vec2i(cx,cy ) );
+				colour = callback( Vec2i(cx,cy ) );
 				renderCellOverlay( colour, tc00->getNormal(), tl, tc, mc, ml );
-				colour = CellOverlayColourCallback()( Vec2i(cx+1, cy) );
+				colour = callback( Vec2i(cx+1, cy) );
 				renderCellOverlay( colour, tc00->getNormal(), tc, tr, mr, mc );
-				colour = CellOverlayColourCallback()( Vec2i(cx, cy + 1) );
+				colour = callback( Vec2i(cx, cy + 1) );
 				renderCellOverlay( colour, tc00->getNormal(), ml, mc, bc, bl );
-				colour = CellOverlayColourCallback()( Vec2i(cx + 1, cy + 1) );
+				colour = callback( Vec2i(cx + 1, cy + 1) );
 				renderCellOverlay( colour, tc00->getNormal(), mc, mr, br, bc );
 			}
 		}
-		glEnd(); //??
 		//Restore
 		glPopAttrib();
 		//assert
 		glGetError();	//remove when first mtex problem solved
 		assertGl();
 	}
-#if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+
 	void renderClusterOverlay( Quad2i &visibleQuad ) {
 		renderCellOverlay<PathfinderClusterOverlay>(visibleQuad);
 	}
-#endif
-
 	void renderRegionHilight(Quad2i &visibleQuad) {
 		renderCellOverlay<RegionHilightCallback>(visibleQuad);
 	}
-
-#if DEBUG_SEARCH_TEXTURES
 	void renderPFDebug( Quad2i &visibleQuad ) {
 		renderCellTextures< PathFinderTextureCallBack >( visibleQuad );
 	}
-#endif
-#if DEBUG_RENDERER_VISIBLEQUAD
 	void renderCapturedQuad( Quad2i &visibleQuad ) {
 		renderCellOverlay< VisibleQuadColourCallback >( visibleQuad );
 	}
-#endif
-#if DEBUG_VISIBILITY_OVERLAY
 	void renderTeamSightOverlay(Quad2i &visibleQuad) {
 		renderCellOverlay<TeamSightColourCallback>(visibleQuad);
 	}
-#endif
 
 private:
 	void renderCellTextured( const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
@@ -328,13 +344,11 @@ private:
 
 	static list<Vec3f> waypoints;
 public:
-	static void clearWaypoints() {waypoints.clear();}
-	static void addWaypoint(Vec3f v){waypoints.push_back(v);}
+	static void clearWaypoints()		{ waypoints.clear();		}
+	static void addWaypoint(Vec3f v)	{ waypoints.push_back(v);	}
 
 	void renderPathOverlay() {
-		
 		//return;
-
 		Vec3f one, two;
 		if ( waypoints.size() < 2 ) return;
 

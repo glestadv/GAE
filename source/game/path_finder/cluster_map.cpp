@@ -82,7 +82,7 @@ void ClusterMap::initCluster(Vec2i cluster) {
 				north->transitions[f].push_back(t);
 			}
 		}// for each Field
-#		if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+#		if _GAE_DEBUG_EDITION_
 			Transitions::iterator it = north->transitions[Field::LAND].begin();
 			for ( ; it != north->transitions[Field::LAND].end(); ++it ) {
 				PathfinderClusterOverlay::entranceCells.insert((*it)->nwPos);
@@ -130,7 +130,7 @@ void ClusterMap::initCluster(Vec2i cluster) {
 			}
 		}// for each Field
 
-#		if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+#		if _GAE_DEBUG_EDITION_
 			Transitions::iterator it = west->transitions[Field::LAND].begin();
 			for ( ; it != west->transitions[Field::LAND].end(); ++it ) {
 				PathfinderClusterOverlay::entranceCells.insert((*it)->nwPos);
@@ -154,7 +154,7 @@ float ClusterMap::aStarPathLength(Field f, int size, Vec2i &start, Vec2i &dest) 
 	if ( res != AStarResult::COMPLETE || goalPos != dest ) {
 		return numeric_limits<float>::infinity();
 	}
-#	if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+#	if _GAE_DEBUG_EDITION_
 		if ( f == Field::LAND && size == 1 ) {
 			Vec2i aPos = se->getPreviousPos(goalPos);
 			while ( aPos != start ) {

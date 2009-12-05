@@ -38,7 +38,7 @@ void NodeMap::reset() {
 	nodeLimit = -1;
 	nodeCount = 0;
 	openTop = Vec2i(-1);
-#if DEBUG_SEARCH_TEXTURES
+#if _GAE_DEBUG_EDITION_
 		listedNodes.clear();
 #endif
 }
@@ -81,7 +81,7 @@ bool NodeMap::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	float est = h + d;
 	nodeCount ++;
 
-#	if DEBUG_SEARCH_TEXTURES
+#	if _GAE_DEBUG_EDITION_
 		listedNodes.push_back ( pos );
 #	endif
 
@@ -257,7 +257,7 @@ bool NodeMap::assertValidPath(list<Vec2i> &path) {
 	return true;
 }
 
-#if DEBUG_SEARCH_TEXTURES
+#if _GAE_DEBUG_EDITION_
 /*
 list<pair<Vec2i,uint32>>* SearchMap::getLocalAnnotations() {
 	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>>();

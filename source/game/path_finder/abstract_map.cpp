@@ -276,7 +276,7 @@ void AbstractMap::initCluster(Vec2i cluster) {
 				}
 			}
 		}
-#		if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+#		if _GAE_DEBUG_EDITION_
 		//if ( cluster.y == 3 ) {
 			if ( west->transitions[Field::LAND].clearance > 0 ) {
 				int y = west->transitions[Field::LAND].position;
@@ -313,7 +313,7 @@ void AbstractMap::initCluster(Vec2i cluster) {
 				}
 			}			
 		}
-#		if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+#		if _GAE_DEBUG_EDITION_
 		//if ( cluster.y == 3 ) {
 			if ( north->transitions[Field::LAND].clearance > 0 ) {
 				int x = north->transitions[Field::LAND].position;
@@ -345,7 +345,7 @@ float AbstractMap::aStarPathLength(Field f, Vec2i &start, Vec2i &dest) {
 	if ( res != AStarResult::COMPLETE || goalPos != dest ) {
 		return numeric_limits<float>::infinity();
 	}
-#	if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+#	if _GAE_DEBUG_EDITION_
 	if ( f == Field::LAND ) {
 		Vec2i aPos = se->getPreviousPos(goalPos);
 		while ( aPos != start ) {

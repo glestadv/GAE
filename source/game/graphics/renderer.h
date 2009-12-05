@@ -27,7 +27,7 @@
 #include "font_manager.h"
 #include "camera.h"
 
-#if DEBUG_RENDERING_ENABLED
+#if _GAE_DEBUG_EDITION_
 #	include "debug_renderer.h"
 #endif
 
@@ -60,6 +60,9 @@ enum ResourceScope{
 // ===========================================================
 
 class Renderer{
+#if _GAE_DEBUG_EDITION_
+	friend class ScriptManager;
+#endif
 public:
 	//progress bar
 	static const int maxProgressBar;
@@ -232,7 +235,7 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
-#if DEBUG_RENDERING_ENABLED
+#if _GAE_DEBUG_EDITION_
 	DebugRenderer debugRenderer;
 #endif
 	//computing

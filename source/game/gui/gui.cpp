@@ -522,13 +522,6 @@ void Gui::hotKey(UserCommand cmd) {
 	case ucPatrol:
 		//clickCommonCommand(CommandClass::PATROL);
 		break;
-#ifdef _GAE_DEBUG_EDITION_
-	case ucSwitchDebugField:
-		f = (int)Renderer::getInstance().getDebugField ();
-		f ++; f %= Field::COUNT;
-		Renderer::getInstance().setDebugField ( (Field)f );
-		break;
-#endif
 	default:
 		break;
 	}
