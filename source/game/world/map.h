@@ -4,7 +4,7 @@
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //				  2008 Jaagup Repän <jrepan@gmail.com>,
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
-//				  2009 James McCulloch <silnarm@gmail.com>
+//				  2009 James McCulloch <silnarm at gmail>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -59,45 +59,38 @@ class Earthquake;
 ///	A map cell that holds info about units present on it
 // =====================================================
 
-class Cell {
+class Cell{
 private:
 	Unit *units[Zone::COUNT];	//units on this cell
 	float height;
 	SurfaceType surfaceType;
-
-private:
-	Cell(const Cell&);
-	void operator=(const Cell&) const;
+	
+	Cell(Cell&);
+	void operator=(Cell&);
 
 public:
-	/**
-	 * Default ctor.  It's usually better to outline stuff like this, but when these are created,
-	 * they are created in large quantities, so it's probably much better to have this ctor inlined.
-	 */
-	Cell() : height(0), surfaceType(SurfaceType::LAND) {
+	Cell() {
 		memset(units, 0, sizeof(units));
+		height= 0;
+		surfaceType = SurfaceType::LAND;
 	}
 
 	// get
-	Unit *getUnit(Zone zone) const	{return units[zone];}
-	Unit *getUnit(Field field)		{return getUnit(field == Field::AIR ? Zone::AIR : Zone::LAND);}
-	float getHeight() const			{return height;}
-	SurfaceType getType() const		{return surfaceType;}
+	Unit *getUnit( Zone zone ) const		{return units[zone];}
+	Unit *getUnit( Field field ) {return getUnit( field==Field::AIR?Zone::AIR:Zone::LAND );}
+	float getHeight() const				{return height;}
+	SurfaceType getType() const { return surfaceType; }
 
-	bool isSubmerged() const		{return surfaceType != SurfaceType::LAND;}
-	bool isDeepSubmerged() const	{return surfaceType == SurfaceType::DEEP_WATER;}
+	bool isSubmerged () const { return surfaceType != SurfaceType::LAND; }
+	bool isDeepSubmerged () const { return surfaceType == SurfaceType::DEEP_WATER; }
 
 	// set
-	void setUnit(Zone field, Unit *unit)	{units[field] = unit;}
-	void setHeight(float h)					{height = h;}
-	void setType(SurfaceType type)			{surfaceType = type;}
+	void setUnit ( Zone field, Unit *unit) {units[field]= unit;}
+	void setHeight (float h) { height= h; }
+	void setType ( SurfaceType type ) { surfaceType = type; }
 
 	//misc
-	/** @returns true if the zone in the cell is not occupied. */
-	bool isFree(Zone zone) const {
-		const Unit *resident = getUnit(zone);
-		return !resident || resident->isPutrefacting();
-	}
+	bool isFree(Zone field) const;
 };
 
 // =====================================================
@@ -157,7 +150,7 @@ public:
 	void setHeight(float height)					{originalVertex.y = vertex.y = height;}
 	void setNormal(const Vec3f &normal)				{this->normal= normal;}
 	void setColor(const Vec3f &color)				{this->color= color;}
-	void setTileType(int tileType)			{this->tileType= tileType;}
+	void setTileType(int tileType)					{this->tileType= tileType;}
 	void setTileTexture(const Texture2D *st)		{this->tileTexture= st;}
 	void setObject(Object *object)					{this->object= object;}
 	void setFowTexCoord(const Vec2f &ftc)			{this->fowTexCoord= ftc;}
@@ -173,7 +166,7 @@ public:
 	void alterVertex(const Vec3f &offset)			{vertex += offset;}
 	void updateObjectVertex() {
 		if(object) {
-			object->setPos(vertex); // should be centered ???
+			object->setPos(vertex); // should be centered ??? YES!!! It should, do so here, remove hack from Renderer
 		}
 	}
 
@@ -369,7 +362,7 @@ private:
 
 public:
 	PosCircularIteratorOrdered(const Map &map, const Vec2i &center,
-			Glest::Game::Util::PosCircularIterator *i) : map(map), center(center), i(i) {}
+			Glest::Game::Util::PosCircularIterator *i) : map(map), center(center), i(i) {} 
 	~PosCircularIteratorOrdered() {
 		delete i;
 	}
@@ -439,7 +432,7 @@ private:
 
 public:
 	PosCircularIteratorSimple(const Map &map, const Vec2i &center, int radius);
-	bool getNext(Vec2i &result, float &dist) {
+	bool getNext(Vec2i &result, float &dist) {	
 		//iterate while dont find a cell that is inside the world
 		//and at less or equal distance that the radius
 		do {
@@ -455,7 +448,7 @@ public:
 			dist = pos.dist(center);
 		} while (floor(dist) >= (radius + 1) || !map.isInside(pos));
 		//while(!(pos.dist(center) <= radius && map.isInside(pos)));
-
+	
 		return true;
 	}
 
@@ -524,7 +517,7 @@ private:
 
 public:
 	PosCircularInsideOutIterator(const Map *map, const Vec2i &center, int radius);
-
+	
 	bool isOutOfRange(const Vec2i &p) {
 		return p.length() > radius;
 	}
@@ -637,7 +630,7 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////
-// Cut Here
+// Cut Here 
 //////////////////////////////////////////////////////////////////
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
@@ -780,7 +773,7 @@ private:
 //#endif
 
 //////////////////////////////////////////////////////////////////
-// Cut Here
+// Cut Here 
 //////////////////////////////////////////////////////////////////
 
 

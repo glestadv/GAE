@@ -23,11 +23,13 @@
 #include "sound_renderer.h"
 #include "game_settings.h"
 #include "network_message.h"
-#include "path_finder.h"
+#include "route_planner.h"
+#include "cartographer.h"
 #include "lang_features.h"
 
-//DEBUG remove me some time...
-#include "renderer.h"
+#if DEBUG_SEARCH_TEXTURES
+#	include "debug_renderer.h"
+#endif
 
 #include "leak_dumper.h"
 
@@ -37,7 +39,7 @@ using namespace Shared::Util;
 namespace Glest { namespace Game {
 
 // =====================================================
-//  class World
+// 	class World
 // =====================================================
 
 const float World::airHeight = 5.f;
@@ -45,12 +47,14 @@ World *World::singleton = NULL;
 
 // ===================== PUBLIC ========================
 
-World::World(Game *game)
+World::World(Game *game) 
 		: game(*game)
 		, gs(game->getGameSettings())
-		, unitUpdater(*game)
 		, stats(game->getGameSettings())
-		, posIteratorFactory(65) {
+		, posIteratorFactory(65)
+		, scenario(NULL)
+		, cartographer(NULL)
+		, routePlanner(NULL) {
 	Config &config = Config::getInstance();
 
 	fogOfWar = config.getGsFogOfWarEnabled();
@@ -63,13 +67,17 @@ World::World(Game *game)
 	frameCount = 0;
 	nextUnitId = 0;
 	scriptManager = NULL;
-	scenario = NULL;
 	assert(!singleton);
 	singleton = this;
 	alive = false;
 }
 
-void World::end() {
+World::~World() {
+	singleton = NULL;
+	delete cartographer;
+}
+
+void World::end(){
 	Logger::getInstance().add("World", !Program::getInstance()->isTerminating());
 	alive = false;
 
@@ -85,7 +93,7 @@ void World::save(XmlNode *node) const {
 	node->addChild("nextUnitId", nextUnitId);
 
 	stats.save(node->addChild("stats"));
-	timeFlow.save(node->addChild("timeFlow"));
+ 	timeFlow.save(node->addChild("timeFlow"));
 	XmlNode *factionsNode = node->addChild("factions");
 	for (Factions::const_iterator i = factions.begin(); i != factions.end(); ++i) {
 		i->save(factionsNode->addChild("faction"));
@@ -104,9 +112,8 @@ void World::save(XmlNode *node) const {
 // ========================== init ===============================================
 
 void World::init(const XmlNode *worldNode) {
-
-#  ifdef _GAE_DEBUG_EDITION_
-	loadPFDebugTextures();
+#  if DEBUG_SEARCH_TEXTURES
+	PathFinderTextureCallBack::loadPFDebugTextures();
 #  endif
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
@@ -114,8 +121,12 @@ void World::init(const XmlNode *worldNode) {
 
 	initSplattedTextures();
 
-	unitUpdater.init(game); // must be done after initMap()
+	cartographer = new Cartographer(this);
+	cartographer->updateResourceMaps();
+	routePlanner = new RoutePlanner(this);
 
+	unitUpdater.init(game); // must be done after initMap()
+	
 	//minimap must be init after sum computation
 	initMinimap();
 
@@ -124,15 +135,17 @@ void World::init(const XmlNode *worldNode) {
 	} else if (game.getGameSettings().getDefaultUnits()) {
 		initUnits();
 	}
+//	cartographer->updateTeamMaps();
 
 	initExplorationState();
-
-	if (worldNode) {
+	
+	if(worldNode) {
 		NetworkDataBuffer buf;
 		NetworkManager &networkManager = NetworkManager::getInstance();
 		uint32 mmDataSize;
 
 		buf.uudecodeUncompressFromXml(worldNode->getChild("map"));
+
 		buf.read(mmDataSize);
 
 		// if client resuming saved game we omit minimap alpha data and sythesize it instead.
@@ -272,7 +285,6 @@ static void logUnit(Unit *unit, string action, Vec2i *oldPos, int *oldHp) {
 			, false);
 }
 
-
 void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, float nextAdvanceFrames) {
 	UnitReference unitRef(n);
 	Unit *unit = unitRef.getUnit();
@@ -358,6 +370,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		}
 	}
 #endif
+		
 
 
 	if (Config::getInstance().getMiscDebugMode()) {
@@ -382,7 +395,7 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		if (unit->getHp()) {
 			// doh! we gotta bring em back
 			moveAndEvict(unit, evicted, NULL);
-
+			
 			// remove them from hacky cleanup list
 			for (Units::iterator i = newlydead.begin(); i != newlydead.end(); ++i) {
 				if (*i == unit) {
@@ -409,9 +422,9 @@ void World::updateClient() {
 
 	while ((msg = clientInterface->getNextUpdate())) {
 		/*
-		if(Config::getInstance().getDebugMode()) {
-		 Logger::getInstance().add(string("\n======================\n")
-		   + msg->getData() + "\n======================\n");
+		if (Config::getInstance().getDebugMode()) {
+			Logger::getInstance().add(string("\n======================\n")
+					+ msg->getData() + "\n======================\n");
 		}*/
 
 		msg->parse();
@@ -504,9 +517,9 @@ void World::updateEarthquakes(float seconds) {
 
 			for (dri = damageReport.begin(); dri != damageReport.end(); ++dri) {
 				float multiplier = techTree.getDamageMultiplier(
-									   at, dri->first->getType()->getArmorType());
+						at, dri->first->getType()->getArmorType());
 				float intensity = dri->second.intensity;
-				float count = dri->second.count;
+				float count = (float)dri->second.count;
 				float damage = intensity * maxDps * multiplier;
 
 				if (!(*ei)->getType()->isAffectsAllies() && attacker->isAlly(dri->first)) {
@@ -519,7 +532,7 @@ void World::updateEarthquakes(float seconds) {
 				}
 
 				const FallDownSkillType *fdst = (const FallDownSkillType *)
-												dri->first->getType()->getFirstStOfClass(SkillClass::FALL_DOWN);
+						dri->first->getType()->getFirstStOfClass(SkillClass::FALL_DOWN);
 
 				if (fdst && dri->first->getCurrSkill() != fdst
 						&& random.randRange(0.f, 1.f) + fdst->getAgility() < intensity / count / 0.25f) {
@@ -531,7 +544,7 @@ void World::updateEarthquakes(float seconds) {
 }
 
 void World::update() {
-
+	PROFILE_START( "World Update" );
 	++frameCount;
 
 	// check ScriptTimers
@@ -608,6 +621,7 @@ void World::update() {
 
 		si.sendUpdates();
 	}
+	PROFILE_STOP( "World Update" );
 }
 
 void World::doKill(Unit *killer, Unit *killed) {
@@ -624,7 +638,8 @@ void World::doKill(Unit *killer, Unit *killed) {
 		killed->kill();
 	}
 	if ( !killed->isMobile() ) {
-		unitUpdater.pathFinder->updateMapMetrics ( killed->getPos (), killed->getSize () );
+		// obstacle removed
+		cartographer->updateMapMetrics(killed->getPos(), killed->getSize());
 	}
 }
 
@@ -632,7 +647,6 @@ void World::tick() {
 	if (!fogOfWarSmoothing) {
 		minimap.updateFowTex(1.f);
 	}
-
 	//apply hack cleanup
 	doHackyCleanUp();
 
@@ -734,27 +748,36 @@ bool World::placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spacia
 //clears a unit old position from map and places new position
 void World::moveUnitCells(Unit *unit) {
 	Vec2i newPos = unit->getNextPos();
-
-	/*if (newPos == unit->getPos()) {
+	bool changingTiles = false;
+	if (Map::toTileCoords(newPos) != Map::toTileCoords(unit->getPos())) {
+		changingTiles = true;
+		// remove unit's visibility
+		cartographer->removeUnitVisibility(unit);
+	}
+	/*if(newPos == unit->getPos()) {
 		return;
 	}*/
 
 	// FIXME: workaround for client problems trying to move units into occupied cells
-	/*
-	if (isNetworkClient()) {
+	//if (isNetworkClient()) {
 		// make sure route is still clear
-
+	/*
 		if (!map.canMove(unit, unit->getPos(), newPos)) {
 			fprintf(stderr, "Unit %d needs a new path and I'm stopping.\n", unit->getId());
 			unit->getPath()->clear();
 			unit->setCurrSkill(SkillClass::STOP);
 			return;
 		}
-	}*/
+	*/
+	//}
 
-	assert(unitUpdater.pathFinder->isLegalMove(unit, newPos));
+	assert( unitUpdater.routePlanner->isLegalMove ( unit, newPos ) );
 	map.clearUnitCells(unit, unit->getPos());
 	map.putUnitCells(unit, newPos);
+	if ( changingTiles ) {
+		// re-apply unit's visibility
+		cartographer->applyUnitVisibility(unit);
+	}
 
 	//water splash
 	if (tileset.getWaterEffects() && unit->getCurrField() == Field::LAND) {
@@ -804,12 +827,11 @@ int World::createUnit(const string &unitName, int factionIndex, const Vec2i &pos
 		unit->create(true);
 		unit->born();
 		if ( !unit->isMobile() ) {
-			Search::PathFinder *pf = Search::PathFinder::getInstance();
-			pf->updateMapMetrics(unit->getPos(), unit->getSize());
+			cartographer->updateMapMetrics(unit->getPos(), unit->getSize());
 		}
 		scriptManager->onUnitCreated(unit);
 		return unit->getId();
-	} else{
+	} else {
 		delete unit;
 		return -3;
 	}
@@ -819,8 +841,8 @@ int World::giveResource(const string &resourceName, int factionIndex, int amount
 	if ( factionIndex < 0 && factionIndex >= factions.size() ) {
 		return -1;
 	}
+	const ResourceType* rt= techTree.getResourceType(resourceName);
 	Faction* faction= &factions[factionIndex];
-	const ResourceType* rt;
 	try {
 		rt = techTree.getResourceType(resourceName);
 	} catch (runtime_error e) {
@@ -877,6 +899,7 @@ int World::givePositionCommand(int unitId, const string &commandName, const Vec2
 		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::GUARD);
 	} else {
 		return -3; // unknown position command
+
 	}
 	if ( !cmdType ) {
 		return -2; // unit has no appropriate command
@@ -922,6 +945,7 @@ int World::giveTargetCommand ( int unitId, const string & cmdName, int targetId 
 			}
 		}
 		return -2;
+
 	} else if ( cmdName == "guard" ) {
 		cmdType = unit->getType()->getFirstCtOfClass(CommandClass::GUARD);
 	} else if ( cmdName == "patrol" ) {
@@ -937,13 +961,13 @@ int World::giveTargetCommand ( int unitId, const string & cmdName, int targetId 
 /** return 0 if ok, -1 if bad unit id, -2 if unit has no stop command, -3 illegal cmd name */
 int World::giveStopCommand(int unitId, const string &cmdName) {
 	Unit *unit = findUnitById(unitId);
-	if ( unit == NULL ) {
+	if (unit == NULL) {
 		return -1;
 	}
-	if ( cmdName == "stop" ) {
+	if (cmdName == "stop") {
 		const StopCommandType *sct = (StopCommandType *)unit->getType()->getFirstCtOfClass(CommandClass::STOP);
-		if ( sct ) {
-			if ( unit->giveCommand(new Command(sct, CommandFlags())) == CommandResult::SUCCESS ) {
+		if (sct) {
+			if (unit->giveCommand(new Command(sct, CommandFlags())) == CommandResult::SUCCESS) {
 				return 0; // ok
 			}
 			return 1; // command fail
@@ -953,8 +977,8 @@ int World::giveStopCommand(int unitId, const string &cmdName) {
 	} else if ( cmdName == "attack-stopped" ) {
 		const AttackStoppedCommandType *asct = 
 			(AttackStoppedCommandType *)unit->getType()->getFirstCtOfClass(CommandClass::ATTACK_STOPPED);
-		if ( asct ) {
-			if ( unit->giveCommand(new Command(asct, CommandFlags())) == CommandResult::SUCCESS ) {
+		if (asct) {
+			if (unit->giveCommand(new Command(asct, CommandFlags())) == CommandResult::SUCCESS) {
 				return 0;
 			}
 			return 1;
@@ -1001,6 +1025,7 @@ int World::giveProductionCommand(int unitId, const string &producedName){
 				//	theConsole.addLine("produce command failed");
 				}
 				return 1; // command fail	
+
 			}
 		} else if ( ct->getClass() == CommandClass::MORPH ) { // Morph Command ?
 			if ( ((MorphCommandType*)ct)->getMorphUnit()->getName() == producedName ) {
@@ -1099,8 +1124,9 @@ int World::getUnitFactionIndex(int unitId){
 int World::getUnitCount(int factionIndex){
 	if(factionIndex<factions.size()){
 		Faction* faction= &factions[factionIndex];
-		int count= 0;
-		for(int i= 0; i<faction->getUnitCount(); ++i){
+		int count = 0;
+		
+		for (int i= 0; i<faction->getUnitCount(); ++i) {
 			const Unit* unit= faction->getUnit(i);
 			if(unit->isAlive()){
 				++count;
@@ -1134,7 +1160,6 @@ int World::getUnitCountOfType(int factionIndex, const string &typeName){
 	}
 }
 
-
 // ==================== PRIVATE ====================
 
 // ==================== private init ====================
@@ -1146,11 +1171,11 @@ void World::initCells() {
 	for (int i = 0; i < map.getTileW(); ++i) {
 		for (int j = 0; j < map.getTileH(); ++j) {
 
-			Tile *sc = map.getTile(i, j);
+			Tile *sc= map.getTile(i, j);
 
 			sc->setFowTexCoord(Vec2f(
-								   i / (next2Power(map.getTileW()) - 1.f),
-								   j / (next2Power(map.getTileH()) - 1.f)));
+					i / (next2Power(map.getTileW()) - 1.f),
+					j / (next2Power(map.getTileH()) - 1.f)));
 
 			for (int k = 0; k < GameConstants::maxPlayers; k++) {
 				sc->setExplored(k, false);
@@ -1171,12 +1196,11 @@ void World::initSplattedTextures() {
 			Tile *sc01 = map.getTile(i, j + 1);
 			Tile *sc11 = map.getTile(i + 1, j + 1);
 			tileset.addSurfTex(
-					sc00->getTileType(),
-					sc10->getTileType(),
-					sc01->getTileType(),
-					sc11->getTileType(),
-					coord,
-					texture);
+				sc00->getTileType(),
+				sc10->getTileType(),
+				sc01->getTileType(),
+				sc11->getTileType(),
+				coord, texture);
 			sc00->setTileTexCoord(coord);
 			sc00->setTileTexture(texture);
 		}
@@ -1239,12 +1263,15 @@ void World::initUnits() {
 
 				} else {
 					throw runtime_error("Unit cant be placed, this error is caused because there "
-										"is no enough place to put the units near its start location, make a "
-										"better map: " + unit->getType()->getName() + " Faction: " + intToStr(i));
+						"is no enough place to put the units near its start location, make a "
+						"better map: " + unit->getType()->getName() + " Faction: "+intToStr(i));
 				}
-				if (unit->getType()->hasSkillClass(SkillClass::BE_BUILT)) {
+				//if ( !unit->isMobile() )
+				//   unitUpdater.routePlanner->updateMapMetrics ( unit->getPos(),
+				//                unit->getSize(), true, unit->getCurrField () );
+				if(unit->getType()->hasSkillClass(SkillClass::BE_BUILT)) {
 					map.flatternTerrain(unit);
-					unitUpdater.pathFinder->updateMapMetrics(unit->getPos(), unit->getSize());
+					cartographer->updateMapMetrics(unit->getPos(), unit->getSize());
 				}
 			}
 		}
@@ -1349,7 +1376,7 @@ void World::computeFow() {
 	for (int i = 0; i < getFactionCount(); ++i) {
 		for (int j = 0; j < getFaction(i)->getUnitCount(); ++j) {
 			Unit *unit = getFaction(i)->getUnit(j);
-
+	
 			//exploration
 			if (unit->isOperative()) {
 				exploreCells(unit->getCenteredPos(), unit->getSight(), unit->getTeam());
@@ -1361,7 +1388,7 @@ void World::computeFow() {
 	for (int i = 0; i < getFactionCount(); ++i) {
 		for (int j = 0; j < getFaction(i)->getUnitCount(); ++j) {
 			Unit *unit = getFaction(i)->getUnit(j);
-
+	
 			//fire
 			ParticleSystem *fire = unit->getFire();
 			if (fire) {
@@ -1369,7 +1396,7 @@ void World::computeFow() {
 			}
 		}
 	}
-
+	
 	//compute texture
 	if ( unfogActive ) { // scripted map reveal
 		doUnfog();

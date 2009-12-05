@@ -45,6 +45,8 @@ class Config;
 class Game;
 class GameSettings;
 class ScriptManager;
+namespace Search { class Cartographer; class RoutePlanner; }
+using namespace Search;
 
 // =====================================================
 // 	class World
@@ -58,20 +60,21 @@ private:
 	typedef std::map< string,set<string> > UnitTypes;
 
 public:
+	/** max radius to look when placing units */
 	static const int generationArea= 100;
+	/** height air units are drawn at. @todo this is not game data, probably belongs somewhere else */
 	static const float airHeight;
+	/** ??? anyone ? */
 	static const int indirectSightRange= 5;
 
 private:
-
 	Map map;
 	Tileset tileset;
 	TechTree techTree;
 	TimeFlow timeFlow;
+	Scenario *scenario;
 	Game &game;
 	const GameSettings &gs;
-
-	Scenario *scenario;
 
 	UnitUpdater unitUpdater;
 	WaterEffects waterEffects;
@@ -83,6 +86,8 @@ private:
 	Random random;
 
 	ScriptManager *scriptManager;
+	Cartographer *cartographer;
+	RoutePlanner *routePlanner;
 
 	int thisFactionIndex;
 	int thisTeamIndex;
@@ -108,7 +113,7 @@ private:
 
 public:
 	World(Game *game);
-	~World()										{singleton = NULL;}
+	~World();
 	void end(); //to die before selection does
 
 	static World& getInstance () { return *singleton; }
@@ -126,6 +131,8 @@ public:
 	const TimeFlow *getTimeFlow() const				{return &timeFlow;}
 	Tileset *getTileset() 							{return &tileset;}
 	Map *getMap() 									{return &map;}
+	Cartographer* getCartographer()					{return cartographer;}
+	RoutePlanner* getRoutePlanner()					{return routePlanner;}
 	const Faction *getFaction(int i) const			{return &factions[i];}
 	Faction *getFaction(int i) 						{return &factions[i];}
 	const Minimap *getMinimap() const				{return &minimap;}
@@ -163,7 +170,7 @@ public:
 		//a unit is rendered if it is in a visible cell or is attacking a unit in a visible cell
 		return visibleQuad.isInside(unit->getCenteredPos()) && toRenderUnit(unit);
 	}
-
+	
 	bool toRenderUnit(const Unit *unit) const {
 		return map.getTile(Map::toTileCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)
 			|| (unit->getCurrSkill()->getClass() == SkillClass::ATTACK
@@ -173,8 +180,8 @@ public:
 	//scripting interface
 	int createUnit(const string &unitName, int factionIndex, const Vec2i &pos);
 	int givePositionCommand(int unitId, const string &commandName, const Vec2i &pos);
-	int giveTargetCommand ( int unitId, const string &commandName, int targetId );
-	int giveStopCommand ( int unitId, const string &commandName );
+	int giveTargetCommand( int unitId, const string &commandName, int targetId);
+	int giveStopCommand( int unitId, const string &commandName);
 	int giveProductionCommand(int unitId, const string &producedName);
 	int giveUpgradeCommand(int unitId, const string &upgradeName);
 	int giveResource(const string &resourceName, int factionIndex, int amount);
@@ -188,9 +195,9 @@ public:
 	void unfogMap(const Vec4i &rect, int time);
 
 #ifdef _GAE_DEBUG_EDITION_
-	void loadPFDebugTextures ();
+	void loadPFDebugTextures();
 	Texture2D *PFDebugTextures[18];
-	//int getNumPathPos () { return map.PathPositions.size (); }
+	//int getNumPathPos() { return map.PathPositions.size(); }
 #endif
 
 private:

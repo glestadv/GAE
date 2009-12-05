@@ -1,7 +1,7 @@
 // ==============================================================
-//	This file is part of Glest Shared Library (www.glest.org)
+//	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2008-2009 Daniel Santos <daniel.santos@pobox.com>
+//	Copyright (C) 2009	James McCulloch
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -9,12 +9,10 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-// NO pre-compiled header!
-// game_constants.h is in it, without GAME_CONSTANTS_DEF defined.
+#include "pch.h"
+#include "influence_map.h"
 
-#define GAME_CONSTANTS_DEF
-#include "game_constants.h"
+namespace Glest { namespace Game { namespace Search {
 
-namespace Game {
+}}}
 
-} // end namespace Game

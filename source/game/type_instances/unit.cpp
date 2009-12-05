@@ -25,6 +25,7 @@
 #include "core_data.h"
 #include "renderer.h"
 #include "script_manager.h"
+#include "cartographer.h"
 
 #include "leak_dumper.h"
 
@@ -37,9 +38,8 @@ namespace Glest{ namespace Game{
 // =====================================================
 // 	class UnitPath
 // =====================================================
-
-const int UnitPath::maxBlockCount= 10;
 	
+/** read in path from XML */
 void UnitPath::read(const XmlNode *node) {
 	clear();
 	string str = node->getStringValue();
@@ -57,7 +57,7 @@ void UnitPath::read(const XmlNode *node) {
 			break;
 		}
 		p = z + 1;
-		pathQueue.push_back(Vec2i(x, y));
+		push_back(Vec2i(x, y));
 	} while(true);
 	
 	blockCount = node->getIntAttribute("blockCount");
@@ -79,10 +79,11 @@ void UnitPath::read(const XmlNode *node) {
 	*/
 }
 
+/** write path to XML */
 void UnitPath::write(XmlNode *node) const {
 	stringstream s;
-	for (vector<Vec2i>::const_iterator i = pathQueue.begin(); i != pathQueue.end(); ++i) {
-		if(i != pathQueue.begin()) {
+	for ( list<Vec2i>::const_iterator i = begin(); i != end(); ++i) {
+		if(i != begin()) {
 			s << ",";
 		}
 		s << i->x << "," << i->y;
@@ -97,26 +98,33 @@ void UnitPath::write(XmlNode *node) const {
 // 	class Unit
 // =====================================================
 
+/** skill speed divider @see somewhere else */
 const float Unit::speedDivider= 100.f;
+/** number of frames until a corpse is removed */
 const int Unit::maxDeadCount= 1000;	//time in until the corpse disapears
+/** time (in seconds ?) of selection circle effect 'flashes' */
 const float Unit::highlightTime= 0.5f;
+/** the invalid unit ID */
 const int Unit::invalidId= -1;
 
 // ============================ Constructor & destructor =============================
 
+/** Construct Unit object */
 Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master)
 		: pos(pos)
 		, lastPos(pos)
 		, nextPos(pos)
 		, targetPos(0)
-		, commandCallback(NULL)
-		, hp_below_trigger(0)
-		, hp_above_trigger(0)
-		, attacked_trigger(false)
 		, targetVec(0.0f)
 		, meetingPos(pos)
 		, lastCommandUpdate(0)
-		, lastCommanded(0) {
+		, lastCommanded(0)
+		, progressSpeed(0.f)
+		, animProgressSpeed(0.f)
+		, commandCallback(NULL)
+		, hp_below_trigger(0)
+		, hp_above_trigger(0)
+		, attacked_trigger(false) {
 	Random random;
 
 	this->faction = faction;
@@ -157,6 +165,7 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	loadType = NULL;
 	currSkill = getType()->getFirstStOfClass(SkillClass::STOP);	//starting skill
 //	lastSkill = currSkill;
+	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " constructed at pos(" + intToStr(pos.x) + "," + intToStr(pos.y) + ")" );
 
 	toBeUndertaken = false;
 //	alive= true;
@@ -171,6 +180,7 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	nextUpdateFrames = 1.f;
 }
 
+/** delete stuff */
 Unit::~Unit() {
 	//remove commands
 	while (!commands.empty()) {
@@ -183,6 +193,7 @@ Unit::~Unit() {
 //	World::getCurrWorld()->getMap()->makeSureImRemoved(this);
 }
 
+/** serialise to XML */
 void Unit::save(XmlNode *node, bool morphed) const {
 	XmlNode *n;
 
@@ -265,6 +276,7 @@ void Unit::writeMinorUpdate(XmlNode *node) const {
 	unitPath.write(node->addChild("unitPath"));
 }
 
+/** XML update, 'minor' network updates */
 void Unit::updateMinor(const XmlNode *node) {
 	string s;
 	int oldHp = hp;
@@ -305,6 +317,7 @@ void Unit::updateMinor(const XmlNode *node) {
 	
 }
 
+/** Construct a unit from XML */
 Unit::Unit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld) :
 		targetRef(node->getChild("targetRef")),
 		effects(node->getChild("effects")),
@@ -321,6 +334,7 @@ Unit::Unit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, 
 	update(node, tt, true, putInWorld, false, 0.f);
 }
 
+/** an XML 'update', full network update or restore saved game */
 void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld, bool netClient, float nextAdvanceFrames) {
 	const XmlNode *n;
 	string s;
@@ -455,6 +469,10 @@ void Unit::update(const XmlNode *node, const TechTree *tt, bool creation, bool p
 
 // ====================================== get ======================================
 
+/** @param from position to search from
+  * @return nearest cell to from that is occuppied
+  * @todo re-implement with Dijkstra search
+  */
 Vec2i Unit::getNearestOccupiedCell(const Vec2i &from) const {
 	int size = type->getSize();
 
@@ -521,6 +539,8 @@ float Unit::getVerticalRotation() const{
 	return 0.f;
 }
 */
+/** query completeness of thing this unit is producing
+  * @return percentage complete, or -1 if not currently producing anything */
 int Unit::getProductionPercent() const {
 	if(anyCommand()) {
 		const ProducibleType *produced = commands.front()->getType()->getProduced();
@@ -531,6 +551,7 @@ int Unit::getProductionPercent() const {
 	return -1;
 }
 
+/** query next availale level @return next level, or NULL */
 const Level *Unit::getNextLevel() const{
 	if(level==NULL && type->getLevelCount()>0){
 		return type->getLevel(0);
@@ -545,6 +566,7 @@ const Level *Unit::getNextLevel() const{
 	return NULL;
 }
 
+/** retrieve name description, levelName + unitTypeName */
 string Unit::getFullName() const{
 	string str;
 	if(level!=NULL){
@@ -556,7 +578,10 @@ string Unit::getFullName() const{
 
 // ====================================== is ======================================
 
-
+/** query unit interestingness
+  * @param iut the type of interestingness you're interested in
+  * @return true if this unit is interesting in the way you're interested in
+  */
 bool Unit::isInteresting(InterestingUnitType iut) const{
 	switch(iut){
 	case InterestingUnitType::IDLE_HARVESTER:
@@ -583,6 +608,10 @@ bool Unit::isInteresting(InterestingUnitType iut) const{
 	}
 }
 
+/** query if a unit is a pet of this unit
+  * @param u potential pet
+  * @return true if u is a pet of this unit
+  */
 bool Unit::isPet(const Unit *u) const {
 	for(Pets::const_iterator i = pets.begin(); i != pets.end(); i++) {
 		if(*i == u) {
@@ -592,6 +621,10 @@ bool Unit::isPet(const Unit *u) const {
 	return false;
 }
 
+/** find a repair command type that can repair a unit
+  * @param u the unit in need of repairing 
+  * @return a RepairCommandType that can repair u, or NULL
+  */
 const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 	for(int i = 0; i < type->getCommandTypeCount(); i++) {
 		const CommandType *ct = type->getCommandType(i);
@@ -611,8 +644,10 @@ const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 
 // ====================================== set ======================================
 
+/** sets the current skill */
 void Unit::setCurrSkill(const SkillType *currSkill) {
 	assert(currSkill);
+	//LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " skill set => " + SkillClassNames[currSkill->getClass()] );
 	if (currSkill->getClass() == SkillClass::STOP && this->currSkill->getClass() == SkillClass::STOP) {
 		return;
 	}
@@ -625,6 +660,7 @@ void Unit::setCurrSkill(const SkillType *currSkill) {
 	notifyObservers(UnitObserver::eStateChange);
 }
 
+/** sets unit's target */
 void Unit::setTarget(const Unit *unit, bool faceTarget, bool useNearestOccupiedCell) {
 	targetRef = unit;
 	if(!unit) {
@@ -635,6 +671,8 @@ void Unit::setTarget(const Unit *unit, bool faceTarget, bool useNearestOccupiedC
 	updateTarget(unit);
 }
 
+/** sets unit's position @param pos position to set 
+  * @warning sets Unit data members only, does not place/move on map */
 void Unit::setPos(const Vec2i &pos){
 	this->lastPos = this->pos;
 	this->pos = pos;
@@ -646,9 +684,10 @@ void Unit::setPos(const Vec2i &pos){
 	}
 }
 
+/** sets targetRotation */
 void Unit::face(const Vec2i &nextPos) {
 	Vec2i relPos = nextPos - pos;
-	Vec2f relPosf = Vec2f(relPos.x, relPos.y);
+	Vec2f relPosf = Vec2f((float)relPos.x, (float)relPos.y);
 	targetRotation = radToDeg(atan2f(relPosf.x, relPosf.y));
 }
 
@@ -673,6 +712,10 @@ Vec3f Unit::getCurrVectorFlat() const {
 */
 // =================== Command list related ===================
 
+/** query first available (and currently executable) command type of a class 
+  * @param commandClass CommandClass of interest
+  * @return the first executable CommandType matching commandClass, or NULL
+  */
 const CommandType *Unit::getFirstAvailableCt(CommandClass commandClass) const {
 	for(int i = 0; i < type->getCommandTypeCount(); ++i) {
 		const CommandType *ct = type->getCommandType(i);
@@ -683,10 +726,13 @@ const CommandType *Unit::getFirstAvailableCt(CommandClass commandClass) const {
 	return NULL;
 }
 
-//give one command (clear, and push back)
+/** give one command, queue or clear command queue and push back (depending on flags)
+  * @param command the command to execute
+  * @return a CommandResult describing success or failure
+  */
 CommandResult Unit::giveCommand(Command *command) {
 	const CommandType *ct = command->getType();
-
+	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " command given: " + CommandClassNames[command->getType()->getClass()] );
 	if(ct->getClass() == CommandClass::SET_MEETING_POINT) {
 		if(command->isQueue() && !commands.empty()) {
 			commands.push_back(command);
@@ -712,6 +758,17 @@ CommandResult Unit::giveCommand(Command *command) {
 				pet->giveCommand(new Command(ct, CommandFlags(CommandProperties::QUEUE, command->isQueue()), pos));
 			}
 		}
+	}
+	switch ( ct->getClass() ) {
+		case CommandClass::MOVE:
+		case CommandClass::ATTACK:
+		case CommandClass::BUILD:
+		case CommandClass::REPAIR:
+		case CommandClass::GUARD:
+		case CommandClass::PATROL:
+			// make path request now...
+			// need to pre-process command...
+			break;
 	}
 
 	if(ct->isQueuable() || command->isQueue()) {
@@ -747,8 +804,12 @@ CommandResult Unit::giveCommand(Command *command) {
 	return result;
 }
 
+/** removes current command (and any queued Set meeting point commands) 
+  * @return the command now at the head of the queue (the new current command) */
 Command *Unit::popCommand() {
 	//pop front
+	//LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
+	//	+ CommandClassNames[commands.front()->getType()->getClass()] + " command popped." );
 	delete commands.front();
 	commands.erase(commands.begin());
 	unitPath.clear();
@@ -762,16 +823,22 @@ Command *Unit::popCommand() {
 		commands.erase(commands.begin());
 		command = commands.empty() ? NULL : commands.front();
 	}
-
+	//if ( command ) {
+	//	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
+	//		+ CommandClassNames[commands.front()->getType()->getClass()] + " command now front of queue." );
+	//}
 	return command;
 }
-//pop front (used when order is done)
+/** pop current command (used when order is done) 
+  * @return CommandResult::SUCCESS, or CommandResult::FAIL_UNDEFINED on catastrophic failure
+  */
 CommandResult Unit::finishCommand() {
-
 	//is empty?
 	if(commands.empty()) {
 		return CommandResult::FAIL_UNDEFINED;
 	}
+	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
+		+ CommandClassNames[commands.front()->getType()->getClass()] + " command finished." );
 
 	Command *command = popCommand();
 
@@ -796,6 +863,8 @@ CommandResult Unit::cancelCommand() {
 	if(commands.empty()){
 		return CommandResult::FAIL_UNDEFINED;
 	}
+	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " queued " 
+		+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
 
 	//undo command
 	undoCommand(*commands.back());
@@ -816,6 +885,8 @@ CommandResult Unit::cancelCurrCommand() {
 	if(commands.empty()) {
 		return CommandResult::FAIL_UNDEFINED;
 	}
+	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " current " 
+		+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
 
 	//undo command
 	undoCommand(*commands.front());
@@ -827,15 +898,24 @@ CommandResult Unit::cancelCurrCommand() {
 
 // =================== route stack ===================
 
+/** Creates a unit, places it on the map and applies static costs for starting units
+  * @param startingUnit true if this is a starting unit.
+  */
 void Unit::create(bool startingUnit) {
+	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " created." );
 	faction->add(this);
+	lastPos.x = lastPos.y = -1;
 	map->putUnitCells(this, pos);
 	if(startingUnit){
 		faction->applyStaticCosts(type);
 	}
+	nextCommandUpdate = -1;
 }
 
+/** Give a unit life. Called when a unit becomes 'operative'
+  */
 void Unit::born(){
+	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " born." );
 	faction->addStore(type);
 	faction->applyStaticProduction(type);
 	setCurrSkill(SkillClass::STOP);
@@ -843,6 +923,9 @@ void Unit::born(){
 	recalculateStats();
 	hp= type->getMaxHp();
 	faction->checkAdvanceSubfaction(type, true);
+	theWorld.getCartographer()->applyUnitVisibility(this);
+	preProcessSkill();
+	nextCommandUpdate--;
 }
 
 /**
@@ -854,6 +937,7 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	hp = 0;
 
 	World::getCurrWorld()->hackyCleanUp(this);
+	theWorld.getCartographer()->removeUnitVisibility(this);
 
 	if(fire != NULL) {
 		fire->fade();
@@ -903,6 +987,11 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 
 // =================== Other ===================
 
+/** Deduce a command based on a location and/or unit clicked
+  * @param pos position clicked (or position of targetUnit)
+  * @param targetUnit unit clicked or NULL
+  * @return the CommandType to execute
+  */
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
 	const CommandType *commandType = NULL;
 	Tile *sc = map->getTile(Map::toTileCoords(pos));
@@ -936,19 +1025,16 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 	return commandType;
 }
 
-/** @return true when the current skill has completed a cycle */
-bool Unit::update() {
-	assert(progress <= 1.f);
-
-	//highlight
-	if(highlight > 0.f) {
-		highlight -= 1.f / (highlightTime * Config::getInstance().getGsWorldUpdateFps());
-	}
-
+void Unit::preProcessSkill() {
 	//speed
 	static const float speedModifier = 1.f / (float)speedDivider / (float)Config::getInstance().getGsWorldUpdateFps();
-	float progressSpeed = getSpeed() * speedModifier;
-	float animationSpeed = currSkill->getAnimSpeed() * speedModifier;
+
+	progressSpeed = getSpeed() * speedModifier;
+	animProgressSpeed = currSkill->getAnimSpeed() * speedModifier;
+	// None of this changes within a skill cycle!
+	// cache it!!!
+	//float progressSpeed = getSpeed() * speedModifier;
+	//float animationSpeed = currSkill->getAnimSpeed() * speedModifier;
 
 	//speed modifiers
 	if(currSkill->getClass() == SkillClass::MOVE) {
@@ -960,17 +1046,42 @@ bool Unit::update() {
 		}
 
 		//if moving to a higher cell move slower else move faster
-		float heightDiff = map->getCell(pos)->getHeight() - map->getCell(nextPos)->getHeight();
+		float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();
 		float heightFactor = clamp(1.f + heightDiff / 1.25f, 0.2f, 5.f);
 		progressSpeed *= heightFactor;
-		animationSpeed *= heightFactor;
+		animProgressSpeed *= heightFactor;
+	}
+	int frames = 1.0000001f / progressSpeed;
+	int end = theWorld.getFrameCount() + frames + 1;
+	/*if ( !commands.empty() ) {
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
+			+ CommandClassNames[commands.front()->getType()->getClass()] + " command, commencing "
+			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
+	} else {
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating no command, commencing "
+			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
+	}*/
+	nextCommandUpdate = end;
+}
+
+/** @return true when the current skill has completed a cycle */
+bool Unit::update() {
+	assert(progress <= 1.f);
+	PROFILE_START( "Unit Update" );
+
+	//highlight
+	if(highlight > 0.f) {
+		highlight -= 1.f / (highlightTime * Config::getInstance().getGsWorldUpdateFps());
 	}
 
 	//update progresses
 	lastAnimProgress = animProgress;
 	progress += nextUpdateFrames * progressSpeed;
-	animProgress += nextUpdateFrames * animationSpeed;
+	animProgress += nextUpdateFrames * animProgressSpeed;
 	nextUpdateFrames = 1.f;
+
+	//LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
+	//	+ SkillClassNames[currSkill->getClass()] + ", progress:" + floatToStr(progress) );
 
 	//update target
 	updateTarget();
@@ -995,25 +1106,24 @@ bool Unit::update() {
 		animProgress = currSkill->getClass() == SkillClass::DIE ? 1.f : 0.f;
 	}
 
+	bool ret = false;
 	//checks
 	if(progress >= 1.f) {
 		lastRotation = targetRotation;
 
 		if(currSkill->getClass() != SkillClass::DIE) {
 			progress = 0.f;
-			return true;
-		} else {
+			ret = true;
+		} else { 
 			progress = 1.f;
 			deadCount++;
-
 			if (deadCount >= maxDeadCount) {
 				toBeUndertaken = true;
-				return false;
 			}
 		}
 	}
-
-	return false;
+	PROFILE_STOP( "Unit Update" );
+	return ret;
 }
 
 /**
@@ -1097,6 +1207,9 @@ Unit* Unit::tick() {
 	return killer;
 }
 
+/** Evaluate current skills energy requirements, subtract from current energy 
+  *	@return false if the skill can commence, true if energy requirements are not met
+  */
 bool Unit::computeEp() {
 
 	//if not enough ep
@@ -1113,6 +1226,11 @@ bool Unit::computeEp() {
 	return false;
 }
 
+/** Repair this unit
+  * @param amount amount of HP to restore
+  * @param multiplier a multiplier for amount
+  * @return true if this unit is now at max hp
+  */
 bool Unit::repair(int amount, float multiplier) {
 	if (!isAlive()) {
 		return false;
@@ -1147,9 +1265,10 @@ bool Unit::repair(int amount, float multiplier) {
 	return false;
 }
 
-/**
- * Decrements HP by the specified amount and returns true if dead.
- */
+/** Decrements HP by the specified amount
+  * @param i amount of HP to remove
+  * @return true if unit is now dead
+  */
 bool Unit::decHp(int i) {
 	assert(i >= 0);
 	if (hp == 0) {
@@ -1191,6 +1310,9 @@ bool Unit::decHp(int i) {
 	return false;
 }
 
+/** Kill all pets belonging to this unit
+  * @return the number of pets killed
+  */
 int Unit::killPets() {
 	int count = 0;
 	while(pets.size() > 0){
@@ -1306,6 +1428,8 @@ string Unit::getDesc(bool full) const {
 	return str;
 }
 
+/** Apply effects of an UpgradeType 
+  * @param upgradeType the type describing the Upgrade to apply*/
 void Unit::applyUpgrade(const UpgradeType *upgradeType){
 	if(upgradeType->isAffected(type)){
 		totalUpgrade.sum(upgradeType);
@@ -1313,6 +1437,7 @@ void Unit::applyUpgrade(const UpgradeType *upgradeType){
 	}
 }
 
+/** recompute stats, re-evaluate upgrades & level and recalculate totalUpgrade */
 void Unit::computeTotalUpgrade(){
 	faction->getUpgradeManager()->computeTotalUpgrade(this, &totalUpgrade);
 	level = NULL;
@@ -1328,6 +1453,7 @@ void Unit::computeTotalUpgrade(){
 	recalculateStats();
 }
 
+/** Another one bites the dust. Increment 'kills' & check level */
 void Unit::incKills() {
 	++kills;
 
@@ -1339,23 +1465,17 @@ void Unit::incKills() {
 	}
 }
 
+/** Perform a morph @param mct the CommandType describing the morph @return true if successful */
 bool Unit::morph(const MorphCommandType *mct) {
 	const UnitType *morphUnitType = mct->getMorphUnit();
 
 	// redo field
 	Field newField;
-	if ( morphUnitType->getField( Field::LAND ) ) {
-		newField = Field::LAND;
-	} else if ( morphUnitType->getField( Field::AIR ) ) {
-		newField = Field::AIR;
-	}
-	if ( morphUnitType->getField( Field::AMPHIBIOUS ) ) {
-		newField = Field::AMPHIBIOUS;
-	} else if ( morphUnitType->getField( Field::ANY_WATER ) ) {
-		newField = Field::ANY_WATER;
-	} else if ( morphUnitType->getField( Field::DEEP_WATER ) ) {
-		newField = Field::DEEP_WATER;
-	}
+	if(morphUnitType->getField(Field::LAND)) newField = Field::LAND;
+	else if(morphUnitType->getField(Field::AIR)) newField = Field::AIR;
+	if ( morphUnitType->getField (Field::AMPHIBIOUS) ) newField = Field::AMPHIBIOUS;
+	else if ( morphUnitType->getField (Field::ANY_WATER) ) newField = Field::ANY_WATER;
+	else if ( morphUnitType->getField (Field::DEEP_WATER) ) newField = Field::DEEP_WATER;
 
 	if (map->areFreeCellsOrHasUnit(pos, morphUnitType->getSize(), newField, this)) {
 		map->clearUnitCells(this, pos);
@@ -1457,6 +1577,10 @@ void Unit::effectExpired(Effect *e){
 
 // ==================== PRIVATE ====================
 
+/** calculate unit height
+  * @param pos location ground reference
+  * @return the height this unit 'stands' at
+  */
 inline float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
@@ -1467,6 +1591,8 @@ inline float Unit::computeHeight(const Vec2i &pos) const {
 	return height;
 }
 
+/** updates target information, (targetPos, targetField & tagetVec) and resets targetRotation 
+  * @param target the unit we are tracking */
 void Unit::updateTarget(const Unit *target) {
 	if(!target) {
 		target = targetRef.getUnit();
@@ -1488,6 +1614,7 @@ void Unit::updateTarget(const Unit *target) {
 	}
 }
 
+/** clear command queue */
 void Unit::clearCommands() {
 	while(!commands.empty()) {
 		undoCommand(*commands.back());
@@ -1496,6 +1623,10 @@ void Unit::clearCommands() {
 	}
 }
 
+/** Check if a command can be executed
+  * @param command the command to check
+  * @return a CommandResult describing success or failure
+  */
 CommandResult Unit::checkCommand(const Command &command) const {
 	const CommandType *ct = command.getType();
 
@@ -1571,6 +1702,9 @@ CommandResult Unit::checkCommand(const Command &command) const {
 	return CommandResult::SUCCESS;
 }
 
+/** Apply costs for a command.
+  * @param command the command to apply costs for
+  */
 void Unit::applyCommand(const Command &command) {
 	const CommandType *ct = command.getType();
 
@@ -1591,6 +1725,10 @@ void Unit::applyCommand(const Command &command) {
 	}
 }
 
+/** De-Apply costs for a command
+  * @param command the command to cancel
+  * @return CommandResult::SUCCESS
+  */
 CommandResult Unit::undoCommand(const Command &command) {
 	const CommandType *ct = command.getType();
 
@@ -1682,7 +1820,10 @@ void Unit::recalculateStats() {
 		}
 	}*/
 }
-
+/** query the speed at which a skill type is executed 
+  * @param st the SkillType
+  * @return the speed value this unit would execute st at
+  */
 int Unit::getSpeed(const SkillType *st) const {
 	float speed = (float)st->getSpeed();
 	switch(st->getClass()) {
@@ -1722,6 +1863,8 @@ int Unit::getSpeed(const SkillType *st) const {
 	return (int)(speed > 0.0f ? speed : 0.0f);
 }
 
+/** query number of pets of a given type @param unitType type of pets to count 
+  * @return number of pets of unitType */
 int Unit::getPetCount(const UnitType *unitType) const {
 	int count = 0;
 	for(Pets::const_iterator i = pets.begin(); i != pets.end(); ++i) {

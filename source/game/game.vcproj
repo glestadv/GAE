@@ -40,6 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				InlineFunctionExpansion="2"
 				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;../shared_lib/include;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1;DEBUG_RENDERING_ENABLED=1"
 				StringPooling="true"
@@ -56,7 +57,7 @@
 				BrowseInformation="1"
 				WarningLevel="2"
 				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4250; 4355"
 			/>
 			<Tool
@@ -505,6 +506,30 @@
 						UsePrecompiledHeader="0"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug+opt|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\game\game_constants.h"
@@ -863,6 +888,46 @@
 			Name="path_finder"
 			>
 			<File
+				RelativePath=".\path_finder\abstract_map.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug+opt|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\path_finder\abstract_map.h"
+				>
+			</File>
+			<File
 				RelativePath=".\path_finder\annotated_map.cpp"
 				>
 			</File>
@@ -871,35 +936,173 @@
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\astar_nodepool.cpp"
+				RelativePath=".\path_finder\cartographer.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						BasicRuntimeChecks="3"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug+opt|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\path_finder\cartographer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\astar_nodepool.h"
+				RelativePath=".\path_finder\cluster_map.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\bestfirst_node_pool.cpp"
+				RelativePath=".\path_finder\cluster_map.h"
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\bestfirst_node_pool.h"
+				RelativePath=".\path_finder\influence_map.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\graph_search.cpp"
+				RelativePath=".\path_finder\influence_map.h"
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\graph_search.h"
+				RelativePath=".\path_finder\node_map.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						BasicRuntimeChecks="3"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug+opt|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\path_finder\node_map.h"
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\path_finder.cpp"
+				RelativePath=".\path_finder\node_pool.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\path_finder\path_finder.h"
+				RelativePath=".\path_finder\node_pool.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\route_planner.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						OmitFramePointers="true"
+						BasicRuntimeChecks="3"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug+opt|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\path_finder\route_planner.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\search_engine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\path_finder\search_functions.inl"
 				>
 			</File>
 		</Filter>

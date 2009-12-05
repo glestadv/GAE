@@ -28,7 +28,6 @@
 
 #include "leak_dumper.h"
 
-
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
@@ -167,6 +166,12 @@ Renderer::Renderer(){
 	perspFov = config.getRenderFov();
 	perspNearPlane = config.getRenderDistanceMin();
 	perspFarPlane = config.getRenderDistanceMax();
+#if DEBUG_SEARCH_TEXTURES
+	PathFinderTextureCallBack::debugField = Field::LAND;
+#endif
+#if DEBUG_RENDERER_VISIBLEQUAD
+	captureQuad = false;
+#endif
 }
 
 Renderer::~Renderer(){
@@ -812,7 +817,6 @@ void Renderer::renderText(const string &text, const Font2D *font, const Vec3f &c
 
 void Renderer::renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered){
 	glPushAttrib(GL_CURRENT_BIT);
-
 	Vec2i pos= centered? computeCenteredPos(text, font, x, y): Vec2i(x, y);	textRenderer->begin(font);
 	glColor3f(0.0f, 0.0f, 0.0f);
 	textRenderer->render(text, pos.x-1.0f, pos.y-1.0f);
@@ -831,9 +835,9 @@ void Renderer::renderLabel(const GraphicLabel *label){
 
 	Vec2i textPos;
 	int x= label->getX();
-	int y= label->getY();
-	int h= label->getH();
-	int w= label->getW();
+    int y= label->getY();
+    int h= label->getH();
+    int w= label->getW();
 
 	if(label->getCentered()){
 		textPos= Vec2i(x+w/2, y+h/2);
@@ -848,7 +852,7 @@ void Renderer::renderLabel(const GraphicLabel *label){
 }
 
 void Renderer::renderButton(const GraphicButton *button){
-	int x= button->getX();	int y= button->getY();	int h= button->getH();	int w= button->getW();
+	int x = button->getX(),	 y = button->getY(), h= button->getH(), w= button->getW();
 	glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT);
 
 	//background
@@ -918,15 +922,14 @@ void Renderer::renderButton(const GraphicButton *button){
 
 	Vec2i textPos= Vec2i(x+w/2, y+h/2);
 
-	renderText(
-		button->getText(), button->getFont(), GraphicButton::getFade(),		x+w/2, y+h/2, true);
+	renderText( button->getText(), button->getFont(), GraphicButton::getFade(), x+w/2, y+h/2, true);
 	glPopAttrib();
 }
 
 void Renderer::renderListBox(const GraphicListBox *listBox){
 
 	renderButton(listBox->getButton1());
-	renderButton(listBox->getButton2());
+    renderButton(listBox->getButton2());
 
 	glPushAttrib(GL_ENABLE_BIT);
 	glEnable(GL_BLEND);
@@ -1119,7 +1122,14 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 // ==================== complex rendering ====================
 
 void Renderer::renderSurface() {
+#	if DEBUG_SEARCH_TEXTURES
+	if ( Config::getInstance().getMiscDebugTextures() ) {
+		debugRenderer.renderPFDebug( visibleQuad );
+	} else {
+#	endif	
+
 	int lastTex=-1;
+
 	int currTex;
 	const World *world= game->getWorld();
 	const Map *map= world->getMap();
@@ -1160,6 +1170,17 @@ void Renderer::renderSurface() {
 
 	Quad2i scaledQuad = visibleQuad/Map::cellScale;
 
+#	if DEBUG_RENDERER_VISIBLEQUAD		
+		if ( captureQuad ) {
+			VisibleQuadColourCallback::quadSet.clear();
+			PosQuadIterator vqi(visibleQuad);
+			while(vqi.next()){
+				const Vec2i &pos= vqi.getPos();
+				VisibleQuadColourCallback::quadSet.insert( pos );
+			}
+			captureQuad = false;
+		}
+#	endif
 	PosQuadIterator pqi(scaledQuad);
 	while(pqi.next()){
 
@@ -1219,9 +1240,24 @@ void Renderer::renderSurface() {
 	//assert
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
+#	if DEBUG_SEARCH_TEXTURES
+	}
+#	endif
 #	if DEBUG_RENDERING_ENABLED
 		debugRenderer.renderRegionHilight(visibleQuad);
 #	endif
+#	if DEBUG_RESOURCE_MAP_OVERLAYS
+		renderGoldInfluence();
+#	endif
+#	if DEBUG_RENDERER_VISIBLEQUAD
+		debugRenderer.renderCapturedQuad( visibleQuad );
+#	endif
+#	if DEBUG_VISIBILITY_OVERLAY
+		debugRenderer.renderTeamSightOverlay(visibleQuad);
+#	endif
+#	if DEBUG_PATHFINDER_CLUSTER_OVERLAY
+		debugRenderer.renderClusterOverlay(visibleQuad);
+#	endif	debugRenderer.renderPathOverlay();
 }
 
 void Renderer::renderObjects(){
@@ -1230,7 +1266,7 @@ void Renderer::renderObjects(){
 
 	assertGl();
 	const Texture2D *fowTex= world->getMinimap()->getFowTexture();
-	Vec3f baseFogColor= world->getTileset()->getFogColor()*computeLightColor(world->getTimeFlow()->getTime());
+	Vec3f baseFogColor= world->getTileset()->getFogColor() * computeLightColor( world->getTimeFlow()->getTime() );
 
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_FOG_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
 
@@ -1345,13 +1381,13 @@ void Renderer::renderWater(){
 	for(int j=scaledRect.p[0].y; j<scaledRect.p[1].y; ++j) {
 		glBegin(GL_TRIANGLE_STRIP);
 
-		for(int i=scaledRect.p[0].x; i<=scaledRect.p[1].x; ++i) {
+		for(int i=scaledRect.p[0].x; i<=scaledRect.p[1].x; ++i){
 
 			Tile *tc0= map->getTile(i, j);
 			Tile *tc1= map->getTile(i, j+1);
 
 			int thisTeamIndex= world->getThisTeamIndex();
-			if(tc0->getNearSubmerged() && (tc0->isExplored(thisTeamIndex) || tc1->isExplored(thisTeamIndex))) {
+			if(tc0->getNearSubmerged() && (tc0->isExplored(thisTeamIndex) || tc1->isExplored(thisTeamIndex))){
 				glNormal3f(0.f, 1.f, 0.f);
 				closed= false;
 
@@ -1553,7 +1589,6 @@ void Renderer::renderUnits(){
 			const Model *model= unit->getCurrentModel();
 			model->updateInterpolationData(unit->getAnimProgress(), unit->isAlive());
 			modelRenderer->render(model);
-
 			triangleCount+= model->getTriangleCount();
 			pointCount+= model->getVertexCount();
 
