@@ -79,16 +79,16 @@ void BattleEnd::render() {
 		string controlString;
 
 		switch (gs.getFactionControl(i)) {
-		case ctCpu:
+		case ControlType::CPU:
 			controlString = lang.get("Cpu");
 			break;
-		case ctCpuUltra:
+		case ControlType::CPU_ULTRA:
 			controlString = lang.get("CpuUltra");
 			break;
-		case ctNetwork:
+		case ControlType::NETWORK:
 			controlString = lang.get("Network");
 			break;
-		case ctHuman:
+		case ControlType::HUMAN:
 			controlString = lang.get("Human");
 			break;
 		default:

@@ -61,7 +61,7 @@ class Earthquake;
 
 class Cell {
 private:
-	Unit *units[ZoneCount];	//units on this cell
+	Unit *units[Zone::COUNT];	//units on this cell
 	float height;
 	SurfaceType surfaceType;
 
@@ -74,18 +74,18 @@ public:
 	 * Default ctor.  It's usually better to outline stuff like this, but when these are created,
 	 * they are created in large quantities, so it's probably much better to have this ctor inlined.
 	 */
-	Cell() : height(0), surfaceType(SurfaceTypeLand) {
+	Cell() : height(0), surfaceType(SurfaceType::LAND) {
 		memset(units, 0, sizeof(units));
 	}
 
 	// get
 	Unit *getUnit(Zone zone) const	{return units[zone];}
-	Unit *getUnit(Field field)		{return getUnit(field == FieldAir ? ZoneAir : ZoneSurface);}
+	Unit *getUnit(Field field)		{return getUnit(field == Field::AIR ? Zone::AIR : Zone::LAND);}
 	float getHeight() const			{return height;}
 	SurfaceType getType() const		{return surfaceType;}
 
-	bool isSubmerged() const		{return surfaceType != SurfaceTypeLand;}
-	bool isDeepSubmerged() const	{return surfaceType == SurfaceTypeDeepWater;}
+	bool isSubmerged() const		{return surfaceType != SurfaceType::LAND;}
+	bool isDeepSubmerged() const	{return surfaceType == SurfaceType::DEEP_WATER;}
 
 	// set
 	void setUnit(Zone field, Unit *unit)	{units[field] = unit;}

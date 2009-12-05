@@ -53,28 +53,6 @@ class Game;
 class World;
 class UnitState;
 
-enum CommandResult {
-	crSuccess,
-	crFailRes,
-	crFailReqs,
-	crFailPetLimit,
-	crFailUndefined,
-	crSomeFailed
-};
-
-enum InterestingUnitType {
-	iutIdleBuilder,
-	iutIdleHarvester,
-	iutIdleWorker,
-	iutIdleRepairer,
-	iutIdleRestorer,
-	iutBuiltBuilding,
-	iutProducer,
-	iutIdleProducer,
-	iutDamaged,
-	iutStore
-};
-
 // =====================================================
 // 	class UnitObserver
 // =====================================================
@@ -228,7 +206,7 @@ public:
 	//queries
 	int getId() const							{return id;}
 	Field getCurrField() const					{return currField;}
-	Zone getCurrZone() const					{return currField == FieldAir ? ZoneAir : ZoneSurface;}
+	Zone getCurrZone() const					{return currField == Field::AIR ? Zone::AIR : Zone::LAND;}
 	int getLoadCount() const					{return loadCount;}
 	float getLastAnimProgress() const			{return lastAnimProgress;}
 	float getProgress() const					{return progress;}
@@ -313,7 +291,7 @@ public:
 	 */
 	int getMaxRange(const SkillType *st) const {
 		switch(st->getClass()) {
-			case scAttack:
+			case SkillClass::ATTACK:
 				return (int)roundf(st->getMaxRange() * attackRangeMult + attackRange);
 			default:
 				return st->getMaxRange();
@@ -338,7 +316,7 @@ public:
 	bool isAlive() const				{return hp;}
 	bool isDamaged() const				{return hp < getMaxHp();}
 	bool isOperative() const			{return isAlive() && isBuilt();}
-	bool isBeingBuilt() const			{return currSkill->getClass() == scBeBuilt;}
+	bool isBeingBuilt() const			{return currSkill->getClass() == SkillClass::BE_BUILT;}
 	bool isBuilt() const				{return !isBeingBuilt();}
 	bool isPutrefacting() const			{return deadCount;}
 	bool isAlly(const Unit *unit) const	{return faction->isAlly(unit->getFaction());}
@@ -380,7 +358,7 @@ public:
 	Vec3f getCurrVectorFlat() const {
 		Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
 	
-		if (currSkill->getClass() == scMove) {
+		if (currSkill->getClass() == SkillClass::MOVE) {
 			v = Vec3f(static_cast<float>(lastPos.x), computeHeight(lastPos),
 					  static_cast<float>(lastPos.y)).lerp(progress, v);
 		}
@@ -477,17 +455,17 @@ public:
 	}
 
 	/**
-	 * Cheesy input, specify scCount to tell it not to care about command class.
+	 * Cheesy input, specify SkillClass::COUNT to tell it not to care about command class.
 	 * Specify 0.f for pctHealth and health level wont matter. These should get
 	 * optimized out when inlining.
 	 */
-	Unit *getNearest(SkillClass skillClass = scCount, float pctHealth = 0.0f) {
+	Unit *getNearest(SkillClass skillClass = SkillClass::COUNT, float pctHealth = 0.0f) {
 		Unit *nearest = NULL;
 		int dist = 0x10000;
 		for(iterator i = begin(); i != end(); ++i) {
 			Unit * u = i->first;
 			if(i->second < dist
-					&& (skillClass == scCount || u->getType()->hasSkillClass(skillClass))
+					&& (skillClass == SkillClass::COUNT || u->getType()->hasSkillClass(skillClass))
 					&& (!pctHealth || (float)u->getHp() / (float)u->getMaxHp() < pctHealth)) {
 				nearest = i->first;
 				dist = i->second;

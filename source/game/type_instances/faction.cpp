@@ -254,7 +254,7 @@ bool Faction::reqsOk(const RequirableType *rt) const {
 
 bool Faction::reqsOk(const CommandType *ct) const {
 
-	if(ct->getClass() == ccSetMeetingPoint) {
+	if(ct->getClass() == CommandClass::SET_MEETING_POINT) {
 		return true;
 	}
 	
@@ -262,7 +262,7 @@ bool Faction::reqsOk(const CommandType *ct) const {
 		return false;
 	}
 
-	if (ct->getClass() == ccUpgrade) {
+	if (ct->getClass() == CommandClass::UPGRADE) {
 		const UpgradeCommandType *uct = static_cast<const UpgradeCommandType*>(ct);
 		if (upgradeManager.isUpgradingOrUpgraded(uct->getProducedUpgrade())) {
 			return false;
@@ -281,7 +281,7 @@ bool Faction::isAvailable(const CommandType *ct) const {
 	//If this command is producing or building anything, we need to make sure
 	//that producable is also available.
 	switch (ct->getClass()) {
-	case ccBuild:
+	case CommandClass::BUILD:
 		// we can display as long as one of these is available
 		for (int i = 0; i < ((BuildCommandType*)ct)->getBuildingCount(); i++) {
 			if (((BuildCommandType*)ct)->getBuilding(i)->isAvailableInSubfaction(subfaction)) {
@@ -290,13 +290,13 @@ bool Faction::isAvailable(const CommandType *ct) const {
 		}
 		return false;
 
-	case ccProduce:
+	case CommandClass::PRODUCE:
 		return ((ProduceCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
 
-	case ccUpgrade:
+	case CommandClass::UPGRADE:
 		return ((UpgradeCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
 
-	case ccMorph:
+	case CommandClass::MORPH:
 		return ((MorphCommandType*)ct)->getProduced()->isAvailableInSubfaction(subfaction);
 
 	default:
@@ -318,7 +318,7 @@ bool Faction::applyCosts(const ProducibleType *p) {
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
 		int cost = p->getCost(i)->getAmount();
-		if ((cost > 0 || rt->getClass() != rcStatic) && rt->getClass() != rcConsumable) {
+		if ((cost > 0 || rt->getClass() != ResourceClass::STATIC) && rt->getClass() != ResourceClass::CONSUMABLE) {
 			incResourceAmount(rt, -(cost));
 		}
 
@@ -332,7 +332,7 @@ void Faction::applyDiscount(const ProducibleType *p, int discount) {
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
 		int cost = p->getCost(i)->getAmount();
-		if ((cost > 0 || rt->getClass() != rcStatic) && rt->getClass() != rcConsumable) {
+		if ((cost > 0 || rt->getClass() != ResourceClass::STATIC) && rt->getClass() != ResourceClass::CONSUMABLE) {
 			incResourceAmount(rt, cost*discount / 100);
 		}
 	}
@@ -344,7 +344,7 @@ void Faction::applyStaticCosts(const ProducibleType *p) {
 	//decrease static resources
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
-		if (rt->getClass() == rcStatic) {
+		if (rt->getClass() == ResourceClass::STATIC) {
 			int cost = p->getCost(i)->getAmount();
 			if (cost > 0) {
 				incResourceAmount(rt, -cost);
@@ -359,7 +359,7 @@ void Faction::applyStaticProduction(const ProducibleType *p) {
 	//decrease static resources
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
-		if (rt->getClass() == rcStatic) {
+		if (rt->getClass() == ResourceClass::STATIC) {
 			int cost = p->getCost(i)->getAmount();
 			if (cost < 0) {
 				incResourceAmount(rt, -cost);
@@ -375,7 +375,7 @@ void Faction::deApplyCosts(const ProducibleType *p) {
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
 		int cost = p->getCost(i)->getAmount();
-		if ((cost > 0 || rt->getClass() != rcStatic) && rt->getClass() != rcConsumable) {
+		if ((cost > 0 || rt->getClass() != ResourceClass::STATIC) && rt->getClass() != ResourceClass::CONSUMABLE) {
 			incResourceAmount(rt, cost);
 		}
 
@@ -388,7 +388,7 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 	//decrease resources
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
-		if (rt->getClass() == rcStatic) {
+		if (rt->getClass() == ResourceClass::STATIC) {
 			int cost = p->getCost(i)->getAmount();
 			incResourceAmount(rt, cost);
 		}
@@ -401,7 +401,7 @@ void Faction::deApplyStaticConsumption(const ProducibleType *p){
     //decrease resources
 	for(int i=0; i<p->getCostCount(); ++i){
 		const ResourceType *rt= p->getCost(i)->getType();
-		if(rt->getClass()==rcStatic){
+		if(rt->getClass()==ResourceClass::STATIC){
             int cost= p->getCost(i)->getAmount();
 			if(cost>0){
 				incResourceAmount(rt, cost);
@@ -419,7 +419,7 @@ void Faction::applyCostsOnInterval() {
 		if (unit->isOperative()) {
 			for (int k = 0; k < unit->getType()->getCostCount(); ++k) {
 				const Resource *resource = unit->getType()->getCost(k);
-				if (resource->getType()->getClass() == rcConsumable && resource->getAmount() < 0) {
+				if (resource->getType()->getClass() == ResourceClass::CONSUMABLE && resource->getAmount() < 0) {
 					incResourceAmount(resource->getType(), -resource->getAmount());
 				}
 			}
@@ -432,7 +432,7 @@ void Faction::applyCostsOnInterval() {
 		if (unit->isOperative()) {
 			for (int k = 0; k < unit->getType()->getCostCount(); ++k) {
 				const Resource *resource = unit->getType()->getCost(k);
-				if (resource->getType()->getClass() == rcConsumable && resource->getAmount() > 0) {
+				if (resource->getType()->getClass() == ResourceClass::CONSUMABLE && resource->getAmount() > 0) {
 					incResourceAmount(resource->getType(), -resource->getAmount());
 
 					//decrease unit hp
@@ -443,7 +443,7 @@ void Faction::applyCostsOnInterval() {
 						if(unit->decHp(unit->getType()->getMaxHp() / 3)) {
 							World::getCurrWorld()->doKill(unit, unit);
 						} else {
-							StaticSound *sound = unit->getType()->getFirstStOfClass(scDie)->getSound();
+							StaticSound *sound = unit->getType()->getFirstStOfClass(SkillClass::DIE)->getSound();
 							if (sound != NULL && thisFaction) {
 								SoundRenderer::getInstance().playFx(sound);
 							}
@@ -488,7 +488,7 @@ void Faction::incResourceAmount(const ResourceType *rt, int amount) {
 		Resource *r = &resources[i];
 		if (r->getType() == rt) {
 			r->setAmount(r->getAmount() + amount);
-			if (r->getType()->getClass() != rcStatic && r->getAmount() > getStoreAmount(rt)) {
+			if (r->getType()->getClass() != ResourceClass::STATIC && r->getAmount() > getStoreAmount(rt)) {
 				r->setAmount(getStoreAmount(rt));
 			}
 			return;
@@ -554,7 +554,7 @@ void Faction::limitResourcesToStore() {
 	for (int i = 0; i < resources.size(); ++i) {
 		Resource *r = &resources[i];
 		Resource *s = &store[i];
-		if (r->getType()->getClass() != rcStatic && r->getAmount() > s->getAmount()) {
+		if (r->getType()->getClass() != ResourceClass::STATIC && r->getAmount() > s->getAmount()) {
 			r->setAmount(s->getAmount());
 		}
 	}

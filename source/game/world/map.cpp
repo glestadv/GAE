@@ -377,7 +377,7 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 					sc->setObject(o);
 					for (int i = 0; i < techTree->getResourceTypeCount(); ++i) {
 						const ResourceType *rt = techTree->getResourceType(i);
-						if (rt->getClass() == rcTileset && rt->getTilesetObject() == objNumber) {
+						if (rt->getClass() == ResourceClass::TILESET && rt->getTilesetObject() == objNumber) {
 							o->setResource(rt, Vec2i(x, y));
 						}
 					}
@@ -413,9 +413,9 @@ void Map::setCellTypes () {
 		for ( int x = 0; x < getW(); ++x ) {
 			Cell *cell = getCell ( x, y );
 			if ( cell->getHeight () < waterLevel - ( 1.5f / heightFactor ) )
-				cell->setType ( SurfaceTypeDeepWater );
+				cell->setType ( SurfaceType::DEEP_WATER );
 			else if ( cell->getHeight () < waterLevel )
-				cell->setType ( SurfaceTypeFordable );
+				cell->setType ( SurfaceType::FORDABLE );
 		}
 	}
 }
@@ -494,38 +494,38 @@ bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resour
 // ==================== free cells ====================
 bool Map::fieldsCompatible ( Cell *cell, Field mf ) const
 {
-   if ( mf == FieldAir || mf == FieldAmphibious
-   ||  (mf == FieldWalkable && ! cell->isDeepSubmerged ())
-   ||  (mf == FieldAnyWater && cell->isSubmerged ())
-   ||  (mf == FieldDeepWater && cell->isDeepSubmerged ()) )
+   if ( mf == Field::AIR || mf == Field::AMPHIBIOUS
+   ||  (mf == Field::LAND && ! cell->isDeepSubmerged ())
+   ||  (mf == Field::ANY_WATER && cell->isSubmerged ())
+   ||  (mf == Field::DEEP_WATER && cell->isDeepSubmerged ()) )
       return true;
    return false;
 }
 
 bool Map::isFreeCell(const Vec2i &pos, Field field) const
 {
-   if ( !isInside(pos) || !getCell(pos)->isFree(field==FieldAir?ZoneAir:ZoneSurface) )
+   if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
       return false;
-   if ( field != FieldAir && !getTile(toTileCoords(pos))->isFree() )
+   if ( field != Field::AIR && !getTile(toTileCoords(pos))->isFree() )
       return false;
    // leave ^^^ that
    // replace all the rest with lookups into the map metrics...
    //return PathFinder::getInstance()->canOccupy ( pos, 1, field );
    // placeUnit() needs to use this... and the metrics aren't constructed at that point...
-   if ( field == FieldWalkable && getCell(pos)->isDeepSubmerged () )
+   if ( field == Field::LAND && getCell(pos)->isDeepSubmerged () )
       return false;
-   if ( field == FieldWalkable && ( pos.x > getW() - 4 || pos.y > getH() - 4 ) )
+   if ( field == Field::LAND && ( pos.x > getW() - 4 || pos.y > getH() - 4 ) )
       return false;
-   if ( field == FieldAnyWater && !getCell(pos)->isSubmerged () )
+   if ( field == Field::ANY_WATER && !getCell(pos)->isSubmerged () )
       return false;
-   if ( field == FieldDeepWater && !getCell(pos)->isDeepSubmerged () )
+   if ( field == Field::DEEP_WATER && !getCell(pos)->isDeepSubmerged () )
       return false;
    return true;
 }
 /*
 bool Map::isFreeCell(const Vec2i &pos, Zone field) const
 {
-   if ( !isInside(pos) || !getCell(pos)->isFree(field==FieldAir?ZoneAir:ZoneSurface) )
+   if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
       return false;
    return true;
 }
@@ -585,7 +585,7 @@ bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const
 		if (sc->isVisible(teamIndex))
 			return sc->isFree() && isFreeCell(pos, field);
 		else if (sc->isExplored(teamIndex))
-			return field == FieldWalkable ? sc->isFree() && !getCell(pos)->isDeepSubmerged() : true;
+			return field == Field::LAND ? sc->isFree() && !getCell(pos)->isDeepSubmerged() : true;
 		else
 			return true;
 	}
@@ -613,10 +613,10 @@ bool Map::areFreeCells( const Vec2i &pos, int size, char *fieldMap ) const
          Field field;
          switch ( fieldMap[j*size+i] )
          {
-         case 'l': field = FieldWalkable; break;
-         case 'a': field = FieldAmphibious; break;
-         case 'w': field = FieldDeepWater; break;
-         case 'r': field = FieldWalkable; break;
+         case 'l': field = Field::LAND; break;
+         case 'a': field = Field::AMPHIBIOUS; break;
+         case 'w': field = Field::DEEP_WATER; break;
+         case 'r': field = Field::LAND; break;
          default: throw runtime_error ( "Bad value in fieldMap" );
          }
 			if ( ! isFreeCell (Vec2i(pos.x+i, pos.y+j), field) )
@@ -689,9 +689,9 @@ bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) co
          Field field;
          switch ( building->getFieldMapCell ( i, j ) )
          {
-         case 'l': field = FieldWalkable; break;
-         case 'a': field = FieldAmphibious; break;
-         case 'w': field = FieldDeepWater; break;
+         case 'l': field = Field::LAND; break;
+         case 'a': field = Field::AMPHIBIOUS; break;
+         case 'w': field = Field::DEEP_WATER; break;
          default: throw runtime_error ( "Illegal value in FieldMap." );
          }
          if ( !fieldsCompatible ( getCell ( pos ), field ) )
@@ -719,7 +719,7 @@ Vec2i Map::getNearestPos(const Vec2i &start, const Vec2i &target, int minRange, 
 	if(start == target) {
 		return start;
 /*		Vec2i ret;
-		if(map->getNearestAdjacentFreePos(ret, NULL, 1, start, target, minRange, ZoneSurface)) {
+		if(map->getNearestAdjacentFreePos(ret, NULL, 1, start, target, minRange, Zone::LAND)) {
 			return ret;
 		} else {
 			return start;
@@ -769,7 +769,7 @@ Vec2i Map::getNearestPos(const Vec2i &start, const Vec2i &target, int minRange, 
 bool Map::getNearestFreePos(Vec2i &result, const Unit *unit, const Vec2i &target, int minRange, int maxRange, int targetSize) const {
 	Vec2i start = unit->getPos();
 	int size = unit->getSize();
-	Field field = unit->getCurrField();//==FieldAir?ZoneAir:ZoneSurface;
+	Field field = unit->getCurrField();//==Field::AIR?Zone::AIR:Zone::LAND;
 	Vec2i candidate;
 
 	// first try quick and dirty approach (should hit most of the time)
@@ -902,7 +902,7 @@ bool Map::getNearestAdjacentFreePos(Vec2i &result, const Unit *unit, const Vec2i
 bool Map::canMove(const Unit *unit, const Vec2i &pos1, const Vec2i &pos2) const {
 	int size = unit->getType()->getSize();
    Field mf = unit->getCurrField();
-   Zone cf = mf == FieldAir ? ZoneAir : ZoneSurface;
+   Zone cf = mf == Field::AIR ? Zone::AIR : Zone::LAND;
 
 	for(int x = 0; x < size; ++x) {
 		for(int y = 0; y < size; ++y) {
@@ -985,10 +985,10 @@ void Map::putUnitCells(Unit *unit, const Vec2i &pos){
 					Zone o_zone = other->getCurrZone();
 					string str = string() + "Error: " + ut->getName() + "[id:" + intToStr(unit->getId())
 						+ "] putting in cell ("  + intToStr(currPos.x) + ", " + intToStr(currPos.y) + ")"
-						+ (zone == ZoneSurface ? "{LAND} " : zone == ZoneAir ? "{AIR} " : "{OTHER} ")
+						+ (zone == Zone::LAND ? "{LAND} " : zone == Zone::AIR ? "{AIR} " : "{OTHER} ")
 						+ " cell is already occupied by a " + other->getType()->getName() + "[id:"
 						+ intToStr(other->getId()) + "]"
-						+ (o_zone == ZoneSurface ? "{LAND} " : o_zone == ZoneAir ? "{AIR} " : "{OTHER} ");
+						+ (o_zone == Zone::LAND ? "{LAND} " : o_zone == Zone::AIR ? "{AIR} " : "{OTHER} ");
 					Logger::getErrorLog().add(str);
 					throw runtime_error ( "Ooops... see glestadv-error.log" );
 				}
@@ -1030,7 +1030,7 @@ void Map::evict(Unit *unit, const Vec2i &pos, vector<Unit *> &evicted) {
 	assert(unit);
 	const UnitType *ut = unit->getType();
 	int size = ut->getSize();
-	Zone field = unit->getCurrField()==FieldAir?ZoneAir:ZoneSurface;
+	Zone field = unit->getCurrField()==Field::AIR?Zone::AIR:Zone::LAND;
 
 	for(int x = 0; x < size; ++x) {
 		for(int y = 0; y < size; ++y) {
@@ -1057,7 +1057,7 @@ bool Map::isNextTo(const Vec2i &pos, const Unit *unit) const{
 	for(int i=-1; i<=1; ++i){
 		for(int j=-1; j<=1; ++j){
 			if(isInside(pos.x+i, pos.y+j)) {
-				if(getCell(pos.x+i, pos.y+j)->getUnit(ZoneSurface)==unit){
+				if(getCell(pos.x+i, pos.y+j)->getUnit(Zone::LAND)==unit){
 					return true;
 				}
 			}
@@ -1106,7 +1106,7 @@ void Map::flatternTerrain(const Unit *unit){
 			Cell *c= getCell(pos);
 			Tile *sc= getTile(toTileCoords(pos));
             //we change height if pos is inside world, if its free or ocupied by the currenty building
-			if(isInside(pos) && sc->getObject()==NULL && (c->getUnit(ZoneSurface)==NULL || c->getUnit(ZoneSurface)==unit)){
+			if(isInside(pos) && sc->getObject()==NULL && (c->getUnit(Zone::LAND)==NULL || c->getUnit(Zone::LAND)==unit)){
 				sc->setHeight(refHeight);
             }
         }
@@ -1133,7 +1133,7 @@ void Map::flattenTerrain ( const Unit *unit )
          Tile *sc= getTile(toTileCoords(pos));
          //we change height if pos is inside world, if its free or ocupied by the currenty building
          if ( isInside(pos) && sc->getObject()==NULL
-         &&   (c->getUnit(ZoneSurface)==NULL || c->getUnit(ZoneSurface)==unit) )
+         &&   (c->getUnit(Zone::LAND)==NULL || c->getUnit(Zone::LAND)==unit) )
 	         sc->setHeight(refHeight);
       }
     }
@@ -1357,7 +1357,7 @@ void Map::assertUnitCells(const Unit * unit) {
 			assert(isInside(currPos));
 
 			if(!ut->hasCellMap() || ut->getCellMapCell(x, y)) {
-				if(unit->getCurrSkill()->getClass() != scDie) {
+				if(unit->getCurrSkill()->getClass() != SkillClass::DIE) {
 					assert(getCell(currPos)->getUnit(field) == unit);
 				} else {
 					assert(getCell(currPos)->getUnit(field) != unit);
@@ -1592,7 +1592,7 @@ void Earthquake::getDamageReport(DamageReport &results, float slice) {
 		for(int y = uBounds.p[0].y; y <= uBounds.p[1].y; ++y) {
 			Vec2i pos(x, y);
 			Vec2i surfacePos = map.toTileCoords(pos);
-			Unit *unit = map.getCell(pos)->getUnit(ZoneSurface);
+			Unit *unit = map.getCell(pos)->getUnit(Zone::LAND);
 			if(!unit) {
 				continue;
 			}

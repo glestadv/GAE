@@ -116,8 +116,6 @@ const Vec2i OffsetsSize2Dist2 [numOffsetsSize2Dist2] =
 	Vec2i ( -1, -2 ), // nnw
 };
 
-enum TravelState { tsArrived, tsOnTheWay, tsBlocked };
-
 // =====================================================
 // 	class PathFinder
 //

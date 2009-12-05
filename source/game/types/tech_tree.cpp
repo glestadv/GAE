@@ -197,7 +197,7 @@ const ResourceType *TechTree::getTechResourceType(int i) const{
 
      for(int j=0; j<getResourceTypeCount(); ++j){
           const ResourceType *rt= getResourceType(j);
-          if(rt->getResourceNumber()==i && rt->getClass()==rcTech)
+          if(rt->getResourceNumber()==i && rt->getClass()==ResourceClass::TECHTREE)
                return getResourceType(j);
      }
 
@@ -207,7 +207,7 @@ const ResourceType *TechTree::getTechResourceType(int i) const{
 const ResourceType *TechTree::getFirstTechResourceType() const{
      for(int i=0; i<getResourceTypeCount(); ++i){
           const ResourceType *rt= getResourceType(i);
-          if(rt->getResourceNumber()==1 && rt->getClass()==rcTech)
+          if(rt->getResourceNumber()==1 && rt->getClass()==ResourceClass::TECHTREE)
                return getResourceType(i);
      }
 	 throw runtime_error("This tech tree has no tech resources, one at least is required");

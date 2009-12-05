@@ -104,7 +104,7 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 		if ( !leftList->empty() ) {
 			for ( VLIt it = leftList->begin (); it != leftList->end (); ++it ) {
 				bool changed = false;
-				if ( field == FieldCount ) { // permanent annotation, update all
+				if ( field == Field::COUNT ) { // permanent annotation, update all
 					CellMetrics old = metrics[*it];
 					computeClearances ( *it );
 					if ( old != metrics[*it] ) {
@@ -129,7 +129,7 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 		}
 		if ( !aboveList->empty() ) {
 			for ( VLIt it = aboveList->begin (); it != aboveList->end (); ++it ) {
-				if ( field == FieldCount ) {
+				if ( field == Field::COUNT ) {
 					CellMetrics old = metrics[*it];
 					computeClearances ( *it );
 					if ( old != metrics[*it] ) {
@@ -154,7 +154,7 @@ void AnnotatedMap::cascadingUpdate ( const Vec2i &pos, const int size,  const Fi
 		}
 		if ( corner ) {
 			// Deal with the corner...
-			if ( field == FieldCount ) {
+			if ( field == Field::COUNT ) {
 				CellMetrics old = metrics[*corner];
 				computeClearances ( *corner );
 				if ( old != metrics[*corner] ) {
@@ -253,30 +253,30 @@ void AnnotatedMap::computeClearances ( const Vec2i &pos ) {
 	Cell *cell = cMap->getCell ( pos );
 
 	// is there a building here, or an object on the tile ??
-	bool surfaceBlocked = ( cell->getUnit(ZoneSurface) && !cell->getUnit(ZoneSurface)->isMobile() )
+	bool surfaceBlocked = ( cell->getUnit(Zone::LAND) && !cell->getUnit(Zone::LAND)->isMobile() )
 							||   !cMap->getTile ( cMap->toTileCoords ( pos ) )->isFree ();
 	// Walkable
 	if ( surfaceBlocked || cell->isDeepSubmerged () )
-		metrics[pos].set ( FieldWalkable, 0 );
+		metrics[pos].set ( Field::LAND, 0 );
 	else
-		computeClearance ( pos, FieldWalkable );
+		computeClearance ( pos, Field::LAND );
 	// Any Water
 	if ( surfaceBlocked || !cell->isSubmerged () )
-		metrics[pos].set ( FieldAnyWater, 0 );
+		metrics[pos].set ( Field::ANY_WATER, 0 );
 	else
-		computeClearance ( pos, FieldAnyWater );
+		computeClearance ( pos, Field::ANY_WATER );
 	// Deep Water
 	if ( surfaceBlocked || !cell->isDeepSubmerged () )
-		metrics[pos].set ( FieldDeepWater, 0 );
+		metrics[pos].set ( Field::DEEP_WATER, 0 );
 	else
-		computeClearance ( pos, FieldDeepWater );
+		computeClearance ( pos, Field::DEEP_WATER );
 	// Amphibious:
 	if ( surfaceBlocked )
-		metrics[pos].set ( FieldAmphibious, 0 );
+		metrics[pos].set ( Field::AMPHIBIOUS, 0 );
 	else
-		computeClearance ( pos, FieldAmphibious );
+		computeClearance ( pos, Field::AMPHIBIOUS );
 	// Air
-	computeClearance ( pos, FieldAir );
+	computeClearance ( pos, Field::AIR );
 }
 
 // Computes clearance based on metrics to the sout and east, Does NOT check if this cell is an obstactle
@@ -331,7 +331,7 @@ void AnnotatedMap::clearLocalAnnotations(Field field) {
 list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations () {
 	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>> ();
 	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin (); it != localAnnt.end (); ++ it )
-		ret->push_back ( pair<Vec2i,uint32> (it->first,metrics[it->first].get(FieldWalkable)) );
+		ret->push_back ( pair<Vec2i,uint32> (it->first,metrics[it->first].get(Field::LAND)) );
 	return ret;
 }
 

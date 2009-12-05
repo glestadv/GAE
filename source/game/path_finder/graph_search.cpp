@@ -69,7 +69,7 @@ bool GraphSearch::GreedySearch ( SearchParams &params, list<Vec2i> &path) {
 #ifdef PATHFINDER_TIMING
 	int64 startTime = Chrono::getCurMicros ();
 #endif
-	Zone zone = params.field == FieldAir ? ZoneAir : ZoneSurface;
+	Zone zone = params.field == Field::AIR ? Zone::AIR : Zone::LAND;
 	bNodePool->reset ();
 	bNodePool->addToOpen ( NULL, params.start, heuristic ( params.start, params.dest ) );
 	bool pathFound= true;
@@ -249,7 +249,7 @@ bool GraphSearch::AStarSearch ( SearchParams &params, list<Vec2i> &path ) {
 	}
 	if ( path.size () < 2 ) {
 		path.clear ();
-		return true; //tsArrived
+		return true; //TravelState::ARRIVED
 	}
 
 #	ifdef _GAE_DEBUG_EDITION_
@@ -313,7 +313,7 @@ bool GraphSearch::canPathOut_Greedy ( const Vec2i &pos, const int radius, Field 
 		for ( int i = 0; i < 8 && ! pathFound; ++ i ) {
 			Vec2i sucPos = maxNode->pos + Directions[i];
 			if ( ! cMap->isInside ( sucPos ) 
-			||   ! cMap->getCell( sucPos )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) )
+			||   ! cMap->getCell( sucPos )->isFree( field == Field::AIR ? Zone::AIR: Zone::LAND ) )
 				continue;
 			//CanOccupy() will be cheapest, do it first...
 			if ( aMap->canOccupy (sucPos, 1, field) && ! bNodePool->isListed (sucPos) ) {
@@ -324,8 +324,8 @@ bool GraphSearch::canPathOut_Greedy ( const Vec2i &pos, const int radius, Field 
 					// and either diag cell is not free...
 					if ( ! aMap->canOccupy ( diag1, 1, field ) 
 					||   ! aMap->canOccupy ( diag2, 1, field )
-					||   ! cMap->getCell( diag1 )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) 
-					||   ! cMap->getCell( diag2 )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) )
+					||   ! cMap->getCell( diag1 )->isFree( field == Field::AIR ? Zone::AIR: Zone::LAND ) 
+					||   ! cMap->getCell( diag2 )->isFree( field == Field::AIR ? Zone::AIR: Zone::LAND ) )
 						continue; // not allowed
 				}
 				// Move is legal.
@@ -357,7 +357,7 @@ bool GraphSearch::canPathOut ( const Vec2i &pos, const int radius, Field field  
 		for ( int i = 0; i < 8 && ! pathFound; ++ i ) {
 			Vec2i sucPos = maxNode->pos + Directions[i];
 			if ( ! cMap->isInside ( sucPos ) 
-			||   ! cMap->getCell( sucPos )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) )
+			||   ! cMap->getCell( sucPos )->isFree( field == Field::AIR ? Zone::AIR: Zone::LAND ) )
 				continue;
 			//CanOccupy() will be cheapest, do it first...
 			if ( aMap->canOccupy (sucPos, 1, field) && ! aNodePool->isListed (sucPos) ) {
@@ -367,8 +367,8 @@ bool GraphSearch::canPathOut ( const Vec2i &pos, const int radius, Field field  
 					Vec2i diag2 ( sucPos.x, maxNode->pos.y );
 					// and either diag cell is not free...
 					if ( ! aMap->canOccupy ( diag1, 1, field ) || ! aMap->canOccupy ( diag2, 1, field )
-					||   ! cMap->getCell( diag1 )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) 
-					||   ! cMap->getCell( diag2 )->isFree( field == FieldAir ? ZoneAir: ZoneSurface ) )
+					||   ! cMap->getCell( diag1 )->isFree( field == Field::AIR ? Zone::AIR: Zone::LAND ) 
+					||   ! cMap->getCell( diag2 )->isFree( field == Field::AIR ? Zone::AIR: Zone::LAND ) )
 						continue; // not allowed
 				}
 				// Move is legal.

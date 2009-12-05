@@ -41,12 +41,6 @@ enum FogMode{
 	fmExp2
 };
 
-enum Weather{
-	wSunny,
-	wRainy,
-	wSnowy
-};
-
 class Renderer;
 class Tile;
 

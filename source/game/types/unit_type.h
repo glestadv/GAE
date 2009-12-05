@@ -64,12 +64,6 @@ public:
 };
 */
 
-enum UnitClass{
-	ucWarrior,
-	ucWorker,
-	ucBuilding
-};
-
 // ===============================
 // 	class UnitType
 //
@@ -109,8 +103,8 @@ private:
 
     //OPTIMIZATIONS:
 	//store first command type and skill type of each class
-	const CommandType *firstCommandTypeOfClass[ccCount];
-    const SkillType *firstSkillTypeOfClass[scCount];
+	const CommandType *firstCommandTypeOfClass[CommandClass::COUNT];
+    const SkillType *firstSkillTypeOfClass[SkillClass::COUNT];
 	float halfSize;
 	float halfHeight;
 
@@ -136,11 +130,10 @@ public:
 	bool isMultiBuild() const							{return multiBuild;}
 	float getHalfSize() const							{return halfSize;}
 	float getHalfHeight() const							{return halfHeight;}
-   bool isMobile () const
-   {
-      const SkillType *st = getFirstStOfClass(scMove);
-      return st && st->getSpeed() > 0 ? true: false;
-   }
+	bool isMobile () const {
+		const SkillType *st = getFirstStOfClass(SkillClass::MOVE);
+		return st && st->getSpeed() > 0 ? true: false;
+	}
 	//cellmap
 	bool *cellMap;
 
@@ -153,7 +146,7 @@ public:
 	StaticSound *getCommandSound() const				{return commandSounds.getRandSound();}
 
 	int getStore(const ResourceType *rt) const;
-	const SkillType *getSkillType(const string &skillName, SkillClass skillClass = scCount) const;
+	const SkillType *getSkillType(const string &skillName, SkillClass skillClass = SkillClass::COUNT) const;
 
 	const CommandType *getFirstCtOfClass(CommandClass commandClass) const {return firstCommandTypeOfClass[commandClass];}
 	const SkillType *getFirstStOfClass(SkillClass skillClass) const {return firstSkillTypeOfClass[skillClass];}

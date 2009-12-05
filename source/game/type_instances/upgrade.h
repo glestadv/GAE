@@ -24,13 +24,6 @@ class Unit;
 class UpgradeType;
 class Game;
 
-enum UpgradeState{
-	usUpgrading,
-	usUpgraded,
-
-	upgradeStateCount
-};
-
 class UpgradeManager;
 class EnhancementTypeBase;
 class FactionType;

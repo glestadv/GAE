@@ -54,7 +54,7 @@ CommandResult Commander::tryGiveCommand(
 	assert(!unitType || pos != Command::invalidPos);
 	
 	// if a build command, make sure it makes sense
-	assert(!unitType || ((ct && ct->getClass() == ccBuild) || cc == ccBuild));
+	assert(!unitType || ((ct && ct->getClass() == CommandClass::BUILD) || cc == CommandClass::BUILD));
 
 	if(!selection.isEmpty()) {
 		Vec2i refPos = computeRefPos(selection);
@@ -66,7 +66,7 @@ CommandResult Commander::tryGiveCommand(
 			const CommandType *effectiveCt;
 			if(ct) {
 				effectiveCt = ct;
-			} else if(cc != ccNull) {
+			} else if(cc != CommandClass::NULL_COMMAND) {
 				effectiveCt = (*i)->getFirstAvailableCt(cc);
 			} else {
 				effectiveCt = (*i)->computeCommandType(pos, targetUnit);
@@ -84,33 +84,33 @@ CommandResult Commander::tryGiveCommand(
 				} else {
 					result = pushCommand(new Command(effectiveCt, flags, Command::invalidPos, *i));
 				}
-				if(result == crSuccess) {
+				if(result == CommandResult::SUCCESS) {
 					(*i)->resetLastCommanded();
 				}
 				results.push_back(result);
 			} else {
-				results.push_back(crFailUndefined);
+				results.push_back(CommandResult::FAIL_UNDEFINED);
 			}
 		}
 		return computeResult(results);
 	} else {
-		return crFailUndefined;
+		return CommandResult::FAIL_UNDEFINED;
 	}
 }
 
 CommandResult Commander::tryCancelCommand(const Selection *selection) const{
 	const Selection::UnitContainer &units = selection->getUnits();
 	for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
-		pushCommand(new Command(catCancelCommand, CommandFlags(), Command::invalidPos, *i));
+		pushCommand(new Command(CommandArchetype::CANCEL_COMMAND, CommandFlags(), Command::invalidPos, *i));
 	}
 
-	return crSuccess;
+	return CommandResult::SUCCESS;
 }
 
 void Commander::trySetAutoRepairEnabled(const Selection &selection, CommandFlags flags, bool enabled) const{
 	const Selection::UnitContainer &units = selection.getUnits();
 	for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
-		pushCommand(new Command(catSetAutoRepair, CommandFlags(cpAutoRepairEnabled, enabled),
+		pushCommand(new Command(CommandArchetype::SET_AUTO_REPAIR, CommandFlags(CommandProperties::AUTO_REPAIR_ENABLED, enabled),
 				Command::invalidPos, *i));
 	}
 }
@@ -146,7 +146,7 @@ Vec2i Commander::computeDestPos(const Vec2i &refUnitPos, const Vec2i &unitPos, c
 CommandResult Commander::computeResult(const CommandResultContainer &results) const {
 	switch (results.size()) {
 	case 0:
-		return crFailUndefined;
+		return CommandResult::FAIL_UNDEFINED;
 	case 1:
 		return results.front();
 	default: {
@@ -157,16 +157,16 @@ CommandResult Commander::computeResult(const CommandResultContainer &results) co
 				if (*i != results.front()) {
 					unique = false;
 				}
-				if (*i == crSuccess) {
+				if (*i == CommandResult::SUCCESS) {
 					anySucceed = true;
 				} else {
 					anyFail = true;
 				}
 			}
 			if (anySucceed) {
-				return anyFail ? crSomeFailed : crSuccess;
+				return anyFail ? CommandResult::SOME_FAILED : CommandResult::SUCCESS;
 			} else {
-				return unique ? results.front() : crFailUndefined;
+				return unique ? results.front() : CommandResult::FAIL_UNDEFINED;
 			}
 		}
 	}
@@ -204,15 +204,15 @@ void Commander::giveCommand(Command *command) const {
 	//execute command, if unit is still alive and non-deleted
 	if(unit && unit->isAlive()) {
 		switch(command->getArchetype()) {
-			case catGiveCommand:
+			case CommandArchetype::GIVE_COMMAND:
 				assert(command->getType());
 				unit->giveCommand(command);
 				break;
-			case catCancelCommand:
+			case CommandArchetype::CANCEL_COMMAND:
 				unit->cancelCommand();
 				delete command;
 				break;
-			case catSetAutoRepair:
+			case CommandArchetype::SET_AUTO_REPAIR:
 				unit->setAutoRepairEnabled(command->isAutoRepairEnabled());
 				delete command;
 				break;

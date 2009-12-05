@@ -214,13 +214,13 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo
 
 		scenarioInfo->factionControls[i] = factionControl;
 
-		if (factionControl != ctClosed) {
+		if (factionControl != ControlType::CLOSED) {
 			int teamIndex = playerNode->getAttribute("team")->getIntValue();
 			XmlAttribute *nameAttrib = playerNode->getAttribute("name", false);
 			XmlAttribute *resMultAttrib = playerNode->getAttribute("resource-multiplier", false);
 			if (nameAttrib) {
 				scenarioInfo->playerNames[i] = nameAttrib->getValue();
-			} else if (factionControl == ctHuman) {
+			} else if (factionControl == ControlType::HUMAN) {
 				scenarioInfo->playerNames[i] = Config::getInstance().getNetPlayerName();
 			} else {
 				scenarioInfo->playerNames[i] = "CPU Player";
@@ -228,7 +228,7 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo
 			if (resMultAttrib) {
 				scenarioInfo->resourceMultipliers[i] = resMultAttrib->getFloatValue();
 			} else {
-				if (factionControl == ctCpuUltra) {
+				if (factionControl == ControlType::CPU_ULTRA) {
 					scenarioInfo->resourceMultipliers[i] = 3.f;
 				} else {
 					scenarioInfo->resourceMultipliers[i] = 1.f;
@@ -253,7 +253,7 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo
 	//add player info
 	scenarioInfo->desc = lang.get("Player") + ": ";
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
-		if (scenarioInfo->factionControls[i] == ctHuman) {
+		if (scenarioInfo->factionControls[i] == ControlType::HUMAN) {
 			scenarioInfo->desc += formatString(scenarioInfo->factionTypeNames[i]);
 			break;
 		}
@@ -290,8 +290,8 @@ void MenuStateScenario::loadGameSettings(const ScenarioInfo *scenarioInfo, GameS
 	int factionCount = 0;
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 		ControlType ct = static_cast<ControlType>(scenarioInfo->factionControls[i]);
-		if (ct != ctClosed) {
-			if (ct == ctHuman) {
+		if (ct != ControlType::CLOSED) {
+			if (ct == ControlType::HUMAN) {
 				gs->setThisFactionIndex(factionCount);
 			}
 			gs->setFactionControl(factionCount, ct);
@@ -310,13 +310,13 @@ void MenuStateScenario::loadGameSettings(const ScenarioInfo *scenarioInfo, GameS
 
 ControlType MenuStateScenario::strToControllerType(const string &str) {
 	if (str == "closed") {
-		return ctClosed;
+		return ControlType::CLOSED;
 	} else if (str == "cpu") {
-		return ctCpu;
+		return ControlType::CPU;
 	} else if (str == "cpu-ultra") {
-		return ctCpuUltra;
+		return ControlType::CPU_ULTRA;
 	} else if (str == "human") {
-		return ctHuman;
+		return ControlType::HUMAN;
 	}
 
 	throw std::runtime_error("Unknown controller type: " + str);
