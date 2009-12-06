@@ -14,6 +14,7 @@
 
 #include <vector>
 #include "xml_parser.h"
+#include "game_constants.h"
 
 using std::vector;
 using Shared::Xml::XmlNode;

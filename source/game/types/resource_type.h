@@ -15,6 +15,7 @@
 #include "element_type.h"
 #include "model.h"
 #include "checksum.h"
+#include "game_constants.h"
 
 namespace Glest{ namespace Game{
 

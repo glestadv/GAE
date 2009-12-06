@@ -21,6 +21,7 @@
 #include "random.h"
 #include "surface_atlas.h"
 #include "checksum.h"
+#include "game_constants.h"
 
 namespace Glest{ namespace Game{
 

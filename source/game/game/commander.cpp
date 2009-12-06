@@ -166,7 +166,7 @@ CommandResult Commander::computeResult(const CommandResultContainer &results) co
 			if (anySucceed) {
 				return anyFail ? CommandResult::SOME_FAILED : CommandResult::SUCCESS;
 			} else {
-				return unique ? results.front() : CommandResult::FAIL_UNDEFINED;
+				return unique ? results.front() : CommandResult(CommandResult::FAIL_UNDEFINED);
 			}
 		}
 	}
