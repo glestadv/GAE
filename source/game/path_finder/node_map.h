@@ -135,7 +135,7 @@ public:
 	void updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost);
 	Vec2i getBestCandidate();
 	/** get the best heuristic node seen this search */
-	Vec2i getBestSeen()		{ return bestH.valid() ? bestH : Vec2i(-1); }
+	Vec2i getBestSeen()		{ return bestH.valid() ? Vec2i(bestH) : Vec2i(-1); }
 
 	/** get the heuristic of the node at pos [known to be visited] */
 	float getHeuristicAt(const Vec2i &pos)	{ return nodeMap[pos].heuristic;	}
@@ -145,7 +145,7 @@ public:
 	float getEstimateFor(const Vec2i &pos)	{ return nodeMap[pos].estimate();	}
 	/** get the best path to the node at pos [known to be visited] */
 	Vec2i getBestTo(const Vec2i &pos)		{ 
-		return nodeMap[pos].prevNode.valid() ? nodeMap[pos].prevNode : Vec2i(-1);
+		return nodeMap[pos].prevNode.valid() ? Vec2i(nodeMap[pos].prevNode) : Vec2i(-1);
 	}
 
 private:

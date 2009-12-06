@@ -226,7 +226,7 @@ public:
 
 	/** Finds a path for unit towards target using map, terminating when a cell with more than
 	  * threshold influence on iMap is found */
-	AStarResult pathToInfluence(const AnnotatedMap *map, const Unit *unit, const DomainKey &target, 
+	AStarResult pathToInfluence(const AnnotatedMap *aMap, const Unit *unit, const DomainKey &target, 
 			const TypeMap<float> *iMap, float threshold) {
 		InfluenceGoal<float> goalFunc(threshold, iMap);
 		MoveCost			 costFunc(unit, aMap);

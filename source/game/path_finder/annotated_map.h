@@ -133,7 +133,7 @@ class AnnotatedMap {
 	friend class AbstractMap;
 	friend class ClusterMap;
 #	if _GAE_DEBUG_EDITION_
-		list<std::pair<Vec2i,uint32>>* getLocalAnnotations();
+		list<std::pair<Vec2i,uint32> >* getLocalAnnotations();
 		friend class Glest::Game::PathFinderTextureCallBack;
 #	endif
 	int width, height;

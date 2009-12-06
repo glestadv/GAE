@@ -16,9 +16,11 @@
 #define _GLEST_GAME_PATHFINDER_NODE_POOL_H_
 
 #include "vec.h"
+#include "game_constants.h"
 
 #include <algorithm>
 #include <set>
+#include <list>
 #include <limits>
 
 using Shared::Graphics::Vec2i;
@@ -145,7 +147,7 @@ private:
 	};
 
 private:
-	AStarNode *leastH;	/**< The 'best' node seen so far this search	*/
+	AStarNode *leastH; /**< The 'best' node seen so far this search	   */
 	int numNodes;	  /**< number of nodes used so far this search	  */
 	int tmpMaxNodes; /**< a temporary maximum number of nodes to use */
 	

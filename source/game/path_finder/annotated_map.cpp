@@ -378,8 +378,8 @@ void AnnotatedMap::clearLocalAnnotations(Field field) {
 
 #if _GAE_DEBUG_EDITION_
 
-list<pair<Vec2i,uint32>>* AnnotatedMap::getLocalAnnotations() {
-	list<pair<Vec2i,uint32>> *ret = new list<pair<Vec2i,uint32>>();
+list<pair<Vec2i,uint32> >* AnnotatedMap::getLocalAnnotations() {
+	list<pair<Vec2i,uint32> > *ret = new list<pair<Vec2i,uint32> >();
 	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin(); it != localAnnt.end(); ++ it )
 		ret->push_back(pair<Vec2i,uint32>(it->first,metrics[it->first].get(Field::LAND)));
 	return ret;

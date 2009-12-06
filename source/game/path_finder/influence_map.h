@@ -73,18 +73,18 @@ protected:
 // =====================================================
 // 	class TypeMap
 // =====================================================
-template<typename type = float> class TypeMap : public InfluenceMap<type, TypeMap<type>> {
-	friend class InfluenceMap<type, TypeMap<type>>;
+template<typename type = float> class TypeMap : public InfluenceMap<type, TypeMap<type> > {
+	friend class InfluenceMap<type, TypeMap<type> >;
 public:
-	TypeMap(Rectangle b, type def) : InfluenceMap<type, TypeMap<type>>(b,def) {
-		data = new type[w*h];
+	TypeMap(Rectangle b, type def) : InfluenceMap<type, TypeMap<type> >(b,def) {
+		data = new type[b.w*b.h];
 	}
-	void zeroMap() { memset(data, 0, sizeof(type) * w * h); }
-	void clearMap(type val) { fill_n(data, w * h, val); }
+	void zeroMap() { memset(data, 0, sizeof(type) * this->w * this->h); }
+	void clearMap(type val) { fill_n(data, this->w * this->h, val); }
 
 private:
-	type get(Point p) { return data[p.y * w + p.x]; }
-	void  set(Point p, type v) { data[p.y * w + p.x] = v; }
+	type get(Point p) { return data[p.y * this->w + p.x]; }
+	void  set(Point p, type v) { data[p.y * this->w + p.x] = v; }
 	type *data;
 };
 
@@ -106,9 +106,9 @@ public:
 		//cout << "section size = " << sectionSize << ", sections per row = " << sectionsPerRow << endl;
 		data = new uint32[b.h * sectionsPerRow];
 	}
-	void zeroMap() { memset(data, 0, sizeof(uint32) * sectionsPerRow * h); }
+	void zeroMap() { memset(data, 0, sizeof(uint32) * sectionsPerRow * this->h); }
 	void clearMap(uint32 val) { 
-		assert(val < max_value);
+//		assert(val < max_value);
 		data[0] = 0;
 		for ( int i=0; i < sectionSize - 1; ++i) {
 			data[0] |= val;
@@ -119,7 +119,7 @@ public:
 			data[i] = data[0];
 		}
 		const int rowSize = sectionsPerRow * sizeof(uint32);
-		for ( int i=1; i < h; ++i ) {
+		for ( int i=1; i < this->h; ++i ) {
 			uint32 *ptr = &data[i * sectionsPerRow];
 			memcpy(ptr, data, rowSize);
 		}

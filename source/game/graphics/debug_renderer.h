@@ -84,7 +84,7 @@ class TeamSightColourCallback {
 public:
 	Vec4f operator()( const Vec2i &cell ) {
 		Vec4f colour(0.f);
-		Vec2i &tile = Map::toTileCoords(cell);
+		const Vec2i &tile = Map::toTileCoords(cell);
 		int vis = theWorld.getCartographer()->getTeamVisibility(theWorld.getThisTeamIndex(), tile);
 		if ( !vis ) {
 			colour.x = 1.0f;

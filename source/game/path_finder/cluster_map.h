@@ -21,7 +21,7 @@ class Cartographer;
 struct Transition;
 
 /** uni-directional edge, is owned by the source transition, contains pointer to dest */
-struct Edge : pair<Transition*, vector<float>> {
+struct Edge : pair<Transition*, vector<float> > {
 	Edge(Transition *t)  { first = t; }
 	Transition* transition() const { return first; }
 	float cost(int size) const { return second[size-1]; }
