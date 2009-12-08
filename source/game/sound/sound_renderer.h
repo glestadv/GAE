@@ -21,7 +21,7 @@
 
 namespace Glest{ namespace Game{
 
-using Shared::Sound::StrSound;
+using Shared::Sound::StreamSound;
 using Shared::Sound::StaticSound;
 using Shared::Sound::SoundPlayer;
 using Shared::Graphics::Vec3f;
@@ -65,8 +65,8 @@ public:
 	SoundPlayer &getSoundPlayer() const	{return *soundPlayer;}
 
 	//music
-	void playMusic(const StrSound &strSound);
-	void stopMusic(const StrSound &strSound);
+	void playMusic(const StreamSound &streamSound);
+	void stopMusic(const StreamSound &streamSound);
 
 	//fx
 	void playFx(const StaticSound &staticSound, const Vec3f &soundPos, const Vec3f &camPos);
@@ -77,8 +77,8 @@ public:
 
 	//ambient
 	//void playAmbient(const StaticSound &staticSound);
-	void playAmbient(const StrSound &strSound);
-	void stopAmbient(const StrSound &strSound);
+	void playAmbient(const StreamSound &streamSound);
+	void stopAmbient(const StreamSound &streamSound);
 
 	//misc
 	void stopAllSounds();

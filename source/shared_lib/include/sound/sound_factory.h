@@ -23,7 +23,7 @@ namespace Shared { namespace Sound {
 class SoundFactory {
 public:
 	virtual ~SoundFactory() {}
-	virtual SoundPlayer *newSoundPlayer() = 0;
+	virtual shared_ptr<SoundPlayer> newSoundPlayer() = 0;
 };
 
 }}//end namespace

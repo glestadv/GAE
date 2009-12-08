@@ -2,6 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//				  2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -16,7 +17,6 @@
 #include <fstream>
 
 #include "types.h"
-#include "factory.h"
 
 struct OggVorbis_File;
 
@@ -27,7 +27,6 @@ namespace Shared { namespace Sound {
 
 using Platform::uint32;
 using Platform::int8;
-using Util::MultiFactory;
 
 class Sound;
 
@@ -38,13 +37,24 @@ class Sound;
 // =====================================================
 
 class SoundFileLoader {
+	friend class Sound;
 public:
-    virtual ~SoundFileLoader() {}
+	virtual ~SoundFileLoader() {}
 
-    virtual void open(const string &path, Sound &sound) = 0;
-    virtual uint32 read(int8 *samples, uint32 size) = 0;
-    virtual void close() = 0;
-    virtual void restart() = 0;
+	/**
+	 * Opens the file specified in the sound parameter.  The Sound object must have already been
+	 * initialized prior to calling this function.
+	 * @return A SoundFileLoader-derived object that can read the specified sound file
+	 * @throw range_error if the extension is not either .wav or .ogg
+	 */
+	static shared_ptr<SoundFileLoader> open(const Sound &sound)	{return open(sound, false);}
+
+	virtual uint32 read(int8 *samples, uint32 size) = 0;
+	virtual void close() = 0;
+	virtual void restart() = 0;
+private:
+	/** Version of open to be called by Sound for initialization */
+	static shared_ptr<SoundFileLoader> open(const Sound &sound, bool initSoundObject);
 };
 
 // =====================================================
@@ -55,19 +65,20 @@ public:
 
 class WavSoundFileLoader: public SoundFileLoader {
 private:
-    static const int maxDataRetryCount = 10;
+	static const int maxDataRetryCount = 10;
 
 private:
-    uint32 dataOffset;
-    uint32 dataSize;
-    uint32 bytesPerSecond;
-    ifstream f;
+	uint32 dataOffset;
+	uint32 dataSize;
+	uint32 bytesPerSecond;
+	ifstream f;
 
 public:
-    virtual void open(const string &path, Sound &sound);
-    virtual uint32 read(int8 *samples, uint32 size);
-    virtual void close();
-    virtual void restart();
+	WavSoundFileLoader(const Sound &sound, bool initSoundObject);
+	~WavSoundFileLoader() {close();}
+	uint32 read(int8 *samples, uint32 size);
+	void close();
+	void restart();
 };
 
 // =====================================================
@@ -78,30 +89,18 @@ public:
 
 class OggSoundFileLoader: public SoundFileLoader {
 private:
-    OggVorbis_File *vf;
-    FILE *f;
+	OggVorbis_File *vf;
+	FILE *f;
 
 public:
-    OggSoundFileLoader() : vf(NULL), f(NULL) {}
-    virtual ~OggSoundFileLoader() {close();}
-    virtual void open(const string &path, Sound &sound);
-    virtual uint32 read(int8 *samples, uint32 size);
-    virtual void close();
-    virtual void restart();
+	OggSoundFileLoader(const Sound &sound, bool initSoundObject);
+	~OggSoundFileLoader() {close();}
+	uint32 read(int8 *samples, uint32 size);
+	void close();
+	void restart();
 };
 
-// =====================================================
-// class SoundFileLoaderFactory
-// =====================================================
-
-class SoundFileLoaderFactory: public MultiFactory<SoundFileLoader> {
-private:
-    SoundFileLoaderFactory();
-
-public:
-    static SoundFileLoaderFactory * getInstance();
-};
-
-}}//end namespace
+}
+}//end namespace
 
 #endif

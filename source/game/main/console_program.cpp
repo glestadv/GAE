@@ -16,7 +16,7 @@
 
 namespace Game {
 
-int ConsoleProgram:main() {
+int ConsoleProgram::main() {
 	return 0;
 }
 

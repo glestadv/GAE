@@ -16,7 +16,7 @@
 #include "upgrade_type.h"
 #include "sound.h"
 
-using Shared::Sound::StrSound;
+using Shared::Sound::StreamSound;
 using Shared::Sound::StaticSound;
 
 namespace Glest{ namespace Game{
@@ -56,7 +56,7 @@ private:
 	StartingUnits startingUnits;
 	Resources startingResources;
 	Subfactions subfactions;
-	StrSound *music;
+	StreamSound *music;
 	SoundContainer *attackNotice;
 	SoundContainer *enemyNotice;
 	int attackNoticeDelay;
@@ -77,7 +77,7 @@ public:
 	const UpgradeType *getUpgradeType(int i) const		{return &upgradeTypes[i];}
 	const string &getSubfaction(int i) const			{return subfactions[i];}
 	int getSubfactionIndex(const string &name) const;
-	StrSound *getMusic() const							{return music;}
+	StreamSound *getMusic() const							{return music;}
 	int getStartingUnitCount() const					{return startingUnits.size();}
 	const UnitType *getStartingUnit(int i) const		{return startingUnits[i].first;}
 	int getStartingUnitAmount(int i) const				{return startingUnits[i].second;}

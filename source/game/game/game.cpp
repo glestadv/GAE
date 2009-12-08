@@ -251,7 +251,7 @@ void Game::init() {
 	}*/
 
 	logger.add("Starting music stream", true);
-	StrSound *gameMusic= world.getThisFaction()->getType()->getMusic();
+	StreamSound *gameMusic= world.getThisFaction()->getType()->getMusic();
 	soundRenderer.playMusic(gameMusic);
 
 	logger.add("Launching game");

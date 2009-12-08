@@ -14,75 +14,158 @@
 
 #include <fstream>
 #include <stdexcept>
+//#include <boost/shared_ptr.hpp>
+//using boost::shared_ptr;
+#include "util.h"
 
 #include "leak_dumper.h"
 
-namespace Shared{ namespace Sound{
-
+namespace Shared { namespace Sound {
+#if 0
 // =====================================================
-//	class Sound
+// class SerialSoundPlayList
 // =====================================================
 
-Sound::Sound()
-	: channels(0)
-	, samplesPerSecond(0)
-	, bitsPerSample(0)
-	, size(0){
+const Sound *SerialSoundPlayList::getSound() const {
+	const Playables &playables = getPlayables();
+	if(!playables.size()) {
+		return NULL;
+	}
+
+	++lastItem;
+	if(lastItem == playables.end()) {
+		lastItem = playables.begin();
+	}
+	return lastItem->getSound();
 }
 
 // =====================================================
-//	class StaticSound
+// class RandomSoundPlayList
 // =====================================================
 
-StaticSound::StaticSound(const string &path){
-	string ext= path.substr(path.find_last_of('.')+1);
+const Sound *RandomSoundPlayList::getSound() const {
+	const Playables &playables = getPlayables();
+	if(!playables.size()) {
+		return NULL;
+	}
 
-	SoundFileLoader *soundFileLoader= SoundFileLoaderFactory::getInstance()->newInstance(ext);
+	int64 now = Chrono::getCurMicros();
+	Playables possibilities;
 
-	soundFileLoader->open(path, *this);
-	samples.resize(size);
-	soundFileLoader->read(&samples.begin(), size);
-	soundFileLoader->close();
 
-	delete soundFileLoader;
+	if(noRepeatSize) {
+		int64 staleTime = now - noRepeatInterval;
+
+		// cull history
+		while(history.size()) {
+			if(history.front().second < staleTime) {
+				history.pop_front();
+			}
+		}
+
+		// If non-repeatable history contains all items then no sound this time.
+		if(history.size() == playables.size()) {
+			return NULL;
+		}
+
+		// calculate the value to subtract from the total
+		foreach(History::value &h, history) {
+			historyValue += h.first->second;
+		}
+	}
+
+	float nextValue = 0.f;
+	foreach(Playables::const_iterator &p, playables) {
+		bool inHistory = false;
+		foreach(History::value &h, history) {
+			if(h.first->first == p) {
+				inHistory = true;
+				break;
+			}
+		}
+
+		if(!inHistory) {
+			possibilities.push_back(Playables::value(p.first, nextValue));
+			nextValue += h.second;
+		}
+		nextValue
+
+	float random
+
+	++lastItem;
+	if(lastItem == playables.end()) {
+		lastItem = playables.begin();
+	}
+	return lastItem->getSound();
+}
+
+class SoundPlayList : public Playable {
+public:
+	typedef dequeue<pair<Playables::const_iterator, int64> > History;
+
+private:
+	size_t noRepeatSize;			/**< The number of history items to not repeat */
+	int64 noRepeatInterval;			/**< The max interval to use the history before resetting it. */
+	mutable History history;
+	mutable Random random;
+
+public:
+	SoundContainer(int64 seed, size_t noRepeatSize, int64 noRepeatInterval);
+
+	const Sound *getSound() const;
+};
+#endif
+// =====================================================
+// class Sound
+// =====================================================
+
+Sound::Sound(const string &path)
+		: path(path)
+		, channels(0)
+		, samplesPerSecond(0)
+		, bitsPerSample(0)
+		, size(0) {
+}
+
+// =====================================================
+// class StaticSound
+// =====================================================
+
+StaticSound::StaticSound(const string &path) : Sound(path) {
+	shared_ptr<SoundFileLoader> sfl = init();
+	samples.resize(getSize());
+	sfl->read(&samples.front(), getSize());
 }
 
 StaticSound::~StaticSound() {
 }
 
-
 // =====================================================
-//	class StrSound
+// class StreamSound
 // =====================================================
 
-StrSound::StrSound(){
+StreamSound::StreamSound(const string &path) : Sound(path) {
+	init();
 }
 
-StrSound::~StrSound(){
-	close();
+StreamSound::~StreamSound() {
 }
 
-void StrSound::open(const string &path){
-	string ext= path.substr(path.find_last_of('.')+1);
 
-	soundFileLoader= SoundFileLoaderFactory::getInstance()->newInstance(ext);
-	soundFileLoader->open(path, &info);
+/*uint32 StreamSound::read(int8 *samples, uint32 size){
+ return soundFileLoader->read(samples, size);
 }
 
-uint32 StrSound::read(int8 *samples, uint32 size){
-	return soundFileLoader->read(samples, size);
+void StreamSound::close(){
+ if(soundFileLoader!=NULL){
+  soundFileLoader->close();
+  delete soundFileLoader;
+  soundFileLoader= NULL;
+ }
 }
 
-void StrSound::close(){
-	if(soundFileLoader!=NULL){
-		soundFileLoader->close();
-		delete soundFileLoader;
-		soundFileLoader= NULL;
-	}
+void StreamSound::restart(){
+ soundFileLoader->restart();
 }
-
-void StrSound::restart(){
-	soundFileLoader->restart();
-}
-
-}}//end namespace
+*/
+}} // end namespace

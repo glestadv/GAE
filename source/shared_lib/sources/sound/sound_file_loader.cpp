@@ -12,10 +12,13 @@
 #include "pch.h"
 #include "sound_file_loader.h"
 
+#include <stdexcept>
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
 #include "sound.h"
+#include "util.h"
+
 #include "leak_dumper.h"
 
 using namespace Shared::Platform;
@@ -23,20 +26,37 @@ using namespace std;
 
 namespace Shared { namespace Sound {
 
+shared_ptr<SoundFileLoader> SoundFileLoader::open(const Sound &sound, bool initSoundObject) {
+	const string &path = sound.getPath();
+	string ext = Shared::Util::toLower(Shared::Util::ext(path));
+	if(ext == "wav") {
+		return shared_ptr<SoundFileLoader>(new WavSoundFileLoader(path, initSoundObject));
+	} else if(ext == "ogg") {
+		return shared_ptr<SoundFileLoader>(new OggSoundFileLoader(path, initSoundObject));
+	} else {
+		throw range_error("No support for sound file extension " + ext);
+	}
+}
+
 // =====================================================
 // class WavSoundFileLoader
 // =====================================================
+// FIXME: Non-portable code! This code will not work on PPC or ARM!!
+void WavSoundFileLoader::WavSoundFileLoader(const Sound &sound, bool initSoundObject)
+		: SoundFileLoader()
+		, dataOffset(0)
+		, dataSize(0)
+		, bytesPerSecond(0)
+		, f(sound.getPath().c_str(), ios_base::in | ios_base::binary) {
 
-void WavSoundFileLoader::open(const string &path, Sound &sound) {
+	const string &path = sound.getPath();
     char chunkId[] = {'-', '-', '-', '-', '\0'};
     uint32 size32 = 0;
     uint16 size16 = 0;
     int count;
 
-    f.open(path.c_str(), ios_base::in | ios_base::binary);
-
     if (!f.is_open()) {
-        throw runtime_error("Error opening wav file: " + string(path));
+        throw runtime_error("Error opening wav file: " + path);
     }
 
     //RIFF chunk - Id
@@ -73,11 +93,19 @@ void WavSoundFileLoader::open(const string &path, Sound &sound) {
 
     //first sub-chunk (header) - Data (nChannels)
     f.read((char*) &size16, 2);
-    sound.setChannels(size16);
+	if(initSoundObject) {
+    	const_cast<Sound&>(sound).setChannels(size16);
+	} else {
+		assert(sound.getChannels() == size16);
+	}
 
     //first sub-chunk (header) - Data (nsamplesPerSecond)
     f.read((char*) &size32, 4);
-    sound.setsamplesPerSecond(size32);
+	if(initSoundObject) {
+    	const_cast<Sound&>(sound).setSamplesPerSecond(size32);
+	} else {
+		assert(sound.getSamplesPerSecond() == size32);
+	}
 
     //first sub-chunk (header) - Data (nAvgBytesPerSec)  - Ignore
     f.read((char*) &size32, 4);
@@ -87,12 +115,16 @@ void WavSoundFileLoader::open(const string &path, Sound &sound) {
 
     //first sub-chunk (header) - Data (nsamplesPerSecond)
     f.read((char*) &size16, 2);
-    sound.setBitsPerSample(size16);
+	if(initSoundObject) {
+    	const_cast<Sound&>(sound).setBitsPerSample(size16);
+	} else {
+		assert(sound.getBitsPerSample() == size16);
+	}
 
     if (sound.getBitsPerSample() != 8 && sound.getBitsPerSample() != 16) {
-        throw runtime_error("Bits per sample must be 8 or 16: " + path);
+        throw range_error("Bits per sample must be 8 or 16: " + path);
     }
-    bytesPerSecond = sound.getBitsPerSample() * 8 * sound.getSamplesPerSecond() * sound.getChannels();
+    bytesPerSecond = sound.getBitsPerSample() / 8 * sound.getSamplesPerSecond() * sound.getChannels();
 
     count = 0;
     do {
@@ -108,7 +140,11 @@ void WavSoundFileLoader::open(const string &path, Sound &sound) {
         //second sub-chunk (samples) - Size
         f.read((char*) &size32, 4);
         dataSize = size32;
-        sound.setSize(dataSize);
+		if(initSoundObject) {
+        	const_cast<Sound&>(sound).setSize(dataSize);
+		} else {
+			assert(sound.getSize() == dataSize);
+		}
     } while (strncmp(chunkId, "data", 4) != 0 && count < maxDataRetryCount);
 
     if (f.bad() || count == maxDataRetryCount) {
@@ -135,26 +171,38 @@ void WavSoundFileLoader::restart() {
 //        Ogg Sound File Loader
 // =======================================
 
-void OggSoundFileLoader::open(const string &path, Sound &sound) {
-    if (!(f = fopen(path.c_str(), "rb"))) {
-        throw runtime_error("Can't open ogg file: " + path);
-    }
+OggSoundFileLoader::OggSoundFileLoader(const Sound &sound, bool initSoundObject)
+		: SoundFileLoader()
+		, vf(NULL)
+		, f(NULL) {
 
-    vf = new OggVorbis_File();
-    if (ov_open(f, vf, NULL, 0)) {
-        fclose(f);
-        f = NULL;
-        throw runtime_error("ov_open failed on ogg file: " + path);
-    }
-    // ogg assumes the file pointer.
-    f = NULL;
+	const string &path = sound.getPath();
+	if (!(f = fopen(path.c_str(), "rb"))) {
+		throw runtime_error("Can't open ogg file: " + path);
+	}
 
-    vorbis_info *vi = ov_info(vf, -1);
+	vf = new OggVorbis_File();
+	if (ov_open(f, vf, NULL, 0)) {
+		fclose(f);
+		f = NULL;
+		throw runtime_error("ov_open failed on ogg file: " + path);
+	}
+	// ogg assumes the file pointer.
+	f = NULL;
 
-    sound.setChannels(vi->channels);
-    sound.setsamplesPerSecond(vi->rate);
-    sound.setBitsPerSample(16);
-    sound.setSize(static_cast<uint32>(ov_pcm_total(vf, -1))*2);
+	vorbis_info *vi = ov_info(vf, -1);
+
+	if (initSoundObject) {
+		const_cast<Sound&>(sound).setChannels(vi->channels);
+		const_cast<Sound&>(sound).setSamplesPerSecond(vi->rate);
+		const_cast<Sound&>(sound).setBitsPerSample(16);
+		const_cast<Sound&>(sound).setSize(static_cast<uint32>(ov_pcm_total(vf, -1)) * 2);
+	} else {
+		assert(sound.getChannels() == vi->channels);
+		assert(sound.getSamplesPerSecond() == vi->rate);
+		assert(sound.getBitsPerSample() == 16);
+		assert(sound.getSize() == static_cast<uint32>(ov_pcm_total(vf, -1)) * 2);
+	}
 }
 
 uint32 OggSoundFileLoader::read(int8 *samples, uint32 size) {
@@ -162,8 +210,7 @@ uint32 OggSoundFileLoader::read(int8 *samples, uint32 size) {
     int totalBytesRead = 0;
 
     while (size > 0) {
-        int bytesRead = ov_read(vf, reinterpret_cast<char*> (samples), size,
-                                0, 2, 1, &section);
+        int bytesRead = ov_read(vf, reinterpret_cast<char*> (samples), size, 0, 2, 1, &section);
         if (bytesRead == 0) {
             break;
         }
@@ -184,20 +231,6 @@ void OggSoundFileLoader::close() {
 
 void OggSoundFileLoader::restart() {
     ov_raw_seek(vf, 0);
-}
-
-// =====================================================
-// class SoundFileLoaderFactory
-// =====================================================
-
-SoundFileLoaderFactory::SoundFileLoaderFactory() {
-    registerClass<WavSoundFileLoader>("wav");
-    registerClass<OggSoundFileLoader>("ogg");
-}
-
-SoundFileLoaderFactory *SoundFileLoaderFactory::getInstance() {
-    static SoundFileLoaderFactory soundFileLoaderFactory;
-    return &soundFileLoaderFactory;
 }
 
 }}//end namespace

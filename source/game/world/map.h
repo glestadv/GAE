@@ -157,7 +157,7 @@ public:
 	void setHeight(float height)					{originalVertex.y = vertex.y = height;}
 	void setNormal(const Vec3f &normal)				{this->normal= normal;}
 	void setColor(const Vec3f &color)				{this->color= color;}
-	void setTileType(int tileType)			{this->tileType= tileType;}
+	void setTileType(int tileType)					{this->tileType= tileType;}
 	void setTileTexture(const Texture2D *st)		{this->tileTexture= st;}
 	void setObject(Object *object)					{this->object= object;}
 	void setFowTexCoord(const Vec2f &ftc)			{this->fowTexCoord= ftc;}

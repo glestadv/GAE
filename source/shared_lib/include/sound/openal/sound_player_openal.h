@@ -28,24 +28,31 @@ using Shared::Platform::Chrono;
 namespace Shared { namespace Sound { namespace OpenAL {
 
 class SoundSource {
-protected:
-	friend class SoundPlayerOpenAL;
+private:
 	ALuint source;
+	const Sound *sound;
+	float volume;
 
 public:
 	SoundSource();
 	virtual ~SoundSource();
 
+
+	template<class T> const T *getSound() const	{return reinterpret_cast<const T *>(sound);}
+	float getVolume() const						{return volume;}
+
 	bool playing();
 	void stop();
 
 protected:
+	void setSound(const Sound *v)				{sound = v;}
+	void setVolume(float v)						{volume = v;}
+	ALuint &getSource()							{return source;}
 	ALenum getFormat(const Sound &sound);
 };
 
 class StaticSoundSource : public SoundSource {
-protected:
-	friend class SoundPlayerOpenAL;
+private:
 	bool bufferAllocated;
 	ALuint buffer;
 
@@ -53,17 +60,19 @@ public:
 	StaticSoundSource();
 	virtual ~StaticSoundSource();
 
+	const StaticSound *getSound() const		{return SoundSource::getSound<StaticSound>();}
+
 	void play(const StaticSound &sound, float attenuation);
 };
 
 class StreamSoundSource : public SoundSource {
 private:
-	friend class SoundPlayerOpenAL;
 	static const size_t STREAMBUFFERSIZE = 1024 * 500;
 	static const size_t STREAMFRAGMENTS = 5;
 	static const size_t STREAMFRAGMENTSIZE = STREAMBUFFERSIZE / STREAMFRAGMENTS;
 
-	StrSound* sound;
+	//const StreamSound *sound;
+	shared_ptr<SoundFileLoader> soundFileLoader;
 	ALuint buffers[STREAMFRAGMENTS];
 	ALenum format;
 
@@ -76,10 +85,11 @@ public:
 	StreamSoundSource();
 	virtual ~StreamSoundSource();
 
-	void play(const StrSound &sound, float attenuation, int64 fade);
+	const StreamSound *getSound() const		{return SoundSource::getSound<StreamSound>();}
+
+	void play(const StreamSound &sound, float attenuation, int64 fade);
 	void update();
-	void stop();
-	void stop(int64 fade);
+	void stop(int64 fade = 0);
 
 private:
 	bool fillBufferAndQueue(ALuint buffer);
@@ -93,12 +103,8 @@ private:
 
 class SoundPlayerOpenAL : public SoundPlayer {
 private:
-	friend class SoundSource;
-	friend class StaticSoundSource;
-	friend class StreamSoundSource;
-
-	typedef std::vector<StaticSoundSource*> StaticSoundSources;
-	typedef std::vector<StreamSoundSource*> StreamSoundSources;
+	typedef std::vector<StaticSoundSource> StaticSoundSources;
+	typedef std::vector<StreamSoundSource> StreamSoundSources;
 
 	ALCdevice* device;
 	ALCcontext* context;
@@ -109,20 +115,21 @@ private:
 public:
 	SoundPlayerOpenAL();
 	virtual ~SoundPlayerOpenAL();
-	virtual void init(const SoundPlayerParams &params);
-	virtual void end();
-	virtual void play(const StaticSound &staticSound, float attenuation);
-	virtual void play(const StrSound &strSound, float attenuation, int64 fadeOn=0);
-	virtual void stop(const StrSound &strSound, int64 fadeOff=0);
-	virtual void stopAllSounds();
-	virtual void updateStreams();	//updates str buffers if needed
+	void init(const SoundPlayerParams &params);
+	void end();
+	void play(const StaticSound &staticSound, float attenuation);
+	void play(const StreamSound &streamSound, float attenuation, int64 fadeOn=0);
+	void stop(const StreamSound &streamSound, int64 fadeOff=0);
+	void stopAllSounds();
+	void updateStreams();	//updates str buffers if needed
+
+	static void checkAlError(const char* message);
 
 private:
 	void printOpenALInfo();
 	StaticSoundSource* findStaticSoundSource();
 	StreamSoundSource* findStreamSoundSource();
 	void checkAlcError(const char* message);
-	static void checkAlError(const char* message);
 };
 
 }}} // end namespace

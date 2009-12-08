@@ -151,11 +151,11 @@ void StaticSoundBuffer::fillDsBuffer() {
 
 // ===================== PUBLIC ========================
 
-StrSoundBuffer::StrSoundBuffer() {
+StreamSoundBuffer::StreamSoundBuffer() {
 	state = sFree;
 }
 
-void StrSoundBuffer::init(IDirectSound8 *dsObject, Sound *sound, uint32 strBufferSize) {
+void StreamSoundBuffer::init(IDirectSound8 *dsObject, Sound *sound, uint32 strBufferSize) {
 	state = sStopped;
 	if (this->sound == NULL) {
 		this->sound = sound;
@@ -171,7 +171,7 @@ void StrSoundBuffer::init(IDirectSound8 *dsObject, Sound *sound, uint32 strBuffe
 	}
 }
 
-void StrSoundBuffer::end() {
+void StreamSoundBuffer::end() {
 	state = sFree;
 	dsBuffer->Stop();
 	dsBuffer->Release();
@@ -179,7 +179,7 @@ void StrSoundBuffer::end() {
 	sound = NULL;
 }
 
-void StrSoundBuffer::play(int64 fadeOn) {
+void StreamSoundBuffer::play(int64 fadeOn) {
 	assert(state == sStopped);
 	lastPlayCursor = 0;
 	if (fadeOn == 0) {
@@ -194,7 +194,7 @@ void StrSoundBuffer::play(int64 fadeOn) {
 	dsBuffer->Play(0, 0, DSBPLAY_LOOPING);
 }
 
-void StrSoundBuffer::update() {
+void StreamSoundBuffer::update() {
 
 	switch (state) {
 	case sFadingOn:
@@ -227,7 +227,7 @@ void StrSoundBuffer::update() {
 	}
 }
 
-void StrSoundBuffer::stop(int64 fadeOff) {
+void StreamSoundBuffer::stop(int64 fadeOff) {
 
 	if (fadeOff == 0) {
 		dsBuffer->Stop();
@@ -241,7 +241,7 @@ void StrSoundBuffer::stop(int64 fadeOff) {
 
 // ===================== PRIVATE =======================
 
-void StrSoundBuffer::fillDsBuffer() {
+void StreamSoundBuffer::fillDsBuffer() {
 	void * writePointer;
 	unsigned long size;
 
@@ -262,7 +262,7 @@ void StrSoundBuffer::fillDsBuffer() {
 }
 
 
-void StrSoundBuffer::refreshDsBuffer() {
+void StreamSoundBuffer::refreshDsBuffer() {
 	void *writePointer1, *writePointer2;
 	DWORD size1, size2;
 	DWORD playCursor;
@@ -309,11 +309,11 @@ void StrSoundBuffer::refreshDsBuffer() {
 	lastPlayCursor = playCursor;
 }
 
-void StrSoundBuffer::readChunk(void *writePointer, uint32 size) {
-	StrSound *s = getStrSound();
+void StreamSoundBuffer::readChunk(void *writePointer, uint32 size) {
+	StreamSound *s = getStreamSound();
 	uint32 readSize = s->read(static_cast<int8*>(writePointer), size);
 	if (readSize < size) {
-		StrSound *next = s->getNext() == NULL ? s : s->getNext();
+		StreamSound *next = s->getNext() == NULL ? s : s->getNext();
 		next->restart();
 		next->read(&static_cast<int8*>(writePointer)[readSize], size - readSize);
 		next->setVolume(s->getVolume());
@@ -336,7 +336,7 @@ void SoundPlayerDs8::init(const SoundPlayerParams *params) {
 
 	//reserve memory for buffers
 	staticSoundBuffers.resize(params->staticBufferCount);
-	strSoundBuffers.resize(params->strBufferCount);
+	streamSoundBuffers.resize(params->strBufferCount);
 
 	//create object
 	hr = DirectSoundCreate8(NULL, &dsObject, NULL);
@@ -366,31 +366,31 @@ void SoundPlayerDs8::play(StaticSound *staticSound, float attenuation) {
 	}
 }
 
-void SoundPlayerDs8::play(StrSound *strSound, float attenuation, int64 fadeOn) {
+void SoundPlayerDs8::play(StreamSound *streamSound, float attenuation, int64 fadeOn) {
 	int bufferIndex = -1;
 #warning FIXME: attenuation
 
 	//play sound if buffer found
-	if (findStrBuffer(strSound, &bufferIndex)) {
-		strSoundBuffers[bufferIndex].init(dsObject, strSound, params.strBufferSize);
-		strSoundBuffers[bufferIndex].play(fadeOn);
+	if (findStrBuffer(streamSound, &bufferIndex)) {
+		streamSoundBuffers[bufferIndex].init(dsObject, streamSound, params.strBufferSize);
+		streamSoundBuffers[bufferIndex].play(fadeOn);
 	}
 }
 
-void SoundPlayerDs8::stop(StrSound *strSound, int64 fadeOff) {
+void SoundPlayerDs8::stop(StreamSound &streamSound, int64 fadeOff) {
 	//find the buffer with this sound and stop it
 	for (int i = 0; i < params.strBufferCount; ++i) {
-		if (strSoundBuffers[i].getSound() == strSound) {
-			strSoundBuffers[i].stop(fadeOff);
+		if (streamSoundBuffers[i].getSound() == streamSound) {
+			streamSoundBuffers[i].stop(fadeOff);
 		}
 	}
 }
 
 void SoundPlayerDs8::stopAllSounds() {
 	for (int i = 0; i < params.strBufferCount; ++i) {
-		if (!strSoundBuffers[i].isFree()) {
-			strSoundBuffers[i].stop(0);
-			strSoundBuffers[i].end();
+		if (!streamSoundBuffers[i].isFree()) {
+			streamSoundBuffers[i].stop(0);
+			streamSoundBuffers[i].end();
 		}
 	}
 	for (int i = 0; i < params.staticBufferCount; ++i) {
@@ -402,7 +402,7 @@ void SoundPlayerDs8::stopAllSounds() {
 
 void SoundPlayerDs8::updateStreams() {
 	for (int i = 0; i < params.strBufferCount; ++i) {
-		strSoundBuffers[i].update();
+		streamSoundBuffers[i].update();
 	}
 }
 
@@ -456,8 +456,8 @@ bool SoundPlayerDs8::findStrBuffer(Sound *sound, int *bufferIndex) {
 
 	//We try to find a free or ready buffer
 	if (!bufferFound) {
-		for (uint32 i = 0; i < strSoundBuffers.size(); ++i) {
-			if (strSoundBuffers[i].isFree() || strSoundBuffers[i].isReady()) {
+		for (uint32 i = 0; i < streamSoundBuffers.size(); ++i) {
+			if (streamSoundBuffers[i].isFree() || streamSoundBuffers[i].isReady()) {
 				*bufferIndex = i;
 				bufferFound = true;
 				break;

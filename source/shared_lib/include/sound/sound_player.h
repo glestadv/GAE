@@ -43,8 +43,8 @@ public:
     virtual void init(const SoundPlayerParams &params) = 0;
     virtual void end() = 0;
     virtual void play(const StaticSound &staticSound, float attenuation) = 0;
-    virtual void play(const StrSound &strSound, float attenuation, int64 fadeOn = 0) = 0; //delay and fade in miliseconds
-    virtual void stop(const StrSound &strSound, int64 fadeOff = 0) = 0;
+    virtual void play(const StreamSound &streamSound, float attenuation, int64 fadeOn = 0) = 0; //delay and fade in miliseconds
+    virtual void stop(const StreamSound &streamSound, int64 fadeOff = 0) = 0;
     virtual void stopAllSounds() = 0;
     virtual void updateStreams() = 0;
 };

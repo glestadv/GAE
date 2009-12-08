@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -67,10 +67,10 @@ private:
 };
 
 // =====================================================
-//	class StrSoundBuffer
+//	class StreamSoundBuffer
 // =====================================================
 
-class StrSoundBuffer: public SoundBuffer{
+class StreamSoundBuffer: public SoundBuffer{
 private:
 	enum State{sFree, sFadingOn, sPlaying, sFadingOff, sStopped};
 
@@ -81,15 +81,15 @@ private:
 	int64 fade;		//fade on fade off delay
 
 public:
-	StrSoundBuffer();
-	StrSound *getStrSound() const	{return static_cast<StrSound*>(sound);}
-	
+	StreamSoundBuffer();
+	StreamSound *getStreamSound() const	{return static_cast<StreamSound*>(sound);}
+
 	void init(IDirectSound8 *dsObject, Sound *sound, uint32 strBufferSize);
 	void end();
 	void play(int64 fadeOn);
 	void update();
 	void stop(int64 fadeOff);
-	
+
 
 private:
 	void fillDsBuffer();
@@ -98,7 +98,7 @@ private:
 };
 
 // =====================================================
-//	class SoundPlayerDs8  
+//	class SoundPlayerDs8
 //
 ///	SoundPlayer implementation using Direct Sound 8
 // =====================================================
@@ -107,16 +107,16 @@ class SoundPlayerDs8: public SoundPlayer{
 private:
 	IDirectSound8 *dsObject;
 	vector<StaticSoundBuffer> staticSoundBuffers;
-	vector<StrSoundBuffer> strSoundBuffers;
+	vector<StreamSoundBuffer> streamSoundBuffers;
 	SoundPlayerParams params;
 
 public:
 	SoundPlayerDs8();
 	virtual void init(const SoundPlayerParams *params);
 	virtual void end();
-	virtual void play(StaticSound *staticSound, float attenuation);
-	virtual void play(StrSound *strSound, float attenuation, int64 fadeOn=0);
-	virtual void stop(StrSound *strSound, int64 fadeOff=0);
+	virtual void play(StaticSound &staticSound, float attenuation);
+	virtual void play(StreamSound &streamSound, float attenuation, int64 fadeOn=0);
+	virtual void stop(StreamSound &streamSound, int64 fadeOff=0);
 	virtual void stopAllSounds();
 	virtual void updateStreams();	//updates str buffers if needed
 

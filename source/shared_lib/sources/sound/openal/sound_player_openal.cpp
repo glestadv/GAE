@@ -25,7 +25,14 @@ namespace Shared { namespace Sound { namespace OpenAL {
 
 using namespace Util;
 
-SoundSource::SoundSource() {
+// =====================================================
+// class SoundSource
+// =====================================================
+
+SoundSource::SoundSource()
+		: source()
+		, sound(NULL)
+		, volume(0.f) {
 	alGenSources(1, &source);
 	SoundPlayerOpenAL::checkAlError("Couldn't create audio source: ");
 }
@@ -69,7 +76,9 @@ ALenum SoundSource::getFormat(const Sound &sound) {
 	throw std::runtime_error("Sample format not supported");
 }
 
-//---------------------------------------------------------------------------
+// =====================================================
+// class StaticSoundSource
+// =====================================================
 
 StaticSoundSource::StaticSoundSource() {
 	bufferAllocated = false;
@@ -82,7 +91,9 @@ StaticSoundSource::~StaticSoundSource() {
 	}
 }
 
-void StaticSoundSource::play(const StaticSound &sound, float attenuation) {
+void StaticSoundSource::play(const StaticSound &sound, float volume) {
+	setSound(&sound);
+	setVolume(volume);
 	if (bufferAllocated) {
 		stop();
 		alDeleteBuffers(1, &buffer);
@@ -98,14 +109,17 @@ void StaticSoundSource::play(const StaticSound &sound, float attenuation) {
 	             static_cast<ALsizei> (sound.getSamplesPerSecond()));
 	SoundPlayerOpenAL::checkAlError("Couldn't fill audio buffer: ");
 
-	alSourcei(source, AL_BUFFER, buffer);
-	alSourcef(source, AL_GAIN, attenuation);
-	alSourcePlay(source);
+	alSourcei(getSource(), AL_BUFFER, buffer);
+	alSourcef(getSource(), AL_GAIN, volume);
+	alSourcePlay(getSource());
 	SoundPlayerOpenAL::checkAlError("Couldn't start audio source: ");
 }
 
+// =====================================================
+// class StreamSoundSource
+// =====================================================
+
 StreamSoundSource::StreamSoundSource() {
-	sound = 0;
 	alGenBuffers(STREAMFRAGMENTS, buffers);
 	SoundPlayerOpenAL::checkAlError("Couldn't allocate audio buffers: ");
 }
@@ -116,53 +130,51 @@ StreamSoundSource::~StreamSoundSource() {
 	SoundPlayerOpenAL::checkAlError("Couldn't delete audio buffers: ");
 }
 
-void StreamSoundSource::stop() {
-	sound = 0;
-	SoundSource::stop();
-}
-
 void StreamSoundSource::stop(int64 fadeoff) {
 	if (fadeoff > 0) {
 		fadeState = FadingOff;
 		fade = fadeoff;
 		chrono.start();
 	} else {
+		setSound(NULL);
 		stop();
 	}
 }
 
-void StreamSoundSource::play(const StrSound &sound, float attenuation, int64 fadeon) {
+void StreamSoundSource::play(const StreamSound &sound, float volume, int64 fadeon) {
+	soundFileLoader = SoundFileLoader::open(sound);
 	stop();
-
-	this->sound = &sound;
+	setSound(&sound);
+	setVolume(volume);
 
 	format = getFormat(sound);
 	for (size_t i = 0; i < STREAMFRAGMENTS; ++i) {
 		fillBufferAndQueue(buffers[i]);
 	}
 	if (fadeon > 0) {
-		alSourcef(source, AL_GAIN, 0);
+		alSourcef(getSource(), AL_GAIN, 0);
 		fadeState = FadingOn;
 		fade = fadeon;
 		chrono.start();
 	} else {
 		fadeState = NoFading;
-		alSourcef(source, AL_GAIN, attenuation);
+		alSourcef(getSource(), AL_GAIN, volume);
 	}
-	alSourcePlay(source);
+	alSourcePlay(getSource());
 }
 
 void StreamSoundSource::update() {
-	if (sound == 0)
+	if (getSound()) {
 		return;
+	}
 
 	ALint processed = 0;
-	alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+	alGetSourcei(getSource(), AL_BUFFERS_PROCESSED, &processed);
 	while (processed > 0) {
 		processed--;
 
 		ALuint buffer;
-		alSourceUnqueueBuffers(source, 1, &buffer);
+		alSourceUnqueueBuffers(getSource(), 1, &buffer);
 		SoundPlayerOpenAL::checkAlError("Couldn't unqueu audio buffer: ");
 
 		if (!fillBufferAndQueue(buffer))
@@ -171,9 +183,8 @@ void StreamSoundSource::update() {
 
 	// we might have to restart the source if we had a buffer underrun
 	if (!playing()) {
-		std::cerr
-		<< "Restarting audio source because of buffer underrun.\n";
-		alSourcePlay(source);
+		std::cerr << "Restarting audio source because of buffer underrun.\n";
+		alSourcePlay(getSource());
 		SoundPlayerOpenAL::checkAlError("Couldn't restart audio source: ");
 	}
 
@@ -181,10 +192,10 @@ void StreamSoundSource::update() {
 	switch (fadeState) {
 	case FadingOn:
 		if (chrono.getMillis() > fade) {
-			alSourcef(source, AL_GAIN, sound->getVolume());
+			alSourcef(getSource(), AL_GAIN, getVolume());
 			fadeState = NoFading;
 		} else {
-			alSourcef(source, AL_GAIN, sound->getVolume() *
+			alSourcef(getSource(), AL_GAIN, getVolume() *
 			          static_cast<float> (chrono.getMillis()) / fade);
 		}
 		break;
@@ -192,7 +203,7 @@ void StreamSoundSource::update() {
 		if (chrono.getMillis() > fade) {
 			stop();
 		} else {
-			alSourcef(source, AL_GAIN, sound->getVolume() *
+			alSourcef(getSource(), AL_GAIN, getVolume() *
 			          (1.0f - static_cast<float>(chrono.getMillis()) / fade));
 		}
 		break;
@@ -206,9 +217,9 @@ bool StreamSoundSource::fillBufferAndQueue(ALuint buffer) {
 	int8* bufferdata = new int8[STREAMFRAGMENTSIZE];
 	uint32 bytesread = 0;
 	do {
-		bytesread += sound->read(bufferdata + bytesread, STREAMFRAGMENTSIZE - bytesread);
+		bytesread += soundFileLoader->read(bufferdata + bytesread, STREAMFRAGMENTSIZE - bytesread);
 		if (bytesread < STREAMFRAGMENTSIZE) {
-			StrSound* next = sound->getNext();
+			StreamSound* next = sound->getNext();
 			if (next == 0)
 				next = sound;
 			next->restart();
@@ -218,19 +229,19 @@ bool StreamSoundSource::fillBufferAndQueue(ALuint buffer) {
 	} while (bytesread < STREAMFRAGMENTSIZE);
 
 	alBufferData(buffer, format, bufferdata, STREAMFRAGMENTSIZE,
-	             sound->getInfo()->getSamplesPerSecond());
+	             getSound()->getSamplesPerSecond());
 	delete[] bufferdata;
 	SoundPlayerOpenAL::checkAlError("Couldn't refill audio buffer: ");
 
-	alSourceQueueBuffers(source, 1, &buffer);
+	alSourceQueueBuffers(getSource(), 1, &buffer);
 	SoundPlayerOpenAL::checkAlError("Couldn't queue audio buffer: ");
 
 	return true;
 }
 
-// ================================
-//        Sound Player OpenAL
-// ================================
+// =====================================================
+// class SoundPlayerOpenAL
+// =====================================================
 
 SoundPlayerOpenAL::SoundPlayerOpenAL() {
 	device = 0;
@@ -270,12 +281,8 @@ void SoundPlayerOpenAL::init(const SoundPlayerParams &params) {
 }
 
 void SoundPlayerOpenAL::end() {
-	for (StaticSoundSources::iterator i = staticSources.begin();
-	        i != staticSources.end(); ++i)
-		delete *i;
-	for (StreamSoundSources::iterator i = streamSources.begin();
-	        i != streamSources.end(); ++i)
-		delete *i;
+	staticSources.clear();
+	streamSources.clear();
 
 	if (context != 0) {
 		alcDestroyContext(context);
@@ -287,60 +294,52 @@ void SoundPlayerOpenAL::end() {
 	}
 }
 
-void SoundPlayerOpenAL::play(const StaticSound &staticSound, float attenuation) {
+void SoundPlayerOpenAL::play(const StaticSound &staticSound, float volume) {
 	try {
 		StaticSoundSource* source = findStaticSoundSource();
-		if (source == 0)
+		if (source == 0) {
 			return;
-		source->play(staticSound, attenuation);
+		}
+		source->play(staticSound, volume);
 	} catch (std::exception& e) {
 		std::cerr << "Couldn't play static sound: " << e.what() << "\n";
 	}
 }
 
-void SoundPlayerOpenAL::play(const StrSound &strSound, float attenuation, int64 fadeOn) {
+void SoundPlayerOpenAL::play(const StreamSound &streamSound, float attenuation, int64 fadeOn) {
 	try {
 		StreamSoundSource* source = findStreamSoundSource();
-		source->play(strSound, attenuation, fadeOn);
+		source->play(streamSound, attenuation, fadeOn);
 	} catch (std::exception& e) {
 		std::cerr << "Couldn't play streaming sound: " << e.what() << "\n";
 	}
 }
 
-void SoundPlayerOpenAL::stop(const StrSound &strSound, int64 fadeOff) {
-	for (StreamSoundSources::iterator i = streamSources.begin();
-	        i != streamSources.end(); ++i) {
-		StreamSoundSource* source = *i;
-		if (source->sound == strSound) {
-			source->stop(fadeOff);
+void SoundPlayerOpenAL::stop(const StreamSound &streamSound, int64 fadeOff) {
+	foreach(StreamSoundSource &source, streamSources) {
+		if (*source.getSound() == streamSound) {
+			source.stop(fadeOff);
 		}
 	}
 }
 
 void SoundPlayerOpenAL::stopAllSounds() {
-	for (StaticSoundSources::iterator i = staticSources.begin();
-	        i != staticSources.end(); ++i) {
-		StaticSoundSource* source = *i;
-		source->stop();
+	foreach(StaticSoundSource &source, staticSources) {
+		source.stop();
 	}
-	for (StreamSoundSources::iterator i = streamSources.begin();
-	        i != streamSources.end(); ++i) {
-		StreamSoundSource* source = *i;
-		source->stop();
+	foreach(StreamSoundSource &source, streamSources) {
+		source.stop(0);
 	}
 }
 
 void SoundPlayerOpenAL::updateStreams() {
 	assert(context != 0);
 	try {
-		for (StreamSoundSources::iterator i = streamSources.begin();
-		        i != streamSources.end(); ++i) {
-			StreamSoundSource* source = *i;
+		foreach(StreamSoundSource &source, streamSources) {
 			try {
-				source->update();
+				source.update();
 			} catch (std::exception& e) {
-				std::cerr << "Error while updating sound stream: "
-				<< e.what() << "\n";
+				std::cerr << "Error while updating sound stream: " << e.what() << "\n";
 			}
 		}
 		alcProcessContext(context);
@@ -353,11 +352,9 @@ void SoundPlayerOpenAL::updateStreams() {
 
 StaticSoundSource* SoundPlayerOpenAL::findStaticSoundSource() {
 	// try to find a stopped source
-	for (StaticSoundSources::iterator i = staticSources.begin();
-	        i != staticSources.end(); ++i) {
-		StaticSoundSource* source = *i;
-		if (! source->playing()) {
-			return source;
+	foreach(StaticSoundSource &source, staticSources) {
+		if (! source.playing()) {
+			return &source;
 		}
 	}
 
@@ -366,18 +363,15 @@ StaticSoundSource* SoundPlayerOpenAL::findStaticSoundSource() {
 		return 0;
 	}
 
-	StaticSoundSource* source = new StaticSoundSource();
-	staticSources.push_back(source);
-	return source;
+	staticSources.resize(staticSources.size() + 1);
+	return &staticSources.back();
 }
 
 StreamSoundSource* SoundPlayerOpenAL::findStreamSoundSource() {
 	// try to find a stopped source
-	for (StreamSoundSources::iterator i = streamSources.begin();
-	        i != streamSources.end(); ++i) {
-		StreamSoundSource* source = *i;
-		if (! source->playing()) {
-			return source;
+	foreach(StreamSoundSource &source, streamSources) {
+		if (! source.playing()) {
+			return &source;
 		}
 	}
 
@@ -386,9 +380,8 @@ StreamSoundSource* SoundPlayerOpenAL::findStreamSoundSource() {
 		throw std::runtime_error("Too many stream sounds played at once");
 	}
 
-	StreamSoundSource* source = new StreamSoundSource();
-	streamSources.push_back(source);
-	return source;
+	streamSources.resize(staticSources.size() + 1);
+	return &streamSources.back();
 }
 
 void SoundPlayerOpenAL::checkAlcError(const char* message) {

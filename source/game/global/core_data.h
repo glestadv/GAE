@@ -24,7 +24,7 @@ namespace Glest{ namespace Game{
 using Shared::Graphics::Texture2D;
 using Shared::Graphics::Texture3D;
 using Shared::Graphics::Font2D;
-using Shared::Sound::StrSound;
+using Shared::Sound::StreamSound;
 using Shared::Sound::StaticSound;
 
 class Renderer;
@@ -38,8 +38,8 @@ class Config;
 
 class CoreData {
 private:
-    StrSound introMusic;
-    StrSound menuMusic;
+    StreamSound introMusic;
+    StreamSound menuMusic;
 	StaticSound clickSoundA;
     StaticSound clickSoundB;
     StaticSound clickSoundC;
@@ -78,8 +78,8 @@ public:
 	const Texture2D *getButtonBigTexture() const	{return buttonBigTexture;}
 	const Texture2D *getTextEntryTexture() const	{return textEntryTexture;}
 
-	const StrSound &getIntroMusic() const			{return introMusic;}
-	const StrSound &getMenuMusic() const			{return menuMusic;}
+	const StreamSound &getIntroMusic() const			{return introMusic;}
+	const StreamSound &getMenuMusic() const			{return menuMusic;}
     const StaticSound &getClickSoundA() const		{return clickSoundA;}
     const StaticSound &getClickSoundB() const		{return clickSoundB;}
     const StaticSound &getClickSoundC() const		{return clickSoundC;}

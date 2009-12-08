@@ -167,8 +167,7 @@ bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
       const XmlNode *musicNode= factionNode->getChild("music");
 	   bool value= musicNode->getAttribute("value")->getBoolValue();
 	   if(value){
-		   music= new StrSound();
-		   music->open(dir+"/"+musicNode->getAttribute("path")->getRestrictedValue());
+		   music= new StreamSound(dir+"/"+musicNode->getAttribute("path")->getRestrictedValue());
 	   }
    }
    catch ( runtime_error e ) {

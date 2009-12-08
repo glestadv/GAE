@@ -26,7 +26,7 @@ namespace Glest{ namespace Game{
 
 using Shared::Xml::XmlNode;
 using Shared::Sound::StaticSound;
-using Shared::Sound::StrSound;
+using Shared::Sound::StreamSound;
 using Shared::Graphics::Model;
 using Shared::Graphics::Vec3f;
 using Shared::Graphics::Texture2D;
@@ -64,10 +64,10 @@ private:
 	bool enabledNightStart;
 	bool alwaysPlayDay;
 	bool alwaysPlayNight;
-	StrSound day;
-	StrSound night;
-	StrSound rain;
-	StrSound snow;
+	StreamSound day;
+	StreamSound night;
+	StreamSound rain;
+	StreamSound snow;
 	StaticSound dayStart;
 	StaticSound nightStart;
 
@@ -81,10 +81,10 @@ public:
 	bool getAlwaysPlayDay() const		{return alwaysPlayDay;}
 	bool getAlwaysPlayNight() const		{return alwaysPlayNight;}
 
-	const StrSound &getDay() const				{return day;}
-	const StrSound &getNight() const			{return night;}
-	const StrSound &getRain() const				{return rain;}
-	const StrSound &getSnow() const				{return snow;}
+	const StreamSound &getDay() const				{return day;}
+	const StreamSound &getNight() const			{return night;}
+	const StreamSound &getRain() const				{return rain;}
+	const StreamSound &getSnow() const				{return snow;}
 	const StaticSound &getDayStart() const		{return dayStart;}
 	const StaticSound &getNightStart() const	{return nightStart;}
 

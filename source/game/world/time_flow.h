@@ -17,8 +17,7 @@
 
 namespace Glest{ namespace Game{
 
-using Shared::Sound::StrSound;
-using Shared::Sound::StrSound;
+using Shared::Sound::StreamSound;
 using Shared::Sound::StaticSound;
 
 

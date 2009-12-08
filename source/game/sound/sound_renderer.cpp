@@ -52,15 +52,15 @@ void SoundRenderer::update() {
 
 // ======================= Music ============================
 
-void SoundRenderer::playMusic(const StrSound &strSound) {
-	//strSound->setVolume(musicVolume);
-	//strSound->restart();
+void SoundRenderer::playMusic(const StreamSound &streamSound) {
+	//streamSound->setVolume(musicVolume);
+	//streamSound->restart();
 #warning	soundPlayer->restart();
-	soundPlayer->play(strSound, getMusicVolume());
+	soundPlayer->play(streamSound, getMusicVolume());
 }
 
-void SoundRenderer::stopMusic(const StrSound &strSound) {
-	soundPlayer->stop(strSound);
+void SoundRenderer::stopMusic(const StreamSound &streamSound) {
+	soundPlayer->stop(streamSound);
 }
 
 // ======================= Fx ============================
@@ -87,13 +87,13 @@ void SoundRenderer::playFx(const StaticSound &staticSound) {
 
 // ======================= Ambient ============================
 
-void SoundRenderer::playAmbient(const StrSound &strSound) {
-	//strSound->setVolume(ambientVolume);
-	soundPlayer->play(strSound, getAmbientVolume(), ambientFade);
+void SoundRenderer::playAmbient(const StreamSound &streamSound) {
+	//streamSound->setVolume(ambientVolume);
+	soundPlayer->play(streamSound, getAmbientVolume(), ambientFade);
 }
 
-void SoundRenderer::stopAmbient(const StrSound &strSound) {
-	soundPlayer->stop(strSound, ambientFade);
+void SoundRenderer::stopAmbient(const StreamSound &streamSound) {
+	soundPlayer->stop(streamSound, ambientFade);
 }
 
 // ======================= Misc ============================
