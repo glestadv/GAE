@@ -14,7 +14,7 @@
 
 #include "leak_dumper.h"
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Math {
 
 // =====================================================
 //	class AxisAngle

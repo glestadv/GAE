@@ -27,8 +27,8 @@
 #include "logger.h"
 
 using namespace std;
-using Shared::Graphics::Vec2i;
-using Shared::Graphics::Vec4i;
+using Shared::Math::Vec2i;
+using Shared::Math::Vec4i;
 using Shared::Platform::Chrono;
 using namespace Shared::Lua;
 

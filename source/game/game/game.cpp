@@ -782,8 +782,8 @@ void Game::render3d(){
 
 	//init
 	renderer.reset3d();
-	renderer.computeVisibleQuad();
 	renderer.loadGameCameraMatrix();
+	renderer.computeVisibleQuad();
 	renderer.setupLighting();
 
 	//shadow map

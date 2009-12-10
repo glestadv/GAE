@@ -769,7 +769,7 @@ void World::moveUnitCells(Unit *unit) {
 
 //returns the nearest unit that can store a type of resource given a position and a faction
 Unit *World::nearestStore(const Vec2i &pos, int factionIndex, const ResourceType *rt) {
-	float currDist = infinity;
+	float currDist = numeric_limits<float>::infinity();
 	Unit *currUnit = NULL;
 
 	for (int i = 0; i < getFaction(factionIndex)->getUnitCount(); ++i) {

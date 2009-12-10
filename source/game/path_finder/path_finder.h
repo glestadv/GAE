@@ -23,7 +23,7 @@
 using std::vector;
 using std::list;
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 using Shared::Platform::uint32;
 using Shared::Platform::int64;
 

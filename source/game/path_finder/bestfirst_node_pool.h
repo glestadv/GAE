@@ -20,7 +20,7 @@
 #include "vec.h"
 #include <list>
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 using std::list;
 
 namespace Glest { namespace Game { 

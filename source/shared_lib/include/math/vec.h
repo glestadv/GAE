@@ -15,7 +15,7 @@
 #include <cmath>
 #include "simd.h"
 
-namespace Shared { namespace Graphics {
+namespace Shared { namespace Math {
 
 template<typename T> class Vec2;
 template<typename T> class Vec3;

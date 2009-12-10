@@ -12,6 +12,7 @@ LIB_DIRS =
 	platform/sdl
 	platform/posix
 	util
+	math
 	graphics
 	graphics/gl
 	sound

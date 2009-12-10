@@ -35,12 +35,7 @@ namespace Shared{ namespace Platform{
 
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Vec4f;
-using Shared::Graphics::Quad2i;
-using Shared::Graphics::Rect2i;
-using Shared::Graphics::Vec4f;
-using Shared::Graphics::Vec2f;
-using Shared::Graphics::Vec2i;
+using namespace Shared::Math;
 using Shared::Graphics::Texture2D;
 using Shared::Platform::NetworkDataBuffer;
 using Glest::Game::Util::PosCircularIteratorFactory;
@@ -670,12 +665,12 @@ public:
 
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Vec4f;
-using Shared::Graphics::Quad2i;
-using Shared::Graphics::Rect2i;
-using Shared::Graphics::Vec4f;
-using Shared::Graphics::Vec2f;
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec4f;
+using Shared::Math::Quad2i;
+using Shared::Math::Rect2i;
+using Shared::Math::Vec4f;
+using Shared::Math::Vec2f;
+using Shared::Math::Vec2i;
 using Shared::Graphics::Texture2D;
 using Shared::Platform::NetworkDataBuffer;
 using Glest::Game::Util::PosCircularIteratorFactory;

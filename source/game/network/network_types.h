@@ -24,7 +24,7 @@ using std::string;
 using Shared::Platform::int8;
 using Shared::Platform::int16;
 using Shared::Platform::int32;
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 
 namespace Glest { namespace Game {
 

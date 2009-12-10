@@ -34,8 +34,8 @@
 
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Quad2i;
-using Shared::Graphics::Rect2i;
+using Shared::Math::Quad2i;
+using Shared::Math::Rect2i;
 using Shared::Util::Random;
 using Glest::Game::Util::PosCircularIteratorFactory;
 

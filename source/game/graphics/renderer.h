@@ -33,8 +33,9 @@
 
 #include "profiler.h"
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
+using namespace Shared::Math;
 using namespace Shared::Graphics;
 
 //non shared classes

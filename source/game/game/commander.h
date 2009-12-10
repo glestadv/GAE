@@ -23,7 +23,7 @@ using std::vector;
 
 namespace Glest { namespace Game {
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 
 class World;
 class Unit;

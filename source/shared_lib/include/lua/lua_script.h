@@ -20,8 +20,8 @@
 #include "conversion.h"
 
 using std::string;
-using Shared::Graphics::Vec2i;
-using Shared::Graphics::Vec4i;
+using Shared::Math::Vec2i;
+using Shared::Math::Vec4i;
 using namespace Shared::Util;
 
 namespace Shared { namespace Lua {

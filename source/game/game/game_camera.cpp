@@ -21,7 +21,7 @@
 #include "leak_dumper.h"
 
 
-using namespace Shared::Graphics;
+using namespace Shared::Math;
 using Shared::Xml::XmlNode;
 
 namespace Glest { namespace Game {
