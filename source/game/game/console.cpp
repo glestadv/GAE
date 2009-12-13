@@ -28,20 +28,20 @@ namespace Glest { namespace Game {
 // 	class Console
 // =====================================================
 
-Console::Console(const Config &config){
-	//config
-	maxLines= config.getUiConsoleMaxLines();
-	timeout= (float)config.getUiConsoleTimeout();
-
-	timeElapsed= 0.0f;
+Console::Console(const Config &config, const Lang &lang)
+		: lang(lang)
+		, timeElapsed(0.f)
+		, lines()
+		, maxLines(config.getUiConsoleMaxLines())
+		, timeout(config.getUiConsoleTimeout()) {
 }
 
 void Console::addStdMessage(const string &s){
-	addLine(theLang.get(s));
+	addLine(lang.get(s));
 }
 
 void Console::addStdMessage(const string &s, const string &param1, const string &param2, const string &param3) {
-	string msg = theLang.get(s);
+	string msg = lang.get(s);
 	size_t bufsize = msg.size() + param1.size()  + param2.size()  + param3.size() + 32;
 	char *buf = new char[bufsize];
 	snprintf(buf, bufsize - 1, msg.c_str(), param1.c_str(), param2.c_str(), param3.c_str());
@@ -50,6 +50,7 @@ void Console::addStdMessage(const string &s, const string &param1, const string 
 }
 
 void Console::addLine(string line, bool playSound) {
+#warning FIXME play sound
 //	if (playSound) {
 //		SoundRenderer::getInstance().playFx(CoreData::getInstance().getClickSoundA());
 //	}

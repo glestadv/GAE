@@ -21,6 +21,8 @@ namespace Shared { namespace Platform {
 
 namespace Glest { namespace Game {
 
+class Stats;
+
 // =====================================================
 // 	class BattleEnd
 //
@@ -28,8 +30,11 @@ namespace Glest { namespace Game {
 // =====================================================
 
 class BattleEnd: public GuiProgramState {
+private:
+	Stats stats;
+
 public:
-	BattleEnd(GuiProgram &program);
+	BattleEnd(GuiProgram &program, const Stats &stats);
 	~BattleEnd();
 	virtual void update();
 	virtual void render();

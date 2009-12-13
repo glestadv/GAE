@@ -31,260 +31,261 @@ namespace Glest { namespace Game {
 // =====================================================
 
 MenuStateOptions::MenuStateOptions(GuiProgram &program, MainMenu &mainMenu) :
-        MenuState(program, mainMenu, "config") {
-    const Lang &lang = getLang();
-    const Config &config = getConfig();
+		MenuState(program, mainMenu, "config") {
+	const Lang &lang = getLang();
+	const Config &config = getConfig();
 
-    //create
-    buttonReturn.init(200, 150, 100);
-    buttonAutoConfig.init(320, 150, 100);
-    buttonOpenglInfo.init(440, 150, 100);
+	//create
+	buttonReturn.init(200, 150, 100);
+	buttonAutoConfig.init(320, 150, 100);
+	buttonOpenglInfo.init(440, 150, 100);
 
-    //labels
-    labelVolumeFx.init(200, 530);
-    labelVolumeAmbient.init(200, 500);
-    labelVolumeMusic.init(200, 470);
+	//labels
+	labelVolumeFx.init(200, 530);
+	labelVolumeAmbient.init(200, 500);
+	labelVolumeMusic.init(200, 470);
 
-    labelLang.init(200, 400);
+	labelLang.init(200, 400);
 
-    labelFilter.init(200, 340);
-    labelShadows.init(200, 310);
-    labelTextures3D.init(200, 280);
-    labelLights.init(200, 250);
+	labelFilter.init(200, 340);
+	labelShadows.init(200, 310);
+	labelTextures3D.init(200, 280);
+	labelLights.init(200, 250);
 
-    labelMaxPathNodes.init ( 500, 560 );
-    labelPFAlgorithm.init ( 500, 530 );
+	labelMaxPathNodes.init(500, 560);
+	labelPFAlgorithm.init(500, 530);
 #  ifdef _GAE_DEBUG_EDITION_
-    labelPFTexturesOn.init ( 500, 500 );
-    labelPFTextureMode.init ( 500, 470 );
+	labelPFTexturesOn.init(500, 500);
+	labelPFTextureMode.init(500, 470);
 #  endif
-    //list boxes
-    listBoxVolumeFx.init(350, 530, 80);
-    listBoxVolumeAmbient.init(350, 500, 80);
-    listBoxVolumeMusic.init(350, 470, 80);
-    listBoxMusicSelect.init(350, 440, 150);
+	//list boxes
+	listBoxVolumeFx.init(350, 530, 80);
+	listBoxVolumeAmbient.init(350, 500, 80);
+	listBoxVolumeMusic.init(350, 470, 80);
+	listBoxMusicSelect.init(350, 440, 150);
 
-    listBoxLang.init(350, 400, 170);
+	listBoxLang.init(350, 400, 170);
 
-    listBoxFilter.init(350, 340, 170);
-    listBoxShadows.init(350, 310, 170);
-    listBoxTextures3D.init(350, 280, 80);
-    listBoxLights.init(350, 250, 80);
+	listBoxFilter.init(350, 340, 170);
+	listBoxShadows.init(350, 310, 170);
+	listBoxTextures3D.init(350, 280, 80);
+	listBoxLights.init(350, 250, 80);
 
-    listBoxMaxPathNodes.init ( 650, 560, 80 );
-    listBoxPFAlgorithm.init ( 650, 530, 180 );
+	listBoxMaxPathNodes.init(650, 560, 80);
+	listBoxPFAlgorithm.init(650, 530, 180);
 #  ifdef _GAE_DEBUG_EDITION_
-    listBoxPFTexturesOn.init ( 650, 500, 180 );
-    listBoxPFTextureMode.init ( 650, 470, 180 );
+	listBoxPFTexturesOn.init(650, 500, 180);
+	listBoxPFTextureMode.init(650, 470, 180);
 #  endif
 
-    //set text
-    buttonReturn.setText(lang.get("Return"));
-    buttonAutoConfig.setText(lang.get("AutoConfig"));
-    buttonOpenglInfo.setText(lang.get("GraphicInfo"));
-    labelLang.setText(lang.get("Language"));
-    labelShadows.setText(lang.get("Shadows"));
-    labelFilter.setText(lang.get("Filter"));
-    labelTextures3D.setText(lang.get("Textures3D"));
-    labelLights.setText(lang.get("MaxLights"));
-    labelVolumeFx.setText(lang.get("FxVolume"));
-    labelVolumeAmbient.setText(lang.get("AmbientVolume"));
-    labelVolumeMusic.setText(lang.get("MusicVolume"));
+	//set text
+	buttonReturn.setText(lang.get("Return"));
+	buttonAutoConfig.setText(lang.get("AutoConfig"));
+	buttonOpenglInfo.setText(lang.get("GraphicInfo"));
+	labelLang.setText(lang.get("Language"));
+	labelShadows.setText(lang.get("Shadows"));
+	labelFilter.setText(lang.get("Filter"));
+	labelTextures3D.setText(lang.get("Textures3D"));
+	labelLights.setText(lang.get("MaxLights"));
+	labelVolumeFx.setText(lang.get("FxVolume"));
+	labelVolumeAmbient.setText(lang.get("AmbientVolume"));
+	labelVolumeMusic.setText(lang.get("MusicVolume"));
 
-    labelMaxPathNodes.setText ( lang.get("MaxPathNodes") );
-    labelPFAlgorithm.setText ( "SearchAlgorithm" );
+	labelMaxPathNodes.setText(lang.get("MaxPathNodes"));
+	labelPFAlgorithm.setText("SearchAlgorithm");
 #  ifdef _GAE_DEBUG_EDITION_
-    labelPFTexturesOn.setText ( "DebugTextures" );
-    labelPFTextureMode.setText ( "TextureMode" );
+	labelPFTexturesOn.setText("DebugTextures");
+	labelPFTextureMode.setText("TextureMode");
 #  endif
-    //sound
+	//sound
 
-    //lang
-    vector<string> langResults;
-    findAll("gae/data/lang/*.lng", langResults, true);
-    if (langResults.empty()) {
-        throw runtime_error("There is no lang file");
-    }
-    listBoxLang.setItems(langResults);
-    listBoxLang.setSelectedItem(config.getUiLocale());
+	//lang
+	vector<string> langResults;
+	findAll("gae/data/lang/*.lng", langResults, true);
+	if (langResults.empty()) {
+		throw runtime_error("There is no lang file");
+	}
+	listBoxLang.setItems(langResults);
+	listBoxLang.setSelectedItem(config.getUiLocale());
 
-    //shadows
-    for (int i = 0; i < Renderer::sCount; ++i) {
-        listBoxShadows.pushBackItem(lang.get(Renderer::shadowsToStr(static_cast<Renderer::Shadows>(i))));
-    }
+	//shadows
+	for (int i = 0; i < Renderer::sCount; ++i) {
+		listBoxShadows.pushBackItem(lang.get(Renderer::shadowsToStr(static_cast<Renderer::Shadows>(i))));
+	}
 
-    string str = config.getRenderShadows();
-    listBoxShadows.setSelectedItemIndex(clamp((int)Renderer::strToShadows(str), 0, Renderer::sCount - 1));
+	string str = config.getRenderShadows();
+	listBoxShadows.setSelectedItemIndex(clamp((int)Renderer::strToShadows(str), 0, Renderer::sCount - 1));
 
-    //filter
-    listBoxFilter.pushBackItem("Bilinear");
-    listBoxFilter.pushBackItem("Trilinear");
-    listBoxFilter.setSelectedItem(config.getRenderFilter());
+	//filter
+	listBoxFilter.pushBackItem("Bilinear");
+	listBoxFilter.pushBackItem("Trilinear");
+	listBoxFilter.setSelectedItem(config.getRenderFilter());
 
-    //textures 3d
-    listBoxTextures3D.pushBackItem(lang.get("No"));
-    listBoxTextures3D.pushBackItem(lang.get("Yes"));
-    listBoxTextures3D.setSelectedItemIndex(config.getRenderTextures3D() ? 1 : 0);
+	//textures 3d
+	listBoxTextures3D.pushBackItem(lang.get("No"));
+	listBoxTextures3D.pushBackItem(lang.get("Yes"));
+	listBoxTextures3D.setSelectedItemIndex(config.getRenderTextures3D() ? 1 : 0);
 
-    //lights
-    for (int i = 1; i <= 8; ++i) {
-        listBoxLights.pushBackItem(intToStr(i));
-    }
-    listBoxLights.setSelectedItemIndex(clamp(config.getRenderLightsMax() - 1, 0, 7));
+	//lights
+	for (int i = 1; i <= 8; ++i) {
+		listBoxLights.pushBackItem(intToStr(i));
+	}
+	listBoxLights.setSelectedItemIndex(clamp(config.getRenderLightsMax() - 1, 0, 7));
 
-    //sound
-    for (int i = 0; i <= 100; i += 5) {
-        listBoxVolumeFx.pushBackItem(intToStr(i));
-        listBoxVolumeAmbient.pushBackItem(intToStr(i));
-        listBoxVolumeMusic.pushBackItem(intToStr(i));
-    }
-    listBoxVolumeFx.setSelectedItem(intToStr(config.getSoundVolumeFx() / 5*5));
-    listBoxVolumeAmbient.setSelectedItem(intToStr(config.getSoundVolumeAmbient() / 5*5));
-    listBoxVolumeMusic.setSelectedItem(intToStr(config.getSoundVolumeMusic() / 5*5));
+	//sound
+	for (int i = 0; i <= 100; i += 5) {
+		listBoxVolumeFx.pushBackItem(intToStr(i));
+		listBoxVolumeAmbient.pushBackItem(intToStr(i));
+		listBoxVolumeMusic.pushBackItem(intToStr(i));
+	}
+	listBoxVolumeFx.setSelectedItem(intToStr(config.getSoundVolumeFx() / 5*5));
+	listBoxVolumeAmbient.setSelectedItem(intToStr(config.getSoundVolumeAmbient() / 5*5));
+	listBoxVolumeMusic.setSelectedItem(intToStr(config.getSoundVolumeMusic() / 5*5));
 
-    // path finder node limit
-    listBoxMaxPathNodes.pushBackItem ( intToStr ( 512 ) );
-    listBoxMaxPathNodes.pushBackItem ( intToStr ( 1024 ) );
-    listBoxMaxPathNodes.pushBackItem ( intToStr ( 2048 ) );
-    listBoxMaxPathNodes.pushBackItem ( intToStr ( 4096 ) );
-    listBoxMaxPathNodes.setSelectedItem ( intToStr ( config.getPathFinderMaxNodes() ) );
+	// path finder node limit
+	listBoxMaxPathNodes.pushBackItem(intToStr(512));
+	listBoxMaxPathNodes.pushBackItem(intToStr(1024));
+	listBoxMaxPathNodes.pushBackItem(intToStr(2048));
+	listBoxMaxPathNodes.pushBackItem(intToStr(4096));
+	listBoxMaxPathNodes.setSelectedItem(intToStr(config.getPathFinderMaxNodes()));
 
-    listBoxPFAlgorithm.pushBackItem ( "Admissable A*" );
-    //listBoxPFAlgorithm.pushBackItem ( "Greedy 'PingPong'" );
-    listBoxPFAlgorithm.pushBackItem ( "Greedy Best First" );
-    listBoxPFAlgorithm.setSelectedItemIndex ( config.getPathFinderUseAStar() ? 0 : 1 );
+	listBoxPFAlgorithm.pushBackItem("Admissable A*");
+	//listBoxPFAlgorithm.pushBackItem ( "Greedy 'PingPong'" );
+	listBoxPFAlgorithm.pushBackItem("Greedy Best First");
+	listBoxPFAlgorithm.setSelectedItemIndex(config.getPathFinderUseAStar() ? 0 : 1);
 
 #  ifdef _GAE_DEBUG_EDITION_
-    listBoxPFTexturesOn.pushBackItem ( "On" );
-    listBoxPFTexturesOn.pushBackItem ( "Off" );
-    listBoxPFTexturesOn.setSelectedItemIndex ( config.getMiscDebugTextures() ? 0 : 1 );
-    listBoxPFTextureMode.pushBackItem ( "Path Only" );
-    listBoxPFTextureMode.pushBackItem ( "Open/Closed Sets" );
-    listBoxPFTextureMode.pushBackItem ( "Local Annotations" );
-    listBoxPFTextureMode.setSelectedItemIndex ( config.getMiscDebugTextureMode () );
+	listBoxPFTexturesOn.pushBackItem("On");
+	listBoxPFTexturesOn.pushBackItem("Off");
+	listBoxPFTexturesOn.setSelectedItemIndex(config.getMiscDebugTextures() ? 0 : 1);
+	listBoxPFTextureMode.pushBackItem("Path Only");
+	listBoxPFTextureMode.pushBackItem("Open/Closed Sets");
+	listBoxPFTextureMode.pushBackItem("Local Annotations");
+	listBoxPFTextureMode.setSelectedItemIndex(config.getMiscDebugTextureMode());
 #  endif
 
 }
 
 void MenuStateOptions::mouseClick(int x, int y, MouseButton mouseButton) {
 
-    Config &config = getConfig();
-    const Lang &lang = getLang();
-    const CoreData &coreData = getCoreData();
-    SoundRenderer &soundRenderer = getSoundRenderer();
+	Config &config = getConfig();
+	const Lang &lang = getLang();
+	const CoreData &coreData = getCoreData();
+	SoundRenderer &soundRenderer = getSoundRenderer();
 
-    if (buttonReturn.mouseClick(x, y)) {
-        soundRenderer.playFx(coreData.getClickSoundA());
-        changeState<MenuStateRoot>();
-    } else if (buttonAutoConfig.mouseClick(x, y)) {
-        soundRenderer.playFx(coreData.getClickSoundA());
-        getRenderer().autoConfig();
-        saveConfig();
-        changeState<MenuStateOptions>();
-    } else if (buttonOpenglInfo.mouseClick(x, y)) {
-        soundRenderer.playFx(coreData.getClickSoundB());
-        changeState<MenuStateGraphicInfo>();
-    } else if (listBoxLang.mouseClick(x, y)) {
-        config.setUiLocale(listBoxLang.getSelectedItem());
-        const_cast<Lang&>(lang).setLocale(config.getUiLocale());
-        saveConfig();
-        changeState<MenuStateOptions>();
+	if (buttonReturn.mouseClick(x, y)) {
+		soundRenderer.playFx(coreData.getClickSoundA());
+		changeState<MenuStateRoot>();
+	} else if (buttonAutoConfig.mouseClick(x, y)) {
+		soundRenderer.playFx(coreData.getClickSoundA());
+		getRenderer().autoConfig(config);
+		saveConfig();
+		changeState<MenuStateOptions>();
+	} else if (buttonOpenglInfo.mouseClick(x, y)) {
+		soundRenderer.playFx(coreData.getClickSoundB());
+		changeState<MenuStateGraphicInfo>();
+	} else if (listBoxLang.mouseClick(x, y)) {
+		config.setUiLocale(listBoxLang.getSelectedItem());
+		const_cast<Lang&>(lang).setLocale(config.getUiLocale());
+		saveConfig();
+		changeState<MenuStateOptions>();
 
-    } else if (listBoxShadows.mouseClick(x, y)) {
-        int index = listBoxShadows.getSelectedItemIndex();
-        config.setRenderShadows(Renderer::shadowsToStr(static_cast<Renderer::Shadows>(index)));
-        saveConfig();
-    } else if (listBoxFilter.mouseClick(x, y)) {
-        config.setRenderFilter(listBoxFilter.getSelectedItem());
-        saveConfig();
-    } else if (listBoxTextures3D.mouseClick(x, y)) {
-        config.setRenderTextures3D(listBoxTextures3D.getSelectedItemIndex());
-        saveConfig();
-    } else if (listBoxLights.mouseClick(x, y)) {
-        config.setRenderLightsMax(listBoxLights.getSelectedItemIndex() + 1);
-        saveConfig();
-    } else if (listBoxVolumeFx.mouseClick(x, y)) {
-        config.setSoundVolumeFx(atoi(listBoxVolumeFx.getSelectedItem().c_str()));
-        saveConfig();
-    } else if (listBoxVolumeAmbient.mouseClick(x, y)) {
-        config.setSoundVolumeAmbient(atoi(listBoxVolumeAmbient.getSelectedItem().c_str()));
-        saveConfig();
-    } else if (listBoxVolumeMusic.mouseClick(x, y)) {
-        coreData.getMenuMusic().setVolume(Conversion::strToInt(listBoxVolumeMusic.getSelectedItem()) / 100.f);
-        config.setSoundVolumeMusic(atoi(listBoxVolumeMusic.getSelectedItem().c_str()));
-        saveConfig();
-    } else if ( listBoxMaxPathNodes.mouseClick ( x, y ) ) {
-        config.setPathFinderMaxNodes ( Conversion::strToInt ( this->listBoxMaxPathNodes.getSelectedItem () ) );
-        saveConfig ();
-    } else if ( listBoxPFAlgorithm.mouseClick ( x, y ) ) {
-        config.setPathFinderUseAStar( listBoxPFAlgorithm.getSelectedItemIndex () ? false : true );
-        saveConfig ();
-    }
+	} else if (listBoxShadows.mouseClick(x, y)) {
+		int index = listBoxShadows.getSelectedItemIndex();
+		config.setRenderShadows(Renderer::shadowsToStr(static_cast<Renderer::Shadows>(index)));
+		saveConfig();
+	} else if (listBoxFilter.mouseClick(x, y)) {
+		config.setRenderFilter(listBoxFilter.getSelectedItem());
+		saveConfig();
+	} else if (listBoxTextures3D.mouseClick(x, y)) {
+		config.setRenderTextures3D(listBoxTextures3D.getSelectedItemIndex());
+		saveConfig();
+	} else if (listBoxLights.mouseClick(x, y)) {
+		config.setRenderLightsMax(listBoxLights.getSelectedItemIndex() + 1);
+		saveConfig();
+	} else if (listBoxVolumeFx.mouseClick(x, y)) {
+		config.setSoundVolumeFx(atoi(listBoxVolumeFx.getSelectedItem().c_str()));
+		saveConfig();
+	} else if (listBoxVolumeAmbient.mouseClick(x, y)) {
+		config.setSoundVolumeAmbient(atoi(listBoxVolumeAmbient.getSelectedItem().c_str()));
+		saveConfig();
+	} else if (listBoxVolumeMusic.mouseClick(x, y)) {
+		//coreData.getMenuMusic().setVolume(Conversion::strToInt(listBoxVolumeMusic.getSelectedItem()) / 100.f);
+		config.setSoundVolumeMusic(atoi(listBoxVolumeMusic.getSelectedItem().c_str()));
+#warning FIXME: reset music here
+		saveConfig();
+	} else if (listBoxMaxPathNodes.mouseClick(x, y)) {
+		config.setPathFinderMaxNodes(Conversion::strToInt(this->listBoxMaxPathNodes.getSelectedItem()));
+		saveConfig();
+	} else if (listBoxPFAlgorithm.mouseClick(x, y)) {
+		config.setPathFinderUseAStar(listBoxPFAlgorithm.getSelectedItemIndex() ? false : true);
+		saveConfig();
+	}
 #  ifdef _GAE_DEBUG_EDITION_
-    else if ( listBoxPFTexturesOn.mouseClick ( x, y ) ) {
-        config.setMiscDebugTextures ( listBoxPFTexturesOn.getSelectedItemIndex () == 0 ? true : false );
-        saveConfig ();
-    } else if ( listBoxPFTextureMode.mouseClick ( x, y ) ) {
-        config.setMiscDebugTextureMode( listBoxPFTextureMode.getSelectedItemIndex () );
-        saveConfig ();
-    }
+	else if (listBoxPFTexturesOn.mouseClick(x, y)) {
+		config.setMiscDebugTextures(listBoxPFTexturesOn.getSelectedItemIndex() == 0 ? true : false);
+		saveConfig();
+	} else if (listBoxPFTextureMode.mouseClick(x, y)) {
+		config.setMiscDebugTextureMode(listBoxPFTextureMode.getSelectedItemIndex());
+		saveConfig();
+	}
 #  endif
 }
 
 void MenuStateOptions::mouseMove(int x, int y, const MouseState &ms) {
-    buttonReturn.mouseMove(x, y);
-    buttonAutoConfig.mouseMove(x, y);
-    buttonOpenglInfo.mouseMove(x, y);
-    listBoxLang.mouseMove(x, y);
-    listBoxVolumeFx.mouseMove(x, y);
-    listBoxVolumeAmbient.mouseMove(x, y);
-    listBoxVolumeMusic.mouseMove(x, y);
-    listBoxLang.mouseMove(x, y);
-    listBoxFilter.mouseMove(x, y);
-    listBoxShadows.mouseMove(x, y);
-    listBoxTextures3D.mouseMove(x, y);
-    listBoxLights.mouseMove(x, y);
-    listBoxMaxPathNodes.mouseMove (x, y);
-    listBoxPFAlgorithm.mouseMove (x, y);
+	buttonReturn.mouseMove(x, y);
+	buttonAutoConfig.mouseMove(x, y);
+	buttonOpenglInfo.mouseMove(x, y);
+	listBoxLang.mouseMove(x, y);
+	listBoxVolumeFx.mouseMove(x, y);
+	listBoxVolumeAmbient.mouseMove(x, y);
+	listBoxVolumeMusic.mouseMove(x, y);
+	listBoxLang.mouseMove(x, y);
+	listBoxFilter.mouseMove(x, y);
+	listBoxShadows.mouseMove(x, y);
+	listBoxTextures3D.mouseMove(x, y);
+	listBoxLights.mouseMove(x, y);
+	listBoxMaxPathNodes.mouseMove(x, y);
+	listBoxPFAlgorithm.mouseMove(x, y);
 #  ifdef _GAE_DEBUG_EDITION_
-    listBoxPFTexturesOn.mouseMove (x, y);
-    listBoxPFTextureMode.mouseMove (x, y);
+	listBoxPFTexturesOn.mouseMove(x, y);
+	listBoxPFTextureMode.mouseMove(x, y);
 #  endif
 }
 
 void MenuStateOptions::render() {
-    Renderer &renderer = getRenderer();
+	Renderer &renderer = getRenderer();
 
-    renderer.renderButton(&buttonReturn);
-    renderer.renderButton(&buttonAutoConfig);
-    renderer.renderButton(&buttonOpenglInfo);
-    renderer.renderListBox(&listBoxLang);
-    renderer.renderListBox(&listBoxShadows);
-    renderer.renderListBox(&listBoxTextures3D);
-    renderer.renderListBox(&listBoxLights);
-    renderer.renderListBox(&listBoxFilter);
-    renderer.renderListBox(&listBoxVolumeFx);
-    renderer.renderListBox(&listBoxVolumeAmbient);
-    renderer.renderListBox(&listBoxVolumeMusic);
-    renderer.renderListBox ( &listBoxMaxPathNodes );
-    renderer.renderListBox ( &listBoxPFAlgorithm );
+	renderer.renderButton(&buttonReturn);
+	renderer.renderButton(&buttonAutoConfig);
+	renderer.renderButton(&buttonOpenglInfo);
+	renderer.renderListBox(&listBoxLang);
+	renderer.renderListBox(&listBoxShadows);
+	renderer.renderListBox(&listBoxTextures3D);
+	renderer.renderListBox(&listBoxLights);
+	renderer.renderListBox(&listBoxFilter);
+	renderer.renderListBox(&listBoxVolumeFx);
+	renderer.renderListBox(&listBoxVolumeAmbient);
+	renderer.renderListBox(&listBoxVolumeMusic);
+	renderer.renderListBox(&listBoxMaxPathNodes);
+	renderer.renderListBox(&listBoxPFAlgorithm);
 #  ifdef _GAE_DEBUG_EDITION_
-    renderer.renderListBox ( &listBoxPFTexturesOn );
-    renderer.renderListBox ( &listBoxPFTextureMode );
+	renderer.renderListBox(&listBoxPFTexturesOn);
+	renderer.renderListBox(&listBoxPFTextureMode);
 #  endif
-    renderer.renderLabel(&labelLang);
-    renderer.renderLabel(&labelShadows);
-    renderer.renderLabel(&labelTextures3D);
-    renderer.renderLabel(&labelLights);
-    renderer.renderLabel(&labelFilter);
-    renderer.renderLabel(&labelVolumeFx);
-    renderer.renderLabel(&labelVolumeAmbient);
-    renderer.renderLabel(&labelVolumeMusic);
-    renderer.renderLabel( & labelMaxPathNodes );
-    renderer.renderLabel( & labelPFAlgorithm );
+	renderer.renderLabel(&labelLang);
+	renderer.renderLabel(&labelShadows);
+	renderer.renderLabel(&labelTextures3D);
+	renderer.renderLabel(&labelLights);
+	renderer.renderLabel(&labelFilter);
+	renderer.renderLabel(&labelVolumeFx);
+	renderer.renderLabel(&labelVolumeAmbient);
+	renderer.renderLabel(&labelVolumeMusic);
+	renderer.renderLabel(& labelMaxPathNodes);
+	renderer.renderLabel(& labelPFAlgorithm);
 #  ifdef _GAE_DEBUG_EDITION_
-    renderer.renderLabel( & labelPFTexturesOn );
-    renderer.renderLabel( & labelPFTextureMode );
+	renderer.renderLabel(& labelPFTexturesOn);
+	renderer.renderLabel(& labelPFTextureMode);
 #  endif
 }
 
@@ -293,7 +294,7 @@ void MenuStateOptions::saveConfig() {
 
 	config.save();
 	Renderer::getInstance().loadConfig();
-#warning	SoundRenderer::getInstance().loadConfig();
+#warning SoundRenderer::getInstance().loadConfig();
 }
 
-}}//end namespace
+}} // end namespace

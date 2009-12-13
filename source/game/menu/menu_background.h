@@ -31,6 +31,7 @@ using Shared::Util::Random;
 namespace Glest { namespace Game {
 
 class Config;
+class Renderer;
 
 // ===========================================================
 // 	class MenuBackground
@@ -47,6 +48,7 @@ public:
 
 private:
 	const Config &config;
+	Renderer &renderer;
 	Model *mainModel;
 
 	//water
@@ -77,7 +79,7 @@ private:
 	Vec3f aboutPosition;
 
 public:
-	MenuBackground(const Config &config);
+	MenuBackground(const Config &config, Renderer &renderer);
 
 	bool getWater() const						{return water;}
 	float getWaterHeight() const				{return waterHeight;}

@@ -1,7 +1,8 @@
 // ==============================================================
-//	This file is part of Glest (www.glest.org)
+//	This file is part of the Glest Advanced Engine (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//				  2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -12,14 +13,19 @@
 #ifndef _GLEST_GAME_SOUNDCONTAINER_H_
 #define _GLEST_GAME_SOUNDCONTAINER_H_
 
-#include <vector>
+//#include <vector>
 
 #include "sound.h"
-#include "random.h"
+#include "collections.h"
+//#include "random.h"
 
-using std::vector;
-using Shared::Util::Random;
+//using std::vector;
+//using Shared::Util::Random;
+using Shared::Sound::Sound;
 using Shared::Sound::StaticSound;
+using Shared::Sound::StreamSound;
+using namespace Shared::Util;
+
 
 namespace Glest{ namespace Game{
 

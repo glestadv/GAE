@@ -34,8 +34,7 @@ namespace Glest { namespace Game {
 //  class MenuBackground
 // =====================================================
 
-MenuBackground::MenuBackground(const Config &config) : config(config) {
-    Renderer &renderer = getRenderer();
+MenuBackground::MenuBackground(const Config &config, Renderer &renderer) : config(config), renderer(renderer) {
 
     //load data
     XmlTree xmlTree;

@@ -89,7 +89,7 @@ public:
 	}
 };
 
-static void showUsage(const vector<const string> &args) {
+static void showUsage(const vector<string> &args) {
 	cout << "Usage: " << args.front() << " [--dedicated|--server|--client ip_addr]" << endl
 		 << "  --dedicated      Run a dedicated server" << endl
 		 << "  --server         Start up and immediate host a new network game." << endl
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 
 	if(launchType != Program::START_OPTION_DEDICATED) {
 		// run the dedicated server.
-		ConsoleProgram program();
+		ConsoleProgram program;
 		return program.main();
 	} else {
 
@@ -176,4 +176,4 @@ int main(int argc, char** argv) {
 
 }}//end namespace
 
-MAIN_FUNCTION(Game::glestMain)
+//MAIN_FUNCTION(Game::glestMain)

@@ -1192,7 +1192,7 @@ int Unit::killPets() {
 
 string Unit::getDesc(bool full) const {
 
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = Lang::getInstance();
 	int armorBonus = getArmor() - type->getArmor();
 	int sightBonus = getSight() - type->getSight();
 

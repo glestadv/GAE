@@ -55,7 +55,7 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 	if (textureNode->getAttribute("value")->getBoolValue()) {
 		Texture2D *texture = renderer.newTexture2D(rsGame);
 		if (textureNode->getAttribute("luminance")->getBoolValue()) {
-			texture->setFormat(Texture::fAlpha);
+			texture->setFormat(Texture::FORMAT_ALPHA);
 			texture->getPixmap()->init(1);
 		} else {
 			texture->getPixmap()->init(4);

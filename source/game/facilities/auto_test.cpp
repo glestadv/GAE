@@ -46,17 +46,17 @@ void AutoTest::updateIntro(GuiProgram &program) {
 }
 
 void AutoTest::updateRoot(GuiProgram &program, MainMenu &mainMenu) {
-	mainMenu->setState(new MenuStateNewGame(program, mainMenu));
+	mainMenu.setState(new MenuStateNewGame(program, mainMenu));
 }
 
 void AutoTest::updateNewGame(GuiProgram &program, MainMenu &mainMenu) {
-	mainMenu->setState(new MenuStateScenario(program, mainMenu/*, "scenarios"*/));
+	mainMenu.setState(new MenuStateScenario(program, mainMenu/*, "scenarios"*/));
 }
 
 void AutoTest::updateScenario(MenuStateScenario &menuStateScenario) {
 	gameStartTime = invalidTime;
 
-	int scenarioIndex = random.randRange(0, menuStateScenario->getScenarioCount() - 1);
+	int scenarioIndex = random.randRange(0, menuStateScenario.getScenarioCount() - 1);
 	menuStateScenario.setScenario(scenarioIndex);
 
 	menuStateScenario.launchGame();

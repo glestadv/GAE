@@ -542,7 +542,7 @@ void NetworkMessageXmlDoc::parse() {
 void NetworkMessageXmlDoc::writeXml() {
 	assert(!data);
 	assert(rootNode);
-	auto_ptr<string> strData = rootNode->toString(Config::getInstance().getMiscDebugMode());
+	shared_ptr<string> strData = rootNode->toString(Config::getInstance().getMiscDebugMode());
 	size = strData->length() + 1;
 	data = strncpy(static_cast<char *>(malloc(size)), strData->c_str(), size);
 	data[size - 1] = 0;	// just in case

@@ -95,7 +95,7 @@ public:
 	Renderer &getRenderer()					{return renderer;}
 	SoundRenderer &getSoundRenderer()		{return soundRenderer;}
 	const CoreData &getCoreData() const		{return coreData;}
-	const Lang &getLang() const				{return getLang();}
+	//const Lang &getLang() const				{return getLang();}
 
 	// functions of Shared::Platform::Window
 	virtual void eventMouseDown(int x, int y, MouseButton mouseButton);
@@ -183,6 +183,7 @@ public:
 
 protected:
 	GuiProgram &getGuiProgram()				{return program;}
+	Lang &getNonConstLang()					{return program.getNonConstLang();}
 };
 
 /**

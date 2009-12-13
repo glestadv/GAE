@@ -196,7 +196,7 @@ void ServerInterface::quitGame(){
 }
 
 string ServerInterface::getStatus() const {
-    Lang &lang= Lang::getInstance();
+    const Lang &lang= Lang::getInstance();
     string str;
 
     for (int i = 0; i < GameConstants::maxPlayers; ++i) {
@@ -383,7 +383,7 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 			if(slot->isConnected()) {
 				slot->send(networkMessage);
 			} else {
-				Lang &lang = Lang::getInstance();
+				const Lang &lang = Lang::getInstance();
 				string errmsg = slot->getDescription() + " (" + lang.get("Player") + " "
 						+ intToStr(slot->getPlayerIndex() + 1) + ") " + lang.get("Disconnected");
 				removeSlot(i);

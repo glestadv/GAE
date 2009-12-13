@@ -40,7 +40,7 @@ private:
 public:
 	Lang();
 
-	static Lang &getInstance();
+	static const Lang &getInstance();
 
 	const string &getLocale() const			{return locale;}
 #if 0

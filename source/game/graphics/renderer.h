@@ -28,9 +28,13 @@
 #include "camera.h"
 #include "game_camera.h"
 #include "gl_wrap.h"
+//#include "context_gl.h"
 
 namespace Shared { namespace Graphics {
 class Context;
+namespace Gl {
+class ContextGl;
+}
 }}
 
 
@@ -55,6 +59,7 @@ using Shared::Graphics::ParticleSystem;
 using Shared::Graphics::Pixmap2D;
 using Shared::Graphics::Camera;
 using Shared::Graphics::Context;
+using Shared::Graphics::Gl::ContextGl;
 
 //non shared classes
 class Config;
@@ -129,10 +134,11 @@ public:
 private:
 	// foreign references
 	const Config &config;
-	const Context &context;
+	Context &context;
 	const World *world;
 	const Map *map;
 	const GameCamera *camera;
+	Game *game;
 
 	//renderers
 	shared_ptr<ModelRenderer> modelRenderer;
@@ -180,7 +186,7 @@ private:
 	float perspFarPlane;
 
 private:
-	Renderer(GraphicsFactory &graphicsFactory, const Config &config, const Context &context);
+	Renderer(GraphicsFactory &graphicsFactory, const Config &config, Context &context);
 	~Renderer();
 
 public:
@@ -271,7 +277,7 @@ public:
     //gl wrap
 	string getGlInfo();
 	string getGlMoreInfo();
-	void autoConfig();
+	void autoConfig(Config &config);
 
 	//clear
     void clearBuffers();
@@ -298,6 +304,7 @@ private:
 	Vec3f computeLightColor(float time);
 	Vec4f computeWaterColor(float waterLevel, float cellHeight);
 	void checkExtension(const string &extension, const string &msg);
+	ContextGl &getContextGl() {return reinterpret_cast<ContextGl &>(context);}
 
 	//selection render
 	void renderObjectsFast();
@@ -319,7 +326,7 @@ private:
 	//private aux drawing
 	void renderSelectionCircle(Vec3f v, int size, float radius);
 	void renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width);
-	void renderProgressBar(int size, int x, int y, Font2D *font);
+	void renderProgressBar(int size, int x, int y, const Font2D *font);
 	void renderTile(const Vec2i &pos);
 	void renderQuad(int x, int y, int w, int h, const Texture2D *texture);
 

@@ -174,7 +174,7 @@ void SkillType::descRange(string &str, const Unit *unit, const char* rangeDesc) 
 
 
 void SkillType::descEffectsRemoved(string &str, const Unit *unit) const {
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 
 	if(effectsRemoved) {
 		str+= lang.get("Removes") + " " + intToStr(effectsRemoved) + " ";
@@ -307,7 +307,7 @@ void TargetBasedSkillType::load(const XmlNode *sn, const string &dir, const Tech
 }
 
 void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* rangeDesc) const {
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 
 	descEpCost(str, unit);
 
@@ -362,7 +362,7 @@ void AttackSkillType::load(const XmlNode *sn, const string &dir, const TechTree 
 }
 
 void AttackSkillType::getDesc(string &str, const Unit *unit) const {
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 
 	//attack strength
 	str+= lang.get("AttackStrength")+": ";
@@ -472,7 +472,7 @@ void RepairSkillType::load(const XmlNode *sn, const string &dir, const TechTree 
 }
 
 void RepairSkillType::getDesc(string &str, const Unit *unit) const {
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 //	descRange(str, unit, "MaxRange");
 
 	descSpeed(str, unit, "RepairSpeed");

@@ -100,8 +100,8 @@ Gui* Gui::currentGui = NULL;
 Gui::Gui(Game &game)
 		: game(game)
 		, input(game.getInput())
-		, metrics(get.getMetrics())
-		, display()
+		, metrics(game.getMetrics())
+		, display(metrics)
 {
 	posObjWorld= Vec2i(54, 14);
 	dragStartPos= Vec2i(0, 0);
@@ -123,7 +123,7 @@ Gui::Gui(Game &game)
 void Gui::init(){
 	this->commander= game.getCommander();
 	this->gameCamera= game.getGameCamera();
-	this->console= game.getConsole();
+	this->console= &game.getConsole();
 	this->world= game.getWorld();
 	buildPositions.reserve(max(world->getMap()->getH(), world->getMap()->getW()));
 	selection.init(this, world->getThisFactionIndex());
@@ -814,7 +814,7 @@ void Gui::mouseDownDisplayUnitBuild(int posDisplay){
 }
 
 void Gui::computeInfoString(int posDisplay) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = Lang::getInstance();
 
 	display.setInfoText("");
 

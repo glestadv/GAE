@@ -43,11 +43,6 @@ public:
 
 private:
 	const Config &config;
-	//volume
-	//float fxVolume;
-	//float musicVolume;
-	//float ambientVolume;
-
 	shared_ptr<SoundPlayer> soundPlayer;
 
 public:

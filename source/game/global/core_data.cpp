@@ -37,9 +37,26 @@ using Shared::Graphics::Font;
 
 // ===================== PUBLIC ========================
 
-CoreData::CoreData(const Config &config, Renderer &renderer) {
+CoreData::CoreData(const Config &config, Renderer &renderer)
+	: introMusic(false)
+    , menuMusic(true)
+	, clickSoundA("data/core/menu/sound/click_a.wav")
+    , clickSoundB("data/core/menu/sound/click_b.wav")
+    , clickSoundC("data/core/menu/sound/click_c.wav")
+	, waterSounds(0) {
 	const string dir = "data/core";
 	Logger::getInstance().add("Core data");
+
+	introMusic.addManaged(new ManagedSingleSelection<Sound>(
+			new StaticSound(dir + "/menu/music/intro_music.ogg")));
+	menuMusic.addManaged(new ManagedSingleSelection<Sound>(
+			new StaticSound(dir + "/menu/music/menu_music.ogg")));
+	introMusic.add(menuMusic, SerialSelection<Sound>::INFINITE);
+
+	for (int i = 0; i < 6; ++i) {
+		string path = dir + "/water_sounds/water" + Conversion::toStr(i) + ".wav";
+		waterSounds.addManaged(new ManagedSingleSelection<Sound>(new StaticSound(path)));
+	}
 
 	//textures
 	backgroundTexture = renderer.newTexture2D(rsGlobal);
@@ -47,13 +64,13 @@ CoreData::CoreData(const Config &config, Renderer &renderer) {
 	backgroundTexture->getPixmap()->load(dir + "/menu/textures/back.tga");
 
 	fireTexture= renderer.newTexture2D(rsGlobal);
-	fireTexture->setFormat(Texture::fAlpha);
+	fireTexture->setFormat(Texture::FORMAT_ALPHA);
 	fireTexture->getPixmap()->init(1);
 	fireTexture->getPixmap()->load(dir + "/misc_textures/fire_particle.tga");
 
 	snowTexture = renderer.newTexture2D(rsGlobal);
 	snowTexture->setMipmap(false);
-	snowTexture->setFormat(Texture::fAlpha);
+	snowTexture->setFormat(Texture::FORMAT_ALPHA);
 	snowTexture->getPixmap()->init(1);
 	snowTexture->getPixmap()->load(dir + "/misc_textures/snow_particle.tga");
 
@@ -65,7 +82,7 @@ CoreData::CoreData(const Config &config, Renderer &renderer) {
 	logoTexture->getPixmap()->load(dir + "/menu/textures/logo.tga");
 
 	waterSplashTexture= renderer.newTexture2D(rsGlobal);
-	waterSplashTexture->setFormat(Texture::fAlpha);
+	waterSplashTexture->setFormat(Texture::FORMAT_ALPHA);
 	waterSplashTexture->getPixmap()->init(1);
 	waterSplashTexture->getPixmap()->load(dir + "/misc_textures/water_splash.tga");
 
@@ -113,22 +130,20 @@ CoreData::CoreData(const Config &config, Renderer &renderer) {
 	consoleFont->setSize(computeFontSize(16));
 
 	//sounds
-	clickSoundA.load(dir + "/menu/sound/click_a.wav");
-	clickSoundB.load(dir + "/menu/sound/click_b.wav");
-	clickSoundC.load(dir + "/menu/sound/click_c.wav");
-	introMusic.open(dir + "/menu/music/intro_music.ogg");
-	introMusic.setNext(&menuMusic);
-	menuMusic.open(dir + "/menu/music/menu_music.ogg");
-	menuMusic.setNext(&menuMusic);
 
-	waterSounds.resize(6);
-	for (int i = 0; i < 6; ++i) {
-		waterSounds[i] = new StaticSound(dir + "/water_sounds/water" + Conversion::toStr(i) + ".wav");
-	}
+	//clickSoundA.load(dir + "/menu/sound/click_a.wav");
+	//clickSoundB.load(dir + "/menu/sound/click_b.wav");
+	//clickSoundC.load(dir + "/menu/sound/click_c.wav");
+	//introMusic.open(dir + "/menu/music/intro_music.ogg");
+	//introMusic.setNext(&menuMusic);
+	//menuMusic.open(dir + "/menu/music/menu_music.ogg");
+	//menuMusic.setNext(&menuMusic);
+	//introMusicList.add(
+
 }
 
 CoreData::~CoreData() {
-	deleteValues(waterSounds.getSounds().begin(), waterSounds.getSounds().end());
+	//deleteValues(waterSounds.getSounds().begin(), waterSounds.getSounds().end());
 }
 
 const CoreData &CoreData::getInstance() {

@@ -17,12 +17,15 @@
 #include <vector>
 
 #include "config.h"
+#include "patterns.h"
 
 using std::string;
 using std::vector;
 using std::pair;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
+
+class Lang;
 
 // =====================================================
 //  class Console
@@ -30,32 +33,30 @@ namespace Glest{ namespace Game{
 /// In-game console that shows various types of messages
 // =====================================================
 
-class Console {
+class Console : Uncopyable {
 public:
 	typedef pair<string, float> StringTimePair;
 	typedef vector<StringTimePair> Lines;
 	typedef Lines::const_iterator LineIterator;
 
 private:
+	const Lang &lang;
 	float timeElapsed;
 	Lines lines;
-
-	//this should be deleted from here someday
-	//bool won, lost;
 
 	//config
 	int maxLines;
 	float timeout;
 
 public:
-	Console(const Config &config);
+	Console(const Config &config, const Lang &lang);
 
 	int getLineCount() const	{return lines.size();}
 	string getLine(int i) const	{return lines[i].first;}
 
 	void addStdMessage(const string &s);
 	void addStdMessage(const string &s, const string &param1, const string &param2 = "", const string &param3 = "");
-	void addLine(string line/*, bool playSound=false */);
+	void addLine(string line, bool playSound = false);
 	//void update();
 	bool isEmpty();
 };

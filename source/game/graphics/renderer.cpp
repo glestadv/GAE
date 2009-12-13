@@ -28,6 +28,17 @@
 #include "faction.h"
 #include "factory_repository.h"
 #include "gui_program.h"
+#include "model_renderer.h"
+
+#include "context_gl.h"
+#include "font_gl.h"
+#include "model_gl.h"
+#include "model_renderer_gl.h"
+#include "particle_renderer_gl.h"
+#include "shader_gl.h"
+#include "text_renderer_gl.h"
+#include "texture_gl.h"
+
 
 #include "leak_dumper.h"
 
@@ -36,7 +47,7 @@ using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
 
-namespace Glest { namespace Game{
+namespace Glest { namespace Game {
 
 // =====================================================
 // 	class MeshCallbackTeamColor
@@ -146,7 +157,7 @@ const float Renderer::maxLightDist= 50.f;
 
 // ==================== constructor and destructor ====================
 
-Renderer::Renderer(GraphicsFactory &graphicsFactory, const Config &config, const Context &context)
+Renderer::Renderer(GraphicsFactory &graphicsFactory, const Config &config, Context &context)
 		: config(config)
 		, context(context)
 		, world(NULL)
@@ -164,12 +175,12 @@ Renderer::Renderer(GraphicsFactory &graphicsFactory, const Config &config, const
 #endif
 		{
 	//resources
-	for(int i=0; i<rsCount; ++i){
-		modelManager[i]= graphicsFactory->newModelManager();
-		textureManager[i]= graphicsFactory->newTextureManager();
+	for(int i=0; i<rsCount; ++i) {
+		modelManager[i]= graphicsFactory.newModelManager();
+		textureManager[i]= graphicsFactory.newTextureManager();
 		modelManager[i]->setTextureManager(textureManager[i]);
-		particleManager[i]= graphicsFactory->newParticleManager();
-		fontManager[i]= graphicsFactory->newFontManager();
+		particleManager[i]= graphicsFactory.newParticleManager();
+		fontManager[i]= graphicsFactory.newFontManager();
 	}
 }
 
@@ -183,7 +194,7 @@ Renderer::~Renderer() {
 	}
 }
 
-Renderer &Renderer::getInstance()
+Renderer &Renderer::getInstance() {
 	return GuiProgram::getInstance().getRenderer();
 }
 
@@ -203,10 +214,11 @@ void Renderer::init() {
 		checkGlCaps();
 	}
 
-	if(config.getMiscFirstTime()){
-		config.setMiscFirstTime(false);
-		autoConfig();
-		config.save();
+	if(config.getMiscFirstTime()) {
+		Config &nonConstConfig = const_cast<Config &>(config);
+		nonConstConfig.setMiscFirstTime(false);
+		autoConfig(nonConstConfig);
+		nonConstConfig.save();
 	}
 
 	modelManager[rsGlobal]->init();
@@ -228,7 +240,7 @@ void Renderer::initGame(Game *game){
 
 	//shadows
 	if(shadows==sProjected || shadows==sShadowMapping){
-		static_cast<ModelRendererGl*>(modelRenderer)->setSecondaryTexCoordUnit(2);
+		static_cast<ModelRendererGl*>(modelRenderer.get())->setSecondaryTexCoordUnit(2);
 
 		glGenTextures(1, &shadowMapHandle);
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
@@ -360,13 +372,13 @@ void Renderer::reloadResources(){
 void Renderer::renderParticleManager(ResourceScope rs){
 	glPushAttrib(GL_DEPTH_BUFFER_BIT  | GL_STENCIL_BUFFER_BIT);
 	glDepthFunc(GL_LESS);
-	particleRenderer->renderManager(particleManager[rs], modelRenderer);
+	particleRenderer->renderManager(particleManager[rs], modelRenderer.get());
 	glPopAttrib();
 }
 
 void Renderer::swapBuffers(){
 	glFlush();
-	GraphicsInterface::getInstance().getCurrentContext()->swapBuffers();
+	getContextGl().swapBuffers();
 }
 
 // ==================== lighting ====================
@@ -375,8 +387,8 @@ void Renderer::swapBuffers(){
 void Renderer::setupLighting(){
 
     int lightCount= 0;
-	const World *world= game->getWorld();
-	const GameCamera *gameCamera= game->getGameCamera();
+	//const World *world= game->getWorld();
+	//const GameCamera *gameCamera= game->getGameCamera();
 	const TimeFlow *timeFlow= world->getTimeFlow();
 	float time= timeFlow->getTime();
 
@@ -408,7 +420,7 @@ void Renderer::setupLighting(){
             for(int j=0; j<world->getFaction(i)->getUnitCount() && lightCount<maxLights; ++j){
                 Unit *unit= world->getFaction(i)->getUnit(j);
 				if(world->toRenderUnit(unit) &&
-					unit->getCurrVector().dist(gameCamera->getPos())<maxLightDist &&
+					unit->getCurrVector().dist(camera->getPos())<maxLightDist &&
                     unit->getType()->getLight() && unit->isOperative()){
 
 					Vec4f pos= Vec4f(unit->getCurrVector());
@@ -425,9 +437,9 @@ void Renderer::setupLighting(){
 
                     ++lightCount;
 
-					const GameCamera *gameCamera= game->getGameCamera();
+					//const GameCamera *gameCamera= game->getGameCamera();
 
-					if(Vec3f(pos).dist(gameCamera->getPos())<Vec3f(nearestLightPos).dist(gameCamera->getPos())){
+					if(Vec3f(pos).dist(camera->getPos())<Vec3f(nearestLightPos).dist(camera->getPos())){
 						nearestLightPos= pos;
 					}
                 }
@@ -439,13 +451,13 @@ void Renderer::setupLighting(){
 }
 
 void Renderer::loadGameCameraMatrix(){
-	const GameCamera *gameCamera= game->getGameCamera();
+	//const GameCamera *gameCamera= game->getGameCamera();
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glRotatef(gameCamera->getVAng(), -1, 0, 0);
-	glRotatef(gameCamera->getHAng(), 0, 1, 0);
-	glTranslatef(-gameCamera->getPos().x, -gameCamera->getPos().y, -gameCamera->getPos().z);
+	glRotatef(camera->getVAng(), -1, 0, 0);
+	glRotatef(camera->getHAng(), 0, 1, 0);
+	glTranslatef(-camera->getPos().x, -camera->getPos().y, -camera->getPos().z);
 }
 
 void Renderer::loadCameraMatrix(const Camera *camera){
@@ -504,7 +516,7 @@ void Renderer::renderMouse3d(){
 
 	const Gui *gui= game->getGui();
 	const Mouse3d *mouse3d= gui->getMouse3d();
-	const Map *map= game->getWorld()->getMap();
+	//const Map *map= game->getWorld()->getMap();
 
 	GLUquadricObj *cilQuadric;
 	Vec4f color;
@@ -665,7 +677,7 @@ void Renderer::renderChatManager(const ChatManager *chatManager){
 void Renderer::renderResourceStatus(){
 
 	const Metrics &metrics= theMetrics;
-	const World *world= game->getWorld();
+	//const World *world= game->getWorld();
 	const Faction *thisFaction= world->getFaction(world->getThisFactionIndex());
 	int subfaction = thisFaction->getSubfaction();
 
@@ -839,12 +851,12 @@ void Renderer::renderButton(const GraphicButton *button){
 
 	//background
 	const CoreData &coreData= theCoreData;
-	Texture2D *backTexture= w>3*h/2? coreData.getButtonBigTexture(): coreData.getButtonSmallTexture();
+	const Texture2D *backTexture= w>3*h/2? coreData.getButtonBigTexture(): coreData.getButtonSmallTexture();
 
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 
-	glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(backTexture)->getHandle());
+	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(backTexture)->getHandle());
 
 	//button
 	Vec4f color= Vec4f(1.f, 1.f, 1.f, GraphicComponent::getFade());
@@ -1002,12 +1014,12 @@ void Renderer::renderTextEntry(const GraphicTextEntry *textEntry) {
 
 	//background
 	const CoreData &coreData= theCoreData;
-	Texture2D *backTexture= coreData.getTextEntryTexture();
+	const Texture2D *backTexture= coreData.getTextEntryTexture();
 
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 
-	glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(backTexture)->getHandle());
+	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(backTexture)->getHandle());
 
 	//textentry
 	Vec4f color= Vec4f(1.f, 1.f, 1.f, GraphicComponent::getFade());
@@ -1117,8 +1129,8 @@ void Renderer::renderSurface() {
 
 	int lastTex=-1;
 	int currTex;
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
+//	const World *world= game->getWorld();
+//	const Map *map= world->getMap();
 	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
 	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
 
@@ -1148,7 +1160,7 @@ void Renderer::renderSurface() {
 
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
-		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+		static_cast<ModelRendererGl*>(modelRenderer.get())->setDuplicateTexCoords(true);
 		enableProjectiveTexturing();
 	}
 
@@ -1209,7 +1221,7 @@ void Renderer::renderSurface() {
 	glEnd();
 
 	//Restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
+	static_cast<ModelRendererGl*>(modelRenderer.get())->setDuplicateTexCoords(false);
 	glPopAttrib();
 
 	//assert
@@ -1222,8 +1234,8 @@ void Renderer::renderSurfacePFDebug ()
 {
 	int lastTex=-1;
 	int currTex;
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
+	//const World *world= game->getWorld();
+	//const Map *map= world->getMap();
 	const Search::PathFinder *pf = Search::PathFinder::getInstance ();
 	const Rect2i mapBounds(0, 0, map->getTileW()-1, map->getTileH()-1);
 	float coordStep= world->getTileset()->getSurfaceAtlas()->getCoordStep();
@@ -1386,8 +1398,8 @@ void Renderer::renderSurfacePFDebug ()
 
 
 void Renderer::renderObjects(){
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
+	//const World *world= game->getWorld();
+	//const Map *map= world->getMap();
 
     assertGl();
 	const Texture2D *fowTex= world->getMinimap()->getFowTexture();
@@ -1401,7 +1413,7 @@ void Renderer::renderObjects(){
 
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
-		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+		static_cast<ModelRendererGl*>(modelRenderer.get())->setDuplicateTexCoords(true);
 		enableProjectiveTexturing();
 	}
 
@@ -1460,15 +1472,15 @@ void Renderer::renderObjects(){
 	modelRenderer->end();
 
 	//restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+	static_cast<ModelRendererGl*>(modelRenderer.get())->setDuplicateTexCoords(true);
 	glPopAttrib();
 }
 
 void Renderer::renderWater(){
 
 	bool closed= false;
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
+	//const World *world= game->getWorld();
+	//const Map *map= world->getMap();
 
 	float waterAnim= world->getWaterEffects()->getAmin();
 
@@ -1593,7 +1605,7 @@ void Renderer::renderUnits(){
 	Unit *unit;
 	const UnitType *ut;
 	int framesUntilDead;
-	const World *world= game->getWorld();
+	//const World *world= game->getWorld();
 	MeshCallbackTeamColor meshCallbackTeamColor;
 
 /*	// commented out because "calculate selected units on render" functionality isn't working
@@ -1642,7 +1654,7 @@ void Renderer::renderUnits(){
 
 		glBindTexture(GL_TEXTURE_2D, shadowMapHandle);
 
-		static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+		static_cast<ModelRendererGl*>(modelRenderer.get())->setDuplicateTexCoords(true);
 		enableProjectiveTexturing();
 	}
 	glActiveTexture(baseTexUnit);
@@ -1732,7 +1744,7 @@ void Renderer::renderUnits(){
 	modelRenderer->end();
 
 	//restore
-	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
+	static_cast<ModelRendererGl*>(modelRenderer.get())->setDuplicateTexCoords(true);
 	glPopAttrib();
 
 /*
@@ -1747,7 +1759,7 @@ void Renderer::renderUnits(){
 		for(int i=1; i<=selCount; ++i){
 			int factionIndex= selectBuffer[i*5-2];
 			int unitIndex= selectBuffer[i*5-1];
-			const World *world= game->getWorld();
+			//const World *world= game->getWorld();
 			if(factionIndex<world->getFactionCount() && unitIndex<world->getFaction(factionIndex)->getUnitCount()){
 				Unit *unit= world->getFaction(factionIndex)->getUnit(unitIndex);
 				if(unit->isAlive()){
@@ -1764,8 +1776,8 @@ void Renderer::renderUnits(){
 
 void Renderer::renderSelectionEffects(){
 
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
+	//const World *world= game->getWorld();
+	//const Map *map= world->getMap();
 	const Selection *selection= game->getGui()->getSelection();
 
 	glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1856,7 +1868,7 @@ void Renderer::renderSelectionEffects(){
 
 			if(unit->isHighlighted()){
 				float highlight= unit->getHightlight();
-				if(game->getWorld()->getThisFactionIndex()==unit->getFactionIndex()){
+				if(world->getThisFactionIndex()==unit->getFactionIndex()){
 					glColor4f(0.f, 1.f, 0.f, highlight);
 				}
 				else{
@@ -1874,9 +1886,9 @@ void Renderer::renderSelectionEffects(){
 }
 
 void Renderer::renderWaterEffects(){
-	const World *world= game->getWorld();
+	//const World *world= game->getWorld();
 	const WaterEffects *we= world->getWaterEffects();
-	const Map *map= world->getMap();
+	//const Map *map= world->getMap();
 	const CoreData &coreData= theCoreData;
 	float height= map->getWaterLevel()+0.001f;
 
@@ -1892,7 +1904,7 @@ void Renderer::renderWaterEffects(){
 	glNormal3f(0.f, 1.f, 0.f);
 
 	//splashes
-	glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
+	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
 	for(int i=0; i<we->getWaterSplashCount(); ++i){
 		const WaterSplash *ws= we->getWaterSplash(i);
 
@@ -1926,9 +1938,9 @@ void Renderer::renderWaterEffects(){
 }
 
 void Renderer::renderMinimap(){
-    const World *world= game->getWorld();
+    //const World *world= game->getWorld();
 	const Minimap *minimap= world->getMinimap();
-	const GameCamera *gameCamera= game->getGameCamera();
+	//const GameCamera *gameCamera= game->getGameCamera();
 	const Pixmap2D *pixmap= minimap->getTexture()->getPixmap();
 	const Metrics &metrics= theMetrics;
 
@@ -2012,10 +2024,10 @@ void Renderer::renderMinimap(){
 	float wRatio= static_cast<float>(metrics.getMinimapW()) / world->getMap()->getW();
 	float hRatio= static_cast<float>(metrics.getMinimapH()) / world->getMap()->getH();
 
-    int x= static_cast<int>(gameCamera->getPos().x * wRatio);
-    int y= static_cast<int>(gameCamera->getPos().z * hRatio);
+    int x= static_cast<int>(camera->getPos().x * wRatio);
+    int y= static_cast<int>(camera->getPos().z * hRatio);
 
-    float ang= degToRad(gameCamera->getHAng());
+    float ang= degToRad(camera->getHAng());
 
     glEnable(GL_BLEND);
 
@@ -2225,7 +2237,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 
 			//splashes
 			const CoreData &coreData= theCoreData;
-			glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
+			glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(coreData.getWaterSplashTexture())->getHandle());
 			for(int i=0; i<MenuBackground::raindropCount; ++i){
 
 				Vec2f pos= menuBackground->getRaindropPos(i);
@@ -2264,7 +2276,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 bool Renderer::computePosition(const Vec2i &screenPos, Vec2i &worldPos){
 
 	assertGl();
-	const Map* map= game->getWorld()->getMap();
+	//const Map* map= game->getWorld()->getMap();
 	const Metrics &metrics= theMetrics;
 	float depth= 0.0f;
 	GLdouble modelviewMatrix[16];
@@ -2336,7 +2348,7 @@ void Renderer::computeSelected(Selection::UnitContainer &units, const Vec2i &pos
 	for(int i=1; i<=selCount; ++i){
 		int factionIndex= selectBuffer[i*5-2];
 		int unitIndex= selectBuffer[i*5-1];
-		const World *world= game->getWorld();
+		//const World *world= game->getWorld();
 		if(factionIndex<world->getFactionCount() && unitIndex<world->getFaction(factionIndex)->getUnitCount()){
 			Unit *unit= world->getFaction(factionIndex)->getUnit(unitIndex);
 			if(unit->isAlive()){
@@ -2380,7 +2392,7 @@ void Renderer::renderShadowsToTexture() {
 				//directional light
 
 				//light pos
-				const TimeFlow *tf = game->getWorld()->getTimeFlow();
+				const TimeFlow *tf = world->getTimeFlow();
 				float ang = tf->isDay() ? computeSunAngle(tf->getTime()) : computeMoonAngle(tf->getTime());
 				ang = radToDeg(ang);
 
@@ -2388,7 +2400,7 @@ void Renderer::renderShadowsToTexture() {
 				glMatrixMode(GL_PROJECTION);
 				glPushMatrix();
 				glLoadIdentity();
-				if (game->getGameCamera()->getState() == GameCamera::sGame) {
+				if (camera->getState() == GameCamera::sGame) {
 					glOrtho(-35, 5, -15, 15, -1000, 1000);
 				}
 				else{
@@ -2483,14 +2495,14 @@ string Renderer::getGlInfo(){
 	stringstream str;
 
 	str << lang.get("OpenGlInfo") << ":" << endl
-		<< "   " << lang.get("OpenGlVersion") << ": " << getGlVersion() << endl
-		<< "   " << lang.get("OpenGlRenderer") << ": " <<  getGlRenderer() << endl
-		<< "   " << lang.get("OpenGlVendor") << ": " << getGlVendor() << endl
-		<< "   " << lang.get("OpenGlMaxLights") << ": " << getGlMaxLights() << endl
-		<< "   " << lang.get("OpenGlMaxTextureSize") << ": " << getGlMaxTextureSize() << endl
-		<< "   " << lang.get("OpenGlMaxTextureUnits") << ": " << getGlMaxTextureUnits() << endl
-		<< "   " << lang.get("OpenGlModelviewStack") << ": " << getGlModelviewMatrixStackDepth() << endl
-		<< "   " << lang.get("OpenGlProjectionStack") << ": " << getGlProjectionMatrixStackDepth() << endl;
+		<< "   " << lang.get("OpenGlVersion") << ": " << getContextGl().getGlVersion() << endl
+		<< "   " << lang.get("OpenGlRenderer") << ": " <<  getContextGl().getGlRenderer() << endl
+		<< "   " << lang.get("OpenGlVendor") << ": " << getContextGl().getGlVendor() << endl
+		<< "   " << lang.get("OpenGlMaxLights") << ": " << getContextGl().getGlMaxLights() << endl
+		<< "   " << lang.get("OpenGlMaxTextureSize") << ": " << getContextGl().getGlMaxTextureSize() << endl
+		<< "   " << lang.get("OpenGlMaxTextureUnits") << ": " << getContextGl().getGlMaxTextureUnits() << endl
+		<< "   " << lang.get("OpenGlModelviewStack") << ": " << getContextGl().getGlModelviewMatrixStackDepth() << endl
+		<< "   " << lang.get("OpenGlProjectionStack") << ": " << getContextGl().getGlProjectionMatrixStackDepth() << endl;
 
 	return str.str();
 }
@@ -2502,7 +2514,7 @@ string Renderer::getGlMoreInfo(){
 	//gl extensions
 	str << lang.get("OpenGlExtensions") << ":" << endl << "   ";
 
-	string extensions= getGlExtensions();
+	string extensions= getContextGl().getGlExtensions();
 	int charCount= 0;
 	for(int i=0; i<extensions.size(); ++i) {
 		str << extensions[i];
@@ -2517,7 +2529,7 @@ string Renderer::getGlMoreInfo(){
 	str << endl << endl << lang.get("OpenGlPlatformExtensions") << ":" << endl << "   ";
 
 	charCount= 0;
-	string platformExtensions= getGlPlatformExtensions();
+	string platformExtensions= getContextGl().getGlPlatformExtensions();
 	for(int i=0; i<platformExtensions.size(); ++i){
 		str << platformExtensions[i];
 		if(charCount>120 && platformExtensions[i]==' '){
@@ -2530,19 +2542,18 @@ string Renderer::getGlMoreInfo(){
 	return str.str();
 }
 
-void Renderer::autoConfig(){
+void Renderer::autoConfig(Config &config){
 
-	Config &config= theConfig;
-	bool nvidiaCard= toLower(getGlVendor()).find("nvidia")!=string::npos;
-	bool atiCard= toLower(getGlVendor()).find("ati")!=string::npos;
-	bool shadowExtensions = isGlExtensionSupported("GL_ARB_shadow") && isGlExtensionSupported("GL_ARB_shadow_ambient");
+	bool nvidiaCard= toLower(getContextGl().getGlVendor()).find("nvidia")!=string::npos;
+	bool atiCard= toLower(getContextGl().getGlVendor()).find("ati")!=string::npos;
+	bool shadowExtensions = getContextGl().isGlExtensionSupported("GL_ARB_shadow") && getContextGl().isGlExtensionSupported("GL_ARB_shadow_ambient");
 
 	//3D textures
-	config.setRenderTextures3D(isGlExtensionSupported("GL_EXT_texture3D"));
+	config.setRenderTextures3D(getContextGl().isGlExtensionSupported("GL_EXT_texture3D"));
 
 	//shadows
 	string shadows;
-	if(getGlMaxTextureUnits()>=3){
+	if(getContextGl().getGlMaxTextureUnits()>=3){
 		if(nvidiaCard && shadowExtensions){
 			shadows= shadowsToStr(sShadowMapping);
 		}
@@ -2678,7 +2689,7 @@ void Renderer::renderUnitsFast(bool renderingShadows) {
 	const UnitType *ut;
 	int framesUntilDead;
 	bool changeColor = false;
-	const World *world= game->getWorld();
+	//const World *world= game->getWorld();
 
 	assertGl();
 
@@ -2766,8 +2777,8 @@ void Renderer::renderUnitsFast(bool renderingShadows) {
 
 //render objects for selection purposes
 void Renderer::renderObjectsFast(){
-	const World *world= game->getWorld();
-	const Map *map= world->getMap();
+	//const World *world= game->getWorld();
+	//const Map *map= world->getMap();
 
     assertGl();
 
@@ -2829,11 +2840,11 @@ void Renderer::renderObjectsFast(){
 void Renderer::checkGlCaps(){
 
 	//opengl 1.3
-	if(!isGlVersionSupported(1, 3, 0)){
+	if(!getContextGl().isGlVersionSupported(1, 3, 0)){
 		string message;
 
 		message += "Your system supports OpenGL version \"";
- 		message += getGlVersion() + string("\"\n");
+ 		message += getContextGl().getGlVersion() + string("\"\n");
  		message += "Glest needs at least version 1.3 to work\n";
  		message += "You may solve this problem by installing your latest video card drivers";
 
@@ -2841,7 +2852,7 @@ void Renderer::checkGlCaps(){
 	}
 
 	//opengl 1.4 or extension
-	if(!isGlVersionSupported(1, 4, 0)){
+	if(!getContextGl().isGlVersionSupported(1, 4, 0)){
 		checkExtension("GL_ARB_texture_env_crossbar", "Glest");
 	}
 }
@@ -2850,7 +2861,7 @@ void Renderer::checkGlOptionalCaps(){
 
 	//shadows
 	if(shadows==sProjected || shadows==sShadowMapping){
-		if(getGlMaxTextureUnits()<3){
+		if(getContextGl().getGlMaxTextureUnits()<3){
 			throw runtime_error("Your system doesn't support 3 texture units, required for shadows");
 		}
 	}
@@ -2863,7 +2874,7 @@ void Renderer::checkGlOptionalCaps(){
 }
 
 void Renderer::checkExtension(const string &extension, const string &msg){
-	if(!isGlExtensionSupported(extension.c_str())){
+	if(!getContextGl().isGlExtensionSupported(extension.c_str())){
 		string str= "OpenGL extension not supported: " + extension +  ", required for " + msg;
 		throw runtime_error(str);
 	}
@@ -2999,7 +3010,7 @@ void Renderer::init3dListMenu(MainMenu &mm) {
     assertGl();
 
 	const Metrics &metrics= theMetrics;
-	const MenuBackground *mb= mm->getMenuBackground();
+	const MenuBackground *mb= mm.getMenuBackground();
 
 	list3dMenu= glGenLists(1);
 	glNewList(list3dMenu, GL_COMPILE);
@@ -3150,7 +3161,7 @@ void Renderer::renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &co
 	glEnd();
 }
 
-void Renderer::renderProgressBar(int size, int x, int y, Font2D *font){
+void Renderer::renderProgressBar(int size, int x, int y, const Font2D *font){
 
 	//bar
 	glBegin(GL_QUADS);
@@ -3184,7 +3195,7 @@ void Renderer::renderProgressBar(int size, int x, int y, Font2D *font){
 
 void Renderer::renderTile(const Vec2i &pos){
 
-	const Map *map= game->getWorld()->getMap();
+	//const Map *map= game->getWorld()->getMap();
 	Vec2i scaledPos= pos * Map::cellScale;
 
 	glMatrixMode(GL_MODELVIEW);
@@ -3291,11 +3302,11 @@ void Renderer::renderLoadingScreen(const vector<string> &lines) {
 	renderBackground(theCoreData.getBackgroundTexture());
 
 	renderText(
-		state, coreData.getMenuFontBig(), Vec3f(1.f),
-		metrics.getVirtualW() / 4, 75*metrics.getVirtualH() / 100, false);
+		"this is supposed to be the console", coreData.getMenuFontBig(), Vec3f(1.f),
+		metrics.getVirtualW() / 4, 75 * metrics.getVirtualH() / 100, false);
 	//if (loadingGame) {
 		int offset = 0;
-		Font2D *font = coreData.getMenuFontNormal();
+		const Font2D *font = coreData.getMenuFontNormal();
 		for(int i = lines.size() - 1; i >= 0; --i) {
 		//for (Strings::reverse_iterator it = logLines.rbegin(); it != logLines.rend(); ++it) {
 			float alpha = offset == 0 ? 1.0f : 0.8f - 0.8f * static_cast<float>(offset) / lines.size();

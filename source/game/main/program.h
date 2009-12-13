@@ -35,8 +35,8 @@ public:
 
 private:
 	Config config;
-	Console console;
 	Lang lang;
+	Console console;
 	Program::LaunchType launchType;
 
 	static Program *singleton;				/**< The one and only Program object. */

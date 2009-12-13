@@ -15,6 +15,9 @@
 #include <string>
 #include <vector>
 
+// work-around for nasty bug! http://thread.gmane.org/gmane.comp.lib.boost.user/47996
+#include <boost/foreach.hpp>
+
 #include <wx/wx.h>
 #include <wx/glcanvas.h>
 

@@ -17,10 +17,14 @@
 #include <stdexcept>
 #include <cassert>
 
+// work-around for nasty bug! http://thread.gmane.org/gmane.comp.lib.boost.user/47996
+#include <boost/foreach.hpp>
+
 #include <SDL.h>
 #ifdef X11_AVAILABLE
 #include <GL/glx.h>
 #endif
+
 
 #include "exception_base.h"
 #include "opengl.h"

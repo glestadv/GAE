@@ -174,7 +174,7 @@ void ScriptManager::init() {
 // ========================== events ===============================================
 
 void ScriptManager::onMessageBoxOk() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = Lang::getInstance();
 
 	if (!messageQueue.empty()) {
 		messageQueue.pop();
@@ -367,7 +367,7 @@ int ScriptManager::stopTimer(LuaHandle* luaHandle) {
 
 int ScriptManager::showMessage(LuaHandle* luaHandle) {
 	LuaArguments luaArguments(luaHandle);
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = Lang::getInstance();
 	if (luaArguments.getArgumentCount() != 2) {
 		luaCppCallError("showMessage", "String, String", describeLuaStack(luaArguments));
 		return luaArguments.getReturnCount();
@@ -418,7 +418,7 @@ int ScriptManager::setCameraPosition(LuaHandle* luaHandle) {
 	}
 	try {
 		Vec2i pos(luaArguments.getVec2i(-1));
-		theCamera.centerXZ((float)pos.x, (float)pos.y);
+		const_cast<GameCamera *>(theCamera)->centerXZ((float)pos.x, (float)pos.y);
 	} catch (LuaError e) {
 		luaCppCallError("setCameraPosition", "Table", describeLuaStack(luaArguments), e.desc());
 	}

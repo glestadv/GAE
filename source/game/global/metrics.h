@@ -32,11 +32,13 @@ private:
 	int minimapH;
 	int displayX;
 	int displayY;
-	int displayH;
 	int displayW;
+	int displayH;
 
 public:
 	Metrics(int screenW, int screenH);
+
+	static const Metrics &getInstance();
 
 	int getScreenW() const	{return screenW;}
 	int getScreenH() const	{return screenH;}

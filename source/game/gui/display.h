@@ -62,7 +62,7 @@ private:
 	int downSelectedPos;
 
 public:
-	Display();
+	Display(const Metrics &metrics);
 
 	//get
 	string getTitle() const							{return title;}

@@ -1,7 +1,7 @@
 // ==============================================================
-//	This file is part of Glest Shared Library (www.glest.org)
+//	This file is part of the Glest Advanced Engine (www.glest.org)
 //
-//	Copyright (C) 2009 Daniel Santos
+//	Copyright (C) 2009 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -11,6 +11,24 @@
 
 #include "pch.h"
 #include "collections.h"
+
+namespace Shared { namespace Util {
+
+// =====================================================
+// class SelectionContainer
+// =====================================================
+#if 0
+SelectionContainer::~SelectionContainer() {
+}
+
+void SelectionContainer::manage(Selection *item) {
+	if(managedItems.count(item)) {
+		throw range_error("Item already exists in SelectionContainer!");
+	}
+	managedItems[item] = shared_ptr<Selection>(item);
+}
+#endif
+
 #if 0
 #include "sound.h"
 
@@ -22,7 +40,6 @@
 
 #include "leak_dumper.h"
 
-namespace Shared { namespace Sound {
 
 // =====================================================
 // class SerialList
@@ -89,3 +106,5 @@ const Selector<T> *RandomList::getSound() const {
 	return lastItem->getSound();
 }
 #endif
+
+}} // end namespace

@@ -42,7 +42,7 @@ Lang::Lang()
 		, scenarioStrings() {
 }
 
-static Lang &Lang::getInstance() {
+const Lang &Lang::getInstance() {
 	return Program::getInstance().getLang();
 }
 

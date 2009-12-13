@@ -31,59 +31,58 @@ namespace Glest{ namespace Game{
 // 	class AmbientSounds
 // =====================================================
 
-void AmbientSounds::load(const string &dir, const XmlNode *xmlNode){
+void AmbientSounds::load(const string &dir, const XmlNode *xmlNode) {
 	string path;
 
 	//day
-	const XmlNode *dayNode= xmlNode->getChild("day-sound");
-	enabledDay= dayNode->getAttribute("enabled")->getBoolValue();
-	if(enabledDay){
-		path= dayNode->getAttribute("path")->getRestrictedValue();
-		day.open(dir + "/" + path);
-		alwaysPlayDay= dayNode->getAttribute("play-always")->getBoolValue();
+	const XmlNode *dayNode = xmlNode->getChild("day-sound");
+	enabledDay = dayNode->getBoolAttribute("enabled");
+	if (enabledDay) {
+		path = dayNode->getRestrictedAttribute("path");
+		day = shared_ptr<StreamSound>(new StreamSound(dir + "/" + path));
+		alwaysPlayDay = dayNode->getAttribute("play-always")->getBoolValue();
 	}
 
 	//night
-	const XmlNode *nightNode= xmlNode->getChild("night-sound");
-	enabledNight= nightNode->getAttribute("enabled")->getBoolValue();
-	if(enabledNight){
-		path= nightNode->getAttribute("path")->getRestrictedValue();
-		night.open(dir + "/" + path);
-		alwaysPlayNight= nightNode->getAttribute("play-always")->getBoolValue();
+	const XmlNode *nightNode = xmlNode->getChild("night-sound");
+	enabledNight = nightNode->getBoolAttribute("enabled");
+	if (enabledNight) {
+		path = nightNode->getRestrictedAttribute("path");
+		night = shared_ptr<StreamSound>(new StreamSound(dir + "/" + path));
+		alwaysPlayNight = nightNode->getAttribute("play-always")->getBoolValue();
 	}
 
 	//rain
-	const XmlNode *rainNode= xmlNode->getChild("rain-sound");
-	enabledRain= rainNode->getAttribute("enabled")->getBoolValue();
-	if(enabledRain){
-		path= rainNode->getAttribute("path")->getRestrictedValue();
-		rain.open(dir + "/" + path);
+	const XmlNode *rainNode = xmlNode->getChild("rain-sound");
+	enabledRain = rainNode->getBoolAttribute("enabled");
+	if (enabledRain) {
+		path = rainNode->getRestrictedAttribute("path");
+		rain = shared_ptr<StreamSound>(new StreamSound(dir + "/" + path));
 	}
 
 	//snow
-	const XmlNode *snowNode= xmlNode->getChild("snow-sound");
-	enabledSnow= snowNode->getAttribute("enabled")->getBoolValue();
-	if(enabledSnow){
-		path= snowNode->getAttribute("path")->getRestrictedValue();
-		snow.open(dir + "/" + path);
+	const XmlNode *snowNode = xmlNode->getChild("snow-sound");
+	enabledSnow = snowNode->getBoolAttribute("enabled");
+	if (enabledSnow) {
+		path = snowNode->getRestrictedAttribute("path");
+		snow = shared_ptr<StreamSound>(new StreamSound(dir + "/" + path));
 	}
 
 	//dayStart
-	const XmlNode *dayStartNode= xmlNode->getChild("day-start-sound");
-	enabledDayStart= dayStartNode->getAttribute("enabled")->getBoolValue();
-	if(enabledDayStart){
-		path= dayStartNode->getAttribute("path")->getRestrictedValue();
-		dayStart.load(dir + "/" + path);
+	const XmlNode *dayStartNode = xmlNode->getChild("day-start-sound");
+	enabledDayStart = dayStartNode->getBoolAttribute("enabled");
+	if (enabledDayStart) {
+		path = dayStartNode->getRestrictedAttribute("path");
+		dayStart = shared_ptr<StaticSound>(new StaticSound(dir + "/" + path));
 	}
 
 	//nightStart
-	const XmlNode *nightStartNode= xmlNode->getChild("night-start-sound");
-	enabledNightStart= nightStartNode->getAttribute("enabled")->getBoolValue();
-	if(enabledNightStart){
-		path= nightStartNode->getAttribute("path")->getRestrictedValue();
-		nightStart.load(dir + "/" + path);
+	const XmlNode *nightStartNode = xmlNode->getChild("night-start-sound");
+	enabledNightStart = nightStartNode->getBoolAttribute("enabled");
+	if (enabledNightStart) {
+		path = nightStartNode->getRestrictedAttribute("path");
+		nightStart = shared_ptr<StaticSound>(new StaticSound(dir + "/" + path));
 	}
-
 }
 
 // =====================================================
@@ -161,7 +160,7 @@ void Tileset::load(const string &dir, Checksum &checksum, GraphicsFactory &graph
 
 		//water
 		const XmlNode *waterNode= parametersNode->getChild("water");
-		waterTex= graphicsFactory.newTexture3D(rsGame);
+		waterTex= Renderer::getInstance().newTexture3D(rsGame);
 		waterTex->setMipmap(false);
 		waterTex->setWrapMode(Texture::WRAP_MODE_REPEAT);
 		waterEffects= waterNode->getAttribute("effects")->getBoolValue();

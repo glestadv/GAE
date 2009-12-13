@@ -17,13 +17,16 @@
 #include "sound.h"
 #include "font.h"
 #include "texture.h"
-#include "sound_container.h"
+//#include "sound_container.h"
+#include "collections.h"
+
 
 namespace Glest{ namespace Game{
 
 using Shared::Graphics::Texture2D;
 using Shared::Graphics::Texture3D;
 using Shared::Graphics::Font2D;
+using Shared::Sound::Sound;
 using Shared::Sound::StreamSound;
 using Shared::Sound::StaticSound;
 
@@ -37,13 +40,16 @@ class Config;
 // =====================================================
 
 class CoreData {
+public:
+	typedef Shared::Util::Selection<Sound> AbstractSoundSelection;
+
 private:
-    StreamSound introMusic;
-    StreamSound menuMusic;
+	SerialSelection<Sound> introMusic;
+	SerialSelection<Sound> menuMusic;
 	StaticSound clickSoundA;
     StaticSound clickSoundB;
     StaticSound clickSoundC;
-	SoundContainer waterSounds;
+	RandomSelection<Sound> waterSounds;
 
 	Texture2D *logoTexture;
     Texture2D *backgroundTexture;
@@ -68,6 +74,13 @@ public:
 
 	static const CoreData &getInstance();
 
+	const AbstractSoundSelection &getIntroMusic() const	{return introMusic;}
+	const AbstractSoundSelection &getMenuMusic() const	{return menuMusic;}
+    const StaticSound &getClickSoundA() const		{return clickSoundA;}
+    const StaticSound &getClickSoundB() const		{return clickSoundB;}
+    const StaticSound &getClickSoundC() const		{return clickSoundC;}
+	const Sound *getWaterSound() const				{return waterSounds.getNext();}
+
 	const Texture2D *getBackgroundTexture() const	{return backgroundTexture;}
 	const Texture2D *getFireTexture() const			{return fireTexture;}
 	const Texture2D *getSnowTexture() const			{return snowTexture;}
@@ -77,13 +90,6 @@ public:
 	const Texture2D *getButtonSmallTexture() const	{return buttonSmallTexture;}
 	const Texture2D *getButtonBigTexture() const	{return buttonBigTexture;}
 	const Texture2D *getTextEntryTexture() const	{return textEntryTexture;}
-
-	const StreamSound &getIntroMusic() const			{return introMusic;}
-	const StreamSound &getMenuMusic() const			{return menuMusic;}
-    const StaticSound &getClickSoundA() const		{return clickSoundA;}
-    const StaticSound &getClickSoundB() const		{return clickSoundB;}
-    const StaticSound &getClickSoundC() const		{return clickSoundC;}
-	const StaticSound &getWaterSound() const		{return *waterSounds.getRandSound();}
 
 	const Font2D *getDisplayFont() const			{return displayFont;}
     const Font2D *getMenuFontSmall() const			{return menuFontSmall;}

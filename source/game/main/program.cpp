@@ -19,13 +19,16 @@
 #endif
 #include <iostream>
 
+#include "logger.h"
+#include "platform_exception.h"
+
 #include "leak_dumper.h"
 
 
 using namespace Shared::Util;
+using Shared::Platform::SDLException;
 //using namespace Shared::Graphics;
 //using namespace Shared::Graphics::Gl;
-
 
 namespace Glest { namespace Game {
 
@@ -37,9 +40,8 @@ Program *Program::singleton = NULL;
 
 Program::Program(Program::LaunchType launchType)
 		: config("glestadv.ini")
-		, console(config)
 		, lang()
-		, dedicated(launchType == START_OPTION_DEDICATED ? true : false) {
+		, console(config, lang) {
 	lang.setLocale(config.getUiLocale());
 
 	//log start
@@ -49,7 +51,7 @@ Program::Program(Program::LaunchType launchType)
 	Logger::getErrorLog().clear();
 
 #if USE_SDL
-	if (SDL_Init(dedicated ? SDL_INIT_TIMER : SDL_INIT_EVERYTHING) < 0)  {
+	if (SDL_Init(isDedicated() ? SDL_INIT_TIMER : SDL_INIT_EVERYTHING) < 0)  {
 		throw SDLException("Couldn't initialize SDL", "SDL_Init", NULL, __FILE__, __LINE__);
 	}
 	SDL_EnableUNICODE(1);

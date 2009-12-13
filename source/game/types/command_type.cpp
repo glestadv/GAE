@@ -145,7 +145,7 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			if(unit->getLastCommandUpdate() > 250000) {
 				unitUpdater->updateStop(unit);
 				unit->resetLastCommandUpdated();
-			}			
+			}
 			break;
 
 		case ccMove:
@@ -160,7 +160,7 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			if(unit->getLastCommandUpdate() > 250000) {
 				unitUpdater->updateAttackStopped(unit);
 				unit->resetLastCommandUpdated();
-			}			
+			}
 			break;
 
 		case ccBuild:
@@ -246,7 +246,7 @@ bool MoveBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
 	bool loadOk = CommandType::load(n, dir, tt, ft);
 
 	//move
-   try { 
+   try {
 	   string skillName= n->getChild("move-skill")->getAttribute("value")->getRestrictedValue();
       const SkillType *st = unitType->getSkillType(skillName, scMove);
 	   moveSkillType= static_cast<const MoveSkillType*>(st);
@@ -296,7 +296,7 @@ bool AttackCommandTypeBase::load(const XmlNode *n, const string &dir, const Tech
          Logger::getErrorLog().addXmlError ( dir, e.what () );
          loadOk = false;
       }
-	} 
+	}
    else { //multiple attack skills
       try {
          const XmlNode *flagsNode;
@@ -400,7 +400,7 @@ bool BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree 
    }
 
 	//start sound
-   try { 
+   try {
 	   const XmlNode *startSoundNode= n->getChild("start-sound");
 	   if(startSoundNode->getAttribute("enabled")->getBoolValue()){
 		   startSounds.resize(startSoundNode->getChildCount());
@@ -453,7 +453,7 @@ bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
       loadOk = false;
    }
 	//stop loaded
-   try { 
+   try {
       skillName= n->getChild("stop-loaded-skill")->getAttribute("value")->getRestrictedValue();
       stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, scStop));
    }
@@ -472,7 +472,7 @@ bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
       loadOk = false;
    }
 	//resources can harvest
-   try { 
+   try {
 	   const XmlNode *resourcesNode= n->getChild("harvested-resources");
 	   for(int i=0; i<resourcesNode->getChildCount(); ++i){
 		   const XmlNode *resourceNode= resourcesNode->getChild("resource", i);
@@ -497,7 +497,7 @@ bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTre
 }
 
 void HarvestCommandType::getDesc(string &str, const Unit *unit) const{
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 
 	str+= lang.get("HarvestSpeed")+": "+ intToStr(harvestSkillType->getSpeed()/hitsPerUnit);
 	EnhancementTypeBase::describeModifier(str, (unit->getSpeed(harvestSkillType) - harvestSkillType->getSpeed())/hitsPerUnit);
@@ -552,7 +552,7 @@ bool RepairCommandType::load(const XmlNode *n, const string &dir, const TechTree
 }
 
 void RepairCommandType::getDesc(string &str, const Unit *unit) const{
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 
 	repairSkillType->getDesc(str, unit);
 
@@ -590,7 +590,7 @@ bool ProduceCommandType::load(const XmlNode *n, const string &dir, const TechTre
    bool loadOk = CommandType::load(n, dir, tt, ft);
 
 	//produce
-   try { 
+   try {
       string skillName= n->getChild("produce-skill")->getAttribute("value")->getRestrictedValue();
 	   produceSkillType= static_cast<const ProduceSkillType*>(unitType->getSkillType(skillName, scProduce));
    }
@@ -599,7 +599,7 @@ bool ProduceCommandType::load(const XmlNode *n, const string &dir, const TechTre
       loadOk = false;
    }
 
-   try { 
+   try {
       string producedUnitName= n->getChild("produced-unit")->getAttribute("name")->getRestrictedValue();
 	   producedUnit= ft->getUnitType(producedUnitName);
    }
@@ -693,7 +693,7 @@ bool MorphCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 }
 
 void MorphCommandType::getDesc(string &str, const Unit *unit) const{
-	Lang &lang= Lang::getInstance();
+	const Lang &lang= Lang::getInstance();
 
 	morphSkillType->getDesc(str, unit);
 

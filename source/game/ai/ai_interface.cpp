@@ -36,7 +36,7 @@ namespace Glest{ namespace Game{
 AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex){
 	this->world= game.getWorld();
 	this->commander= game.getCommander();
-	this->console= game.getConsole();
+	this->console= &game.getConsole();
 
 	this->factionIndex= factionIndex;
 	this->teamIndex= teamIndex;

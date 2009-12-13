@@ -49,11 +49,11 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 
 	XmlTree xmlTree;
    const XmlNode *upgradeNode;
-   try { 
+   try {
       xmlTree.load(path);
 	   upgradeNode= xmlTree.getRootNode();
    }
-   catch ( runtime_error e ) { 
+   catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what() );
       return false;
    }
@@ -63,7 +63,7 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 	   image= Renderer::getInstance().newTexture2D(rsGame);
 	   image->load(dir+"/"+imageNode->getAttribute("path")->getRestrictedValue());
    }
-   catch ( runtime_error e ) { 
+   catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what() );
       return false;
    }
@@ -73,21 +73,21 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 	   cancelImage= Renderer::getInstance().newTexture2D(rsGame);
 	   cancelImage->load(dir+"/"+imageCancelNode->getAttribute("path")->getRestrictedValue());
    }
-   catch ( runtime_error e ) { 
+   catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what() );
       return false;
    }
 
 	//upgrade time
    try { productionTime= upgradeNode->getChildIntValue("time"); }
-   catch ( runtime_error e ) { 
+   catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what() );
       return false;
    }
 
 	//ProducibleType parameters
    try { ProducibleType::load(upgradeNode, dir, techTree, factionType); }
-   catch ( runtime_error e ) { 
+   catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what() );
       return false;
    }
@@ -103,7 +103,7 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 		   }
 	   }
    }
-   catch ( runtime_error e ) { 
+   catch ( runtime_error e ) {
       Logger::getErrorLog().addXmlError ( dir, e.what() );
       return false;
    }
@@ -129,7 +129,7 @@ bool UpgradeType::load(const string &dir, const TechTree *techTree, const Factio
 }
 
 string UpgradeType::getDesc() const {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = Lang::getInstance();
 	string str = getReqDesc();
 
 	if(getEffectCount() > 0) {

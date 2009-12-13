@@ -37,8 +37,9 @@ namespace Glest { namespace Game {
 //  class BattleEnd
 // =====================================================
 
-BattleEnd::BattleEnd(GuiProgram &program)
-		: GuiProgramState(program) {
+BattleEnd::BattleEnd(GuiProgram &program, const Stats &stats)
+		: GuiProgramState(program)
+		, stats(stats) {
 }
 
 BattleEnd::~BattleEnd() {
@@ -48,7 +49,7 @@ BattleEnd::~BattleEnd() {
 void BattleEnd::update(){
 	//TOOD: add AutoTest to config
 	/*
-	if(theConfig.getMiscAutoTest()){
+	if(getConfig().getMiscAutoTest()){
 		AutoTest::getInstance().updateBattleEnd(program);
 	}*/
 }
@@ -67,15 +68,16 @@ void BattleEnd::render() {
 	int lm = 80;
 	int bm = 100;
 
-	foreach(const shared_ptr<GameSettings::Faction> &f, gs->getFactions()) {
-		int id = f->getId();
+	const GameSettings &gs = stats.getGameSettings();
 
-		int textX = lm + 300 + id * 120;
-		int team = f->getTeam().getId() + 1;
-		int kills = stats.getKills(id);
-		int deaths = stats.getDeaths(id);
-		int unitsProduced = stats.getUnitsProduced(id);
-		int resourcesHarvested = stats.getResourcesHarvested(id);
+	for (int i = 0; i < gs.getFactionCount(); ++i) {
+
+		int textX = lm + 300 + i * 120;
+		int team = gs.getTeam(i) + 1;
+		int kills = stats.getKills(i);
+		int deaths = stats.getDeaths(i);
+		int unitsProduced = stats.getUnitsProduced(i);
+		int resourcesHarvested = stats.getResourcesHarvested(i);
 
 		int score = kills * 100 + unitsProduced * 50 + resourcesHarvested / 10;
 		string controlString;
@@ -131,9 +133,9 @@ void BattleEnd::render() {
 
 	textRenderer->begin(getCoreData().getMenuFontVeryBig());
 
-	string header = gs->getDescription() + " - ";
+	string header = gs.getDescription() + " - ";
 
-	if (stats.getVictory(gs->getThisFactionId())) {
+	if (stats.getVictory(gs.getThisFactionIndex())) {
 		header += lang.get("Victory");
 	} else {
 		header += lang.get("Defeat");
@@ -147,12 +149,12 @@ void BattleEnd::render() {
 
 void BattleEnd::keyDown(const Key &key) {
 	if(!key.isModifier()) {
-		getProgram().setState(new MainMenu(getProgram()));
+		getGuiProgram().setState(new MainMenu(getGuiProgram()));
 	}
 }
 
 void BattleEnd::mouseDownLeft(int x, int y) {
-	getProgram().setState(new MainMenu(getProgram()));
+	getGuiProgram().setState(new MainMenu(getGuiProgram()));
 }
 
 }}//end namespace

@@ -31,7 +31,7 @@ class Sound;
 // class Sound
 // =====================================================
 
-class Sound : public Selector<Sound> {
+class Sound /*: public Selector<Sound> */{
 private:
 	string path;
 	uint32 channels;
@@ -43,7 +43,7 @@ public:
 	Sound(const string &path);
 	virtual ~Sound() {};
 
-	const Sound *getSelection() const	{return this;}
+//	const Sound *getSelection() const	{return this;}
 	const string &getPath() const		{return path;}
 	uint32 getChannels() const			{return channels;}
 	uint32 getSamplesPerSecond() const	{return samplesPerSecond;}

@@ -14,10 +14,10 @@
 
 #include "leak_dumper.h"
 
-namespace Game {
+namespace Glest { namespace Game {
 
 int ConsoleProgram::main() {
 	return 0;
 }
 
-} // end namespace
+}} // end namespace

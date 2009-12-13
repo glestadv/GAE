@@ -180,7 +180,7 @@ bool UnitStatsBase::load(const XmlNode *baseNode, const string &dir, const TechT
 	   //epRegeneration
 	   if (maxEp) {
 		   epRegeneration = baseNode->getChild("max-ep")->getIntAttribute("regeneration");
-	   } 
+	   }
       else {
 		   XmlAttribute *epRegenAttr = baseNode->getChild("max-ep")->getAttribute("regeneration", false);
 		   epRegeneration = epRegenAttr ? epRegenAttr->getIntValue() : 0;
@@ -330,7 +330,7 @@ void EnhancementTypeBase::addMultipliers(const EnhancementTypeBase &e, float str
 
 /*inline */void EnhancementTypeBase::formatModifier(string &str, const char *pre, const char* label,
 		int value, float multiplier) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = Lang::getInstance();
 
 	if (value) {
 		str += pre + lang.get(label) + ": ";

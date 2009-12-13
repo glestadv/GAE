@@ -26,7 +26,7 @@ namespace Glest { namespace Game {
 //  class Display
 // =====================================================
 
-Display::Display() {
+Display::Display(const Metrics &metrics) : metrics(metrics) {
 	colors[0] = Vec3f(1.f, 1.f, 1.f);
 	colors[1] = Vec3f(1.f, 0.5f, 0.5f);
 	colors[2] = Vec3f(0.f, 1.f, 0.f);

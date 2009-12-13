@@ -68,7 +68,7 @@ Intro::Intro(GuiProgram &program) : GuiProgramState(program) {
 	timer=0;
 
 	texts.push_back(Text(coreData.getLogoTexture(), Vec2i(w/2-128, h/2-64), Vec2i(256, 128), 4000));
-	texts.push_back(Text("Advanced Engine " + gaeVersionString, Vec2i(w / 2 + 80, h / 2 - 32), 4000, coreData.getMenuFontNormal()));
+	texts.push_back(Text("Advanced Engine " + getGaeVersion().toString(), Vec2i(w / 2 + 80, h / 2 - 32), 4000, coreData.getMenuFontNormal()));
 	texts.push_back(Text("www.glest.org", Vec2i(w/2, h/2), 12000, coreData.getMenuFontVeryBig()));
 	SoundRenderer &soundRenderer= theSoundRenderer;
 	soundRenderer.playMusic(theCoreData.getIntroMusic());

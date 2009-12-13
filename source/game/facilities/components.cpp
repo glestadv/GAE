@@ -217,7 +217,7 @@ void GraphicMessageBox::layout() {
 	w = max(defW, (int)roundf(dim.x * 0.7f + defW / 16.f));
 	h = max(defH, (int)roundf(dim.y * 1.75f + defH * 0.5f));
 
-	const Metrics &metrics = theMetrics;
+	const Metrics &metrics = Metrics::getInstance();
 
 	x = (metrics.getVirtualW() - w) / 2;
 	y = (metrics.getVirtualH() - h) / 2;
@@ -327,7 +327,7 @@ void GraphicTextEntryBox::init(const string &button1Str, const string &button2St
 	h = defH;
 	w = defW;
 
-	const Metrics &metrics = theMetrics;
+	const Metrics &metrics = Metrics::getInstance();
 
 	x = (metrics.getVirtualW() - w) / 2;
 	y = (metrics.getVirtualH() - h) / 2;;

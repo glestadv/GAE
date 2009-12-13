@@ -47,7 +47,7 @@ void ChatManager::init(Console* console, int thisTeamIndex) {
 
 /** @return true if the keystroke was used or will be used when keyPressed is called. */
 bool ChatManager::keyDown(const Key &key) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = Lang::getInstance();
 	bool keyUsed = false;
 
 

@@ -14,7 +14,6 @@
 
 #include "graphics_factory.h"
 
-
 namespace Shared { namespace Graphics { namespace Gl {
 
 class ContextGl;

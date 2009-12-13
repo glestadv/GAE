@@ -48,7 +48,7 @@ namespace Glest { namespace Game {
 MainMenu::MainMenu(GuiProgram &program)
 		: GuiProgramState(program)
 		, gameSettings()
-		, menuBackground(program.getConfig())
+		, menuBackground(getConfig(), getRenderer())
 		, state(NULL)
 		, mouseX(100)
 		, mouseY(100)

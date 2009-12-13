@@ -42,7 +42,7 @@ shared_ptr<SoundFileLoader> SoundFileLoader::open(const Sound &sound, bool initS
 // class WavSoundFileLoader
 // =====================================================
 // FIXME: Non-portable code! This code will not work on PPC or ARM!!
-void WavSoundFileLoader::WavSoundFileLoader(const Sound &sound, bool initSoundObject)
+WavSoundFileLoader::WavSoundFileLoader(const Sound &sound, bool initSoundObject)
 		: SoundFileLoader()
 		, dataOffset(0)
 		, dataSize(0)

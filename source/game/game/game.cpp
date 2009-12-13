@@ -144,7 +144,7 @@ void Game::load(){
 
 	//scenario
 	if(!scenarioName.empty()){
-		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
+		getNonConstLang().loadScenarioStrings(scenarioPath, scenarioName);
 		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksum);
 	}
 }
@@ -334,7 +334,7 @@ void Game::update() {
 }
 
 void Game::displayError(SocketException &e) {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	paused = true;
 	stringstream errmsg;
 	char buf[512];
@@ -496,7 +496,7 @@ void Game::eventMouseWheel(int x, int y, int zDelta) {
 
 void Game::keyDown(const Key &key) {
 	UserCommand cmd = keymap.getCommand(key);
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	bool isNetworkGame = NetworkManager::getInstance().isNetworkGame();
 	bool speedChangesAllowed = !isNetworkGame;
 
@@ -749,7 +749,7 @@ void Game::keyPress(char c) {
 }
 
 void Game::quitGame(){
-	program.setState(new BattleEnd(getGuiProgram(), world.getStats()));
+	getGuiProgram().setState(new BattleEnd(getGuiProgram(), world.getStats()));
 }
 
 // ==================== PRIVATE ====================
@@ -892,7 +892,7 @@ void Game::render2d(){
 	//resource info
 	if(!config.getUiPhotoMode()){
 		renderer.renderResourceStatus();
-		renderer.renderConsole(&console);
+		renderer.renderConsole(getConsole());
 	}
 
 	//2d mouse
@@ -982,8 +982,8 @@ bool Game::hasBuilding(const Faction *faction){
 }
 
 void Game::updateSpeed() {
-	Lang &lang= Lang::getInstance();
-	console.addLine(lang.get("GameSpeedSet") + " " + lang.get(SpeedDesc[speed]));
+	const Lang &lang = getLang();
+	getConsole().addLine(lang.get("GameSpeedSet") + " " + lang.get(SpeedDesc[speed]));
 	if(speed == sNormal) {
 		fUpdateLoops = 1.0f;
 	} else if(speed > sNormal) {
@@ -1025,12 +1025,12 @@ int Game::getUpdateLoops() {
 }
 
 void Game::showLoseMessageBox() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	showMessageBox(lang.get("YouLose") + ", " + lang.get("ExitGame?"), lang.get("BattleOver"), false);
 }
 
 void Game::showWinMessageBox() {
-	Lang &lang = Lang::getInstance();
+	const Lang &lang = getLang();
 	showMessageBox(lang.get("YouWin") + ", " + lang.get("ExitGame?"), lang.get("BattleOver"), false);
 }
 

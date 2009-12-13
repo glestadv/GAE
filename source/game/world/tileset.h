@@ -64,12 +64,12 @@ private:
 	bool enabledNightStart;
 	bool alwaysPlayDay;
 	bool alwaysPlayNight;
-	StreamSound day;
-	StreamSound night;
-	StreamSound rain;
-	StreamSound snow;
-	StaticSound dayStart;
-	StaticSound nightStart;
+	shared_ptr<StreamSound> day;
+	shared_ptr<StreamSound> night;
+	shared_ptr<StreamSound> rain;
+	shared_ptr<StreamSound> snow;
+	shared_ptr<StaticSound> dayStart;
+	shared_ptr<StaticSound> nightStart;
 
 public:
 	bool isEnabledDay() const			{return enabledDay;}
@@ -81,12 +81,12 @@ public:
 	bool getAlwaysPlayDay() const		{return alwaysPlayDay;}
 	bool getAlwaysPlayNight() const		{return alwaysPlayNight;}
 
-	const StreamSound &getDay() const				{return day;}
-	const StreamSound &getNight() const			{return night;}
-	const StreamSound &getRain() const				{return rain;}
-	const StreamSound &getSnow() const				{return snow;}
-	const StaticSound &getDayStart() const		{return dayStart;}
-	const StaticSound &getNightStart() const	{return nightStart;}
+	const StreamSound &getDay() const			{assert(day.get()); return *day;}
+	const StreamSound &getNight() const			{assert(night.get()); return *night;}
+	const StreamSound &getRain() const			{assert(rain.get()); return *rain;}
+	const StreamSound &getSnow() const			{assert(snow.get()); return *snow;}
+	const StaticSound &getDayStart() const		{assert(dayStart.get()); return *dayStart;}
+	const StaticSound &getNightStart() const	{assert(nightStart.get()); return *nightStart;}
 
 	void load(const string &dir, const XmlNode *xmlNode);
 };
