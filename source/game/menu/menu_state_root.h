@@ -22,24 +22,29 @@ namespace Glest { namespace Game {
 
 class MenuStateRoot: public MenuState {
 private:
-	GraphicButton buttonNewGame;
-	GraphicButton buttonJoinGame;
-	GraphicButton buttonScenario;
-	GraphicButton buttonLoadGame;
-	GraphicButton buttonOptions;
-	GraphicButton buttonAbout;
-	GraphicButton buttonExit;
 	GraphicLabel labelVersion;
+
+	CEGUI::Window* btnNewGame;
+	CEGUI::Window* btnJoinGame;
+	CEGUI::Window* btnScenario;
+	CEGUI::Window* btnLoadGame;
+	CEGUI::Window* btnOptions;
+	CEGUI::Window* btnAbout;
+	CEGUI::Window* btnExit;
 
 private:
 	MenuStateRoot(const MenuStateRoot &);
 	const MenuStateRoot &operator =(const MenuStateRoot &);
+
+	void registerButtonEvent(CEGUI::Window *button);
+	bool MenuStateRoot::handleButtonClick(const CEGUI::EventArgs& ea);
 
 public:
 	MenuStateRoot(Program &program, MainMenu *mainMenu);
 
 	void mouseClick(int x, int y, MouseButton mouseButton);
 	void mouseMove(int x, int y, const MouseState &mouseState);
+	void init();
 	void render();
 	void update();
 };

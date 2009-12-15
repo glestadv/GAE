@@ -2,6 +2,7 @@
 //	This file is part of Glest (www.glest.org)
 //
 //	Copyright (C) 2001-2005 Martiño Figueroa
+//							Nathan Turner <hailstone>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -39,73 +40,92 @@ namespace Glest{ namespace Game{
 MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu):
 	MenuState(program, mainMenu, "root")
 {
-	Lang &lang= Lang::getInstance();
-
-	buttonNewGame.init(425, 370, 150);
-    buttonJoinGame.init(425, 330, 150);
-    buttonScenario.init(425, 290, 150);
-	buttonLoadGame.init(425, 250, 150);
-    buttonOptions.init(425, 210, 150);
-    buttonAbout.init(425, 170, 150);
-    buttonExit.init(425, 130, 150);
 	labelVersion.init(520, 460);
-
-	buttonNewGame.setText(lang.get("NewGame"));
-	buttonJoinGame.setText(lang.get("JoinGame"));
-	buttonScenario.setText(lang.get("Scenario"));
-	buttonLoadGame.setText(lang.get("LoadGame"));
-	buttonOptions.setText(lang.get("Options"));
-	buttonAbout.setText(lang.get("About"));
-	buttonExit.setText(lang.get("Exit"));
 	labelVersion.setText("Advanced Engine " + gaeVersionString);
 
 	// end network interface
 	NetworkManager::getInstance().end();
 }
 
-void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton){
+void MenuStateRoot::init() {
+	// Setup CEGUI Window
+	CEGUI::WindowManager &wmgr = CEGUI::WindowManager::getSingleton();
+	CEGUI::Window* myRoot = wmgr.loadWindowLayout("menu_state_root.layout");
+	CEGUI::System::getSingleton().setGUISheet(myRoot);
 
-	CoreData &coreData=  CoreData::getInstance();
-	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+	btnNewGame = wmgr.getWindow("new_game");
+	btnJoinGame = wmgr.getWindow("join_game");
+	btnScenario = wmgr.getWindow("scenario");
+	btnLoadGame = wmgr.getWindow("load_game");
+	btnOptions = wmgr.getWindow("options");
+	btnAbout = wmgr.getWindow("about");
+	btnExit = wmgr.getWindow("exit");
 
-	if(buttonNewGame.mouseClick(x, y)){
-		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateNewGame(program, mainMenu));
-    }
-	else if(buttonJoinGame.mouseClick(x, y)){
-		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateJoinGame(program, mainMenu));
-    }
-	else if(buttonScenario.mouseClick(x, y)){
-		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateScenario(program, mainMenu));
-    }
-    else if(buttonOptions.mouseClick(x, y)){
-		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateOptions(program, mainMenu));
-    }
-	else if(buttonLoadGame.mouseClick(x, y)){
-		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateLoadGame(program, mainMenu));
-	}
-    else if(buttonAbout.mouseClick(x, y)){
-		soundRenderer.playFx(coreData.getClickSoundB());
-		mainMenu->setState(new MenuStateAbout(program, mainMenu));
-    }
-    else if(buttonExit.mouseClick(x, y)){
+	//set text
+	Lang &lang= Lang::getInstance();
+	btnNewGame->setText(lang.get("NewGame"));
+	btnJoinGame->setText(lang.get("JoinGame"));
+	btnScenario->setText(lang.get("Scenario"));
+	btnLoadGame->setText(lang.get("LoadGame"));
+	btnOptions->setText(lang.get("Options"));
+	btnAbout->setText(lang.get("About"));
+	btnExit->setText(lang.get("Exit"));
+
+	//setup slots
+	registerButtonEvent(btnNewGame);
+	registerButtonEvent(btnJoinGame);
+	registerButtonEvent(btnScenario);
+	registerButtonEvent(btnLoadGame);
+	registerButtonEvent(btnOptions);
+	registerButtonEvent(btnAbout);
+	registerButtonEvent(btnExit);
+}
+
+void MenuStateRoot::registerButtonEvent(CEGUI::Window *button) {
+	button->subscribeEvent(CEGUI::PushButton::EventClicked, 
+		CEGUI::Event::Subscriber(&MenuStateRoot::handleButtonClick, this));
+}
+
+//Events
+bool MenuStateRoot::handleButtonClick(const CEGUI::EventArgs& ea) {
+	SoundRenderer &soundRenderer = SoundRenderer::getInstance();
+	CoreData &coreData = CoreData::getInstance();
+
+	// find the calling component
+	const CEGUI::Window *window = static_cast<const CEGUI::WindowEventArgs&>(ea).window;
+
+	if (window == btnExit) {
 		soundRenderer.playFx(coreData.getClickSoundA());
 		program.exit();
-    }
+		
+		return true;
+	}
+
+	soundRenderer.playFx(coreData.getClickSoundB());
+	
+	if (window == btnNewGame) {
+		mainMenu->setState(new MenuStateNewGame(program, mainMenu));
+	} else if (window == btnJoinGame) {
+		mainMenu->setState(new MenuStateJoinGame(program, mainMenu));
+	} else if (window == btnScenario) {
+		mainMenu->setState(new MenuStateScenario(program, mainMenu));
+	} else if (window == btnLoadGame) {
+		mainMenu->setState(new MenuStateLoadGame(program, mainMenu));
+	} else if (window == btnOptions) {
+		mainMenu->setState(new MenuStateOptions(program, mainMenu));
+	} else if (window == btnAbout) {
+		mainMenu->setState(new MenuStateAbout(program, mainMenu));
+	}
+
+	return true;
+}
+
+void MenuStateRoot::mouseClick(int x, int y, MouseButton mouseButton){
+
 }
 
 void MenuStateRoot::mouseMove(int x, int y, const MouseState &ms){
-	buttonNewGame.mouseMove(x, y);
-    buttonJoinGame.mouseMove(x, y);
-    buttonScenario.mouseMove(x, y);
-	buttonLoadGame.mouseMove(x, y);
-    buttonOptions.mouseMove(x, y);
-    buttonAbout.mouseMove(x, y);
-    buttonExit.mouseMove(x,y);
+
 }
 
 void MenuStateRoot::render(){
@@ -119,13 +139,7 @@ void MenuStateRoot::render(){
 	renderer.renderTextureQuad(
 		(metrics.getVirtualW()-w)/2, 495-h/2, w, h,
 		coreData.getLogoTexture(), GraphicComponent::getFade());
-	renderer.renderButton(&buttonNewGame);
-	renderer.renderButton(&buttonJoinGame);
-	renderer.renderButton(&buttonScenario);
-	renderer.renderButton(&buttonLoadGame);
-	renderer.renderButton(&buttonOptions);
-	renderer.renderButton(&buttonAbout);
-	renderer.renderButton(&buttonExit);
+	
 	renderer.renderLabel(&labelVersion);
 }
 

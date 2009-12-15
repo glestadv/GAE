@@ -113,6 +113,7 @@ private:
 public:
 	MenuState(Program &program, MainMenu *mainMenu, const string &stateName);
 	virtual ~MenuState(){}
+	virtual void init() {}
 	virtual void mouseClick(int x, int y, MouseButton mouseButton) = 0;
 	virtual void mouseMove(int x, int y, const MouseState &mouseState) = 0;
 	virtual void render() = 0;

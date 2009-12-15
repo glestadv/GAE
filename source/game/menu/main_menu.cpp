@@ -92,6 +92,8 @@ void MainMenu::render() {
 	state->render();
 	renderer.renderMouse2d(mouseX, mouseY, mouse2dAnim);
 
+	CEGUI::System::getSingleton().renderGUI();
+
 	if (config.getMiscDebugMode()) {
 		renderer.renderText(
 				"FPS: " + intToStr(lastFps),
@@ -144,6 +146,11 @@ void MainMenu::setState(MenuState *state) {
 	GraphicComponent::resetFade();
 
 	menuBackground.setTargetCamera(state->getCamera());
+
+	// FIXME: hide/show might be better then destroy/create
+	// TODO: make sure memory leaks aren't created here.
+	CEGUI::WindowManager::getSingleton().destroyAllWindows();
+	state->init();
 }
 
 

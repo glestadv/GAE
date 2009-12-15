@@ -21,6 +21,9 @@
 #include "components.h"
 #include "keymap.h"
 
+// CEGUI
+#include "CEGUI/CEGui.h"
+
 /*
 using Shared::Graphics::Context;
 using Shared::Platform::WindowGl;
@@ -30,6 +33,11 @@ using Shared::Platform::PerformanceTimer;
 using Shared::Platform::Ip;
 */
 using namespace Shared::Platform;
+
+namespace CEGUI {
+class OpenGLRenderer;
+class System;
+}
 
 namespace Glest { namespace Game {
 
@@ -108,6 +116,9 @@ private:
 	bool crashed;
 	Keymap keymap;
 
+	CEGUI::OpenGLRenderer *guiRenderer;
+	CEGUI::System *guiSystem;
+
 private:
 	Program(const Program &);
 	const Program &operator =(const Program &);
@@ -126,9 +137,11 @@ public:
 
 		switch(mouseButton) {
 		case mbLeft:
+			CEGUI::System::getSingleton().injectMouseButtonDown(CEGUI::LeftButton);
 			programState->mouseDownLeft(vx, vy);
 			break;
 		case mbRight:
+			CEGUI::System::getSingleton().injectMouseButtonDown(CEGUI::RightButton);
 			programState->mouseDownRight(vx, vy);
 			break;
 		case mbCenter:
@@ -146,9 +159,11 @@ public:
 
 		switch(mouseButton) {
 		case mbLeft:
+			CEGUI::System::getSingleton().injectMouseButtonUp(CEGUI::LeftButton);
 			programState->mouseUpLeft(vx, vy);
 			break;
 		case mbRight:
+			CEGUI::System::getSingleton().injectMouseButtonUp(CEGUI::RightButton);
 			programState->mouseUpRight(vx, vy);
 			break;
 		case mbCenter:
@@ -164,6 +179,7 @@ public:
 		int vx = metrics.toVirtualX(x);
 		int vy = metrics.toVirtualY(getH() - y);
 
+		CEGUI::System::getSingleton().injectMousePosition(static_cast<float>(x), static_cast<float>(y));
 		programState->mouseMove(vx, vy, ms);
 	}
 
@@ -197,8 +213,16 @@ public:
 
 	// FIXME: using both left & right alt/control/shift at the same time will cause these to be
 	// incorrect on some platforms (not sure that anybody cares though).
-	virtual void eventKeyDown(const Key &key)	{programState->keyDown(key);}
-	virtual void eventKeyUp(const Key &key)		{programState->keyUp(key);}
+	virtual void eventKeyDown(const Key &key)	{
+		// TODO: key needs translation for CEGUI (ie direct input scan codes)
+		//http://www.cegui.org.uk/wiki/index.php/The_Beginner_Guide_to_Injecting_Inputs
+		//CEGUI::System::getSingleton().injectKeyDown(key.getCode());
+		programState->keyDown(key);
+	}
+	virtual void eventKeyUp(const Key &key)		{
+		//CEGUI::System::getSingleton().injectKeyUp(key.getCode());
+		programState->keyUp(key);
+	}
 	virtual void eventKeyPress(char c)			{programState->keyPress(c);}
 
 	virtual void eventActivate(bool active) {
@@ -230,6 +254,7 @@ public:
 	void resetTimers();
 
 private:
+	void loadGui();
 	void setDisplaySettings();
 	void restoreDisplaySettings();
 };

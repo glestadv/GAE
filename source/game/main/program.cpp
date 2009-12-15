@@ -31,6 +31,8 @@
 
 #include "leak_dumper.h"
 
+#include <CEGUI/CEGUIDefaultResourceProvider.h>
+#include "CEGUI/RendererModules/OpenGL/CEGUIOpenGLRenderer.h"
 
 using namespace Shared::Util;
 using namespace Shared::Graphics;
@@ -141,6 +143,8 @@ Program::Program(Config &config, int argc, char** argv) :
 
 	keymap.save("keymap.ini");
 
+	loadGui();
+
 	// startup and immediately host a game
 	if(argc == 2 && string(argv[1]) == "-server") {
 		MainMenu* mainMenu = new MainMenu(*this);
@@ -172,6 +176,9 @@ Program::~Program() {
 
 	//restore video mode
 	restoreDisplaySettings();
+
+	//delete guiRenderer;
+	//delete guiSystem;
 }
 
 void Program::loop() {
@@ -255,6 +262,53 @@ void Program::resetTimers() {
 }
 
 // ==================== PRIVATE ====================
+
+void Program::loadGui() {
+	// TODO: move to gui when it's not as reliant on game
+	const Metrics &metrics = Metrics::getInstance();
+
+	using namespace CEGUI;
+
+	try
+	{
+		guiRenderer = &CEGUI::OpenGLRenderer::create(CEGUI::Size(metrics.getScreenW(), metrics.getScreenH()));//new CEGUI::OpenGLRenderer(CEGUI::Size(metrics.getScreenW(), metrics.getScreenH()), 0);	
+		//guiSystem = new CEGUI::System(guiRenderer);
+		CEGUI::System::create(*guiRenderer);
+		
+		CEGUI::String skin = "TaharezLook"; // TODO: replace this with a value from config
+
+		// Specify Resource Groups
+		DefaultResourceProvider* rp = static_cast<DefaultResourceProvider*>(CEGUI::System::getSingleton().getResourceProvider());
+		
+		rp->setResourceGroupDirectory("skins", "./data/gui/skins/" + skin + "/"); // schemes, imagesets, looknfeels
+		/*rp->setResourceGroupDirectory("schemes", "./data/gui/skins/" + skin + "/");
+		rp->setResourceGroupDirectory("imagesets", "./data/gui/skins/" + skin + "/");
+		rp->setResourceGroupDirectory("looknfeels", "./data/gui/skins/" + skin + "/");*/
+
+		rp->setResourceGroupDirectory("fonts", "./data/gui/fonts/");
+		rp->setResourceGroupDirectory("layouts", "./data/gui/layouts/");
+		rp->setResourceGroupDirectory("lua_scripts", "./data/gui/scripts/");
+
+		// Assign DefaultResourceGroups
+		Imageset::setDefaultResourceGroup("skins");
+		WidgetLookManager::setDefaultResourceGroup("skins");
+		Scheme::setDefaultResourceGroup("skins");
+		CEGUI::Font::setDefaultResourceGroup("fonts");
+		CEGUI::WindowManager::setDefaultResourceGroup("layouts");
+		CEGUI::ScriptModule::setDefaultResourceGroup("lua_scripts");
+
+		// Load basic files and specify defaults
+		SchemeManager::getSingleton().create(skin + ".scheme");
+		//Imageset taharezImages = ImagesetManager::getSingleton().create(skin, skin + ".imageset");
+		System::getSingleton().setDefaultMouseCursor(skin, "MouseArrow");//&taharezImages.getImage("MouseArrow"));
+		CEGUI::FontManager::getSingleton().create("Commonwealth-10.font");
+		WidgetLookManager::getSingleton().parseLookNFeelSpecification(skin + ".looknfeel");
+	}
+	catch (CEGUI::Exception& e)
+	{
+		fprintf(stderr,"CEGUI Exception occured - Game: %s", e.getMessage().c_str());
+	}
+}
 
 void Program::setDisplaySettings(){
 
