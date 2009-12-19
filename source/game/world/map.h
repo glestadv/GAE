@@ -180,7 +180,6 @@ public:
 	void write(NetworkDataBuffer &buf) const;
 };
 
-
 // =====================================================
 // 	class Map
 //
@@ -197,6 +196,7 @@ private:
 	string title;
 	float waterLevel;
 	float heightFactor;
+	float avgHeight;
 	int w;
 	int h;
 	int tileW;
@@ -232,6 +232,7 @@ public:
 	int getTileH() const								{return tileH;}
 	int getMaxPlayers() const							{return maxPlayers;}
 	float getHeightFactor() const						{return heightFactor;}
+	float getAvgHeight() const							{return avgHeight;}
 	float getWaterLevel() const							{return waterLevel;}
 	Vec2i getStartLocation(int loactionIndex) const		{return startLocations[loactionIndex];}
 
@@ -337,7 +338,9 @@ private:
 	void smoothSurface();
 	void computeNearSubmerged();
 	void computeCellColors();
-	void setCellTypes ();
+	void setCellTypes();
+	void calcAvgAltitude();
+
 	//void setCellType ( Vec2i pos );
 
 	static void findNearest(Vec2i &result, const Vec2i &start, const Vec2i &candidate, float &minDistance);
@@ -593,43 +596,6 @@ public:
 	}
 };
 */
-
-// ===============================
-// 	class PosQuadIterator
-// ===============================
-
-class PosQuadIterator {
-private:
-	Quad2i quad;
-	int step;
-	Rect2i boundingRect;
-	Vec2i pos;
-
-public:
-	PosQuadIterator(const Quad2i &quad, int step = 1);
-
-	bool next() {
-		do {
-			pos.x += step;
-			if (pos.x > boundingRect.p[1].x) {
-				pos.x = (boundingRect.p[0].x / step) * step;
-				pos.y += step;
-			}
-			if (pos.y > boundingRect.p[1].y)
-				return false;
-		} while (!quad.isInside(pos));
-
-		return true;
-	}
-
-	void skipX() {
-		pos.x += step;
-	}
-
-	const Vec2i &getPos() {
-		return pos;
-	}
-};
 
 //////////////////////////////////////////////////////////////////
 // Cut Here

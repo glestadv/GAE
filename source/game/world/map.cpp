@@ -237,20 +237,21 @@ void Tile::write(NetworkDataBuffer &buf) const {
 const int Map::cellScale = 2;
 const int Map::mapScale = 2;
 
-Map::Map() :
-		title(),
-		waterLevel(0.f),
-		heightFactor(0.f),
-		w(0),
-		h(0),
-		tileW(0),
-		tileH(0),
-		maxPlayers(0),
-		cells(NULL),
-		tiles(NULL),
-		startLocations(NULL),
-		surfaceHeights(NULL),
-		earthquakes() {
+Map::Map() 
+		: title()
+		, waterLevel(0.f)
+		, heightFactor(0.f)
+		, avgHeight(0.f)
+		, w(0)
+		, h(0)
+		, tileW(0)
+		, tileH(0)
+		, maxPlayers(0)
+		, cells(NULL)
+		, tiles(NULL)
+		, startLocations(NULL)
+		, surfaceHeights(NULL)
+		, earthquakes() {
 
 	// If this is expanded, maintain Tile::read() and write()
 	assert(Tileset::objCount < 256);
@@ -406,8 +407,10 @@ void Map::init() {
 	computeInterpolatedHeights();
 	computeNearSubmerged();
 	computeCellColors();
-	setCellTypes ();
+	setCellTypes();
+	calcAvgAltitude();
 }
+
 void Map::setCellTypes () {
 	for ( int y = 0; y < getH(); ++y ) {
 		for ( int x = 0; x < getW(); ++x ) {
@@ -418,6 +421,17 @@ void Map::setCellTypes () {
 				cell->setType ( SurfaceType::FORDABLE );
 		}
 	}
+}
+
+void Map::calcAvgAltitude() {
+	double sum = 0.0;
+	for (int y=0; y < getTileH(); ++y) {
+		for (int x=0; x < getTileW(); ++x) {
+			sum += getTile(x,y)->getHeight();
+		}
+	}
+	avgHeight = (float)(sum / (getTileH() * getTileW()));
+	cout << "average map height = " << avgHeight << endl;
 }
 
 void Map::read(NetworkDataBuffer &buf) {
@@ -1374,20 +1388,6 @@ void Map::assertUnitCells(const Unit * unit) {
 
 PosCircularIteratorSimple::PosCircularIteratorSimple(const Map &map, const Vec2i &center, int radius) :
 		map(map), center(center), radius(radius), pos(center - Vec2i(radius + 1, radius)) {
-}
-
-// =====================================================
-// 	class PosQuadIterator
-// =====================================================
-
-PosQuadIterator::PosQuadIterator(const Quad2i &quad, int step) :
-		quad(quad),
-		step(step),
-		boundingRect(quad.computeBoundingRect()),
-		pos(boundingRect.p[0]) {
-	--pos.x;
-	pos.x = (pos.x / step) * step;
-	pos.y = (pos.y / step) * step;
 }
 
 

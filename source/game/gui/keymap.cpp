@@ -155,7 +155,7 @@ const Keymap::UserCommandInfo Keymap::commandInfo[ucCount] = {
 	{"NetworkStatusToggle",		keyN,		0,			0,			0},
 	{"SaveScreenshot",			keyE,		0,			0,			0},
 	{"CycleDisplayColor",		keyC,		0,			0,			0},
-	{"CameraCycleMode",			keyF,		0,			0,			0},
+	{"CameraCycleMode",			0,			0,			0,			0},
 	{"CameraZoomIn",			keyPageUp,	0,			0,			0},
 	{"CameraZoomOut",			keyPageDown,0,			0,			0},
 	{"CameraZoomReset",			0,			0,			0,			0},
@@ -191,6 +191,7 @@ const Keymap::UserCommandInfo Keymap::commandInfo[ucCount] = {
 #ifdef _GAE_DEBUG_EDITION_
 	,{"SwitchDebugField",		keyKPMinus,	0,			0,			0}
 #endif
+	,{"ucCaptureFrustum",		keyF,		0,			0,			0}
 };
 #pragma pack(pop)
 

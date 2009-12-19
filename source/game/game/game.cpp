@@ -783,7 +783,7 @@ void Game::render3d(){
 	//init
 	renderer.reset3d();
 	renderer.loadGameCameraMatrix();
-	renderer.computeVisibleQuad();
+	renderer.computeVisibleArea();
 	renderer.setupLighting();
 
 	//shadow map
@@ -794,6 +794,10 @@ void Game::render3d(){
 
 	//surface
 	renderer.renderSurface();
+
+	if (renderer.showFrustum) {
+		renderer.renderFrustum();
+	}
 
 	//selection circles
 	renderer.renderSelectionEffects();
@@ -876,6 +880,8 @@ void Game::render2d(){
 			<< "Frame count: " << world.getFrameCount() << endl;
 
 		//visible quad
+
+		/*
 		Quad2i visibleQuad= renderer.getVisibleQuad();
 
 		str << "Visible quad: ";
@@ -884,6 +890,9 @@ void Game::render2d(){
 		}
 		str << endl;
 		str << "Visible quad area: " << visibleQuad.area() << endl;
+		*/
+
+		str << "Camera VAng : " << gameCamera.getVAng() << endl;
 
 		// resources
 		for(int i=0; i<world.getFactionCount(); ++i){

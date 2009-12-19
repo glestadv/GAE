@@ -1315,10 +1315,11 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 	}
 
 	//complain
+	/*
 	const Vec3f &attackerVec = attacked->getCurrVector();
 	if (!gui.isVisible(Vec2i((int)roundf(attackerVec.x), (int)roundf(attackerVec.y)))) {
 		attacked->getFaction()->attackNotice(attacked);
-	}
+	}*/
 
 	if ( attacked->isAlive() && attacked->getAttackedTrigger() ) {
 		ScriptManager::onAttackedTrigger(attacked);

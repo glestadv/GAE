@@ -150,19 +150,13 @@ public:
 	//misc
 	void update();
 	void moveUnitCells(Unit *unit);
-	Unit* findUnitById(int id);
+	Unit* findUnitById(int id) const;
 	const UnitType* findUnitTypeById(const FactionType* factionType, int id);
 	bool placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spaciated= false);
 	Unit *nearestStore(const Vec2i &pos, int factionIndex, const ResourceType *rt);
 	void doKill(Unit *killer, Unit *killed);
 	void assertConsistiency();
 	void hackyCleanUp(Unit *unit);
-	//bool toRenderUnit(const Unit *unit, const Quad2i &visibleQuad) const;
-	//bool toRenderUnit(const Unit *unit) const;
-	bool toRenderUnit(const Unit *unit, const Quad2i &visibleQuad) const {
-		//a unit is rendered if it is in a visible cell or is attacking a unit in a visible cell
-		return visibleQuad.isInside(unit->getCenteredPos()) && toRenderUnit(unit);
-	}
 
 	bool toRenderUnit(const Unit *unit) const {
 		return map.getTile(Map::toTileCoords(unit->getCenteredPos()))->isVisible(thisTeamIndex)

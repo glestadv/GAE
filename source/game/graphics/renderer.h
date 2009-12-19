@@ -12,6 +12,7 @@
 #ifndef _GLEST_GAME_RENDERER_H_
 #define _GLEST_GAME_RENDERER_H_
 
+// shared_lib
 #include "vec.h"
 #include "math_util.h"
 #include "model.h"
@@ -19,19 +20,21 @@
 #include "pixmap.h"
 #include "font.h"
 #include "matrix.h"
-#include "selection.h"
-#include "components.h"
 #include "texture.h"
 #include "model_manager.h"
 #include "graphics_factory_gl.h"
 #include "font_manager.h"
 #include "camera.h"
+#include "profiler.h"
+
+// game
+#include "selection.h"
+#include "components.h"
+#include "scene_culler.h"
 
 #if DEBUG_RENDERING_ENABLED
 #	include "debug_renderer.h"
 #endif
-
-#include "profiler.h"
 
 namespace Glest { namespace Game {
 
@@ -98,6 +101,7 @@ public:
 	static const float maxLightDist;
 	
 public:
+	//WRAPPED_ENUM(Shadows, Disabled, Projected, Mapped);
 	enum Shadows{
 		sDisabled,
 		sProjected,
@@ -123,7 +127,6 @@ private:
 	//misc
 	int triangleCount;
 	int pointCount;
-	Quad2i visibleQuad;
 	Vec4f nearestLightPos;
 
 	//renderers
@@ -154,6 +157,12 @@ private:
 	float perspFov;
 	float perspNearPlane;
 	float perspFarPlane;
+
+	SceneCuller culler;
+
+	//DEBUG
+	Vec3f frstmPoints[8];
+
 
 private:
 	Renderer();
@@ -199,7 +208,13 @@ public:
 	void setupLighting();
 	void loadGameCameraMatrix();
 	void loadCameraMatrix(const Camera *camera);
-	void computeVisibleQuad();
+	
+	void computeVisibleArea();
+
+	//DEBUG
+	bool captureFrustum, showFrustum;
+	void renderFrustum() const;
+
 
     //basic rendering
 	void renderMouse2d(int mouseX, int mouseY, int anim, float fade= 0.f);
@@ -255,7 +270,7 @@ public:
 	//misc
 	void loadConfig();
 	void saveScreen(const string &path);
-	Quad2i getVisibleQuad() const		{return visibleQuad;}
+//	Quad2i getVisibleQuad() const		{return visibleQuad;}
 
 	//static
 	static Shadows strToShadows(const string &s);

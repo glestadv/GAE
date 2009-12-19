@@ -677,15 +677,15 @@ void World::tick() {
 	}
 }
 
-Unit* World::findUnitById(int id) {
+Unit* World::findUnitById(int id) const {
 	for (int i = 0; i < getFactionCount(); ++i) {
-		Faction* faction = getFaction(i);
+		const Faction* faction = getFaction(i);
 
 		for (int j = 0; j < faction->getUnitCount(); ++j) {
-			Unit* unit = faction->getUnit(j);
+			const Unit* unit = faction->getUnit(j);
 
 			if (unit->getId() == id) {
-				return unit;
+				return const_cast<Unit*>(unit);
 			}
 		}
 	}

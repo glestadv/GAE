@@ -144,7 +144,8 @@ const float Renderer::maxLightDist= 50.f;
 
 // ==================== constructor and destructor ====================
 
-Renderer::Renderer(){
+Renderer::Renderer()
+		: captureFrustum(false), showFrustum(false) {
 	GraphicsInterface &gi= GraphicsInterface::getInstance();
 	FactoryRepository &fr= FactoryRepository::getInstance();
 	Config &config= Config::getInstance();
@@ -480,8 +481,65 @@ void Renderer::loadCameraMatrix(const Camera *camera){
 	glTranslatef(-position.x, -position.y, -position.z);
 }
 
-void Renderer::computeVisibleQuad(){
-	visibleQuad= game->getGameCamera()->computeVisibleQuad();
+void Renderer::computeVisibleArea() {
+
+	culler.establishScene();
+
+	if (captureFrustum) {
+		for (int i=0; i  < 8; ++i) {
+			frstmPoints[i] = culler.frstmPoints[i];
+		}
+		captureFrustum = false;
+
+		SceneCuller::iterator it = culler.tile_begin();
+		for ( ; it != culler.tile_end(); ++it) {
+			Vec2i pos = *it;
+			pos.x *= 2;
+			pos.y *= 2;
+			RegionHilightCallback::cells.insert(pos);
+		}
+	}
+}
+
+void Renderer::renderFrustum() const {
+	glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT );
+	glEnable( GL_BLEND );
+	glEnable( GL_COLOR_MATERIAL ); 
+	glDisable( GL_ALPHA_TEST );
+	glActiveTexture( GL_TEXTURE0 );
+	glDisable( GL_TEXTURE_2D );
+	
+	glPointSize(4);
+	glColor3f(1.f, 0.2f, 0.2f);
+	glBegin(GL_POINTS);
+		for (int i=0; i < 6; ++i) glVertex3fv(frstmPoints[i].ptr());
+	glEnd();
+
+	glColor3f(0.2f, 1.0f, 0.2f);
+	glBegin(GL_POINTS);
+		for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
+	glEnd();
+
+	glLineWidth(2);
+	glColor3f(0.2f, 0.9f, 0.2f); // near
+	glBegin(GL_LINE_LOOP);
+		for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
+	glEnd();
+	
+	glColor3f(0.2f, 0.2f, 0.9f); // far
+	glBegin(GL_LINE_LOOP);
+		for (int i=4; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
+	glEnd();
+	
+	glColor3f(0.2f, 0.7f, 0.7f);
+	glBegin(GL_LINES);
+		for (int i=0; i < 4; ++i) {
+			glVertex3fv(frstmPoints[i].ptr()); // near
+			glVertex3fv(frstmPoints[i+4].ptr()); // far
+		}
+	glEnd();
+
+	glPopAttrib();
 }
 
 // =======================================
@@ -1158,13 +1216,9 @@ void Renderer::renderSurface() {
 
 	glActiveTexture(baseTexUnit);
 
-	Quad2i scaledQuad = visibleQuad/Map::cellScale;
-
-	PosQuadIterator pqi(scaledQuad);
-	while(pqi.next()){
-
-		const Vec2i &pos= pqi.getPos();
-
+	SceneCuller::iterator it = culler.tile_begin();
+	for ( ; it != culler.tile_end(); ++it) {
+		const Vec2i pos = *it;
 		if(mapBounds.isInside(pos)){
 
 			Tile *tc00= map->getTile(pos.x, pos.y);
@@ -1210,7 +1264,6 @@ void Renderer::renderSurface() {
 			glEnd();
 		}
 	}
-	//glEnd();
 
 	//Restore
 	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(false);
@@ -1220,7 +1273,7 @@ void Renderer::renderSurface() {
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
 #	if DEBUG_RENDERING_ENABLED
-		debugRenderer.renderRegionHilight(visibleQuad);
+		debugRenderer.renderRegionHilight(culler);
 #	endif
 }
 
@@ -1252,43 +1305,46 @@ void Renderer::renderObjects(){
 	modelRenderer->begin(true, true, false);
 	int thisTeamIndex= world->getThisTeamIndex();
 
-	PosQuadIterator pqi(visibleQuad, Map::cellScale);
-	while(pqi.next()){
-		const Vec2i &pos= pqi.getPos();
-		if(map->isInside(pos)){
+	SceneCuller::iterator it = culler.tile_begin();
+	for ( ; it != culler.tile_end(); ++it ) {
+		const Vec2i &pos = *it;
+		if (!map->isInsideTile(pos)) continue;
+		Tile *sc= map->getTile(pos);
+		Object *o= sc->getObject();
+		if(o && sc->isExplored(thisTeamIndex)) {
 
-			Tile *sc= map->getTile(Map::toTileCoords(pos));
-			Object *o= sc->getObject();
-			if(o && sc->isExplored(thisTeamIndex)){
+			const Model *objModel= sc->getObject()->getModel();
+			Vec3f v= o->getPos();
 
-				const Model *objModel= sc->getObject()->getModel();
-				Vec3f v= o->getPos();
+			// QUICK-FIX: Objects/Resources drawn out of place...
+			// Why do we need this ??? are the tileset objects / techtree resources defined out of position ??
+			v.x += Map::mapScale / 2; // == 1
+			v.z += Map::mapScale / 2;
 
-				// QUICK-FIX: Objects/Resources drawn out of place...				// Why do we need this ??? are the tileset objects / techtree resources defined out of position ??				v.x += Map::mapScale / 2; // == 1				v.z += Map::mapScale / 2;				//ambient and diffuse color is taken from cell color
-				float fowFactor= fowTex->getPixmap()->getPixelf(pos.x/Map::cellScale, pos.y/Map::cellScale);
-				Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
-				glColor4fv(color.ptr());
-				// FIXME: I was tired when I edited this code and it could be as broken as our
-				// economy.
-				Vec4f color2 = color * ambFactor;
-				glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color2.ptr());
-				color2 = Vec4f(baseFogColor) * fowFactor;
-				glFogfv(GL_FOG_COLOR, color2.ptr());
+			//ambient and diffuse color is taken from cell color
+			float fowFactor= fowTex->getPixmap()->getPixelf(pos.x, pos.y);
+			Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
+			glColor4fv(color.ptr());
+			// FIXME: I was tired when I edited this code and it could be as broken as our
+			// economy.
+			Vec4f color2 = color * ambFactor;
+			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, color2.ptr());
+			color2 = Vec4f(baseFogColor) * fowFactor;
+			glFogfv(GL_FOG_COLOR, color2.ptr());
 
-				glMatrixMode(GL_MODELVIEW);
-				glPushMatrix();
-				glTranslatef(v.x, v.y, v.z);
-				glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			glTranslatef(v.x, v.y, v.z);
+			glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
 
-				objModel->updateInterpolationData(0.f, true);
-				modelRenderer->render(objModel);
+			objModel->updateInterpolationData(0.f, true);
+			modelRenderer->render(objModel);
 
-				triangleCount+= objModel->getTriangleCount();
-				pointCount+= objModel->getVertexCount();
+			triangleCount+= objModel->getTriangleCount();
+			pointCount+= objModel->getVertexCount();
 
-				glPopMatrix();
+			glPopMatrix();
 
-			}
 		}
 	}
 	modelRenderer->end();
@@ -1337,8 +1393,9 @@ void Renderer::renderWater(){
 
 	assertGl();
 
-	Rect2i boundingRect= visibleQuad.computeBoundingRect();
-	Rect2i scaledRect= boundingRect/Map::cellScale;
+	//Rect2i boundingRect= visibleQuad.computeBoundingRect();
+	//Rect2i scaledRect= boundingRect/Map::cellScale;
+	Rect2i scaledRect = culler.getBoundingRectTile();
 	scaledRect.clamp(0, 0, map->getTileW()-1, map->getTileH()-1);
 
 	float waterLevel= world->getMap()->getWaterLevel();
@@ -1421,47 +1478,13 @@ void Renderer::renderWater(){
 }
 
 void Renderer::renderUnits(){
-	Unit *unit;
+	const Unit *unit;
 	const UnitType *ut;
 	int framesUntilDead;
 	const World *world= game->getWorld();
+	const Map *map = world->getMap();
 	MeshCallbackTeamColor meshCallbackTeamColor;
 
-/*	// commented out because "calculate selected units on render" functionality isn't working
-	
-	// compute selection variables
-	GLuint selectBuffer[Gui::maxSelBuff];
-	Selection::UnitContainer units;
-	const Metrics &metrics= Metrics::getInstance();
-	Gui* gui = Gui::getCurrentGui();
-
-	// compute selected during render
-	if (gui && gui->isNeedSelectionUpdate()) {
-		//compute center and dimensions of selection rectangle
-		const SelectionQuad &selectionQuad = *(gui->getSelectionQuad());
-		const Vec2i &posDown = selectionQuad.getPosDown();
-		const Vec2i &posUp = selectionQuad.getPosUp();
-		int x = (posDown.x + posUp.x) / 2;
-		int y = (posDown.y + posUp.y) / 2;
-		int w = abs(posDown.x - posUp.x);
-		int h = abs(posDown.y - posUp.y);
-		if (w < 1) w = 1;
-		if (h < 1) h = 1;
-	
-		//setup matrices
-		glSelectBuffer(Gui::maxSelBuff, selectBuffer);
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		GLint view[] = {0, 0, metrics.getVirtualW(), metrics.getVirtualH()};
-		glRenderMode(GL_SELECT);
-		glLoadIdentity();
-		gluPickMatrix(x, y, w, h, view);
-		gluPerspective(perspFov, metrics.getAspectRatio(), perspNearPlane, perspFarPlane);
-		loadGameCameraMatrix();
-	}*/
-
-	
-	
 	assertGl();
 
 	glPushAttrib(GL_ENABLE_BIT | GL_FOG_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
@@ -1480,13 +1503,27 @@ void Renderer::renderUnits(){
 
 	modelRenderer->begin(true, true, true, &meshCallbackTeamColor);
 
-	for(int i=0; i<world->getFactionCount(); ++i){
-		meshCallbackTeamColor.setTeamTexture(world->getFaction(i)->getTexture());
-		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			unit = world->getFaction(i)->getUnit(j);
-			if(!world->toRenderUnit(unit, visibleQuad)) {
-				continue;
+	vector<const Unit*> toRender[GameConstants::maxPlayers];
+	set<const Unit*> unitsSeen;
+	for (SceneCuller::iterator it = culler.cell_begin(); it != culler.cell_end(); ++it ) {
+		const Vec2i &pos = *it;
+		if (!map->isInside(pos)) continue;
+		for (Zone z(0); z < Zone::COUNT; ++z) {
+			const Unit *unit = map->getCell(pos)->getUnit(z);
+			if (unit && world->toRenderUnit(unit) && unitsSeen.find(unit) == unitsSeen.end()) {
+				unitsSeen.insert(unit);
+				toRender[unit->getFactionIndex()].push_back(unit);
 			}
+		}
+	}
+
+	for (int i=0; i < GameConstants::maxPlayers; ++i) {
+		if (toRender[i].empty()) continue;
+
+		meshCallbackTeamColor.setTeamTexture(world->getFaction(i)->getTexture());
+		vector<const Unit *>::iterator it = toRender[i].begin();
+		for ( ; it != toRender[i].end(); ++it) {
+			unit = *it;
 			ut = unit->getType();
 			int framesUntilDead = Unit::maxDeadCount - unit->getDeadCount();
 
@@ -1566,29 +1603,6 @@ void Renderer::renderUnits(){
 	static_cast<ModelRendererGl*>(modelRenderer)->setDuplicateTexCoords(true);
 	glPopAttrib();
 
-/*
-	// compute selected during render
-	if(gui && gui->isNeedSelectionUpdate()) {
-		//pop matrices
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-	
-		//select units
-		int selCount= glRenderMode(GL_RENDER);
-		for(int i=1; i<=selCount; ++i){
-			int factionIndex= selectBuffer[i*5-2];
-			int unitIndex= selectBuffer[i*5-1];
-			const World *world= game->getWorld();
-			if(factionIndex<world->getFactionCount() && unitIndex<world->getFaction(factionIndex)->getUnitCount()){
-				Unit *unit= world->getFaction(factionIndex)->getUnit(unitIndex);
-				if(unit->isAlive()){
-					units.push_back(unit);
-				}
-			}
-		}
-		gui->updateSelection(false, units);
-	}*/
-	
 	//assert
 	assertGl();
 }
@@ -2123,14 +2137,16 @@ void Renderer::computeSelected(Selection::UnitContainer &units, const Vec2i &pos
 	int selCount= glRenderMode(GL_RENDER);
 	for(int i=1; i<=selCount; ++i){
 		int factionIndex= selectBuffer[i*5-2];
-		int unitIndex= selectBuffer[i*5-1];
+		//int unitIndex= selectBuffer[i*5-1];
+		int uid = selectBuffer[i*5-1];
 		const World *world= game->getWorld();
-		if(factionIndex<world->getFactionCount() && unitIndex<world->getFaction(factionIndex)->getUnitCount()){
-			Unit *unit= world->getFaction(factionIndex)->getUnit(unitIndex);
-			if(unit->isAlive()){
+		//if (factionIndex < world->getFactionCount() && unitIndex < world->getFaction(factionIndex)->getUnitCount()) {
+			Unit *unit = world->findUnitById(uid);
+			//Unit *unit= world->getFaction(factionIndex)->getUnit(unitIndex);
+			if (unit && unit->isAlive()) {
 				units.push_back(unit);
 			}
-		}
+		//}
 	}
 }
 
@@ -2421,13 +2437,14 @@ Vec4f Renderer::computeWaterColor(float waterLevel, float cellHeight){
 
 // ==================== fast render ====================
 
-//render units for selection purposes
+//render units for shadows or selection purposes
 void Renderer::renderUnitsFast(bool renderingShadows) {
-	Unit *unit;
+	const Unit *unit;
 	const UnitType *ut;
 	int framesUntilDead;
 	bool changeColor = false;
 	const World *world= game->getWorld();
+	const Map *map = world->getMap();
 
 	assertGl();
 
@@ -2437,83 +2454,96 @@ void Renderer::renderUnitsFast(bool renderingShadows) {
 
 	modelRenderer->begin(false, false, false);
 	glInitNames();
-	for(int i=0; i<world->getFactionCount(); ++i){
+
+	vector<const Unit*> toRender[GameConstants::maxPlayers];
+	set<const Unit*> unitsSeen;
+	for (SceneCuller::iterator it = culler.cell_begin(); it != culler.cell_end(); ++it ) {
+		const Vec2i &pos = *it;
+		if (!map->isInside(pos)) continue;
+		for (Zone z(0); z < Zone::COUNT; ++z) {
+			const Unit *unit = map->getCell(pos)->getUnit(z);
+			if (unit && world->toRenderUnit(unit) && unitsSeen.find(unit) == unitsSeen.end()) {
+				unitsSeen.insert(unit);
+				toRender[unit->getFactionIndex()].push_back(unit);
+			}
+		}
+	}
+
+	for (int i=0; i < GameConstants::maxPlayers; ++i) {
+		if (toRender[i].empty()) continue;
+
 		glPushName(i);
-		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			glPushName(j);
-			Unit *unit= world->getFaction(i)->getUnit(j);
-			if(world->toRenderUnit(unit, visibleQuad)) {
+		vector<const Unit *>::iterator it = toRender[i].begin();
+		for ( ; it != toRender[i].end(); ++it) {
+			unit = *it;
+			glPushName(unit->getId());
+			glMatrixMode(GL_MODELVIEW);
 
-				glMatrixMode(GL_MODELVIEW);
+			//debuxar modelo
+			glPushMatrix();
 
-				//debuxar modelo
-				glPushMatrix();
+			//translate
+			Vec3f currVec= unit->getCurrVectorFlat();
 
-				//translate
-				Vec3f currVec= unit->getCurrVectorFlat();
+			glTranslatef(currVec.x, currVec.y, currVec.z);
 
-				glTranslatef(currVec.x, currVec.y, currVec.z);
+			//rotate
+			glRotatef(unit->getRotation(), 0.f, 1.f, 0.f);
 
-				//rotate
-				glRotatef(unit->getRotation(), 0.f, 1.f, 0.f);
+			// faded shadows
+			if(renderingShadows) {
+				ut = unit->getType();
+				int framesUntilDead = Unit::maxDeadCount - unit->getDeadCount();
+				float color = 1.0f - shadowAlpha;
+				float fade = false;
 
-				// faded shadows
-				if(renderingShadows) {
-					ut = unit->getType();
-					int framesUntilDead = Unit::maxDeadCount - unit->getDeadCount();
-					float color = 1.0f - shadowAlpha;
-					float fade = false;
-
-					//dead alpha
-					const SkillType *st = unit->getCurrSkill();
-					if(st->getClass() == SkillClass::DIE) {
-						const DieSkillType *dst = (const DieSkillType*)st;
-						if(dst->getFade()) {
-							color *= 1.0f - unit->getAnimProgress();
-							fade = true;
-						} else if (framesUntilDead <= 300) {
-							color *= (float)framesUntilDead / 300.f;
-							fade = true;
-						}
-						changeColor = changeColor || fade;
+				//dead alpha
+				const SkillType *st = unit->getCurrSkill();
+				if(st->getClass() == SkillClass::DIE) {
+					const DieSkillType *dst = (const DieSkillType*)st;
+					if(dst->getFade()) {
+						color *= 1.0f - unit->getAnimProgress();
+						fade = true;
+					} else if (framesUntilDead <= 300) {
+						color *= (float)framesUntilDead / 300.f;
+						fade = true;
 					}
-
-					if(shadows == sShadowMapping) {
-						if(changeColor) {
-							//fprintf(stderr, "color = %f\n", color);
-							glColor3f(color, color, color);
-							glClearColor(1.f, 1.f, 1.f, 1.f);
-							glDisable(GL_DEPTH_TEST);
-							glClear(GL_COLOR_BUFFER_BIT);
-							if(!fade) {
-								changeColor = false;
-							}
-						}
-					} else if(fade) {
-						// skip this unit's shadow in projected shadows
-						glPopMatrix();
-						continue;
-					}
+					changeColor = changeColor || fade;
 				}
 
-				//render
-				const Model *model= unit->getCurrentModel();
-				model->updateInterpolationVertices(unit->getAnimProgress(), unit->isAlive());
-				modelRenderer->render(model);
-
-				glPopMatrix();
-
+				if(shadows == sShadowMapping) {
+					if(changeColor) {
+						//fprintf(stderr, "color = %f\n", color);
+						glColor3f(color, color, color);
+						glClearColor(1.f, 1.f, 1.f, 1.f);
+						glDisable(GL_DEPTH_TEST);
+						glClear(GL_COLOR_BUFFER_BIT);
+						if(!fade) {
+							changeColor = false;
+						}
+					}
+				} else if(fade) {
+					// skip this unit's shadow in projected shadows
+					glPopMatrix();
+					continue;
+				}
 			}
+
+			//render
+			const Model *model= unit->getCurrentModel();
+			model->updateInterpolationVertices(unit->getAnimProgress(), unit->isAlive());
+			modelRenderer->render(model);
+
+			glPopMatrix();
 			glPopName();
 		}
 		glPopName();
 	}
 	modelRenderer->end();
-
 	glPopAttrib();
 }
 
-//render objects for selection purposes
+//render objects for shadows
 void Renderer::renderObjectsFast(){
 	const World *world= game->getWorld();
 	const Map *map= world->getMap();
@@ -2540,36 +2570,26 @@ void Renderer::renderObjectsFast(){
 	modelRenderer->begin(false, true, false);
 	int thisTeamIndex= world->getThisTeamIndex();
 
-	PosQuadIterator pqi(visibleQuad, Map::cellScale);
-	while(pqi.next()){
-		const Vec2i pos= pqi.getPos();
+	SceneCuller::iterator it = culler.tile_begin();
+	for ( ; it != culler.tile_end(); ++it) {
+		const Vec2i &pos = *it;
+		if (!map->isInside(pos)) continue;
+		Tile *sc= map->getTile(pos);
+		Object *o= sc->getObject();
+		if(o && sc->isExplored(thisTeamIndex)) {
+			const Model *objModel= sc->getObject()->getModel();
+			Vec3f v= o->getPos();
 
-		if(map->isInside(pos)){
-
-			Tile *sc= map->getTile(Map::toTileCoords(pos));
-			Object *o= sc->getObject();
-			if(sc->isExplored(thisTeamIndex) && o!=NULL){
-
-				const Model *objModel= sc->getObject()->getModel();
-				Vec3f v= o->getPos();
-
-				glMatrixMode(GL_MODELVIEW);
-				glPushMatrix();
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
 				glTranslatef(v.x, v.y, v.z);
 				glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
-
 				modelRenderer->render(objModel);
-
-				glPopMatrix();
-
-			}
+			glPopMatrix();
 		}
 	}
-
 	modelRenderer->end();
-
 	glPopAttrib();
-
 	assertGl();
 }
 

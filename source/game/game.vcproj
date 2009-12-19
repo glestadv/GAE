@@ -505,6 +505,14 @@
 						UsePrecompiledHeader="0"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release+SSE2|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\game\game_constants.h"
@@ -1177,6 +1185,14 @@
 		</File>
 		<File
 			RelativePath=".\pch.h"
+			>
+		</File>
+		<File
+			RelativePath=".\graphics\scene_culler.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\graphics\scene_culler.h"
 			>
 		</File>
 	</Files>

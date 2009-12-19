@@ -107,7 +107,6 @@ public:
 
     //other
     void update();
-    Quad2i computeVisibleQuad() const;
 	void switchState();
 
 	void centerXZ(float x, float z);

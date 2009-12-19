@@ -86,6 +86,7 @@ enum UserCommand {
 #ifdef _GAE_DEBUG_EDITION_
 	ucSwitchDebugField,
 #endif
+	ucCaptureFrustum,
 	ucCount
 };
 

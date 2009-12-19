@@ -51,7 +51,7 @@ namespace Search {
 	  */
 	REGULAR_ENUM( TravelState, 
 						ARRIVED, MOVING, BLOCKED, IMPOSSIBLE
-				   );
+				);
 
 	/** result set for aStar() 
 	  * <ul><li><b>FAILED</b> No path exists
@@ -61,7 +61,7 @@ namespace Search {
 	  */
 	REGULAR_ENUM( AStarResult, 
 						FAILED, COMPLETE, NODE_LIMIT, TIME_LIMIT
-				   );
+				);
 
 	/** Specifies a 'space' to search 
 	  * <ul><li><b>CELLMAP</b> search on cell map</li>
@@ -91,7 +91,7 @@ STRINGY_ENUM( ControlType,
 					CPU_ULTRA, 
 					NETWORK, 
 					HUMAN 
-			   );
+			);
 
 /** fields of movement
   * <ul><li><b>WALKABLE</b> land traveller</li>
@@ -106,7 +106,7 @@ STRINGY_ENUM( Field,
 				   ANY_WATER,
 				   DEEP_WATER,
 				   AMPHIBIOUS
-			   );
+			);
 
 /** surface type for cells
   * <ul><li><b>LAND</b> land (above sea level)</li>
@@ -117,7 +117,7 @@ REGULAR_ENUM( SurfaceType,
 				   LAND, 
 				   FORDABLE, 
 				   DEEP_WATER
-			   );
+			);
 
 /** zones of unit occupance
   * <ul><li><b>SURFACE_PROP</b> A surface prop, not used yet.</li>
@@ -128,7 +128,7 @@ STRINGY_ENUM( Zone,
 				   SURFACE_PROP,
 				   LAND,
 				   AIR
-			   );
+			);
 
 /** unit properties
   * <ul><li><b>BURNABLE</b> can catch fire.</li>
@@ -139,7 +139,7 @@ STRINGY_ENUM( Property,
 					BURNABLE,
 					ROTATED_CLIMB,
 					WALL
-			   );
+			);
 
 /** effects flags
   * effect properties:
@@ -190,7 +190,7 @@ STRINGY_ENUM( EffectTypeFlag,
 					AI_COMBAT,
 					AI_USE_SPARINGLY,
 					AI_USE_LIBERALLY
-			   );
+			);
 
 /** attack skill preferences
   */
@@ -200,7 +200,7 @@ STRINGY_ENUM( AttackSkillPreference,
 					ON_LARGE,
 					ON_BUILDING,
 					WHEN_DAMAGED
-			   );
+			);
 
 /** unit classes
   */
@@ -208,7 +208,7 @@ REGULAR_ENUM( UnitClass,
 					WARRIOR,
 					WORKER,
 					BUILDING
-			   );
+			);
 
 /** command result set
   * <ul><li><b>SUCCESS</b> command succeeded.</li>
@@ -225,7 +225,7 @@ REGULAR_ENUM( CommandResult,
 					FAIL_PET_LIMIT,
 					FAIL_UNDEFINED,
 					SOME_FAILED
-			   );
+			);
 
 /** interesting unit types
   */
@@ -240,14 +240,14 @@ REGULAR_ENUM( InterestingUnitType,
 					IDLE_PRODUCER,
 					DAMAGED,
 					STORE
-			   );
+			);
 
 /** upgrade states
   */
 REGULAR_ENUM( UpgradeState,
 					UPGRADING,
 					UPGRADED
-			   );
+			);
 
 /** command classes
   */
@@ -267,14 +267,14 @@ STRINGY_ENUM( CommandClass,
 					PATROL,
 					SET_MEETING_POINT,
 					NULL_COMMAND
-			   );
+			);
 
 /** click count
   */
 REGULAR_ENUM( Clicks,
 					ONE,
 					TWO
-			   );
+			);
 			
 /** resource classes
   * <ul><li><b>TECH</b> resource is defined in tech tree.</li>
@@ -287,7 +287,7 @@ STRINGY_ENUM( ResourceClass,
 					TILESET,
 					STATIC,
 					CONSUMABLE
-			   );
+			);
 
 /** skill classes
   */
@@ -307,7 +307,7 @@ STRINGY_ENUM( SkillClass,
 					FALL_DOWN,
 					GET_UP,
 					WAIT_FOR_SERVER
-			   );
+			);
 
 /** weather set
   * <ul><li><b>SUNNY</b> Sunny weather, no weather particle system.</li>
@@ -318,7 +318,7 @@ REGULAR_ENUM( Weather,
 					SUNNY,
 					RAINY,
 					SNOWY
-			   );
+			);
 
 /** command properties
   */
@@ -327,7 +327,7 @@ REGULAR_ENUM( CommandProperties,
 					AUTO,
 					DONT_RESERVE_RESOURCES,
 					AUTO_REPAIR_ENABLED
-			   );
+			);
 
 /** Command Archetypes
   */
@@ -336,7 +336,7 @@ REGULAR_ENUM( CommandArchetype,
 					CANCEL_COMMAND,
 				//	SET_METTING_POINT,
 					SET_AUTO_REPAIR
-			   );
+			);
 
 // =====================================================
 //	class GameConstants

@@ -31,14 +31,6 @@ using namespace Shared::Lua;
 
 namespace Glest { namespace Game {
 
-//TODO move these somewhere sensible [after branch is re-intergrated]
-ostream& operator<<(ostream &lhs, Vec2i &rhs) {
-	return lhs << "(" << rhs.x << ", " << rhs.y << ")";
-}
-ostream& operator<<(ostream &lhs, Vec4i &rhs) {
-	return lhs << "(" << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << ")";
-}
-
 // =====================================================
 //	class ScriptTimer
 // =====================================================
@@ -333,9 +325,6 @@ void ScriptManager::init(Game *g) {
 	messageBox.init("", Lang::getInstance().get("Ok"));
 	messageBox.setEnabled(false);
 
-	if ( !scenario ) {
-		return;
-	}
 	luaScript.startUp();
 	luaScript.atPanic(panicFunc);
 	assert(!luaScript.isDefined("startup")); // making sure old code is gone
@@ -411,6 +400,10 @@ void ScriptManager::init(Game *g) {
 	latestCreated.id = -1;
 	latestCasualty.id = -1;
 	gameOver= false;
+
+	if ( !scenario ) {
+		return;
+	}
 
 	//load code
 	for(int i= 0; i<scenario->getScriptCount(); ++i){

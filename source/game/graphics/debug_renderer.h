@@ -11,6 +11,7 @@
 #include "pixmap.h"
 #include "texture.h"
 #include "graphics_factory_gl.h"
+#include "scene_culler.h"
 
 #include <set>
 
@@ -42,7 +43,7 @@ public:
 	DebugRenderer () {}
 
 	template< typename CellTextureCallback >
-	void renderCellTextures ( Quad2i &visibleQuad ) {
+	void renderCellTextures(SceneCuller &culler) {
 		const Rect2i mapBounds(0, 0, theMap.getTileW()-1, theMap.getTileH()-1);
 		float coordStep= theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
 		assertGl();
@@ -53,10 +54,9 @@ public:
 		glDisable(GL_ALPHA_TEST);
 		glActiveTexture( GL_TEXTURE0 );
 
-		Quad2i scaledQuad = visibleQuad / Map::cellScale;
-		PosQuadIterator pqi( scaledQuad );
-		while ( pqi.next() ) {
-			const Vec2i &pos= pqi.getPos();
+		SceneCuller::iterator it = culler.tile_begin();
+		for ( ; it !+ culler.tile_end(); ++it ) {
+			const Vec2i &pos= *it;
 			int cx, cy;
 			cx = pos.x * 2;
 			cy = pos.y * 2;
@@ -90,7 +90,7 @@ public:
 	} // renderCellTextures ()
 
 	template< typename CellOverlayColourCallback >
-	void renderCellOverlay ( Quad2i &visibleQuad ) {
+	void renderCellOverlay(SceneCuller &culler) {
 		const Rect2i mapBounds( 0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1 );
 		float coordStep = theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
 		Vec4f colour;
@@ -101,10 +101,10 @@ public:
 		glDisable( GL_ALPHA_TEST );
 		glActiveTexture( GL_TEXTURE0 );
 		glDisable( GL_TEXTURE_2D );
-		Quad2i scaledQuad = visibleQuad / Map::cellScale;
-		PosQuadIterator pqi( scaledQuad );
-		while ( pqi.next() ){
-			const Vec2i &pos = pqi.getPos();
+
+		SceneCuller::iterator it = culler.tile_begin();
+		for ( ; it != culler.tile_end(); ++it ) {
+			const Vec2i &pos= *it;
 			int cx, cy;
 			cx = pos.x * 2;
 			cy = pos.y * 2;
@@ -135,8 +135,8 @@ public:
 		assertGl();
 	}
 
-	void renderRegionHilight(Quad2i &visibleQuad) {
-		renderCellOverlay<RegionHilightCallback>(visibleQuad);
+	void renderRegionHilight(SceneCuller &culler) {
+		renderCellOverlay<RegionHilightCallback>(culler);
 	}
 
 
