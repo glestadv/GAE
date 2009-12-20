@@ -1,14 +1,13 @@
 // ==============================================================
-//	This file is part of Glest (www.glest.org)
+//	This file is part of The Glest Advanced Engine
 //
-//	Copyright (C) 2009 James McCulloch <silnarm at gmail>
+//	Copyright (C) 2009	James McCulloch <silnarm at gmail>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
-// ==============================================================
-//
+// ==============================================================//
 // File: astar_nodepool.cpp
 //
 #include "pch.h"

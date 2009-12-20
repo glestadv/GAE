@@ -487,16 +487,20 @@ void Renderer::computeVisibleArea() {
 	culler.establishScene();
 
 	if (captureFrustum) {
+		captureFrustum = false;
 		for (int i=0; i  < 8; ++i) {
 			frstmPoints[i] = culler.frstmPoints[i];
 		}
-		captureFrustum = false;
-
+		for (int i=0; i < 4; ++i) {
+			Vec2i pos(culler.intersectPoints[i].x, culler.intersectPoints[i].z);
+			RegionHilightCallback::cells.insert(pos);
+		}
+		/*
 		SceneCuller::iterator it = culler.cell_begin();
 		for ( ; it != culler.cell_end(); ++it) {
 			Vec2i pos = *it;
 			RegionHilightCallback::cells.insert(pos);
-		}
+		}*/
 	}
 }
 
@@ -508,29 +512,24 @@ void Renderer::renderFrustum() const {
 	glActiveTexture( GL_TEXTURE0 );
 	glDisable( GL_TEXTURE_2D );
 	
-	glPointSize(4);
+	glPointSize(5);
 	glColor3f(1.f, 0.2f, 0.2f);
 	glBegin(GL_POINTS);
-		for (int i=0; i < 6; ++i) glVertex3fv(frstmPoints[i].ptr());
-	glEnd();
-
-	glColor3f(0.2f, 1.0f, 0.2f);
-	glBegin(GL_POINTS);
-		for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
+		for (int i=0; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
 	glEnd();
 
 	glLineWidth(2);
-	glColor3f(0.2f, 0.9f, 0.2f); // near
+	glColor3f(0.1f, 0.5f, 0.1f); // near
 	glBegin(GL_LINE_LOOP);
 		for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
 	glEnd();
 	
-	glColor3f(0.2f, 0.2f, 0.9f); // far
+	glColor3f(0.1f, 0.1f, 0.5f); // far
 	glBegin(GL_LINE_LOOP);
 		for (int i=4; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
 	glEnd();
 	
-	glColor3f(0.2f, 0.7f, 0.7f);
+	glColor3f(0.1f, 0.5f, 0.5f);
 	glBegin(GL_LINES);
 		for (int i=0; i < 4; ++i) {
 			glVertex3fv(frstmPoints[i].ptr()); // near
@@ -1176,6 +1175,15 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 // ==================== complex rendering ====================
 
 void Renderer::renderSurface() {
+#	if DEBUG_RENDERING_ENABLED
+
+	if (false) {
+		debugRenderer.renderGrid(culler);
+
+	} else {
+
+#	endif
+
 	int lastTex=-1;
 	int currTex;
 	const World *world= game->getWorld();
@@ -1272,6 +1280,7 @@ void Renderer::renderSurface() {
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
 #	if DEBUG_RENDERING_ENABLED
+	}
 		debugRenderer.renderRegionHilight(culler);
 #	endif
 }

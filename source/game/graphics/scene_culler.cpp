@@ -113,7 +113,6 @@ void SceneCuller::getFrustumExtents() {
 		}
 		Vec3f dir = pt2 - pt;
 		float u = (alt - pt.y) / dir.y;
-		
 		assert(u > 0.f);
 		if (u > 1.f) {
 			// if u is > 1.f the intersection with the plane is beyond the far clip plane
@@ -122,18 +121,13 @@ void SceneCuller::getFrustumExtents() {
 			intersectPoints[i] = pt + dir * 1.f;
 		} else {
 			// if u is < 1.f the intersection is before the far clip plane
-			
-			// check the height of the cell, recast
+			// check the height of the cell, and recast
 			intersectPoints[i] = pt + dir * u;
-			Vec2i cell(intersectPoints[i].x,intersectPoints[i].y);
+			Vec2i cell(intersectPoints[i].x,intersectPoints[i].z);
 			if (map->isInside(cell)) {
 				float cellAlt = map->getCell(cell)->getHeight();
 				u = (cellAlt - pt.y) / dir.y;
 				intersectPoints[i] = pt + dir * u;
-				//Vec2i cell2(intersectPoints[i].x,intersectPoints[i].y);
-				//if (cell != cell2) {
-				//	// do it again??
-				//}
 			}
 		}
 	}

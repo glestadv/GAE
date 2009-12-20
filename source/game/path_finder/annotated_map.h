@@ -1,14 +1,13 @@
 // ==============================================================
-//	This file is part of Glest (www.glest.org)
+//	This file is part of The Glest Advanced Engine
 //
-//	Copyright (C) 2009 James McCulloch <silnarm at gmail>
+//	Copyright (C) 2009	James McCulloch <silnarm at gmail>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
 //	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
-// ==============================================================
-//
+// ==============================================================//
 // File: annotated_map.h
 //
 // Annotated Map, for use in pathfinding.
@@ -28,6 +27,7 @@
 namespace Glest { namespace Game {
 
 class Map;
+class PathFinderTextureCallBack;
 
 namespace Search {
 
@@ -101,6 +101,9 @@ public:
 };
 
 class AnnotatedMap {
+#ifdef DEBUG_RENDERING_ENABLED
+	friend class PathFinderTextureCallBack;
+#endif
 public:
 	AnnotatedMap ( Map *map );
 	virtual ~AnnotatedMap ();
@@ -124,7 +127,7 @@ public:
 	// Clear temporary annotations
 	void clearLocalAnnotations ( Field field );
 
-#  ifdef _GAE_DEBUG_EDITION_
+#  ifdef DEBUG_RENDERING_ENABLED
 	list<std::pair<Vec2i,uint32>>* getLocalAnnotations ();
 #  endif
 
@@ -146,9 +149,6 @@ private:
 	int metricHeight;
 	std::map<Vec2i,uint32> localAnnt;
 	Map *cMap;
-#ifdef _GAE_DEBUG_EDITION_
-public:
-#endif
 	MetricMap metrics;
 };
 

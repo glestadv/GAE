@@ -1,3 +1,13 @@
+// ==============================================================
+//	This file is part of The Glest Advanced Engine
+//
+//	Copyright (C) 2009	James McCulloch <silnarm at gmail>
+//
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
+//	License, or (at your option) any later version
+// ==============================================================
 
 #if ! DEBUG_RENDERING_ENABLED
 #	error debug_renderer.h included without DEBUG_RENDERING_ENABLED
@@ -21,7 +31,39 @@ using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
 
-namespace Glest { namespace Game{
+namespace Glest { namespace Game {
+
+class PathFinderTextureCallBack {
+public:
+	static set<Vec2i> pathSet, openSet, closedSet;
+	static Vec2i pathStart, pathDest;
+	static map<Vec2i,uint32> localAnnotations;
+	
+	static Field debugField;
+	static void loadPFDebugTextures ();
+	static Texture2D *PFDebugTextures[26];
+
+	Texture2DGl* operator() ( const Vec2i &cell ) {
+		int ndx = -1;
+		if ( pathStart == cell ) ndx = 9;
+		else if ( pathDest == cell ) ndx = 10;
+		else if ( pathSet.find(cell) != pathSet.end() ) ndx = 14; // on path
+		else if ( closedSet.find(cell) != closedSet.end() ) ndx = 16; // closed nodes
+		else if ( openSet.find(cell) != openSet.end() ) ndx = 15; // open nodes
+		else if ( localAnnotations.find(cell) != localAnnotations.end() ) // local annotation
+			ndx = 17 + localAnnotations.find(cell)->second;
+		else ndx = Search::PathFinder::getInstance()->annotatedMap->metrics[cell].get(debugField); // else use cell metric for debug field
+		return (Texture2DGl*)PFDebugTextures[ndx];
+   }
+};
+
+class GridTextureCallback {
+public:
+	static Texture2D *tex;
+	Texture2DGl* operator() ( const Vec2i &cell ) {
+		return (Texture2DGl*)tex;
+   }
+};
 
 class RegionHilightCallback {
 public:
@@ -42,6 +84,8 @@ class DebugRenderer {
 public:
 	DebugRenderer () {}
 
+	static void init();
+
 	template< typename CellTextureCallback >
 	void renderCellTextures(SceneCuller &culler) {
 		const Rect2i mapBounds(0, 0, theMap.getTileW()-1, theMap.getTileH()-1);
@@ -55,7 +99,7 @@ public:
 		glActiveTexture( GL_TEXTURE0 );
 
 		SceneCuller::iterator it = culler.tile_begin();
-		for ( ; it !+ culler.tile_end(); ++it ) {
+		for ( ; it != culler.tile_end(); ++it ) {
 			const Vec2i &pos= *it;
 			int cx, cy;
 			cx = pos.x * 2;
@@ -139,6 +183,9 @@ public:
 		renderCellOverlay<RegionHilightCallback>(culler);
 	}
 
+	void renderGrid(SceneCuller &culler) {
+		renderCellTextures<GridTextureCallback>(culler);
+	}
 
 private:
 	void renderCellTextured( const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
