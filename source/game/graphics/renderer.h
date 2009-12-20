@@ -188,6 +188,8 @@ public:
 	int getTriangleCount() const	{return triangleCount;}
 	int getPointCount() const		{return pointCount;}
 
+	void setFarClip(float clip) { perspFarPlane = clip; }
+
 	//misc
 	void reloadResources();
 

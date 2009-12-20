@@ -364,13 +364,14 @@ private:
 	static int lastCreatedUnit(LuaHandle* luaHandle);		// ?? deprecate, use 'created' unitEvent ??
 
 	static int lastDeadUnitName(LuaHandle* luaHandle);		// deprecate, use unitEvent
-	static int lastDeadUnit(LuaHandle* luaHandle);		// deprecate, use unitEvent
+	static int lastDeadUnit(LuaHandle* luaHandle);			// deprecate, use unitEvent
 
 #	if DEBUG_RENDERING_ENABLED
 
 	static int hilightRegion(LuaHandle *luaHandle);
 	static int hilightCell(LuaHandle *luaHandle);
 	static int clearHilights(LuaHandle *luaHandle);
+	static int setFarClip(LuaHandle *luaHandle);
 
 #	endif
 

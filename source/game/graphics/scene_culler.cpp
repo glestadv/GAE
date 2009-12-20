@@ -102,16 +102,40 @@ void SceneCuller::extractFrustum() {
 /** project frustum edges onto a plane at avg map height & clip result to map bounds */
 void SceneCuller::getFrustumExtents() {
 	const GameCamera *cam = Game::getInstance()->getGameCamera();
-	float alt = World::getCurrWorld()->getMap()->getAvgHeight();
+	const Map *map = World::getCurrWorld()->getMap();
+	float alt = map->getAvgHeight();
 	for (int i=0; i < 4; ++i) {
 		Vec3f &pt = frstmPoints[i];
 		Vec3f pt2 = frstmPoints[i+4];
-		if (pt2.y >= pt.y) {
+		if (pt2.y >= pt.y) { 
+			// a bit hacky, but means we don't need special case code elsewhere
 			pt2.y = pt.y - 0.1f;
 		}
 		Vec3f dir = pt2 - pt;
 		float u = (alt - pt.y) / dir.y;
-		intersectPoints[i] = pt + dir * u;
+		
+		assert(u > 0.f);
+		if (u > 1.f) {
+			// if u is > 1.f the intersection with the plane is beyond the far clip plane
+			// so we 'cut off' the projection at the far clip plane, the 'y' value will be
+			// wrong, but we're about to ignore that anyway.
+			intersectPoints[i] = pt + dir * 1.f;
+		} else {
+			// if u is < 1.f the intersection is before the far clip plane
+			
+			// check the height of the cell, recast
+			intersectPoints[i] = pt + dir * u;
+			Vec2i cell(intersectPoints[i].x,intersectPoints[i].y);
+			if (map->isInside(cell)) {
+				float cellAlt = map->getCell(cell)->getHeight();
+				u = (cellAlt - pt.y) / dir.y;
+				intersectPoints[i] = pt + dir * u;
+				//Vec2i cell2(intersectPoints[i].x,intersectPoints[i].y);
+				//if (cell != cell2) {
+				//	// do it again??
+				//}
+			}
+		}
 	}
 
 	vector<Vec2f> in;

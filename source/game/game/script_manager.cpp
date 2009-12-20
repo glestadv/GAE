@@ -19,6 +19,7 @@
 #include "lang.h"
 #include "game_camera.h"
 #include "game.h"
+#include "renderer.h"
 
 #include "leak_dumper.h"
 
@@ -393,6 +394,7 @@ void ScriptManager::init(Game *g) {
 	LUA_FUNC(hilightRegion);
 	LUA_FUNC(hilightCell);
 	LUA_FUNC(clearHilights);
+	LUA_FUNC(setFarClip);
 
 #	endif
 
@@ -1293,7 +1295,14 @@ int ScriptManager::clearHilights(LuaHandle *luaHandle) {
 	return args.getReturnCount();
 }
 
-
+int ScriptManager::setFarClip(LuaHandle *luaHandle) {
+	LuaArguments args(luaHandle);
+	int clip;
+	if (extractArgs(args, "setFarClip", "int", &clip)) {
+		Renderer::getInstance().setFarClip(clip);
+	}
+	return args.getReturnCount();
+}
 #endif
 
 }}//end namespace

@@ -280,6 +280,7 @@ void Renderer::initMenu(MainMenu *mm){
 void Renderer::reset3d(){
 	assertGl();
 	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+	loadProjectionMatrix();
 	glCallList(list3d);
 	pointCount= 0;
 	triangleCount= 0;
@@ -491,11 +492,9 @@ void Renderer::computeVisibleArea() {
 		}
 		captureFrustum = false;
 
-		SceneCuller::iterator it = culler.tile_begin();
-		for ( ; it != culler.tile_end(); ++it) {
+		SceneCuller::iterator it = culler.cell_begin();
+		for ( ; it != culler.cell_end(); ++it) {
 			Vec2i pos = *it;
-			pos.x *= 2;
-			pos.y *= 2;
 			RegionHilightCallback::cells.insert(pos);
 		}
 	}
@@ -2655,7 +2654,6 @@ void Renderer::init3dList(){
 		glClearColor(fowColor.x, fowColor.y, fowColor.z, fowColor.w);
 		glFrontFace(GL_CW);
 		glEnable(GL_CULL_FACE);
-		loadProjectionMatrix();
 
 		//texture state
 		glActiveTexture(shadowTexUnit);
