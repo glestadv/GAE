@@ -233,6 +233,7 @@ Team=Team
 TechTree=Tech tree
 Textures3D=3D Textures
 Tileset=Tileset
+UnableToJoin=Unable to connect to server
 UnitAddedToProductionQueue=Unit added to production queue
 UnitNoPlace=Unit can´t be placed
 UnitNoReqs=Unit doesn't satisfy requirements
