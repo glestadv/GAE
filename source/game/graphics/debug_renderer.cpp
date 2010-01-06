@@ -20,7 +20,8 @@ using namespace Shared::Util;
 
 namespace Glest { namespace Game{
 
-set<Vec2i>	RegionHilightCallback::cells; 
+set<Vec2i>	RegionHilightCallback::blueCells,
+			RegionHilightCallback::greenCells; 
 
 Field		PathFinderTextureCallBack::debugField;
 Texture2D*	PathFinderTextureCallBack::PFDebugTextures[26];

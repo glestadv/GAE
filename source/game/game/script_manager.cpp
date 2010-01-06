@@ -1270,7 +1270,7 @@ int ScriptManager::hilightRegion(LuaHandle *luaHandle) {
 			const Rect *rect = static_cast<const Rect*>(r);
 			for ( int y = rect->y; y < rect->y + rect->h; ++y ) {
 				for ( int x = rect->x; x < rect->x + rect->w; ++x ) {
-					RegionHilightCallback::cells.insert(Vec2i(x,y));
+					RegionHilightCallback::blueCells.insert(Vec2i(x,y));
 				}
 			}
 		} else {
@@ -1284,14 +1284,14 @@ int ScriptManager::hilightCell(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	Vec2i cell;
 	if ( extractArgs(args, "hilightCell", "v2i", &cell) ) {
-		RegionHilightCallback::cells.insert(cell);
+		RegionHilightCallback::blueCells.insert(cell);
 	}
 	return args.getReturnCount();
 }
 
 int ScriptManager::clearHilights(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
-	RegionHilightCallback::cells.clear();
+	RegionHilightCallback::clear();
 	return args.getReturnCount();
 }
 

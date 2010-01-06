@@ -128,6 +128,12 @@ public:
 		return *this;
 	}
 
+	Vec2<T>& operator /=(const T &v) {
+		x /= v;
+		y /= v;
+		return *this;
+	}
+
 	Vec2<T> lerp(T t, const Vec2<T> &v) const {
 		return *this + (v - *this)*t;
 	}

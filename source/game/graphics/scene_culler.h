@@ -127,21 +127,56 @@ class SceneCuller {
 	friend class Renderer;
 private:
 	enum { Left, Right, Top, Bottom, Near, Far };
-	enum { TopLeft, TopRight, BottomRight, BottomLeft };
 	Plane frstmPlanes[6];
+
+	enum { 
+		NearBottomLeft, NearTopLeft, NearTopRight, NearBottomRight,
+		FarBottomLeft, FarTopLeft, FarTopRight, FarBottomRight
+	};
 	Vec3f frstmPoints[8];
-	Vec3f intersectPoints[4];
+	
+	enum { TopRight, BottomRight, BottomLeft, TopLeft };
+
+	struct Line {
+		Vec3f origin, magnitude;
+	};
+	struct RayInfo {
+		Line  line;
+		float last_u;
+		Vec2f last_intersect;
+
+		// construct from two points (near,far)
+		RayInfo(Vec3f pt1, Vec3f pt2) {
+			line.origin = pt1;
+			if (pt2.y >= pt1.y) { 
+				// a bit hacky, but means we don't need special case code elsewhere
+				pt2.y = pt1.y - 0.1f;
+			}
+			line.magnitude = pt2 - pt1;
+			castRay();
+		}
+		// constrcut from two other rays, interpolating line 
+		RayInfo(const RayInfo &ri1, const RayInfo &ri2, const float frac) {
+			line.origin = (ri1.line.origin + ri2.line.origin) * frac;
+			line.magnitude = (ri1.line.magnitude + ri2.line.magnitude) * frac;
+			castRay();
+		}
+		void castRay();
+	};
+	list<RayInfo> rays;
+
+	vector<Vec2f> boundingPoints;
 	vector<Vec2f> visiblePoly;
 
 	typedef pair<Vec2i,Vec2i> Edge;
 	static bool EdgeComp(const Edge &e0, const Edge &e1) {
-		return (e0.first.y > e1.first.y);
+		return (e0.first.y < e1.first.y);
 	}
 
 	struct Extrema {
 		int min_y, max_y;
 		int min_x, max_x;
-		vector< pair<int,int> > edges;
+		vector< pair<int,int> > spans;
 
 		Rect2i getBounds() const { return Rect2i(min_x, min_y, max_x, max_y); }
 		void reset(int minY, int maxY);
@@ -157,7 +192,9 @@ private:
 	void getFrustumExtents();
 	void clipVisibleQuad(vector<Vec2f> &in);
 	void setVisibleExtrema();
-	void setVisibleExtrema(const vector<Edge> &edges);
+
+	template < typename EdgeIt >
+	void setVisibleExtrema(const EdgeIt &start, const EdgeIt &end);
 
 	void scanLine(int x0, int y0, int x1, int y1);
 	void cellVisit(int x, int y);
@@ -180,11 +217,11 @@ public:
 		iterator() : extrema(NULL), x(-1), y(-1) {}
 		iterator(const Extrema *extrema, bool start=true) : extrema(extrema) {
 			if (start) {
-				x = extrema->edges[0].first;
+				x = (extrema->max_y - extrema->min_y) ? extrema->spans[0].first : -1;
 				y = extrema->min_y;
 			} else { // end
 				x = -1;
-				y = extrema->min_y + extrema->edges.size();
+				y = extrema->min_y + extrema->spans.size();
 			}
 		}
 		const Extrema *extrema;
@@ -193,9 +230,9 @@ public:
 	public:
 		void operator++() {
 			const int &row = y - extrema->min_y;
-			if (x == extrema->edges[row].second) {
+			if (x == extrema->spans[row].second) {
 				++y;
-				x = (row == extrema->edges.size() - 1 ? -1 : extrema->edges[row+1].first);
+				x = (row == extrema->spans.size() - 1 ? -1 : extrema->spans[row+1].first);
 			} else {
 				++x;
 			}

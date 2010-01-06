@@ -491,10 +491,28 @@ void Renderer::computeVisibleArea() {
 		for (int i=0; i  < 8; ++i) {
 			frstmPoints[i] = culler.frstmPoints[i];
 		}
-		for (int i=0; i < 4; ++i) {
-			Vec2i pos(culler.intersectPoints[i].x, culler.intersectPoints[i].z);
-			RegionHilightCallback::cells.insert(pos);
+
+		for (int i=0; i < culler.boundingPoints.size(); ++i) {
+			Vec2i pos(culler.boundingPoints[i].x, culler.boundingPoints[i].y);
+			RegionHilightCallback::blueCells.insert(pos);
 		}
+
+		vector<Vec2f>::iterator it = culler.visiblePoly.begin();
+		for ( ; it != culler.visiblePoly.end(); ++it) {
+			Vec2i pos(it->x, it->y);
+			RegionHilightCallback::greenCells.insert(pos);
+		}
+		for ( int i=0; i < culler.cellExtrema.spans.size(); ++i) {
+			int y = culler.cellExtrema.min_y + i;
+			int x1 = culler.cellExtrema.spans[i].first;
+			int x2 = culler.cellExtrema.spans[i].second;
+			RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
+			RegionHilightCallback::greenCells.insert(Vec2i(x2,y));
+			//for ( ; x1 <= x2; ++x1) {
+			//	RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
+			//}
+		}
+
 		/*
 		SceneCuller::iterator it = culler.cell_begin();
 		for ( ; it != culler.cell_end(); ++it) {
@@ -1177,7 +1195,7 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 void Renderer::renderSurface() {
 #	if DEBUG_RENDERING_ENABLED
 
-	if (false) {
+	if (true) {
 		debugRenderer.renderGrid(culler);
 
 	} else {
@@ -1205,8 +1223,7 @@ void Renderer::renderSurface() {
 	glActiveTexture(fowTexUnit);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, static_cast<const Texture2DGl*>(fowTex)->getHandle());
-	glTexSubImage2D(
-		GL_TEXTURE_2D, 0, 0, 0,
+	glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0,
 		fowTex->getPixmap()->getW(), fowTex->getPixmap()->getH(),
 		GL_ALPHA, GL_UNSIGNED_BYTE, fowTex->getPixmap()->getPixels());
 

@@ -21,12 +21,44 @@ namespace Glest { namespace Game {
 #undef max
 
 void SceneCuller::Extrema::reset(int minY, int maxY) {
-	edges.clear();
+	spans.clear();
 	min_y = minY;
 	max_y = maxY;
 	min_x = numeric_limits<int>::max();
 	max_x = -1;
 }
+
+void SceneCuller::RayInfo::castRay() {
+	const Map *map = World::getCurrWorld()->getMap();
+	float alt = map->getAvgHeight();
+	last_u = (alt - line.origin.y) / line.magnitude.y;
+	if (last_u < 1.f) {
+		Vec3f p = line.origin + line.magnitude * last_u;
+		last_intersect = Vec2f(p.x, p.z);
+		Vec2i cell((int)last_intersect.x, (int)last_intersect.y);
+		if (map->isInside(cell)) {
+			Vec2i lastCell;
+			const int max = 3;
+			int num = max;
+			do {
+				alt = map->getCell(cell)->getHeight();
+				last_u = (alt - line.origin.y) / line.magnitude.y;
+				p = line.origin + line.magnitude * (last_u < 1.f ? last_u : 1.f);
+				last_intersect = Vec2f(p.x, p.z);
+				lastCell = cell;
+				cell = Vec2i((int)last_intersect.x, (int)last_intersect.y);
+			} while (cell != lastCell && map->isInside(cell) && num--);
+		}
+	} else {
+		// if u is > 1.f the intersection with the plane is beyond the far clip plane
+		// so we 'cut off' the projection at the far clip plane, the 'y' value will be
+		// wrong, but we're about to discard that anyway.
+		Vec3f p = line.origin + line.magnitude * 1.f;
+		last_intersect = Vec2f(p.x, p.z);
+		
+	}
+}
+
 
 /** determine visibility of cells & tiles */
 void SceneCuller::establishScene() {
@@ -81,17 +113,17 @@ void SceneCuller::extractFrustum() {
 	frstmPlanes[Far].n.z	=	fm._43 - fm._33;
 	frstmPlanes[Far].d		= -(fm._44 - fm._34);
 
-	// find near points (intersections of 'side' planes eith near plane)
-	frstmPoints[0] = intersection(frstmPlanes[Near], frstmPlanes[Left], frstmPlanes[Top]);		// ntl
-	frstmPoints[1] = intersection(frstmPlanes[Near], frstmPlanes[Right], frstmPlanes[Top]);		// ntr
-	frstmPoints[2] = intersection(frstmPlanes[Near], frstmPlanes[Right], frstmPlanes[Bottom]);	// nbr
-	frstmPoints[3] = intersection(frstmPlanes[Near], frstmPlanes[Left], frstmPlanes[Bottom]);	// nbl
+	// find near points (intersections of 'side' planes with near plane)
+	frstmPoints[NearTopLeft]	 = intersection(frstmPlanes[Near], frstmPlanes[Left], frstmPlanes[Top]);
+	frstmPoints[NearTopRight]	 = intersection(frstmPlanes[Near], frstmPlanes[Right], frstmPlanes[Top]);
+	frstmPoints[NearBottomRight] = intersection(frstmPlanes[Near], frstmPlanes[Right], frstmPlanes[Bottom]);
+	frstmPoints[NearBottomLeft]  = intersection(frstmPlanes[Near], frstmPlanes[Left], frstmPlanes[Bottom]);
 	
 	// far points
-	frstmPoints[4] = intersection(frstmPlanes[Far], frstmPlanes[Left], frstmPlanes[Top]);		// ftl
-	frstmPoints[5] = intersection(frstmPlanes[Far], frstmPlanes[Right], frstmPlanes[Top]);		// ftr
-	frstmPoints[6] = intersection(frstmPlanes[Far], frstmPlanes[Right], frstmPlanes[Bottom]);	// fbr
-	frstmPoints[7] = intersection(frstmPlanes[Far], frstmPlanes[Left], frstmPlanes[Bottom]);	// fbl
+	frstmPoints[FarTopLeft]		= intersection(frstmPlanes[Far], frstmPlanes[Left], frstmPlanes[Top]);
+	frstmPoints[FarTopRight]	= intersection(frstmPlanes[Far], frstmPlanes[Right], frstmPlanes[Top]);
+	frstmPoints[FarBottomRight] = intersection(frstmPlanes[Far], frstmPlanes[Right], frstmPlanes[Bottom]);
+	frstmPoints[FarBottomLeft]	= intersection(frstmPlanes[Far], frstmPlanes[Left], frstmPlanes[Bottom]);
 
 	// normalise planes
 	for (int i=0; i < 6; ++i) {
@@ -102,51 +134,51 @@ void SceneCuller::extractFrustum() {
 /** project frustum edges onto a plane at avg map height & clip result to map bounds */
 void SceneCuller::getFrustumExtents() {
 	const GameCamera *cam = Game::getInstance()->getGameCamera();
-	const Map *map = World::getCurrWorld()->getMap();
-	float alt = map->getAvgHeight();
-	for (int i=0; i < 4; ++i) {
-		Vec3f &pt = frstmPoints[i];
-		Vec3f pt2 = frstmPoints[i+4];
-		if (pt2.y >= pt.y) { 
-			// a bit hacky, but means we don't need special case code elsewhere
-			pt2.y = pt.y - 0.1f;
+
+	Vec2f centreView(0.f);
+
+	// collect line segments first, inserting additional interpolated ones as needed
+	rays.clear();
+	for (int i=0; i < 4; ++i) { // do the four from the frustum extents
+		rays.push_back(RayInfo(frstmPoints[i], frstmPoints[i+4]));
+		centreView += rays.back().last_intersect;
+	}
+	centreView /= 4.f;
+
+	list<RayInfo>::iterator it1 = rays.begin();
+	list<RayInfo>::iterator it2 = it1;
+	++it2;
+	for ( ; it2 != rays.end(); it1 = it2, ++it2) { 
+		// check length between BL-TL, TL-TR, TR-BR, & possibly add more rays
+		const float dist = it1->last_intersect.dist(it2->last_intersect);
+		int newRays;
+		/*if (dist > 128.f) { // insert four new rays
+			newRays = 4;
+		} else if (dist > 64.f) { // insert three new rays
+			newRays = 3;
+		} else if (dist > 32.f) { // insert two new rays
+			newRays = 2;
+		} else*/ if (dist > 16.f) { // insert one new ray
+			newRays = 1;
+		} else {	// insert zero new rays
+			newRays = 0;
 		}
-		Vec3f dir = pt2 - pt;
-		float u = (alt - pt.y) / dir.y;
-		assert(u > 0.f);
-		if (u > 1.f) {
-			// if u is > 1.f the intersection with the plane is beyond the far clip plane
-			// so we 'cut off' the projection at the far clip plane, the 'y' value will be
-			// wrong, but we're about to ignore that anyway.
-			intersectPoints[i] = pt + dir * 1.f;
-		} else {
-			// if u is < 1.f the intersection is before the far clip plane
-			// check the height of the cell, and recast
-			intersectPoints[i] = pt + dir * u;
-			Vec2i cell(intersectPoints[i].x,intersectPoints[i].z);
-			if (map->isInside(cell)) {
-				float cellAlt = map->getCell(cell)->getHeight();
-				u = (cellAlt - pt.y) / dir.y;
-				intersectPoints[i] = pt + dir * u;
-			}
+		for (int i=0; i < newRays; ++i) {
+			float frac = ((float)(i+1)) / ((float)(newRays+1));
+			rays.insert(it2, RayInfo(*it1, *it2, frac));
+			//RayInfo ray(*it1, *it2, frac);
+			//cout << "interpolated ray: " << ray.line.origin << ", " << ray.line.magnitude << endl;
 		}
 	}
 
-	vector<Vec2f> in;
-	for (int i=0; i < 4; ++i) {
-		Vec2f p(intersectPoints[i].x, intersectPoints[i].z);
-		in.push_back(p);
+	vector<Vec2f> &in = boundingPoints;
+	in.clear();
+	for (list<RayInfo>::iterator it = rays.begin(); it != rays.end(); ++it) {
+		// push them out a bit, to avoid jaggies...
+		Vec2f push_dir = it->last_intersect - centreView;
+		push_dir.normalize();
+		in.push_back(it->last_intersect + push_dir);
 	}
-	// push them out a bit, to avoid jaggies...
-	Vec2f west = in[TopLeft] - in[TopRight];
-	Vec2f south = in[BottomLeft] - in[TopLeft];
-	west.normalize();
-	south.normalize();
-	in[BottomRight] += -west + south;
-	in[BottomLeft]	+= west + south;
-	in[TopLeft]		+= west - south;
-	in[TopRight]	+= -west - south;
-
 	in.push_back(in.front()); // close poly
 	clipVisibleQuad(in);
 }
@@ -160,31 +192,31 @@ void SceneCuller::cellVisit(int x, int y) {
 	int tx = x / 2;
 	y = y - cellExtrema.min_y;
 	if (activeEdge == Left) {
-		if (cellExtrema.edges.size() < y + 1) {
-			cellExtrema.edges.push_back(pair<int,int>(x,-1));
-		} else if (x < cellExtrema.edges[y].first) {
-			cellExtrema.edges[y].first = x;
+		if (cellExtrema.spans.size() < y + 1) {
+			cellExtrema.spans.push_back(pair<int,int>(x,-1));
+		} else if (x < cellExtrema.spans[y].first) {
+			cellExtrema.spans[y].first = x;
 		}
 		if (x < cellExtrema.min_x) {
 			cellExtrema.min_x = x;
 		}
-		if (tileExtrema.edges.size() < ty + 1) {
-			tileExtrema.edges.push_back(pair<int,int>(tx,-1));
-		} else if ( tx < tileExtrema.edges[ty].first) {
-			tileExtrema.edges[ty].first = tx;
+		if (tileExtrema.spans.size() < ty + 1) {
+			tileExtrema.spans.push_back(pair<int,int>(tx,-1));
+		} else if ( tx < tileExtrema.spans[ty].first) {
+			tileExtrema.spans[ty].first = tx;
 		}
 		if (tx < tileExtrema.min_x) {
 			tileExtrema.min_x = tx;
 		}
 	} else {
-		if (x > cellExtrema.edges[y].second) {
-			cellExtrema.edges[y].second = x;
+		if (x > cellExtrema.spans[y].second) {
+			cellExtrema.spans[y].second = x;
 		}
 		if (x > cellExtrema.max_x) {
 			cellExtrema.max_x = x;
 		}
-		if (tx > tileExtrema.edges[ty].second) {
-			tileExtrema.edges[ty].second = tx;
+		if (tx > tileExtrema.spans[ty].second) {
+			tileExtrema.spans[ty].second = tx;
 		}
 		if (tx > tileExtrema.max_x) {
 			tileExtrema.max_x = tx;
@@ -242,8 +274,9 @@ void SceneCuller::scanLine(int x0, int y0, int x1, int y1) {
 }
 
 /** evaluate a set of edges (the left or right side), calls scanLine() for each edge */
-void SceneCuller::setVisibleExtrema(const vector<Edge> &edges) {
-	for (vector<Edge>::const_iterator it = edges.begin(); it != edges.end(); ++it) {
+template < typename EdgeIt >
+void SceneCuller::setVisibleExtrema(const EdgeIt &start, const EdgeIt &end) {
+	for (EdgeIt it = start; it != end; ++it) {
 		assert(it->first.y < it->second.y);
 		if (it->first.x < it->second.x)  {
 			line_mirrored = false;
@@ -259,106 +292,58 @@ void SceneCuller::setVisibleExtrema(const vector<Edge> &edges) {
 
 /** sort the edges into left and right edge lists, then evaluate edge lists */
 void SceneCuller::setVisibleExtrema() {
-	vector<Edge> allEdges;
-	// get edges...
-	for (int i=0; i < visiblePoly.size(); ++i) {
-		Vec2i pt0 = Vec2i(visiblePoly[i]);
-		Vec2i pt1 = Vec2i(visiblePoly[(i + 1) % visiblePoly.size()]);
-		// put them all in allEdges, the 'right way' up (lower y val first)
-		if (pt0.y == pt1.y) {
-			continue; // cull horizontal
-		} else if (pt0.y < pt1.y) {
-			Edge foo(pt0, pt1);
-			allEdges.push_back(foo);
-		} else { // pt1.y < pt0.y
-			Edge foo(pt1, pt0);
-			allEdges.push_back(foo);
+	// find indices of lowest & hightest y value
+	// and therefor indices of first right edge and first left edge
+	const size_t &n = visiblePoly.size();
+	int ndx_min_y = -1, min_y = numeric_limits<int>::max(),
+		ndx_max_y = -1, max_y = -1;
+	for (int i=0; i < n; ++i) {
+		Vec2i pt((int)visiblePoly[i].x, (int)visiblePoly[i].y);
+		if (pt.y < min_y) {
+			min_y = pt.y;
+			ndx_min_y = i;
+		}
+		if (pt.y > max_y) {
+			max_y = pt.y;
+			ndx_max_y = i;
 		}
 	}
-	// sort, putting lower first.y edges at the back (because that's where we'll remove them from)
-	sort(allEdges.begin(), allEdges.end(), EdgeComp);
+	// build left and right edge lists
+	int i;
+	vector<Edge> leftEdges, rightEdges;
+	for (i = ndx_min_y; i != ndx_max_y; ++i, i %= n) {
+		Vec2i pt0((int)visiblePoly[i % n].x, (int)visiblePoly[i % n].y);
+		Vec2i pt1((int)visiblePoly[(i + 1) % n].x, (int)visiblePoly[(i + 1) % n].y);
+		if (pt0.y < pt1.y) {
+			rightEdges.push_back(Edge(pt0, pt1));
+		}
+	}
+	for ( ; i != ndx_min_y; ++i, i %= n) {
+		Vec2i pt0((int)visiblePoly[i % n].x, (int)visiblePoly[i % n].y);
+		Vec2i pt1((int)visiblePoly[(i + 1) % n].x, (int)visiblePoly[(i + 1) % n].y);
+		if (pt0.y > pt1.y) { // edge from pt1 to pt0 ...
+			leftEdges.push_back(Edge(pt1, pt0)); // line algorithm needs first.y < second.y
+		}
+	}
 
-	if (allEdges.size() < 2) {
+	if (leftEdges.empty() || rightEdges.empty()) { // invalidate and bail, nothing visible
 		cellExtrema.invalidate();
 		tileExtrema.invalidate();
 		return;
 	}
-	//REMOVE
-	assert(allEdges.size() >= 2);
-	const size_t &n = allEdges.size();
-	assert(allEdges[n-1].first.y == allEdges[n-2].first.y);
-	//REMOVE END
+	// assert sanity
+	assert(leftEdges.back().first.y == rightEdges.front().first.y);
+	assert(leftEdges.front().second.y == rightEdges.back().second.y);
 
-	int min_y = allEdges.back().first.y,
-		max_y = allEdges.front().second.y;
-
-	//DEBUG!!!
-	vector<Edge> boo = vector<Edge>(allEdges);
-
-	Edge e0 = allEdges.back();
-	allEdges.pop_back();
-	Edge e1 = allEdges.back();
-	allEdges.pop_back();
-
-	vector<Edge> edgeList1, edgeList2;
-
-	bool firstIsLeft = false;
-
-	edgeList1.push_back(e0);
-	edgeList2.push_back(e1);
-
-	while (!allEdges.empty()) {
-		e0 = allEdges.back();
-		allEdges.pop_back();
-		if (e0.first == edgeList1.back().second) {
-			edgeList1.push_back(e0);
-		} else if (e0.first == edgeList2.back().second) {
-			edgeList2.push_back(e0);
-		} else {
-			cellExtrema.invalidate();
-			tileExtrema.invalidate();
-			return;
-		}
-	}
-
-	vector<Edge>::iterator it1 = edgeList1.begin();
-	vector<Edge>::iterator it2 = edgeList2.begin();
-	if (it1->first.x < it2->first.x) {
-		firstIsLeft = true;
-	} else if (it2->first.x < it2->first.x) {
-		firstIsLeft = false;
-	} else {
-		do {
-			if (it1->second.x < it2->second.x) {
-				firstIsLeft = true;
-				break;
-			} else if (it2->second.x < it1->second.x) {
-				firstIsLeft = false;
-				break;
-			}
-			if ( it1->second.y < it2->second.y) {
-				++it1;
-			} else {
-				++it2;
-			}
-		} while (it1 != edgeList1.end() && it2 != edgeList2.end());
-		if (it1 == edgeList1.end() || it2 == edgeList2.end()) {
-			cellExtrema.invalidate();
-			tileExtrema.invalidate();
-			return;
-		}
-	}
-	assert(edgeList1.front().first.y == edgeList2.front().first.y);
-	assert(edgeList1.back().second.y == edgeList2.back().second.y);
-
+	// set extrema
 	cellExtrema.reset(min_y, max_y);
 	tileExtrema.reset(min_y / 2,max_y / 2);
-
 	activeEdge = Left;
-	setVisibleExtrema(firstIsLeft ? edgeList1 : edgeList2);
+	setVisibleExtrema(leftEdges.rbegin(), leftEdges.rend());
 	activeEdge = Right;
-	setVisibleExtrema(firstIsLeft ? edgeList2 : edgeList1);
+	setVisibleExtrema(rightEdges.begin(), rightEdges.end());
 
+	// assert sanity still prevails
 	assert(cellExtrema.min_x != cellExtrema.max_x);
 }
 

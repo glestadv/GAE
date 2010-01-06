@@ -67,16 +67,23 @@ public:
 
 class RegionHilightCallback {
 public:
-	static set<Vec2i> cells;
+	static set<Vec2i> blueCells, greenCells;
+
+	static void clear() {
+		blueCells.clear();
+		greenCells.clear();
+	}
 
 	Vec4f operator()( const Vec2i &cell ) {
-		Vec4f colour(0.f, 0.f, 1.f, 0.f);
-		if ( cells.find(cell) == cells.end() ) {
-			colour.w = 0.f;
-		} else {
-			colour.w = 0.6f;
+		Vec4f none(0.f);
+		Vec4f blue(0.f, 0.f, 1.f, 0.8f);
+		Vec4f green(0.f, 1.f, 0.f, 0.8f);
+		if ( blueCells.find(cell) != blueCells.end() ) {
+			return blue;
+		} else if (greenCells.find(cell) != greenCells.end()) {
+			return green;
 		}
-		return colour;
+		return none;
 	}
 };
 

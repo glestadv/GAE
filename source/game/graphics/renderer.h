@@ -163,7 +163,6 @@ private:
 	//DEBUG
 	Vec3f frstmPoints[8];
 
-
 private:
 	Renderer();
 	~Renderer();
