@@ -264,10 +264,11 @@ public:
 class GraphicProgressBar: public GraphicComponent {
 private:
 	int progress;
+	Font2D *font;
 
 public:
 	GraphicProgressBar();
-	void init(int x, int y/*, int w, int h*/);
+	void init(int x, int y, int w, int h);
 
 	void setProgress(int v) { progress = v; }
 	int getProgress() { return progress; }

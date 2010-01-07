@@ -1939,6 +1939,7 @@ void Renderer::renderDisplay(){
 			display->getProgressBar(),
 			metrics.getDisplayX(),
 			metrics.getDisplayY() + metrics.getDisplayH()-50,
+			100, 10,
 			coreData.getMenuFontSmall());
 	}
 	//up images
@@ -2943,34 +2944,39 @@ void Renderer::renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &co
 	glEnd();
 }
 
-void Renderer::renderProgressBar(int size, int x, int y, Font2D *font){
+void Renderer::renderProgressBar(int progress, int x, int y, int w, int h, const Font2D *font){
+	assert(progress <= maxProgressBar);
+	assert(x >= maxProgressBar);
+
+	int widthFactor = static_cast<int>(w / maxProgressBar);
+	int width = progress * widthFactor;
 
 	//bar
 	glBegin(GL_QUADS);
 		glColor4fv(progressBarFront2.ptr());
-		glVertex2i(x, y);
-		glVertex2i(x, y+10);
+		glVertex2i(x, y); // bottom left
+		glVertex2i(x, y + h); // top left
 		glColor4fv(progressBarFront1.ptr());
-		glVertex2i(x+size, y+10);
-		glVertex2i(x+size, y);
+		glVertex2i(x+width, y + h); // top right
+		glVertex2i(x+width, y); // bottom right
 	glEnd();
 
 	//transp bar
 	glEnable(GL_BLEND);
 	glBegin(GL_QUADS);
 		glColor4fv(progressBarBack2.ptr());
-		glVertex2i(x+size, y);
-		glVertex2i(x+size, y+10);
+		glVertex2i(x+width, y); // bottom left
+		glVertex2i(x+width, y + h); // top left
 		glColor4fv(progressBarBack1.ptr());
-		glVertex2i(x+maxProgressBar, y+10);
-		glVertex2i(x+maxProgressBar, y);
+		glVertex2i(x+maxProgressBar*widthFactor, y + h); // top right
+		glVertex2i(x+maxProgressBar*widthFactor, y); // bottom right
 	glEnd();
 	glDisable(GL_BLEND);
 
 	//text
 	glColor3fv(defColor.ptr());
 	textRenderer->begin(font);
-	textRenderer->render(intToStr(static_cast<int>(size))+"%", x+maxProgressBar/2, y, true);
+	textRenderer->render(intToStr(progress)+"%", x+maxProgressBar*widthFactor/2, y, true);
 	textRenderer->end();
 }
 

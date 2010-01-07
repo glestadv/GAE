@@ -127,7 +127,7 @@ void Game::load(){
 	string scenarioName= basename(scenarioPath);
 
 	GraphicProgressBar progressBar;
-	progressBar.init(365, 560);
+	progressBar.init(345, 550, 300, 20);
 	logger.setProgressBar(&progressBar);
 
 	logger.setState(Lang::getInstance().get("Loading"));

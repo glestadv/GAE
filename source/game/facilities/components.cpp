@@ -382,16 +382,24 @@ void GraphicTextEntryBox::keyDown(const Key &key) {
 // 	class GraphicProgressBar
 // ===========================================================
 
-GraphicProgressBar::GraphicProgressBar() : GraphicComponent(), progress(0) {}
+GraphicProgressBar::GraphicProgressBar() : GraphicComponent(), progress(0), font(0) {}
 
-void GraphicProgressBar::init(int x, int y/*, int w, int h*/) {
-	GraphicComponent::init(x, y, 0, 0);
+void GraphicProgressBar::init(int x, int y, int w, int h) {
+	GraphicComponent::init(x, y, w, h);
+
+	// choose appropriate font size
+	CoreData &coreData = CoreData::getInstance();
+	if (y < 15) {
+		setFont(coreData.getMenuFontSmall());
+	} else if (y < 30) {
+		setFont(coreData.getMenuFontNormal());
+	} else {
+		setFont(coreData.getMenuFontBig());
+	}
 }
 
 void GraphicProgressBar::render() {
-	CoreData &coreData = CoreData::getInstance();
-
-	Renderer::getInstance().renderProgressBar(progress,	x, y, coreData.getMenuFontSmall());
+	Renderer::getInstance().renderProgressBar(progress,	x, y, w, h, getFont());
 }
 
 }}//end namespace

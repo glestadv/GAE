@@ -237,7 +237,7 @@ public:
 	void renderMessageBox(const GraphicMessageBox *listBox);
 	void renderTextEntry(const GraphicTextEntry *textEntry);
 	void renderTextEntryBox(const GraphicTextEntryBox *textEntryBox);
-	void renderProgressBar(int size, int x, int y, Font2D *font);
+	void renderProgressBar(int size, int x, int y, int w, int h, const Font2D *font);
 
     //complex rendering
     void renderSurface();
