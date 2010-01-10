@@ -9,7 +9,7 @@
 #include "route_planner.h"   
 #include "influence_map.h"
 #include "cartographer.h"
-#include "abstract_map.h"
+#include "cluster_map.h"
 
 #include "vec.h"
 #include "math_util.h"
@@ -22,6 +22,7 @@ using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
 using Glest::Game::Search::InfluenceMap;
+using Glest::Game::Search::ClusterMap;
 using Glest::Game::Search::Cartographer;
 
 namespace Glest { namespace Game {
@@ -110,7 +111,7 @@ public:
 	static set<Vec2i> pathCells;
 
 	Vec4f operator()( const Vec2i &cell ) {
-		const int &clusterSize = Search::AbstractMap::clusterSize;
+		const int &clusterSize = Search::ClusterMap::clusterSize;
 		if ( cell.x % clusterSize == clusterSize - 1 
 		|| cell.y % clusterSize == clusterSize - 1  ) {
 			if ( entranceCells.find(cell) != entranceCells.end() ) {
@@ -368,11 +369,51 @@ public:
 		++it;
 		two = *it;
 		while ( true ) {
-			renderArrow(one,two,Vec3f(0.2f, 0.2f, 1.0f), 0.3f);
+			renderArrow(one,two,Vec3f(1.0f, 1.0f, 0.f), 0.15f);
 			one = two;
 			++it;
 			if ( it == waypoints.end() ) break;
 			two = *it;
+		}
+		//Restore
+		glPopAttrib();
+	}
+
+	void renderIntraCusterEdges(const Vec2i &cluster, CardinalDir dir = CardinalDir::COUNT) {
+		ClusterMap *cm = World::getInstance().getCartographer()->getClusterMap();
+		const Map *map = World::getInstance().getMap();
+		
+		Transitions transitions;
+		if (dir != CardinalDir::COUNT) {
+			Transitions &bt = cm->getBorder(cluster, dir)->transitions[Field::LAND];
+			transitions.insert(transitions.end(), bt.begin(), bt.end());
+		} else {
+			cm->getTransitions(cluster, Field::LAND, transitions);
+		}		
+		assertGl();
+		glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT );
+		glEnable( GL_COLOR_MATERIAL ); 
+		glDisable( GL_ALPHA_TEST );
+		glDepthFunc(GL_ALWAYS);
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_CULL_FACE);
+		glLineWidth(2.f);
+		glActiveTexture( GL_TEXTURE0 );
+		glDisable( GL_TEXTURE_2D );
+
+		for (Transitions::iterator ti = transitions.begin(); ti != transitions.end(); ++ti) {
+			const Transition* &t = *ti;
+			float h = map->getCell(t->nwPos)->getHeight();
+			Vec3f t1Pos(t->nwPos.x + 0.5f, h + 0.1f, t->nwPos.y + 0.5f);
+			for (Edges::const_iterator ei = t->edges.begin(); ei != t->edges.end(); ++ei) {
+				Edge * const &e = *ei;
+				if (e->cost(1) != numeric_limits<float>::infinity()) {
+					Transition* &t2 = e->first;
+					h = map->getCell(t2->nwPos)->getHeight();
+					Vec3f t2Pos(t2->nwPos.x + 0.5f, h + 0.1f, t2->nwPos.y + 0.5f);
+					renderArrow(t1Pos, t2Pos, Vec3f(1.f, 0.f, 1.f), 0.2f);
+				}
+			}
 		}
 		//Restore
 		glPopAttrib();

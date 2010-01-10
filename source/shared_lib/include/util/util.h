@@ -52,9 +52,10 @@ const string sharedLibVersionString= "v0.4.1";
 		enum Enum { INVALID = -1, __VA_ARGS__, COUNT };	\
 		Name() : value(INVALID) {}						\
 		Name(Enum val) : value(val) {}					\
+		explicit Name(int val) : value(Enum(val)) {}	\
 		operator Enum() const { return value; }			\
 		void operator++() {								\
-			if ( value < COUNT ) {						\
+			if (value < COUNT) {						\
 				value = (Enum)(value + 1);				\
 			}											\
 		}												\

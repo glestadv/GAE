@@ -37,52 +37,37 @@ struct Transition {
 	Edges edges;
 
 	Transition(Vec2i pos, int clear, bool vert) : nwPos(pos), clearance(clear), vertical(vert) {}
+	~Transition() {
+		deleteValues(edges.begin(), edges.end());
+	}
 };
 typedef vector<const Transition*> Transitions;
 
 class TransitionNeighbours {
-	class Builder {
-		Transitions &transitions;
-	public:
-		Builder(Transitions &t) : transitions(t) {}
-		void operator()(Edge *e) {
-			transitions.push_back(e->transition());
-		}
-	};
 public:
 	void operator()(const Transition* pos, Transitions &neighbours) const {
-		for_each(pos->edges.begin(), pos->edges.end(), Builder(neighbours));
+		for (Edges::const_iterator it = pos->edges.begin(); it != pos->edges.end(); ++it) {
+			neighbours.push_back((*it)->transition());
+		}
 	}
-
 };
 
 /** cost function for searching cluster map */
 class TransitionCost {
-	// predicate for find_if
-	/*class Finder {
-		const Transition *t;
-	public:
-		Finder(const Transition *t) : t(t) {}
-		bool operator()(const Edge *e) const { 
-			return (t == e->transition());
-		}
-	};*/
-	// data
 	Field field;
 	int size;
 
 public:
 	TransitionCost(Field f, int s) : field(f), size(s) {}
 	float operator()(const Transition *t, const Transition *t2) const {
-		Edges::const_iterator it = //find_if(t->edges.begin(), t->edges.end(), Finder(t2));
-			t->edges.begin();
+		Edges::const_iterator it =  t->edges.begin();
 		for ( ; it != t->edges.end(); ++it ) {
 			if ( (*it)->transition() == t2 ) {
 				break;
 			}
 		}
 		if ( it == t->edges.end() ) {
-			throw runtime_error("bad connection.");
+			throw runtime_error("bad connection in ClusterMap.");
 		}
 		if ( it != t->edges.end() && (*it)->maxClear() >= size ) {
 			return (*it)->cost(size);
@@ -104,6 +89,12 @@ public:
 
 struct ClusterBorder {
 	Transitions transitions[Field::COUNT];
+
+	~ClusterBorder() {
+		for (Field f(0); f < Field::COUNT; ++f) {
+			deleteValues(transitions[f].begin(), transitions[f].end());
+		}
+	}
 };
 
 #define POS_X ((cluster.x+1)*clusterSize-i-1)
@@ -140,6 +131,21 @@ public:
 	ClusterBorder* getWestBorder(Vec2i cluster) { 
 		return ( cluster.x == 0 ) ? &sentinel : &vertBorders[cluster.y * (w - 1) + cluster.x - 1]; 
 	}
+	ClusterBorder* getBorder(Vec2i cluster, CardinalDir dir) {
+		switch (dir) {
+			case CardinalDir::NORTH:
+				return getNorthBorder(cluster);
+			case CardinalDir::EAST:
+				return getEastBorder(cluster);
+			case CardinalDir::SOUTH:
+				return getSouthBorder(cluster);
+			case CardinalDir::WEST:
+				return getWestBorder(cluster);
+			default:
+				throw runtime_error("ClusterMap::getBorder() passed dogey direction");
+				return 0; // keep compiler quiet
+		}
+	}
 
 	void initCluster(Vec2i cluster);
 	void evalCluster(Vec2i cluster);
@@ -175,25 +181,29 @@ private:
 	bool assertOpen();
 
 public:
-	TransitionNodeStore() : stock(NULL) { }
-	~TransitionNodeStore() { delete [] stock; }
-	void init(int size) { this->size = size; stock = new TransitionAStarNode[size]; reset(); }
+	TransitionNodeStore(int size) : stock(NULL), size(size) { 
+		stock = new TransitionAStarNode[size]; 
+		reset();
+	}
+	~TransitionNodeStore() { 
+		delete [] stock; 
+	}
 
 	void reset() { nodeCount = 0; open.clear(); closed.clear(); openList.clear(); listed.clear(); }
-	void setMaxNodes( int limit ) {}
+	void setMaxNodes(int limit) { }
 	
-	bool isOpen ( const Transition* pos ) { return open.find(pos) != open.end(); }
-	bool isClosed ( const Transition* pos ) { return closed.find(pos) != closed.end(); }
+	bool isOpen(const Transition* pos)		{ return open.find(pos) != open.end();		}
+	bool isClosed(const Transition* pos)	{ return closed.find(pos) != closed.end();	}
 
-	bool setOpen ( const Transition* pos, const Transition* prev, float h, float d );
-	void updateOpen ( const Transition* pos, const Transition* &prev, const float cost );
+	bool setOpen(const Transition* pos, const Transition* prev, float h, float d);
+	void updateOpen(const Transition* pos, const Transition* &prev, const float cost);
 	const Transition* getBestCandidate();
 	Transition* getBestSeen();
 
-	float getHeuristicAt( const Transition* &pos )		{ return listed[pos]->heuristic;	}
-	float getCostTo( const Transition* pos )			{ return listed[pos]->distToHere;	}
-	float getEstimateFor( const Transition* pos )		{ return listed[pos]->est();		}
-	const Transition* getBestTo( const Transition* pos )	{ return listed[pos]->prev;			}
+	float getHeuristicAt(const Transition* &pos)		{ return listed[pos]->heuristic;	}
+	float getCostTo(const Transition* pos)				{ return listed[pos]->distToHere;	}
+	float getEstimateFor(const Transition* pos)			{ return listed[pos]->est();		}
+	const Transition* getBestTo(const Transition* pos)	{ return listed[pos]->prev;			}
 };
 
 

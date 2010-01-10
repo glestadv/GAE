@@ -76,15 +76,15 @@ __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d
 #include "search_functions.inl"
 
 const int numOffsetsSize1Dist1 = 8;
-const Vec2i OffsetsSize1Dist1 [numOffsetsSize1Dist1] = {
-	Vec2i (  0, -1 ), // n
-	Vec2i (  1, -1 ), // ne
-	Vec2i (  0,  1 ), // e
-	Vec2i (  1,  1 ), // se
-	Vec2i (  1,  0 ), // s
-	Vec2i ( -1,  1 ), // sw
-	Vec2i ( -1,  0 ), // w
-	Vec2i ( -1, -1 )  // nw
+const Vec2i OffsetsSize1Dist1[numOffsetsSize1Dist1] = {
+	Vec2i( 0, -1), // n
+	Vec2i( 1, -1), // ne
+	Vec2i( 0,  1), // e
+	Vec2i( 1,  1), // se
+	Vec2i( 1,  0), // s
+	Vec2i(-1,  1), // sw
+	Vec2i(-1,  0), // w
+	Vec2i(-1, -1)  // nw
 };
 
 /*
@@ -117,20 +117,20 @@ public:
 	static int width, height;
 	//GridNeighbours(int w, int h) : width(w), height(h) {}
 	void operator()(Vec2i &pos, vector<Vec2i> &neighbours) const {
-		for ( int i = 0; i < 8; ++i ) { 
+		for (int i = 0; i < 8; ++i) {
 			Vec2i nPos = pos + OffsetsSize1Dist1[i];
-			if ( nPos.x >= x && nPos.x < x + width && nPos.y >= y && nPos.y < y + height ) {
+			if (nPos.x >= x && nPos.x < x + width && nPos.y >= y && nPos.y < y + height) {
 				neighbours.push_back(nPos);
 			}
 		}
 	}
 	/** Kludge to search on Cellmap or Tilemap... templated search domain should deprecate this */
 	static void setSearchSpace(SearchSpace s) {
-		if ( s == SearchSpace::CELLMAP ) {
+		if (s == SearchSpace::CELLMAP) {
 			x = y = 0;
 			width = theMap.getW();
 			height = theMap.getH();
-		} else if ( s == SearchSpace::TILEMAP ) {
+		} else if (s == SearchSpace::TILEMAP) {
 			x = y = 0;
 			width = theMap.getTileW();
 			height= theMap.getTileH();
@@ -140,9 +140,9 @@ public:
 	/** more kludgy search restriction stuff... */
 	static void setSearchCluster(Vec2i cluster) {
 		x = cluster.x * clusterSize - 1;
-		if ( x < 0 ) x = 0;
+		if (x < 0) x = 0;
 		y = cluster.y * clusterSize - 1;
-		if ( y < 0 ) y = 0;
+		if (y < 0) y = 0;
 		width = clusterSize + 1;
 		height = clusterSize + 1;
 	}
@@ -151,8 +151,8 @@ public:
 // ========================================================
 // class SearchEngine
 // ========================================================
-/** Wrapper for generic (templated) A*
-  * @param NodeStorage templated NodeStorage, must conform to implicit interface, see elsewhere
+/** Wrapper for generic (template) A*
+  * @param NodeStorage NodeStorage class to use, must conform to implicit interface, see elsewhere
   */
 template< typename NodeStorage, typename NeighbourFunc = GridNeighbours, typename DomainKey = Vec2i >
 class SearchEngine {
@@ -167,11 +167,11 @@ private:
 
 public:
 	/** construct & initialise NodeStorage */
-	SearchEngine() 
+	SearchEngine(NodeStorage *store = 0) 
 			: expandLimit(-1)
 			, nodeLimit(-1)
 			, expanded(0)
-			, nodeStorage(NULL) {
+			, nodeStorage(store) {
 	}
 	~SearchEngine() { 
 	}

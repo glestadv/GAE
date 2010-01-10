@@ -17,21 +17,22 @@ namespace Glest { namespace Game{
 list<Vec3f> DebugRenderer::waypoints;
 set<Vec2i>	RegionHilightCallback::cells; 
 
-void DebugRenderer::renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width){
-	const int tesselation= 3;
-	const float arrowEndSize= 0.4f;
+void DebugRenderer::renderArrow(const Vec3f &pos1, const Vec3f &_pos2, const Vec3f &color, float width){
+	const int tesselation = 3;
+	const float arrowEndSize = 0.5f;
 
-	Vec3f dir= Vec3f(pos2-pos1);
-	float len= dir.length();
-	float alphaFactor= 0.9f;
+	Vec3f dir = Vec3f(_pos2 - pos1);
+	float len = dir.length();
+	float alphaFactor = 0.3f;
 
 	dir.normalize();
-	Vec3f normal= dir.cross(Vec3f(0, 1, 0));
+	Vec3f pos2 = _pos2 - dir;
+	Vec3f normal = dir.cross(Vec3f(0, 1, 0));
 
-	Vec3f pos2Left= pos2 + normal*(width-0.05f) - dir*arrowEndSize*width;
-	Vec3f pos2Right= pos2 - normal*(width-0.05f) - dir*arrowEndSize*width;
-	Vec3f pos1Left= pos1 + normal*(width+0.05f);
-	Vec3f pos1Right= pos1 - normal*(width+0.05f);
+	Vec3f pos2Left  = pos2 + normal * (width - 0.05f) - dir * arrowEndSize * width;
+	Vec3f pos2Right = pos2 - normal * (width - 0.05f) - dir * arrowEndSize * width;
+	Vec3f pos1Left  = pos1 + normal * (width + 0.02f);
+	Vec3f pos1Right = pos1 - normal * (width + 0.02f);
 
 	//arrow body
 	glBegin(GL_TRIANGLE_STRIP);

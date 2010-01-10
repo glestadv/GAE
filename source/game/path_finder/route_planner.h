@@ -16,7 +16,6 @@
 #include "game_constants.h"
 #include "influence_map.h"
 #include "annotated_map.h"
-#include "abstract_map.h"
 #include "cluster_map.h"
 #include "config.h"
 #include "profiler.h"
@@ -60,10 +59,10 @@ public:
 
 private:
 	bool repairPath(Unit *unit);
+
 	float quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
-	//void openBorders(const Unit *unit, const Vec2i &dest);
-	//bool findAbstractPath(const Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
 	bool refinePath(Unit *unit);
+	void smoothPath(Unit *unit);
 
 	bool setupHierarchicalSearch(Unit *unit, const Vec2i &dest, TransitionGoal &goalFunc);
 	bool findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints);
@@ -71,14 +70,10 @@ private:
 	World *world;
 	SearchEngine<NodeStore>	 *nsgSearchEngine;
 	NodeStore *nodeStore;
-	//AbstractNodeStorage *abstractNodeStore;
-	//SearchEngine<AbstractNodeStorage,BorderNeighbours,const Border*> *nsbSearchEngine;
 	TransitionSearchEngine *tSearchEngine;
 	TransitionNodeStore *tNodeStore;
 
 	Vec2i computeNearestFreePos(const Unit *unit, const Vec2i &targetPos);
-
-	AbstractMap *abstractMap;
 
 	bool attemptMove(Unit *unit) const {
 		Vec2i pos = unit->getPath()->peek(); 

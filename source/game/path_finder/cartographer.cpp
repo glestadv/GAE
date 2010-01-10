@@ -17,7 +17,6 @@
 #include "cartographer.h"
 
 #include "search_engine.h"
-#include "abstract_map.h"
 #include "cluster_map.h"
 
 #include "map.h"
@@ -42,23 +41,22 @@ Cartographer::Cartographer(World *world)
 
 	cellMap = world->getMap();
 	int w = cellMap->getW(), h = cellMap->getH();
-	nodeMap = new NodeMap(w,h);
-	nmSearchEngine = new SearchEngine<NodeMap,GridNeighbours>();
+	nodeMap = new NodeMap(w, h);
+	nmSearchEngine = new SearchEngine<NodeMap, GridNeighbours>();
 	nmSearchEngine->setStorage(nodeMap);
 	nmSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 	masterMap = new AnnotatedMap(world);
-	//abstractMap = new AbstractMap(this);
-	clusterMap = new ClusterMap(masterMap,this);
+	clusterMap = new ClusterMap(masterMap, this);
 
 	// team search and visibility maps
 	set<int> teams;
 	//theLogger.add( "Factions: " + intToStr(world->getFactionCount()));
-	for ( int i=0; i < world->getFactionCount(); ++i ) {
+	for (int i=0; i < world->getFactionCount(); ++i) {
 		const Faction *f = world->getFaction(i);
 		int team = f->getTeam();
 		//theLogger.add( "Faction " + intToStr(i) + " team: " + intToStr(f->getTeam()));
-		if ( teams.find(team) == teams.end() ) {
+		if (teams.find(team) == teams.end()) {
 			teams.insert(team);
 			theLogger.add("Team : " + intToStr(team));
 			// AnnotatedMap needs to be 'bound' to explored status

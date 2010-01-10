@@ -1235,6 +1235,7 @@ void Renderer::renderSurface() {
 	//assert
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
+
 #	if _GAE_DEBUG_EDITION_
 	} // end else, if not renderering textures instead of terrain
 
@@ -1250,6 +1251,8 @@ void Renderer::renderSurface() {
 	if (debugRenderer.HAAStarOverlay ) {
 		debugRenderer.renderClusterOverlay(visibleQuad);
 		debugRenderer.renderPathOverlay();
+
+		//debugRenderer.renderIntraCusterEdges(Vec2i(2,4), CardinalDir::NORTH);
 	}
 #	endif	
 }

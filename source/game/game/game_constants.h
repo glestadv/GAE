@@ -72,9 +72,13 @@ namespace Search {
 				);
 
 	/** The cardinal and ordinal directions enumerated for convenience */
-//	REGULAR_ENUM( Directions,
-//						NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST );
-//				);
+	REGULAR_ENUM( OrdinalDir,
+						NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
+				);
+
+	REGULAR_ENUM( CardinalDir, 
+						NORTH, EAST, SOUTH, WEST 
+				);
 
 } // end namespace Search
 
