@@ -296,11 +296,14 @@ bool TransitionNodeStore::assertOpen() {
 	for (++it2; it2 != openList.end(); ++it2) {
 		if (seen.find((*it2)->pos) != seen.end()) {
 			theLogger.add("open list has cycle... that's bad.");
+			cout << "open list has cycle... that's bad." << endl;
 			return false;
 		}
 		seen.insert((*it2)->pos);
-		if ((*it1)->est() > (*it2)->est()) {
+		if ((*it1)->est() > (*it2)->est() + 0.0001f) { // stupid inaccurate fp
 			theLogger.add("open list is not ordered correctly.");
+			cout << "Open list corrupt: it1.est() == " << (*it1)->est() 
+				<< " > it2.est() == " << (*it2)->est() << endl;
 			return false;
 		}
 	}
@@ -308,6 +311,7 @@ bool TransitionNodeStore::assertOpen() {
 	for ( ; it != open.end(); ++it) {
 		if (seen.find(*it) == seen.end()) {
 			theLogger.add("node marked open not on open list.");
+			cout << "node marked open not on open list." << endl;
 			return false;
 		}
 	}
@@ -315,6 +319,7 @@ bool TransitionNodeStore::assertOpen() {
 	for ( ; it != seen.end(); ++it) {
 		if (open.find(*it) == open.end()) {
 			theLogger.add("node on open list not marked open.");
+			cout << "node on open list not marked open." << endl;
 			return false;
 		}
 	}

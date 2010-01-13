@@ -75,8 +75,7 @@ __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d
 // need to have seen getDiags() defined
 #include "search_functions.inl"
 
-const int numOffsetsSize1Dist1 = 8;
-const Vec2i OffsetsSize1Dist1[numOffsetsSize1Dist1] = {
+const Vec2i OrdinalOffsets[OrdinalDir::COUNT] = {
 	Vec2i( 0, -1), // n
 	Vec2i( 1, -1), // ne
 	Vec2i( 0,  1), // e
@@ -117,8 +116,8 @@ public:
 	static int width, height;
 	//GridNeighbours(int w, int h) : width(w), height(h) {}
 	void operator()(Vec2i &pos, vector<Vec2i> &neighbours) const {
-		for (int i = 0; i < 8; ++i) {
-			Vec2i nPos = pos + OffsetsSize1Dist1[i];
+		for (OrdinalDir i(0); i < OrdinalDir::COUNT; ++i) {
+			Vec2i nPos = pos + OrdinalOffsets[i];
 			if (nPos.x >= x && nPos.x < x + width && nPos.y >= y && nPos.y < y + height) {
 				neighbours.push_back(nPos);
 			}
@@ -217,15 +216,17 @@ public:
 	int getExpandedLastRun() { return expanded; }
 
 	/** Find a path for unit to target using map */
+/* move to RoutePlanner...
 	AStarResult pathToPos(const AnnotatedMap *map, const Unit *unit, const DomainKey &target) {
 		PosGoal goalFunc(target);
 		MoveCost costFunc (unit, map);
 		DiagonalDistance heuristic(target);
 		return aStar<PosGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
-
+*/
 	/** Finds a path for unit towards target using map, terminating when a cell with more than
 	  * threshold influence on iMap is found */
+/* move to RoutePlanner...
 	AStarResult pathToInfluence(const AnnotatedMap *aMap, const Unit *unit, const DomainKey &target, 
 			const TypeMap<float> *iMap, float threshold) {
 		InfluenceGoal<float> goalFunc(threshold, iMap);
@@ -233,13 +234,14 @@ public:
 		DiagonalDistance	 heuristic(target); // a bit hacky... target is needed for heuristic
 		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
 	}
-
+*/
 	/** Runs a Dijkstra search, setting distance data in iMap, until cutOff is reached */
+/* move to Cartographer...
 	void buildDistanceMap(TypeMap<float> *iMap, float cutOff) {
 		InfluenceBuilderGoal goalFunc(cutOff, iMap);
 		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>(goalFunc,DistanceCost(),ZeroHeuristic());
 	}
-
+*/
 	float getCostTo(const DomainKey &pos) {
 		assert(nodeStorage->isOpen(pos) || nodeStorage->isClosed(pos));
 		return nodeStorage->getCostTo(pos);
@@ -259,45 +261,45 @@ public:
 		DomainKey minPos(invalidKey);
 		vector<DomainKey> neighbours;
 		NeighbourFunc neighbourFunc;
-		while ( true ) {
+		while (true) {
 			// get best open
 			minPos = nodeStorage->getBestCandidate();
-			if ( minPos == invalidKey ) { // failure
+			if (minPos == invalidKey) { // failure
 				goalPos = invalidKey;
 				return AStarResult::FAILED; 
 			}
-			if ( goalFunc(minPos, nodeStorage->getCostTo(minPos)) ) { // success
+			if (goalFunc(minPos, nodeStorage->getCostTo(minPos))) { // success
 				goalPos = minPos;
 				return AStarResult::COMPLETE;
 			}
 			// expand it...
 			neighbourFunc(minPos, neighbours);
-			while ( ! neighbours.empty() ) {
+			while (!neighbours.empty()) {
 				DomainKey nPos = neighbours.back();
 				neighbours.pop_back();
-				if ( nodeStorage->isClosed(nPos) ) {
+				if (nodeStorage->isClosed(nPos)) {
 					continue;
 				}
 				float cost = costFunc(minPos, nPos);
-				if ( cost == numeric_limits<float>::infinity() ) {
+				if (cost == numeric_limits<float>::infinity()) {
 					continue;
 				}
-				if ( nodeStorage->isOpen(nPos) ) {
+				if (nodeStorage->isOpen(nPos)) {
 					nodeStorage->updateOpen(nPos, minPos, cost);
 				} else {
 					const float &costToMin = nodeStorage->getCostTo(minPos);
-					if ( ! nodeStorage->setOpen(nPos, minPos, heuristic(nPos), costToMin + cost) ) {
+					if (!nodeStorage->setOpen(nPos, minPos, heuristic(nPos), costToMin + cost)) {
 						goalPos = nodeStorage->getBestSeen();
 						return AStarResult::NODE_LIMIT;
 					}
 				}
 			} 
 			expanded++;
-			if ( expanded == expandLimit ) { // run limit
+			if (expanded == expandLimit) { // run limit
 				goalPos = invalidKey;
 				return AStarResult::TIME_LIMIT;
 			}
-		} // while node limit not reached
+		}
 		return AStarResult::INVALID; // impossible... just keeping the compiler from complaining
 	}
 };

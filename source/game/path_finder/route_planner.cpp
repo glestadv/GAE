@@ -128,10 +128,12 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 #define ASTAR_LOWLEVEL aStar<PosGoal,MoveCost,DiagonalDistance>
 
 float RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const Vec2i &dest) {
+	// setup search
 	MoveCost moveCost(field, size, world->getCartographer()->getMasterMap());
 	DiagonalDistance heuristic(dest);
 	nsgSearchEngine->setNodeLimit(ClusterMap::clusterSize * ClusterMap::clusterSize);
 	nsgSearchEngine->setStart(start, heuristic(start));
+
 	AStarResult r = nsgSearchEngine->ASTAR_LOWLEVEL(PosGoal(dest), moveCost, heuristic);
 	if (r == AStarResult::COMPLETE && nsgSearchEngine->getGoalPos() == dest) {
 		return nsgSearchEngine->getCostTo(dest);
@@ -248,13 +250,14 @@ bool RoutePlanner::refinePath(Unit *unit) {
 	UnitPath &path = *unit->getPath();
 	assert(!wpPath.empty());
 
-	Vec2i startPos = path.empty() ? unit->getPos() : path.back();
+	const Vec2i &startPos = path.empty() ? unit->getPos() : path.back();
+	const Vec2i &destPos = wpPath.front();
 	AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
 	SearchEngine<NodeMap,GridNeighbours> *se = theWorld.getCartographer()->getSearchEngine();
 
 	MoveCost cost(unit, aMap);
-	DiagonalDistance dd(wpPath.front());
-	PosGoal posGoal(wpPath.front());
+	DiagonalDistance dd(destPos);
+	PosGoal posGoal(destPos);
 
 	se->setNodeLimit(ClusterMap::clusterSize * ClusterMap::clusterSize); // 256
 	se->setStart(startPos, dd(startPos));
@@ -265,7 +268,7 @@ bool RoutePlanner::refinePath(Unit *unit) {
 	IF_DEBUG_TEXTURES( collectOpenClosed(se); )
 	// extract path
 	Vec2i pos = se->getGoalPos();
-	assert(pos == wpPath.front());
+	assert(pos == destPos);
 	list<Vec2i>::iterator it = path.end();
 	while (pos.x != -1) {
 		it = path.insert(it, pos);
@@ -278,9 +281,75 @@ bool RoutePlanner::refinePath(Unit *unit) {
 	return true;
 }
 
-void RoutePlanner::smoothPath(Unit *unit) {
+#undef max
 
+void RoutePlanner::smoothPath(Unit *unit) {
+	AnnotatedMap* const &aMap = world->getCartographer()->getMasterMap();
+	int min_x = numeric_limits<int>::max(), 
+		max_x = -1, 
+		min_y = numeric_limits<int>::max(), 
+		max_y = -1;
+	set<Vec2i> onPath;
+	UnitPath::iterator it = unit->getPath()->begin();
+	for ( ; it  != unit->getPath()->end(); ++it) {
+		if (it->x < min_x) min_x = it->x;
+		if (it->x > max_x) max_x = it->x;
+		if (it->y < min_y) min_y = it->y;
+		if (it->y > max_y) max_y = it->y;
+		onPath.insert(*it);
+	}
+	assert(unit->getPath()->size() > 1);
+	Rect2i bounds(min_x, min_y, max_x + 1, max_y + 1);
+
+	it = unit->getPath()->begin();
+	UnitPath::iterator nit = it;
+	++nit;
+
+	while (nit != unit->getPath()->end()) {
+		onPath.erase(*it);
+		Vec2i sp = *it;
+		for (OrdinalDir d(0); d < OrdinalDir::COUNT; ++d) {
+			Vec2i p = *it + OrdinalOffsets[d];
+			if (p == *nit) continue;
+			Vec2i intersect(-1);
+			while (bounds.isInside(p)) {
+				if (!aMap->canOccupy(p, unit->getSize(), unit->getCurrField())) {
+					break;
+				}
+				if (d % 2 == 1) { // diagonal
+					Vec2i off1, off2;
+					getDiags(p - OrdinalOffsets[d], p, unit->getSize(), off1, off2);
+					if (!aMap->canOccupy(off1, 1, unit->getCurrField())
+					|| !aMap->canOccupy(off2, 1, unit->getCurrField())) {
+						break;
+					}
+				}
+				if (onPath.find(p) != onPath.end()) {
+					intersect = p;
+					break;
+				}
+				p += OrdinalOffsets[d];
+			}
+			if (intersect != Vec2i(-1)) {
+				UnitPath::iterator eit = nit;
+				while (*eit != intersect) {
+					onPath.erase(*eit++);
+				}
+				nit = unit->getPath()->erase(nit, eit);
+				sp += OrdinalOffsets[d];
+				while (sp != intersect) {
+					unit->getPath()->insert(nit, sp);
+					onPath.insert(sp); // do we need this? Can these get us further hits ??
+					sp += OrdinalOffsets[d];
+				}
+				break; // break foreach direction
+			} // if shortcut
+		} // foreach direction
+		nit = ++it;
+		++nit;
+	}
 }
+
 
 /** Find a path to a location.
   * @param unit the unit requesting the path
@@ -296,12 +365,38 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		unit->setCurrSkill(SkillClass::STOP);
 		return TravelState::ARRIVED;
 	} else if (!path.empty()) { // route cache
-		if (attemptMove(unit)) return TravelState::MOVING;
-		if (path.size() > 15  && repairPath(unit)) {
-			if (attemptMove(unit)) return TravelState::MOVING;
+		assert(unit->getPos().dist(path.front()) < 1.5f);
+		if (attemptMove(unit)) {
+			if (!wpPath.empty() && path.size() < 12) {
+				// if there are less than 12 steps left on this path, and there are more waypoints
+				IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), finalPos); )
+				while (!wpPath.empty() && path.size() < 20) {
+					// refine path to at least 20 steps (or end of path)
+					if (!refinePath(unit)) {
+						theConsole.addLine("refinePath() failure.");
+						theLogger.add("refinePath() failure.");
+						break;
+					}
+				}
+				IF_DEBUG_TEXTURES
+				(	for (UnitPath::iterator pit = path.begin(); pit != path.end(); ++pit) 
+						PathFinderTextureCallBack::pathSet.insert(*pit);
+				)
+				smoothPath(unit);
+			}
+			return TravelState::MOVING;
 		}
+		// path blocked, quickSearch to next waypoint...
+		theConsole.addLine("Blocked!");
+
+		//if (path.size() > 15  && repairPath(unit)) { // repair ?? (ditch this??)
+		//	if (attemptMove(unit)) {
+		//		return TravelState::MOVING;
+		//	}
+		//}
 	}
 	// route cache miss and either no repair performed or repair failed
+	
 	const Vec2i &target = computeNearestFreePos(unit, finalPos); // set target for PosGoal Function
 	// if arrived (as close as we can get to it)
 	if (target == unit->getPos()) {
@@ -313,93 +408,119 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 
 	Vec2i startCluster = ClusterMap::cellToCluster(unit->getPos());
 	Vec2i destCluster  = ClusterMap::cellToCluster(target);
-	if (startCluster.dist(destCluster) >= 3.0f) {
-		tSearchEngine->reset();
-		if (findWaypointPath(unit, target, wpPath)) {
-			IF_DEBUG_TEXTURES( DebugRenderer::clearWaypoints(); )
-			WaypointPath::iterator it = wpPath.begin();
-			for ( ; it != wpPath.end(); ++it) {
-				Vec3f vert = world->getMap()->getTile(Map::toTileCoords(*it))->getVertex();
-				vert.x += it->x % Map::cellScale + 0.5f;
-				vert.z += it->y % Map::cellScale + 0.5f;
-				vert.y += 0.25f;
-				DebugRenderer::addWaypoint(vert);
-			}
-		} else {
-			if (unit->getFaction()->isThisFaction()) {
-				theConsole.addLine("Destination unreachable?");
-			}
-			return TravelState::IMPOSSIBLE;
-		}
-		IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), target); )
-		assert(wpPath.size() > 2);
-		wpPath.pop();
-		// refine path
-		while (!wpPath.empty()) {
-			if (!refinePath(unit)) {
-				theLogger.add("refinePath failed!");
-				return TravelState::BLOCKED;
-			}
-		}
-		IF_DEBUG_TEXTURES
-		(	for (UnitPath::iterator pit = path.begin(); pit != path.end(); ++pit) 
-				PathFinderTextureCallBack::pathSet.insert(*pit);
-		)
-		if (attemptMove(unit)) return TravelState::MOVING;
-		theLogger.add("Hierarchical refined path blocked ? valid ?!?");
-/*
-		//
 
-		// this is the 'straight' A* using the NodeMap (no node limit)
-
-		AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
-		SearchEngine<NodeMap> *se = theWorld.getCartographer()->getSearchEngine();
-		DiagonalDistance dd(target);
-		MoveCost cost(unit, aMap);
-		PosGoal goal(target);
-		se->setNodeLimit(-1);
-		se->setStart(unit->getPos(), dd(unit->getPos()));
-		AStarResult res = se->ASTAR_TO_POS(goal,cost,dd);
-		list<Vec2i>::iterator it;
-		IF_DEBUG_TEXTURES
-		( 
-			list<Vec2i> *nodes = NULL;
-			NodeMap* nm = se->getStorage();
-		)
-		Vec2i goalPos, pos;
-		switch ( res ) {
-			case AStarResult::COMPLETE:
-				goalPos = se->getGoalPos();
-				pos = goalPos;
-				while ( pos.x != 65535 ) {
-					path.push(pos);
-//					IF_DEBUG_TEXTURES( PathFinderTextureCallBack::pathSet.insert(pos); )
-					pos = se->getPreviousPos(pos);
-				}
-				if ( path.size() ) path.pop();
-				IF_DEBUG_TEXTURES( collectOpenClosed(se); )
-				IF_DEBUG_TEXTURES
-						(	UnitPath::iterator pit = path.begin();
-							for ( ; pit != path.end(); ++pit ) 
-								PathFinderTextureCallBack::pathSet.insert(*pit);
-						)
-				// it's a horrible mess atm the moment anyway... leave me alone! :P
-				goto End;
-				break; // case AStarResult::COMPLETE
-			case AStarResult::FAILED:
-				wpPath.clear();
-				return TravelState::IMPOSSIBLE;
-				break;
-			default:
-				throw runtime_error("Something that shouldn't have happened, did happen :(");
-				break;
+	if (startCluster == destCluster) {
+		if (quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), target)
+		!=  numeric_limits<float>::infinity()) {
+			Vec2i pos = nsgSearchEngine->getGoalPos();
+			while (pos.x != -1) {
+				path.push_front(pos);
+				pos = nsgSearchEngine->getPreviousPos(pos);
+			}
+			if (!path.empty()) path.pop();
+			if (attemptMove(unit)) {
+				return TravelState::MOVING;
+			}
+			path.clear();
+			// else fall through and try hierarchical
 		}
-		//
-		*/
 	}
 
-	// search with NodeStore
+	// Hierarchical Search
+	tSearchEngine->reset();
+	if (!findWaypointPath(unit, target, wpPath)) {
+		if (unit->getFaction()->isThisFaction()) {
+			theConsole.addLine("Destination unreachable?");
+		}
+		return TravelState::IMPOSSIBLE;
+	}
+	IF_DEBUG_TEXTURES
+	(	DebugRenderer::clearWaypoints();
+		WaypointPath::iterator it = wpPath.begin();
+		for ( ; it != wpPath.end(); ++it) {
+			Vec3f vert = world->getMap()->getTile(Map::toTileCoords(*it))->getVertex();
+			vert.x += it->x % Map::cellScale + 0.5f;
+			vert.z += it->y % Map::cellScale + 0.5f;
+			vert.y += 0.25f;
+			DebugRenderer::addWaypoint(vert);
+		}
+		clearOpenClosed(unit->getPos(), target);
+	)
+	
+	//TODO post process, scan wpPath, if prev.dist(pos) < 4 cull prev
 
+	// refine path, to at least 20 steps (or end of path)
+	while (!wpPath.empty() && path.size() < 20) {
+		if (!refinePath(unit)) {
+			theLogger.add("refinePath failed!");
+			return TravelState::BLOCKED;
+		}
+	}
+	smoothPath(unit);
+
+	IF_DEBUG_TEXTURES
+	(	for (UnitPath::iterator pit = path.begin(); pit != path.end(); ++pit) 
+			PathFinderTextureCallBack::pathSet.insert(*pit);
+	)
+	if (attemptMove(unit)) {
+		return TravelState::MOVING;
+	}
+
+	theLogger.add("Hierarchical refined path blocked ? valid ?!?");
+	unit->setCurrSkill(SkillClass::STOP);
+	return TravelState::INVALID;
+
+
+	/*
+	// Low Level Search with NodeMap (this is for testing purposes only, not node limited)
+
+	// this is the 'straight' A* using the NodeMap (no node limit)
+	AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
+	SearchEngine<NodeMap> *se = theWorld.getCartographer()->getSearchEngine();
+	DiagonalDistance dd(target);
+	MoveCost cost(unit, aMap);
+	PosGoal goal(target);
+	se->setNodeLimit(-1);
+	se->setStart(unit->getPos(), dd(unit->getPos()));
+	AStarResult res = se->ASTAR_TO_POS(goal,cost,dd);
+	list<Vec2i>::iterator it;
+	IF_DEBUG_TEXTURES
+	( 
+		list<Vec2i> *nodes = NULL;
+		NodeMap* nm = se->getStorage();
+	)
+	Vec2i goalPos, pos;
+	switch (res) {
+		case AStarResult::COMPLETE:
+			goalPos = se->getGoalPos();
+			pos = goalPos;
+			while (pos.x != -1) {
+				path.push(pos);
+				pos = se->getPreviousPos(pos);
+			}
+			if ( path.size() ) path.pop();
+			IF_DEBUG_TEXTURES( collectOpenClosed(se); )
+			IF_DEBUG_TEXTURES
+					(	UnitPath::iterator pit = path.begin();
+						for ( ; pit != path.end(); ++pit ) 
+							PathFinderTextureCallBack::pathSet.insert(*pit);
+					)
+			// it's a horrible mess atm the moment anyway... leave me alone! :P
+			goto End;
+			break; // case AStarResult::COMPLETE
+		case AStarResult::FAILED:
+			wpPath.clear();
+			return TravelState::IMPOSSIBLE;
+			break;
+		default:
+			throw runtime_error("Something that shouldn't have happened, did happen :(");
+			break;
+	}
+	*/
+
+
+	/*
+	// Low Level Search with NodeStore
 	path.clear();
 	wpPath.clear();
 	// do a 'limited search'
@@ -421,26 +542,30 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	}
 	// Partail or Complete... extract path...
 	Vec2i pos = nsgSearchEngine->getGoalPos();
-	while ( pos.x >= 0 ) {
+	while (pos.x >= 0) {
 		path.push(pos);
 		pos = nsgSearchEngine->getPreviousPos(pos);
 	}
-	if ( path.size() ) path.pop();
+	if (path.size()) path.pop();
+
 End:
-	if ( path.empty() ) {
+	if (path.empty()) {
 		unit->setCurrSkill(SkillClass::STOP);
 		return TravelState::ARRIVED;
 	}
-	if ( attemptMove(unit) ) return TravelState::MOVING; // should always succeed
+	if (attemptMove(unit)) return TravelState::MOVING; // should always succeed
 	unit->setCurrSkill(SkillClass::STOP);
 	path.incBlockCount();
 	return TravelState::BLOCKED;
+	*/
 }
 
 /** repair a blocked path
   * @param unit unit whose path is blocked 
   * @return true if repair succeeded */
 bool RoutePlanner::repairPath(Unit *unit) {
+	
+	/*
 	UnitPath &path = *unit->getPath();
 	assert(path.size() > 12);
 	int i=8;
@@ -466,6 +591,8 @@ bool RoutePlanner::repairPath(Unit *unit) {
 		return true;
 	}
 	path.clear();
+	return false;
+	*/
 	return false;
 }
 
@@ -530,7 +657,7 @@ Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPo
 	return nearestPos;
 }
 
-} // end namespace Glest::Game::PathFinder
+} // end namespace Glest::Game::Search
 
 #if defined DEBUG && defined VALIDATE_MAP
 // Why is this here?  Doesn't it belong in world.cpp?  It's here because we compile path_finder.cpp
