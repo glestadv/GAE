@@ -27,13 +27,13 @@
 #include "game_constants.h"
 #include "map.h"
 #include "annotated_map.h"
-//#include "abstract_map.h"
+#include "cluster_map.h"
 #include "node_pool.h"
 #include "node_map.h"
 #include "influence_map.h"
 
 namespace Glest { namespace Game { 
-/** Home of the templated A* algorithm and the primary users of it.*/
+/** Home of the templated A* algorithm and some of the bits that plug into it.*/
 namespace Search {
 
 class NodeMap;
@@ -45,16 +45,16 @@ class NodeMap;
   * @return d1 & d2, the two cells to check
   * @warning assumes s & d are indeed diagonal, abs(s.x - d.x) == 1 && abs(s.y - d.y) == 1
   */
-__inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2 ) {
+__inline void getDiags(const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1, Vec2i &d2) {
 #	define _SEARCH_ENGINE_GET_DIAGS_DEFINED_
-	assert( abs( s.x - d.x ) == 1 && abs( s.y - d.y ) == 1 );
-	if ( size == 1 ) {
+	assert(abs(s.x - d.x) == 1 && abs(s.y - d.y) == 1);
+	if (size == 1) {
 		d1.x = s.x; d1.y = d.y;
 		d2.x = d.x; d2.y = s.y;
 		return;
 	}
-	if ( d.x > s.x ) {  // travelling east
-		if ( d.y > s.y ) {  // se
+	if (d.x > s.x) {  // travelling east
+		if (d.y > s.y) {  // se
 			d1.x = d.x + size - 1; d1.y = s.y;
 			d2.x = s.x; d2.y = d.y + size - 1;
 		} else {  // ne
@@ -62,7 +62,7 @@ __inline void getDiags( const Vec2i &s, const Vec2i &d, const int size, Vec2i &d
 			d2.x = d.x + size - 1; d2.y = s.y - size + 1;
 		}
 	} else {  // travelling west
-		if ( d.y > s.y ) {  // sw
+		if (d.y > s.y) {  // sw
 			d1.x = d.x; d1.y = s.y;
 			d2.x = s.x + size - 1; d2.y = d.y + size - 1;
 		} else {  // nw
@@ -109,12 +109,13 @@ const Vec2i OrdinalOffsets[OrdinalDir::COUNT] = {
 	};
 */
 
+/** Neighbour function for 'octile grid map' as search domain */
 class GridNeighbours {
-public:
-	static const int clusterSize = 16;
+private:
 	static int x, y;
 	static int width, height;
-	//GridNeighbours(int w, int h) : width(w), height(h) {}
+
+public:
 	void operator()(Vec2i &pos, vector<Vec2i> &neighbours) const {
 		for (OrdinalDir i(0); i < OrdinalDir::COUNT; ++i) {
 			Vec2i nPos = pos + OrdinalOffsets[i];
@@ -138,54 +139,78 @@ public:
 
 	/** more kludgy search restriction stuff... */
 	static void setSearchCluster(Vec2i cluster) {
-		x = cluster.x * clusterSize - 1;
+		x = cluster.x * ClusterMap::clusterSize - 1;
 		if (x < 0) x = 0;
-		y = cluster.y * clusterSize - 1;
+		y = cluster.y * ClusterMap::clusterSize - 1;
 		if (y < 0) y = 0;
-		width = clusterSize + 1;
-		height = clusterSize + 1;
+		width = ClusterMap::clusterSize + 1;
+		height = ClusterMap::clusterSize + 1;
 	}
 };
 
 // ========================================================
 // class SearchEngine
 // ========================================================
-/** Wrapper for generic (template) A*
+/** Generic (template) A*
   * @param NodeStorage NodeStorage class to use, must conform to implicit interface, see elsewhere
+  * @param NeighbourFunc the function to generate neighbours for a search domain
+  * @param DomainKey the key type of the search domain
   */
 template< typename NodeStorage, typename NeighbourFunc = GridNeighbours, typename DomainKey = Vec2i >
 class SearchEngine {
 private:
-	NodeStorage *nodeStorage; /**< NodeStorage for this SearchEngine */
-
-	DomainKey goalPos;	/**< The goal pos (the 'result') from the last A* search */
-	DomainKey invalidKey;
-	int expandLimit,	/**< limit on number of nodes to expand */
-		nodeLimit,		/**< limit on number of nodes to use */
-		expanded;//,		/**< number of nodes expanded this/last run */
+	NodeStorage *nodeStorage;/**< NodeStorage for this SearchEngine					   */
+	DomainKey goalPos;		/**< The goal pos (the 'result') from the last A* search  */
+	DomainKey invalidKey;  /**< The DomainKey value indicating an invalid 'position' */
+	int expandLimit,	  /**< limit on number of nodes to expand					*/
+		nodeLimit,		 /**< limit on number of nodes to use					   */
+		expanded;		/**< number of nodes expanded this/last run				  */
+	bool ownStore;	   /**< wether or not this SearchEngine 'owns' its storage   */
 
 public:
-	/** construct & initialise NodeStorage */
-	SearchEngine(NodeStorage *store = 0) 
+	/** construct & initialise NodeStorage 
+	  * @param store NodeStorage to use
+	  * @param own wether the SearchEngine should own the storage
+	  */
+	SearchEngine(NodeStorage *store = 0, bool own=false) 
 			: expandLimit(-1)
 			, nodeLimit(-1)
 			, expanded(0)
-			, nodeStorage(store) {
-	}
-	~SearchEngine() { 
+			, nodeStorage(store)
+			, ownStore(own) {
 	}
 
-	void setStorage(NodeStorage *storage)	{ nodeStorage = storage;	}
-	void setInvalidKey(DomainKey key)		{ invalidKey = key;			}
+	/** Detruct, will delete storage if ownStore was set true */
+	~SearchEngine() { 
+		if (ownStore) {
+			delete nodeStorage;
+		}
+	}
+
+	/** Attach NodeStorage
+	  * @param store NodeStorage to use
+	  * @param own wether the SearchEngine should own the storage
+	  */
+	void setStorage(NodeStorage *store, bool own=false)	{ 
+		nodeStorage = store;
+		ownStore = own;
+	}
+
+	/** Set the DomainKey value indicating an invalid position, this must be set before use!
+	  * @param key the invalid DomainKey value
+	  */
+	void setInvalidKey(DomainKey key) { invalidKey = key; }
 
 	/** @return a pointer to this engine's node storage */
-	NodeStorage* getStorage()	{ return nodeStorage; }
+	NodeStorage* getStorage() { return nodeStorage; }
 
 	/** Reset the node storage */
 	void reset() { nodeStorage->reset(); nodeStorage->setMaxNodes(nodeLimit > 0 ? nodeLimit : -1); }
-	/** Add a position to the open set with 0 cost to here (a start position)
+	
+	/** Add a position to the open set with 'd' cost to here and invalid prev (a start position)
 	  * @param pos position to set as open
 	  * @param h heuristc, estimate to goal from pos
+	  * @param d distance or cost to node (optional, defaults to 0)
 	  */
 	void setOpen(DomainKey pos, float h, float d = 0.f) { 
 		nodeStorage->setOpen(pos, invalidKey, h, d); 
@@ -194,6 +219,7 @@ public:
 	/** Reset the node storage and add pos to open 
 	  * @param pos position to set as open
 	  * @param h heuristc, estimate to goal from pos
+	  * @param d distance or cost to node (optional, defaults to 0)
 	  */
 	void setStart(DomainKey pos, float h, float d = 0.f) {
 		nodeStorage->reset();
@@ -202,46 +228,23 @@ public:
 		}
 		nodeStorage->setOpen(pos, invalidKey, h, d);
 	}
+
 	/** Retrieve the goal of last search, position of last goal reached */
 	DomainKey getGoalPos() { return goalPos; }
+	
 	/** Best path to pos is from */
 	DomainKey getPreviousPos(const DomainKey &pos) { return nodeStorage->getBestTo(pos); }
 	
-	/** limit search to use at mose limit nodes */
+	/** limit search to use at most limit nodes */
 	void setNodeLimit(int limit) { nodeLimit = limit > 0 ? limit : -1; }
-	/** set an 'expanded nodes' limit, for a resumable serch */
+	
+	/** set an 'expanded nodes' limit, for a resumable search */
 	void setTimeLimit(int limit) { expandLimit = limit > 0 ? limit : -1; }
 
 	/** How many nodes were expanded last search */
 	int getExpandedLastRun() { return expanded; }
 
-	/** Find a path for unit to target using map */
-/* move to RoutePlanner...
-	AStarResult pathToPos(const AnnotatedMap *map, const Unit *unit, const DomainKey &target) {
-		PosGoal goalFunc(target);
-		MoveCost costFunc (unit, map);
-		DiagonalDistance heuristic(target);
-		return aStar<PosGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
-	}
-*/
-	/** Finds a path for unit towards target using map, terminating when a cell with more than
-	  * threshold influence on iMap is found */
-/* move to RoutePlanner...
-	AStarResult pathToInfluence(const AnnotatedMap *aMap, const Unit *unit, const DomainKey &target, 
-			const TypeMap<float> *iMap, float threshold) {
-		InfluenceGoal<float> goalFunc(threshold, iMap);
-		MoveCost			 costFunc(unit, aMap);
-		DiagonalDistance	 heuristic(target); // a bit hacky... target is needed for heuristic
-		return aStar<InfluenceGoal,MoveCost,DiagonalDistance>(goalFunc,costFunc,heuristic);
-	}
-*/
-	/** Runs a Dijkstra search, setting distance data in iMap, until cutOff is reached */
-/* move to Cartographer...
-	void buildDistanceMap(TypeMap<float> *iMap, float cutOff) {
-		InfluenceBuilderGoal goalFunc(cutOff, iMap);
-		aStar<InfluenceBuilderGoal,DistanceCost,ZeroHeuristic>(goalFunc,DistanceCost(),ZeroHeuristic());
-	}
-*/
+	/** Retrieves cost to the node at pos (known to be visited) */
 	float getCostTo(const DomainKey &pos) {
 		assert(nodeStorage->isOpen(pos) || nodeStorage->isClosed(pos));
 		return nodeStorage->getCostTo(pos);
@@ -266,7 +269,7 @@ public:
 			minPos = nodeStorage->getBestCandidate();
 			if (minPos == invalidKey) { // failure
 				goalPos = invalidKey;
-				return AStarResult::FAILED; 
+				return AStarResult::FAILURE; 
 			}
 			if (goalFunc(minPos, nodeStorage->getCostTo(minPos))) { // success
 				goalPos = minPos;

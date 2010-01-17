@@ -139,7 +139,7 @@ class AnnotatedMap {
 	int width, height;
 
 	Map *cellMap;
-
+	
 public:
 	AnnotatedMap(World *world, ExplorationMap *eMap=NULL);
 	~AnnotatedMap();

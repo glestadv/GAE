@@ -24,7 +24,7 @@ namespace Glest { namespace Game { namespace Search {
 // =====================================================
 
 NodeStore::NodeStore(int w, int h) 
-		: tmpMaxNodes(NodePool::size)
+		: tmpMaxNodes(size)
 		, numNodes(0)
 		, leastH(NULL)
 		, markerArray(w, h)
@@ -41,7 +41,7 @@ NodeStore::~NodeStore() {
 void NodeStore::reset() {
 	numNodes = 0;
 	counter = 0;
-	tmpMaxNodes = NodePool::size;
+	tmpMaxNodes = size;
 	leastH = NULL;
 	markerArray.newSearch();
 	openHeap.clear();
@@ -51,7 +51,7 @@ void NodeStore::reset() {
 }
 /** set a maximum number of nodes to expand */
 void NodeStore::setMaxNodes(const int max) {
-	assert(max >= 32 && max <= 2048); // reasonable number ?
+	assert(max >= 32 && max <= size); // reasonable number ?
 	assert(!numNodes); // can't do this after we've started using it.
 	tmpMaxNodes = max;
 }
@@ -66,11 +66,11 @@ bool NodeStore::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	assert(!isOpen(pos));
 //	assert(prev.x < 0 || isClosed(prev));
 	AStarNode *node = newNode();
-	if ( !node ) { // NodePool exhausted
+	if (!node) { // NodePool exhausted
 		return false;
 	}
 	node->posOff = pos;
-	if ( prev.x >= 0 ) {
+	if (prev.x >= 0) {
 		node->posOff.ox = prev.x - pos.x;
 		node->posOff.oy = prev.y - pos.y;
 	} else {
@@ -80,7 +80,7 @@ bool NodeStore::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	node->distToHere = d;
 	node->heuristic = h;
 	addOpenNode(node);
-	if ( !numNodes || h < leastH->heuristic ) {
+	if (!numNodes || h < leastH->heuristic) {
 			leastH = node;
 	}
 	numNodes++;

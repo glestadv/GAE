@@ -484,6 +484,10 @@ typedef Vec2<double> Vec2d;
 typedef Vec3<double> Vec3d;
 typedef Vec4<double> Vec4d;
 
+inline std::ostream& operator<<(std::ostream &stream, const Vec2i &p) {
+	return stream << "(" << p.x << ", " << p.y << ")";
+}
+
 #ifndef USE_SSE2_INTRINSICS
 typedef Vec3<float> Vec3f;
 typedef Vec4<float> Vec4f;

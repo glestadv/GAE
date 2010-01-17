@@ -57,23 +57,19 @@ RoutePlanner::RoutePlanner(World *world)
 		, nsgSearchEngine(NULL) {
 	theLogger.add( "Initialising SearchEngine", true );
 
-	nsgSearchEngine = new SearchEngine<NodeStore>();
-	nodeStore = new NodeStore(world->getMap()->getW(),world->getMap()->getH());
-	nsgSearchEngine->setStorage(nodeStore);
+	nodeStore = new NodeStore(world->getMap()->getW(), world->getMap()->getH());
+	nsgSearchEngine = new SearchEngine<NodeStore>(nodeStore, true);
 	nsgSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 
 	tNodeStore = new TransitionNodeStore(2048); //FIXME (size)
-	tSearchEngine = new TransitionSearchEngine();
-	tSearchEngine->setStorage(tNodeStore);
+	tSearchEngine = new TransitionSearchEngine(tNodeStore, true);
 	tSearchEngine->setInvalidKey(NULL);
 }
 
-/** delete SearchEngine objects and NodePool array */
+/** delete SearchEngine objects */
 RoutePlanner::~RoutePlanner() {
 	delete nsgSearchEngine;
-	delete nodeStore;
-	delete tNodeStore;
 	delete tSearchEngine;
 }
 
@@ -131,7 +127,6 @@ float RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const
 	// setup search
 	MoveCost moveCost(field, size, world->getCartographer()->getMasterMap());
 	DiagonalDistance heuristic(dest);
-	nsgSearchEngine->setNodeLimit(ClusterMap::clusterSize * ClusterMap::clusterSize);
 	nsgSearchEngine->setStart(start, heuristic(start));
 
 	AStarResult r = nsgSearchEngine->ASTAR_LOWLEVEL(PosGoal(dest), moveCost, heuristic);
@@ -215,8 +210,8 @@ bool RoutePlanner::findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath 
 }
 
 #if _GAE_DEBUG_EDITION_
-	void collectOpenClosed(SearchEngine<NodeMap,GridNeighbours> *se) {
-		NodeMap* nm = se->getStorage();
+	void collectOpenClosed(SearchEngine<NodeStore> *se) {
+		NodeStore* nm = se->getStorage();
 		list<Vec2i> *nodes = nm->getOpenNodes();
 		list<Vec2i>::iterator nit = nodes->begin();
 		for ( ; nit != nodes->end(); ++nit ) 
@@ -253,26 +248,25 @@ bool RoutePlanner::refinePath(Unit *unit) {
 	const Vec2i &startPos = path.empty() ? unit->getPos() : path.back();
 	const Vec2i &destPos = wpPath.front();
 	AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
-	SearchEngine<NodeMap,GridNeighbours> *se = theWorld.getCartographer()->getSearchEngine();
-
+	//SearchEngine<NodeMap,GridNeighbours> *se = theWorld.getCartographer()->getSearchEngine();
+	
 	MoveCost cost(unit, aMap);
 	DiagonalDistance dd(destPos);
 	PosGoal posGoal(destPos);
 
-	se->setNodeLimit(ClusterMap::clusterSize * ClusterMap::clusterSize); // 256
-	se->setStart(startPos, dd(startPos));
-	AStarResult res = se->ASTAR_LOWLEVEL(posGoal, cost, dd);
+	nsgSearchEngine->setStart(startPos, dd(startPos));
+	AStarResult res = nsgSearchEngine->ASTAR_LOWLEVEL(posGoal, cost, dd);
 	if (res != AStarResult::COMPLETE) {
 		return false;
 	}
-	IF_DEBUG_TEXTURES( collectOpenClosed(se); )
+	IF_DEBUG_TEXTURES( collectOpenClosed(nsgSearchEngine); )
 	// extract path
-	Vec2i pos = se->getGoalPos();
+	Vec2i pos = nsgSearchEngine->getGoalPos();
 	assert(pos == destPos);
 	list<Vec2i>::iterator it = path.end();
 	while (pos.x != -1) {
 		it = path.insert(it, pos);
-		pos = se->getPreviousPos(pos);
+		pos = nsgSearchEngine->getPreviousPos(pos);
 	}
 	// erase start point (already on path or is start pos)
 	it = path.erase(it);
@@ -395,7 +389,7 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		//	}
 		//}
 	}
-	// route cache miss and either no repair performed or repair failed
+	// route cache miss or blocked
 	
 	const Vec2i &target = computeNearestFreePos(unit, finalPos); // set target for PosGoal Function
 	// if arrived (as close as we can get to it)
@@ -409,9 +403,9 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	Vec2i startCluster = ClusterMap::cellToCluster(unit->getPos());
 	Vec2i destCluster  = ClusterMap::cellToCluster(target);
 
-	if (startCluster == destCluster) {
+	if (startCluster.dist(destCluster) < 3.f) {
 		if (quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), target)
-		!=  numeric_limits<float>::infinity()) {
+		!= numeric_limits<float>::infinity()) {
 			Vec2i pos = nsgSearchEngine->getGoalPos();
 			while (pos.x != -1) {
 				path.push_front(pos);
@@ -448,6 +442,8 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	)
 	
 	//TODO post process, scan wpPath, if prev.dist(pos) < 4 cull prev
+	assert(wpPath.size() > 1);
+	wpPath.pop();
 
 	// refine path, to at least 20 steps (or end of path)
 	while (!wpPath.empty() && path.size() < 20) {

@@ -18,6 +18,7 @@
 #include "map.h"
 #include "route_planner.h"
 #include "cartographer.h"
+#include "cluster_map.h"
 
 #include "profiler.h"
 
@@ -224,6 +225,21 @@ bool AnnotatedMap::updateCell(const Vec2i &pos, const Field field) {
 		CellMetrics old = metrics[pos];
 		computeClearances(pos);
 		if ( old != metrics[pos] ) {
+			ClusterMap *clusterMap = World::getInstance().getCartographer()->getClusterMap();
+			Vec2i cluster = ClusterMap::cellToCluster(pos);
+			clusterMap->setClusterDirty(cluster);
+			int ymod = pos.y % ClusterMap::clusterSize;
+			if (ymod == 0) {
+				clusterMap->setNorthBorderDirty(cluster);
+			} else if (ymod == ClusterMap::clusterSize - 1) {
+				clusterMap->setNorthBorderDirty(Vec2i(cluster.x, cluster.y + 1));
+			}
+			int xmod = pos.x & ClusterMap::clusterSize;
+			if (xmod == 0) {
+				clusterMap->setWestBorderDirty(cluster);
+			} else if ( xmod == ClusterMap::clusterSize - 1) {
+				clusterMap->setWestBorderDirty(Vec2i(cluster.x + 1, cluster.y));
+			}
 			return true;
 		}
 	} else { // local annotation, only check field, store original clearances

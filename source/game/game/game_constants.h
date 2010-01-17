@@ -60,7 +60,7 @@ namespace Search {
 	  *		<li><b>TIME_LIMIT</b> search ongoing (time limit reached)</li></ul>
 	  */
 	REGULAR_ENUM( AStarResult, 
-						FAILED, COMPLETE, NODE_LIMIT, TIME_LIMIT
+						FAILURE, COMPLETE, NODE_LIMIT, TIME_LIMIT
 				   );
 
 	/** Specifies a 'space' to search 
@@ -98,7 +98,7 @@ STRINGY_ENUM( ControlType,
 			   );
 
 /** fields of movement
-  * <ul><li><b>WALKABLE</b> land traveller</li>
+  * <ul><li><b>LAND</b> land traveller</li>
   *		<li><b>AIR</b> flying units</li>
   *		<li><b>ANY_WATER</b> travel on water only</li>
   *		<li><b>DEEP_WATER</b> travel in deep water only</li>

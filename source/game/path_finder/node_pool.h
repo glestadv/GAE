@@ -91,23 +91,6 @@ public:
 };
 
 // ========================================================
-// class NodePool
-// ========================================================
-/** An array of AStarNode.  
-  * A NodePool is attached to a NodeStore and provides the new nodes
-  * for a search. */
-class NodePool {
-private:
-	AStarNode *stock; /**< The block of nodes */
-	int counter;	 /**< current counter    */
-public:
-	NodePool() : counter(0) { stock = new AStarNode[size]; } /**< Construct NodePool */
-	~NodePool() { delete [] stock; } /**< Delete NodePool							*/
-	static const int size = 512;	/**< total number of AStarNodes in each pool   */
-	AStarNode*	newNode()	{ return ( counter < size ? &stock[counter++] : NULL ); } 
-	void reset() { counter = 0; }
-};
-// ========================================================
 // class NodeStore
 // ========================================================
 class NodeStore {	/**< A NodeStorage class (template interface) for A* */

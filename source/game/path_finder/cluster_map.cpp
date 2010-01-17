@@ -23,7 +23,7 @@
 namespace Glest { namespace Game { namespace Search {
 
 ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto) 
-		: aMap(aMap) , carto(carto) {
+		: aMap(aMap) , carto(carto), dirty(false) {
 	w = aMap->getWidth() / clusterSize;
 	h = aMap->getHeight() / clusterSize;
 	vertBorders = new ClusterBorder[(w-1)*h];
@@ -39,51 +39,193 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 }
 
-/** initialise/re-initialise cluster (evaluates north and west borders) */
-void ClusterMap::initCluster(Vec2i cluster) {
-	ClusterBorder *west = getWestBorder(cluster);
-	ClusterBorder *north = getNorthBorder(cluster);
-	Transitions::iterator it;
 
+int ClusterMap::eClear[clusterSize];
+
+void ClusterMap::addNorthTransition(ClusterBorder *cb, Field f, int y, int max_clear, int startPos, int endPos, int run) {
+	assert(max_clear > 0 && startPos != -1 && endPos != -1);
+	if (run < 12) {
+		// find central most pos with max clearance
+		int cp = (startPos + endPos) / 2;
+		int incr = 0;
+		bool minus = true;
+		int n = 0;
+		int tp = cp;
+		while (n < run) {
+			if (eClear[startPos - tp] == max_clear) {
+				Transition *t = new Transition(Vec2i(tp,y), max_clear, false);
+				cb->transitions[f].push_back(t);
+				return;
+			}
+			if (minus) {
+				++incr;
+				tp = cp + incr;
+				minus = false;
+			} else {
+				tp = cp - incr;
+				minus = true;
+			}
+			++n;
+		}
+		assert(false);
+	} else {
+		// find two points, as close as possible to 1/4 and 3/4 accross entrance
+		int crp = endPos + (startPos - endPos) / 4;
+		int clp = endPos + (startPos - endPos) * 3 / 4;
+		// right-centre
+		int incr = 0;
+		bool minus = true;
+		int tp = crp;
+		while (tp <= startPos) {
+			if (eClear[startPos - tp] == max_clear) {
+				Transition *t = new Transition(Vec2i(tp,y), max_clear, false);
+				cb->transitions[f].push_back(t);
+				break;
+			}
+			if (minus) {
+				++incr;
+				tp = crp + incr;
+				minus = false;
+			} else {
+				tp = crp - incr;
+				minus = true;
+			}
+		}
+		// left-centre
+		incr = 0;
+		minus = true;
+		tp = clp;
+		while (tp >= endPos) {
+			if (eClear[startPos - tp] == max_clear) {
+				Transition *t = new Transition(Vec2i(tp,y), max_clear, false);
+				cb->transitions[f].push_back(t);
+				break;
+			}
+			if (minus) {
+				++incr;
+				tp = clp + incr;
+				minus = false;
+			} else {
+				tp = clp - incr;
+				minus = true;
+			}
+		}
+	}
+}
+
+void ClusterMap::addWestTransition(ClusterBorder *cb, Field f, int x, int max_clear, int startPos, int endPos, int run) {
+	assert(max_clear > 0 && startPos != -1 && endPos != -1);
+	if (run < 12) {
+		// find central most pos with max clearance
+		int cp = (startPos + endPos) / 2;
+		int incr = 0;
+		bool minus = true;
+		int n = 0;
+		int tp = cp;
+		while (n < run) {
+			if (eClear[startPos - tp] == max_clear) {
+				Transition *t = new Transition(Vec2i(x, tp), max_clear, true);
+				cb->transitions[f].push_back(t);
+				return;
+			}
+			if (minus) {
+				++incr;
+				tp = cp + incr;
+				minus = false;
+			} else {
+				tp = cp - incr;
+				minus = true;
+			}
+			++n;
+		}
+		assert(false);
+	} else {
+		// find two points, as close as possible to 1/4 and 3/4 accross entrance
+		int cbp = endPos + (startPos - endPos) / 4;
+		int ctp = endPos + (startPos - endPos) * 3 / 4;
+		// bottom-centre
+		int incr = 0;
+		bool minus = true;
+		int tp = cbp;
+		while (tp <= startPos) {
+			if (eClear[startPos - tp] == max_clear) {
+				Transition *t = new Transition(Vec2i(x,tp), max_clear, true);
+				cb->transitions[f].push_back(t);
+				break;
+			}
+			if (minus) {
+				++incr;
+				tp = cbp + incr;
+				minus = false;
+			} else {
+				tp = cbp - incr;
+				minus = true;
+			}
+		}
+		// top-centre
+		incr = 0;
+		minus = true;
+		tp = ctp;
+		while (tp >= endPos) {
+			if (eClear[startPos - tp] == max_clear) {
+				Transition *t = new Transition(Vec2i(x,tp), max_clear, true);
+				cb->transitions[f].push_back(t);
+				break;
+			}
+			if (minus) {
+				++incr;
+				tp = ctp + incr;
+				minus = false;
+			} else {
+				tp = ctp - incr;
+				minus = true;
+			}
+		}
+
+	}
+}
+
+void ClusterMap::initNorthBorder(const Vec2i &cluster) {
+	ClusterBorder *north = getNorthBorder(cluster);
 	if (north != &sentinel) {
 		int y = cluster.y * clusterSize - 1;
 		int y2 = y + 1;
 		bool clear = false;   // true while evaluating a Transition, false when obstacle hit
 		int max_clear = -1;  // max clearance seen for current Transition
-		int max_pos = -1;	// position of max clearance for current Transition
-		int cx = (cluster.x + 1) * clusterSize - clusterSize / 2;
-		for (Field f = enum_cast<Field>(0); f < Field::COUNT; ++f) {
+		int startPos = -1; // start position of entrance
+		int endPos = -1;  // end position of entrance
+		int run = 0;	 // to count entrance 'width'
+		for (Field f(0); f < Field::COUNT; ++f) {
 			if (!aMap->maxClearance[f]) continue;
 			deleteValues(north->transitions[f].begin(), north->transitions[f].end());
 			north->transitions[f].clear();			
 			clear = false;
 			max_clear = -1;
-			max_pos = -1;
 			for (int i=0; i < clusterSize; ++i) {
-				int clear1 = aMap->metrics[Vec2i(POS_X,y)].get(enum_cast<Field>(f));
-				int clear2 = aMap->metrics[Vec2i(POS_X,y2)].get(enum_cast<Field>(f));
+				int clear1 = aMap->metrics[Vec2i(POS_X,y)].get(f);
+				int clear2 = aMap->metrics[Vec2i(POS_X,y2)].get(f);
 				int local = min(clear1, clear2);
 				if (local) {
-					clear = true;
-					if (local > max_clear || ( local == max_clear && abs(POS_X - cx) < abs(max_pos - cx) )) {
+					if (!clear) {
+						clear = true;
+						startPos = POS_X;
+					}
+					eClear[run++] = local;
+					endPos = POS_X;
+					if (local > max_clear) {
 						max_clear = local;
-						max_pos = POS_X;
 					} 
 				} else {
 					if (clear) {
-						assert(max_clear > 0 && max_pos != -1);
-						Transition *t = new Transition(Vec2i(max_pos,y), max_clear, false);
-						north->transitions[f].push_back(t);
-						max_clear = -1;
-						max_pos = -1;
+						addNorthTransition(north, f, y, max_clear, startPos, endPos, run);
+						run = 0;
+						startPos = endPos = max_clear = -1;
+						clear = false;
 					}
-					clear = false;
 				}
 			} // for i < clusterSize
 			if (clear) {
-				assert(max_clear > 0 && max_pos != -1 );
-				Transition *t = new Transition(Vec2i(max_pos,y), max_clear, false);
-				north->transitions[f].push_back(t);
+				addNorthTransition(north, f, y, max_clear, startPos, endPos, run);
 			}
 		}// for each Field
 #		if _GAE_DEBUG_EDITION_
@@ -93,48 +235,49 @@ void ClusterMap::initCluster(Vec2i cluster) {
 			}
 #		endif
 	} // if not sentinel
+}
 
+void ClusterMap::initWestBorder(const Vec2i &cluster) {
+	ClusterBorder *west = getWestBorder(cluster);
 	if (west != &sentinel) {
 		int x = cluster.x * clusterSize - 1;
 		int x2 = x + 1;
-		bool clear = false;	  // true while evaluating an Transition, false when obstacle hit
-		int max_clear = -1;  // max clearance seen for current Transition
-		int max_pos = -1;	// position of max clearance for current Transition
-		int cy = (cluster.y + 1) * clusterSize - clusterSize / 2;
-		for (Field f = enum_cast<Field>(0); f < Field::COUNT; ++f) {
+		bool clear = false;  // true while evaluating an Transition, false when obstacle hit
+		int max_clear = -1; // max clearance seen for current Transition
+		int startPos = -1; // start position of entrance
+		int endPos = -1;  // end position of entrance
+		int run = 0;	 // to count entrance 'width'
+		for (Field f(0); f < Field::COUNT; ++f) {
 			if (!aMap->maxClearance[f]) continue;
-
 			deleteValues(west->transitions[f].begin(), west->transitions[f].end());
 			west->transitions[f].clear();			
-
 			clear = false;
 			max_clear = -1;
-			max_pos = -1;
 			for (int i=0; i < clusterSize; ++i) {
-				int clear1 = aMap->metrics[Vec2i(x,POS_Y)].get(enum_cast<Field>(f));
-				int clear2 = aMap->metrics[Vec2i(x2,POS_Y)].get(enum_cast<Field>(f));
+				int clear1 = aMap->metrics[Vec2i(x,POS_Y)].get(f);
+				int clear2 = aMap->metrics[Vec2i(x2,POS_Y)].get(f);
 				int local = min(clear1, clear2);
 				if (local) {
-					clear = true;
-					if (local > max_clear || ( local == max_clear && abs(POS_Y - cy) < abs(max_pos - cy) )) {
+					if (!clear) {
+						clear = true;
+						startPos = POS_Y;
+					}
+					eClear[run++] = local;
+					endPos = POS_Y;
+					if (local > max_clear) {
 						max_clear = local;
-						max_pos = POS_Y;
 					}
 				} else {
 					if (clear) {
-						assert(max_clear > 0 && max_pos != -1 );
-						Transition *t = new Transition(Vec2i(x,max_pos), max_clear, true);
-						west->transitions[f].push_back(t);
-						max_clear = -1;
-						max_pos = -1;
+						addWestTransition(west, f, x, max_clear, startPos, endPos, run);
+						run = 0;
+						startPos = endPos = max_clear = -1;
+						clear = false;
 					}
-					clear = false;
 				}
 			} // for i < clusterSize
 			if (clear) {
-				assert(max_clear > 0 && max_pos != -1 );
-				Transition *t = new Transition(Vec2i(x,max_pos), max_clear, true);
-				west->transitions[f].push_back(t);
+				addWestTransition(west, f, x, max_clear, startPos, endPos, run);
 			}
 		}// for each Field
 
@@ -145,12 +288,17 @@ void ClusterMap::initCluster(Vec2i cluster) {
 			}
 #		endif
 	} // if not sentinel
+}
 
+/** initialise/re-initialise cluster (evaluates north and west borders) */
+void ClusterMap::initCluster(const Vec2i &cluster) {
+	initNorthBorder(cluster);
+	initWestBorder(cluster);
 }
 
 //bool showIntraClusterPaths = false;
 
-float ClusterMap::aStarPathLength(Field f, int size, Vec2i &start, Vec2i &dest) {
+float ClusterMap::aStarPathLength(Field f, int size, const Vec2i &start, const Vec2i &dest) {
 	if (start == dest) {
 		return 0.f;
 	}
@@ -176,7 +324,7 @@ float ClusterMap::aStarPathLength(Field f, int size, Vec2i &start, Vec2i &dest) 
 	return se->getCostTo(goalPos);
 }
 
-void ClusterMap::getTransitions(Vec2i cluster, Field f, Transitions &t) {
+void ClusterMap::getTransitions(const Vec2i &cluster, Field f, Transitions &t) {
 	ClusterBorder *north = getNorthBorder(cluster);
 	ClusterBorder *east = getEastBorder(cluster);
 	ClusterBorder *south = getSouthBorder(cluster);
@@ -201,12 +349,63 @@ void ClusterMap::getTransitions(Vec2i cluster, Field f, Transitions &t) {
 		t.push_back(*it);
 }
 
-ostream& operator<<(ostream &stream, const Vec2i &p) {
-	return stream << "(" << p.x << ", " << p.y << ")";
+void ClusterMap::disconnectCluster(const Vec2i &cluster) {
+	for (Field f(0); f < Field::COUNT; ++f) {
+		Transitions t;
+		getTransitions(cluster, f, t);
+		set<const Transition*> tset;
+		for (Transitions::iterator it = t.begin(); it != t.end(); ++it) {
+			tset.insert(*it);
+		}
+		for (Transitions::iterator it = t.begin(); it != t.end(); ++it) {
+			Edges e = (*it)->edges;
+			Edges::iterator eit = e.begin(); 
+			while (eit != e.end()) {
+				if (tset.find((*eit)->transition()) != tset.end()) {
+					eit = e.erase(eit);
+				} else {
+					++eit;
+				}
+			}
+		}
+	}
+}
+
+void ClusterMap::update() {
+	/*
+	for (set<Vec2i>::iterator it = dirtyNorthBorders.begin(); it != dirtyNorthBorders.end(); ++it) {
+		if (it->y > 0 && it->y < h) {
+			dirtyClusters.insert(Vec2i(it->x, it->y));
+			dirtyClusters.insert(Vec2i(it->x, it->y - 1));
+		}
+	}
+	for (set<Vec2i>::iterator it = dirtyWestBorders.begin(); it != dirtyWestBorders.end(); ++it) {
+		if (it->x > 0 && it->x < w) {
+			dirtyClusters.insert(Vec2i(it->x, it->y));
+			dirtyClusters.insert(Vec2i(it->x - 1, it->y));
+		}
+	}
+	for (set<Vec2i>::iterator it = dirtyClusters.begin(); it != dirtyClusters.end(); ++it) {
+		disconnectCluster(*it);
+	}
+	for (set<Vec2i>::iterator it = dirtyNorthBorders.begin(); it != dirtyNorthBorders.end(); ++it) {
+		initNorthBorder(*it);
+	}
+	for (set<Vec2i>::iterator it = dirtyWestBorders.begin(); it != dirtyWestBorders.end(); ++it) {
+		initWestBorder(*it);
+	}
+	for (set<Vec2i>::iterator it = dirtyClusters.begin(); it != dirtyClusters.end(); ++it) {
+		evalCluster(*it);
+	}
+	*/
+	dirtyClusters.clear();
+	dirtyClusters.clear();
+	dirtyWestBorders.clear();
+	dirty = false;
 }
 
 /** compute intra-cluster path lengths */
-void ClusterMap::evalCluster(Vec2i cluster) {
+void ClusterMap::evalCluster(const Vec2i &cluster) {
 	/*if (cluster.x == 2 && cluster.y == 4) {
 		showIntraClusterPaths = true;
 	} else {
@@ -355,6 +554,8 @@ bool TransitionNodeStore::setOpen(const Transition* pos, const Transition* prev,
 }
 
 void TransitionNodeStore::updateOpen(const Transition* pos, const Transition* &prev, const float cost) {
+	assert(open.find(pos) != open.end());
+	assert(closed.find(prev) != closed.end());
 
 	//REMOVE
 	assert(assertOpen());

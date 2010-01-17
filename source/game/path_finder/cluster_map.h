@@ -12,11 +12,17 @@
 #ifndef _GLEST_GAME_CLUSTER_MAP_H_
 #define _GLEST_GAME_CLUSTER_MAP_H_
 
-#include "annotated_map.h"
 #include "game_constants.h"
 
-namespace Glest { namespace Game { namespace Search {
+using std::set;
 
+namespace Glest { namespace Game { 
+
+class DebugRenderer;
+
+namespace Search {
+
+class AnnotatedMap;
 class Cartographer;
 struct Transition;
 
@@ -97,14 +103,28 @@ struct ClusterBorder {
 	}
 };
 
-#define POS_X ((cluster.x+1)*clusterSize-i-1)
-#define POS_Y ((cluster.y+1)*clusterSize-i-1)
+#define POS_X ((cluster.x + 1) * clusterSize - i - 1)
+#define POS_Y ((cluster.y + 1) * clusterSize - i - 1)
 
 class ClusterMap {
+#if _GAE_DEBUG_EDITION_
+	friend class DebugRenderer;
+#endif
+public:
+	static const int clusterSize = 16;
+
+private:
 	int w, h;
 	ClusterBorder *vertBorders, *horizBorders, sentinel;
 	Cartographer *carto;
 	AnnotatedMap *aMap;
+
+	set<Vec2i> dirtyClusters;
+	set<Vec2i> dirtyNorthBorders;
+	set<Vec2i> dirtyWestBorders;
+	bool dirty;
+
+	static int eClear[clusterSize];
 
 public:
 	ClusterMap(AnnotatedMap *aMap, Cartographer *carto);
@@ -112,8 +132,6 @@ public:
 		delete [] vertBorders;
 		delete [] horizBorders;
 	}
-
-	static const int clusterSize = 16;
 
 	static Vec2i cellToCluster (const Vec2i &cellPos) {
 		return Vec2i(cellPos.x / clusterSize, cellPos.y / clusterSize);
@@ -142,15 +160,31 @@ public:
 			case CardinalDir::WEST:
 				return getWestBorder(cluster);
 			default:
-				throw runtime_error("ClusterMap::getBorder() passed dogey direction");
+				throw runtime_error("ClusterMap::getBorder() passed dodgey direction");
 				return 0; // keep compiler quiet
 		}
 	}
+	void getTransitions(const Vec2i &cluster, Field f, Transitions &t);
 
-	void initCluster(Vec2i cluster);
-	void evalCluster(Vec2i cluster);
-	float aStarPathLength(Field f, int size, Vec2i &start, Vec2i &dest);
-	void getTransitions(Vec2i cluster, Field f, Transitions &t);
+	bool isDirty()	{ return dirty; }
+	void update();
+
+	void setClusterDirty(const Vec2i &cluster)		{ dirty = true; dirtyClusters.insert(cluster);		}
+	void setNorthBorderDirty(const Vec2i &cluster)	{ dirty = true; dirtyNorthBorders.insert(cluster);	}
+	void setWestBorderDirty(const Vec2i &cluster)	{ dirty = true; dirtyWestBorders.insert(cluster);	}
+
+private:
+	void addNorthTransition(ClusterBorder *cb, Field f, int y, int max_clear, int startPos, int endPos, int run);
+	void addWestTransition(ClusterBorder *cb, Field f, int x, int max_clear, int startPos, int endPos, int run);
+
+	void initCluster(const Vec2i &cluster);
+	void initNorthBorder(const Vec2i &cluster);
+	void initWestBorder(const Vec2i &cluster);
+
+	void disconnectCluster(const Vec2i &cluster);
+
+	void evalCluster(const Vec2i &cluster);
+	float aStarPathLength(Field f, int size, const Vec2i &start, const Vec2i &dest);
 };
 
 struct TransitionAStarNode {
