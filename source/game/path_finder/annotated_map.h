@@ -49,27 +49,27 @@ class ExplorationMap;
   * The team's annotated map is thus not updated until that cell becomes visible again.
   */
 struct CellMetrics {
-	CellMetrics() { memset ( this, 0, sizeof(*this) ); }
+	CellMetrics() { memset(this, 0, sizeof(*this)); }
 	
 	uint16 get(const Field field) const { /**< get metrics for field */
-		switch ( field ) {
+		switch (field) {
 			case Field::LAND:		return field0;
 			case Field::AIR:		return field1;
 			case Field::ANY_WATER:	return field2;
 			case Field::DEEP_WATER:	return field3;
 			case Field::AMPHIBIOUS:	return field4;
-			default: throw runtime_error ( "Unknown Field passed to CellMetrics::get()" );
+			default: throw runtime_error("Unknown Field passed to CellMetrics::get()");
 		}
 	}
 	
 	void set(const Field field, uint16 val) { /**< set metrics for field */
-		switch ( field ) {
+		switch (field) {
 			case Field::LAND:		field0 = val; return;
 			case Field::AIR:		field1 = val; return;
 			case Field::ANY_WATER:	field2 = val; return;
 			case Field::DEEP_WATER:	field3 = val; return;
 			case Field::AMPHIBIOUS:	field4 = val; return;
-			default: throw runtime_error ( "Unknown Field passed to CellMetrics::set()" );
+			default: throw runtime_error("Unknown Field passed to CellMetrics::set()");
 		}
 	}
 	
@@ -78,8 +78,8 @@ struct CellMetrics {
 	}
 
 	bool operator!=(CellMetrics &that)	const { /**< comparison, ignoring dirty bit */
-		if ( field0 == that.field0 && field1 == that.field1 
-		&&  field2 == that.field2 && field3 == that.field3 && field4 == that.field4 ) {
+		if (field0 == that.field0 && field1 == that.field1 
+		&& field2 == that.field2 && field3 == that.field3 && field4 == that.field4) {
 			return false;
 		}
 		return true;
@@ -112,7 +112,14 @@ private:
 public:
 	MetricMap() : width(0), height(0), metrics(NULL) { }
 	~MetricMap()			{ delete [] metrics; }
-	void init(int w, int h) { assert ( w > 0 && h > 0); width = w; height = h; metrics = new CellMetrics[w * h]; }
+
+	void init(int w, int h) { 
+		assert ( w > 0 && h > 0); 
+		width = w; 
+		height = h; 
+		metrics = new CellMetrics[w * h];
+	}
+
 	void zero()				{ memset(metrics, 0, sizeof(CellMetrics) * width * height); }
 	
 	CellMetrics& operator[](const Vec2i &pos) const { return metrics[pos.y * width + pos.x]; }
@@ -150,7 +157,7 @@ public:
 	/** Maximum clearance allowed by the game. Hence, also maximum moveable unit size supported. */
 	static const int maxClearanceValue = 7; // don't change me without also changing CellMetrics
 
-	int maxClearance[Field::COUNT]; // maximum clearances need for this world
+	int maxClearance[Field::COUNT]; // maximum clearances needed for this world
 
 	void initMapMetrics();
 

@@ -29,7 +29,9 @@
 
 #include "leak_dumper.h"
 
-#include "debug_renderer.h"
+#if _GAE_DEBUG_EDITION_
+#	include "debug_renderer.h"
+#endif
 
 using namespace std;
 using namespace Shared::Graphics;

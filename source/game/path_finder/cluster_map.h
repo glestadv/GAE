@@ -26,32 +26,103 @@ class AnnotatedMap;
 class Cartographer;
 struct Transition;
 
+static const int clusterSize = 16;
+
 /** uni-directional edge, is owned by the source transition, contains pointer to dest */
-struct Edge : pair<Transition*, vector<float> > {
-	Edge(Transition *t)  { first = t; }
-	Transition* transition() const { return first; }
-	float cost(int size) const { return second[size-1]; }
-	int maxClear() { return second.size(); }
+struct Edge {
+private:
+	static int numEdges;
+
+	const Transition *dest;
+	vector<float> weights;
+
+public:
+	static bool addingLand;
+	Edge(const Transition *t) {
+		dest = t;
+		if (addingLand)
+			++numEdges;
+	}
+
+	~Edge() {
+		if (addingLand)
+			--numEdges;
+	}
+
+	void addWeight(const float w) { weights.push_back(w); }
+	const Transition* transition() const { return dest; }
+	float cost(int size) const { return weights[size-1]; }
+	int maxClear() { return weights.size(); }
+
+	static int NumEdges() { return numEdges; }
 };
-typedef vector<Edge*> Edges;
+typedef list<Edge*> Edges;
 
 /**  */
 struct Transition {
+private:
+	static int numTransitions;
+
+public:
+	static bool addingLand;
 	int clearance;
 	Vec2i nwPos;
 	bool vertical;
 	Edges edges;
 
-	Transition(Vec2i pos, int clear, bool vert) : nwPos(pos), clearance(clear), vertical(vert) {}
+	Transition(Vec2i pos, int clear, bool vert) 
+			: nwPos(pos), clearance(clear), vertical(vert) {
+		if (addingLand)
+			++numTransitions;
+	}
 	~Transition() {
 		deleteValues(edges.begin(), edges.end());
+		if (addingLand)
+			--numTransitions;
 	}
+
+	static int NumTransitions() { return numTransitions; }
 };
+
 typedef vector<const Transition*> Transitions;
 
+struct TransitionCollection {
+	Transition *transitions[clusterSize/2];
+	unsigned n;
+
+	TransitionCollection() {
+		n = 0;
+		memset(transitions, 0, sizeof(Transition*) * clusterSize / 2);
+	}
+
+	void add(Transition *t) {
+		assert(n < clusterSize / 2);
+		transitions[n++] = t;
+	}
+
+	void clear() {
+		for (int i=0; i < n; ++i) {
+			delete transitions[i];
+		}
+		n = 0;
+	}
+
+};
+
+struct ClusterBorder {
+	TransitionCollection transitions[Field::COUNT];
+
+	~ClusterBorder() {
+		for (Field f(0); f < Field::COUNT; ++f) {
+			transitions[f].clear();
+		}
+	}
+};
+
+/** NeighbourFunc, describes abstract search space */
 class TransitionNeighbours {
 public:
-	void operator()(const Transition* pos, Transitions &neighbours) const {
+	void operator()(const Transition* pos, vector<const Transition*> &neighbours) const {
 		for (Edges::const_iterator it = pos->edges.begin(); it != pos->edges.end(); ++it) {
 			neighbours.push_back((*it)->transition());
 		}
@@ -67,15 +138,15 @@ public:
 	TransitionCost(Field f, int s) : field(f), size(s) {}
 	float operator()(const Transition *t, const Transition *t2) const {
 		Edges::const_iterator it =  t->edges.begin();
-		for ( ; it != t->edges.end(); ++it ) {
-			if ( (*it)->transition() == t2 ) {
+		for ( ; it != t->edges.end(); ++it) {
+			if ((*it)->transition() == t2) {
 				break;
 			}
 		}
-		if ( it == t->edges.end() ) {
+		if (it == t->edges.end()) {
 			throw runtime_error("bad connection in ClusterMap.");
 		}
-		if ( it != t->edges.end() && (*it)->maxClear() >= size ) {
+		if ((*it)->maxClear() >= size) {
 			return (*it)->cost(size);
 		}
 		return numeric_limits<float>::infinity();
@@ -93,16 +164,6 @@ public:
 	}
 };
 
-struct ClusterBorder {
-	Transitions transitions[Field::COUNT];
-
-	~ClusterBorder() {
-		for (Field f(0); f < Field::COUNT; ++f) {
-			deleteValues(transitions[f].begin(), transitions[f].end());
-		}
-	}
-};
-
 #define POS_X ((cluster.x + 1) * clusterSize - i - 1)
 #define POS_Y ((cluster.y + 1) * clusterSize - i - 1)
 
@@ -110,9 +171,6 @@ class ClusterMap {
 #if _GAE_DEBUG_EDITION_
 	friend class DebugRenderer;
 #endif
-public:
-	static const int clusterSize = 16;
-
 private:
 	int w, h;
 	ClusterBorder *vertBorders, *horizBorders, sentinel;
@@ -124,7 +182,7 @@ private:
 	set<Vec2i> dirtyWestBorders;
 	bool dirty;
 
-	static int eClear[clusterSize];
+	int eClear[clusterSize];
 
 public:
 	ClusterMap(AnnotatedMap *aMap, Cartographer *carto);
@@ -174,17 +232,26 @@ public:
 	void setWestBorderDirty(const Vec2i &cluster)	{ dirty = true; dirtyWestBorders.insert(cluster);	}
 
 private:
-	void addNorthTransition(ClusterBorder *cb, Field f, int y, int max_clear, int startPos, int endPos, int run);
-	void addWestTransition(ClusterBorder *cb, Field f, int x, int max_clear, int startPos, int endPos, int run);
+	struct EntranceInfo {
+		ClusterBorder *cb;
+		Field f;
+		bool vert;
+		int pos, max_clear, startPos, endPos, run;
+	};
+	void addBorderTransition(EntranceInfo &info);
+	void initClusterBorder(const Vec2i &cluster, bool north);
 
-	void initCluster(const Vec2i &cluster);
-	void initNorthBorder(const Vec2i &cluster);
-	void initWestBorder(const Vec2i &cluster);
-
-	void disconnectCluster(const Vec2i &cluster);
+	/** initialise/re-initialise cluster (evaluates north and west borders) */
+	void initCluster(const Vec2i &cluster) {
+		initClusterBorder(cluster, true);
+		initClusterBorder(cluster, false);
+	}
 
 	void evalCluster(const Vec2i &cluster);
+
 	float aStarPathLength(Field f, int size, const Vec2i &start, const Vec2i &dest);
+
+	void disconnectCluster(const Vec2i &cluster);
 };
 
 struct TransitionAStarNode {

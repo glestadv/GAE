@@ -139,12 +139,12 @@ public:
 
 	/** more kludgy search restriction stuff... */
 	static void setSearchCluster(Vec2i cluster) {
-		x = cluster.x * ClusterMap::clusterSize - 1;
+		x = cluster.x * clusterSize - 1;
 		if (x < 0) x = 0;
-		y = cluster.y * ClusterMap::clusterSize - 1;
+		y = cluster.y * clusterSize - 1;
 		if (y < 0) y = 0;
-		width = ClusterMap::clusterSize + 1;
-		height = ClusterMap::clusterSize + 1;
+		width = clusterSize + 1;
+		height = clusterSize + 1;
 	}
 };
 

@@ -650,6 +650,8 @@ void World::tick() {
 	//apply hack cleanup
 	doHackyCleanUp();
 
+	cartographer->tick();
+
 	//apply regen/degen
 	for (int i = 0; i < getFactionCount(); ++i) {
 		for (int j = 0; j < getFaction(i)->getUnitCount(); ++j) {

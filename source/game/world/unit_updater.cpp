@@ -62,7 +62,10 @@ void UnitUpdater::init(Game &game) {
 	this->gui = game.getGui();
 	this->gameCamera = game.getGameCamera();
 	this->world = game.getWorld();
-	this->map = world->getMap();	this->console = game.getConsole();	routePlanner = world->getRoutePlanner();	gameSettings = game.getGameSettings();}
+	this->map = world->getMap();
+	this->console = game.getConsole();
+	routePlanner = world->getRoutePlanner();
+	gameSettings = game.getGameSettings();}
 
 // ==================== progress skills ====================
 
@@ -308,7 +311,8 @@ void UnitUpdater::updateStop(Unit *unit) {
 	// if we have another command then stop sitting on your ass
 	if (unit->getCommands().size() > 1 && unit->getCommands().front()->getType()->getClass() == CommandClass::STOP) {
 		unit->finishCommand();
-		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " cancelling stop" );		return;
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " cancelling stop" );
+		return;
 	}
 
 	unit->setCurrSkill(sct->getStopSkillType());
@@ -412,7 +416,8 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		//compute target pos
 		Vec2i pos;
 		if ( attackableOnSight(unit, &target, asts, NULL) ) {
-			// found a target, but not in range			pos = target->getNearestOccupiedCell(unit->getPos());
+			// found a target, but not in range
+			pos = target->getNearestOccupiedCell(unit->getPos());
 			if (pos != unit->getTargetPos()) {
 				unit->setTargetPos(pos);
 				unit->getPath()->clear();
@@ -441,7 +446,11 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		case TravelState::BLOCKED:
 			if (unit->getPath()->isBlocked()) {
 				return true;
-			}			break;		default:			return true;		}
+			}
+			break;
+		default:
+			return true;
+		}
 	}
 
 	return false;
@@ -577,7 +586,8 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			}
 			if ( !builtUnit->isMobile() ) {
 				// new obstacle, inform cartographer
-				world->getCartographer()->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());			}
+				world->getCartographer()->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
+			}
 			//play start sound
 			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(bct->getStartSound(), unit->getCurrVector(), gameCamera->getPos());
@@ -706,7 +716,8 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 						unit->face(unit->getNextPos());
 						break;
 					case TravelState::BLOCKED:
-						unit->setCurrSkill(hct->getStopLoadedSkillType());						break;
+						unit->setCurrSkill(hct->getStopLoadedSkillType());
+						break;
 				}
 				if (map->isNextTo(unit->getPos(), store)) {
 					//update resources
@@ -840,8 +851,14 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				unit->setCurrSkill(SkillClass::STOP);
 				unit->finishCommand();
 				break;
-			}			if (repaired) {
-				unit->setCurrSkill(rst);			} else {				unit->setCurrSkill(SkillClass::STOP);				unit->finishCommand();			}			break;
+			}
+			if (repaired) {
+				unit->setCurrSkill(rst);
+			} else {
+				unit->setCurrSkill(SkillClass::STOP);
+				unit->finishCommand();
+			}
+			break;
 		case TravelState::MOVING:
 			unit->setCurrSkill(rct->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -1067,9 +1084,12 @@ void UnitUpdater::updateMorph(Unit *unit) {
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
 				if (mapUpdate) {
 					// obstacle added or removed, update annotated maps
-					bool adding = !mct->getMorphUnit()->isMobile();					world->getCartographer()->updateMapMetrics(unit->getPos(), unit->getSize());				}
+					bool adding = !mct->getMorphUnit()->isMobile();
+					world->getCartographer()->updateMapMetrics(unit->getPos(), unit->getSize());
+				}
 
-				if(isNetworkServer()) {					getServerInterface()->unitMorph(unit);
+				if(isNetworkServer()) {
+					getServerInterface()->unitMorph(unit);
 					getServerInterface()->updateFactions();
 				}
 			} else {

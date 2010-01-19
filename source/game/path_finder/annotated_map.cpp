@@ -32,6 +32,7 @@ namespace Glest { namespace Game { namespace Search {
 AnnotatedMap::AnnotatedMap(World *world, ExplorationMap *eMap) 
 		: cellMap(NULL)
 		, eMap(eMap) {
+	cout << "Annotated Map\n";
 	assert(world && world->getMap());
 	cellMap = world->getMap();
 	width = cellMap->getW();
@@ -58,7 +59,7 @@ AnnotatedMap::AnnotatedMap(World *world, ExplorationMap *eMap)
 		}
 	}
 #	ifndef NDEBUG
-		for ( Field f = enum_cast<Field>(0); f < Field::COUNT; ++f ) {
+		for ( Field f(0); f < Field::COUNT; ++f ) {
 			cout << "max clearance in " << FieldNames[f] << " = " << maxClearance[f] << "\n";
 		}
 #	endif
@@ -228,16 +229,16 @@ bool AnnotatedMap::updateCell(const Vec2i &pos, const Field field) {
 			ClusterMap *clusterMap = World::getInstance().getCartographer()->getClusterMap();
 			Vec2i cluster = ClusterMap::cellToCluster(pos);
 			clusterMap->setClusterDirty(cluster);
-			int ymod = pos.y % ClusterMap::clusterSize;
+			int ymod = pos.y % Search::clusterSize;
 			if (ymod == 0) {
 				clusterMap->setNorthBorderDirty(cluster);
-			} else if (ymod == ClusterMap::clusterSize - 1) {
+			} else if (ymod == Search::clusterSize - 1) {
 				clusterMap->setNorthBorderDirty(Vec2i(cluster.x, cluster.y + 1));
 			}
-			int xmod = pos.x & ClusterMap::clusterSize;
+			int xmod = pos.x % Search::clusterSize;
 			if (xmod == 0) {
 				clusterMap->setWestBorderDirty(cluster);
-			} else if ( xmod == ClusterMap::clusterSize - 1) {
+			} else if ( xmod == Search::clusterSize - 1) {
 				clusterMap->setWestBorderDirty(Vec2i(cluster.x + 1, cluster.y));
 			}
 			return true;

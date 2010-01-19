@@ -111,7 +111,7 @@ public:
 	static set<Vec2i> pathCells;
 
 	Vec4f operator()( const Vec2i &cell ) {
-		const int &clusterSize = Search::ClusterMap::clusterSize;
+		const int &clusterSize = Search::clusterSize;
 		if ( cell.x % clusterSize == clusterSize - 1 
 		|| cell.y % clusterSize == clusterSize - 1  ) {
 			if ( entranceCells.find(cell) != entranceCells.end() ) {
@@ -385,8 +385,10 @@ public:
 		
 		Transitions transitions;
 		if (dir != CardinalDir::COUNT) {
-			Transitions &bt = cm->getBorder(cluster, dir)->transitions[Field::LAND];
-			transitions.insert(transitions.end(), bt.begin(), bt.end());
+			TransitionCollection &tc = cm->getBorder(cluster, dir)->transitions[Field::LAND];
+			for (int i=0; i < tc.n; ++i) {
+				transitions.push_back(tc.transitions[i]);
+			}
 		} else {
 			cm->getTransitions(cluster, Field::LAND, transitions);
 		}		
@@ -407,12 +409,12 @@ public:
 			Vec3f t1Pos(t->nwPos.x + 0.5f, h + 0.1f, t->nwPos.y + 0.5f);
 			for (Edges::const_iterator ei = t->edges.begin(); ei != t->edges.end(); ++ei) {
 				Edge * const &e = *ei;
-				if (e->cost(1) != numeric_limits<float>::infinity()) {
-					Transition* &t2 = e->first;
+				//if (e->cost(1) != numeric_limits<float>::infinity()) {
+					const Transition* t2 = e->transition();
 					h = map->getCell(t2->nwPos)->getHeight();
 					Vec3f t2Pos(t2->nwPos.x + 0.5f, h + 0.1f, t2->nwPos.y + 0.5f);
 					renderArrow(t1Pos, t2Pos, Vec3f(1.f, 0.f, 1.f), 0.2f);
-				}
+				//}
 			}
 		}
 		//Restore

@@ -143,8 +143,12 @@ public:
 		masterMap->updateMapMetrics(pos, size);
 		// who can see it ? update their maps too.
 		// set cells as dirty for those that can't see it
+	}
 
-		clusterMap->update();
+	void tick() {
+		if (clusterMap->isDirty()) {
+			clusterMap->update();
+		}
 	}
 
 	TypeMap<float>* getResourceMap(int team, const ResourceType* rt) {

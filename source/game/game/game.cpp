@@ -26,6 +26,7 @@
 #include "checksum.h"
 #include "auto_test.h"
 #include "profiler.h"
+#include "cluster_map.h"
 
 #include "leak_dumper.h"
 #ifdef _MSC_VER
@@ -893,6 +894,11 @@ void Game::render2d(){
 			}
 			str << endl;
 		}
+
+		// cluster map
+		str << "ClusterMap Nodes = " << Search::Transition::NumTransitions() << endl;
+		str << "ClusterMap Edges = " << Search::Edge::NumEdges() << endl;
+
 		renderer.renderText(
 			str.str(), coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 10, 500, false);

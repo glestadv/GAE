@@ -1253,7 +1253,9 @@ void Renderer::renderSurface() {
 		debugRenderer.renderPathOverlay();
 
 		//debugRenderer.renderIntraCusterEdges(Vec2i(2,4), CardinalDir::NORTH);
+		//debugRenderer.renderIntraCusterEdges(Vec2i(0,0));
 	}
+	
 #	endif	
 }
 
