@@ -254,6 +254,7 @@ public:
 	const UnitPath *getPath() const				{return &unitPath;}
 	UnitPath *getPath()							{return &unitPath;}
 	WaypointPath *getWaypointPath()				{return &waypointPath;}
+	const WaypointPath *getWaypointPath() const {return &waypointPath;}
 	int getSpeed(const SkillType *st) const;
 	int getSpeed() const						{return getSpeed(currSkill);}
 	Unit *getMaster() const						{return master;}

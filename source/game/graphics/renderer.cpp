@@ -264,6 +264,10 @@ void Renderer::initGame(Game *game){
 	fontManager[rsGame]->init();
 
 	init3dList();
+
+#ifdef _GAE_DEBUG_EDITION_
+	debugRenderer.init();
+#endif
 }
 
 void Renderer::initMenu(MainMenu *mm){
@@ -1254,6 +1258,9 @@ void Renderer::renderSurface() {
 
 		//debugRenderer.renderIntraCusterEdges(Vec2i(2,4), CardinalDir::NORTH);
 		//debugRenderer.renderIntraCusterEdges(Vec2i(0,0));
+	}
+	if (debugRenderer.resourceMapOverlay) {
+		debugRenderer.renderResourceMapOverlay(visibleQuad);
 	}
 	
 #	endif	

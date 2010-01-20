@@ -37,7 +37,6 @@ bool Transition::addingLand = false;
 
 ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto) 
 		: aMap(aMap) , carto(carto), dirty(false) {
-	WRITE_AND_FLUSH( "Clutser Map\n" )
 	w = aMap->getWidth() / clusterSize;
 	h = aMap->getHeight() / clusterSize;
 	vertBorders = new ClusterBorder[(w-1)*h];

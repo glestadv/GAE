@@ -33,11 +33,61 @@
 #	include "debug_renderer.h"
 #endif
 
+#define CONSOLE_LOG(x) {theConsole.addLine(x); theLogger.add(x);}
+#define ASTAR_LOWLEVEL		aStar<PosGoal,MoveCost,DiagonalDistance>
+#define ASTAR_HIERARCHICAL	aStar<TransitionGoal,TransitionCost,TransitionHeuristic>
+
 using namespace std;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
 namespace Glest { namespace Game { namespace Search {
+
+#if _GAE_DEBUG_EDITION_
+	template <typename NodeStorage>
+	void collectOpenClosed(NodeStorage *ns) {
+		list<Vec2i> *nodes = ns->getOpenNodes();
+		list<Vec2i>::iterator nit = nodes->begin();
+		for ( ; nit != nodes->end(); ++nit ) 
+			PathFinderTextureCallBack::openSet.insert(*nit);
+		delete nodes;
+		nodes = ns->getClosedNodes();
+		for ( nit = nodes->begin(); nit != nodes->end(); ++nit )
+			PathFinderTextureCallBack::closedSet.insert(*nit);
+		delete nodes;					
+	}
+
+	void collectPath(const Unit *unit) {
+		const UnitPath &path = *unit->getPath();
+		for (UnitPath::const_iterator pit = path.begin(); pit != path.end(); ++pit) 
+			PathFinderTextureCallBack::pathSet.insert(*pit);
+	}
+
+	void collectWaypointPath(const Unit *unit) {
+		const WaypointPath &path = *unit->getWaypointPath();
+		DebugRenderer::clearWaypoints();
+		WaypointPath::const_iterator it = path.begin();
+		for ( ; it != path.end(); ++it) {
+			Vec3f vert = theWorld.getMap()->getTile(Map::toTileCoords(*it))->getVertex();
+			vert.x += it->x % Map::cellScale + 0.5f;
+			vert.z += it->y % Map::cellScale + 0.5f;
+			vert.y += 0.15f;
+			DebugRenderer::addWaypoint(vert);
+		}
+	}
+
+	void clearOpenClosed(const Vec2i &start, const Vec2i &target) {
+		PathFinderTextureCallBack::pathStart = start;
+		PathFinderTextureCallBack::pathDest = target;
+		PathFinderTextureCallBack::pathSet.clear();
+		PathFinderTextureCallBack::openSet.clear();
+		PathFinderTextureCallBack::closedSet.clear();
+	}
+
+#	define IF_DEBUG_TEXTURES(x) { x }
+#else
+#	define IF_DEBUG_TEXTURES(x) {}
+#endif  // _GAE_DEBUG_EDITION_
 
 int GridNeighbours::x = 0;
 int GridNeighbours::y = 0;
@@ -59,11 +109,13 @@ RoutePlanner::RoutePlanner(World *world)
 		, nsgSearchEngine(NULL) {
 	theLogger.add( "Initialising SearchEngine", true );
 
+	cout << "NodeStore SearchEngine\n";
 	nodeStore = new NodeStore(world->getMap()->getW(), world->getMap()->getH());
 	nsgSearchEngine = new SearchEngine<NodeStore>(nodeStore, true);
 	nsgSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 
+	cout << "Transition SearchEngine\n";
 	tNodeStore = new TransitionNodeStore(2048); //FIXME (size)
 	tSearchEngine = new TransitionSearchEngine(tNodeStore, true);
 	tSearchEngine->setInvalidKey(NULL);
@@ -86,6 +138,9 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 	//assert(unit->getPos().dist(pos2) < 1.5);
 	if (unit->getPos().dist(pos2) > 1.5) {
 		//TODO: figure out why we need this!  because blocked paths are popping...
+		cout << "Unit is at " << unit->getPos() << " next step is " << pos2  
+			 << " dist is " << unit->getPos().dist(pos2) << endl;
+		cout.flush();
 		return false;
 	}
 	const Vec2i &pos1 = unit->getPos();
@@ -122,8 +177,6 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 	// pos2 is free, and nothing is in the way
 	return true;
 }
-
-#define ASTAR_LOWLEVEL aStar<PosGoal,MoveCost,DiagonalDistance>
 
 float RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const Vec2i &dest) {
 	// setup search
@@ -183,8 +236,6 @@ bool RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &dest, Transi
 	return true;
 }
 
-#define ASTAR_HIERARCHICAL aStar<TransitionGoal,TransitionCost,TransitionHeuristic>
-
 bool RoutePlanner::findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints) {
 	TransitionGoal goal;
 	if ( !setupHierarchicalSearch(unit, dest, goal) ) {
@@ -211,37 +262,6 @@ bool RoutePlanner::findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath 
 	return false;
 }
 
-#if _GAE_DEBUG_EDITION_
-	void collectOpenClosed(SearchEngine<NodeStore> *se) {
-		NodeStore* nm = se->getStorage();
-		list<Vec2i> *nodes = nm->getOpenNodes();
-		list<Vec2i>::iterator nit = nodes->begin();
-		for ( ; nit != nodes->end(); ++nit ) 
-			PathFinderTextureCallBack::openSet.insert(*nit);
-		delete nodes;
-		nodes = nm->getClosedNodes();
-		for ( nit = nodes->begin(); nit != nodes->end(); ++nit )
-			PathFinderTextureCallBack::closedSet.insert(*nit);
-		delete nodes;					
-	}
-
-	void clearOpenClosed(const Vec2i &start, const Vec2i &target) {
-		PathFinderTextureCallBack::pathStart = start;
-		PathFinderTextureCallBack::pathDest = target;
-		PathFinderTextureCallBack::pathSet.clear();
-		PathFinderTextureCallBack::openSet.clear();
-		PathFinderTextureCallBack::closedSet.clear();
-	}
-
-#	define IF_DEBUG_TEXTURES(x) { x }
-#else
-#	define IF_DEBUG_TEXTURES(x) {}
-#endif  // _GAE_DEBUG_EDITION_
-
-ostream& operator<<(ostream& lhs, Vec2i &rhs) {
-	return lhs << "(" << rhs.x << "," << rhs.y << ")";
-}
-
 bool RoutePlanner::refinePath(Unit *unit) {
 	WaypointPath &wpPath = *unit->getWaypointPath();
 	UnitPath &path = *unit->getPath();
@@ -249,7 +269,7 @@ bool RoutePlanner::refinePath(Unit *unit) {
 
 	const Vec2i &startPos = path.empty() ? unit->getPos() : path.back();
 	const Vec2i &destPos = wpPath.front();
-	AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
+	AnnotatedMap *aMap = world->getCartographer()->getAnnotatedMap(unit);
 	//SearchEngine<NodeMap,GridNeighbours> *se = theWorld.getCartographer()->getSearchEngine();
 	
 	MoveCost cost(unit, aMap);
@@ -261,7 +281,7 @@ bool RoutePlanner::refinePath(Unit *unit) {
 	if (res != AStarResult::COMPLETE) {
 		return false;
 	}
-	IF_DEBUG_TEXTURES( collectOpenClosed(nsgSearchEngine); )
+	IF_DEBUG_TEXTURES( collectOpenClosed<NodeStore>(nsgSearchEngine->getStorage()); )
 	// extract path
 	Vec2i pos = nsgSearchEngine->getGoalPos();
 	assert(pos == destPos);
@@ -346,7 +366,6 @@ void RoutePlanner::smoothPath(Unit *unit) {
 	}
 }
 
-
 /** Find a path to a location.
   * @param unit the unit requesting the path
   * @param finalPos the position the unit desires to go to
@@ -369,27 +388,21 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 				while (!wpPath.empty() && path.size() < 20) {
 					// refine path to at least 20 steps (or end of path)
 					if (!refinePath(unit)) {
-						theConsole.addLine("refinePath() failure.");
-						theLogger.add("refinePath() failure.");
+						CONSOLE_LOG( "refinePath() failure." )
 						break;
 					}
 				}
-				IF_DEBUG_TEXTURES
-				(	for (UnitPath::iterator pit = path.begin(); pit != path.end(); ++pit) 
-						PathFinderTextureCallBack::pathSet.insert(*pit);
-				)
 				smoothPath(unit);
+				IF_DEBUG_TEXTURES (	collectPath(unit); )
 			}
 			return TravelState::MOVING;
 		}
 		// path blocked, quickSearch to next waypoint...
-		theConsole.addLine("Blocked!");
-
-		//if (path.size() > 15  && repairPath(unit)) { // repair ?? (ditch this??)
-		//	if (attemptMove(unit)) {
-		//		return TravelState::MOVING;
-		//	}
-		//}
+		IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), finalPos); )
+		if (repairPath(unit) && attemptMove(unit)) {
+			IF_DEBUG_TEXTURES (	collectPath(unit); )
+			return TravelState::MOVING;
+		}
 	}
 	// route cache miss or blocked
 	
@@ -405,9 +418,13 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	Vec2i startCluster = ClusterMap::cellToCluster(unit->getPos());
 	Vec2i destCluster  = ClusterMap::cellToCluster(target);
 
+	AnnotatedMap *aMap = world->getCartographer()->getAnnotatedMap(unit);
+
 	if (startCluster.dist(destCluster) < 3.f) {
-		if (quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), target)
-		!= numeric_limits<float>::infinity()) {
+		aMap->annotateLocal(unit, unit->getCurrField());
+		float cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), target);
+		aMap->clearLocalAnnotations(unit->getCurrField());
+		if (cost != numeric_limits<float>::infinity()) {
 			Vec2i pos = nsgSearchEngine->getGoalPos();
 			while (pos.x != -1) {
 				path.push_front(pos);
@@ -430,46 +447,102 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		}
 		return TravelState::IMPOSSIBLE;
 	}
-	IF_DEBUG_TEXTURES
-	(	DebugRenderer::clearWaypoints();
-		WaypointPath::iterator it = wpPath.begin();
-		for ( ; it != wpPath.end(); ++it) {
-			Vec3f vert = world->getMap()->getTile(Map::toTileCoords(*it))->getVertex();
-			vert.x += it->x % Map::cellScale + 0.5f;
-			vert.z += it->y % Map::cellScale + 0.5f;
-			vert.y += 0.25f;
-			DebugRenderer::addWaypoint(vert);
-		}
-		clearOpenClosed(unit->getPos(), target);
-	)
+	IF_DEBUG_TEXTURES (	collectWaypointPath(unit); )
 	
 	//TODO post process, scan wpPath, if prev.dist(pos) < 4 cull prev
 	assert(wpPath.size() > 1);
 	wpPath.pop();
-
+	IF_DEBUG_TEXTURES (	clearOpenClosed(unit->getPos(), target); )
 	// refine path, to at least 20 steps (or end of path)
+	aMap->annotateLocal(unit, unit->getCurrField());
 	while (!wpPath.empty() && path.size() < 20) {
 		if (!refinePath(unit)) {
-			theLogger.add("refinePath failed!");
+			CONSOLE_LOG( "refinePath failed!" )
+			aMap->clearLocalAnnotations(unit->getCurrField());
 			return TravelState::BLOCKED;
 		}
 	}
 	smoothPath(unit);
-
-	IF_DEBUG_TEXTURES
-	(	for (UnitPath::iterator pit = path.begin(); pit != path.end(); ++pit) 
-			PathFinderTextureCallBack::pathSet.insert(*pit);
-	)
+	aMap->clearLocalAnnotations(unit->getCurrField());
+	IF_DEBUG_TEXTURES (	collectPath(unit); )
 	if (attemptMove(unit)) {
 		return TravelState::MOVING;
 	}
-
-	theLogger.add("Hierarchical refined path blocked ? valid ?!?");
+	if (repairPath(unit) && attemptMove(unit)) {
+		return TravelState::MOVING;
+	}
+	CONSOLE_LOG( "Hierarchical refined path blocked ? valid ?!?" )
 	unit->setCurrSkill(SkillClass::STOP);
 	return TravelState::INVALID;
+}
 
 
-	/*
+TravelState RoutePlanner::findPathToResource(Unit *unit, const Vec2i &targetPos, const ResourceType *rt) {
+	assert(rt->getClass() == ResourceClass::TECHTREE || rt->getClass() == ResourceClass::TILESET);
+
+
+
+	return findPathToLocation(unit, targetPos);
+}
+
+/** repair a blocked path
+  * @param unit unit whose path is blocked 
+  * @return true if repair succeeded */
+bool RoutePlanner::repairPath(Unit *unit) {
+	UnitPath &path = *unit->getPath();
+	WaypointPath &wpPath = *unit->getWaypointPath();
+	
+	Vec2i dest;
+	if (path.size() < 10 && !wpPath.empty()) {
+		dest = wpPath.front();
+	} else {
+		dest = path.back();
+	}
+	path.clear();
+
+	AnnotatedMap *aMap = world->getCartographer()->getAnnotatedMap(unit);
+	aMap->annotateLocal(unit, unit->getCurrField());
+	if (quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), dest)
+	!= numeric_limits<float>::infinity()) {
+		Vec2i pos = nsgSearchEngine->getGoalPos();
+		while (pos.x != -1) {
+			path.push_front(pos);
+			pos = nsgSearchEngine->getPreviousPos(pos);
+		}
+		if (path.size() > 2) {
+			path.pop();
+			if (!wpPath.empty() && wpPath.front() == path.back()) {
+				wpPath.pop();
+			}
+		} else {
+			path.clear();
+		}
+	}
+	aMap->clearLocalAnnotations(unit->getCurrField());
+	if (!path.empty()) {
+		IF_DEBUG_TEXTURES ( 
+			collectOpenClosed<NodeStore>(nsgSearchEngine->getStorage()); 
+			collectPath(unit);
+		)
+		return true;
+	}
+	return false;
+}
+
+#if _GAE_DEBUG_EDITION_
+
+TravelState RoutePlanner::doFullLowLevelAStar(Unit *unit, const Vec2i &dest) {
+	UnitPath &path = *unit->getPath();
+	WaypointPath &wpPath = *unit->getWaypointPath();
+	const Vec2i &target = computeNearestFreePos(unit, dest);
+	// if arrived (as close as we can get to it)
+	if (target == unit->getPos()) {
+		unit->setCurrSkill(SkillClass::STOP);
+		return TravelState::ARRIVED;
+	}
+	path.clear();
+	wpPath.clear();
+
 	// Low Level Search with NodeMap (this is for testing purposes only, not node limited)
 
 	// this is the 'straight' A* using the NodeMap (no node limit)
@@ -480,10 +553,9 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	PosGoal goal(target);
 	se->setNodeLimit(-1);
 	se->setStart(unit->getPos(), dd(unit->getPos()));
-	AStarResult res = se->ASTAR_TO_POS(goal,cost,dd);
+	AStarResult res = se->ASTAR_LOWLEVEL(goal,cost,dd);
 	list<Vec2i>::iterator it;
-	IF_DEBUG_TEXTURES
-	( 
+	IF_DEBUG_TEXTURES ( 
 		list<Vec2i> *nodes = NULL;
 		NodeMap* nm = se->getStorage();
 	)
@@ -496,57 +568,18 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 				path.push(pos);
 				pos = se->getPreviousPos(pos);
 			}
-			if ( path.size() ) path.pop();
-			IF_DEBUG_TEXTURES( collectOpenClosed(se); )
-			IF_DEBUG_TEXTURES
-					(	UnitPath::iterator pit = path.begin();
-						for ( ; pit != path.end(); ++pit ) 
-							PathFinderTextureCallBack::pathSet.insert(*pit);
-					)
-			// it's a horrible mess atm the moment anyway... leave me alone! :P
-			goto End;
+			if (!path.empty()) path.pop();
+			IF_DEBUG_TEXTURES ( 
+				collectOpenClosed<NodeMap>(se->getStorage());
+				collectPath(unit);
+			)
 			break; // case AStarResult::COMPLETE
-		case AStarResult::FAILED:
-			wpPath.clear();
+		case AStarResult::FAILURE:
 			return TravelState::IMPOSSIBLE;
-			break;
 		default:
 			throw runtime_error("Something that shouldn't have happened, did happen :(");
 			break;
 	}
-	*/
-
-
-	/*
-	// Low Level Search with NodeStore
-	path.clear();
-	wpPath.clear();
-	// do a 'limited search'
-	AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
-	aMap->annotateLocal(unit, unit->getCurrField()); // annotate map
-	// reset nodepool and add start to open
-	nsgSearchEngine->setNodeLimit(NodePool::size);
-	nsgSearchEngine->setStart(unit->getPos(), DiagonalDistance(target)(unit->getPos())); 
-	AStarResult result = nsgSearchEngine->pathToPos(aMap, unit, target); // perform search
-	aMap->clearLocalAnnotations(unit->getCurrField()); // clear annotations
-	if (result == AStarResult::FAILED) {
-		unit->setCurrSkill(SkillClass::STOP);
-		path.incBlockCount();
-		return TravelState::IMPOSSIBLE;
-	}
-	if (result == AStarResult::NODE_LIMIT) {
-		theLogger.add("non hierarchical search was node limited.");
-		// Queue for 'complete' search...
-	}
-	// Partail or Complete... extract path...
-	Vec2i pos = nsgSearchEngine->getGoalPos();
-	while (pos.x >= 0) {
-		path.push(pos);
-		pos = nsgSearchEngine->getPreviousPos(pos);
-	}
-	if (path.size()) path.pop();
-
-End:
 	if (path.empty()) {
 		unit->setCurrSkill(SkillClass::STOP);
 		return TravelState::ARRIVED;
@@ -555,44 +588,9 @@ End:
 	unit->setCurrSkill(SkillClass::STOP);
 	path.incBlockCount();
 	return TravelState::BLOCKED;
-	*/
 }
 
-/** repair a blocked path
-  * @param unit unit whose path is blocked 
-  * @return true if repair succeeded */
-bool RoutePlanner::repairPath(Unit *unit) {
-	
-	/*
-	UnitPath &path = *unit->getPath();
-	assert(path.size() > 12);
-	int i=8;
-	while ( i-- ) {
-		path.pop();
-	}
-	AnnotatedMap *aMap = theWorld.getCartographer()->getAnnotatedMap(unit);
-	aMap->annotateLocal(unit, unit->getCurrField());
-	// reset nodepool and add start to open
-	nsgSearchEngine->setNodeLimit(256);
-	nsgSearchEngine->setStart(unit->getPos(), DiagonalDistance(path.peek())(unit->getPos()));
-	int result = nsgSearchEngine->pathToPos(aMap, unit, path.peek()); // perform search
-	aMap->clearLocalAnnotations(unit->getCurrField());
-
-	if ( result == AStarResult::COMPLETE ) {
-		Vec2i pos = nsgSearchEngine->getGoalPos();
-		// skip target (is on the 'front' of the path already...
-		pos = nsgSearchEngine->getPreviousPos(pos);
-		while ( pos.x >= 0 ) {
-			path.push(pos);
-			pos = nsgSearchEngine->getPreviousPos(pos);
-		}
-		return true;
-	}
-	path.clear();
-	return false;
-	*/
-	return false;
-}
+#endif
 
 // ==================== PRIVATE ====================
 

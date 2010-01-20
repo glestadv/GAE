@@ -27,7 +27,11 @@
 #define theSoundRenderer	(SoundRenderer::getInstance())
 #define theLogger			(Logger::getInstance())
 
-#define LOG(x) Logger::getInstance().add(x)
+#ifndef NDEBUG
+#	define LOG(x) Logger::getInstance().add(x)
+#else
+#	define LOG(x) {}
+#endif
 
 #include "util.h"
 using Shared::Util::EnumNames;

@@ -127,15 +127,47 @@ public:
 	}
 };
 
+class ResourceMapOverlay {
+public:
+	static const ResourceType *rt;
+
+	Vec4f operator()(const Vec2i &cell) {
+		PatchMap<1> *pMap = theWorld.getCartographer()->getResourceMap(rt);
+		if (pMap && pMap->getInfluence(cell) == 1) {
+			return Vec4f(1.f, 1.f, 0.f, 0.7f);
+		} else {
+			return Vec4f(1.f, 1.f, 1.f, 0.f);
+		}
+	}
+};
+
 class DebugRenderer {
 public:
 	bool AAStarTextures, HAAStarOverlay, showVisibleQuad, captureVisibleQuad,
-		regionHilights, teamSight;
+		regionHilights, teamSight, resourceMapOverlay;
 
-	DebugRenderer () {
-		AAStarTextures = HAAStarOverlay = true;
+	DebugRenderer() {
+		AAStarTextures = HAAStarOverlay = showVisibleQuad = 
+			captureVisibleQuad = regionHilights = 
+			teamSight = resourceMapOverlay = false;
+	}
+	
+	void init() {
+		AAStarTextures = true;
+		HAAStarOverlay = false;
+		resourceMapOverlay = true;
 		showVisibleQuad = captureVisibleQuad = regionHilights = teamSight = false;
 		PathFinderTextureCallBack::debugField = Field::LAND;
+
+		ResourceMapOverlay::rt = NULL;
+		const int &n = theWorld.getTechTree()->getResourceTypeCount();
+		for (int i=0; i < n; ++i) {
+			const ResourceType *rt = theWorld.getTechTree()->getResourceType(i);
+			if (rt->getName() == "gold") {
+				ResourceMapOverlay::rt = rt;
+				break;
+			}
+		}
 	}
 
 	void commandLine(string &line) {
@@ -298,6 +330,9 @@ public:
 	}
 	void renderTeamSightOverlay(Quad2i &visibleQuad) {
 		renderCellOverlay<TeamSightColourCallback>(visibleQuad);
+	}
+	void renderResourceMapOverlay(Quad2i &visibleQuad) {
+		renderCellOverlay<ResourceMapOverlay>(visibleQuad);
 	}
 
 private:

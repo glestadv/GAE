@@ -65,7 +65,8 @@ void UnitUpdater::init(Game &game) {
 	this->map = world->getMap();
 	this->console = game.getConsole();
 	routePlanner = world->getRoutePlanner();
-	gameSettings = game.getGameSettings();}
+	gameSettings = game.getGameSettings();
+}
 
 // ==================== progress skills ====================
 

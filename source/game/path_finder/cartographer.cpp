@@ -41,30 +41,38 @@ Cartographer::Cartographer(World *world)
 
 	cellMap = world->getMap();
 	int w = cellMap->getW(), h = cellMap->getH();
+
+	cout << "NodeMap SearchEngine\n";
 	nodeMap = new NodeMap(w, h);
 	nmSearchEngine = new SearchEngine<NodeMap, GridNeighbours>();
 	nmSearchEngine->setStorage(nodeMap);
 	nmSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
+
+	cout << "Annotated Map\n";
 	masterMap = new AnnotatedMap(world);
+	
+	cout << "Cluster Map\n";
 	clusterMap = new ClusterMap(masterMap, this);
 
+	cout << "Exploration Maps\n";
 	// team search and visibility maps
 	set<int> teams;
-	//theLogger.add( "Factions: " + intToStr(world->getFactionCount()));
 	for (int i=0; i < world->getFactionCount(); ++i) {
 		const Faction *f = world->getFaction(i);
 		int team = f->getTeam();
-		//theLogger.add( "Faction " + intToStr(i) + " team: " + intToStr(f->getTeam()));
 		if (teams.find(team) == teams.end()) {
 			teams.insert(team);
-			theLogger.add("Team : " + intToStr(team));
 			// AnnotatedMap needs to be 'bound' to explored status
 			explorationMaps[team] = new ExplorationMap(cellMap);
 			//teamMaps[team] = new AnnotatedMap(world, explorationMaps[team]);
 		}
 	}
-	/*
+
+	// Todo: more preprocessing. Discover all harvester units, 
+	// check field, harvest reange and resource types...
+	//
+	cout << "Resource Catalog\n";
 	// find and catalog all resources...
 	for ( int x=0; x < cellMap->getTileW() - 1; ++x ) {
 		for ( int y=0; y < cellMap->getTileH() - 1; ++y ) {
@@ -75,6 +83,18 @@ Cartographer::Cartographer(World *world)
 		}
 	}
 
+	const TechTree *tt = world->getTechTree();
+	for (int i=0; i < tt->getResourceTypeCount(); ++i) {
+		const ResourceType *rt = tt->getResourceType(i);
+		if (rt->getClass() == ResourceClass::TECHTREE || rt->getClass() == ResourceClass::TILESET) {
+			Rectangle rect(0, 0, cellMap->getW() - 2, cellMap->getH() - 2);
+			PatchMap<1> *pMap = new PatchMap<1>(rect, 0);
+			initResourceMap(rt, pMap);
+			resourceMaps[rt] = pMap;
+		}
+	}
+
+	/*
 	// construct resource influence maps for each team
 	for ( int i=0; i < world->getTechTree()->getResourceTypeCount(); ++i ) {
 		const ResourceType* rt = world->getTechTree()->getResourceType( i );
@@ -142,40 +162,79 @@ void Cartographer::updateResourceMaps() {
 	}*/
 }
 
-/** WIP */
-void Cartographer::initResourceMap(int team, const ResourceType *rt, TypeMap<float> *iMap) {
-	/*
-	//DEBUG
-	static char buf[1024];
-	char *ptr = buf;
-	ptr += sprintf(ptr, "Initialising %s influence map for team %d : ", rt->getName().c_str(), team);
-	theLogger.add(buf);
-	int64 time = Chrono::getCurMillis();
-	vector<Vec2i> knownResources;
-	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
-	for ( ; it != resourceLocations[rt].end(); ++it ) {
-		if ( cellMap->getTile(*it)->isExplored(team) ) {
-			knownResources.push_back(*it);
+/** custom goal function for building resource map */
+class ResourceMapBuilderGoal {
+private:
+	float range;
+	PatchMap<1> *pMap;
+public:
+	ResourceMapBuilderGoal(float range, PatchMap<1> *pMap)
+			: range(range), pMap(pMap) {}
+	bool operator()(const Vec2i &pos, const float costSoFar) const {
+		if (costSoFar > range) {
+			return true;
 		}
+		if (costSoFar == 0.f) {
+			return false;
+		}
+		// else in range
+		pMap->setInfluence(pos, 1);
+		return false;
 	}
-	iMap->zeroMap();
+};
+
+/** custom cost function for building resource map */
+class ResourceMapBuilderCost {
+private:
+	Field field;
+	int size;
+	const AnnotatedMap *aMap;
+
+public:
+	ResourceMapBuilderCost(const Field field, const int size, const AnnotatedMap *aMap )
+		: field(field), size(size), aMap(aMap) {}
+
+	float operator()(const Vec2i &p1, const Vec2i &p2) const {
+		if (!aMap->canOccupy(p2, size, field)) {
+			return numeric_limits<float>::infinity();
+		}
+		if (p1.x != p2.x && p1.y != p2.y) {
+			return SQRT2;
+		}
+		return 1.f;
+	}
+};
+
+#define BUILD_RESOURCE_MAP aStar<ResourceMapBuilderGoal, ResourceMapBuilderCost, ZeroHeuristic>
+
+/** WIP */
+void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
+	
+	static char buf[512];
+	char *ptr = buf;
+	ptr += sprintf(ptr, "Initialising resource map : %s.\n", rt->getName().c_str());
+	int64 time = Chrono::getCurMillis();
+
+	pMap->zeroMap();
+	nmSearchEngine->setNodeLimit(-1);
 	nmSearchEngine->reset();
-	for ( it = knownResources.begin(); it != knownResources.end(); ++it ) {
+	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
+	int nt = 0;
+	for ( ; it != resourceLocations[rt].end(); ++it) {
 		Vec2i pos = *it * Map::cellScale;
 		nmSearchEngine->setOpen(pos, 0.f);
 		nmSearchEngine->setOpen(pos + Vec2i(0,1), 0.f);
 		nmSearchEngine->setOpen(pos + Vec2i(1,0), 0.f);
 		nmSearchEngine->setOpen(pos + Vec2i(1,1), 0.f);
+		++nt;
 	}
-	nmSearchEngine->buildDistanceMap(iMap, 20.f);
+	ResourceMapBuilderGoal goal(1.5f, pMap);
+	ResourceMapBuilderCost cost(Field::LAND, 1, masterMap);
+	nmSearchEngine->BUILD_RESOURCE_MAP(goal, cost, ZeroHeuristic());
 
 	time = Chrono::getCurMillis() - time;
-	ptr += sprintf(ptr, "Used %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time);
+	ptr += sprintf(ptr, "Expanded %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time);
 	theLogger.add(buf);
-	//if ( team == world->getThisTeamIndex() && rt->getName() == "gold" ) {
-	//	iMap->log();
-	//}
-	*/
 }
 
 /** Initialise annotated maps for each team, call after initial units visibility is applied */

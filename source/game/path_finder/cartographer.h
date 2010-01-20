@@ -38,7 +38,7 @@ class ExplorationMap {
 public:
 	ExplorationMap(Map *cMap) : cellMap(cMap) { /**< Construct ExplorationMap, sets everything to zero */
 		state = new ExplorationState[cellMap->getTileW() * cellMap->getTileH()];
-		memset( state, 0, sizeof(ExplorationState) * cellMap->getTileW() * cellMap->getTileH() );
+		memset(state, 0, sizeof(ExplorationState) * cellMap->getTileW() * cellMap->getTileH());
 	}
 	/** @param pos cell coordinates @return number of units that can see this tile */
 	int  getVisCounter(const Vec2i &pos) const	{ return state[pos.y * cellMap->getTileH() + pos.x].visCounter; }
@@ -66,8 +66,13 @@ class Cartographer {
 	ClusterMap *clusterMap;
 	/** The locations of each and every resource on the map */
 	map< const ResourceType*, vector< Vec2i > > resourceLocations;
-	/** Inlfuence maps, for each team, describing distance to resources */
-	map< int, map< const ResourceType*, TypeMap<float>* > > teamResourceMaps;
+	
+	/* /* Inlfuence maps, for each team, describing distance to resources */
+	//map< int, map< const ResourceType*, TypeMap<float>* > > teamResourceMaps;
+
+	/** Goal Maps for each tech & tileset resource */
+	map< const ResourceType*, PatchMap<1>* > resourceMaps;
+
 	/** Exploration maps for each team */
 	map< int, ExplorationMap* > explorationMaps;
 
@@ -77,7 +82,7 @@ class Cartographer {
 	World *world;
 	Map *cellMap;
 
-	void initResourceMap( int team, const ResourceType *rt, TypeMap<float> *iMap );
+	void initResourceMap(const ResourceType *rt, PatchMap<1> *pMap);
 
 	/** Custom Goal function for maintaining the exploration maps */
 	class VisibilityMaintainerGoal {
@@ -151,14 +156,8 @@ public:
 		}
 	}
 
-	TypeMap<float>* getResourceMap(int team, const ResourceType* rt) {
-		return teamResourceMaps[team][rt];
-	}
-	TypeMap<float>* getResourceMap(Faction *faction, const ResourceType* rt) {
-		return teamResourceMaps[faction->getTeam()][rt];
-	}
-	TypeMap<float>* getResourceMap(Unit *unit, const ResourceType* rt) {
-		return teamResourceMaps[unit->getTeam()][rt];
+	PatchMap<1>* getResourceMap(const ResourceType* rt) {
+		return resourceMaps[rt];
 	}
 
 //	AbstractMap* getAbstractMap() const	{ return abstractMap; }

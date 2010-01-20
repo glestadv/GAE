@@ -17,6 +17,8 @@ namespace Glest { namespace Game{
 list<Vec3f> DebugRenderer::waypoints;
 set<Vec2i>	RegionHilightCallback::cells; 
 
+const ResourceType *ResourceMapOverlay::rt;
+
 void DebugRenderer::renderArrow(const Vec3f &pos1, const Vec3f &_pos2, const Vec3f &color, float width){
 	const int tesselation = 3;
 	const float arrowEndSize = 0.5f;

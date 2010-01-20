@@ -22,8 +22,6 @@
 
 #include "profiler.h"
 
-#define LOG(x) Logger::getInstance().add(x)
-
 namespace Glest { namespace Game { namespace Search {
 
 /** Construct AnnotatedMap object, 'theMap' must be constructed and loaded
@@ -32,7 +30,6 @@ namespace Glest { namespace Game { namespace Search {
 AnnotatedMap::AnnotatedMap(World *world, ExplorationMap *eMap) 
 		: cellMap(NULL)
 		, eMap(eMap) {
-	cout << "Annotated Map\n";
 	assert(world && world->getMap());
 	cellMap = world->getMap();
 	width = cellMap->getW();

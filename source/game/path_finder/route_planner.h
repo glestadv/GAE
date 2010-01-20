@@ -55,6 +55,9 @@ public:
 	TravelState findPath(Unit *unit, const Vec2i &finalPos) { 
 		return findPathToLocation(unit, finalPos); 
 	}
+
+	TravelState findPathToResource(Unit *unit, const Vec2i &targetPos, const ResourceType *rt);
+
 	bool isLegalMove(Unit *unit, const Vec2i &pos) const;
 
 private:
@@ -84,7 +87,9 @@ private:
 		}
 		return false;
 	}
-
+#if _GAE_DEBUG_EDITION_
+	TravelState doFullLowLevelAStar(Unit *unit, const Vec2i &dest);
+#endif
 #if DEBUG_SEARCH_TEXTURES
 public:
 	enum { SHOW_PATH_ONLY, SHOW_OPEN_CLOSED_SETS, SHOW_LOCAL_ANNOTATIONS } debug_texture_action;

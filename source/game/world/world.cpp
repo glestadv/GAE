@@ -1240,6 +1240,7 @@ void World::initFactionTypes() {
 
 void World::initMinimap() {
 	Logger::getInstance().add("Compute minimap surface", true);
+	cout << "MiniMap\n";
 	minimap.init(map.getW(), map.getH(), this);
 }
 
