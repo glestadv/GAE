@@ -33,6 +33,10 @@ public:
 
 /** Goal function for 'get within x of' searches */
 class RangeGoal {
+	//
+	// accurate version, a cheaper one could just use the range param
+	// that gives the 'diaganol distance'
+	//
 public:
 	RangeGoal(const Vec2i &target, float range) : target(target), range(range) {}
 	/** search target */
@@ -45,7 +49,7 @@ public:
 	  * @return true if pos is within range of target, else false
 	  */
 	bool operator()(const Vec2i &pos, const float costSoFar) const { 
-		return pos.dist( target ) <= range; 
+		return pos.dist(target) <= range; 
 	}
 };
 
@@ -220,14 +224,14 @@ public:
 	float operator()(const Vec2i &p1, const Vec2i &p2) const {
 		assert(p1.dist(p2) < 1.5 && p1 != p2);
 		assert(theMap.isInside(p2));
-		if ( ! aMap->canOccupy(p2, size, field) ) {
+		if (!aMap->canOccupy(p2, size, field)) {
 			return numeric_limits<float>::infinity();
 		}
-		if ( p1.x != p2.x && p1.y != p2.y ) {
+		if (p1.x != p2.x && p1.y != p2.y) {
 			Vec2i d1, d2;
 			getDiags(p1, p2, size, d1, d2);
-			if ( !theMap.isInside(d1) || !aMap->canOccupy(d1, 1, field)
-			||   !theMap.isInside(d2) || !aMap->canOccupy(d2, 1, field) ) {
+			assert(theMap.isInside(d1) && theMap.isInside(d2));
+			if (!aMap->canOccupy(d1, 1, field) || !aMap->canOccupy(d2, 1, field) ) {
 				return numeric_limits<float>::infinity();
 			}
 			return SQRT2;

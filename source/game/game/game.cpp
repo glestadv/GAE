@@ -168,6 +168,10 @@ void Game::init() {
 	Map *map= world.getMap();
 	NetworkManager &networkManager= NetworkManager::getInstance();
 
+	GraphicProgressBar progressBar;
+	progressBar.init(365, 560);
+	logger.setProgressBar(&progressBar);
+
 	logger.setState(lang.get("Initializing"));
 
 	//mesage box
@@ -193,6 +197,8 @@ void Game::init() {
 	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
+
+	logger.setProgressBar(NULL);
 
 	ScriptManager::init(this);
 	

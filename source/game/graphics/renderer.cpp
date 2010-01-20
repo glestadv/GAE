@@ -265,7 +265,7 @@ void Renderer::initGame(Game *game){
 
 	init3dList();
 
-#ifdef _GAE_DEBUG_EDITION_
+#if _GAE_DEBUG_EDITION_
 	debugRenderer.init();
 #endif
 }

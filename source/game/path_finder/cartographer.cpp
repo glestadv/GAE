@@ -36,11 +36,13 @@ namespace Glest { namespace Game { namespace Search {
 /** Construct Cartographer object. Requires game settings, factions & cell map to have been loaded.
   */
 Cartographer::Cartographer(World *world)
-		: world(world) {
+		: world(world), routePlanner(0), cellMap(0) {
 	theLogger.add("Cartographer", true);
 
 	cellMap = world->getMap();
 	int w = cellMap->getW(), h = cellMap->getH();
+
+	routePlanner = world->getRoutePlanner();
 
 	cout << "NodeMap SearchEngine\n";
 	nodeMap = new NodeMap(w, h);
@@ -213,7 +215,8 @@ void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
 	static char buf[512];
 	char *ptr = buf;
 	ptr += sprintf(ptr, "Initialising resource map : %s.\n", rt->getName().c_str());
-	int64 time = Chrono::getCurMillis();
+	int64 time_millis = Chrono::getCurMillis();
+	int64 time_micros = Chrono::getCurMicros();
 
 	pMap->zeroMap();
 	nmSearchEngine->setNodeLimit(-1);
@@ -232,8 +235,15 @@ void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
 	ResourceMapBuilderCost cost(Field::LAND, 1, masterMap);
 	nmSearchEngine->BUILD_RESOURCE_MAP(goal, cost, ZeroHeuristic());
 
-	time = Chrono::getCurMillis() - time;
-	ptr += sprintf(ptr, "Expanded %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(), time);
+	time_millis = Chrono::getCurMillis() - time_millis;
+	time_micros = Chrono::getCurMicros() - time_micros;
+	if (time_millis >= 3) {
+		ptr += sprintf(ptr, "Expanded %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(),
+			(int)time_millis);
+	} else {
+		ptr += sprintf(ptr, "Expanded %d nodes, took %dms (%dus)\n", nmSearchEngine->getExpandedLastRun(),
+			(int)time_millis, (int)time_micros);
+	}
 	theLogger.add(buf);
 }
 

@@ -121,9 +121,9 @@ void World::init(const XmlNode *worldNode) {
 
 	initSplattedTextures();
 
+	routePlanner = new RoutePlanner(this);
 	cartographer = new Cartographer(this);
 	cartographer->updateResourceMaps();
-	routePlanner = new RoutePlanner(this);
 
 	unitUpdater.init(game); // must be done after initMap()
 	
@@ -1222,8 +1222,10 @@ void World::initFactionTypes() {
 	factions.resize(gs.getFactionCount());
 	for (int i = 0; i < factions.size(); ++i) {
 		const FactionType *ft= techTree.getFactionType(gs.getFactionTypeName(i));
-		factions[i].init( ft, gs.getFactionControl(i), &techTree, i, gs.getTeam(i),
-				gs.getStartLocationIndex(i), i==thisFactionIndex, gs.getDefaultResources ());
+		factions[i].init( 
+			ft, gs.getFactionControl(i), &techTree, i, gs.getTeam(i),
+			gs.getStartLocationIndex(i), i==thisFactionIndex, gs.getDefaultResources ()
+		);
 		if ( unitTypes.find(ft->getName()) == unitTypes.end() ) {
 			unitTypes.insert(pair< string,set<string> >(ft->getName(),set<string>()));
 			for ( int j = 0; j < ft->getUnitTypeCount(); ++j ) {

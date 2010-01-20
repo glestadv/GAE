@@ -19,6 +19,11 @@
 
 namespace Glest { namespace Game { namespace Search {
 
+#if _GAE_DEBUG_EDITION_
+#	define IF_DEBUG_TEXTURES(x) { x }
+#else
+#	define IF_DEBUG_TEXTURES(x) {}
+#endif  // _GAE_DEBUG_EDITION_
 // =====================================================
 // 	class NodeStore
 // =====================================================
@@ -45,9 +50,7 @@ void NodeStore::reset() {
 	leastH = NULL;
 	markerArray.newSearch();
 	openHeap.clear();
-#	if _GAE_DEBUG_EDITION_
-		listedNodes.clear();
-#	endif
+	IF_DEBUG_TEXTURES( listedNodes.clear(); )
 }
 /** set a maximum number of nodes to expand */
 void NodeStore::setMaxNodes(const int max) {
@@ -69,6 +72,7 @@ bool NodeStore::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	if (!node) { // NodePool exhausted
 		return false;
 	}
+	IF_DEBUG_TEXTURES( listedNodes.push_back(pos); )
 	node->posOff = pos;
 	if (prev.x >= 0) {
 		node->posOff.ox = prev.x - pos.x;
@@ -81,7 +85,7 @@ bool NodeStore::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	node->heuristic = h;
 	addOpenNode(node);
 	if (!numNodes || h < leastH->heuristic) {
-			leastH = node;
+		leastH = node;
 	}
 	numNodes++;
 	return true;
@@ -114,7 +118,7 @@ void NodeStore::updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost
 		vector<AStarNode*>::iterator it = find(openHeap.begin(), openHeap.end(), posNode);
 		push_heap(openHeap.begin(), it + 1, AStarComp());
 #else	// just remake entire heap
-		make_heap ( openHeap.begin(), openHeap.end(), AStarComp() );
+		make_heap(openHeap.begin(), openHeap.end(), AStarComp());
 #endif
 	}
 }
@@ -124,8 +128,8 @@ void NodeStore::updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost
 list<Vec2i>* NodeStore::getOpenNodes() {
 	list<Vec2i> *ret = new list<Vec2i>();
 	list<Vec2i>::iterator it = listedNodes.begin();
-	for ( ; it != listedNodes.end (); ++it ) {
-		if ( isOpen(*it) ) ret->push_back(*it);
+	for ( ; it != listedNodes.end (); ++it) {
+		if (isOpen(*it)) ret->push_back(*it);
 	}
 	return ret;
 }
@@ -133,8 +137,8 @@ list<Vec2i>* NodeStore::getOpenNodes() {
 list<Vec2i>* NodeStore::getClosedNodes() {
 	list<Vec2i> *ret = new list<Vec2i>();
 	list<Vec2i>::iterator it = listedNodes.begin();
-	for ( ; it != listedNodes.end(); ++it ) {
-		if ( isClosed(*it) ) ret->push_back(*it);
+	for ( ; it != listedNodes.end(); ++it) {
+		if (isClosed(*it)) ret->push_back(*it);
 	}
 	return ret;
 }

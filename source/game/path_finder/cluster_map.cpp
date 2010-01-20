@@ -17,6 +17,7 @@
 #include "cluster_map.h"
 #include "cartographer.h"
 #include "search_engine.h"
+#include "route_planner.h"
 
 #if _GAE_DEBUG_EDITION_
 #	include "debug_renderer.h"
@@ -42,9 +43,14 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 	vertBorders = new ClusterBorder[(w-1)*h];
 	horizBorders = new ClusterBorder[w*(h-1)];
 	// init Borders (and hence inter-cluster edges) & evaluate clusters (intra-cluster edges)
-	const int numClusters = h * w;
-	int clustersInit = 0;
-	float target = 0.05;
+
+	theLogger.setClusterCount(w * h);
+
+	static char buf[512];
+	char *ptr = buf;
+	ptr += sprintf(ptr, "Initialising cluster map.\n");
+	int64 time_millis = Chrono::getCurMillis();
+
 	for (int i = h - 1; i >= 0; --i) {
 		for (int j = w - 1; j >= 0; --j) {
 			Vec2i cluster(j, i);
@@ -53,16 +59,14 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 			WRITE_AND_FLUSH( "Cluster " << cluster << "initialised.\n" )
 			evalCluster(cluster);
 			WRITE_AND_FLUSH( "Cluster " << cluster << "evaluated.\n" )
-			++clustersInit;
-			float prog = float(clustersInit) / float(numClusters);
-			if (prog >= target) {
-				while (prog >= target && target < 1.f)
-					target += 0.05;
-				printf("\t %1.2f\n", target - 0.05);
-			}
+			theLogger.clusterInit();
 		}
 	}
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
+
+	time_millis = Chrono::getCurMillis() - time_millis;
+	ptr += sprintf(ptr, "\ttook %dms\n", (int)time_millis);
+	theLogger.add(buf);
 }
 
 /** Entrance init helper class */
@@ -115,6 +119,7 @@ void ClusterMap::addBorderTransition(EntranceInfo &info) {
 				info.cb->transitions[info.f].add(t);
 				return;
 			}
+			++it;
 		}
 		WRITE_AND_FLUSH( "\t\t\tno pos with clearance == max_clear found!!!! WTF!!!" )
 		assert(false);
@@ -131,6 +136,7 @@ void ClusterMap::addBorderTransition(EntranceInfo &info) {
 				first_at = *it;
 				break;
 			}
+			++it;
 		}
 		if (first_at != -1) {
 			it = InsideOutIterator(l2, h2);
@@ -140,6 +146,7 @@ void ClusterMap::addBorderTransition(EntranceInfo &info) {
 					next_at = *it;
 					break;
 				}
+				++it;
 			}
 			if (next_at != -1) {
 				Transition *t1, *t2;
@@ -171,6 +178,7 @@ void ClusterMap::addBorderTransition(EntranceInfo &info) {
 				info.cb->transitions[info.f].add(t);
 				return;
 			}
+			++it;
 		}
 		WRITE_AND_FLUSH( "\t\t\tno pos with clearance == max_clear found!!!! WTF!!!" )
 		assert(false);
@@ -259,7 +267,10 @@ float ClusterMap::aStarPathLength(Field f, int size, const Vec2i &start, const V
 	if (start == dest) {
 		return 0.f;
 	}
-	SearchEngine<NodeMap,GridNeighbours>* se = carto->getSearchEngine();
+	
+	//SearchEngine<NodeMap,GridNeighbours>* se = carto->getSearchEngine();
+	SearchEngine<NodeStore> *se = carto->getRoutePlanner()->getSearchEngine();
+
 	MoveCost costFunc(f, size, aMap);
 	DiagonalDistance dd(dest);
 	se->setNodeLimit(clusterSize * clusterSize);

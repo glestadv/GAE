@@ -24,6 +24,7 @@
 namespace Glest { namespace Game { namespace Search {
 
 class ClusterMap;
+class RoutePlanner;
 
 /** A map containing a visility counter and explored flag for every map tile. */
 class ExplorationMap {
@@ -81,6 +82,7 @@ class Cartographer {
 
 	World *world;
 	Map *cellMap;
+	RoutePlanner *routePlanner;
 
 	void initResourceMap(const ResourceType *rt, PatchMap<1> *pMap);
 
@@ -124,6 +126,7 @@ public:
 	void updateResourceMaps();
 
 	SearchEngine<NodeMap,GridNeighbours>* getSearchEngine() { return nmSearchEngine; }
+	RoutePlanner* getRoutePlanner() { return routePlanner; }
 
 	/** @return the number of units of team that can see a tile 
 	  * @param team team index 

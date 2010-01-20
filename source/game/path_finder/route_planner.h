@@ -60,6 +60,8 @@ public:
 
 	bool isLegalMove(Unit *unit, const Vec2i &pos) const;
 
+	SearchEngine<NodeStore>* getSearchEngine() { return nsgSearchEngine; }
+
 private:
 	bool repairPath(Unit *unit);
 

@@ -42,36 +42,35 @@ void Logger::setState(const string &state){
 void Logger::unitLoaded() {
 	++unitsLoaded;
 	float pcnt = ((float)unitsLoaded) / ((float)totalUnits) * 100.f;
-	stringstream ss;
-	//output value for testing
-	//ss << "Loading : " << fixed << setprecision(2) << pcnt << " %";
-	//resetState(ss.str());
 	progressBar->setProgress(int(pcnt));
+}
+
+void Logger::clusterInit() {
+	++clustersInit;
+	float pcnt = ((float)clustersInit) / ((float)totalClusters) * 100.f;
+	progressBar->setProgress(int(pcnt));
+	renderLoadingScreen();
 }
 
 void Logger::add(const string &str,  bool renderScreen){
 	FILE *f=fopen(fileName.c_str(), "at+");
-	if ( f )
-	{
+	if (f) {
 		fprintf(f, "%d: %s\n", (int)(clock() / 1000), str.c_str());
 		fclose(f);
 	}
-	if ( loadingGame )
-	{
-		if(f==NULL){
-			throw runtime_error("Error opening log file"+ fileName);
+	if (loadingGame && renderScreen) {
+		if (f == NULL) {
+			throw runtime_error("Error opening log file" + fileName);
 		}
 
 		logLines.push_back(str);
-		if(logLines.size() > logLineCount){
+		if(logLines.size() > logLineCount) {
 			logLines.pop_front();
 		}
-	}
-	else
-	{
+	} else {
 		current = str;
 	}
-	if(renderScreen){
+	if(renderScreen) {
 		renderLoadingScreen();
 	}
 }
@@ -80,7 +79,7 @@ void Logger::clear() {
    string s="Log file\n";
 
    FILE *f= fopen(fileName.c_str(), "wt+");
-   if(!f){
+   if (!f) {
       throw runtime_error("Error opening log file" + fileName);
    }
 
@@ -90,11 +89,10 @@ void Logger::clear() {
    fclose(f);
 }
 
-void Logger::addXmlError ( const string &path, const char *error )
-{
+void Logger::addXmlError(const string &path, const char *error) {
    static char buffer[2048];
-   sprintf ( buffer, "XML Error in %s:\n %s", path.c_str(), error );
-   add ( buffer );
+   sprintf(buffer, "XML Error in %s:\n %s", path.c_str(), error);
+   add(buffer);
 }
 
 
@@ -112,9 +110,9 @@ void Logger::renderLoadingScreen(){
 
 	renderer.renderText(
 		state, coreData.getMenuFontBig(), Vec3f(1.f),
-		metrics.getVirtualW()/4, 75*metrics.getVirtualH()/100, false);
-	if ( loadingGame )
-	{
+		metrics.getVirtualW()/4, 75*metrics.getVirtualH()/100, false
+	);
+	if ( loadingGame ) {
 		int offset= 0;
 		Font2D *font= coreData.getMenuFontNormal();
 		for(Strings::reverse_iterator it= logLines.rbegin(); it!=logLines.rend(); ++it){
@@ -123,7 +121,8 @@ void Logger::renderLoadingScreen(){
 				*it, font, alpha ,
 				metrics.getVirtualW()/4,
 				70*metrics.getVirtualH()/100 - offset*(font->getSize()+4),
-				false);
+				false
+			);
 			++offset;
 		}
 		if (progressBar) {

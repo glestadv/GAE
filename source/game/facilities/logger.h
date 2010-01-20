@@ -48,6 +48,7 @@ private:
 	bool loadingGame;
 	static char errorBuf[];
 	int totalUnits, unitsLoaded;
+	int totalClusters, clustersInit;
 
 	GraphicProgressBar *progressBar;
 
@@ -88,12 +89,15 @@ public:
 	void setLoading(bool v)				{loadingGame = v;}
 	void setProgressBar(GraphicProgressBar *v) { progressBar = v; }
 
-	void add( const string &str, bool renderScreen = false );
+	void add(const string &str, bool renderScreen = false);
 	void renderLoadingScreen();
 	void clear();
 
 	void setUnitCount(int count) { totalUnits = count; unitsLoaded = 0; }
 	void unitLoaded();
+
+	void setClusterCount(int count) { totalClusters = count; clustersInit = 0; }
+	void clusterInit();
 };
 
 #if defined(WIN32) | defined(WIN64)
