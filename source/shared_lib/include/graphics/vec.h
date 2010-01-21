@@ -119,6 +119,12 @@ public:
 		return *this;
 	}
 
+	Vec2<T>& operator *=(int scale) {
+		x *= scale;
+		y *= scale;
+		return *this;
+	}
+
 	Vec2<T> lerp(T t, const Vec2<T> &v) const {
 		return *this + (v - *this)*t;
 	}

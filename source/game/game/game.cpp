@@ -902,8 +902,8 @@ void Game::render2d(){
 		}
 
 		// cluster map
-		str << "ClusterMap Nodes = " << Search::Transition::NumTransitions() << endl;
-		str << "ClusterMap Edges = " << Search::Edge::NumEdges() << endl;
+		str << "ClusterMap Nodes = " << Search::Transition::NumTransitions(Field::LAND) << endl;
+		str << "ClusterMap Edges = " << Search::Edge::NumEdges(Field::LAND) << endl;
 
 		renderer.renderText(
 			str.str(), coreData.getMenuFontNormal(),

@@ -34,6 +34,8 @@ using Shared::Platform::uint32;
 
 namespace Glest { namespace Game { namespace Search {
 
+class ResourceGoal;
+
 /** maximum radius to search for a free position from a target position */
 const int maxFreeSearchRadius = 10;
 /** @deprecated not in use */
@@ -68,6 +70,8 @@ private:
 	float quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
 	bool refinePath(Unit *unit);
 	void smoothPath(Unit *unit);
+
+	float resourceSearch(ResourceGoal &goal, Field field, int size, const Vec2i &start, const Vec2i &dest);
 
 	bool setupHierarchicalSearch(Unit *unit, const Vec2i &dest, TransitionGoal &goalFunc);
 	bool findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints);

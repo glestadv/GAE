@@ -78,9 +78,9 @@ __inline void getDiags(const Vec2i &s, const Vec2i &d, const int size, Vec2i &d1
 const Vec2i OrdinalOffsets[OrdinalDir::COUNT] = {
 	Vec2i( 0, -1), // n
 	Vec2i( 1, -1), // ne
-	Vec2i( 0,  1), // e
+	Vec2i( 1,  0), // e
 	Vec2i( 1,  1), // se
-	Vec2i( 1,  0), // s
+	Vec2i( 0,  1), // s
 	Vec2i(-1,  1), // sw
 	Vec2i(-1,  0), // w
 	Vec2i(-1, -1)  // nw

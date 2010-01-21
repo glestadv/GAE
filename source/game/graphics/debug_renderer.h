@@ -163,7 +163,7 @@ public:
 		const int &n = theWorld.getTechTree()->getResourceTypeCount();
 		for (int i=0; i < n; ++i) {
 			const ResourceType *rt = theWorld.getTechTree()->getResourceType(i);
-			if (rt->getName() == "gold") {
+			if (rt->getName() == "wood") {
 				ResourceMapOverlay::rt = rt;
 				break;
 			}

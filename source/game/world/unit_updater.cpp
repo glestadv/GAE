@@ -679,24 +679,25 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			//if not loaded go for resources
 			Resource *r = map->getTile(Map::toTileCoords(command->getPos()))->getResource();
 			if (r && hct->canHarvest(r->getType())) {
-				//if can harvest dest. pos
-				if (unit->getPos().dist(command->getPos()) < harvestDistance 
-				&&  map->isResourceNear(unit->getPos(), r->getType(), targetPos)) {
-					//if it finds resources it starts harvesting
-					unit->setCurrSkill(hct->getHarvestSkillType());
-					unit->setTargetPos(targetPos);
-					unit->face(targetPos);
-					unit->setLoadCount(0);
-					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
-				} else { //if not continue walking
-					switch (routePlanner->findPathToLocation( unit, command->getPos()/*, r->getType()*/)) {
-						case TravelState::MOVING:
-							unit->setCurrSkill(hct->getMoveSkillType());
-							unit->face(unit->getNextPos());
-							break;
-						default:
-							break;
-					}
+				switch (routePlanner->findPathToResource(unit, command->getPos(), r->getType())) {
+					case TravelState::ARRIVED:
+						if (map->isResourceNear(unit->getPos(), r->getType(), targetPos)) {
+							//if it finds resources it starts harvesting
+							unit->setCurrSkill(hct->getHarvestSkillType());
+							unit->setTargetPos(targetPos);
+							command->setPos(targetPos);
+							unit->face(targetPos);
+							unit->setLoadCount(0);
+							unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
+						}
+						break;
+					case TravelState::MOVING:
+						unit->setCurrSkill(hct->getMoveSkillType());
+						unit->face(unit->getNextPos());
+						break;
+					default:
+						unit->setCurrSkill(SkillClass::STOP);
+						break;
 				}
 			} else {
 				//if can't harvest, search for another resource

@@ -123,7 +123,6 @@ void World::init(const XmlNode *worldNode) {
 
 	routePlanner = new RoutePlanner(this);
 	cartographer = new Cartographer(this);
-	cartographer->updateResourceMaps();
 
 	unitUpdater.init(game); // must be done after initMap()
 	
@@ -135,7 +134,6 @@ void World::init(const XmlNode *worldNode) {
 	} else if (game.getGameSettings().getDefaultUnits()) {
 		initUnits();
 	}
-//	cartographer->updateTeamMaps();
 
 	initExplorationState();
 	
@@ -145,7 +143,6 @@ void World::init(const XmlNode *worldNode) {
 		uint32 mmDataSize;
 
 		buf.uudecodeUncompressFromXml(worldNode->getChild("map"));
-
 		buf.read(mmDataSize);
 
 		// if client resuming saved game we omit minimap alpha data and sythesize it instead.
@@ -157,16 +154,13 @@ void World::init(const XmlNode *worldNode) {
 			minimap.read(buf);
 			map.read(buf);
 		}
-
 		// make sure I read every last byte
 		assert(!buf.size());
 	}
 	computeFow();
-
 	if (isNetworkServer()) {
 		initNetworkServer();
 	}
-
 	alive = true;
 }
 

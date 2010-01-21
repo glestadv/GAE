@@ -31,22 +31,21 @@ static const int clusterSize = 16;
 /** uni-directional edge, is owned by the source transition, contains pointer to dest */
 struct Edge {
 private:
-	static int numEdges;
+	static int numEdges[Field::COUNT];
 
 	const Transition *dest;
 	vector<float> weights;
 
+	Field f; // for diagnostics... remove this one day
+
 public:
-	static bool addingLand;
-	Edge(const Transition *t) {
+	Edge(const Transition *t, Field f) : f(f) {
 		dest = t;
-		if (addingLand)
-			++numEdges;
+		++numEdges[f];
 	}
 
 	~Edge() {
-		if (addingLand)
-			--numEdges;
+		--numEdges[f];
 	}
 
 	void addWeight(const float w) { weights.push_back(w); }
@@ -54,34 +53,34 @@ public:
 	float cost(int size) const { return weights[size-1]; }
 	int maxClear() { return weights.size(); }
 
-	static int NumEdges() { return numEdges; }
+	static int NumEdges(Field f) { return numEdges[f]; }
+	static void zeroCounters();
 };
 typedef list<Edge*> Edges;
 
 /**  */
 struct Transition {
 private:
-	static int numTransitions;
+	static int numTransitions[Field::COUNT];
+	Field f;
 
 public:
-	static bool addingLand;
 	int clearance;
 	Vec2i nwPos;
 	bool vertical;
 	Edges edges;
 
-	Transition(Vec2i pos, int clear, bool vert) 
-			: nwPos(pos), clearance(clear), vertical(vert) {
-		if (addingLand)
-			++numTransitions;
+	Transition(Vec2i pos, int clear, bool vert, Field f) 
+			: nwPos(pos), clearance(clear), vertical(vert), f(f) {
+		++numTransitions[f];
 	}
 	~Transition() {
 		deleteValues(edges.begin(), edges.end());
-		if (addingLand)
-			--numTransitions;
+		--numTransitions[f];
 	}
 
-	static int NumTransitions() { return numTransitions; }
+	static int NumTransitions(Field f) { return numTransitions[f]; }
+	static void zeroCounters();
 };
 
 typedef vector<const Transition*> Transitions;
@@ -186,10 +185,7 @@ private:
 
 public:
 	ClusterMap(AnnotatedMap *aMap, Cartographer *carto);
-	~ClusterMap() {
-		delete [] vertBorders;
-		delete [] horizBorders;
-	}
+	~ClusterMap();
 
 	static Vec2i cellToCluster (const Vec2i &cellPos) {
 		return Vec2i(cellPos.x / clusterSize, cellPos.y / clusterSize);

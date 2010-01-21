@@ -384,23 +384,23 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		if (attemptMove(unit)) {
 			if (!wpPath.empty() && path.size() < 12) {
 				// if there are less than 12 steps left on this path, and there are more waypoints
-				IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), finalPos); )
-				while (!wpPath.empty() && path.size() < 20) {
-					// refine path to at least 20 steps (or end of path)
+				IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), wpPath.back()); )
+				while (!wpPath.empty() && path.size() < 24) {
+					// refine path to at least 24 steps (or end of path)
 					if (!refinePath(unit)) {
 						CONSOLE_LOG( "refinePath() failure." )
 						break;
 					}
 				}
 				smoothPath(unit);
-				IF_DEBUG_TEXTURES (	collectPath(unit); )
+				IF_DEBUG_TEXTURES( collectPath(unit); )
 			}
 			return TravelState::MOVING;
 		}
 		// path blocked, quickSearch to next waypoint...
-		IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), finalPos); )
+		IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), wpPath.empty() ? path.back() : wpPath.front()); )
 		if (repairPath(unit) && attemptMove(unit)) {
-			IF_DEBUG_TEXTURES (	collectPath(unit); )
+			IF_DEBUG_TEXTURES( collectPath(unit); )
 			return TravelState::MOVING;
 		}
 	}
@@ -447,12 +447,12 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 		}
 		return TravelState::IMPOSSIBLE;
 	}
-	IF_DEBUG_TEXTURES (	collectWaypointPath(unit); )
+	IF_DEBUG_TEXTURES( collectWaypointPath(unit); )
 	
 	//TODO post process, scan wpPath, if prev.dist(pos) < 4 cull prev
 	assert(wpPath.size() > 1);
 	wpPath.pop();
-	IF_DEBUG_TEXTURES (	clearOpenClosed(unit->getPos(), target); )
+	IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), target); )
 	// refine path, to at least 20 steps (or end of path)
 	aMap->annotateLocal(unit, unit->getCurrField());
 	while (!wpPath.empty() && path.size() < 20) {
@@ -464,25 +464,153 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	}
 	smoothPath(unit);
 	aMap->clearLocalAnnotations(unit->getCurrField());
-	IF_DEBUG_TEXTURES (	collectPath(unit); )
+	IF_DEBUG_TEXTURES( collectPath(unit); )
 	if (attemptMove(unit)) {
 		return TravelState::MOVING;
 	}
-	if (repairPath(unit) && attemptMove(unit)) {
-		return TravelState::MOVING;
-	}
+	//if (repairPath(unit) && attemptMove(unit)) {
+	//	return TravelState::MOVING;
+	//}
 	CONSOLE_LOG( "Hierarchical refined path blocked ? valid ?!?" )
 	unit->setCurrSkill(SkillClass::STOP);
 	return TravelState::INVALID;
 }
 
+class ResourceGoal {
+private:
+	PatchMap<1> *pMap;
+
+public:
+	ResourceGoal(const ResourceType *rt) : pMap(0) {
+		pMap = theWorld.getCartographer()->getResourceMap(rt);
+	}
+
+	bool operator()(const Vec2i &pos, const float) const {
+		if (pMap->getInfluence(pos)) {
+			return true;
+		}
+		return false;
+	}
+};
+
+#define ASTAR_TO_RESOURCE aStar<ResourceGoal, MoveCost, DiagonalDistance>
+
+float RoutePlanner::resourceSearch(ResourceGoal &goal, Field field, int size, const Vec2i &start, const Vec2i &dest) {
+	// setup search
+	MoveCost moveCost(field, size, world->getCartographer()->getMasterMap());
+	DiagonalDistance heuristic(dest);
+	nsgSearchEngine->setStart(start, heuristic(start));
+
+	AStarResult r = nsgSearchEngine->ASTAR_TO_RESOURCE(goal, moveCost, heuristic);
+	if (r == AStarResult::COMPLETE) {
+		return nsgSearchEngine->getCostTo(nsgSearchEngine->getGoalPos());
+	}
+	return numeric_limits<float>::infinity();
+}
 
 TravelState RoutePlanner::findPathToResource(Unit *unit, const Vec2i &targetPos, const ResourceType *rt) {
 	assert(rt->getClass() == ResourceClass::TECHTREE || rt->getClass() == ResourceClass::TILESET);
+	UnitPath &path = *unit->getPath();
+	WaypointPath &wpPath = *unit->getWaypointPath();
+	ResourceGoal goal(rt);
 
+	if (goal(unit->getPos(), 0.f)) {
+		unit->setCurrSkill(SkillClass::STOP);
+		return TravelState::ARRIVED;
+	}
+	if (!path.empty()) {
+		assert(unit->getPos().dist(path.front()) < 1.5f);
+		if (attemptMove(unit)) {
+			if (!wpPath.empty() && path.size() < 12) {
+				// if there are less than 12 steps left on this path, and there are more waypoints
+				IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), wpPath.back()); )
+				while (!wpPath.empty() && path.size() < 24) {
+					// refine path to at least 24 steps (or end of path)
+					if (!refinePath(unit)) {
+						CONSOLE_LOG( "refinePath() failure." )
+						break;
+					}
+				}
+				smoothPath(unit);
+				IF_DEBUG_TEXTURES( collectPath(unit); )
+			}
+			return TravelState::MOVING;
+		}
+		// path blocked, quickSearch to next waypoint...
+		IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), wpPath.empty() ? path.back() : wpPath.front()); )
+		if (repairPath(unit) && attemptMove(unit)) {
+			IF_DEBUG_TEXTURES( collectPath(unit); )
+			return TravelState::MOVING;
+		}
+		path.clear();
+		wpPath.clear();
+	}
 
+	AnnotatedMap *aMap = world->getCartographer()->getAnnotatedMap(unit);
 
-	return findPathToLocation(unit, targetPos);
+	if (unit->getPos().dist(targetPos) < 50.f) { // try resourceSearch()
+		wpPath.clear();
+		aMap->annotateLocal(unit, unit->getCurrField());
+		float cost = resourceSearch(goal, unit->getCurrField(), unit->getSize(), unit->getPos(), targetPos);
+		aMap->clearLocalAnnotations(unit->getCurrField());
+		if (cost != numeric_limits<float>::infinity()) {
+			Vec2i pos = nsgSearchEngine->getGoalPos();
+			IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), pos); )
+			IF_DEBUG_TEXTURES( collectOpenClosed<NodeStore>(nsgSearchEngine->getStorage()); )
+			while (pos.x != -1) {
+				path.push_front(pos);
+				pos = nsgSearchEngine->getPreviousPos(pos);
+			}
+			if (!path.empty()) path.pop();
+			IF_DEBUG_TEXTURES( collectPath(unit); )
+			if (attemptMove(unit)) {
+				return TravelState::MOVING;
+			}
+			path.clear();
+			// else fall through and try hierarchical
+		}
+	}
+	
+	// Hierarchical Search
+	tSearchEngine->reset();
+	if (!findWaypointPath(unit, targetPos, wpPath)) {
+		if (unit->getFaction()->isThisFaction()) {
+			theConsole.addLine("Destination unreachable?");
+		}
+		return TravelState::IMPOSSIBLE;
+	}
+	IF_DEBUG_TEXTURES( collectWaypointPath(unit); )
+	
+	assert(wpPath.size() > 1);
+	wpPath.pop();
+	IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), targetPos); )
+	// cull destination and waypoints close to it
+	// when we get to the last remaining waypoint we'll do a 'resourceSearch'
+	// to the target
+	while (wpPath.size() > 1 && wpPath.back().dist(targetPos) < 40.f) {
+		wpPath.pop_back();
+	}
+	// refine path, to at least 20 steps (or end of path)
+	aMap->annotateLocal(unit, unit->getCurrField());
+	while (!wpPath.empty() && path.size() < 20) {
+		if (!refinePath(unit)) {
+			CONSOLE_LOG( "refinePath failed!" )
+			aMap->clearLocalAnnotations(unit->getCurrField());
+			return TravelState::BLOCKED;
+		}
+	}
+	smoothPath(unit);
+	aMap->clearLocalAnnotations(unit->getCurrField());
+	IF_DEBUG_TEXTURES( collectPath(unit); )
+	if (attemptMove(unit)) {
+		return TravelState::MOVING;
+	}
+	//if (repairPath(unit) && attemptMove(unit)) {
+	//	return TravelState::MOVING;
+	//}
+	CONSOLE_LOG( "Hierarchical refined path blocked ? valid ?!?" )
+	unit->setCurrSkill(SkillClass::STOP);
+	return TravelState::INVALID;
 }
 
 /** repair a blocked path

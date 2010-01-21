@@ -18,8 +18,8 @@
 #include "annotated_map.h"
 #include "world.h"
 #include "config.h"
-
 #include "search_engine.h"
+#include "sigslot.h"
 
 namespace Glest { namespace Game { namespace Search {
 
@@ -57,7 +57,7 @@ public:
 //
 // Cartographer: 'Map' Manager
 //
-class Cartographer {
+class Cartographer : public sigslot::has_slots<> {
 	/** Master annotated map, always correct */
 	AnnotatedMap *masterMap;
 	/** Team annotateded maps, 'foggy' */
@@ -67,13 +67,15 @@ class Cartographer {
 	ClusterMap *clusterMap;
 	/** The locations of each and every resource on the map */
 	map< const ResourceType*, vector< Vec2i > > resourceLocations;
-	
+
+	typedef vector< pair<Vec2i, Vec2i> > AreaList;
+	map<const ResourceType*, AreaList> resDirtyAreas;
 	/* /* Inlfuence maps, for each team, describing distance to resources */
 	//map< int, map< const ResourceType*, TypeMap<float>* > > teamResourceMaps;
 
 	/** Goal Maps for each tech & tileset resource */
 	map< const ResourceType*, PatchMap<1>* > resourceMaps;
-
+	
 	/** Exploration maps for each team */
 	map< int, ExplorationMap* > explorationMaps;
 
@@ -85,45 +87,14 @@ class Cartographer {
 	RoutePlanner *routePlanner;
 
 	void initResourceMap(const ResourceType *rt, PatchMap<1> *pMap);
+	void fixupResourceMap(const ResourceType *rt, const Vec2i &tl, const Vec2i &br);
+	void onResourceDepleted(Vec2i pos);
 
-	/** Custom Goal function for maintaining the exploration maps */
-	class VisibilityMaintainerGoal {
-	private:
-		float range;			/**< range of entity sight */
-		ExplorationMap *eMap;	/**< exploration map to adjust */
-		bool inc;				/**< true to increment, false to decrement */
-	public:
-		/** Construct goal function object
-		  * @param range the range of visibility
-		  * @param eMap the ExplorationMap to adjust
-		  * @param inc true to apply visibility, false to remove
-		  */
-		VisibilityMaintainerGoal(float range, ExplorationMap *eMap, bool inc)
-			: range(range), eMap(eMap), inc(inc) {}
-
-		/** The goal function 
-		  * @param pos position to test
-		  * @param costSoFar the cost of the shortest path to pos
-		  * @return true when range is exceeded.
-		  */
-		bool operator()(const Vec2i &pos, const float costSoFar) const { 
-			if ( costSoFar > range ) {
-				return true;
-			}
-			if ( inc ) {
-				eMap->incVisCounter(pos);
-			} else {
-				eMap->decVisCounter(pos);
-			}
-			return false; 
-		}
-	};
 	void maintainUnitVisibility(Unit *unit, bool add);
 
 public:
 	Cartographer(World *world);
 	~Cartographer();
-	void updateResourceMaps();
 
 	SearchEngine<NodeMap,GridNeighbours>* getSearchEngine() { return nmSearchEngine; }
 	RoutePlanner* getRoutePlanner() { return routePlanner; }
@@ -137,33 +108,25 @@ public:
 	/** Removes a unit's visibility from its team's exploration map */
 	void removeUnitVisibility(Unit *unit)	{ maintainUnitVisibility(unit, false); }
 
-	void resourceDepleted(Resource *r);
-
 	void initTeamMaps();
 
 	/** Update the annotated maps when an obstacle has been added or removed from the map.
 	  * Unconditionally updates the master map, updates team maps if the team can see the cells,
 	  * or mark as 'dirty' if they cannot currently see the change. @todo implement team maps
 	  * @param pos position (north-west most cell) of obstacle
-	  * @param size size of obstacle
-	  */
+	  * @param size size of obstacle	*/
 	void updateMapMetrics(const Vec2i &pos, const int size) { 
 		masterMap->updateMapMetrics(pos, size);
 		// who can see it ? update their maps too.
 		// set cells as dirty for those that can't see it
 	}
 
-	void tick() {
-		if (clusterMap->isDirty()) {
-			clusterMap->update();
-		}
-	}
+	void tick();
 
 	PatchMap<1>* getResourceMap(const ResourceType* rt) {
 		return resourceMaps[rt];
 	}
 
-//	AbstractMap* getAbstractMap() const	{ return abstractMap; }
 	ClusterMap* getClusterMap() const { return clusterMap; }
 
 	AnnotatedMap* getMasterMap()				const	{ return masterMap;							  }

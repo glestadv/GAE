@@ -25,16 +25,27 @@
 
 namespace Glest { namespace Game { namespace Search {
 
-int Edge::numEdges = 0;
-bool Edge::addingLand = false;
-int Transition::numTransitions = 0;
-bool Transition::addingLand = false;
+int Edge::numEdges[Field::COUNT];
+int Transition::numTransitions[Field::COUNT];
+
 
 #if SILNARM_HAS_DEFINED_SOME_CRAZY_PREPROCESSOR_SYMBOL
 #	define WRITE_AND_FLUSH(x) { cout << x, cout.flush(); }
 #else
 #	define WRITE_AND_FLUSH(x) {}
 #endif
+
+void Edge::zeroCounters() {
+	for (Field f(0); f < Field::COUNT; ++f) {
+		numEdges[f] = 0;
+	}
+}
+
+void Transition::zeroCounters() {
+	for (Field f(0); f < Field::COUNT; ++f) {
+		numTransitions[f] = 0;
+	}
+}
 
 ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto) 
 		: aMap(aMap) , carto(carto), dirty(false) {
@@ -43,6 +54,9 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 	vertBorders = new ClusterBorder[(w-1)*h];
 	horizBorders = new ClusterBorder[w*(h-1)];
 	// init Borders (and hence inter-cluster edges) & evaluate clusters (intra-cluster edges)
+
+	Edge::zeroCounters();
+	Transition::zeroCounters();
 
 	theLogger.setClusterCount(w * h);
 
@@ -69,19 +83,30 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 	theLogger.add(buf);
 }
 
+ClusterMap::~ClusterMap() {
+	delete [] vertBorders;
+	delete [] horizBorders;
+	for (Field f(0); f < Field::COUNT; ++f) {
+		assert(Edge::NumEdges(f) == 0);
+		assert(Transition::NumTransitions(f) == 0);
+		if (Edge::NumEdges(f) != 0 || Transition::NumTransitions(f) != 0) {
+			throw runtime_error("memory leak");
+		}
+	}
+}
+
 /** Entrance init helper class */
 class InsideOutIterator {
 private:
-	int  low, high, centre, incr, end;
-	bool flip, odd;
+	int  centre, incr, end;
+	bool flip;
 
 public:
 	InsideOutIterator(int low, int high)
-			: low(low), high(high), flip(false) {
+			: flip(false) {
 		centre = low + (high - low) / 2;
-		odd = (high - low) % 2 != 0;
 		incr = 0;
-		end = odd ? low - 1 : high + 1;
+		end = ((high - low) % 2 != 0) ? low - 1 : high + 1;
 	}
 
 	int operator*() const {
@@ -111,9 +136,9 @@ void ClusterMap::addBorderTransition(EntranceInfo &info) {
 			if (eClear[info.startPos - *it] == info.max_clear) {
 				Transition *t;
 				if (info.vert) {
-					t = new Transition(Vec2i(info.pos, *it), info.max_clear, true);
+					t = new Transition(Vec2i(info.pos, *it), info.max_clear, true, info.f);
 				} else {
-					t = new Transition(Vec2i(*it, info.pos), info.max_clear, false);
+					t = new Transition(Vec2i(*it, info.pos), info.max_clear, false, info.f);
 				}
 				WRITE_AND_FLUSH( "\t\t\tadding Entrance at " << t->nwPos << "\n" )
 				info.cb->transitions[info.f].add(t);
@@ -151,11 +176,11 @@ void ClusterMap::addBorderTransition(EntranceInfo &info) {
 			if (next_at != -1) {
 				Transition *t1, *t2;
 				if (info.vert) {
-					t1 = new Transition(Vec2i(info.pos, first_at), info.max_clear, true);
-					t2 = new Transition(Vec2i(info.pos, next_at), info.max_clear, true);
+					t1 = new Transition(Vec2i(info.pos, first_at), info.max_clear, true, info.f);
+					t2 = new Transition(Vec2i(info.pos, next_at), info.max_clear, true, info.f);
 				} else {
-					t1 = new Transition(Vec2i(first_at, info.pos), info.max_clear, false);
-					t2 = new Transition(Vec2i(next_at, info.pos), info.max_clear, false);
+					t1 = new Transition(Vec2i(first_at, info.pos), info.max_clear, false, info.f);
+					t2 = new Transition(Vec2i(next_at, info.pos), info.max_clear, false, info.f);
 				}
 				WRITE_AND_FLUSH( "\t\t\tadding Entrance at " << t1->nwPos << "\n" )
 				WRITE_AND_FLUSH( "\t\t\tadding Entrance at " << t2->nwPos << "\n" )
@@ -170,9 +195,9 @@ void ClusterMap::addBorderTransition(EntranceInfo &info) {
 			if (eClear[info.startPos - *it] == info.max_clear) {
 				Transition *t;
 				if (info.vert) {
-					t = new Transition(Vec2i(info.pos, *it), info.max_clear, true);
+					t = new Transition(Vec2i(info.pos, *it), info.max_clear, true, info.f);
 				} else {
-					t = new Transition(Vec2i(*it, info.pos), info.max_clear, false);
+					t = new Transition(Vec2i(*it, info.pos), info.max_clear, false, info.f);
 				}
 				WRITE_AND_FLUSH( "\t\t\tadding Entrance at " << t->nwPos << "\n" )
 				info.cb->transitions[info.f].add(t);
@@ -202,7 +227,6 @@ void ClusterMap::initClusterBorder(const Vec2i &cluster, bool north) {
 		inf.run = 0;	 // to count entrance 'width'
 		for (Field f(0); f < Field::COUNT; ++f) {
 			if (!aMap->maxClearance[f]) continue;
-			Transition::addingLand = f == Field::LAND;
 #			if _GAE_DEBUG_EDITION_
 				if (f == Field::LAND) {	
 					for (int i=0; i < cb->transitions[f].n; ++i) {
@@ -373,7 +397,6 @@ void ClusterMap::evalCluster(const Vec2i &cluster) {
 	Transitions transitions;
 	for (Field f(0); f < Field::COUNT; ++f) {
 		if (!aMap->maxClearance[f]) continue;
-		Edge::addingLand = f == Field::LAND;
 		transitions.clear();
 		getTransitions(cluster, f, transitions);
 		Transitions::iterator it = transitions.begin();
@@ -387,7 +410,7 @@ void ClusterMap::evalCluster(const Vec2i &cluster) {
 				Vec2i dest = t2->nwPos;
 				float cost  = aStarPathLength(f, 1, start, dest);
 				if (cost == numeric_limits<float>::infinity()) continue;
-				Edge *e = new Edge(t2);
+				Edge *e = new Edge(t2, f);
 				t->edges.push_back(e);
 				e->addWeight(cost);
 				int size = 2;

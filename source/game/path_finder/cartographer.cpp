@@ -76,10 +76,10 @@ Cartographer::Cartographer(World *world)
 	//
 	cout << "Resource Catalog\n";
 	// find and catalog all resources...
-	for ( int x=0; x < cellMap->getTileW() - 1; ++x ) {
-		for ( int y=0; y < cellMap->getTileH() - 1; ++y ) {
+	for (int x=0; x < cellMap->getTileW() - 1; ++x) {
+		for (int y=0; y < cellMap->getTileH() - 1; ++y) {
 			const Resource * const r = cellMap->getTile(x,y)->getResource();
-			if ( r ) {
+			if (r) {
 				resourceLocations[r->getType()].push_back(Vec2i(x,y));
 			}
 		}
@@ -95,21 +95,6 @@ Cartographer::Cartographer(World *world)
 			resourceMaps[rt] = pMap;
 		}
 	}
-
-	/*
-	// construct resource influence maps for each team
-	for ( int i=0; i < world->getTechTree()->getResourceTypeCount(); ++i ) {
-		const ResourceType* rt = world->getTechTree()->getResourceType( i );
-		if ( rt->getClass() == ResourceClass::TECH || rt->getClass() == ResourceClass::TILESET ) {
-			for ( int j=0; j < world->getFactionCount(); ++j ) {
-				int team = world->getFaction(j)->getTeam();
-				if ( teamResourceMaps[team].find(rt) == teamResourceMaps[team].end() ) {
-					teamResourceMaps[team][rt] = new TypeMap<float>(Rect(0,0,cellMap->getW(),cellMap->getH()), -1.f);
-				}
-			}
-		}
-	}
-	*/
 }
 
 /** Destruct */
@@ -133,118 +118,108 @@ Cartographer::~Cartographer() {
 	explorationMaps.clear();
 	
 	// Resource Maps
-	/*
-	map<int,map<const ResourceType*, TypeMap<float>*>>::iterator teamIt;
-	map<const ResourceType*, TypeMap<float>*>::iterator iMapIt;
-	teamIt = teamResourceMaps.begin();
-	for ( ; teamIt != teamResourceMaps.end(); ++teamIt ) {
-		iMapIt = teamIt->second.begin();
-		for ( ; iMapIt != teamIt->second.end(); ++iMapIt ) {
-			delete iMapIt->second;
-		}
+	map<const ResourceType*, PatchMap<1>*>::iterator rmIt = resourceMaps.begin();
+	for ( ; rmIt != resourceMaps.end(); ++rmIt) {
+		delete rmIt->second;
 	}
-	teamResourceMaps.clear();*/
+	resourceMaps.clear();
 }
 
-/** WIP */
-void Cartographer::updateResourceMaps() {
-	/*set< int > seen;
-	for ( int j=0; j < world->getFactionCount(); ++j ) {
-		int team = world->getFaction( j )->getTeam();
-		if ( seen.find( team ) != seen.end() ) {
-			continue;
-		}
-		seen.insert( team );
-		for ( int i=0; i < world->getTechTree()->getResourceTypeCount(); ++i ) {
-			const ResourceType* rt = world->getTechTree()->getResourceType( i );
-			if ( rt->getClass() == ResourceClass::TECH || rt->getClass() == ResourceClass::TILESET ) {
-				initResourceMap( team, rt, teamResourceMaps[team][rt] );
-			}
-		}
-	}*/
-}
-
-/** custom goal function for building resource map */
-class ResourceMapBuilderGoal {
-private:
-	float range;
-	PatchMap<1> *pMap;
-public:
-	ResourceMapBuilderGoal(float range, PatchMap<1> *pMap)
-			: range(range), pMap(pMap) {}
-	bool operator()(const Vec2i &pos, const float costSoFar) const {
-		if (costSoFar > range) {
-			return true;
-		}
-		if (costSoFar == 0.f) {
-			return false;
-		}
-		// else in range
-		pMap->setInfluence(pos, 1);
-		return false;
-	}
-};
-
-/** custom cost function for building resource map */
-class ResourceMapBuilderCost {
-private:
-	Field field;
-	int size;
-	const AnnotatedMap *aMap;
-
-public:
-	ResourceMapBuilderCost(const Field field, const int size, const AnnotatedMap *aMap )
-		: field(field), size(size), aMap(aMap) {}
-
-	float operator()(const Vec2i &p1, const Vec2i &p2) const {
-		if (!aMap->canOccupy(p2, size, field)) {
-			return numeric_limits<float>::infinity();
-		}
-		if (p1.x != p2.x && p1.y != p2.y) {
-			return SQRT2;
-		}
-		return 1.f;
-	}
-};
-
-#define BUILD_RESOURCE_MAP aStar<ResourceMapBuilderGoal, ResourceMapBuilderCost, ZeroHeuristic>
-
-/** WIP */
 void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
-	
+/*
 	static char buf[512];
 	char *ptr = buf;
 	ptr += sprintf(ptr, "Initialising resource map : %s.\n", rt->getName().c_str());
 	int64 time_millis = Chrono::getCurMillis();
 	int64 time_micros = Chrono::getCurMicros();
-
+*/
 	pMap->zeroMap();
-	nmSearchEngine->setNodeLimit(-1);
-	nmSearchEngine->reset();
 	vector<Vec2i>::iterator it = resourceLocations[rt].begin();
-	int nt = 0;
 	for ( ; it != resourceLocations[rt].end(); ++it) {
-		Vec2i pos = *it * Map::cellScale;
-		nmSearchEngine->setOpen(pos, 0.f);
-		nmSearchEngine->setOpen(pos + Vec2i(0,1), 0.f);
-		nmSearchEngine->setOpen(pos + Vec2i(1,0), 0.f);
-		nmSearchEngine->setOpen(pos + Vec2i(1,1), 0.f);
-		++nt;
-	}
-	ResourceMapBuilderGoal goal(1.5f, pMap);
-	ResourceMapBuilderCost cost(Field::LAND, 1, masterMap);
-	nmSearchEngine->BUILD_RESOURCE_MAP(goal, cost, ZeroHeuristic());
+		Resource *r = world->getMap()->getTile(*it)->getResource();
+		assert(r);
+		r->Depleted.connect(this, &Cartographer::onResourceDepleted);
 
+		Vec2i pos = *it * Map::cellScale;
+		Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST];
+		Vec2i tr = pos + OrdinalOffsets[OrdinalDir::EAST] + OrdinalOffsets[OrdinalDir::NORTH_EAST];
+		Vec2i bl = pos + OrdinalOffsets[OrdinalDir::SOUTH] + OrdinalOffsets[OrdinalDir::SOUTH_WEST];
+		Vec2i br = pos + OrdinalOffsets[OrdinalDir::SOUTH_EAST] * 2;
+
+		int n = tr.x - tl.x;
+		for (int i=0; i <= n; ++i) {
+			Vec2i top(tl.x + i, tl.y);
+			Vec2i bot(tl.x + i, bl.y);
+			if (world->getMap()->isInside(top) && masterMap->canOccupy(top, 1, Field::LAND)) {
+				pMap->setInfluence(top, 1);
+			}
+			if (world->getMap()->isInside(bot) && masterMap->canOccupy(bot, 1, Field::LAND)) {
+				pMap->setInfluence(bot, 1);
+			}
+		}
+		for (int i=1; i <= n - 1; ++i) {
+			Vec2i left(tl.x, tl.y + i);
+			Vec2i right(tr.x, tl.y + i);
+			if (world->getMap()->isInside(left) && masterMap->canOccupy(left, 1, Field::LAND)) {
+				pMap->setInfluence(left, 1);
+			}
+			if (world->getMap()->isInside(right) && masterMap->canOccupy(right, 1, Field::LAND)) {
+				pMap->setInfluence(right, 1);
+			}
+		}
+	}
+/*
 	time_millis = Chrono::getCurMillis() - time_millis;
 	time_micros = Chrono::getCurMicros() - time_micros;
 	if (time_millis >= 3) {
-		ptr += sprintf(ptr, "Expanded %d nodes, took %dms\n", nmSearchEngine->getExpandedLastRun(),
-			(int)time_millis);
+		ptr += sprintf(ptr, "Took %dms\n", (int)time_millis);
 	} else {
-		ptr += sprintf(ptr, "Expanded %d nodes, took %dms (%dus)\n", nmSearchEngine->getExpandedLastRun(),
-			(int)time_millis, (int)time_micros);
+		ptr += sprintf(ptr, "Took %dms (%dus)\n", (int)time_millis, (int)time_micros);
 	}
 	theLogger.add(buf);
+*/
+}
+
+void Cartographer::onResourceDepleted(Vec2i pos) {
+	const ResourceType *rt = world->getMap()->getTile(pos/Map::cellScale)->getResource()->getType();
+	//pos *= Map::cellScale;
+	Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST];
+	Vec2i br = pos + OrdinalOffsets[OrdinalDir::SOUTH_EAST] * 2;
+	resDirtyAreas[rt].push_back(pair<Vec2i,Vec2i>(tl,br));
+}
+
+void Cartographer::fixupResourceMap(const ResourceType *rt, const Vec2i &tl, const Vec2i &br) {
+	PatchMap<1> *pMap = resourceMaps[rt];
+	assert(pMap);
+	Vec2i junk;
+	for (int y = tl.y; y <= br.y; ++y) {
+		for (int x = tl.x; x <= br.x; ++x) {
+			Vec2i pos(x,y);
+			if (!world->getMap()->isInside(pos)) continue;
+			if (masterMap->canOccupy(pos, 1, Field::LAND)
+			&& cellMap->isResourceNear(pos, rt, junk)) {
+				pMap->setInfluence(pos, 1);
+			} else {
+				pMap->setInfluence(pos, 0);
+			}
+		}
+	}
+}
+
+void Cartographer::tick() {
+	if (clusterMap->isDirty()) {
+		clusterMap->update();
+	}
+	map<const ResourceType*, AreaList>::iterator it = resDirtyAreas.begin();
+	for ( ; it != resDirtyAreas.end(); ++it) {
+		if (!it->second.empty()) {
+			AreaList::iterator alIt = it->second.begin();
+			for ( ; alIt != it->second.end(); ++alIt) {
+				fixupResourceMap(it->first, alIt->first, alIt->second);
+			}
+			it->second.clear();
+		}
+	}
 }
 
 /** Initialise annotated maps for each team, call after initial units visibility is applied */
@@ -256,6 +231,39 @@ void Cartographer::initTeamMaps() {
 
 	}
 }
+
+/** Custom Goal function for maintaining the exploration maps */
+class VisibilityMaintainerGoal {
+private:
+	float range;			/**< range of entity sight */
+	ExplorationMap *eMap;	/**< exploration map to adjust */
+	bool inc;				/**< true to increment, false to decrement */
+public:
+	/** Construct goal function object
+	  * @param range the range of visibility
+	  * @param eMap the ExplorationMap to adjust
+	  * @param inc true to apply visibility, false to remove
+	  */
+	VisibilityMaintainerGoal(float range, ExplorationMap *eMap, bool inc)
+		: range(range), eMap(eMap), inc(inc) {}
+
+	/** The goal function 
+	  * @param pos position to test
+	  * @param costSoFar the cost of the shortest path to pos
+	  * @return true when range is exceeded.
+	  */
+	bool operator()(const Vec2i &pos, const float costSoFar) const { 
+		if ( costSoFar > range ) {
+			return true;
+		}
+		if ( inc ) {
+			eMap->incVisCounter(pos);
+		} else {
+			eMap->decVisCounter(pos);
+		}
+		return false; 
+	}
+};
 
 /** Maintains visibility on a per team basis. Adds or removes a unit's visibility
   * to (or from) its team exploration map, using a Dijkstra search.
