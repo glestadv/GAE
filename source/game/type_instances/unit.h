@@ -415,6 +415,14 @@ public:
 		}
 	}
 
+	// signals, should prob replace that observer stuff above
+	
+	sigslot::signal1<Unit*>	Died;
+	//sigslot::signal1<Unit*>	Created;
+	//sigslot::signal1<Unit*>	Born;
+
+	//sigslot::signal2<Unit*, const UnitType*> Morphed;
+
 	//other
 	void resetHighlight()								{highlight= 1.f;}
 	const CommandType *computeCommandType(const Vec2i &pos, const Unit *targetUnit= NULL) const;

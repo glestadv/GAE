@@ -95,6 +95,104 @@ ClusterMap::~ClusterMap() {
 	}
 }
 
+void ClusterMap::assertValid() {
+	bool valid[Field::COUNT];
+	bool inUse[Field::COUNT];
+	int numNodes[Field::COUNT];
+	int numEdges[Field::COUNT];
+
+	for (Field f(0); f < Field::COUNT; ++f) {
+		typedef set<const Transition *> TSet;
+		TSet tSet;
+
+		typedef pair<Vec2i, bool> TKey;
+		typedef map<TKey, const Transition *> TKMap;
+
+		TKMap tkMap;
+
+		valid[f] = true;
+		numNodes[f] = 0;
+		numEdges[f] = 0;
+		inUse[f] = aMap->maxClearance[f] != 0;
+		if (!inUse[f]) {
+			continue;
+		}
+
+		// collect all transitions, checking for membership in tSet and tkMap (indicating an error)
+		// and filling tSet and tkMap
+		for (int i=0; i < (w - 1) * h; ++i) {
+			ClusterBorder *b = &vertBorders[i];
+			for (int j=0; j < b->transitions[f].n; ++j) {
+				const Transition *t = b->transitions[f].transitions[j]; 
+				if (tSet.find(t) != tSet.end()) {
+					cout << "single transition on multiple borders.\n";
+					valid[f] = false;
+				} else {
+					tSet.insert(t);
+					TKey key(t->nwPos, t->vertical);
+					if (tkMap.find(key) != tkMap.end()) {
+						cout << "seperate transitions of same orientation on same cell.\n";
+						valid[f] = false;
+					} else {
+						tkMap[key] = t;
+					}
+				}
+				++numNodes[f];
+			}
+			
+		}
+		for (int i=0; i < w * (h - 1); ++i) {
+			ClusterBorder *b = &horizBorders[i];
+			for (int j=0; j < b->transitions[f].n; ++j) {
+				const Transition *t = b->transitions[f].transitions[j]; 
+				if (tSet.find(t) != tSet.end()) {
+					cout << "single transition on multiple borders.\n";
+					valid[f] = false;
+				} else {
+					tSet.insert(t);
+					TKey key(t->nwPos, t->vertical);
+					if (tkMap.find(key) != tkMap.end()) {
+						cout << "seperate transitions of same orientation on same cell.\n";
+						valid[f] = false;
+					} else {
+						tkMap[key] = t;
+					}
+				}
+				++numNodes[f];
+			}
+		}
+		
+		// with a complete collection, iterate, check all dest transitions
+		for (TSet::iterator it = tSet.begin(); it != tSet.end(); ++it) {
+			const Edges &edges = (*it)->edges;
+			for (Edges::const_iterator eit = edges.begin(); eit != edges.end(); ++eit) {
+				TSet::iterator it2 = tSet.find((*eit)->transition());
+				if (it2 == tSet.end()) {
+					cout << "Invalid edge.\n";
+					valid[f] = false;
+				} else {
+					if (*it == *it2) {
+						cout << "self referential transition.\n";
+						valid[f] = false;
+					}
+				}
+				++numEdges[f];
+			}
+		}
+	}
+	cout << "\nClusterMap::assertValid()\n";
+	cout << "=========================\n";
+	for (Field f(0); f < Field::COUNT; ++f) {
+		if (!inUse[f]) {
+			cout << "Field::" << FieldNames[f] << " not in use.\n";
+		} else {
+			cout << "Field::" << FieldNames[f] << " in use and " << (!valid[f]? "NOT " : "") << "valid.\n";
+			cout << "\t" << numNodes[f] << " transitions inspected.\n";
+			cout << "\t" << numEdges[f] << " edges inspected.\n";
+		}
+	}
+}
+
 /** Entrance init helper class */
 class InsideOutIterator {
 private:

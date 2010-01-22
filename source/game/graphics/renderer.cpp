@@ -1121,8 +1121,8 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 
 void Renderer::renderSurface() {
 #	if _GAE_DEBUG_EDITION_
-	if ( debugRenderer.AAStarTextures ) {
-		debugRenderer.renderPFDebug( visibleQuad );
+	if (debugRenderer.willRenderSurface()) {
+		debugRenderer.renderSurface(visibleQuad);
 	} else {
 #	endif	
 
@@ -1243,26 +1243,8 @@ void Renderer::renderSurface() {
 #	if _GAE_DEBUG_EDITION_
 	} // end else, if not renderering textures instead of terrain
 
-	if (debugRenderer.regionHilights ) {
-		debugRenderer.renderRegionHilight(visibleQuad);
-	}
-	if (debugRenderer.showVisibleQuad ) {
-		debugRenderer.renderCapturedQuad( visibleQuad );
-	}
-	if (debugRenderer.teamSight ) {
-		debugRenderer.renderTeamSightOverlay(visibleQuad);
-	}
-	if (debugRenderer.HAAStarOverlay ) {
-		debugRenderer.renderClusterOverlay(visibleQuad);
-		debugRenderer.renderPathOverlay();
+	debugRenderer.renderEffects(visibleQuad);
 
-		//debugRenderer.renderIntraCusterEdges(Vec2i(2,4), CardinalDir::NORTH);
-		//debugRenderer.renderIntraCusterEdges(Vec2i(0,0));
-	}
-	if (debugRenderer.resourceMapOverlay) {
-		debugRenderer.renderResourceMapOverlay(visibleQuad);
-	}
-	
 #	endif	
 }
 

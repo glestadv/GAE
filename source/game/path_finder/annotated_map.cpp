@@ -318,8 +318,9 @@ uint32 AnnotatedMap::computeClearance( const Vec2i &pos, Field f ) {
   * @param unit the unit about to perform a search
   * @param field the field that the unit is about to search in
   */
-void AnnotatedMap::annotateLocal(const Unit *unit, const Field field) {
+void AnnotatedMap::annotateLocal(const Unit *unit) {
 	PROFILE_LVL2_START("Local Annotations");
+	const Field &field = unit->getCurrField();
 	const Vec2i &pos = unit->getPos();
 	const int &size = unit->getSize();
 	assert(cellMap->isInside(pos));
@@ -379,8 +380,9 @@ void AnnotatedMap::annotateUnit(const Unit *unit, const Field field) {
 
 /** Clear all local annotations								*
   * @param field the field annotations were applied to		*/
-void AnnotatedMap::clearLocalAnnotations(Field field) {
+void AnnotatedMap::clearLocalAnnotations(const Unit *unit) {
 	PROFILE_LVL2_START("Local Annotations");
+	const Field &field = unit->getCurrField();
 	for ( map<Vec2i,uint32>::iterator it = localAnnt.begin(); it != localAnnt.end(); ++ it ) {
 		assert(it->second <= maxClearance[field]);
 		assert(cellMap->isInside(it->first));

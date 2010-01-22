@@ -955,27 +955,23 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	setCurrSkill(SkillClass::DIE);
 
 	//no longer needs static resources
-	if(isBeingBuilt())
+	if(isBeingBuilt()) {
 		faction->deApplyStaticConsumption(type);
-	else
+	} else {
 		faction->deApplyStaticCosts(type);
-
+	}
+	Died(this);
 	notifyObservers(UnitObserver::eKill);
-
-	//clear commands
 	clearCommands();
-
 	//kill or free pets
 	killPets();
-
 	//kiss mom of the cheek
 	if(master.getUnit()) {
 		master.getUnit()->petDied(this);
 	}
-
-	// hack... 
+	// hack... 'tracking' particle systems might reference this, 'this' will soon be deleted...
 	Renderer::getInstance().getParticleManager()->checkTargets(this);
-	
+
 	// random decay time
 	//deadCount = Random(id).randRange(-256, 256);
 	deadCount = 0;
@@ -1031,19 +1027,16 @@ void Unit::preProcessSkill() {
 
 	progressSpeed = getSpeed() * speedModifier;
 	animProgressSpeed = currSkill->getAnimSpeed() * speedModifier;
-	// None of this changes within a skill cycle!
-	// cache it!!!
-	//float progressSpeed = getSpeed() * speedModifier;
-	//float animationSpeed = currSkill->getAnimSpeed() * speedModifier;
-
 	//speed modifiers
 	if(currSkill->getClass() == SkillClass::MOVE) {
 
-		//if moving in diagonal move slower
-		Vec2i dest = pos - lastPos;
-		if(abs(dest.x) + abs(dest.y) == 2) {
+		if (pos.x != nextPos.x && pos.y != nextPos.y) {
+			//if moving in diagonal move slower
 			progressSpeed *= 0.71f;
-		}
+			//LOGMOVE("Diagonal.");
+		}// else {
+		//	LOGMOVE("straight.");
+		//}
 
 		//if moving to a higher cell move slower else move faster
 		float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();

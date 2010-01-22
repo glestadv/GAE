@@ -141,86 +141,25 @@ public:
 	}
 };
 
+// =====================================================
+// 	class DebugRender
+//
+/// Helper class compiled with _GAE_DEBUG_EDITION_ only
+// =====================================================
 class DebugRenderer {
+private:
+	set<Vec2i> clusterEdgesWest;
+	set<Vec2i> clusterEdgesNorth;
+
 public:
+	DebugRenderer();
+	void init();
+	void commandLine(string &line);
+
 	bool AAStarTextures, HAAStarOverlay, showVisibleQuad, captureVisibleQuad,
 		regionHilights, teamSight, resourceMapOverlay;
 
-	DebugRenderer() {
-		AAStarTextures = HAAStarOverlay = showVisibleQuad = 
-			captureVisibleQuad = regionHilights = 
-			teamSight = resourceMapOverlay = false;
-	}
-	
-	void init() {
-		AAStarTextures = true;
-		HAAStarOverlay = false;
-		resourceMapOverlay = true;
-		showVisibleQuad = captureVisibleQuad = regionHilights = teamSight = false;
-		PathFinderTextureCallBack::debugField = Field::LAND;
-
-		ResourceMapOverlay::rt = NULL;
-		const int &n = theWorld.getTechTree()->getResourceTypeCount();
-		for (int i=0; i < n; ++i) {
-			const ResourceType *rt = theWorld.getTechTree()->getResourceType(i);
-			if (rt->getName() == "wood") {
-				ResourceMapOverlay::rt = rt;
-				break;
-			}
-		}
-	}
-
-	void commandLine(string &line) {
-		string key, val;
-		size_t n = line.find('=');
-		if ( n != string::npos ) {
-			key = line.substr(0, n);
-			val = line.substr(n+1);
-		} else {
-			key = line;
-		}
-		if ( key == "AStarTextures" ) {
-			if ( val == "" ) { // no val supplied, toggle
-				AAStarTextures = !AAStarTextures;
-			} else {
-				if ( val == "on" || val == "On" ) {
-					AAStarTextures = true;
-				} else {
-					AAStarTextures = false;
-				}
-			}
-		} else if ( key == "ClusterOverlay" ) {
-			if ( val == "" ) { // no val supplied, toggle
-				HAAStarOverlay = !HAAStarOverlay;
-			} else {
-				if ( val == "on" || val == "On" ) {
-					HAAStarOverlay = true;
-				} else {
-					HAAStarOverlay = false;
-				}
-			}
-		} else if ( key == "CaptuereQuad" ) {
-			captureVisibleQuad = true;
-		} else if ( key == "RegionColouring" ) {
-			if ( val == "" ) { // no val supplied, toggle
-				regionHilights = !regionHilights;
-			} else {
-				if ( val == "on" || val == "On" ) {
-					regionHilights = true;
-				} else {
-					regionHilights = false;
-				}
-			}
-		} else if ( key == "DebugField" ) {
-			Field f = FieldNames.match(val.c_str());
-			if ( f != Field::INVALID ) {
-				PathFinderTextureCallBack::debugField = f;
-			} else {
-				theConsole.addLine("Bad field: " + val);
-			}
-		}
-	}
-
+private:
 	template< typename CellTextureCallback >
 	void renderCellTextures ( Quad2i &visibleQuad ) {
 		const Rect2i mapBounds(0, 0, theMap.getTileW()-1, theMap.getTileH()-1);
@@ -322,9 +261,6 @@ public:
 	void renderRegionHilight(Quad2i &visibleQuad) {
 		renderCellOverlay<RegionHilightCallback>(visibleQuad);
 	}
-	void renderPFDebug( Quad2i &visibleQuad ) {
-		renderCellTextures< PathFinderTextureCallBack >( visibleQuad );
-	}
 	void renderCapturedQuad( Quad2i &visibleQuad ) {
 		renderCellOverlay< VisibleQuadColourCallback >( visibleQuad );
 	}
@@ -335,126 +271,24 @@ public:
 		renderCellOverlay<ResourceMapOverlay>(visibleQuad);
 	}
 
-private:
-	void renderCellTextured( const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
-				const Vec3f &v1, const Vec3f &v2, const Vec3f &v3  ) {
-		glBindTexture( GL_TEXTURE_2D, tex->getHandle() );
-		glBegin( GL_TRIANGLE_FAN );
-			glTexCoord2f( 0.f, 1.f );
-			glNormal3fv( norm.ptr() );
-			glVertex3fv( v0.ptr() );
-
-			glTexCoord2f( 1.f, 1.f );
-			glNormal3fv( norm.ptr() );
-			glVertex3fv( v1.ptr() );
-
-			glTexCoord2f( 1.f, 0.f );
-			glNormal3fv( norm.ptr() );
-			glVertex3fv( v2.ptr() );
-
-			glTexCoord2f( 0.f, 0.f );
-			glNormal3fv( norm.ptr() );
-			glVertex3fv( v3.ptr() );                        
-		glEnd ();
-	}
-
-	void renderCellOverlay( const Vec4f colour,  const Vec3f &norm, const Vec3f &v0, 
-				const Vec3f &v1, const Vec3f &v2, const Vec3f &v3  ) {
-		glBegin ( GL_TRIANGLE_FAN );
-			glNormal3fv(norm.ptr());
-			glColor4fv( colour.ptr() );
-			glVertex3fv(v0.ptr());
-			glNormal3fv(norm.ptr());
-			glColor4fv( colour.ptr() );
-			glVertex3fv(v1.ptr());
-			glNormal3fv(norm.ptr());
-			glColor4fv( colour.ptr() );
-			glVertex3fv(v2.ptr());
-			glNormal3fv(norm.ptr());
-			glColor4fv( colour.ptr() );
-			glVertex3fv(v3.ptr());                        
-		glEnd ();
-	}
-
+	void renderCellTextured(const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
+				const Vec3f &v1, const Vec3f &v2, const Vec3f &v3);
+	void renderCellOverlay(const Vec4f colour,  const Vec3f &norm, const Vec3f &v0, 
+				const Vec3f &v1, const Vec3f &v2, const Vec3f &v3);
 	void renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width);
 
 	static list<Vec3f> waypoints;
+
+	void renderPathOverlay();
+	void renderIntraClusterEdges(const Vec2i &cluster, CardinalDir dir = CardinalDir::COUNT);
+
 public:
 	static void clearWaypoints()		{ waypoints.clear();		}
 	static void addWaypoint(Vec3f v)	{ waypoints.push_back(v);	}
 
-	void renderPathOverlay() {
-		//return;
-		Vec3f one, two;
-		if ( waypoints.size() < 2 ) return;
-
-		assertGl();
-		glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT );
-		glEnable( GL_COLOR_MATERIAL ); 
-		glDisable( GL_ALPHA_TEST );
-		glDepthFunc(GL_ALWAYS);
-		glDisable(GL_STENCIL_TEST);
-		glDisable(GL_CULL_FACE);
-		glLineWidth(2.f);
-		glActiveTexture( GL_TEXTURE0 );
-		glDisable( GL_TEXTURE_2D );
-
-		list<Vec3f>::iterator it = waypoints.begin(); 
-		one = *it;
-		++it;
-		two = *it;
-		while ( true ) {
-			renderArrow(one,two,Vec3f(1.0f, 1.0f, 0.f), 0.15f);
-			one = two;
-			++it;
-			if ( it == waypoints.end() ) break;
-			two = *it;
-		}
-		//Restore
-		glPopAttrib();
-	}
-
-	void renderIntraCusterEdges(const Vec2i &cluster, CardinalDir dir = CardinalDir::COUNT) {
-		ClusterMap *cm = World::getInstance().getCartographer()->getClusterMap();
-		const Map *map = World::getInstance().getMap();
-		
-		Transitions transitions;
-		if (dir != CardinalDir::COUNT) {
-			TransitionCollection &tc = cm->getBorder(cluster, dir)->transitions[Field::LAND];
-			for (int i=0; i < tc.n; ++i) {
-				transitions.push_back(tc.transitions[i]);
-			}
-		} else {
-			cm->getTransitions(cluster, Field::LAND, transitions);
-		}		
-		assertGl();
-		glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT );
-		glEnable( GL_COLOR_MATERIAL ); 
-		glDisable( GL_ALPHA_TEST );
-		glDepthFunc(GL_ALWAYS);
-		glDisable(GL_STENCIL_TEST);
-		glDisable(GL_CULL_FACE);
-		glLineWidth(2.f);
-		glActiveTexture( GL_TEXTURE0 );
-		glDisable( GL_TEXTURE_2D );
-
-		for (Transitions::iterator ti = transitions.begin(); ti != transitions.end(); ++ti) {
-			const Transition* &t = *ti;
-			float h = map->getCell(t->nwPos)->getHeight();
-			Vec3f t1Pos(t->nwPos.x + 0.5f, h + 0.1f, t->nwPos.y + 0.5f);
-			for (Edges::const_iterator ei = t->edges.begin(); ei != t->edges.end(); ++ei) {
-				Edge * const &e = *ei;
-				//if (e->cost(1) != numeric_limits<float>::infinity()) {
-					const Transition* t2 = e->transition();
-					h = map->getCell(t2->nwPos)->getHeight();
-					Vec3f t2Pos(t2->nwPos.x + 0.5f, h + 0.1f, t2->nwPos.y + 0.5f);
-					renderArrow(t1Pos, t2Pos, Vec3f(1.f, 0.f, 1.f), 0.2f);
-				//}
-			}
-		}
-		//Restore
-		glPopAttrib();
-	}
+	bool willRenderSurface() const { return AAStarTextures; }
+	void renderSurface(Quad2i &quad) { renderCellTextures< PathFinderTextureCallBack >(quad); }
+	void renderEffects(Quad2i &quad);
 };
 
 }}

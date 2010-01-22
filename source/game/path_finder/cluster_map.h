@@ -187,6 +187,9 @@ public:
 	ClusterMap(AnnotatedMap *aMap, Cartographer *carto);
 	~ClusterMap();
 
+	int getWidth() const	{ return w; }
+	int getHeight() const	{ return h; }
+
 	static Vec2i cellToCluster (const Vec2i &cellPos) {
 		return Vec2i(cellPos.x / clusterSize, cellPos.y / clusterSize);
 	}
@@ -226,6 +229,8 @@ public:
 	void setClusterDirty(const Vec2i &cluster)		{ dirty = true; dirtyClusters.insert(cluster);		}
 	void setNorthBorderDirty(const Vec2i &cluster)	{ dirty = true; dirtyNorthBorders.insert(cluster);	}
 	void setWestBorderDirty(const Vec2i &cluster)	{ dirty = true; dirtyWestBorders.insert(cluster);	}
+
+	void assertValid();
 
 private:
 	struct EntranceInfo {

@@ -94,7 +94,7 @@ class Cartographer : public sigslot::has_slots<> {
 
 public:
 	Cartographer(World *world);
-	~Cartographer();
+	virtual ~Cartographer();
 
 	SearchEngine<NodeMap,GridNeighbours>* getSearchEngine() { return nmSearchEngine; }
 	RoutePlanner* getRoutePlanner() { return routePlanner; }

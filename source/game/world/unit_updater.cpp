@@ -354,7 +354,7 @@ void UnitUpdater::updateMove(Unit *unit) {
 		pos = command->getPos();
 	}
 
-	switch(routePlanner->findPath(unit, pos)) {
+	switch (routePlanner->findPath(unit, pos)) {
 		case TravelState::MOVING:
 			unit->setCurrSkill(mct->getMoveSkillType());
 			unit->face(unit->getNextPos());
@@ -365,9 +365,9 @@ void UnitUpdater::updateMove(Unit *unit) {
 		case TravelState::BLOCKED:
 			if(unit->getPath()->isBlocked() && !command->getUnit()){
 				unit->finishCommand();
-			}		
+			}
 			break;	
-		default: // TravelState::ARRIVED
+		default: // TravelState::ARRIVED or TravelState::IMPOSSIBLE
 			unit->finishCommand();	
 	}
 
@@ -712,7 +712,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			//if loaded, return to store
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
-				switch (routePlanner->findPathToLocation( unit, store->getNearestOccupiedCell(unit->getPos())/*, store*/)) {
+				switch (routePlanner->findPathToStore(unit, store)) {
 					case TravelState::MOVING:
 						unit->setCurrSkill(hct->getMoveLoadedSkillType());
 						unit->face(unit->getNextPos());

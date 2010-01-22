@@ -60,6 +60,8 @@ public:
 
 	TravelState findPathToResource(Unit *unit, const Vec2i &targetPos, const ResourceType *rt);
 
+	TravelState findPathToStore(Unit *unit, const Unit *store);
+
 	bool isLegalMove(Unit *unit, const Vec2i &pos) const;
 
 	SearchEngine<NodeStore>* getSearchEngine() { return nsgSearchEngine; }
@@ -67,11 +69,13 @@ public:
 private:
 	bool repairPath(Unit *unit);
 
+	TravelState doRouteCache(Unit *unit);
+	TravelState doQuickPathSearch(Unit *unit, const Vec2i &target);
+	TravelState resourceSearch(ResourceGoal &goal, Unit *unit, const Vec2i &target);
+
 	float quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
 	bool refinePath(Unit *unit);
 	void smoothPath(Unit *unit);
-
-	float resourceSearch(ResourceGoal &goal, Field field, int size, const Vec2i &start, const Vec2i &dest);
 
 	bool setupHierarchicalSearch(Unit *unit, const Vec2i &dest, TransitionGoal &goalFunc);
 	bool findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints);

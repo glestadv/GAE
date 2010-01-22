@@ -179,8 +179,8 @@ public:
 	bool isDirty(const Vec2i &pos) const			{ metrics[pos].isDirty();		}
 	void setDirty(const Vec2i &pos, const bool val)	{ metrics[pos].setDirty(val);	}
 
-	void annotateLocal(const Unit *unit, const Field field);
-	void clearLocalAnnotations(Field field);
+	void annotateLocal(const Unit *unit);
+	void clearLocalAnnotations(const Unit *unit);
 
 private:
 	// for initMetrics() and updateMapMetrics ()
