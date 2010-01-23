@@ -181,7 +181,7 @@ void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
 }
 
 void Cartographer::onResourceDepleted(Vec2i pos) {
-	const ResourceType *rt = world->getMap()->getTile(pos/Map::cellScale)->getResource()->getType();
+	const ResourceType *rt = cellMap->getTile(pos/Map::cellScale)->getResource()->getType();
 	//pos *= Map::cellScale;
 	Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST];
 	Vec2i br = pos + OrdinalOffsets[OrdinalDir::SOUTH_EAST] * 2;
@@ -204,6 +204,42 @@ void Cartographer::fixupResourceMap(const ResourceType *rt, const Vec2i &tl, con
 			}
 		}
 	}
+}
+
+PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
+	const UnitType* const &ut = unit->getType();
+	Vec2i pos = unit->getPos();
+	int sx = pos.x;
+	int sy = pos.y;
+	pos += OrdinalOffsets[OrdinalDir::NORTH_WEST];
+	Rectangle rect(pos.x, pos.y, unit->getSize() + 2, unit->getSize() + 2);
+	PatchMap<1> *pMap = new PatchMap<1>(rect, 0);
+	pMap->zeroMap();
+	
+	//debug
+	int count = 0;
+	cout << "building store map for " << unit->getType()->getName() << "\n\tSetting cells:";
+	for (int y = sy; y < sy + unit->getSize(); ++y) {
+		for (int x = sx; x < sx + unit->getSize(); ++x) {
+			if (!ut->hasCellMap() || ut->getCellMapCell(x-sx, y-sx)) {
+				for (OrdinalDir d(0); d < OrdinalDir::COUNT; ++d) {
+					Vec2i goalPos = Vec2i(x,y) + OrdinalOffsets[d];
+					if (masterMap->canOccupy(goalPos, 1, Field::LAND) 
+					&& !pMap->getInfluence(goalPos)) {
+						pMap->setInfluence(goalPos, 1);
+						assert(pMap->getInfluence(goalPos));
+						++count;
+						cout << " " << goalPos;
+					}
+				}
+			}
+		}
+	}
+	cout << "\nMade store map for " << unit->getType()->getName() << " @ " 
+		 << unit->getPos() << ", added " << count << " goal cells." << endl;
+
+	storeMaps[unit] = pMap;
+	return pMap;
 }
 
 void Cartographer::tick() {

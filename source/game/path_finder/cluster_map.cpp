@@ -76,8 +76,6 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 			theLogger.clusterInit();
 		}
 	}
-	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
-
 	time_millis = Chrono::getCurMillis() - time_millis;
 	ptr += sprintf(ptr, "\ttook %dms\n", (int)time_millis);
 	theLogger.add(buf);
@@ -180,8 +178,8 @@ void ClusterMap::assertValid() {
 			}
 		}
 	}
-	cout << "\nClusterMap::assertValid()\n";
-	cout << "=========================\n";
+	cout << "\nClusterMap::assertValid()";
+	cout << "\n=========================\n";
 	for (Field f(0); f < Field::COUNT; ++f) {
 		if (!inUse[f]) {
 			cout << "Field::" << FieldNames[f] << " not in use.\n";
@@ -389,10 +387,7 @@ float ClusterMap::aStarPathLength(Field f, int size, const Vec2i &start, const V
 	if (start == dest) {
 		return 0.f;
 	}
-	
-	//SearchEngine<NodeMap,GridNeighbours>* se = carto->getSearchEngine();
 	SearchEngine<NodeStore> *se = carto->getRoutePlanner()->getSearchEngine();
-
 	MoveCost costFunc(f, size, aMap);
 	DiagonalDistance dd(dest);
 	se->setNodeLimit(clusterSize * clusterSize);
@@ -454,7 +449,7 @@ void ClusterMap::disconnectCluster(const Vec2i &cluster) {
 }
 
 void ClusterMap::update() {
-	
+	//cout << "ClusterMap::update()" << endl;
 	for (set<Vec2i>::iterator it = dirtyNorthBorders.begin(); it != dirtyNorthBorders.end(); ++it) {
 		if (it->y > 0 && it->y < h) {
 			dirtyClusters.insert(Vec2i(it->x, it->y));
@@ -525,6 +520,7 @@ void ClusterMap::evalCluster(const Vec2i &cluster) {
 			}
 		}
 	} // for each Field
+	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 }
 
 // ========================================================

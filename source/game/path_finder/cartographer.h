@@ -60,25 +60,37 @@ public:
 class Cartographer : public sigslot::has_slots<> {
 	/** Master annotated map, always correct */
 	AnnotatedMap *masterMap;
-	/** Team annotateded maps, 'foggy' */
-	//map< int, AnnotatedMap* > teamMaps;
-	/**  */
-	//AbstractMap *abstractMap;
-	ClusterMap *clusterMap;
-	/** The locations of each and every resource on the map */
-	map< const ResourceType*, vector< Vec2i > > resourceLocations;
 
-	typedef vector< pair<Vec2i, Vec2i> > AreaList;
-	map<const ResourceType*, AreaList> resDirtyAreas;
-	/* /* Inlfuence maps, for each team, describing distance to resources */
-	//map< int, map< const ResourceType*, TypeMap<float>* > > teamResourceMaps;
+	/*/* Team annotateded maps, 'foggy' */
+	//map< int, AnnotatedMap* > teamMaps;
+
+	/** The ClusterMap (Hierarchical map abstraction) */
+	ClusterMap *clusterMap;
+
+	typedef const ResourceType* rt_ptr;
+	typedef pair<Vec2i, Vec2i> PosPair;
+	typedef vector<PosPair> AreaList;
+
+	typedef map<rt_ptr, PatchMap<1>*> ResourceMaps;
+	typedef map<const Unit*, PatchMap<1>*> StoreMaps;
+
+	// Resources
+	/** The locations of each and every resource on the map */
+	map<rt_ptr, vector<Vec2i> > resourceLocations;
+
+	/** areas where resources have been depleted and updates are required */
+	map<rt_ptr, AreaList> resDirtyAreas;
 
 	/** Goal Maps for each tech & tileset resource */
-	map< const ResourceType*, PatchMap<1>* > resourceMaps;
-	
+	ResourceMaps resourceMaps;
+
+	StoreMaps storeMaps;
+
+	// Exploration
 	/** Exploration maps for each team */
 	map< int, ExplorationMap* > explorationMaps;
 
+	// A* stuff
 	NodeMap *nodeMap;
 	SearchEngine<NodeMap,GridNeighbours> *nmSearchEngine;
 
@@ -88,7 +100,15 @@ class Cartographer : public sigslot::has_slots<> {
 
 	void initResourceMap(const ResourceType *rt, PatchMap<1> *pMap);
 	void fixupResourceMap(const ResourceType *rt, const Vec2i &tl, const Vec2i &br);
+
+	PatchMap<1>* buildStoreMap(const Unit *unit);
+
+	// slots
 	void onResourceDepleted(Vec2i pos);
+	void onUnitBorn(Unit *unit);
+	void onUnitMoved(Unit *unit);
+	void onUnitMorphed(Unit *unit, const UnitType *type);
+	void onUnitDied(Unit *unit);
 
 	void maintainUnitVisibility(Unit *unit, bool add);
 
@@ -125,6 +145,14 @@ public:
 
 	PatchMap<1>* getResourceMap(const ResourceType* rt) {
 		return resourceMaps[rt];
+	}
+
+	PatchMap<1>* getStoreMap(const Unit *unit) {
+		StoreMaps::iterator it = storeMaps.find(unit);
+		if (it != storeMaps.end()) {
+			return it->second;
+		}
+		return buildStoreMap(unit);
 	}
 
 	ClusterMap* getClusterMap() const { return clusterMap; }

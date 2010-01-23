@@ -524,7 +524,7 @@ public:
 class StoreGoal : public PMap1Goal {
 public:
 	StoreGoal(const Unit *store) : PMap1Goal() {
-//		pMap = theWorld.getCartographer()->getStoreMap(store);
+		pMap = theWorld.getCartographer()->getStoreMap(store);
 	}
 };
 
@@ -541,14 +541,70 @@ public:
 TravelState RoutePlanner::findPathToStore(Unit *unit, const Unit *store) {
 	Vec2i target = store->getNearestOccupiedCell(unit->getPos());
 	
-	// Insert code here
-	
-	return findPathToLocation(unit, target);
+	UnitPath &path = *unit->getPath();
+	WaypointPath &wpPath = *unit->getWaypointPath();
+	StoreGoal goal(store);
 
-
+	// if at goal
+	if (goal(unit->getPos(), 0.f)) {
+		unit->setCurrSkill(SkillClass::STOP);
+		return TravelState::ARRIVED;
+	}
+	// route chache
+	if (!path.empty()) {
+		if (doRouteCache(unit) == TravelState::MOVING) {
+			return TravelState::MOVING;
+		}
+		path.clear();
+		wpPath.clear();
+	}
+	// try StoreSearch if close to target
+	if (unit->getPos().dist(target) < 50.f) {
+		if (customGoalSearch<StoreGoal>(goal, unit, target) == TravelState::MOVING) {
+			return TravelState::MOVING;
+		} else {
+			return TravelState::BLOCKED;
+		}
+	}
+	// Hierarchical Search
+	tSearchEngine->reset();
+	if (!findWaypointPath(unit, target, wpPath)) {
+		if (unit->getFaction()->isThisFaction()) {
+			theConsole.addLine("Destination unreachable? [Harvester-to-Store]");
+		}
+		return TravelState::IMPOSSIBLE;
+	}
+	IF_DEBUG_TEXTURES( collectWaypointPath(unit); )
+	assert(wpPath.size() > 1);
+	wpPath.pop();
+	IF_DEBUG_TEXTURES( clearOpenClosed(unit->getPos(), target); )
+	// cull destination and waypoints close to it
+	while (wpPath.size() > 1 && wpPath.back().dist(target) < 32.f) {
+		wpPath.pop_back();
+	}
+	// refine path, to at least 20 steps (or end of path)
+	AnnotatedMap *aMap = world->getCartographer()->getMasterMap();
+	aMap->annotateLocal(unit);
+	while (!wpPath.empty() && path.size() < 20) {
+		if (!refinePath(unit)) {
+			CONSOLE_LOG( "refinePath failed! [Harvester-to-Store]" )
+			aMap->clearLocalAnnotations(unit);
+			return TravelState::BLOCKED;
+		}
+	}
+	smoothPath(unit);
+	aMap->clearLocalAnnotations(unit);
+	IF_DEBUG_TEXTURES( collectPath(unit); )
+	if (attemptMove(unit)) {
+		return TravelState::MOVING;
+	}
+	CONSOLE_LOG( "Hierarchical refined path blocked ? valid ?!? [Harvester-to-Store]" )
+	unit->setCurrSkill(SkillClass::STOP);
+	return TravelState::INVALID;
 }
 
-TravelState RoutePlanner::resourceSearch(ResourceGoal &goal, Unit *unit, const Vec2i &target) {
+template <typename GoalType>
+TravelState RoutePlanner::customGoalSearch(GoalType &goal, Unit *unit, const Vec2i &target) {
 	UnitPath &path = *unit->getPath();
 	WaypointPath &wpPath = *unit->getWaypointPath();
 	const Vec2i &start = unit->getPos();
@@ -559,7 +615,7 @@ TravelState RoutePlanner::resourceSearch(ResourceGoal &goal, Unit *unit, const V
 
 	AnnotatedMap *aMap = world->getCartographer()->getMasterMap();
 	aMap->annotateLocal(unit);
-	AStarResult r = nsgSearchEngine->ASTAR_TO_RESOURCE(goal, moveCost, heuristic);
+	AStarResult r = nsgSearchEngine->aStar<GoalType,MoveCost,DiagonalDistance>(goal, moveCost, heuristic);
 	aMap->clearLocalAnnotations(unit);
 	if (r == AStarResult::COMPLETE) {
 		Vec2i pos = nsgSearchEngine->getGoalPos();
@@ -600,15 +656,17 @@ TravelState RoutePlanner::findPathToResource(Unit *unit, const Vec2i &targetPos,
 	}
 	// try ResourceSearch if close to target
 	if (unit->getPos().dist(targetPos) < 50.f) {
-		if (resourceSearch(goal, unit, targetPos) == TravelState::MOVING) {
+		if (customGoalSearch<ResourceGoal>(goal, unit, targetPos) == TravelState::MOVING) {
 			return TravelState::MOVING;
+		} else {
+			return TravelState::BLOCKED;
 		}
 	}
 	// Hierarchical Search
 	tSearchEngine->reset();
 	if (!findWaypointPath(unit, targetPos, wpPath)) {
 		if (unit->getFaction()->isThisFaction()) {
-			theConsole.addLine("Destination unreachable?");
+			theConsole.addLine("Destination unreachable? [Harvester-to-Resource]");
 		}
 		return TravelState::IMPOSSIBLE;
 	}
@@ -627,7 +685,7 @@ TravelState RoutePlanner::findPathToResource(Unit *unit, const Vec2i &targetPos,
 	aMap->annotateLocal(unit);
 	while (!wpPath.empty() && path.size() < 20) {
 		if (!refinePath(unit)) {
-			CONSOLE_LOG( "refinePath failed!" )
+			CONSOLE_LOG( "refinePath failed! [Harvester-to-Resource]" )
 			aMap->clearLocalAnnotations(unit);
 			return TravelState::BLOCKED;
 		}
@@ -638,7 +696,7 @@ TravelState RoutePlanner::findPathToResource(Unit *unit, const Vec2i &targetPos,
 	if (attemptMove(unit)) {
 		return TravelState::MOVING;
 	}
-	CONSOLE_LOG( "Hierarchical refined path blocked ? valid ?!?" )
+	CONSOLE_LOG( "Hierarchical refined path blocked ? valid ?!? [Harvester-to-Resource]" )
 	unit->setCurrSkill(SkillClass::STOP);
 	return TravelState::INVALID;
 }

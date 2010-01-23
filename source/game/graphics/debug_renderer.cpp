@@ -25,6 +25,9 @@ set<Vec2i>	RegionHilightCallback::cells;
 // =====================================================
 const ResourceType *ResourceMapOverlay::rt;
 
+const Unit* StoreMapOverlay::store = NULL;
+
+
 // =====================================================
 //  class PathFinderTextureCallback
 // =====================================================
@@ -90,7 +93,7 @@ list<Vec3f> DebugRenderer::waypoints;
 DebugRenderer::DebugRenderer() {
 	AAStarTextures = HAAStarOverlay = showVisibleQuad = 
 		captureVisibleQuad = regionHilights = 
-		teamSight = resourceMapOverlay = false;
+		teamSight = resourceMapOverlay = storeMapOverlay = false;
 }
 
 bool findResourceMapRes(string &res) {
@@ -107,10 +110,7 @@ bool findResourceMapRes(string &res) {
 }
 
 void DebugRenderer::init() {
-	AAStarTextures = true;
-	HAAStarOverlay = false;
-	resourceMapOverlay = true;
-	showVisibleQuad = captureVisibleQuad = regionHilights = teamSight = false;
+	HAAStarOverlay = true;
 	PathFinderTextureCallBack::debugField = Field::LAND;
 
 	ResourceMapOverlay::rt = NULL;
@@ -171,15 +171,22 @@ void DebugRenderer::commandLine(string &line) {
 		} else {
 			if ( val == "on" || val == "On" ) {
 				resourceMapOverlay = true;
+				storeMapOverlay = true;
 			} else if (val == "off" || val == "Off") {
 				resourceMapOverlay = false;
+				storeMapOverlay = false;
 			} else {
 				// else find resource
 				if (!findResourceMapRes(val)) {
 					theConsole.addLine("Error: value=" + val + " not valid.");
 					resourceMapOverlay = false;
+					storeMapOverlay = false;
 				}
 				resourceMapOverlay = true;
+				storeMapOverlay = true;
+			}
+			if (storeMapOverlay) {
+				StoreMapOverlay::store = theWorld.findUnitById(0);
 			}
 		}
 	} else if (key == "AssertClusterMap") {
@@ -406,6 +413,9 @@ void DebugRenderer::renderEffects(Quad2i &quad) {
 	}
 	if (resourceMapOverlay) {
 		renderResourceMapOverlay(quad);
+	}
+	if (storeMapOverlay) {
+		renderStoreMapOverlay(quad);
 	}
 }
 

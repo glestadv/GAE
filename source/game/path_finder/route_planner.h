@@ -71,7 +71,9 @@ private:
 
 	TravelState doRouteCache(Unit *unit);
 	TravelState doQuickPathSearch(Unit *unit, const Vec2i &target);
-	TravelState resourceSearch(ResourceGoal &goal, Unit *unit, const Vec2i &target);
+
+	template <typename GoalType>
+	TravelState customGoalSearch(GoalType &goal, Unit *unit, const Vec2i &target);
 
 	float quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
 	bool refinePath(Unit *unit);

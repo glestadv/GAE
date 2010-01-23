@@ -116,6 +116,36 @@ void AnnotatedMap::revealTile(const Vec2i &pos) {
 	// do a cascading update, but stop at any un-explored tiles...
 }
 
+//#define LOG_CLUSTER_DIRTYING(x) {}
+#define LOG_CLUSTER_DIRTYING(x) {cout << x;}
+
+struct MudFlinger {
+	ClusterMap *cm;
+
+	__forceinline void setDirty(const Vec2i &pos) {
+		Vec2i cluster = ClusterMap::cellToCluster(pos);
+		cm->setClusterDirty(cluster);
+		LOG_CLUSTER_DIRTYING( "MapMetrics changed @ pos = " << pos << endl )
+		cout << "\tCluster = " << cluster << " dirty\n";
+		int ymod = pos.y % Search::clusterSize;
+		if (ymod == 0) {
+			cm->setNorthBorderDirty(cluster);
+			LOG_CLUSTER_DIRTYING( "\tNorth border dirty\n" )
+		} else if (ymod == Search::clusterSize - 1) {
+			cm->setNorthBorderDirty(Vec2i(cluster.x, cluster.y + 1));
+			LOG_CLUSTER_DIRTYING( "\tSouth border dirty\n" )
+		}
+		int xmod = pos.x % Search::clusterSize;
+		if (xmod == 0) {
+			cm->setWestBorderDirty(cluster);
+			LOG_CLUSTER_DIRTYING( "\tWest border dirty\n" )
+		} else if (xmod == Search::clusterSize - 1) {
+			cm->setWestBorderDirty(Vec2i(cluster.x + 1, cluster.y));
+			LOG_CLUSTER_DIRTYING( "\tEast border dirty\n" )
+		}
+	}
+} mudFlinger;
+
 /** Update clearance data, when an obstactle is placed or removed from the map	*
   * @param pos the cell co-ordinates of the obstacle added/removed				*
   * @param size the size of the obstacle										*/
@@ -124,15 +154,22 @@ void AnnotatedMap::updateMapMetrics(const Vec2i &pos, const int size) {
 	assert(cellMap->isInside(pos.x + size - 1, pos.y + size - 1));
 	PROFILE_LVL2_START("Updating Map Metrics");
 
-	if ( eMap ) {
+	// need to throw mud on the ClusterMap
+	mudFlinger.cm = World::getInstance().getCartographer()->getClusterMap();	
 
+	if (eMap) {
 	}
+
 	// 1. re-evaluate the cells occupied (or formerly occupied)
-	for ( int i = size - 1; i >= 0 ; --i ) {
-		for ( int j = size - 1; j >= 0; --j ) {
+	for (int i = size - 1; i >= 0 ; --i) {
+		for (int j = size - 1; j >= 0; --j) {
 			Vec2i occPos = pos;
 			occPos.x += i; occPos.y += j;
+			CellMetrics old = metrics[occPos];
 			computeClearances(occPos);
+			if (old != metrics[occPos]) {
+				mudFlinger.setDirty(occPos);
+			}
 		}
 	}
 	// 2. propegate changes...
@@ -149,49 +186,49 @@ void AnnotatedMap::cascadingUpdate(const Vec2i &pos, const int size,  const Fiel
 	leftList = &leftList1;
 	aboveList = &aboveList1;
 	// both the left and above lists need to be sorted, bigger values first (right->left, bottom->top)
-	for ( int i = size - 1; i >= 0; --i ) {
+	for (int i = size - 1; i >= 0; --i) {
 		// Check if positions are on map, (the '+i' components are along the sides of the building/object, 
 		// so we assume they are ok). If so, list them
-		if ( pos.x-1 >= 0 ) {
+		if (pos.x-1 >= 0) {
 			leftList->push_back(Vec2i(pos.x-1,pos.y+i));
 		}
-		if ( pos.y-1 >= 0 ) {
+		if (pos.y-1 >= 0) {
 			aboveList->push_back(Vec2i(pos.x+i,pos.y-1));
 		}
 	}
 	// the cell to the nothwest...
 	Vec2i *corner = NULL;
 	Vec2i cornerHolder(pos.x - 1, pos.y - 1);
-	if ( pos.x - 1 >= 0 && pos.y - 1 >= 0 ) {
+	if (pos.x - 1 >= 0 && pos.y - 1 >= 0) {
 		corner = &cornerHolder;
 	}
-	while ( !leftList->empty() || !aboveList->empty() || corner ) {
+	while (!leftList->empty() || !aboveList->empty() || corner) {
 		// the left and above lists for the next loop iteration
 		list<Vec2i> *newLeftList, *newAboveList;
 		newLeftList = leftList == &leftList1 ? &leftList2 : &leftList1;
 		newAboveList = aboveList == &aboveList1 ? &aboveList2 : &aboveList1;
-		if ( !leftList->empty() ) {
-			for ( VLIt it = leftList->begin(); it != leftList->end(); ++it ) {
-				if ( updateCell(*it, field) &&  it->x - 1 >= 0 ) { 
+		if (!leftList->empty()) {
+			for (VLIt it = leftList->begin(); it != leftList->end(); ++it) {
+				if (updateCell(*it, field) &&  it->x - 1 >= 0) { 
 					// if we updated and there is a cell to the left, add it to
 					newLeftList->push_back(Vec2i(it->x-1,it->y)); // the new left list
 				}
 			}
 		}
-		if ( !aboveList->empty() ) {
-			for ( VLIt it = aboveList->begin(); it != aboveList->end(); ++it ) {
-				if ( updateCell(*it, field) && it->y - 1 >= 0 ) {
+		if (!aboveList->empty()) {
+			for (VLIt it = aboveList->begin(); it != aboveList->end(); ++it) {
+				if (updateCell(*it, field) && it->y - 1 >= 0) {
 					newAboveList->push_back(Vec2i(it->x,it->y-1));
 				}
 			}
 		}
-		if ( corner ) {
+		if (corner) {
 			// Deal with the corner...
-			if ( updateCell(*corner, field) ) {
+			if (updateCell(*corner, field)) {
 				int x = corner->x, y  = corner->y;
-				if ( x - 1 >= 0 ) {
+				if (x - 1 >= 0) {
 					newLeftList->push_back(Vec2i(x-1,y));
-					if ( y - 1 >= 0 ) {
+					if (y - 1 >= 0) {
 						*corner = Vec2i(x-1,y-1);
 					} else {
 						corner = NULL;
@@ -199,7 +236,7 @@ void AnnotatedMap::cascadingUpdate(const Vec2i &pos, const int size,  const Fiel
 				} else {
 					corner = NULL;
 				}
-				if ( y - 1 >= 0 ) { 
+				if (y - 1 >= 0) { 
 					newAboveList->push_back(Vec2i(x,y-1));
 				}
 			} else {
@@ -215,37 +252,23 @@ void AnnotatedMap::cascadingUpdate(const Vec2i &pos, const int size,  const Fiel
 
 /** cascadingUpdate() helper */
 bool AnnotatedMap::updateCell(const Vec2i &pos, const Field field) {
-	if ( field == Field::COUNT ) { // permanent annotation, update all
-		if ( eMap && !eMap->isExplored(Map::toTileCoords(pos)) ) { 
+	if (field == Field::COUNT) { // permanent annotation, update all
+		//if (eMap && !eMap->isExplored(Map::toTileCoords(pos))) { 
 			// if not master map, stop if cells are unexplored
-			return false;
-		}
+		//	return false;
+		//}
 		CellMetrics old = metrics[pos];
 		computeClearances(pos);
-		if ( old != metrics[pos] ) {
-			ClusterMap *clusterMap = World::getInstance().getCartographer()->getClusterMap();
-			Vec2i cluster = ClusterMap::cellToCluster(pos);
-			clusterMap->setClusterDirty(cluster);
-			int ymod = pos.y % Search::clusterSize;
-			if (ymod == 0) {
-				clusterMap->setNorthBorderDirty(cluster);
-			} else if (ymod == Search::clusterSize - 1) {
-				clusterMap->setNorthBorderDirty(Vec2i(cluster.x, cluster.y + 1));
-			}
-			int xmod = pos.x % Search::clusterSize;
-			if (xmod == 0) {
-				clusterMap->setWestBorderDirty(cluster);
-			} else if ( xmod == Search::clusterSize - 1) {
-				clusterMap->setWestBorderDirty(Vec2i(cluster.x + 1, cluster.y));
-			}
+		if (old != metrics[pos]) {
+			mudFlinger.setDirty(pos);
 			return true;
 		}
 	} else { // local annotation, only check field, store original clearances
 		uint32 old = metrics[pos].get(field);
-		if ( old ) {
+		if (old) {
 			computeClearance(pos, field);
-			if ( old > metrics[pos].get(field) ) {
-				if ( localAnnt.find(pos) == localAnnt.end() ) {
+			if (old > metrics[pos].get(field)) {
+				if (localAnnt.find(pos) == localAnnt.end()) {
 					localAnnt[pos] = old; // was original clearance
 				}
 				return true;

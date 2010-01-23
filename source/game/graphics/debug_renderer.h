@@ -55,14 +55,12 @@ class RegionHilightCallback {
 public:
 	static set<Vec2i> cells;
 
-	Vec4f operator()( const Vec2i &cell ) {
-		Vec4f colour(0.f, 0.f, 1.f, 0.f);
-		if ( cells.find(cell) == cells.end() ) {
-			colour.w = 0.f;
-		} else {
-			colour.w = 0.6f;
+	bool operator()(const Vec2i &cell, Vec4f &colour) {
+		if (cells.find(cell) == cells.end()) {
+			return false;
 		}
-		return colour;
+		colour = Vec4f(0.f, 0.f, 1.f, 0.6f);
+		return true;
 	}
 };
 
@@ -71,37 +69,32 @@ public:
 	static set<Vec2i> quadSet;
 	static Vec4f colour;
 
-	Vec4f operator() ( const Vec2i &cell ) {
-		if ( quadSet.find( cell ) == quadSet.end() ) {
-			colour.w = 0.f;
-		} else {
-			colour.w = 0.6f;
+	bool operator()(const Vec2i &cell, Vec4f &colour) {
+		if (quadSet.find(cell) == quadSet.end()) {
+			return false;
 		}
-		return Vec4f(colour);
+		colour = this->colour;
+		return true;
 	}
 };
 
 class TeamSightColourCallback {
 public:
-	Vec4f operator()( const Vec2i &cell ) {
-		Vec4f colour(0.f);
+	bool operator()(const Vec2i &cell, Vec4f &colour) {
 		const Vec2i &tile = Map::toTileCoords(cell);
 		int vis = theWorld.getCartographer()->getTeamVisibility(theWorld.getThisTeamIndex(), tile);
-		if ( !vis ) {
-			colour.x = 1.0f;
-			colour.w = 0.1f;
-		} else {
-			colour.z = 1.0f;
-			switch ( vis ) {
-				case 1:  colour.w = 0.05f;	break;
-				case 2:  colour.w = 0.1f;	break;
-				case 3:  colour.w = 0.15f;	break;
-				case 4:  colour.w = 0.2f;	break;
-				case 5:  colour.w = 0.25f;	break;
-				default: colour.w = 0.3f;
-			}
+		if (!vis) {
+			return false;
 		}
-		return colour;
+		colour = Vec4f(0.f, 0.f, 1.f, 0.3f);
+		switch (vis) {
+			case 1:  colour.w = 0.05f;	break;
+			case 2:  colour.w = 0.1f;	break;
+			case 3:  colour.w = 0.15f;	break;
+			case 4:  colour.w = 0.2f;	break;
+			case 5:  colour.w = 0.25f;	break;
+		}
+		return true;
 	}
 };
 
@@ -110,20 +103,21 @@ public:
 	static set<Vec2i> entranceCells;
 	static set<Vec2i> pathCells;
 
-	Vec4f operator()( const Vec2i &cell ) {
+	bool operator()(const Vec2i &cell, Vec4f &colour) {
 		const int &clusterSize = Search::clusterSize;
 		if ( cell.x % clusterSize == clusterSize - 1 
 		|| cell.y % clusterSize == clusterSize - 1  ) {
 			if ( entranceCells.find(cell) != entranceCells.end() ) {
-				return Vec4f(0.f, 1.f, 0.f, 0.7f); // entrance
+				colour = Vec4f(0.f, 1.f, 0.f, 0.7f); // entrance
 			} else {
-				return Vec4f(1.f, 0.f, 0.f, 0.7f);  // border
+				colour = Vec4f(1.f, 0.f, 0.f, 0.7f);  // border
 			}
 		} else if ( pathCells.find(cell) != pathCells.end() ) { // intra-cluster edge
-			return Vec4f(0.f, 0.f, 1.f, 0.7f);
+			colour = Vec4f(0.f, 0.f, 1.f, 0.7f);
 		} else {
-			return Vec4f(0.f, 0.f, 0.f, 0.f); // nothing interesting
+			return false; // nothing interesting
 		}
+		return true;
 	}
 };
 
@@ -131,13 +125,27 @@ class ResourceMapOverlay {
 public:
 	static const ResourceType *rt;
 
-	Vec4f operator()(const Vec2i &cell) {
+	bool operator()(const Vec2i &cell, Vec4f &colour) {
 		PatchMap<1> *pMap = theWorld.getCartographer()->getResourceMap(rt);
-		if (pMap && pMap->getInfluence(cell) == 1) {
-			return Vec4f(1.f, 1.f, 0.f, 0.7f);
-		} else {
-			return Vec4f(1.f, 1.f, 1.f, 0.f);
+		if (pMap && pMap->getInfluence(cell)) {
+			colour = Vec4f(1.f, 1.f, 0.f, 0.7f);
+			return true;
 		}
+		return false;
+	}
+};
+
+class StoreMapOverlay {
+public:
+	static const Unit *store;
+
+	bool operator()(const Vec2i &cell, Vec4f &colour) {
+		PatchMap<1> *pMap = theWorld.getCartographer()->getStoreMap(store);
+		if (pMap && pMap->getInfluence(cell)) {
+			colour = Vec4f(0.f, 1.f, 0.3f, 0.7f);
+			return true;
+		}
+		return false;
 	}
 };
 
@@ -157,11 +165,11 @@ public:
 	void commandLine(string &line);
 
 	bool AAStarTextures, HAAStarOverlay, showVisibleQuad, captureVisibleQuad,
-		regionHilights, teamSight, resourceMapOverlay;
+		regionHilights, teamSight, resourceMapOverlay, storeMapOverlay;
 
 private:
-	template< typename CellTextureCallback >
-	void renderCellTextures ( Quad2i &visibleQuad ) {
+	template<typename CellTextureCallback>
+	void renderCellTextures(Quad2i &visibleQuad) {
 		const Rect2i mapBounds(0, 0, theMap.getTileW()-1, theMap.getTileH()-1);
 		float coordStep= theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
 		assertGl();
@@ -209,9 +217,9 @@ private:
 
 	} // renderCellTextures ()
 
-	template< typename CellColourCallback >
-	void renderCellOverlay ( Quad2i &visibleQuad ) {
-		const Rect2i mapBounds( 0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1 );
+	template<typename CellColourCallback>
+	void renderCellOverlay(Quad2i &visibleQuad) {
+		const Rect2i mapBounds(0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1);
 		float coordStep = theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
 		Vec4f colour;
 		assertGl();
@@ -230,28 +238,30 @@ private:
 			cx = pos.x * 2;
 			cy = pos.y * 2;
 			if ( mapBounds.isInside( pos ) ) {
-				Tile *tc00= theMap.getTile( pos.x, pos.y ),		*tc10= theMap.getTile( pos.x+1, pos.y ),
-					 *tc01= theMap.getTile( pos.x, pos.y+1 ),	*tc11= theMap.getTile( pos.x+1, pos.y+1 );
+				Tile *tc00= theMap.getTile(pos.x, pos.y),	*tc10= theMap.getTile(pos.x+1, pos.y),
+					 *tc01= theMap.getTile(pos.x, pos.y+1),	*tc11= theMap.getTile(pos.x+1, pos.y+1);
 				Vec3f tl = tc00->getVertex(),	tr = tc10->getVertex(),
 					  bl = tc01->getVertex(),	br = tc11->getVertex(); 
-				tl.y += 0.25f; tr.y += 0.25f; bl.y += 0.25f; br.y += 0.25f;
+				tl.y += 0.1f; tr.y += 0.1f; bl.y += 0.1f; br.y += 0.1f;
 				Vec3f tc = tl + (tr - tl) / 2,	ml = tl + (bl - tl) / 2,	mr = tr + (br - tr) / 2,
 					  mc = ml + (mr - ml) / 2,	bc = bl + (br - bl) / 2;
 
-				colour = callback( Vec2i(cx,cy ) );
-				renderCellOverlay( colour, tc00->getNormal(), tl, tc, mc, ml );
-				colour = callback( Vec2i(cx+1, cy) );
-				renderCellOverlay( colour, tc00->getNormal(), tc, tr, mr, mc );
-				colour = callback( Vec2i(cx, cy + 1) );
-				renderCellOverlay( colour, tc00->getNormal(), ml, mc, bc, bl );
-				colour = callback( Vec2i(cx + 1, cy + 1) );
-				renderCellOverlay( colour, tc00->getNormal(), mc, mr, br, bc );
+				if (callback(Vec2i(cx,cy), colour)) {
+					renderCellOverlay(colour, tc00->getNormal(), tl, tc, mc, ml);
+				}
+				if (callback(Vec2i(cx+1, cy), colour)) {
+					renderCellOverlay(colour, tc00->getNormal(), tc, tr, mr, mc);
+				}
+				if (callback(Vec2i(cx, cy + 1), colour)) {
+					renderCellOverlay(colour, tc00->getNormal(), ml, mc, bc, bl);
+				}
+				if (callback(Vec2i(cx + 1, cy + 1), colour)) {
+					renderCellOverlay(colour, tc00->getNormal(), mc, mr, br, bc);
+				}
 			}
 		}
 		//Restore
 		glPopAttrib();
-		//assert
-		glGetError();	//remove when first mtex problem solved
 		assertGl();
 	}
 
@@ -270,7 +280,11 @@ private:
 	void renderResourceMapOverlay(Quad2i &visibleQuad) {
 		renderCellOverlay<ResourceMapOverlay>(visibleQuad);
 	}
-
+	void renderStoreMapOverlay(Quad2i &visibleQuad) {
+		if (StoreMapOverlay::store) {
+			renderCellOverlay<StoreMapOverlay>(visibleQuad);
+		}
+	}
 	void renderCellTextured(const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
 				const Vec3f &v1, const Vec3f &v2, const Vec3f &v3);
 	void renderCellOverlay(const Vec4f colour,  const Vec3f &norm, const Vec3f &v0, 

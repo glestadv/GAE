@@ -416,12 +416,18 @@ public:
 	}
 
 	// signals, should prob replace that observer stuff above
-	
-	sigslot::signal1<Unit*>	Died;
-	//sigslot::signal1<Unit*>	Created;
-	//sigslot::signal1<Unit*>	Born;
+	typedef Unit* u_ptr;
+	typedef const UnitType* ut_ptr;
+	typedef sigslot::signal1<u_ptr>			UnitSignal;
+	typedef sigslot::signal2<u_ptr, Vec2i>	UnitPosSignal;
+	typedef sigslot::signal2<u_ptr, ut_ptr> MorphSignal;
 
-	//sigslot::signal2<Unit*, const UnitType*> Morphed;
+	UnitSignal		Created;	 /**< fires when a unit is created		   */
+	UnitSignal		Born;		/**< fires when a unit is 'born'		  */
+	UnitPosSignal	Moving;	   /**< fires just before a unit is moved	 */
+	UnitPosSignal	Moved;	  /**< fires after a unit has moved			*/
+	MorphSignal		Morphed; /**<  */
+	UnitSignal		Died;	/**<  */
 
 	//other
 	void resetHighlight()								{highlight= 1.f;}
