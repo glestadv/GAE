@@ -187,7 +187,7 @@ const TechTree *AiInterface::getTechTree(){
 bool AiInterface::getNearestSightedResource(const ResourceType *rt, const Vec2i &pos, Vec2i &resultPos){
 	float tmpDist;
 
-	float nearestDist= infinity;
+	float nearestDist = numeric_limits<float>::infinity();
 	bool anyResource= false;
 
 	const Map *map= world->getMap();

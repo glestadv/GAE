@@ -1,8 +1,8 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Marti√±o Figueroa,
-//				  2008 Jaagup Rep√§n <jrepan@gmail.com>,
+//	Copyright (C) 2001-2008 MartiÒo Figueroa,
+//				  2008 Jaagup Rep‰n <jrepan@gmail.com>,
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //				  2009 James McCulloch <silnarm@gmail.com>
 //
@@ -246,20 +246,21 @@ void Tile::write(NetworkDataBuffer &buf) const {
 const int Map::cellScale = 2;
 const int Map::mapScale = 2;
 
-Map::Map() :
-		title(),
-		waterLevel(0.f),
-		heightFactor(0.f),
-		w(0),
-		h(0),
-		tileW(0),
-		tileH(0),
-		maxPlayers(0),
-		cells(NULL),
-		tiles(NULL),
-		startLocations(NULL),
-		surfaceHeights(NULL),
-		earthquakes() {
+Map::Map() 
+		: title()
+		, waterLevel(0.f)
+		, heightFactor(0.f)
+		, avgHeight(0.f)
+		, w(0)
+		, h(0)
+		, tileW(0)
+		, tileH(0)
+		, maxPlayers(0)
+		, cells(NULL)
+		, tiles(NULL)
+		, startLocations(NULL)
+		, surfaceHeights(NULL)
+		, earthquakes() {
 
 	// If this is expanded, maintain Tile::read() and write()
 	assert(Tileset::objCount < 256);
@@ -415,8 +416,10 @@ void Map::init() {
 	computeInterpolatedHeights();
 	computeNearSubmerged();
 	computeCellColors();
-	setCellTypes ();
+	setCellTypes();
+	calcAvgAltitude();
 }
+
 void Map::setCellTypes () {
 	for ( int y = 0; y < getH(); ++y ) {
 		for ( int x = 0; x < getW(); ++x ) {
@@ -440,6 +443,17 @@ void Map::setCellType ( Vec2i pos )
       cell->setType ( SurfaceType::LAND );
 }
 */
+void Map::calcAvgAltitude() {
+	double sum = 0.0;
+	for (int y=0; y < getTileH(); ++y) {
+		for (int x=0; x < getTileW(); ++x) {
+			sum += getTile(x,y)->getHeight();
+		}
+	}
+	avgHeight = (float)(sum / (getTileH() * getTileW()));
+	cout << "average map height = " << avgHeight << endl;
+}
+
 void Map::read(NetworkDataBuffer &buf) {
 
 	for(int y = 0; y < tileH; ++y) {
@@ -1233,7 +1247,7 @@ void Map::computeNearSubmerged(){
 					|| (x - 1 >= 0		 && y - 1 >= 0		 && getSubmerged(getTile(x - 1, y - 1)));
 			*/
 
-			// Marti√±o's version: slower, but more compact (altered from original)
+			// MartiÒo's version: slower, but more compact (altered from original)
 			bool anySubmerged = false;
 			for(int xoff = -1; xoff <= 2 && !anySubmerged; ++xoff) {
 				for(int yoff = -1; yoff <= 2 && !anySubmerged; ++yoff) {
@@ -1299,20 +1313,6 @@ PosCircularIteratorSimple::PosCircularIteratorSimple(const Map &map, const Vec2i
 		map(map), center(center), radius(radius), pos(center - Vec2i(radius + 1, radius)) {
 }
 
-// =====================================================
-// 	class PosQuadIterator
-// =====================================================
-
-PosQuadIterator::PosQuadIterator(const Quad2i &quad, int step) :
-		quad(quad),
-		step(step),
-		boundingRect(quad.computeBoundingRect()),
-		pos(boundingRect.p[0]) {
-	--pos.x;
-	pos.x = (pos.x / step) * step;
-	pos.y = (pos.y / step) * step;
-}
-
 
 //////////////////////////////////////////////////////////////////
 // Cut Here 
@@ -1320,7 +1320,7 @@ PosQuadIterator::PosQuadIterator(const Quad2i &quad, int step) :
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2008 Jaagup Rep√§n <jrepan@gmail.com>,
+//	Copyright (C) 2008 Jaagup Rep‰n <jrepan@gmail.com>,
 //				     2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under

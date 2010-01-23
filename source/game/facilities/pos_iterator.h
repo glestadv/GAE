@@ -18,7 +18,7 @@
 
 namespace Glest { namespace Game { namespace Util {
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 
 struct PosData {
 	int step;

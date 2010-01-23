@@ -21,9 +21,9 @@ namespace Shared { namespace Xml {
 
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Quad2i;
-using Shared::Graphics::Vec3f;
-using Shared::Graphics::Vec2f;
+using Shared::Math::Quad2i;
+using Shared::Math::Vec3f;
+using Shared::Math::Vec2f;
 using Shared::Xml::XmlNode;
 
 class Config;
@@ -107,7 +107,6 @@ public:
 
     //other
     void update();
-    Quad2i computeVisibleQuad() const;
 	void switchState();
 
 	void centerXZ(float x, float z);

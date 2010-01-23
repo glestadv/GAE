@@ -83,6 +83,7 @@ enum UserCommand {
 	ucGuard,
 	ucFollow,
 	ucPatrol,
+	ucCaptureFrustum,
 	ucCount
 };
 

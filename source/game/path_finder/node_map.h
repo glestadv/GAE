@@ -17,7 +17,7 @@
 #include "vec.h"
 #include "world.h"
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 using Shared::Platform::uint16;
 using Shared::Platform::uint32;
 

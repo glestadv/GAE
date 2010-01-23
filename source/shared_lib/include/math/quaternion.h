@@ -19,7 +19,7 @@
 
 using namespace std;
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Math {
 
 // =====================================================
 //	class AxisAngle

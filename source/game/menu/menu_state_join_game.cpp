@@ -95,6 +95,8 @@ MenuStateJoinGame::MenuStateJoinGame(Program &program, MainMenu *mainMenu, bool 
 	} else {
 		labelServerIp.setText(config.getNetServerIp() + "_");
 	}
+
+	msgBox = NULL;
 }
 
 void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
@@ -124,6 +126,12 @@ void MenuStateJoinGame::mouseClick(int x, int y, MouseButton mouseButton) {
 		soundRenderer.playFx(coreData.getClickSoundA());
 		mainMenu->setState(new MenuStateRoot(program, mainMenu));
 
+	} else if (msgBox) {
+		if (msgBox->mouseClick(x, y)) {
+			soundRenderer.playFx(coreData.getClickSoundC());
+			delete msgBox;
+			msgBox = NULL;
+		}
 	//connect
 	} else if (buttonConnect.mouseClick(x, y)) {
 		ClientInterface* clientInterface = networkManager.getClientInterface();
@@ -143,6 +151,11 @@ void MenuStateJoinGame::mouseMove(int x, int y, const MouseState &ms) {
 	buttonReturn.mouseMove(x, y);
 	buttonConnect.mouseMove(x, y);
 	listBoxServerType.mouseMove(x, y);
+
+	if (msgBox != NULL) {
+		msgBox->mouseMove(x, y);
+		return;
+	}
 
 	//hide-show options depending on the selection
 	if (listBoxServers.getSelectedItemIndex() == newServerIndex) {
@@ -167,6 +180,10 @@ void MenuStateJoinGame::render() {
 		renderer.renderLabel(&labelServerIp);
 	} else {
 		renderer.renderListBox(&listBoxServers);
+	}
+
+	if (msgBox != NULL) {
+		renderer.renderMessageBox(msgBox);
 	}
 }
 
@@ -259,15 +276,24 @@ void MenuStateJoinGame::keyPress(char c) {
 void MenuStateJoinGame::connectToServer() {
 	ClientInterface* clientInterface = NetworkManager::getInstance().getClientInterface();
 	Config& config = Config::getInstance();
+	Lang &lang = Lang::getInstance();
 	Ip serverIp(labelServerIp.getText());
+	
+	try {
+		clientInterface->connect(serverIp, GameConstants::serverPort);
 
-	clientInterface->connect(serverIp, GameConstants::serverPort);
+		//save server ip
+		config.setNetServerIp(serverIp.getString());
+		config.save();
+	} catch(exception &e) {
+		// tell the user
+		msgBox = new GraphicMessageBox();
+		msgBox->init(lang.get("UnableToJoin"), lang.get("Ok"));
+		printf("\n%s", e.what());
+	}
+
 	labelServerIp.setText(serverIp.getString() + '_');
 	labelInfo.setText("");
-
-	//save server ip
-	config.setNetServerIp(serverIp.getString());
-	config.save();
 }
 
 }}//end namespace

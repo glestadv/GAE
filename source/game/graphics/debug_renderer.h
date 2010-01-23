@@ -1,3 +1,13 @@
+// ==============================================================
+//	This file is part of The Glest Advanced Engine
+//
+//	Copyright (C) 2009	James McCulloch <silnarm at gmail>
+//
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
+//	License, or (at your option) any later version
+// ==============================================================
 
 #if ! _GAE_DEBUG_EDITION_
 #	error debug_renderer.h included without _GAE_DEBUG_EDITION_
@@ -16,6 +26,7 @@
 #include "pixmap.h"
 #include "texture.h"
 #include "graphics_factory_gl.h"
+#include "scene_culler.h"
 #include "game.h"
 
 using namespace Shared::Graphics;
@@ -37,29 +48,40 @@ public:
 	static void loadPFDebugTextures ();
 	static Texture2D *PFDebugTextures[26];
 
-	Texture2DGl* operator() ( const Vec2i &cell ) {
+	Texture2DGl* operator()(const Vec2i &cell) {
 		int ndx = -1;
-		if ( pathStart == cell ) ndx = 9;
-		else if ( pathDest == cell ) ndx = 10;
-		else if ( pathSet.find(cell) != pathSet.end() ) ndx = 14; // on path
-		else if ( closedSet.find(cell) != closedSet.end() ) ndx = 16; // closed nodes
-		else if ( openSet.find(cell) != openSet.end() ) ndx = 15; // open nodes
-		else if ( localAnnotations.find(cell) != localAnnotations.end() ) // local annotation
+		if (pathStart == cell) ndx = 9;
+		else if (pathDest == cell) ndx = 10;
+		else if (pathSet.find(cell) != pathSet.end()) ndx = 14; // on path
+		else if (closedSet.find(cell) != closedSet.end()) ndx = 16; // closed nodes
+		else if (openSet.find(cell) != openSet.end()) ndx = 15; // open nodes
+		else if (localAnnotations.find(cell) != localAnnotations.end()) // local annotation
 			ndx = 17 + localAnnotations.find(cell)->second;
 		else ndx = theWorld.getCartographer()->getMasterMap()->metrics[cell].get(debugField); // else use cell metric for debug field
 		return (Texture2DGl*)PFDebugTextures[ndx];
    }
 };
 
+class GridTextureCallback {
+public:
+	static Texture2D *tex;
+	Texture2DGl* operator()(const Vec2i &cell) {
+		return (Texture2DGl*)tex;
+   }
+};
+
 class RegionHilightCallback {
 public:
-	static set<Vec2i> cells;
+	static set<Vec2i> blueCells, greenCells;
 
 	bool operator()(const Vec2i &cell, Vec4f &colour) {
-		if (cells.find(cell) == cells.end()) {
+		if (blueCells.find(cell) != blueCells.end()) {
+			colour = Vec4f(0.f, 0.f, 1.f, 0.6f);
+		} else if (greenCells.find(cell) != greenCells.end()) {
+			colour = Vec4f(0.f, 1.f, 0.f, 0.6f);
+		} else {
 			return false;
 		}
-		colour = Vec4f(0.f, 0.f, 1.f, 0.6f);
 		return true;
 	}
 };
@@ -169,7 +191,7 @@ public:
 
 private:
 	template<typename CellTextureCallback>
-	void renderCellTextures(Quad2i &visibleQuad) {
+	void renderCellTextures(SceneCuller &culler) {
 		const Rect2i mapBounds(0, 0, theMap.getTileW()-1, theMap.getTileH()-1);
 		float coordStep= theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
 		assertGl();
@@ -180,11 +202,11 @@ private:
 		glDisable(GL_ALPHA_TEST);
 		glActiveTexture( GL_TEXTURE0 );
 
-		Quad2i scaledQuad = visibleQuad / Map::cellScale;
-		PosQuadIterator pqi( scaledQuad );
 		CellTextureCallback callback;
-		while ( pqi.next() ) {
-			const Vec2i &pos= pqi.getPos();
+
+		SceneCuller::iterator it = culler.tile_begin();
+		for ( ; it != culler.tile_end(); ++it ) {
+			const Vec2i &pos= *it;
 			int cx, cy;
 			cx = pos.x * 2;
 			cy = pos.y * 2;
@@ -217,9 +239,9 @@ private:
 
 	} // renderCellTextures ()
 
-	template<typename CellColourCallback>
-	void renderCellOverlay(Quad2i &visibleQuad) {
-		const Rect2i mapBounds(0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1);
+	template< typename CellOverlayColourCallback >
+	void renderCellOverlay(SceneCuller &culler) {
+		const Rect2i mapBounds( 0, 0, theMap.getTileW() - 1, theMap.getTileH() - 1 );
 		float coordStep = theWorld.getTileset()->getSurfaceAtlas()->getCoordStep();
 		Vec4f colour;
 		assertGl();
@@ -229,11 +251,12 @@ private:
 		glDisable( GL_ALPHA_TEST );
 		glActiveTexture( GL_TEXTURE0 );
 		glDisable( GL_TEXTURE_2D );
-		Quad2i scaledQuad = visibleQuad / Map::cellScale;
-		PosQuadIterator pqi( scaledQuad );
-		CellColourCallback callback;
-		while ( pqi.next() ){
-			const Vec2i &pos = pqi.getPos();
+
+		CellOverlayColourCallback callback;
+
+		SceneCuller::iterator it = culler.tile_begin();
+		for ( ; it != culler.tile_end(); ++it ) {
+			const Vec2i &pos= *it;
 			int cx, cy;
 			cx = pos.x * 2;
 			cy = pos.y * 2;
@@ -265,24 +288,24 @@ private:
 		assertGl();
 	}
 
-	void renderClusterOverlay( Quad2i &visibleQuad ) {
-		renderCellOverlay<PathfinderClusterOverlay>(visibleQuad);
+	void renderClusterOverlay(SceneCuller &culler) {
+		renderCellOverlay<PathfinderClusterOverlay>(culler);
 	}
-	void renderRegionHilight(Quad2i &visibleQuad) {
-		renderCellOverlay<RegionHilightCallback>(visibleQuad);
+	void renderRegionHilight(SceneCuller &culler) {
+		renderCellOverlay<RegionHilightCallback>(culler);
 	}
-	void renderCapturedQuad( Quad2i &visibleQuad ) {
-		renderCellOverlay< VisibleQuadColourCallback >( visibleQuad );
+	void renderCapturedQuad(SceneCuller &culler) {
+		renderCellOverlay<VisibleQuadColourCallback>(culler);
 	}
-	void renderTeamSightOverlay(Quad2i &visibleQuad) {
-		renderCellOverlay<TeamSightColourCallback>(visibleQuad);
+	void renderTeamSightOverlay(SceneCuller &culler) {
+		renderCellOverlay<TeamSightColourCallback>(culler);
 	}
-	void renderResourceMapOverlay(Quad2i &visibleQuad) {
-		renderCellOverlay<ResourceMapOverlay>(visibleQuad);
+	void renderResourceMapOverlay(SceneCuller &culler) {
+		renderCellOverlay<ResourceMapOverlay>(culler);
 	}
-	void renderStoreMapOverlay(Quad2i &visibleQuad) {
+	void renderStoreMapOverlay(SceneCuller &culler) {
 		if (StoreMapOverlay::store) {
-			renderCellOverlay<StoreMapOverlay>(visibleQuad);
+			renderCellOverlay<StoreMapOverlay>(culler);
 		}
 	}
 	void renderCellTextured(const Texture2DGl *tex, const Vec3f &norm, const Vec3f &v0, 
@@ -292,6 +315,9 @@ private:
 	void renderArrow(const Vec3f &pos1, const Vec3f &pos2, const Vec3f &color, float width);
 
 	static list<Vec3f> waypoints;
+	void renderGrid(SceneCuller &culler) {
+		renderCellTextures<GridTextureCallback>(culler);
+	}
 
 	void renderPathOverlay();
 	void renderIntraClusterEdges(const Vec2i &cluster, CardinalDir dir = CardinalDir::COUNT);
@@ -301,8 +327,8 @@ public:
 	static void addWaypoint(Vec3f v)	{ waypoints.push_back(v);	}
 
 	bool willRenderSurface() const { return AAStarTextures; }
-	void renderSurface(Quad2i &quad) { renderCellTextures< PathFinderTextureCallBack >(quad); }
-	void renderEffects(Quad2i &quad);
+	void renderSurface(SceneCuller &culler) { renderCellTextures<PathFinderTextureCallBack>(culler); }
+	void renderEffects(SceneCuller &culler);
 };
 
 }}

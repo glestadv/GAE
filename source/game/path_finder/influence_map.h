@@ -20,7 +20,7 @@ namespace Glest { namespace Game { namespace Search {
 
 using Shared::Platform::uint32;
 
-typedef Shared::Graphics::Vec2i Point;
+typedef Shared::Math::Vec2i Point;
 
 struct Rectangle {
 	Rectangle () : x(0), y(0), w(0), h(0) {}

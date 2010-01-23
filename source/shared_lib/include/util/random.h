@@ -16,7 +16,8 @@
 #include <cassert>
 #include "vec.h"
 
-using namespace Shared::Graphics;
+using namespace Shared::Math;
+
 namespace Shared { namespace Util {
 
 // =====================================================

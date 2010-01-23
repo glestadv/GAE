@@ -23,7 +23,7 @@
 #include <list>
 #include <limits>
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 
 using namespace std;
 using namespace Shared::Platform;

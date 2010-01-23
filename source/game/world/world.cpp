@@ -687,9 +687,9 @@ void World::tick() {
 	}
 }
 
-Unit* World::findUnitById(int id) {
+Unit* World::findUnitById(int id) const {
 	for (int i = 0; i < getFactionCount(); ++i) {
-		Faction* faction = getFaction(i);
+		const Faction* faction = getFaction(i);
 
 		for (int j = 0; j < faction->getUnitCount(); ++j) {
 			Unit* unit = faction->getUnit(j);
@@ -788,7 +788,7 @@ void World::moveUnitCells(Unit *unit) {
 
 //returns the nearest unit that can store a type of resource given a position and a faction
 Unit *World::nearestStore(const Vec2i &pos, int factionIndex, const ResourceType *rt) {
-	float currDist = infinity;
+	float currDist = numeric_limits<float>::infinity();
 	Unit *currUnit = NULL;
 
 	for (int i = 0; i < getFaction(factionIndex)->getUnitCount(); ++i) {

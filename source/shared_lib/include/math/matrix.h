@@ -16,7 +16,7 @@
 
 #include "vec.h"
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Math {
 
 // =====================================================
 //	class Matrix3
@@ -75,7 +75,7 @@ public:
 		return rm;
 	}
 
-	void traspose(){
+	void transpose(){
 		for(int i=0; i<3; ++i){
 			for(int j=0; j<3; ++j){
 				T tmp= data[j*3+i];

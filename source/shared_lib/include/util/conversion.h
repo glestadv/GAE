@@ -27,7 +27,7 @@ using std::runtime_error;
 using std::stringstream;
 using Shared::Platform::int64;
 using Shared::Platform::uint64;
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 
 #if defined(WIN32) || defined(WIN64)
 #	define strtoull(np,ep,b) _strtoui64(np,ep,b)

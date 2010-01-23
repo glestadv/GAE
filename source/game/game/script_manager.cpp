@@ -19,6 +19,7 @@
 #include "lang.h"
 #include "game_camera.h"
 #include "game.h"
+#include "renderer.h"
 
 #include "leak_dumper.h"
 
@@ -31,14 +32,6 @@ using namespace Shared::Platform;
 using namespace Shared::Lua;
 
 namespace Glest { namespace Game {
-
-//TODO move these somewhere sensible [after branch is re-intergrated]
-ostream& operator<<(ostream &lhs, Vec2i &rhs) {
-	return lhs << "(" << rhs.x << ", " << rhs.y << ")";
-}
-ostream& operator<<(ostream &lhs, Vec4i &rhs) {
-	return lhs << "(" << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << ")";
-}
 
 // =====================================================
 //	class ScriptTimer
@@ -403,6 +396,7 @@ void ScriptManager::init(Game *g) {
 	LUA_FUNC(hilightCell);
 	LUA_FUNC(clearHilights);
 	LUA_FUNC(debugSet);
+	LUA_FUNC(setFarClip);
 
 #	endif
 
@@ -1277,7 +1271,7 @@ int ScriptManager::hilightRegion(LuaHandle *luaHandle) {
 			const Rect *rect = static_cast<const Rect*>(r);
 			for ( int y = rect->y; y < rect->y + rect->h; ++y ) {
 				for ( int x = rect->x; x < rect->x + rect->w; ++x ) {
-					RegionHilightCallback::cells.insert(Vec2i(x,y));
+					RegionHilightCallback::blueCells.insert(Vec2i(x,y));
 				}
 			}
 		} else {
@@ -1291,14 +1285,15 @@ int ScriptManager::hilightCell(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	Vec2i cell;
 	if ( extractArgs(args, "hilightCell", "v2i", &cell) ) {
-		RegionHilightCallback::cells.insert(cell);
+		RegionHilightCallback::blueCells.insert(cell);
 	}
 	return args.getReturnCount();
 }
 
 int ScriptManager::clearHilights(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
-	RegionHilightCallback::cells.clear();
+	RegionHilightCallback::blueCells.clear();
+	RegionHilightCallback::greenCells.clear();
 	return args.getReturnCount();
 }
 
@@ -1311,6 +1306,14 @@ int ScriptManager::debugSet(LuaHandle *luaHandle) {
 	return args.getReturnCount();
 }
 
+int ScriptManager::setFarClip(LuaHandle *luaHandle) {
+	LuaArguments args(luaHandle);
+	int clip;
+	if (extractArgs(args, "setFarClip", "int", &clip)) {
+		Renderer::getInstance().setFarClip(clip);
+	}
+	return args.getReturnCount();
+}
 #endif
 
 }}//end namespace

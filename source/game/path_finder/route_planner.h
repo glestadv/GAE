@@ -29,7 +29,7 @@ using std::vector;
 using std::list;
 using std::map;
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 using Shared::Platform::uint32;
 
 namespace Glest { namespace Game { namespace Search {

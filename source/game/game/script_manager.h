@@ -27,8 +27,8 @@
 #include "logger.h"
 
 using namespace std;
-using Shared::Graphics::Vec2i;
-using Shared::Graphics::Vec4i;
+using Shared::Math::Vec2i;
+using Shared::Math::Vec4i;
 using Shared::Platform::Chrono;
 using namespace Shared::Lua;
 
@@ -364,7 +364,7 @@ private:
 	static int lastCreatedUnit(LuaHandle* luaHandle);		// ?? deprecate, use 'created' unitEvent ??
 
 	static int lastDeadUnitName(LuaHandle* luaHandle);		// deprecate, use unitEvent
-	static int lastDeadUnit(LuaHandle* luaHandle);		// deprecate, use unitEvent
+	static int lastDeadUnit(LuaHandle* luaHandle);			// deprecate, use unitEvent
 
 #	if _GAE_DEBUG_EDITION_
 
@@ -372,6 +372,7 @@ private:
 	static int hilightCell(LuaHandle *luaHandle);
 	static int clearHilights(LuaHandle *luaHandle);
 	static int debugSet(LuaHandle *luaHandle);
+	static int setFarClip(LuaHandle *luaHandle);
 
 #	endif
 

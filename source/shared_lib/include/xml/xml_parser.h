@@ -28,7 +28,7 @@ using std::vector;
 using std::stringstream;
 using std::auto_ptr;	// This isn't as good as shared_ptr from tr1 or boost, but it's better
 						// than what we've been doing with toString()
-using namespace Shared::Graphics;
+using namespace Shared::Math;
 using namespace Shared::Util;
 
 namespace Shared { namespace Xml {

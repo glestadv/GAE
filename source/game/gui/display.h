@@ -24,7 +24,7 @@
 using std::string;
 
 using Shared::Graphics::Texture2D;
-using Shared::Graphics::Vec3f;
+using Shared::Math::Vec3f;
 using Shared::Util::replaceBy;
 
 namespace Glest{ namespace Game{

@@ -22,7 +22,7 @@
 
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 using Shared::Platform::int16;
 
 class CommandType;

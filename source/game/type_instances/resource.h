@@ -22,7 +22,7 @@ using Shared::Xml::XmlNode;
 
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec2i;
 
 class ResourceType;
 class TechTree;

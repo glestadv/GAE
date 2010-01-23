@@ -13,9 +13,12 @@
 #define _SHARED_GRAPHICS_VEC_H_
 
 #include <cmath>
+#include <iostream>
 #include "simd.h"
 
-namespace Shared { namespace Graphics {
+using std::ostream;
+
+namespace Shared { namespace Math {
 
 template<typename T> class Vec2;
 template<typename T> class Vec3;
@@ -119,9 +122,15 @@ public:
 		return *this;
 	}
 
-	Vec2<T>& operator *=(int scale) {
-		x *= scale;
-		y *= scale;
+	Vec2<T>& operator *=(const T &v) {
+		x *= v;
+		y *= v;
+		return *this;
+	}
+
+	Vec2<T>& operator /=(const T &v) {
+		x /= v;
+		y /= v;
 		return *this;
 	}
 
@@ -160,9 +169,11 @@ public:
 
 ALIGN_VEC12_DECL template<typename T> class Vec3 {
 public:
-	T x;
-	T y;
-	T z;
+	union {
+		struct { T x, y, z; };
+		struct { T r, g, b; };
+		T raw[3];
+	};
 
 	Vec3() {}
 
@@ -332,10 +343,11 @@ public:
 
 ALIGN_VEC_DECL template<typename T> class Vec4 {
 public:
-	T x;
-	T y;
-	T z;
-	T w;
+	union {
+		struct { T x, y, z, w; };
+		struct { T r, g, b, a; };
+		T raw[4];
+	};
 
 	Vec4() {}
 
@@ -490,9 +502,12 @@ typedef Vec2<double> Vec2d;
 typedef Vec3<double> Vec3d;
 typedef Vec4<double> Vec4d;
 
-inline std::ostream& operator<<(std::ostream &stream, const Vec2i &p) {
-	return stream << "(" << p.x << ", " << p.y << ")";
+
+
+inline ostream& operator<<(ostream &stream, const Vec2i &vec) {
+	return stream << "(" << vec.x << ", " << vec.y << ")";
 }
+
 
 #ifndef USE_SSE2_INTRINSICS
 typedef Vec3<float> Vec3f;
@@ -965,6 +980,11 @@ public:
 
 inline Vec3f::Vec3f(const Vec4f &v): SSE2Vec4f(v) {}
 #endif // USE_SSE2
+
+ostream& operator<<(ostream &lhs, Vec3f &pt);
+ostream& operator<<(ostream &lhs, Vec2i &pt);
+ostream& operator<<(ostream &lhs, Vec2f &pt);
+ostream& operator<<(ostream &lhs, Vec4i &rhs);
 
 }} //end namespace
 

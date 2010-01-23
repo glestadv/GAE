@@ -1,3 +1,14 @@
+// ==============================================================
+//	This file is part of The Glest Advanced Engine
+//
+//	Copyright (C) 2009	James McCulloch <silnarm at gmail>
+//
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
+//	License, or (at your option) any later version
+// ==============================================================
+
 #include "pch.h"
 #include "renderer.h"
 #include "route_planner.h"   
@@ -18,7 +29,8 @@ namespace Glest { namespace Game {
 // =====================================================
 //  class RegionHilightCallback
 // =====================================================
-set<Vec2i>	RegionHilightCallback::cells; 
+set<Vec2i>	RegionHilightCallback::blueCells,
+			RegionHilightCallback::greenCells; 
 
 // =====================================================
 //  class ResourceMapOverlay
@@ -390,18 +402,18 @@ void DebugRenderer::renderIntraClusterEdges(const Vec2i &cluster, CardinalDir di
 	glPopAttrib();
 }
 
-void DebugRenderer::renderEffects(Quad2i &quad) {
+void DebugRenderer::renderEffects(SceneCuller &culler) {
 	if (regionHilights) {
-		renderRegionHilight(quad);
+		renderRegionHilight(culler);
 	}
 	if (showVisibleQuad) {
-		renderCapturedQuad(quad);
+		renderCapturedQuad(culler);
 	}
 	if (teamSight) {
-		renderTeamSightOverlay(quad);
+		renderTeamSightOverlay(culler);
 	}
 	if (HAAStarOverlay) {
-		renderClusterOverlay(quad);
+		renderClusterOverlay(culler);
 		renderPathOverlay();
 		set<Vec2i>::iterator it;
 		for (it = clusterEdgesWest.begin(); it != clusterEdgesWest.end(); ++it) {
@@ -412,10 +424,10 @@ void DebugRenderer::renderEffects(Quad2i &quad) {
 		}
 	}
 	if (resourceMapOverlay) {
-		renderResourceMapOverlay(quad);
+		renderResourceMapOverlay(culler);
 	}
 	if (storeMapOverlay) {
-		renderStoreMapOverlay(quad);
+		renderStoreMapOverlay(culler);
 	}
 }
 

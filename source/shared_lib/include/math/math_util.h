@@ -13,24 +13,20 @@
 #define _SHARED_GRAPHICS_MATHUTIL_H_
 
 #include <cmath>
-
 #include "vec.h"
 
 #if defined(WIN32) || defined(WIN64)
 	inline float roundf(float f) { return f > 0 ? floorf(f + 0.5f) : ceilf(f - 0.5f); }
-//	#define
 #endif
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Math {
 
-//const float pi = 3.14159265f;
-const float pi = 3.1415926535897f;
-const float twopi = 6.2831853071794f;
-const float halfpi = 1.57079632679485f;
-const float sqrt2 = 1.41421356f;
-const float zero = 1e-6f;
-const float infinity = 1e6f;
-
+const float pi		= 3.1415926535897f;
+const float twopi	= 6.2831853071794f;
+const float halfpi	= 1.57079632679485f;
+const float sqrt2	= 1.41421356237309f;// 1.41421356f;
+//const float zero = 1e-6f;		// USE numeric_limits<float>::min() [smallest non-zero non-denormalised]
+//const float infinity = 1e6f;	// USE numeric_limits<float>::infinity();
 
 // =====================================================
 //	class Rect

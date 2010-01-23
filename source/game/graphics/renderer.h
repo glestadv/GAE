@@ -12,6 +12,7 @@
 #ifndef _GLEST_GAME_RENDERER_H_
 #define _GLEST_GAME_RENDERER_H_
 
+// shared_lib
 #include "vec.h"
 #include "math_util.h"
 #include "model.h"
@@ -19,22 +20,25 @@
 #include "pixmap.h"
 #include "font.h"
 #include "matrix.h"
-#include "selection.h"
-#include "components.h"
 #include "texture.h"
 #include "model_manager.h"
 #include "graphics_factory_gl.h"
 #include "font_manager.h"
 #include "camera.h"
+#include "profiler.h"
+
+// game
+#include "selection.h"
+#include "components.h"
+#include "scene_culler.h"
 
 #if _GAE_DEBUG_EDITION_
 #	include "debug_renderer.h"
 #endif
 
-#include "profiler.h"
+namespace Glest { namespace Game {
 
-namespace Glest{ namespace Game{
-
+using namespace Shared::Math;
 using namespace Shared::Graphics;
 
 //non shared classes
@@ -100,6 +104,7 @@ public:
 	static const float maxLightDist;
 	
 public:
+	//WRAPPED_ENUM(Shadows, Disabled, Projected, Mapped);
 	enum Shadows{
 		sDisabled,
 		sProjected,
@@ -125,7 +130,6 @@ private:
 	//misc
 	int triangleCount;
 	int pointCount;
-	Quad2i visibleQuad;
 	Vec4f nearestLightPos;
 
 	//renderers
@@ -157,6 +161,11 @@ private:
 	float perspNearPlane;
 	float perspFarPlane;
 
+	SceneCuller culler;
+
+	//DEBUG
+	Vec3f frstmPoints[8];
+
 private:
 	Renderer();
 	~Renderer();
@@ -181,6 +190,8 @@ public:
 	int getTriangleCount() const	{return triangleCount;}
 	int getPointCount() const		{return pointCount;}
 
+	void setFarClip(float clip) { perspFarPlane = clip; }
+
 	//misc
 	void reloadResources();
 
@@ -201,7 +212,13 @@ public:
 	void setupLighting();
 	void loadGameCameraMatrix();
 	void loadCameraMatrix(const Camera *camera);
-	void computeVisibleQuad();
+	
+	void computeVisibleArea();
+
+	//DEBUG
+	bool captureFrustum, showFrustum;
+	void renderFrustum() const;
+
 
     //basic rendering
 	void renderMouse2d(int mouseX, int mouseY, int anim, float fade= 0.f);
@@ -223,7 +240,7 @@ public:
 	void renderMessageBox(const GraphicMessageBox *listBox);
 	void renderTextEntry(const GraphicTextEntry *textEntry);
 	void renderTextEntryBox(const GraphicTextEntryBox *textEntryBox);
-	void renderProgressBar(int size, int x, int y, Font2D *font);
+	void renderProgressBar(int size, int x, int y, int w, int h, const Font2D *font);
 
     //complex rendering
     void renderSurface();
@@ -257,7 +274,7 @@ public:
 	//misc
 	void loadConfig();
 	void saveScreen(const string &path);
-	Quad2i getVisibleQuad() const		{return visibleQuad;}
+//	Quad2i getVisibleQuad() const		{return visibleQuad;}
 
 	//static
 	static Shadows strToShadows(const string &s);

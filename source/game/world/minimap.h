@@ -23,9 +23,9 @@ namespace Shared { namespace Platform {
 
 namespace Glest{ namespace Game{
 
-using Shared::Graphics::Vec4f;
-using Shared::Graphics::Vec3f;
-using Shared::Graphics::Vec2i;
+using Shared::Math::Vec4f;
+using Shared::Math::Vec3f;
+using Shared::Math::Vec2i;
 using Shared::Graphics::Pixmap2D;
 using Shared::Graphics::Texture2D;
 using Shared::Platform::NetworkDataBuffer;
