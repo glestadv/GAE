@@ -69,6 +69,8 @@ public:
 private:
 	bool repairPath(Unit *unit);
 
+	TravelState findAerialPath(Unit *unit, const Vec2i &targetPos);
+
 	TravelState doRouteCache(Unit *unit);
 	TravelState doQuickPathSearch(Unit *unit, const Vec2i &target);
 

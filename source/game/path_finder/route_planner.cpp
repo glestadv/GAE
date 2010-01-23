@@ -428,7 +428,33 @@ TravelState RoutePlanner::doQuickPathSearch(Unit *unit, const Vec2i &target) {
 	return TravelState::BLOCKED;
 }
 
+TravelState RoutePlanner::findAerialPath(Unit *unit, const Vec2i &targetPos) {
+	AnnotatedMap *aMap = world->getCartographer()->getMasterMap();
+	UnitPath &path = *unit->getPath();
+	PosGoal goal(targetPos);
+	MoveCost cost(unit, aMap);
+	DiagonalDistance dd(targetPos);
 
+	nsgSearchEngine->setNodeLimit(256);
+	nsgSearchEngine->setStart(unit->getPos(), dd(unit->getPos()));
+
+	aMap->annotateLocal(unit);
+	AStarResult res = nsgSearchEngine->ASTAR_LOWLEVEL(goal, cost, dd);
+	aMap->clearLocalAnnotations(unit);
+	if (res == AStarResult::COMPLETE || res == AStarResult::NODE_LIMIT) {
+		Vec2i pos = nsgSearchEngine->getGoalPos();
+		while (pos.x != -1) {
+			path.push_front(pos);
+			pos = nsgSearchEngine->getPreviousPos(pos);
+		}
+		if (!path.empty()) path.pop();
+		if (attemptMove(unit)) {
+			return TravelState::MOVING;
+		}
+	}
+	path.incBlockCount();
+	return TravelState::BLOCKED;
+}
 
 /** Find a path to a location.
   * @param unit the unit requesting the path
@@ -460,6 +486,10 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	}
 	path.clear();
 	wpPath.clear();
+
+	if (unit->getCurrField() == Field::AIR) {
+		return findAerialPath(unit, target);
+	}
 
 	// QuickSearch if close to target
 	Vec2i startCluster = ClusterMap::cellToCluster(unit->getPos());

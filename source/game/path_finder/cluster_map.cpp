@@ -112,6 +112,7 @@ void ClusterMap::assertValid() {
 		numNodes[f] = 0;
 		numEdges[f] = 0;
 		inUse[f] = aMap->maxClearance[f] != 0;
+		if (f == Field::AIR) inUse[f] = false;
 		if (!inUse[f]) {
 			continue;
 		}
@@ -322,7 +323,7 @@ void ClusterMap::initClusterBorder(const Vec2i &cluster, bool north) {
 		inf.endPos = -1;  // end position of entrance
 		inf.run = 0;	 // to count entrance 'width'
 		for (Field f(0); f < Field::COUNT; ++f) {
-			if (!aMap->maxClearance[f]) continue;
+			if (!aMap->maxClearance[f] || f == Field::AIR) continue;
 #			if _GAE_DEBUG_EDITION_
 				if (f == Field::LAND) {	
 					for (int i=0; i < cb->transitions[f].n; ++i) {
@@ -422,7 +423,7 @@ void ClusterMap::getTransitions(const Vec2i &cluster, Field f, Transitions &t) {
 void ClusterMap::disconnectCluster(const Vec2i &cluster) {
 	//cout << "Disconnecting cluster " << cluster << endl;
 	for (Field f(0); f < Field::COUNT; ++f) {
-		if (!aMap->maxClearance[f]) continue;
+		if (!aMap->maxClearance[f] || f == Field::AIR) continue;
 		Transitions t;
 		getTransitions(cluster, f, t);
 		set<const Transition*> tset;
@@ -489,7 +490,7 @@ void ClusterMap::evalCluster(const Vec2i &cluster) {
 	GridNeighbours::setSearchCluster(cluster);
 	Transitions transitions;
 	for (Field f(0); f < Field::COUNT; ++f) {
-		if (!aMap->maxClearance[f]) continue;
+		if (!aMap->maxClearance[f] || f == Field::AIR) continue;
 		transitions.clear();
 		getTransitions(cluster, f, transitions);
 		Transitions::iterator it = transitions.begin();
