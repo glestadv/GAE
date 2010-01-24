@@ -429,11 +429,7 @@ void Gui::groupKey(int groupIndex){
 void Gui::hotKey(UserCommand cmd) {
 	int f = 0;
 	switch(cmd) {
-	case ucCaptureFrustum:
-		Renderer::getInstance().captureFrustum = true;
-		Renderer::getInstance().showFrustum = true;
-		break;
- 	// goto selection
+	// goto selection
 	case ucCameraGotoSelection:
 		centerCameraOnSelection();
 		break;
@@ -526,13 +522,6 @@ void Gui::hotKey(UserCommand cmd) {
 	case ucPatrol:
 		//clickCommonCommand(CommandClass::PATROL);
 		break;
-#ifdef _GAE_DEBUG_EDITION_
-	case ucSwitchDebugField:
-		f = (int)Renderer::getInstance().getDebugField ();
-		f ++; f %= Field::COUNT;
-		Renderer::getInstance().setDebugField ( (Field)f );
-		break;
-#endif
 	default:
 		break;
 	}

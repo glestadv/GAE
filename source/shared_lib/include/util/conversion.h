@@ -20,12 +20,14 @@
 #include <sstream>
 
 #include "types.h"
+#include "vec.h"
 
 using std::string;
 using std::runtime_error;
 using std::stringstream;
 using Shared::Platform::int64;
 using Shared::Platform::uint64;
+using Shared::Math::Vec2i;
 
 #if defined(WIN32) || defined(WIN64)
 #	define strtoull(np,ep,b) _strtoui64(np,ep,b)
@@ -254,6 +256,12 @@ private:
 };
 
 inline string intToStr(int i) {return Conversion::toStr(i);}
+
+inline string Vec2iToStr(Vec2i v) {
+	char str[maxStrSize];
+	sprintf(str, "(%d,%d)", v.x, v.y);
+	return str; 
+}
 
 }}//end namespace
 

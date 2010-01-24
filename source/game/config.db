@@ -29,8 +29,6 @@ miscAutoTest				bool	false
 miscCatchExceptions			bool	true
 miscDebugKeys				bool	false
 miscDebugMode				bool	false
-miscDebugTextureMode		int		0
-miscDebugTextures			bool	false
 miscFirstTime				bool	true
 #miscLowMemory				bool	false
 netChangeSpeedAllowed		bool	false
@@ -41,8 +39,6 @@ netPauseAllowed				bool	false
 netPlayerName				string	"Player"
 netServerIp					string	"192.168.1.1"
 netServerPort				int		12345			0		65535
-pathFinderMaxNodes			int		1024
-pathFinderUseAStar			bool	false
 renderCheckGlCaps			bool	true
 renderColorBits				int		32
 renderDepthBits				int		isWindows()?32:16

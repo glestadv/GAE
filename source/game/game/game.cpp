@@ -26,6 +26,7 @@
 #include "checksum.h"
 #include "auto_test.h"
 #include "profiler.h"
+#include "cluster_map.h"
 
 #include "leak_dumper.h"
 #ifdef _MSC_VER
@@ -173,12 +174,12 @@ void Game::init() {
 	mainMessageBox.init("", lang.get("Yes"), lang.get("No"));
 	mainMessageBox.setEnabled(false);
 
-#ifndef DEBUG
-	//check fog of war
-	if(!config.getGsFogOfWarEnabled() && networkManager.isNetworkGame() ){
-		throw runtime_error("Can not play online games with fog of war disabled");
-	}
-#endif
+#	ifdef NDEBUG
+		//check fog of war
+		if(!config.getGsFogOfWarEnabled() && networkManager.isNetworkGame() ){
+			throw runtime_error("Can not play online games with fog of war disabled");
+		}
+#	endif
 
 	// (very) minor performance hack
 	renderNetworkStatus = networkManager.isNetworkGame();
@@ -186,7 +187,14 @@ void Game::init() {
 	// init world, and place camera
 	commander.init(&world);
 
+	GraphicProgressBar progressBar;
+	progressBar.init(345, 550, 300, 20);
+	logger.setProgressBar(&progressBar);
+
 	world.init(savedGame ? savedGame->getChild("world") : NULL);
+
+	logger.setProgressBar(NULL);
+
 	gui.init();
 	chatManager.init(&console, world.getThisTeamIndex());
 	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
@@ -795,10 +803,6 @@ void Game::render3d(){
 	//surface
 	renderer.renderSurface();
 
-	if (renderer.showFrustum) {
-		renderer.renderFrustum();
-	}
-
 	//selection circles
 	renderer.renderSelectionEffects();
 
@@ -902,9 +906,11 @@ void Game::render2d(){
 			}
 			str << endl;
 		}
-#ifdef _GAE_DEBUG_EDITION_
-		str << "Debug Field : " << Fields::getName ( renderer.getDebugField() ) << endl;
-#endif
+
+		// cluster map
+		str << "ClusterMap Nodes = " << Search::Transition::NumTransitions(Field::LAND) << endl;
+		str << "ClusterMap Edges = " << Search::Edge::NumEdges(Field::LAND) << endl;
+
 		renderer.renderText(
 			str.str(), coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 10, 500, false);

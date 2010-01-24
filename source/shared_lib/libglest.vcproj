@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua;include/math"
+				AdditionalIncludeDirectories="include/math;../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/lua;include/xml"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -80,78 +80,6 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="../../build/$(ConfigurationName)/$(ProjectName)"
-			IntermediateDirectory="../../build/$(ConfigurationName)/$(ProjectName)"
-			ConfigurationType="4"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua;include/math"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;XML_LIBRARY;USE_PCH=1"
-				StringPooling="true"
-				RuntimeLibrary="0"
-				BufferSecurityCheck="true"
-				FloatingPointModel="2"
-				RuntimeTypeInfo="false"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderThrough="pch.h"
-				BrowseInformation="0"
-				WarningLevel="1"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="3"
-				DisableSpecificWarnings="4250; 4355"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -234,7 +162,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug+opt|Win32"
+			Name="Speedy Debug|Win32"
 			OutputDirectory="../../build/$(ConfigurationName)/$(ProjectName)"
 			IntermediateDirectory="../../build/$(ConfigurationName)/$(ProjectName)"
 			ConfigurationType="4"
@@ -257,18 +185,91 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua;include/math"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/lua;include/xml"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
 				StringPooling="true"
 				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
+				BasicRuntimeChecks="2"
 				SmallerTypeCheck="true"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="2"
 				FloatingPointModel="2"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
+				PrecompiledHeaderThrough="pch.h"
+				BrowseInformation="1"
+				WarningLevel="2"
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="4250; 4355"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Ultra Debug|Win32"
+			OutputDirectory="../../build/$(ConfigurationName)/$(ProjectName)"
+			IntermediateDirectory="../../build/$(ConfigurationName)/$(ProjectName)"
+			ConfigurationType="4"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/lua;include/xml"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
+				StringPooling="true"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				SmallerTypeCheck="true"
+				RuntimeLibrary="1"
+				EnableFunctionLevelLinking="true"
+				EnableEnhancedInstructionSet="0"
+				FloatingPointModel="2"
+				RuntimeTypeInfo="false"
+				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="pch.h"
 				BrowseInformation="1"
 				WarningLevel="2"
@@ -483,6 +484,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\graphics\quaternion.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\math\quaternion.h"
 				>
 			</File>
@@ -500,6 +505,10 @@
 			</File>
 			<File
 				RelativePath=".\include\graphics\shader_manager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\util\sigslot.h"
 				>
 			</File>
 			<File
@@ -591,6 +600,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\graphics\vec.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\math\vec.h"
 				>
 			</File>
@@ -626,7 +639,7 @@
 				RelativePath=".\sources\graphics\buffer.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -646,7 +659,7 @@
 				RelativePath=".\sources\graphics\camera.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -670,7 +683,7 @@
 				RelativePath=".\sources\graphics\context.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -690,7 +703,7 @@
 				RelativePath=".\sources\graphics\gl\context_gl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -718,7 +731,7 @@
 				RelativePath=".\sources\graphics\font.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -738,7 +751,7 @@
 				RelativePath=".\sources\graphics\gl\font_gl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -758,7 +771,7 @@
 				RelativePath=".\sources\graphics\font_manager.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -790,14 +803,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release+SSE2|Win32"
 					>
 					<Tool
@@ -806,7 +811,15 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Ultra Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -818,7 +831,7 @@
 				RelativePath=".\sources\graphics\graphics_interface.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -842,7 +855,7 @@
 				RelativePath=".\sources\graphics\interpolation.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -870,7 +883,7 @@
 				RelativePath=".\sources\graphics\model.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -890,7 +903,7 @@
 				RelativePath=".\sources\graphics\model_manager.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -910,7 +923,7 @@
 				RelativePath=".\sources\graphics\gl\model_renderer_gl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -930,7 +943,7 @@
 				RelativePath=".\sources\graphics\gl\opengl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -950,7 +963,7 @@
 				RelativePath=".\sources\graphics\particle.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -970,7 +983,7 @@
 				RelativePath=".\sources\graphics\gl\particle_renderer_gl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -998,14 +1011,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release+SSE2|Win32"
 					>
 					<Tool
@@ -1014,11 +1019,19 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Ultra Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
 			</File>
@@ -1026,7 +1039,7 @@
 				RelativePath=".\sources\graphics\pixmap.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1061,6 +1074,22 @@
 			<File
 				RelativePath=".\sources\math\quaternion.cpp"
 				>
+				<FileConfiguration
+					Name="Speedy Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						InlineFunctionExpansion="2"
+						EnableIntrinsicFunctions="true"
+						FavorSizeOrSpeed="1"
+						BasicRuntimeChecks="0"
+						SmallerTypeCheck="false"
+						EnableEnhancedInstructionSet="2"
+						UsePrecompiledHeader="0"
+						DebugInformationFormat="3"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\sources\util\random.cpp"
@@ -1070,7 +1099,7 @@
 				RelativePath=".\sources\graphics\shader.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1090,7 +1119,7 @@
 				RelativePath=".\sources\graphics\gl\shader_gl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1110,7 +1139,7 @@
 				RelativePath=".\sources\graphics\shader_manager.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1154,7 +1183,7 @@
 				RelativePath=".\sources\graphics\gl\text_renderer_gl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1174,7 +1203,7 @@
 				RelativePath=".\sources\graphics\texture.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1194,7 +1223,7 @@
 				RelativePath=".\sources\graphics\gl\texture_gl.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1214,7 +1243,7 @@
 				RelativePath=".\sources\graphics\texture_manager.cpp"
 				>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -1274,14 +1303,6 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
 					Name="Release+SSE2|Win32"
 					>
 					<Tool
@@ -1290,7 +1311,15 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug+opt|Win32"
+					Name="Speedy Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Ultra Debug|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"

@@ -27,7 +27,11 @@
 #define theSoundRenderer	(SoundRenderer::getInstance())
 #define theLogger			(Logger::getInstance())
 
-#define LOG(x) Logger::getInstance().add(x)
+#ifndef NDEBUG
+#	define LOG(x) Logger::getInstance().add(x)
+#else
+#	define LOG(x) {}
+#endif
 
 #include "util.h"
 using Shared::Util::EnumNames;
@@ -41,7 +45,7 @@ using Shared::Util::EnumNames;
 	  *		<li><b>VALUE</b> description</li></ul>
 	  */
 
-namespace Glest{ namespace Game {
+namespace Glest { namespace Game {
 
 namespace Search {
 	/** result set for path finding 
@@ -60,7 +64,11 @@ namespace Search {
 	  *		<li><b>TIME_LIMIT</b> search ongoing (time limit reached)</li></ul>
 	  */
 	REGULAR_ENUM( AStarResult, 
-						FAILED, COMPLETE, NODE_LIMIT, TIME_LIMIT
+					FAILURE, COMPLETE, NODE_LIMIT, TIME_LIMIT
+				);
+
+	REGULAR_ENUM( HAAStarResult,
+					FAILURE, COMPLETE, START_TRAP, GOAL_TRAP
 				);
 
 	/** Specifies a 'space' to search 
@@ -72,9 +80,13 @@ namespace Search {
 				);
 
 	/** The cardinal and ordinal directions enumerated for convenience */
-//	REGULAR_ENUM( Directions,
-//						NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST );
-//				);
+	REGULAR_ENUM( OrdinalDir,
+						NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
+				);
+
+	REGULAR_ENUM( CardinalDir, 
+						NORTH, EAST, SOUTH, WEST 
+				);
 
 } // end namespace Search
 
@@ -86,15 +98,11 @@ namespace Search {
   *		<li><b>HUMAN</b> Local Player</li></ul>
   */
 STRINGY_ENUM( ControlType, 
-					CLOSED, 
-					CPU, 
-					CPU_ULTRA, 
-					NETWORK, 
-					HUMAN 
+					CLOSED, CPU, CPU_ULTRA, NETWORK, HUMAN 
 			);
 
 /** fields of movement
-  * <ul><li><b>WALKABLE</b> land traveller</li>
+  * <ul><li><b>LAND</b> land traveller</li>
   *		<li><b>AIR</b> flying units</li>
   *		<li><b>ANY_WATER</b> travel on water only</li>
   *		<li><b>DEEP_WATER</b> travel in deep water only</li>
