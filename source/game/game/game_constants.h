@@ -64,7 +64,11 @@ namespace Search {
 	  *		<li><b>TIME_LIMIT</b> search ongoing (time limit reached)</li></ul>
 	  */
 	REGULAR_ENUM( AStarResult, 
-						FAILURE, COMPLETE, NODE_LIMIT, TIME_LIMIT
+					FAILURE, COMPLETE, NODE_LIMIT, TIME_LIMIT
+				);
+
+	REGULAR_ENUM( HAAStarResult,
+					FAILURE, COMPLETE, START_TRAP, GOAL_TRAP
 				);
 
 	/** Specifies a 'space' to search 

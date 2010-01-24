@@ -196,7 +196,7 @@ float RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const
 	return numeric_limits<float>::infinity();
 }
 
-bool RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &dest, TransitionGoal &goalFunc) {
+HAAStarResult RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &dest, TransitionGoal &goalFunc) {
 	// get Transitions for start cluster
 	Transitions transitions;
 	Vec2i startCluster = ClusterMap::cellToCluster(unit->getPos());
@@ -206,7 +206,7 @@ bool RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &dest, Transi
 	DiagonalDistance dd(dest);
 	GridNeighbours::setSearchCluster(startCluster);
 
-	bool startTrans = false;
+	bool startTrap = true;
 	// attempt quick path from unit->pos to each transition, 
 	// if successful add transition to open list
 
@@ -216,12 +216,23 @@ bool RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &dest, Transi
 		float cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), (*it)->nwPos);
 		if (cost != numeric_limits<float>::infinity()) {
 			tSearchEngine->setOpen(*it, dd((*it)->nwPos), cost);
-			startTrans = true;
+			startTrap = false;
 		}
 	}
-	if (!startTrans) {
+	if (startTrap) {
+		// do again, without annnotations, return TRAPPED if all else goes well
 		aMap->clearLocalAnnotations(unit);
-		return false;
+		bool locked = true;
+		for (Transitions::iterator it = transitions.begin(); it != transitions.end(); ++it) {
+			float cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), (*it)->nwPos);
+			if (cost != numeric_limits<float>::infinity()) {
+				tSearchEngine->setOpen(*it, dd((*it)->nwPos), cost);
+				locked = false;
+			}
+		}
+		if (locked) {
+			return HAAStarResult::FAILURE;
+		}
 	}
 
 	// transitions to goal
@@ -231,9 +242,13 @@ bool RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &dest, Transi
 
 	GridNeighbours::setSearchCluster(cluster);
 
-	const bool stillAnnotated = startCluster.dist(cluster) < 1.5;
+	bool goalTrap = true;
+	bool stillAnnotated = startCluster.dist(cluster) < 1.5;
 	if (!stillAnnotated) {
 		aMap->clearLocalAnnotations(unit);
+	}
+	if (stillAnnotated && startTrap) {
+		stillAnnotated = false;
 	}
 	// attempt quick path from dest to each transition, 
 	// if successful add transition to goal set
@@ -241,22 +256,36 @@ bool RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &dest, Transi
 		float cost = quickSearch(unit->getCurrField(), unit->getSize(), dest, (*it)->nwPos);
 		if (cost != numeric_limits<float>::infinity()) {
 			goalFunc.goalTransitions().insert(*it);
+			goalTrap = false;
 		}
 	}
 	if (stillAnnotated) {
 		aMap->clearLocalAnnotations(unit);
 	}
-	if (goalFunc.goalTransitions().empty()) {
-		return false;
+	if (goalTrap) {
+		if (stillAnnotated) {
+			for (Transitions::iterator it = transitions.begin(); it != transitions.end(); ++it) {
+				float cost = quickSearch(unit->getCurrField(), unit->getSize(), dest, (*it)->nwPos);
+				if (cost != numeric_limits<float>::infinity()) {
+					goalFunc.goalTransitions().insert(*it);
+				}
+			}
+			if (goalFunc.goalTransitions().empty()) {
+				return HAAStarResult::FAILURE;
+			}
+		}
 	}
-	return true;
+	return startTrap ? HAAStarResult::START_TRAP 
+		  : goalTrap ? HAAStarResult::GOAL_TRAP 
+					 : HAAStarResult::COMPLETE;
 }
 
-bool RoutePlanner::findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints) {
+HAAStarResult RoutePlanner::findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints) {
 	TransitionGoal goal;
-	if (!setupHierarchicalSearch(unit, dest, goal)) {
+	HAAStarResult setupResult = setupHierarchicalSearch(unit, dest, goal);
+	if (setupResult == HAAStarResult::FAILURE) {
 		GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
-		return false;
+		return HAAStarResult::FAILURE;
 	}
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 	TransitionCost cost(unit->getCurrField(), unit->getSize());
@@ -271,9 +300,9 @@ bool RoutePlanner::findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath 
 			waypoints.push(t->nwPos);
 			t = tSearchEngine->getPreviousPos(t);
 		}
-		return true;
+		return setupResult;
 	}
-	return false;
+	return HAAStarResult::FAILURE;
 }
 
 bool RoutePlanner::refinePath(Unit *unit) {
@@ -506,15 +535,16 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	}
 	// Hierarchical Search
 	tSearchEngine->reset();
-	if (!findWaypointPath(unit, target, wpPath)) {
+	HAAStarResult res = findWaypointPath(unit, target, wpPath);
+	if (res == HAAStarResult::FAILURE) {
 		if (unit->getFaction()->isThisFaction()) {
 			theConsole.addLine("Can not reach destination.");
 		}
-		//
-		// Try without annotations...
-		//
 		return TravelState::IMPOSSIBLE;
+	} else if ( res == HAAStarResult::START_TRAP) {
+		return TravelState::BLOCKED;
 	}
+
 	IF_DEBUG_TEXTURES( collectWaypointPath(unit); )
 	//CONSOLE_LOG( "WaypointPath size : " + intToStr(wpPath.size()) )
 	//TODO post process, scan wpPath, if prev.dist(pos) < 4 cull prev
