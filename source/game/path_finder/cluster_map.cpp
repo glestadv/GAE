@@ -59,12 +59,12 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 	Transition::zeroCounters();
 
 	theLogger.setClusterCount(w * h);
-
+/*
 	static char buf[512];
 	char *ptr = buf;
 	ptr += sprintf(ptr, "Initialising cluster map.\n");
 	int64 time_millis = Chrono::getCurMillis();
-
+*/
 	for (int i = h - 1; i >= 0; --i) {
 		for (int j = w - 1; j >= 0; --j) {
 			Vec2i cluster(j, i);
@@ -76,9 +76,12 @@ ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto)
 			theLogger.clusterInit();
 		}
 	}
+
+	/*
 	time_millis = Chrono::getCurMillis() - time_millis;
 	ptr += sprintf(ptr, "\ttook %dms\n", (int)time_millis);
 	theLogger.add(buf);
+	*/
 }
 
 ClusterMap::~ClusterMap() {
@@ -599,7 +602,7 @@ bool TransitionNodeStore::setOpen(const Transition* pos, const Transition* prev,
 	assert(closed.find(pos) == closed.end());
 	
 	//REMOVE
-	assert(assertOpen());
+	//assert(assertOpen());
 	
 	TransitionAStarNode *node = getNode();
 	if (!node) return false;
@@ -612,7 +615,7 @@ bool TransitionNodeStore::setOpen(const Transition* pos, const Transition* prev,
 	listed[pos] = node;
 	
 	//REMOVE
-	assert(assertOpen());
+	//assert(assertOpen());
 
 	return true;
 }
@@ -622,7 +625,7 @@ void TransitionNodeStore::updateOpen(const Transition* pos, const Transition* &p
 	assert(closed.find(prev) != closed.end());
 
 	//REMOVE
-	assert(assertOpen());
+	//assert(assertOpen());
 
 	TransitionAStarNode *prevNode = listed[prev];
 	TransitionAStarNode *posNode = listed[pos];
@@ -634,7 +637,7 @@ void TransitionNodeStore::updateOpen(const Transition* pos, const Transition* &p
 	}
 
 	//REMOVE
-	assert(assertOpen());
+	//assert(assertOpen());
 }
 
 const Transition* TransitionNodeStore::getBestCandidate() {

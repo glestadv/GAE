@@ -44,20 +44,16 @@ Cartographer::Cartographer(World *world)
 
 	routePlanner = world->getRoutePlanner();
 
-	cout << "NodeMap SearchEngine\n";
 	nodeMap = new NodeMap(w, h);
-	nmSearchEngine = new SearchEngine<NodeMap, GridNeighbours>();
+	nmSearchEngine = new SearchEngine<NodeMap, GridNeighbours>(nodeMap, true);
 	nmSearchEngine->setStorage(nodeMap);
 	nmSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 
-	cout << "Annotated Map\n";
 	masterMap = new AnnotatedMap(world);
 	
-	cout << "Cluster Map\n";
 	clusterMap = new ClusterMap(masterMap, this);
 
-	cout << "Exploration Maps\n";
 	// team search and visibility maps
 	set<int> teams;
 	for (int i=0; i < world->getFactionCount(); ++i) {
@@ -74,7 +70,6 @@ Cartographer::Cartographer(World *world)
 	// Todo: more preprocessing. Discover all harvester units, 
 	// check field, harvest reange and resource types...
 	//
-	cout << "Resource Catalog\n";
 	// find and catalog all resources...
 	for (int x=0; x < cellMap->getTileW() - 1; ++x) {
 		for (int y=0; y < cellMap->getTileH() - 1; ++y) {
@@ -100,8 +95,8 @@ Cartographer::Cartographer(World *world)
 /** Destruct */
 Cartographer::~Cartographer() {
 	delete masterMap;
+	delete clusterMap;
 	delete nmSearchEngine;
-	delete nodeMap;
 
 	// Team Annotated Maps
 	/*map<int,AnnotatedMap*>::iterator aMapIt = teamMaps.begin();
@@ -118,11 +113,17 @@ Cartographer::~Cartographer() {
 	explorationMaps.clear();
 	
 	// Resource Maps
-	map<const ResourceType*, PatchMap<1>*>::iterator rmIt = resourceMaps.begin();
-	for ( ; rmIt != resourceMaps.end(); ++rmIt) {
+	for (ResourceMaps::iterator rmIt = resourceMaps.begin(); rmIt != resourceMaps.end(); ++rmIt) {
 		delete rmIt->second;
 	}
 	resourceMaps.clear();
+
+	// Store Maps
+	for (StoreMaps::iterator smIt = storeMaps.begin(); smIt != storeMaps.end(); ++smIt) {
+		delete smIt->second;
+	}
+	storeMaps.clear();
+	
 }
 
 void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
@@ -217,8 +218,8 @@ PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
 	pMap->zeroMap();
 	
 	//debug
-	int count = 0;
-	cout << "building store map for " << unit->getType()->getName() << "\n\tSetting cells:";
+	//int count = 0;
+	//cout << "building store map for " << unit->getType()->getName() << "\n\tSetting cells:";
 	for (int y = sy; y < sy + unit->getSize(); ++y) {
 		for (int x = sx; x < sx + unit->getSize(); ++x) {
 			if (!ut->hasCellMap() || ut->getCellMapCell(x-sx, y-sy)) {
@@ -228,16 +229,15 @@ PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
 					&& !pMap->getInfluence(goalPos)) {
 						pMap->setInfluence(goalPos, 1);
 						assert(pMap->getInfluence(goalPos));
-						++count;
-						cout << " " << goalPos;
+						//++count;
+						//cout << " " << goalPos;
 					}
 				}
 			}
 		}
 	}
-	cout << "\nMade store map for " << unit->getType()->getName() << " @ " 
-		 << unit->getPos() << ", added " << count << " goal cells." << endl;
-
+	//cout << "\nMade store map for " << unit->getType()->getName() << " @ " 
+	//	 << unit->getPos() << ", added " << count << " goal cells." << endl;
 	storeMaps[unit] = pMap;
 	return pMap;
 }
@@ -307,6 +307,9 @@ public:
   * @param add true to add this units visibility to its team map, false to remove
   */
 void Cartographer::maintainUnitVisibility(Unit *unit, bool add) {
+	
+	/* This might be too expensive using Dijkstra...
+
 	// set up goal function
 	VisibilityMaintainerGoal goalFunc((float)unit->getSight(), explorationMaps[unit->getTeam()], add);
 	// set up search engine
@@ -319,6 +322,7 @@ void Cartographer::maintainUnitVisibility(Unit *unit, bool add) {
 						 (goalFunc,DistanceCost(),ZeroHeuristic());
 	// reset search space
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
+	*/
 }
 
 }}}

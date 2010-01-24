@@ -21,6 +21,7 @@
 #include "profiler.h"
 
 #include "search_engine.h"
+#include "cartographer.h"
 
 #include <set>
 #include <map>
@@ -34,14 +35,27 @@ using Shared::Platform::uint32;
 
 namespace Glest { namespace Game { namespace Search {
 
-class ResourceGoal;
-
 /** maximum radius to search for a free position from a target position */
 const int maxFreeSearchRadius = 10;
 /** @deprecated not in use */
 const int pathFindNodesMax = 2048;
 
 typedef SearchEngine<TransitionNodeStore,TransitionNeighbours,const Transition*> TransitionSearchEngine;
+
+class PMap1Goal {
+protected:
+	PatchMap<1> *pMap;
+
+public:
+	PMap1Goal(PatchMap<1> *pMap) : pMap(pMap) {}
+
+	bool operator()(const Vec2i &pos, const float) const {
+		if (pMap->getInfluence(pos)) {
+			return true;
+		}
+		return false;
+	}
+};
 
 // =====================================================
 // 	class RoutePlanner
@@ -53,14 +67,23 @@ public:
 	~RoutePlanner();
 
 	TravelState findPathToLocation(Unit *unit, const Vec2i &finalPos);
+
 	/** @see findPathToLocation() */
 	TravelState findPath(Unit *unit, const Vec2i &finalPos) { 
 		return findPathToLocation(unit, finalPos); 
 	}
 
-	TravelState findPathToResource(Unit *unit, const Vec2i &targetPos, const ResourceType *rt);
+	TravelState findPathToResource(Unit *unit, const Vec2i &targetPos, const ResourceType *rt) {
+		assert(rt->getClass() == ResourceClass::TECHTREE || rt->getClass() == ResourceClass::TILESET);
+		PMap1Goal goal(world->getCartographer()->getResourceMap(rt));
+		return findPathToGoal(unit, goal, targetPos);
+	}
 
-	TravelState findPathToStore(Unit *unit, const Unit *store);
+	TravelState findPathToStore(Unit *unit, const Unit *store) {
+		Vec2i target = store->getNearestOccupiedCell(unit->getPos());
+		PMap1Goal goal(world->getCartographer()->getStoreMap(store));
+		return findPathToGoal(unit, goal, target);
+	}
 
 	bool isLegalMove(Unit *unit, const Vec2i &pos) const;
 
@@ -74,8 +97,8 @@ private:
 	TravelState doRouteCache(Unit *unit);
 	TravelState doQuickPathSearch(Unit *unit, const Vec2i &target);
 
-	template <typename GoalType>
-	TravelState customGoalSearch(GoalType &goal, Unit *unit, const Vec2i &target);
+	TravelState findPathToGoal(Unit *unit, PMap1Goal &goal, const Vec2i &targetPos);
+	TravelState customGoalSearch(PMap1Goal &goal, Unit *unit, const Vec2i &target);
 
 	float quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
 	bool refinePath(Unit *unit);

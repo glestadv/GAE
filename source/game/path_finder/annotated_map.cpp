@@ -115,8 +115,8 @@ void AnnotatedMap::revealTile(const Vec2i &pos) {
 	// do a cascading update, but stop at any un-explored tiles...
 }
 
-//#define LOG_CLUSTER_DIRTYING(x) {}
-#define LOG_CLUSTER_DIRTYING(x) {cout << x;}
+#define LOG_CLUSTER_DIRTYING(x) {}
+//#define LOG_CLUSTER_DIRTYING(x) {cout << x;}
 
 struct MudFlinger {
 	ClusterMap *cm;
@@ -125,7 +125,7 @@ struct MudFlinger {
 		Vec2i cluster = ClusterMap::cellToCluster(pos);
 		cm->setClusterDirty(cluster);
 		LOG_CLUSTER_DIRTYING( "MapMetrics changed @ pos = " << pos << endl )
-		cout << "\tCluster = " << cluster << " dirty\n";
+		LOG_CLUSTER_DIRTYING( cout << "\tCluster = " << cluster << " dirty\n" )
 		int ymod = pos.y % Search::clusterSize;
 		if (ymod == 0) {
 			cm->setNorthBorderDirty(cluster);

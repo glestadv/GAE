@@ -143,8 +143,10 @@ const float Renderer::maxLightDist= 50.f;
 
 // ==================== constructor and destructor ====================
 
-Renderer::Renderer()
-		: captureFrustum(false), showFrustum(false) {
+Renderer::Renderer() {
+	IF_DEBUG_EDITION( captureFrustum = false; )
+	IF_DEBUG_EDITION( showFrustum = false; )
+
 	GraphicsInterface &gi= GraphicsInterface::getInstance();
 	FactoryRepository &fr= FactoryRepository::getInstance();
 	Config &config= Config::getInstance();
@@ -259,9 +261,7 @@ void Renderer::initGame(Game *game){
 		shadowMapFrame= -1;
 	}
 
-#	if _GAE_DEBUG_EDITION_
-		debugRenderer.init();
-#	endif
+	IF_DEBUG_EDITION( debugRenderer.init(); )
 
 	//texture init
 	modelManager[rsGame]->init();
@@ -489,77 +489,71 @@ void Renderer::computeVisibleArea() {
 
 	culler.establishScene();
 
-	if (captureFrustum) {
-		captureFrustum = false;
-		for (int i=0; i  < 8; ++i) {
-			frstmPoints[i] = culler.frstmPoints[i];
-		}
+	IF_DEBUG_EDITION(
+		if (captureFrustum) {
+			captureFrustum = false;
+			for (int i=0; i  < 8; ++i) {
+				frstmPoints[i] = culler.frstmPoints[i];
+			}
 
-		for (int i=0; i < culler.boundingPoints.size(); ++i) {
-			Vec2i pos(culler.boundingPoints[i].x, culler.boundingPoints[i].y);
-			RegionHilightCallback::blueCells.insert(pos);
-		}
+			for (int i=0; i < culler.boundingPoints.size(); ++i) {
+				Vec2i pos(culler.boundingPoints[i].x, culler.boundingPoints[i].y);
+				RegionHilightCallback::blueCells.insert(pos);
+			}
 
-		vector<Vec2f>::iterator it = culler.visiblePoly.begin();
-		for ( ; it != culler.visiblePoly.end(); ++it) {
-			Vec2i pos(it->x, it->y);
-			RegionHilightCallback::greenCells.insert(pos);
+			vector<Vec2f>::iterator it = culler.visiblePoly.begin();
+			for ( ; it != culler.visiblePoly.end(); ++it) {
+				Vec2i pos(it->x, it->y);
+				RegionHilightCallback::greenCells.insert(pos);
+			}
+			for ( int i=0; i < culler.cellExtrema.spans.size(); ++i) {
+				int y = culler.cellExtrema.min_y + i;
+				int x1 = culler.cellExtrema.spans[i].first;
+				int x2 = culler.cellExtrema.spans[i].second;
+				RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
+				RegionHilightCallback::greenCells.insert(Vec2i(x2,y));
+			}
 		}
-		for ( int i=0; i < culler.cellExtrema.spans.size(); ++i) {
-			int y = culler.cellExtrema.min_y + i;
-			int x1 = culler.cellExtrema.spans[i].first;
-			int x2 = culler.cellExtrema.spans[i].second;
-			RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
-			RegionHilightCallback::greenCells.insert(Vec2i(x2,y));
-			//for ( ; x1 <= x2; ++x1) {
-			//	RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
-			//}
-		}
+	)
+}
 
-		/*
-		SceneCuller::iterator it = culler.cell_begin();
-		for ( ; it != culler.cell_end(); ++it) {
-			Vec2i pos = *it;
-			RegionHilightCallback::cells.insert(pos);
-		}*/
+IF_DEBUG_EDITION(
+	void Renderer::renderFrustum() const {
+		glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT );
+		glEnable( GL_BLEND );
+		glEnable( GL_COLOR_MATERIAL ); 
+		glDisable( GL_ALPHA_TEST );
+		glActiveTexture( GL_TEXTURE0 );
+		glDisable( GL_TEXTURE_2D );
+		
+		glPointSize(5);
+		glColor3f(1.f, 0.2f, 0.2f);
+		glBegin(GL_POINTS);
+			for (int i=0; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
+		glEnd();
+
+		glLineWidth(2);
+		glColor3f(0.1f, 0.5f, 0.1f); // near
+		glBegin(GL_LINE_LOOP);
+			for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
+		glEnd();
+		
+		glColor3f(0.1f, 0.1f, 0.5f); // far
+		glBegin(GL_LINE_LOOP);
+			for (int i=4; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
+		glEnd();
+		
+		glColor3f(0.1f, 0.5f, 0.5f);
+		glBegin(GL_LINES);
+			for (int i=0; i < 4; ++i) {
+				glVertex3fv(frstmPoints[i].ptr()); // near
+				glVertex3fv(frstmPoints[i+4].ptr()); // far
+			}
+		glEnd();
+
+		glPopAttrib();
 	}
-}
-
-void Renderer::renderFrustum() const {
-	glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT );
-	glEnable( GL_BLEND );
-	glEnable( GL_COLOR_MATERIAL ); 
-	glDisable( GL_ALPHA_TEST );
-	glActiveTexture( GL_TEXTURE0 );
-	glDisable( GL_TEXTURE_2D );
-	
-	glPointSize(5);
-	glColor3f(1.f, 0.2f, 0.2f);
-	glBegin(GL_POINTS);
-		for (int i=0; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
-	glEnd();
-
-	glLineWidth(2);
-	glColor3f(0.1f, 0.5f, 0.1f); // near
-	glBegin(GL_LINE_LOOP);
-		for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
-	glEnd();
-	
-	glColor3f(0.1f, 0.1f, 0.5f); // far
-	glBegin(GL_LINE_LOOP);
-		for (int i=4; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
-	glEnd();
-	
-	glColor3f(0.1f, 0.5f, 0.5f);
-	glBegin(GL_LINES);
-		for (int i=0; i < 4; ++i) {
-			glVertex3fv(frstmPoints[i].ptr()); // near
-			glVertex3fv(frstmPoints[i+4].ptr()); // far
-		}
-	glEnd();
-
-	glPopAttrib();
-}
+)
 
 // =======================================
 // basic rendering

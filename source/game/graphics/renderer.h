@@ -33,7 +33,10 @@
 #include "scene_culler.h"
 
 #if _GAE_DEBUG_EDITION_
+#	define IF_DEBUG_EDITION(x) x
 #	include "debug_renderer.h"
+#else
+#	define IF_DEBUG_EDITION(x)
 #endif
 
 namespace Glest { namespace Game {
@@ -64,9 +67,7 @@ enum ResourceScope{
 // ===========================================================
 
 class Renderer{
-#if _GAE_DEBUG_EDITION_
-	friend class ScriptManager;
-#endif
+	IF_DEBUG_EDITION( friend class ScriptManager; )
 public:
 	//progress bar
 	static const int maxProgressBar;
@@ -164,7 +165,7 @@ private:
 	SceneCuller culler;
 
 	//DEBUG
-	Vec3f frstmPoints[8];
+	IF_DEBUG_EDITION( Vec3f frstmPoints[8]; )
 
 private:
 	Renderer();
@@ -216,8 +217,8 @@ public:
 	void computeVisibleArea();
 
 	//DEBUG
-	bool captureFrustum, showFrustum;
-	void renderFrustum() const;
+	IF_DEBUG_EDITION( bool captureFrustum; bool showFrustum; )
+	IF_DEBUG_EDITION( void renderFrustum() const; )
 
 
     //basic rendering
@@ -252,9 +253,9 @@ public:
 	void renderMinimap();
     void renderDisplay();
 	void renderMenuBackground(const MenuBackground *menuBackground);
-#if _GAE_DEBUG_EDITION_
-	DebugRenderer debugRenderer;
-#endif
+
+	IF_DEBUG_EDITION( DebugRenderer debugRenderer; )
+
 	//computing
     bool computePosition(const Vec2i &screenPos, Vec2i &worldPos);
 	void computeSelected(Selection::UnitContainer &units, const Vec2i &posDown, const Vec2i &posUp);

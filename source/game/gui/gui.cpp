@@ -429,11 +429,13 @@ void Gui::groupKey(int groupIndex){
 void Gui::hotKey(UserCommand cmd) {
 	int f = 0;
 	switch(cmd) {
+#	if _GAE_DEBUG_EDITOIN_
 	case ucCaptureFrustum:
 		Renderer::getInstance().captureFrustum = true;
 		Renderer::getInstance().showFrustum = true;
 		break;
- 	// goto selection
+#	endif
+	// goto selection
 	case ucCameraGotoSelection:
 		centerCameraOnSelection();
 		break;

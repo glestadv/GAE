@@ -451,7 +451,7 @@ void Map::calcAvgAltitude() {
 		}
 	}
 	avgHeight = (float)(sum / (getTileH() * getTileW()));
-	cout << "average map height = " << avgHeight << endl;
+	//cout << "average map height = " << avgHeight << endl;
 }
 
 void Map::read(NetworkDataBuffer &buf) {
