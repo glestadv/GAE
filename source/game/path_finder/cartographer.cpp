@@ -139,6 +139,7 @@ void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
 	for ( ; it != resourceLocations[rt].end(); ++it) {
 		Resource *r = world->getMap()->getTile(*it)->getResource();
 		assert(r);
+
 		r->Depleted.connect(this, &Cartographer::onResourceDepleted);
 
 		Vec2i pos = *it * Map::cellScale;
@@ -183,7 +184,6 @@ void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
 
 void Cartographer::onResourceDepleted(Vec2i pos) {
 	const ResourceType *rt = cellMap->getTile(pos/Map::cellScale)->getResource()->getType();
-	//pos *= Map::cellScale;
 	Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST];
 	Vec2i br = pos + OrdinalOffsets[OrdinalDir::SOUTH_EAST] * 2;
 	resDirtyAreas[rt].push_back(pair<Vec2i,Vec2i>(tl,br));
@@ -207,8 +207,15 @@ void Cartographer::fixupResourceMap(const ResourceType *rt, const Vec2i &tl, con
 	}
 }
 
-PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
+void Cartographer::onStoreDestroyed(Unit *unit) {
+	delete storeMaps[unit];
+	storeMaps.erase(unit);
+}
+
+PatchMap<1>* Cartographer::buildStoreMap(Unit *unit) {
 	const UnitType* const &ut = unit->getType();
+
+	unit->Died.connect(this, &Cartographer::onStoreDestroyed);
 	Vec2i pos = unit->getPos();
 	const int sx = pos.x;
 	const int sy = pos.y;
@@ -217,9 +224,6 @@ PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
 	PatchMap<1> *pMap = new PatchMap<1>(rect, 0);
 	pMap->zeroMap();
 	
-	//debug
-	//int count = 0;
-	//cout << "building store map for " << unit->getType()->getName() << "\n\tSetting cells:";
 	for (int y = sy; y < sy + unit->getSize(); ++y) {
 		for (int x = sx; x < sx + unit->getSize(); ++x) {
 			if (!ut->hasCellMap() || ut->getCellMapCell(x-sx, y-sy)) {
@@ -229,15 +233,11 @@ PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
 					&& !pMap->getInfluence(goalPos)) {
 						pMap->setInfluence(goalPos, 1);
 						assert(pMap->getInfluence(goalPos));
-						//++count;
-						//cout << " " << goalPos;
 					}
 				}
 			}
 		}
 	}
-	//cout << "\nMade store map for " << unit->getType()->getName() << " @ " 
-	//	 << unit->getPos() << ", added " << count << " goal cells." << endl;
 	storeMaps[unit] = pMap;
 	return pMap;
 }

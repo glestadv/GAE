@@ -83,9 +83,7 @@ enum UserCommand {
 	ucGuard,
 	ucFollow,
 	ucPatrol,
-#	if _GAE_DEBUG_EDITION
-		ucCaptureFrustum,
-#	endif
+
 	ucCount
 };
 

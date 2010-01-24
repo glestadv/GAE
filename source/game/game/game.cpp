@@ -803,12 +803,6 @@ void Game::render3d(){
 	//surface
 	renderer.renderSurface();
 
-	IF_DEBUG_EDITION(
-		if (renderer.showFrustum) {
-			renderer.renderFrustum();
-		}
-	)
-
 	//selection circles
 	renderer.renderSelectionEffects();
 

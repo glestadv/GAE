@@ -114,14 +114,17 @@ RoutePlanner::RoutePlanner(World *world)
 		, nsgSearchEngine(NULL) {
 	theLogger.add( "Initialising SearchEngine", true );
 
+	const int &w = world->getMap()->getW();
+	const int &h = world->getMap()->getH();
 	//cout << "NodeStore SearchEngine\n";
-	nodeStore = new NodeStore(world->getMap()->getW(), world->getMap()->getH());
+	nodeStore = new NodeStore(w, h);
 	nsgSearchEngine = new SearchEngine<NodeStore>(nodeStore, true);
 	nsgSearchEngine->setInvalidKey(Vec2i(-1));
 	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 
 	//cout << "Transition SearchEngine\n";
-	tNodeStore = new TransitionNodeStore(2048); //FIXME (size)
+	int numNodes = w * h / 4096 * 250; // 250 nodes for every 16 clusters
+	tNodeStore = new TransitionNodeStore(numNodes);
 	tSearchEngine = new TransitionSearchEngine(tNodeStore, true);
 	tSearchEngine->setInvalidKey(NULL);
 }

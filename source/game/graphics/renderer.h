@@ -164,9 +164,6 @@ private:
 
 	SceneCuller culler;
 
-	//DEBUG
-	IF_DEBUG_EDITION( Vec3f frstmPoints[8]; )
-
 private:
 	Renderer();
 	~Renderer();
@@ -215,11 +212,6 @@ public:
 	void loadCameraMatrix(const Camera *camera);
 	
 	void computeVisibleArea();
-
-	//DEBUG
-	IF_DEBUG_EDITION( bool captureFrustum; bool showFrustum; )
-	IF_DEBUG_EDITION( void renderFrustum() const; )
-
 
     //basic rendering
 	void renderMouse2d(int mouseX, int mouseY, int anim, float fade= 0.f);

@@ -422,11 +422,11 @@ public:
 	typedef sigslot::signal2<u_ptr, Vec2i>	UnitPosSignal;
 	typedef sigslot::signal2<u_ptr, ut_ptr> MorphSignal;
 
-	UnitSignal		Created;	 /**< fires when a unit is created		   */
-	UnitSignal		Born;		/**< fires when a unit is 'born'		  */
-	UnitPosSignal	Moving;	   /**< fires just before a unit is moved	 */
-	UnitPosSignal	Moved;	  /**< fires after a unit has moved			*/
-	MorphSignal		Morphed; /**<  */
+	//UnitSignal		Created;	 /**< fires when a unit is created		   */
+	//UnitSignal		Born;		/**< fires when a unit is 'born'		  */
+	//UnitPosSignal	Moving;	   /**< fires just before a unit is moved	 */
+	//UnitPosSignal	Moved;	  /**< fires after a unit has moved			*/
+	//MorphSignal		Morphed; /**<  */
 	UnitSignal		Died;	/**<  */
 
 	//other

@@ -183,6 +183,7 @@ class DebugRenderer {
 private:
 	set<Vec2i> clusterEdgesWest;
 	set<Vec2i> clusterEdgesNorth;
+	Vec3f frstmPoints[8];
 
 public:
 	DebugRenderer();
@@ -191,6 +192,8 @@ public:
 
 	bool gridTextures, AAStarTextures, HAAStarOverlay, showVisibleQuad, captureVisibleQuad,
 		regionHilights, teamSight, resourceMapOverlay, storeMapOverlay;
+	bool captureFrustum;
+	bool showFrustum;
 
 private:
 	template<typename CellTextureCallback>
@@ -325,10 +328,13 @@ private:
 	void renderPathOverlay();
 	void renderIntraClusterEdges(const Vec2i &cluster, CardinalDir dir = CardinalDir::COUNT);
 
+	void renderFrustum() const;
+
 public:
 	static void clearWaypoints()		{ waypoints.clear();		}
 	static void addWaypoint(Vec3f v)	{ waypoints.push_back(v);	}
 
+	void sceneEstablished(SceneCuller &culler);
 	bool willRenderSurface() const { return AAStarTextures || gridTextures; }
 	void renderSurface(SceneCuller &culler) {
 		if (AAStarTextures) {

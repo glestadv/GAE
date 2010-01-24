@@ -101,10 +101,12 @@ class Cartographer : public sigslot::has_slots<> {
 	void initResourceMap(const ResourceType *rt, PatchMap<1> *pMap);
 	void fixupResourceMap(const ResourceType *rt, const Vec2i &tl, const Vec2i &br);
 
-	PatchMap<1>* buildStoreMap(const Unit *unit);
+	PatchMap<1>* buildStoreMap(Unit *unit);
 
 	// slots
 	void onResourceDepleted(Vec2i pos);
+	void onStoreDestroyed(Unit *unit);
+
 	void onUnitBorn(Unit *unit);
 	void onUnitMoved(Unit *unit);
 	void onUnitMorphed(Unit *unit, const UnitType *type);
@@ -152,7 +154,7 @@ public:
 		if (it != storeMaps.end()) {
 			return it->second;
 		}
-		return buildStoreMap(unit);
+		return buildStoreMap(const_cast<Unit*>(unit));
 	}
 
 	ClusterMap* getClusterMap() const { return clusterMap; }

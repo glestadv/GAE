@@ -75,7 +75,8 @@ list<Vec3f> DebugRenderer::waypoints;
 DebugRenderer::DebugRenderer() {
 	gridTextures = AAStarTextures = HAAStarOverlay = showVisibleQuad = 
 		captureVisibleQuad = regionHilights = 
-		teamSight = resourceMapOverlay = storeMapOverlay = false;
+		teamSight = resourceMapOverlay = storeMapOverlay =
+		showFrustum = captureFrustum = false;
 }
 
 bool findResourceMapRes(string &res) {
@@ -128,6 +129,34 @@ void DebugRenderer::init() {
 	ResourceMapOverlay::rt = NULL;
 	findResourceMapRes(string("gold"));
 
+}
+
+void DebugRenderer::sceneEstablished(SceneCuller &culler) {
+	if (captureFrustum) {
+		captureFrustum = false;
+		for (int i=0; i  < 8; ++i) {
+			frstmPoints[i] = culler.frstmPoints[i];
+		}
+
+		for (int i=0; i < culler.boundingPoints.size(); ++i) {
+			Vec2i pos(culler.boundingPoints[i].x, culler.boundingPoints[i].y);
+			RegionHilightCallback::blueCells.insert(pos);
+		}
+
+		vector<Vec2f>::iterator it = culler.visiblePoly.begin();
+		for ( ; it != culler.visiblePoly.end(); ++it) {
+			Vec2i pos(it->x, it->y);
+			RegionHilightCallback::greenCells.insert(pos);
+		}
+		for ( int i=0; i < culler.cellExtrema.spans.size(); ++i) {
+			int y = culler.cellExtrema.min_y + i;
+			int x1 = culler.cellExtrema.spans[i].first;
+			int x2 = culler.cellExtrema.spans[i].second;
+			RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
+			RegionHilightCallback::greenCells.insert(Vec2i(x2,y));
+		}
+		showFrustum = true;
+	}
 }
 
 void DebugRenderer::commandLine(string &line) {
@@ -187,6 +216,12 @@ void DebugRenderer::commandLine(string &line) {
 			PathFinderTextureCallBack::debugField = f;
 		} else {
 			theConsole.addLine("Bad field: " + val);
+		}
+	} else if (key == "Frustum") {
+		if (val == "capture" || val == "Capture") {
+			captureFrustum = true;
+		} else if (val == "off" || val == "Off") {
+			showFrustum = false;
 		}
 	} else if (key == "ResourceMap") {
 		if ( val == "" ) { // no val supplied, toggle
@@ -420,6 +455,42 @@ void DebugRenderer::renderIntraClusterEdges(const Vec2i &cluster, CardinalDir di
 	glPopAttrib();
 }
 
+void DebugRenderer::renderFrustum() const {
+	glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT );
+	glEnable( GL_BLEND );
+	glEnable( GL_COLOR_MATERIAL ); 
+	glDisable( GL_ALPHA_TEST );
+	glActiveTexture( GL_TEXTURE0 );
+	glDisable( GL_TEXTURE_2D );
+	
+	glPointSize(5);
+	glColor3f(1.f, 0.2f, 0.2f);
+	glBegin(GL_POINTS);
+		for (int i=0; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
+	glEnd();
+
+	glLineWidth(2);
+	glColor3f(0.1f, 0.5f, 0.1f); // near
+	glBegin(GL_LINE_LOOP);
+		for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
+	glEnd();
+	
+	glColor3f(0.1f, 0.1f, 0.5f); // far
+	glBegin(GL_LINE_LOOP);
+		for (int i=4; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
+	glEnd();
+	
+	glColor3f(0.1f, 0.5f, 0.5f);
+	glBegin(GL_LINES);
+		for (int i=0; i < 4; ++i) {
+			glVertex3fv(frstmPoints[i].ptr()); // near
+			glVertex3fv(frstmPoints[i+4].ptr()); // far
+		}
+	glEnd();
+
+	glPopAttrib();
+}
+
 void DebugRenderer::renderEffects(SceneCuller &culler) {
 	if (regionHilights) {
 		renderRegionHilight(culler);
@@ -446,6 +517,9 @@ void DebugRenderer::renderEffects(SceneCuller &culler) {
 	}
 	if (storeMapOverlay) {
 		renderStoreMapOverlay(culler);
+	}
+	if (showFrustum) {
+		renderFrustum();
 	}
 }
 
