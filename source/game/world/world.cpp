@@ -112,9 +112,6 @@ void World::save(XmlNode *node) const {
 // ========================== init ===============================================
 
 void World::init(const XmlNode *worldNode) {
-#	if _GAE_DEBUG_EDITION_
-		PathFinderTextureCallBack::loadPFDebugTextures();
-#	endif
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
 	initMap();

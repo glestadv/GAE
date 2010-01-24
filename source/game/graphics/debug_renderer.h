@@ -45,7 +45,7 @@ public:
 	static map<Vec2i,uint32> localAnnotations;
 	
 	static Field debugField;
-	static void loadPFDebugTextures ();
+	//static void loadPFDebugTextures ();
 	static Texture2D *PFDebugTextures[26];
 
 	Texture2DGl* operator()(const Vec2i &cell) {
@@ -159,13 +159,16 @@ public:
 
 class StoreMapOverlay {
 public:
-	static const Unit *store;
+	typedef vector<const Unit *> UnitList;
+	static UnitList stores;
 
 	bool operator()(const Vec2i &cell, Vec4f &colour) {
-		PatchMap<1> *pMap = theWorld.getCartographer()->getStoreMap(store);
-		if (pMap && pMap->getInfluence(cell)) {
-			colour = Vec4f(0.f, 1.f, 0.3f, 0.7f);
-			return true;
+		for (UnitList::iterator it = stores.begin(); it != stores.end(); ++it) {
+			PatchMap<1> *pMap = theWorld.getCartographer()->getStoreMap(*it);
+			if (pMap && pMap->getInfluence(cell)) {
+				colour = Vec4f(0.f, 1.f, 0.3f, 0.7f);
+				return true;
+			}
 		}
 		return false;
 	}
@@ -186,7 +189,7 @@ public:
 	void init();
 	void commandLine(string &line);
 
-	bool AAStarTextures, HAAStarOverlay, showVisibleQuad, captureVisibleQuad,
+	bool gridTextures, AAStarTextures, HAAStarOverlay, showVisibleQuad, captureVisibleQuad,
 		regionHilights, teamSight, resourceMapOverlay, storeMapOverlay;
 
 private:
@@ -212,23 +215,23 @@ private:
 			cy = pos.y * 2;
 			if(mapBounds.isInside(pos)){
 				Tile *tc00 = theMap.getTile(pos.x, pos.y), *tc10 = theMap.getTile(pos.x+1, pos.y),
-					*tc01 = theMap.getTile(pos.x, pos.y+1), *tc11 = theMap.getTile(pos.x+1, pos.y+1);
+					 *tc01 = theMap.getTile(pos.x, pos.y+1), *tc11 = theMap.getTile(pos.x+1, pos.y+1);
 				Vec3f tl = tc00->getVertex (), tr = tc10->getVertex (),
-					bl = tc01->getVertex (), br = tc11->getVertex ();
+					  bl = tc01->getVertex (), br = tc11->getVertex ();
 				Vec3f tc = tl + (tr - tl) / 2,  ml = tl + (bl - tl) / 2,
-					mr = tr + (br - tr) / 2, mc = ml + (mr - ml) / 2, bc = bl + (br - bl) / 2;
-				Vec2i cPos ( cx, cy );
-				const Texture2DGl *tex = callback( cPos );
-				renderCellTextured( tex, tc00->getNormal(), tl, tc, mc, ml );
-				cPos = Vec2i( cx+1, cy );
-				tex = callback( cPos );
-				renderCellTextured( tex, tc00->getNormal(), tc, tr, mr, mc );
-				cPos = Vec2i( cx, cy + 1 );
-				tex = callback( cPos );
-				renderCellTextured( tex, tc00->getNormal(), ml, mc, bc, bl );
-				cPos = Vec2i( cx + 1, cy + 1 );
-				tex = callback( cPos );
-				renderCellTextured( tex, tc00->getNormal(), mc, mr, br, bc );
+					  mr = tr + (br - tr) / 2, mc = ml + (mr - ml) / 2, bc = bl + (br - bl) / 2;
+				Vec2i cPos(cx, cy);
+				const Texture2DGl *tex = callback(cPos);
+				renderCellTextured(tex, tc00->getNormal(), tl, tc, mc, ml);
+				cPos = Vec2i(cx + 1, cy);
+				tex = callback(cPos);
+				renderCellTextured(tex, tc00->getNormal(), tc, tr, mr, mc);
+				cPos = Vec2i(cx, cy + 1 );
+				tex = callback(cPos);
+				renderCellTextured(tex, tc00->getNormal(), ml, mc, bc, bl);
+				cPos = Vec2i(cx + 1, cy + 1);
+				tex = callback(cPos);
+				renderCellTextured(tex, tc00->getNormal(), mc, mr, br, bc);
 			}
 		}
 		//Restore
@@ -304,7 +307,7 @@ private:
 		renderCellOverlay<ResourceMapOverlay>(culler);
 	}
 	void renderStoreMapOverlay(SceneCuller &culler) {
-		if (StoreMapOverlay::store) {
+		if (!StoreMapOverlay::stores.empty()) {
 			renderCellOverlay<StoreMapOverlay>(culler);
 		}
 	}
@@ -326,8 +329,15 @@ public:
 	static void clearWaypoints()		{ waypoints.clear();		}
 	static void addWaypoint(Vec3f v)	{ waypoints.push_back(v);	}
 
-	bool willRenderSurface() const { return AAStarTextures; }
-	void renderSurface(SceneCuller &culler) { renderCellTextures<PathFinderTextureCallBack>(culler); }
+	bool willRenderSurface() const { return AAStarTextures || gridTextures; }
+	void renderSurface(SceneCuller &culler) {
+		if (AAStarTextures) {
+			if (gridTextures) gridTextures = false;
+			renderCellTextures<PathFinderTextureCallBack>(culler);
+		} else if (gridTextures) {
+			renderCellTextures<GridTextureCallback>(culler);
+		}
+	}
 	void renderEffects(SceneCuller &culler);
 };
 

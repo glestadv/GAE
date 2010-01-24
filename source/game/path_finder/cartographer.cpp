@@ -209,8 +209,8 @@ void Cartographer::fixupResourceMap(const ResourceType *rt, const Vec2i &tl, con
 PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
 	const UnitType* const &ut = unit->getType();
 	Vec2i pos = unit->getPos();
-	int sx = pos.x;
-	int sy = pos.y;
+	const int sx = pos.x;
+	const int sy = pos.y;
 	pos += OrdinalOffsets[OrdinalDir::NORTH_WEST];
 	Rectangle rect(pos.x, pos.y, unit->getSize() + 2, unit->getSize() + 2);
 	PatchMap<1> *pMap = new PatchMap<1>(rect, 0);
@@ -221,7 +221,7 @@ PatchMap<1>* Cartographer::buildStoreMap(const Unit *unit) {
 	cout << "building store map for " << unit->getType()->getName() << "\n\tSetting cells:";
 	for (int y = sy; y < sy + unit->getSize(); ++y) {
 		for (int x = sx; x < sx + unit->getSize(); ++x) {
-			if (!ut->hasCellMap() || ut->getCellMapCell(x-sx, y-sx)) {
+			if (!ut->hasCellMap() || ut->getCellMapCell(x-sx, y-sy)) {
 				for (OrdinalDir d(0); d < OrdinalDir::COUNT; ++d) {
 					Vec2i goalPos = Vec2i(x,y) + OrdinalOffsets[d];
 					if (masterMap->canOccupy(goalPos, 1, Field::LAND) 

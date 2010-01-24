@@ -37,7 +37,7 @@ set<Vec2i>	RegionHilightCallback::blueCells,
 // =====================================================
 const ResourceType *ResourceMapOverlay::rt;
 
-const Unit* StoreMapOverlay::store = NULL;
+vector<const Unit*> StoreMapOverlay::stores;
 
 
 // =====================================================
@@ -53,37 +53,7 @@ Vec2i		PathFinderTextureCallBack::pathStart,
 map<Vec2i,uint32> 
 			PathFinderTextureCallBack::localAnnotations;
 
-#define _load_tex(i,f)												\
-   PFDebugTextures[i]=Renderer::getInstance().newTexture2D(rsGame);	\
-   PFDebugTextures[i]->setMipmap(false);							\
-   PFDebugTextures[i]->getPixmap()->load(f);
-
-void PathFinderTextureCallBack::loadPFDebugTextures()
-{
-   char buff[128];
-   for ( int i=0; i < 8; ++i )
-   {
-      sprintf ( buff, "data/core/misc_textures/g%02d.bmp", i );
-      _load_tex ( i, buff );
-   }
-   _load_tex ( 9, "data/core/misc_textures/path_start.bmp" );
-   _load_tex ( 10, "data/core/misc_textures/path_dest.bmp" );
-   _load_tex ( 11, "data/core/misc_textures/path_both.bmp" );
-   _load_tex ( 12, "data/core/misc_textures/path_return.bmp" );
-   _load_tex ( 13, "data/core/misc_textures/path.bmp" );
-
-   _load_tex ( 14, "data/core/misc_textures/path_node.bmp" );
-   _load_tex ( 15, "data/core/misc_textures/open_node.bmp" );
-   _load_tex ( 16, "data/core/misc_textures/closed_node.bmp" );
-
-   for ( int i=17; i < 17+8; ++i )
-   {
-      sprintf ( buff, "data/core/misc_textures/l%02d.bmp", i-17 );
-      _load_tex ( i, buff );
-   }
-}
-
-#undef _load_tex
+Texture2D*	GridTextureCallback::tex;
 
 // =====================================================
 //  class VisibleQuadColourCallback
@@ -103,7 +73,7 @@ set<Vec2i> PathfinderClusterOverlay::pathCells;
 list<Vec3f> DebugRenderer::waypoints;
 
 DebugRenderer::DebugRenderer() {
-	AAStarTextures = HAAStarOverlay = showVisibleQuad = 
+	gridTextures = AAStarTextures = HAAStarOverlay = showVisibleQuad = 
 		captureVisibleQuad = regionHilights = 
 		teamSight = resourceMapOverlay = storeMapOverlay = false;
 }
@@ -121,12 +91,43 @@ bool findResourceMapRes(string &res) {
 	return false;
 }
 
+void _load_debug_tex(Texture2D* &t, const char *f) {
+	t = Renderer::getInstance().newTexture2D(rsGame);
+	t->setMipmap(false);
+	t->getPixmap()->load(f);
+}
+
 void DebugRenderer::init() {
-	HAAStarOverlay = true;
+#	define _load_tex(i,f) _load_debug_tex(PathFinderTextureCallBack::PFDebugTextures[i],f)
+	char buff[128];
+	for (int i=0; i < 8; ++i) {
+		sprintf(buff, "data/core/misc_textures/g%02d.bmp", i);
+		_load_tex(i, buff);
+	}
+	_load_tex(9, "data/core/misc_textures/path_start.bmp");
+	_load_tex(10, "data/core/misc_textures/path_dest.bmp");
+	_load_tex(11, "data/core/misc_textures/path_both.bmp");
+	_load_tex(12, "data/core/misc_textures/path_return.bmp");
+	_load_tex(13, "data/core/misc_textures/path.bmp");
+
+	_load_tex(14, "data/core/misc_textures/path_node.bmp");
+	_load_tex(15, "data/core/misc_textures/open_node.bmp");
+	_load_tex(16, "data/core/misc_textures/closed_node.bmp");
+
+	for (int i=17; i < 17+8; ++i) {
+		sprintf(buff, "data/core/misc_textures/l%02d.bmp", i-17);
+		_load_tex(i, buff);
+	}
+#	undef _load_tex
+
+	_load_debug_tex(GridTextureCallback::tex, "data/core/misc_textures/grid.bmp");
+
+	resourceMapOverlay = storeMapOverlay = gridTextures = true;
 	PathFinderTextureCallBack::debugField = Field::LAND;
 
 	ResourceMapOverlay::rt = NULL;
-	findResourceMapRes(string("wood"));
+	findResourceMapRes(string("gold"));
+
 }
 
 void DebugRenderer::commandLine(string &line) {
@@ -146,6 +147,16 @@ void DebugRenderer::commandLine(string &line) {
 				AAStarTextures = true;
 			} else {
 				AAStarTextures = false;
+			}
+		}
+	} else if ( key == "GridTextures" ) {
+		if ( val == "" ) { // no val supplied, toggle
+			gridTextures = !gridTextures;
+		} else {
+			if ( val == "on" || val == "On" ) {
+				gridTextures = true;
+			} else {
+				gridTextures = false;
 			}
 		}
 	} else if ( key == "ClusterOverlay" ) {
@@ -198,7 +209,14 @@ void DebugRenderer::commandLine(string &line) {
 				storeMapOverlay = true;
 			}
 			if (storeMapOverlay) {
-				StoreMapOverlay::store = theWorld.findUnitById(0);
+				const Faction *f = theWorld.getThisFaction();
+				StoreMapOverlay::stores.clear();
+				for (int i=0; i < f->getUnitCount(); ++i) {
+					const Unit *u = f->getUnit(i);
+					if (u->getType()->getName() == "mage_tower") {
+						StoreMapOverlay::stores.push_back(u);
+					}
+				}
 			}
 		}
 	} else if (key == "AssertClusterMap") {

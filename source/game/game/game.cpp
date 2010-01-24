@@ -168,22 +168,18 @@ void Game::init() {
 	Map *map= world.getMap();
 	NetworkManager &networkManager= NetworkManager::getInstance();
 
-	GraphicProgressBar progressBar;
-	progressBar.init(345, 550, 300, 20);
-	logger.setProgressBar(&progressBar);
-
 	logger.setState(lang.get("Initializing"));
 
 	//mesage box
 	mainMessageBox.init("", lang.get("Yes"), lang.get("No"));
 	mainMessageBox.setEnabled(false);
 
-#ifndef DEBUG
-	//check fog of war
-	if(!config.getGsFogOfWarEnabled() && networkManager.isNetworkGame() ){
-		throw runtime_error("Can not play online games with fog of war disabled");
-	}
-#endif
+#	ifdef NDEBUG
+		//check fog of war
+		if(!config.getGsFogOfWarEnabled() && networkManager.isNetworkGame() ){
+			throw runtime_error("Can not play online games with fog of war disabled");
+		}
+#	endif
 
 	// (very) minor performance hack
 	renderNetworkStatus = networkManager.isNetworkGame();
@@ -191,14 +187,19 @@ void Game::init() {
 	// init world, and place camera
 	commander.init(&world);
 
+	GraphicProgressBar progressBar;
+	progressBar.init(345, 550, 300, 20);
+	logger.setProgressBar(&progressBar);
+
 	world.init(savedGame ? savedGame->getChild("world") : NULL);
+
+	logger.setProgressBar(NULL);
+
 	gui.init();
 	chatManager.init(&console, world.getThisTeamIndex());
 	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
-
-	logger.setProgressBar(NULL);
 
 	ScriptManager::init(this);
 	

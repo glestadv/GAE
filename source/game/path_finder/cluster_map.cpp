@@ -430,7 +430,7 @@ void ClusterMap::disconnectCluster(const Vec2i &cluster) {
 		for (Transitions::iterator it = t.begin(); it != t.end(); ++it) {
 			tset.insert(*it);
 		}
-		int del = 0;
+		//int del = 0;
 		for (Transitions::iterator it = t.begin(); it != t.end(); ++it) {
 			Transition *t = const_cast<Transition*>(*it);
 			Edges::iterator eit = t->edges.begin(); 
@@ -438,7 +438,7 @@ void ClusterMap::disconnectCluster(const Vec2i &cluster) {
 				if (tset.find((*eit)->transition()) != tset.end()) {
 					delete *eit;
 					eit = t->edges.erase(eit);
-					++del;
+					//++del;
 				} else {
 					++eit;
 				}

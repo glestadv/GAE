@@ -259,16 +259,16 @@ void Renderer::initGame(Game *game){
 		shadowMapFrame= -1;
 	}
 
+#	if _GAE_DEBUG_EDITION_
+		debugRenderer.init();
+#	endif
+
 	//texture init
 	modelManager[rsGame]->init();
 	textureManager[rsGame]->init();
 	fontManager[rsGame]->init();
 
 	init3dList();
-
-#if _GAE_DEBUG_EDITION_
-	debugRenderer.init();
-#endif
 }
 
 void Renderer::initMenu(MainMenu *mm){
