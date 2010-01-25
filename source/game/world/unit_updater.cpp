@@ -25,11 +25,11 @@
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "game.h"
-#include "path_finder.h"
+#include "route_planner.h"
 #include "object.h"
 #include "faction.h"
 #include "network_manager.h"
-
+#include "cartographer.h"
 #include "leak_dumper.h"
 
 using namespace Shared::Graphics;
@@ -58,22 +58,14 @@ static bool verifySubfaction(Unit *unit, const ProducibleType *pt) {
 // ===================== PUBLIC ========================
 const float UnitUpdater::repairerToFriendlySearchRadius = 1.25f;
 
-UnitUpdater::UnitUpdater(Game &game)
-		: gameCamera(game.getGameCamera())
-		, gui(*(game.getGui()))
-		, world(*(game.getWorld()))
-		, map(NULL)
-		, console(*(game.getConsole()))
-		, scriptManager(NULL)
-		, pathFinder(NULL)
-		, random() // note, should be initialized identically on all nodes of a network game!
-		, gameSettings(game.getGameSettings()) {
-}
-
 void UnitUpdater::init(Game &game) {
-	map = world.getMap();
-	pathFinder = Search::PathFinder::getInstance();
-	pathFinder->init(map);
+	this->gui = game.getGui();
+	this->gameCamera = game.getGameCamera();
+	this->world = game.getWorld();
+	this->map = world->getMap();
+	this->console = game.getConsole();
+	routePlanner = world->getRoutePlanner();
+	gameSettings = game.getGameSettings();
 }
 
 // ==================== progress skills ====================
@@ -87,7 +79,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 	if (currSkill->getSound() != NULL) {
 		float soundStartTime = currSkill->getSoundStartTime();
 		if (soundStartTime >= unit->getLastAnimProgress() && soundStartTime < unit->getAnimProgress()) {
-			if (map->getTile(Map::toTileCoords(unit->getPos()))->isVisible(world.getThisTeamIndex())) {
+			if (map->getTile(Map::toTileCoords(unit->getPos()))->isVisible(world->getThisTeamIndex())) {
 				soundRenderer.playFx(currSkill->getSound(), unit->getCurrVector(), gameCamera->getPos());
 			}
 		}
@@ -103,21 +95,13 @@ void UnitUpdater::updateUnit(Unit *unit) {
 	}
 
 	//update emanations every 8 frames
-	if (unit->getGetEmanations().size() && !((world.getFrameCount() + unit->getId()) % 8)
+	if (unit->getGetEmanations().size() && !((world->getFrameCount() + unit->getId()) % 8)
 			&& unit->isOperative()) {
 		updateEmanations(unit);
 	}
 
 	//update unit
 	if (unit->update()) {
-		// make sure attack systems are started even on laggy computers
-		/* this is causing double attacks for some reason
-		if (unit->getCurrSkill()->getClass() == SkillClass::ATTACK) {
-			const AttackSkillType *ast = static_cast<const AttackSkillType*>(unit->getCurrSkill());
-			if (ast->getStartTime() < unit->getLastAnimProgress()) {
-				startAttackSystems(unit, ast);
-			}
-		}*/
 
 		const UnitType *ut = unit->getType();
 
@@ -140,7 +124,7 @@ void UnitUpdater::updateUnit(Unit *unit) {
 
 		//move unit in cells
 		if (unit->getCurrSkill()->getClass() == SkillClass::MOVE) {
-			world.moveUnitCells(unit);
+			world->moveUnitCells(unit);
 
 			//play water sound
 			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() && unit->getCurrField() == Field::LAND) {
@@ -194,6 +178,15 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 			}
 		}
 	}
+	// calculate and cache skill progress here.	
+	unit->preProcessSkill();
+	/*if ( unit->anyCommand() ) {		
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " updating command "
+			+ CommandClassNames[unit->getCurrCommand()->getType()->getClass()] );	
+		} else {
+			LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " has no command!" );
+		}
+	}*/
 }
 
 // ==================== updateStop ====================
@@ -319,6 +312,7 @@ void UnitUpdater::updateStop(Unit *unit) {
 	// if we have another command then stop sitting on your ass
 	if (unit->getCommands().size() > 1 && unit->getCommands().front()->getType()->getClass() == CommandClass::STOP) {
 		unit->finishCommand();
+		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " cancelling stop" );
 		return;
 	}
 
@@ -360,20 +354,21 @@ void UnitUpdater::updateMove(Unit *unit) {
 		pos = command->getPos();
 	}
 
-	switch (pathFinder->findPath(unit, pos)) {
-		case Search::TravelState::MOVING:
+	switch (routePlanner->findPath(unit, pos)) {
+		case TravelState::MOVING:
 			unit->setCurrSkill(mct->getMoveSkillType());
 			unit->face(unit->getNextPos());
+			LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) 
+				+ " updating move "  + "Unit is at " + Vec2iToStr(unit->getPos()) 
+				+ " now moving into " + Vec2iToStr(unit->getNextPos()) );
 			break;
-
-		case Search::TravelState::BLOCKED:
-			if (unit->getPath()->isBlocked() && !command->getUnit()) {
+		case TravelState::BLOCKED:
+			if(unit->getPath()->isBlocked() && !command->getUnit()){
 				unit->finishCommand();
 			}
-			break;
-
-		default:
-			unit->finishCommand();
+			break;	
+		default: // TravelState::ARRIVED or TravelState::IMPOSSIBLE
+			unit->finishCommand();	
 	}
 
 	// if we're doing an auto command, let's make sure we still want to do it
@@ -409,8 +404,8 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 	if (target && !asts->getZone(target->getCurrZone()))
 		unit->finishCommand();
 
-	//if found
-	if (attackableOnRange(unit, &target, act->getAttackSkillTypes(), &ast)) {
+	if(attackableOnRange(unit, &target, act->getAttackSkillTypes(), &ast)) {
+		// found a target in range
 		assert(ast);
 		if (unit->getEp() >= ast->getEpCost()) {
 			unit->setCurrSkill(ast);
@@ -421,7 +416,8 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 	} else {
 		//compute target pos
 		Vec2i pos;
-		if (attackableOnSight(unit, &target, asts, NULL)) {
+		if ( attackableOnSight(unit, &target, asts, NULL) ) {
+			// found a target, but not in range
 			pos = target->getNearestOccupiedCell(unit->getPos());
 			if (pos != unit->getTargetPos()) {
 				unit->setTargetPos(pos);
@@ -443,12 +439,12 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 		}
 
 		//if unit arrives destPos order has ended
-		switch (pathFinder->findPath(unit, pos)) {
-			case Search::TravelState::MOVING:
+		switch(routePlanner->findPath(unit, pos)) {
+		case TravelState::MOVING:
 				unit->setCurrSkill(act->getMoveSkillType());
 				unit->face(unit->getNextPos());
 				break;
-			case Search::TravelState::BLOCKED:
+		case TravelState::BLOCKED:
 				if (unit->getPath()->isBlocked()) {
 					return true;
 				}
@@ -517,27 +513,27 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				unit->getPath()->clear();
 			}
 		} else {
-			console.addStdMessage("Blocked");
+			console->addStdMessage("Blocked");
 			unit->cancelCurrCommand();
 			return;
 		}
 
-		switch (pathFinder->findPath(unit, waypoint)) {
-			case Search::TravelState::MOVING:
+		switch (routePlanner->findPath(unit, waypoint)) {
+		case TravelState::MOVING:
 				unit->setCurrSkill(bct->getMoveSkillType());
 				unit->face(unit->getNextPos());
 				return;
 
-			case Search::TravelState::BLOCKED:
-				if (unit->getPath()->isBlocked()) {
-					console.addStdMessage("Blocked");
+		case TravelState::BLOCKED:
+			if(unit->getPath()->isBlocked()) {
+				console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
 				}
 				return;
 
-			case Search::TravelState::ARRIVED:
-				if (unit->getPos() != waypoint) {
-					console.addStdMessage("Blocked");
+		case TravelState::ARRIVED:
+			if(unit->getPos() != waypoint) {
+				console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
 					return;
 				}
@@ -561,8 +557,8 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				if (!command->isReserveResources()) {
 					command->setReserveResources(true);
 					if (unit->checkCommand(*command) != CommandResult::SUCCESS) {
-						if (unit->getFactionIndex() == world.getThisFactionIndex()) {
-							console.addStdMessage("BuildingNoRes");
+						if (unit->getFactionIndex() == world->getThisFactionIndex()) {
+							console->addStdMessage("BuildingNoRes");
 						}
 						unit->finishCommand();
 						return;
@@ -570,7 +566,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 					unit->getFaction()->applyCosts(command->getUnitType());
 				}
 
-				builtUnit = new Unit(world.getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world.getMap());
+				builtUnit = new Unit(world->getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world->getMap());
 				builtUnit->create();
 
 				if (!builtUnitType->hasSkillClass(SkillClass::BE_BUILT)) {
@@ -589,11 +585,12 @@ void UnitUpdater::updateBuild(Unit *unit) {
 					getServerInterface()->updateFactions();
 				}
 			}
-			if (!builtUnit->isMobile()) {
-				pathFinder->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
+			if ( !builtUnit->isMobile() ) {
+				// new obstacle, inform cartographer
+				world->getCartographer()->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
 			}
 			//play start sound
-			if (unit->getFactionIndex() == world.getThisFactionIndex()) {
+			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(bct->getStartSound(), unit->getCurrVector(), gameCamera->getPos());
 			}
 		} else {
@@ -633,8 +630,8 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				// contains deeply submerged terain
 				unit->cancelCurrCommand();
 				unit->setCurrSkill(SkillClass::STOP);
-				if (unit->getFactionIndex() == world.getThisFactionIndex()) {
-					console.addStdMessage("BuildingNoPlace");
+				if (unit->getFactionIndex() == world->getThisFactionIndex()) {
+					console->addStdMessage("BuildingNoPlace");
 				}
 			}
 		}
@@ -653,7 +650,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			unit->setCurrSkill(SkillClass::STOP);
 			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), true);
 			scriptManager->onUnitCreated(builtUnit);
-			if (unit->getFactionIndex() == world.getThisFactionIndex()) {
+			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(
 					bct->getBuiltSound(),
 					unit->getCurrVector(),
@@ -682,35 +679,26 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			//if not loaded go for resources
 			Resource *r = map->getTile(Map::toTileCoords(command->getPos()))->getResource();
 			if (r && hct->canHarvest(r->getType())) {
-				//if can harvest dest. pos
-				if (unit->getPos().dist(command->getPos()) < harvestDistance
-						&&  map->isResourceNear(unit->getPos(), r->getType(), targetPos)) {
+				switch (routePlanner->findPathToResource(unit, command->getPos(), r->getType())) {
+					case TravelState::ARRIVED:
+						if (map->isResourceNear(unit->getPos(), r->getType(), targetPos)) {
 					//if it finds resources it starts harvesting
 					unit->setCurrSkill(hct->getHarvestSkillType());
 					unit->setTargetPos(targetPos);
+							command->setPos(targetPos);
 					unit->face(targetPos);
 					unit->setLoadCount(0);
 					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
-				} else { //if not continue walking
-					switch (pathFinder->findPathToResource(unit, command->getPos(), r->getType())) {
-						case Search::TravelState::MOVING:
+						}
+						break;
+					case TravelState::MOVING:
 							unit->setCurrSkill(hct->getMoveSkillType());
 							unit->face(unit->getNextPos());
 							break;
-						case Search::TravelState::ARRIVED:
-							for (int i = 0; i < 8; ++i) { // reset target
-								Vec2i cPos = unit->getPos() + Search::OffsetsSize1Dist1[i];
-								Resource *res = map->getTile(Map::toTileCoords(cPos))->getResource();
-								if (res && hct->canHarvest(res->getType())) {
-									command->setPos(cPos);
-									break;
-								}
-							}
-							//command->setPos (
 						default:
+						unit->setCurrSkill(SkillClass::STOP);
 							break;
 					}
-				}
 			} else {
 				//if can't harvest, search for another resource
 				unit->setCurrSkill(SkillClass::STOP);
@@ -722,30 +710,27 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			}
 		} else {
 			//if loaded, return to store
-			Unit *store = world.nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
+			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
-				switch (pathFinder->findPathToStore(unit, store->getNearestOccupiedCell(unit->getPos()), store)) {
-					case Search::TravelState::MOVING:
+				switch (routePlanner->findPathToStore(unit, store)) {
+					case TravelState::MOVING:
 						unit->setCurrSkill(hct->getMoveLoadedSkillType());
 						unit->face(unit->getNextPos());
 						break;
-					default:
+					case TravelState::BLOCKED:
+						unit->setCurrSkill(hct->getStopLoadedSkillType());
 						break;
 				}
-
-				//world.changePosCells(unit,unit->getPos()+unit->getDest());
 				if (map->isNextTo(unit->getPos(), store)) {
-
 					//update resources
 					int resourceAmount = unit->getLoadCount();
-					//
 					// Just do this all players ???
 					if (unit->getFaction()->getCpuUltraControl()) {
 						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
 						//resourceAmount *= ultraResourceFactor; // Pull from GameSettings
 					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
-					world.getStats().harvest(unit->getFactionIndex(), resourceAmount);
+					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
 					scriptManager->onResourceHarvested();
 
 					//if next to a store unload resources
@@ -775,13 +760,12 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 
 				//if resource exausted, then delete it and stop
 				if (r->decAmount(1)) {
-					// let the pathfinder know
+					// let the cartographer know
 					Vec2i rPos = r->getPos();
 					sc->deleteResource();
-					pathFinder->updateMapMetrics(rPos, 2);
+					world->getCartographer()->updateMapMetrics(rPos, 2);
 					unit->setCurrSkill(hct->getStopLoadedSkillType());
 				}
-
 				if (unit->getLoadCount() == hct->getMaxLoad()) {
 					unit->setCurrSkill(hct->getStopLoadedSkillType());
 					unit->getPath()->clear();
@@ -862,8 +846,8 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			targetPos = command->getPos();
 		}
 
-		switch (pathFinder->findPath(unit, targetPos)) {
-			case Search::TravelState::ARRIVED:
+		switch (routePlanner->findPath(unit, targetPos)) {
+		case TravelState::ARRIVED:
 				if (repaired && unit->getPos() != targetPos) {
 					// presume blocked
 					unit->setCurrSkill(SkillClass::STOP);
@@ -877,14 +861,13 @@ void UnitUpdater::updateRepair(Unit *unit) {
 					unit->finishCommand();
 				}
 				break;
-
-			case Search::TravelState::MOVING:
+		case TravelState::MOVING:
 				unit->setCurrSkill(rct->getMoveSkillType());
 				unit->face(unit->getNextPos());
 				break;
 
-			case Search::TravelState::BLOCKED:
-				if (unit->getPath()->isBlocked()) {
+		case TravelState::BLOCKED:
+			if(unit->getPath()->isBlocked()){
 					unit->setCurrSkill(SkillClass::STOP);
 					unit->finishCommand();
 				}
@@ -909,7 +892,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			//shiney
 			if (rst->getSplashParticleSystemType()) {
 				const Tile *sc = map->getTile(Map::toTileCoords(repaired->getCenteredPos()));
-				bool visible = sc->isVisible(world.getThisTeamIndex());
+				bool visible = sc->isVisible(world->getThisTeamIndex());
 
 				SplashParticleSystem *psSplash = rst->getSplashParticleSystemType()->createSplashParticleSystem();
 				psSplash->setPos(repaired->getCurrVector());
@@ -926,7 +909,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				if (!wasBuilt) {
 					//building finished
 					scriptManager->onUnitCreated(repaired);
-					if (unit->getFactionIndex() == world.getThisFactionIndex()) {
+					if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 						// try to find finish build sound
 						BuildCommandType *bct = (BuildCommandType *)unit->getType()->getFirstCtOfClass(CommandClass::BUILD);
 						if (bct) {
@@ -975,7 +958,7 @@ void UnitUpdater::updateProduce(Unit *unit) {
 				return;
 			}
 
-			produced = new Unit(world.getNextUnitId(), Vec2i(0), pct->getProducedUnit(), unit->getFaction(), world.getMap());
+			produced = new Unit(world->getNextUnitId(), Vec2i(0), pct->getProducedUnit(), unit->getFaction(), world->getMap());
 
 			//if no longer a valid subfaction, let them have the unit, but make
 			//sure it doesn't advance the subfaction
@@ -984,15 +967,14 @@ void UnitUpdater::updateProduce(Unit *unit) {
 				unit->getFaction()->checkAdvanceSubfaction(pct->getProducedUnit(), true);
 			}
 
-			//place unit creates the unit
-			if (!world.placeUnit(unit->getCenteredPos(), 10, produced)) {
+			if (!world->placeUnit(unit->getCenteredPos(), 10, produced)) {
 				unit->cancelCurrCommand();
 				delete produced;
 			} else {
 				produced->create();
 				produced->born();
-				scriptManager->onUnitCreated(produced);
-				world.getStats().produce(unit->getFactionIndex());
+				scriptManager->onUnitCreated( produced );
+				world->getStats().produce(unit->getFactionIndex());
 				const CommandType *ct = produced->computeCommandType(unit->getMeetingPos());
 
 				if (ct) {
@@ -1073,31 +1055,22 @@ void UnitUpdater::updateMorph(Unit *unit) {
 
 	if (unit->getCurrSkill()->getClass() != SkillClass::MORPH) {
 		//if not morphing, check space
-		bool gotSpace = false;
-		// redo field
-		Fields mfs = mct->getMorphUnit()->getFields();
-
+		// determine morph unit field
+		Fields mfs = mct->getMorphUnit()->getFields ();
 		Field mf;
-		if (mfs.get(Field::LAND)){
-			mf = Field::LAND;
-		} else if (mfs.get(Field::AIR)) {
-			mf = Field::AIR;
-		}
-		if (mfs.get(Field::AMPHIBIOUS)) {
-			mf = Field::AMPHIBIOUS;
-		} else if (mfs.get(Field::ANY_WATER)) {
-			mf = Field::ANY_WATER;
-		} else if (mfs.get(Field::DEEP_WATER)) {
-			mf = Field::DEEP_WATER;
-		}
+		if ( mfs.get ( Field::LAND ) ) mf = Field::LAND;
+		else if ( mfs.get ( Field::AIR ) ) mf = Field::AIR;
+		if ( mfs.get (Field::AMPHIBIOUS) ) mf = Field::AMPHIBIOUS;
+		else if ( mfs.get (Field::ANY_WATER) ) mf = Field::ANY_WATER;
+		else if ( mfs.get (Field::DEEP_WATER) ) mf = Field::DEEP_WATER;
 
-		if (map->areFreeCellsOrHasUnit(unit->getPos(), mct->getMorphUnit()->getSize(), mf, unit)) {
+		if (map->areFreeCellsOrHasUnit (unit->getPos(), mct->getMorphUnit()->getSize(), mf, unit)) {
 			unit->setCurrSkill(mct->getMorphSkillType());
 			unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), false);
 		} else {
-			if (unit->getFactionIndex() == world.getThisFactionIndex())
+			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				Game::getInstance()->getConsole()->addStdMessage("InvalidPosition");
-			unit->cancelCurrCommand();
+			}			unit->cancelCurrCommand();
 		}
 	} else {
 		unit->update2();
@@ -1106,22 +1079,25 @@ void UnitUpdater::updateMorph(Unit *unit) {
 			//finish the command
 			if (unit->morph(mct)) {
 				unit->finishCommand();
-				if (gui.isSelected(unit)) {
-					gui.onSelectionChanged();
+				if (gui->isSelected(unit)) {
+					gui->onSelectionChanged();
 				}
 				scriptManager->onUnitCreated(unit);
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
 				if (mapUpdate) {
-					pathFinder->updateMapMetrics(unit->getPos(), unit->getSize());
+					// obstacle added or removed, update annotated maps
+					bool adding = !mct->getMorphUnit()->isMobile();
+					world->getCartographer()->updateMapMetrics(unit->getPos(), unit->getSize());
 				}
-				if (isNetworkServer()) {
+
+				if(isNetworkServer()) {
 					getServerInterface()->unitMorph(unit);
 					getServerInterface()->updateFactions();
 				}
 			} else {
 				unit->cancelCurrCommand();
-				if (unit->getFactionIndex() == world.getThisFactionIndex()) {
-					console.addStdMessage("InvalidPosition");
+				if (unit->getFactionIndex() == world->getThisFactionIndex()) {
+					console->addStdMessage("InvalidPosition");
 				}
 			}
 			unit->setCurrSkill(SkillClass::STOP);
@@ -1268,9 +1244,9 @@ void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &t
 	}
 }
 
-void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance) {
+void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance){
 
-	if (isNetworkClient()) {
+	if(isNetworkClient()) {
 		return;
 	}
 
@@ -1278,7 +1254,7 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 	float damage = (float)attacker->getAttackStrength(ast);
 	int var = ast->getAttackVar();
 	int armor = attacked->getArmor();
-	float damageMultiplier = world.getTechTree()->getDamageMultiplier(ast->getAttackType(),
+	float damageMultiplier = world->getTechTree()->getDamageMultiplier(ast->getAttackType(),
 							 attacked->getType()->getArmorType());
 	int startingHealth = attacked->getHp();
 	int actualDamage;
@@ -1294,10 +1270,12 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 
 	//damage the unit
 	if (attacked->decHp(static_cast<int>(damage))) {
-		world.doKill(attacker, attacked);
+		world->doKill(attacker, attacked);
 		actualDamage = startingHealth;
-	} else
+	} 
+	else {
 		actualDamage = (int)roundf(damage);
+	}
 
 	//add stolen health to attacker
 	if (attacker->getAttackPctStolen(ast) || ast->getAttackPctVar()) {
@@ -1306,7 +1284,7 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 		int stolen = (int)roundf((float)actualDamage * pct);
 		if (stolen && attacker->doRegen(stolen, 0)) {
 			// stealing a negative percentage and dying?
-			world.doKill(attacker, attacker);
+			world->doKill(attacker, attacker);
 		}
 	}
 	if (isNetworkServer()) {
@@ -1317,14 +1295,9 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 	//complain
 	/*
 	const Vec3f &attackerVec = attacked->getCurrVector();
-	if (!gui.isVisible(Vec2i((int)roundf(attackerVec.x), (int)roundf(attackerVec.y)))) {
+	if (!gui->isVisible(Vec2i((int)roundf(attackerVec.x), (int)roundf(attackerVec.y)))) {
 		attacked->getFaction()->attackNotice(attacked);
 	}*/
-
-	if ( attacked->isAlive() && attacked->getAttackedTrigger() ) {
-		ScriptManager::onAttackedTrigger(attacked);
-		attacked->setAttackedTrigger(false);
-	}
 }
 
 void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
@@ -1342,7 +1315,7 @@ void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 	//make particle system
 	const Tile *sc = map->getTile(Map::toTileCoords(unit->getPos()));
 	const Tile *tsc = map->getTile(Map::toTileCoords(unit->getTargetPos()));
-	bool visible = sc->isVisible(world.getThisTeamIndex()) || tsc->isVisible(world.getThisTeamIndex());
+	bool visible = sc->isVisible(world->getThisTeamIndex()) || tsc->isVisible(world->getThisTeamIndex());
 
 	//projectile
 	if (pstProj != NULL) {
@@ -1366,7 +1339,7 @@ void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 		}
 
 		psProj->setPath(startPos, endPos);
-		if (pstProj->isTracking() && unit->getTarget()) {
+		if(pstProj->isTracking() && unit->getTarget()) {
 			psProj->setTarget(unit->getTarget());
 			psProj->setObserver(new ParticleDamager(unit, unit->getTarget(), this, gameCamera));
 		} else {
@@ -1469,13 +1442,13 @@ void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes, Uni
 						: true)) {
 
 			float strength = (*i)->isScaleSplashStrength() ? 1.0f / (float)(distance + 1) : 1.0f;
-			Effect *primaryEffect = new Effect((*i), source, NULL, strength, target, world.getTechTree());
+			Effect *primaryEffect = new Effect((*i), source, NULL, strength, target, world->getTechTree());
 
 			target->add(primaryEffect);
 
 			for (EffectTypes::const_iterator j = (*i)->getRecourse().begin();
 					j != (*i)->getRecourse().end(); j++) {
-				source->add(new Effect((*j), NULL, primaryEffect, strength, source, world.getTechTree()));
+				source->add(new Effect((*j), NULL, primaryEffect, strength, source, world->getTechTree()));
 			}
 		}
 	}
@@ -1485,11 +1458,11 @@ void UnitUpdater::appyEffect(Unit *u, Effect *e) {
 	if (u->add(e)) {
 		Unit *attacker = e->getSource();
 		if (attacker) {
-			world.getStats().kill(attacker->getFactionIndex(), u->getFactionIndex());
+			world->getStats().kill(attacker->getFactionIndex(), u->getFactionIndex());
 			attacker->incKills();
 		} else if (e->getRoot()) {
 			// if killed by a recourse effect, this was suicide
-			world.getStats().kill(u->getFactionIndex(), u->getFactionIndex());
+			world->getStats().kill(u->getFactionIndex(), u->getFactionIndex());
 		}
 	}
 }
@@ -1535,7 +1508,7 @@ bool UnitUpdater::searchForResource(Unit *unit, const HarvestCommandType *hct) {
 	Vec2i pos;
 
 	PosCircularIteratorOrdered pci(*map, unit->getCurrCommand()->getPos(),
-								   world.getPosIteratorFactory().getInsideOutIterator(1, maxResSearchRadius));
+			world->getPosIteratorFactory().getInsideOutIterator(1, maxResSearchRadius));
 
 	while (pci.getNext(pos)) {
 		Resource *r = map->getTile(Map::toTileCoords(pos))->getResource();
@@ -1552,13 +1525,13 @@ inline bool UnitUpdater::attackerOnSight(const Unit *unit, Unit **rangedPtr) {
 	return unitOnRange(unit, range, rangedPtr, NULL, NULL);
 }
 
-inline bool UnitUpdater::attackableOnSight(const Unit *unit, Unit **rangedPtr,
+inline bool UnitUpdater::attackableOnSight(const Unit *unit, Unit **rangedPtr, 
 		const AttackSkillTypes *asts, const AttackSkillType **past) {
 	int range = unit->getSight();
 	return unitOnRange(unit, range, rangedPtr, asts, past);
 }
 
-inline bool UnitUpdater::attackableOnRange(const Unit *unit, Unit **rangedPtr,
+inline bool UnitUpdater::attackableOnRange(const Unit *unit, Unit **rangedPtr, 
 		const AttackSkillTypes *asts, const AttackSkillType **past) {
 	// can't attack beyond range of vision
 	int range = min(unit->getMaxRange(asts), unit->getSight());
@@ -1567,15 +1540,15 @@ inline bool UnitUpdater::attackableOnRange(const Unit *unit, Unit **rangedPtr,
 
 //if the unit has any enemy on range
 /** rangedPtr should point to a pointer that is either NULL or a valid Unit */
-bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr,
+bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr, 
 							  const AttackSkillTypes *asts, const AttackSkillType **past) {
 	Vec2f floatCenter = unit->getFloatCenteredPos();
 	float halfSize = (float)unit->getType()->getSize() / 2.f;
 	float distance;
 	bool needDistance = false;
 
-	if (*rangedPtr && ((*rangedPtr)->isDead()
-					   ||  !asts->getZone((*rangedPtr)->getCurrZone())))
+	if ( *rangedPtr && ( (*rangedPtr)->isDead() 
+	||	 !asts->getZone((*rangedPtr)->getCurrZone()) ) )
 		*rangedPtr = NULL;
 
 	if (*rangedPtr) {
@@ -1583,18 +1556,18 @@ bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr,
 	} else {
 		Targets enemies;
 		Vec2i pos;
-		PosCircularIteratorOrdered pci(*map, unit->getPos(), world.getPosIteratorFactory()
+		PosCircularIteratorOrdered pci(*map, unit->getPos(), world->getPosIteratorFactory()
 									   .getInsideOutIterator(1, (int)roundf(range + halfSize)));
 
 		while (pci.getNext(pos, distance)) {
 
-			//all fields
+			//all zones
 			for (int k = 0; k < Zone::COUNT; k++) {
-				Zone f = enum_cast<Zone>(k);
+				Zone z = enum_cast<Zone>(k);
 
-				//check field
-				if (!asts || asts->getZone(f)) {
-					Unit *possibleEnemy = map->getCell(pos)->getUnit(f);
+				//check zone
+				if (!asts || asts->getZone(z)) {
+					Unit *possibleEnemy= map->getCell(pos)->getUnit(z);
 
 					//check enemy
 					if (possibleEnemy && possibleEnemy->isAlive() && !unit->isAlly(possibleEnemy)) {
@@ -1604,30 +1577,30 @@ bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr,
 							goto unitOnRange_exitLoop;
 						}
 						// otherwise, we'll record it and figure out who to slap later.
-						enemies.record(possibleEnemy, distance);
+						enemies.record(possibleEnemy, (int)distance);
 					}
 				}
 			}
 		}
-
+	
 		if (!enemies.size()) {
 			return false;
 		}
-
+	
 		*rangedPtr = enemies.getNearest();
 		needDistance = true;
 	}
 unitOnRange_exitLoop:
 	assert(*rangedPtr);
-
-	if (needDistance) {
+	
+	if(needDistance) {
 		float targetHalfSize = (float)(*rangedPtr)->getType()->getSize() / 2.f;
 		distance = floatCenter.dist((*rangedPtr)->getFloatCenteredPos()) - targetHalfSize;
 	}
 
 	// check to see if we like this target.
-	if (asts && past) {
-		return (bool)(*past = asts->getPreferredAttack(unit, *rangedPtr, distance - halfSize));
+	if(asts && past) {
+		return (bool)(*past = asts->getPreferredAttack(unit, *rangedPtr, (int)(distance - halfSize)));
 	}
 	return true;
 }
@@ -1669,10 +1642,10 @@ bool UnitUpdater::repairableOnRange(
 	float distance;
 	PosCircularIteratorSimple pci(*map, center, range);
 	while (pci.getNext(pos, distance)) {
-		//all fields
-		for (int f = 0; f < Field::COUNT; f++) {
-			Unit *candidate = map->getCell(pos)->getUnit(enum_cast<Field>(f));
-
+		//all zones
+		for (int z = 0; z < Zone::COUNT; z++) {
+			Unit *candidate = map->getCell(pos)->getUnit(enum_cast<Field>(z));
+	
 			//is it a repairable?
 			if (candidate
 					&& (allowSelf || candidate != unit)
@@ -1683,9 +1656,9 @@ bool UnitUpdater::repairableOnRange(
 					&& (!damagedOnly || candidate->isDamaged())
 					&& (!militaryOnly || candidate->getType()->hasCommandClass(CommandClass::ATTACK))
 					&& rct->isRepairableUnitType(candidate->getType())) {
-
+	
 				//record the nearest distance to target (target may be on multiple cells)
-				repairables.record(candidate, distance);
+				repairables.record(candidate, (int)distance);
 			}
 		}
 	}
@@ -1701,7 +1674,7 @@ bool UnitUpdater::repairableOnRange(
 	//heal cloesest ally that can attack (and are probably fighting) first.
 	//if none, go for units that are less than 20%
 	//otherwise, take the nearest repairable unit
-	if (!(*rangedPtr = repairables.getNearest(SkillClass::ATTACK))
+	if(!(*rangedPtr = repairables.getNearest(SkillClass::ATTACK))
 			&& !(*rangedPtr = repairables.getNearest(SkillClass::COUNT, 0.2f))
 			&& !(*rangedPtr = repairables.getNearest())) {
 		return false;
@@ -1746,5 +1719,4 @@ void ParticleDamager::update(ParticleSystem *particleSystem) {
 	delete this;
 }
 
-}
-}//end namespace
+}}//end namespace

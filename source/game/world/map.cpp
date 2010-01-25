@@ -41,10 +41,19 @@ using namespace Shared::Util;
 
 namespace Glest{ namespace Game{
 
+using Search::Cartographer;
+
 // =====================================================
 // 	class Cell
 // =====================================================
 
+
+// ==================== misc ====================
+
+//returns if the cell is free
+bool Cell::isFree(Zone field) const {
+	return getUnit(field)==NULL || getUnit(field)->isPutrefacting();
+}
 
 // =====================================================
 // 	class Tile
@@ -276,7 +285,7 @@ Cell *Map::getCell(int x, int y) const {
 Cell *Map::getCell(const Vec2i &pos) const {
 	return getCell(pos.x, pos.y);
 }
-Tile *Map::getTile(int sx, int sy) const {
+Tile *Map::getTile(int sx, int sy) const { 
 	assert ( this->isInsideTile ( sx,sy ) );
 	return &tiles[sy*tileW+sx];
 }
@@ -305,7 +314,7 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 
 		//read header
 		MapFileHeader header;
-
+		
 		// FIXME: Better error handling starting here: report bad map instead of partially loading,
 		// etc.
 		fread(&header, sizeof(MapFileHeader), 1, f);
@@ -422,7 +431,18 @@ void Map::setCellTypes () {
 		}
 	}
 }
-
+/*
+void Map::setCellType ( Vec2i pos )
+{
+   Cell *cell = getCell ( pos );
+   if ( cell->getHeight () < waterLevel - ( 1.5f / heightFactor ) )
+      cell->setType ( SurfaceType::DEEP_WATER );
+   else if ( cell->getHeight () < waterLevel )
+      cell->setType ( SurfaceType::FORDABLE );
+   else
+      cell->setType ( SurfaceType::LAND );
+}
+*/
 void Map::calcAvgAltitude() {
 	double sum = 0.0;
 	for (int y=0; y < getTileH(); ++y) {
@@ -431,7 +451,7 @@ void Map::calcAvgAltitude() {
 		}
 	}
 	avgHeight = (float)(sum / (getTileH() * getTileW()));
-	cout << "average map height = " << avgHeight << endl;
+	//cout << "average map height = " << avgHeight << endl;
 }
 
 void Map::read(NetworkDataBuffer &buf) {
@@ -469,7 +489,6 @@ void Map::read(NetworkDataBuffer &buf) {
 		}
 	}
 
-
 	minimap->updateFowTex(1.f);
 */
 }
@@ -506,33 +525,31 @@ bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resour
 
 
 // ==================== free cells ====================
-bool Map::fieldsCompatible ( Cell *cell, Field mf ) const
-{
+bool Map::fieldsCompatible ( Cell *cell, Field mf ) const {
    if ( mf == Field::AIR || mf == Field::AMPHIBIOUS
-   ||  (mf == Field::LAND && ! cell->isDeepSubmerged ())
+	||  (mf == Field::LAND && ! cell->isDeepSubmerged ()) 
    ||  (mf == Field::ANY_WATER && cell->isSubmerged ())
    ||  (mf == Field::DEEP_WATER && cell->isDeepSubmerged ()) )
       return true;
    return false;
 }
 
-bool Map::isFreeCell(const Vec2i &pos, Field field) const
-{
+bool Map::isFreeCell(const Vec2i &pos, Field field) const {
    if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
       return false;
    if ( field != Field::AIR && !getTile(toTileCoords(pos))->isFree() )
       return false;
    // leave ^^^ that
    // replace all the rest with lookups into the map metrics...
-   //return PathFinder::getInstance()->canOccupy ( pos, 1, field );
+	//return masterMap->canOccupy ( pos, 1, field );
    // placeUnit() needs to use this... and the metrics aren't constructed at that point...
-   if ( field == Field::LAND && getCell(pos)->isDeepSubmerged () )
+	if ( field == Field::LAND && getCell(pos)->isDeepSubmerged() )
       return false;
-   if ( field == Field::LAND && ( pos.x > getW() - 4 || pos.y > getH() - 4 ) )
+	if ( field == Field::LAND && (pos.x > getW() - 4 || pos.y > getH() - 4) )
       return false;
-   if ( field == Field::ANY_WATER && !getCell(pos)->isSubmerged () )
+	if ( field == Field::ANY_WATER && !getCell(pos)->isSubmerged() )
       return false;
-   if ( field == Field::DEEP_WATER && !getCell(pos)->isDeepSubmerged () )
+	if ( field == Field::DEEP_WATER && !getCell(pos)->isDeepSubmerged() )
       return false;
    return true;
 }
@@ -558,16 +575,14 @@ bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Zone field, const Unit *unit) co
 	return false;
 }
 */
-bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) const
-{
-	if ( isInside ( pos ) )
-   {
+bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) const {
+	if ( isInside(pos) ) {
 		Cell *c = getCell(pos);
-		if ( c->getUnit(unit->getCurrField()) == unit
-      &&   fieldsCompatible ( c, field) )
+		if ( c->getUnit(unit->getCurrField()) == unit 
+		&&   fieldsCompatible( c, field) ) 
 			return true;
-		else
-			return isFreeCell ( pos, field );
+		else 
+			return isFreeCell(pos, field);
 	}
 	return false;
 }
@@ -575,10 +590,9 @@ bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) c
 bool Map::isFreeCellOrHaveUnits(const Vec2i &pos, Field field, const Selection::UnitContainer &units) const {
 	if(isInside(pos)) {
       Unit *containedUnit = getCell(pos)->getUnit(field);
-		if ( containedUnit && fieldsCompatible ( getCell(pos), field ) )
-      {
+		if ( containedUnit && fieldsCompatible(getCell(pos), field) ) {
 			Selection::UnitContainer::const_iterator i;
-			for(i = units.begin(); i != units.end(); ++i)
+			for(i = units.begin(); i != units.end(); ++i) 
 				if(containedUnit == *i)
 					return true;
 		}
@@ -590,27 +604,24 @@ bool Map::isFreeCellOrHaveUnits(const Vec2i &pos, Field field, const Selection::
 // if the Cell is visible, true if free, false if occupied
 // if the Cell is explored, true if Tile is free (no object), false otherwise
 // if the Cell is unexplored, true
-bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const
-{
-	if (isInside(pos)) // on map ?
-   {
+bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const {
+	if (isInside(pos)) { // on map ?
 		const Tile *sc = getTile(toTileCoords(pos));
-
-		if (sc->isVisible(teamIndex))
+		if (sc->isVisible(teamIndex)) {
 			return sc->isFree() && isFreeCell(pos, field);
-		else if (sc->isExplored(teamIndex))
+		} else if (sc->isExplored(teamIndex)) {
 			return field == Field::LAND ? sc->isFree() && !getCell(pos)->isDeepSubmerged() : true;
-		else
+		} else {
 			return true;
 	}
-
+	}
 	return false;
 }
 
-bool Map::areFreeCells(const Vec2i & pos, int size, Field field) const{
-	for(int i=pos.x; i<pos.x+size; ++i){
-		for(int j=pos.y; j<pos.y+size; ++j){
-			if(!isFreeCell(Vec2i(i,j), field)){
+bool Map::areFreeCells(const Vec2i & pos, int size, Field field) const {
+	for ( int i=pos.x; i<pos.x+size; ++i ) {
+		for ( int j=pos.y; j<pos.y+size; ++j ) {
+			if ( !isFreeCell(Vec2i(i,j), field) ) {
                 return false;
 			}
 		}
@@ -618,24 +629,21 @@ bool Map::areFreeCells(const Vec2i & pos, int size, Field field) const{
     return true;
 }
 
-bool Map::areFreeCells( const Vec2i &pos, int size, char *fieldMap ) const
-{
-	for ( int i = 0; i < size; ++i)
-   {
-		for ( int j = 0; j < size; ++j)
-      {
+bool Map::areFreeCells(const Vec2i &pos, int size, char *fieldMap) const {
+	for ( int i = 0; i < size; ++i) {
+		for ( int j = 0; j < size; ++j) {
          Field field;
-         switch ( fieldMap[j*size+i] )
-         {
+			switch ( fieldMap[j*size+i] ) {
          case 'l': field = Field::LAND; break;
          case 'a': field = Field::AMPHIBIOUS; break;
          case 'w': field = Field::DEEP_WATER; break;
          case 'r': field = Field::LAND; break;
          default: throw runtime_error ( "Bad value in fieldMap" );
          }
-			if ( ! isFreeCell (Vec2i(pos.x+i, pos.y+j), field) )
+			if ( !isFreeCell(Vec2i(pos.x+i, pos.y+j), field) ) {
                 return false;
 		}
+	}
 	}
     return true;
 }
@@ -675,17 +683,12 @@ bool Map::areAproxFreeCells(const Vec2i &pos, int size, Field field, int teamInd
 
 void Map::getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Zone field) const {
 	results.clear();
-
 	for (int i = pos.x; i < pos.x + size; ++i) {
 		for (int j = pos.y; j < pos.y + size; ++j) {
 			Vec2i currPos(i, j);
 			Unit *occupant;
-
 			if (isInside(currPos) && (occupant = getCell(currPos)->getUnit(field))) {
-				vector<Unit *>::const_iterator i;
-
-				for (i = results.begin(); i != results.end() && *i != occupant; ++i) ;
-
+				vector<Unit *>::const_iterator i = find(results.begin(), results.end(), occupant);
 				if (i == results.end()) {
 					results.push_back(occupant);
 				}
@@ -696,22 +699,20 @@ void Map::getOccupants(vector<Unit *> &results, const Vec2i &pos, int size, Zone
 /*
 bool Map::isFieldMapCompatible ( const Vec2i &pos, const UnitType *building ) const
 {
-   for ( int i=0; i < building->getSize(); ++i )
-   {
-      for ( int j=0; j < building->getSize(); ++j )
-      {
+	for ( int i=0; i < building->getSize(); ++i ) {
+		for ( int j=0; j < building->getSize(); ++j ) {
          Field field;
-         switch ( building->getFieldMapCell ( i, j ) )
-         {
+			switch ( building->getFieldMapCell ( i, j ) ) {
          case 'l': field = Field::LAND; break;
          case 'a': field = Field::AMPHIBIOUS; break;
          case 'w': field = Field::DEEP_WATER; break;
          default: throw runtime_error ( "Illegal value in FieldMap." );
          }
-         if ( !fieldsCompatible ( getCell ( pos ), field ) )
+			if ( !fieldsCompatible ( getCell ( pos ), field ) ) {
             return false;
       }
    }
+	}
    return true;
 }
 */
@@ -805,8 +806,7 @@ bool Map::getNearestFreePos(Vec2i &result, const Unit *unit, const Vec2i &target
 		int leftX = target.x - size;
 		int rightX = target.x + targetSize;
 
-		for(int i = 0; i < sideSize; ++i)
-      {
+		for(int i = 0; i < sideSize; ++i) {
          findNearestFree(result, start, size, field, Vec2i(leftX + i, topY), minDistance, unit);		// above
          findNearestFree(result, start, size, field, Vec2i(rightX, topY + i), minDistance, unit);	// right
          findNearestFree(result, start, size, field, Vec2i(rightX - i, bottomY), minDistance, unit);	// below
@@ -853,8 +853,7 @@ inline void Map::findNearestFree(Vec2i &result, const Vec2i &start, int size, Fi
 /**
  * Finds a location for a unit of the specified size to be adjacent to target of the specified size.
  */
-Vec2i Map::getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &target, Field field,
-		int targetSize) {
+Vec2i Map::getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &target, Field field, int targetSize) {
 	int sideSize = targetSize + size;
 	Vec2i result(0.f);
 	float minDistance = 100000.f;
@@ -870,7 +869,6 @@ Vec2i Map::getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &targ
 		findNearest(result, start, Vec2i(rightX - i, bottomY), minDistance);// below
 		findNearest(result, start, Vec2i(leftX, bottomY - i), minDistance);	// left
 	}
-
 	return result;
 }
 
@@ -911,76 +909,7 @@ bool Map::getNearestAdjacentFreePos(Vec2i &result, const Unit *unit, const Vec2i
 
 
 // ==================== unit placement ====================
-/*
-//checks if a unit can move from between 2 cells
-bool Map::canMove(const Unit *unit, const Vec2i &pos1, const Vec2i &pos2) const {
-	int size = unit->getType()->getSize();
-   Field mf = unit->getCurrField();
-   Zone cf = mf == Field::AIR ? Zone::AIR : Zone::LAND;
 
-	for(int x = 0; x < size; ++x) {
-		for(int y = 0; y < size; ++y) {
-			Vec2i currPos(x + pos2.x, y + pos2.y);
-
-			if(!isInside(currPos)) {
-				return false;
-			}
-
-			if(getCell(currPos)->getUnit(cf) != unit && !isFreeCell(currPos, mf)) {
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-// Called from PathFinder::aStar ()'s INNER LOOP, can this be tightened up???
-// Ditch it! Use clearance values to handle size, check cell 'availability' in pathfinder...
-// Check if a unit could theoreticaly move from pos1 to pos2 (pos1 & pos2 must be 'connected')
-bool Map::aproxCanMove(const Unit *unit, const Vec2i &pos1, const Vec2i &pos2) const{
-	int size = unit->getType()->getSize();
-	int teamIndex = unit->getTeam();
-	Field field = unit->getCurrField();
-
-	if (size == 1) //single cell units
-   {
-		if (!isAproxFreeCell(pos2, field, teamIndex))
-			return false; // can not move to pos2, object or unit there
-
-      if (pos1.x != pos2.x && pos1.y != pos2.y)
-      {
-         // Proposed move is diagonal, check if cells either 'side' are free.
-         //  eg..  XXXX
-         //        X1FX  The Cells marked 'F' must both be free
-         //        XF2X  for the move 1->2 to be legit
-         //        XXXX
-			if ( !isAproxFreeCell(Vec2i(pos1.x, pos2.y), field, teamIndex)
-         &&   !isAproxFreeCell(Vec2i(pos2.x, pos1.y), field, teamIndex) )
-				return false; // obstruction, can not move to pos2
-		}
-      // pos2 is free, and nothing is in the way
-		return true;
-	}
-   else //multi cell units
-   {
-		for (int i = pos2.x; i < pos2.x + size; ++i) {
-			for (int j = pos2.y; j < pos2.y + size; ++j) {
-				if (isInside(i, j)) {
-					if (getCell(i, j)->getUnit(unit->getCurrField()) != unit) {
-						if (!isAproxFreeCell(Vec2i(i, j), field, teamIndex)) {
-							return false;
-						}
-					}
-				} else {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-}
-*/
 //put a units into the cells
 void Map::putUnitCells(Unit *unit, const Vec2i &pos){
 
@@ -1127,82 +1056,76 @@ void Map::flatternTerrain(const Unit *unit){
     }
 }
 /*
-void Map::flattenTerrain ( const Unit *unit )
-{
+void Map::flattenTerrain(const Unit *unit) {
    // need to make sure unit->getCenteredPos() is on a 'l' fieldMapCell
 	float refHeight= getTile(toTileCoords(unit->getFlattenPos()))->getHeight();
 
-	for(int i=-1; i<=unit->getType()->getSize(); ++i)
-   {
-      for(int j=-1; j<=unit->getType()->getSize(); ++j)
-      {
+	for ( int i = -1; i <= unit->getType()->getSize(); ++i ) {
+		for ( int j = -1; j <= unit->getType()->getSize(); ++j ) {
          Vec2i relPos = Vec2i(i, j);
          Vec2i pos= unit->getPos() + relPos;
          // Only flatten for parts of the building on 'land'
          if ( unit->getType ()->hasFieldMap ()
          &&   unit->getType ()->getFieldMapCell ( relPos ) != 'l'
-         &&   unit->getType ()->getFieldMapCell ( relPos ) != 'f' )
+			&&   unit->getType ()->getFieldMapCell ( relPos ) != 'f' ) {
             continue;
+			}
          Cell *c= getCell(pos);
          Tile *sc= getTile(toTileCoords(pos));
          //we change height if pos is inside world, if its free or ocupied by the currenty building
-         if ( isInside(pos) && sc->getObject()==NULL
-         &&   (c->getUnit(Zone::LAND)==NULL || c->getUnit(Zone::LAND)==unit) )
+			if ( isInside(pos) && sc->getObject()==NULL 
+			&&   (c->getUnit(Zone::LAND)==NULL || c->getUnit(Zone::LAND)==unit) ) {
 	         sc->setHeight(refHeight);
       }
     }
-}*/
-
+	}
+}
+*/
 //compute normals
-void Map::computeNormals(){
+void Map::computeNormals(){  
     //compute center normals
     for(int i=1; i<tileW-1; ++i){
         for(int j=1; j<tileH-1; ++j){
             getTile(i, j)->setNormal(
-				getTile(i, j)->getVertex().normal(getTile(i, j-1)->getVertex(),
-					getTile(i+1, j)->getVertex(),
-					getTile(i, j+1)->getVertex(),
+				getTile(i, j)->getVertex().normal(getTile(i, j-1)->getVertex(), 
+					getTile(i+1, j)->getVertex(), 
+					getTile(i, j+1)->getVertex(), 
 					getTile(i-1, j)->getVertex()));
         }
     }
 }
 
-void Map::computeInterpolatedHeights(){
-
-	for(int i=0; i<w; ++i){
-		for(int j=0; j<h; ++j){
+void Map::computeInterpolatedHeights() {
+	for ( int i = 0; i < w; ++i ) {
+		for ( int j = 0; j < h; ++j ) {
 			getCell(i, j)->setHeight(getTile(toTileCoords(Vec2i(i, j)))->getHeight());
 		}
 	}
-
-	for(int i=1; i<tileW-1; ++i){
-		for(int j=1; j<tileH-1; ++j){
-			for(int k=0; k<cellScale; ++k){
-				for(int l=0; l<cellScale; ++l){
-					if(k==0 && l==0){
-						getCell(i*cellScale, j*cellScale)->setHeight(getTile(i, j)->getHeight());
+	for ( int i = 1; i < tileW - 1; ++i ) {
+		for ( int j = 1; j < tileH - 1; ++j ) {
+			for ( int k = 0; k < cellScale; ++k ) {
+				for ( int l = 0; l < cellScale; ++l) {
+					if ( k == 0 && l == 0 ) {
+						getCell(i * cellScale, j * cellScale)->setHeight(getTile(i, j)->getHeight());
+					} else if ( k != 0 && l == 0 ) {
+						getCell(i * cellScale + k, j * cellScale)->setHeight((
+							getTile(    i, j)->getHeight() + 
+							getTile(i + 1, j)->getHeight() ) / 2.f);
+					} else if ( l != 0 && k == 0 ) {
+						getCell(i * cellScale, j * cellScale + l)->setHeight((
+							getTile(i,     j)->getHeight() + 
+							getTile(i, j + 1)->getHeight() ) / 2.f);
+					} else {
+						getCell(i * cellScale + k, j * cellScale + l)->setHeight((
+							getTile(    i,     j)->getHeight() +
+							getTile(    i, j + 1)->getHeight() +
+							getTile(i + 1,     j)->getHeight() +
+							getTile(i + 1, j + 1)->getHeight() ) / 4.f);
 					}
-					else if(k!=0 && l==0){
-						getCell(i*cellScale+k, j*cellScale)->setHeight((
-							getTile(i, j)->getHeight()+
-							getTile(i+1, j)->getHeight())/2.f);
 					}
-					else if(l!=0 && k==0){
-						getCell(i*cellScale, j*cellScale+l)->setHeight((
-							getTile(i, j)->getHeight()+
-							getTile(i, j+1)->getHeight())/2.f);
 					}
-					else{
-						getCell(i*cellScale+k, j*cellScale+l)->setHeight((
-							getTile(i, j)->getHeight()+
-							getTile(i, j+1)->getHeight()+
-							getTile(i+1, j)->getHeight()+
-							getTile(i+1, j+1)->getHeight())/4.f);
 					}
 				}
-			}
-		}
-	}
 }
 
 
@@ -1302,14 +1225,14 @@ void Map::computeNearSubmerged(){
 		for(int y = 0; y < tileH; ++y) {
 
          //FIXME
-         // if the cells have been init already, we could use the new
-         // SurfaceType enum, it'll be a bit clunky (the code anyway),
+         // if the cells have been init already, we could use the new 
+         // SurfaceType enum, it'll be a bit clunky (the code anyway), 
          // but it will reduce redundant calculation...
 
          //FIXME
          // Also, I meant to move getSubmerged(Tile*) into Tile ages ago
          // That's the logical place for it, getSubmerged(Cell*) now lives
-         // in Cell ( as Cell::isSubmerged() )...
+         // in Cell ( as Cell::isSubmerged() )... 
 
 			// Daniel's optimized version: +speed, +code size
 			/*
@@ -1324,7 +1247,7 @@ void Map::computeNearSubmerged(){
 					|| (x - 1 >= 0	  && y - 1 >= 0	   && getSubmerged(getTile(x - 1, y - 1)));
 			*/
 
-			// Martiï¿½o's version: slower, but more compact (altered from original)
+			// Martiño's version: slower, but more compact (altered from original)
 			bool anySubmerged = false;
 			for(int xoff = -1; xoff <= 2 && !anySubmerged; ++xoff) {
 				for(int yoff = -1; yoff <= 2 && !anySubmerged; ++yoff) {
@@ -1392,7 +1315,7 @@ PosCircularIteratorSimple::PosCircularIteratorSimple(const Map &map, const Vec2i
 
 
 //////////////////////////////////////////////////////////////////
-// Cut Here
+// Cut Here 
 //////////////////////////////////////////////////////////////////
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
@@ -1626,7 +1549,7 @@ void Earthquake::resetSurface() {
 
 //}}//end namespace
 //////////////////////////////////////////////////////////////////
-// Cut Here
+// Cut Here 
 //////////////////////////////////////////////////////////////////
 
 

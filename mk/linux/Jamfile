@@ -28,7 +28,7 @@ for i in $(LIB_DIRS) {
 
 LIB_INCLUDE_DIRS = include include/$(LIB_DIRS) ;
 
-CPPFLAGS += -DDEBUG_RENDERING_ENABLED ;
+CPPFLAGS += -D_GAE_DEBUG_EDITION_ ;
 
 if $(USE_PCH) = "yes" {
 	LIB_PCH = include/pch.h ;

@@ -36,11 +36,7 @@ class AiRule;
 ///	An action that has to be performed by the IA
 // =====================================================
 
-enum TaskClass{
-	tcProduce,
-	tcBuild,
-	tcUpgrade
-};
+WRAPPED_ENUM( TaskClass, PRODUCE, BUILD, UPGRADE )
 
 class Task{
 protected:

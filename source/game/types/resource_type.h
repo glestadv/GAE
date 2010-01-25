@@ -45,7 +45,7 @@ public:
     bool load(const string &dir, int id, Checksum &checksum);
 
     //get
-	int getClass() const			{return resourceClass;}
+	ResourceClass getClass() const	{return resourceClass;}
 	int getTilesetObject() const	{return tilesetObject;}
 	int getResourceNumber() const	{return resourceNumber;}
 	int getInterval() const			{return interval;}

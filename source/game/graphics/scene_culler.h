@@ -121,10 +121,10 @@ struct Plane {
 	}
 };
 
-class Renderer;
+class DebugRenderer;
 
 class SceneCuller {
-	friend class Renderer;
+	friend class DebugRenderer;
 private:
 	enum { Left, Right, Top, Bottom, Near, Far };
 	Plane frstmPlanes[6];

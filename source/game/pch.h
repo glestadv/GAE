@@ -33,6 +33,8 @@
 
 // some local headers of importance
 #include "types.h"
+#include "game_constants.h"
+#include "sigslot.h"
 
 // POSIX base
 #include <stdlib.h>
@@ -111,8 +113,6 @@
 	#include <winsock.h>
 	#include <dsound.h>
 #endif
-
-#include "game_constants.h"
 
 #endif // USE_PCH
 #endif // _SHARED_PCH_H_

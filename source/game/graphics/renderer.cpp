@@ -28,7 +28,6 @@
 
 #include "leak_dumper.h"
 
-
 using namespace Shared::Graphics;
 using namespace Shared::Graphics::Gl;
 using namespace Shared::Util;
@@ -144,8 +143,7 @@ const float Renderer::maxLightDist= 50.f;
 
 // ==================== constructor and destructor ====================
 
-Renderer::Renderer()
-		: captureFrustum(false), showFrustum(false) {
+Renderer::Renderer() {
 	GraphicsInterface &gi= GraphicsInterface::getInstance();
 	FactoryRepository &fr= FactoryRepository::getInstance();
 	Config &config= Config::getInstance();
@@ -259,6 +257,8 @@ void Renderer::initGame(Game *game){
 
 		shadowMapFrame= -1;
 	}
+
+	IF_DEBUG_EDITION( debugRenderer.init(); )
 
 	//texture init
 	modelManager[rsGame]->init();
@@ -483,79 +483,8 @@ void Renderer::loadCameraMatrix(const Camera *camera){
 }
 
 void Renderer::computeVisibleArea() {
-
 	culler.establishScene();
-
-	if (captureFrustum) {
-		captureFrustum = false;
-		for (int i=0; i  < 8; ++i) {
-			frstmPoints[i] = culler.frstmPoints[i];
-		}
-
-		for (int i=0; i < culler.boundingPoints.size(); ++i) {
-			Vec2i pos(culler.boundingPoints[i].x, culler.boundingPoints[i].y);
-			RegionHilightCallback::blueCells.insert(pos);
-		}
-
-		vector<Vec2f>::iterator it = culler.visiblePoly.begin();
-		for ( ; it != culler.visiblePoly.end(); ++it) {
-			Vec2i pos(it->x, it->y);
-			RegionHilightCallback::greenCells.insert(pos);
-		}
-		for ( int i=0; i < culler.cellExtrema.spans.size(); ++i) {
-			int y = culler.cellExtrema.min_y + i;
-			int x1 = culler.cellExtrema.spans[i].first;
-			int x2 = culler.cellExtrema.spans[i].second;
-			RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
-			RegionHilightCallback::greenCells.insert(Vec2i(x2,y));
-			//for ( ; x1 <= x2; ++x1) {
-			//	RegionHilightCallback::greenCells.insert(Vec2i(x1,y));
-			//}
-		}
-
-		/*
-		SceneCuller::iterator it = culler.cell_begin();
-		for ( ; it != culler.cell_end(); ++it) {
-			Vec2i pos = *it;
-			RegionHilightCallback::cells.insert(pos);
-		}*/
-	}
-}
-
-void Renderer::renderFrustum() const {
-	glPushAttrib( GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_FOG_BIT | GL_TEXTURE_BIT );
-	glEnable( GL_BLEND );
-	glEnable( GL_COLOR_MATERIAL ); 
-	glDisable( GL_ALPHA_TEST );
-	glActiveTexture( GL_TEXTURE0 );
-	glDisable( GL_TEXTURE_2D );
-	
-	glPointSize(5);
-	glColor3f(1.f, 0.2f, 0.2f);
-	glBegin(GL_POINTS);
-		for (int i=0; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
-	glEnd();
-
-	glLineWidth(2);
-	glColor3f(0.1f, 0.5f, 0.1f); // near
-	glBegin(GL_LINE_LOOP);
-		for (int i=0; i < 4; ++i) glVertex3fv(frstmPoints[i].ptr());
-	glEnd();
-	
-	glColor3f(0.1f, 0.1f, 0.5f); // far
-	glBegin(GL_LINE_LOOP);
-		for (int i=4; i < 8; ++i) glVertex3fv(frstmPoints[i].ptr());
-	glEnd();
-	
-	glColor3f(0.1f, 0.5f, 0.5f);
-	glBegin(GL_LINES);
-		for (int i=0; i < 4; ++i) {
-			glVertex3fv(frstmPoints[i].ptr()); // near
-			glVertex3fv(frstmPoints[i+4].ptr()); // far
-		}
-	glEnd();
-
-	glPopAttrib();
+	IF_DEBUG_EDITION( debugRenderer.sceneEstablished(culler); )
 }
 
 // =======================================
@@ -886,7 +815,6 @@ void Renderer::renderText(const string &text, const Font2D *font, const Vec3f &c
 
 void Renderer::renderTextShadow(const string &text, const Font2D *font, int x, int y, bool centered){
 	glPushAttrib(GL_CURRENT_BIT);
-
 	Vec2i pos= centered? computeCenteredPos(text, font, x, y): Vec2i(x, y);	textRenderer->begin(font);
 	glColor3f(0.0f, 0.0f, 0.0f);
 	textRenderer->render(text, pos.x-1.0f, pos.y-1.0f);
@@ -922,7 +850,7 @@ void Renderer::renderLabel(const GraphicLabel *label){
 }
 
 void Renderer::renderButton(const GraphicButton *button){
-	int x= button->getX();	int y= button->getY();	int h= button->getH();	int w= button->getW();
+	int x = button->getX(),	 y = button->getY(), h= button->getH(), w= button->getW();
 	glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT);
 
 	//background
@@ -992,8 +920,7 @@ void Renderer::renderButton(const GraphicButton *button){
 
 	Vec2i textPos= Vec2i(x+w/2, y+h/2);
 
-	renderText(
-		button->getText(), button->getFont(), GraphicButton::getFade(),		x+w/2, y+h/2, true);
+	renderText( button->getText(), button->getFont(), GraphicButton::getFade(), x+w/2, y+h/2, true);
 	glPopAttrib();
 }
 
@@ -1193,16 +1120,14 @@ void Renderer::renderTextEntryBox(const GraphicTextEntryBox *textEntryBox){
 // ==================== complex rendering ====================
 
 void Renderer::renderSurface() {
-#	if DEBUG_RENDERING_ENABLED
-
-	if (true) {
-		debugRenderer.renderGrid(culler);
-
+	IF_DEBUG_EDITION(
+		if (debugRenderer.willRenderSurface()) {
+			debugRenderer.renderSurface(culler);
 	} else {
-
-#	endif
+	)
 
 	int lastTex=-1;
+
 	int currTex;
 	const World *world= game->getWorld();
 	const Map *map= world->getMap();
@@ -1296,10 +1221,11 @@ void Renderer::renderSurface() {
 	//assert
 	glGetError();	//remove when first mtex problem solved
 	assertGl();
-#	if DEBUG_RENDERING_ENABLED
-	}
-		debugRenderer.renderRegionHilight(culler);
-#	endif
+
+	IF_DEBUG_EDITION(
+		} // end else, if not renderering textures instead of terrain
+		debugRenderer.renderEffects(culler);
+	)
 }
 
 void Renderer::renderObjects(){
@@ -1308,7 +1234,7 @@ void Renderer::renderObjects(){
 
 	assertGl();
 	const Texture2D *fowTex= world->getMinimap()->getFowTexture();
-	Vec3f baseFogColor= world->getTileset()->getFogColor()*computeLightColor(world->getTimeFlow()->getTime());
+	Vec3f baseFogColor= world->getTileset()->getFogColor() * computeLightColor( world->getTimeFlow()->getTime() );
 
 	glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_FOG_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
 
@@ -1341,13 +1267,13 @@ void Renderer::renderObjects(){
 			const Model *objModel= sc->getObject()->getModel();
 			Vec3f v= o->getPos();
 
-			// QUICK-FIX: Objects/Resources drawn out of place...
+			// QUICK-FIX: Objects/Resources drawn out of place...				
 			// Why do we need this ??? are the tileset objects / techtree resources defined out of position ??
 			v.x += Map::mapScale / 2; // == 1
 			v.z += Map::mapScale / 2;
-
+			
 			//ambient and diffuse color is taken from cell color
-			float fowFactor= fowTex->getPixmap()->getPixelf(pos.x, pos.y);
+			float fowFactor= fowTex->getPixmap()->getPixelf(pos.x/Map::cellScale, pos.y/Map::cellScale);
 			Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
 			glColor4fv(color.ptr());
 			// FIXME: I was tired when I edited this code and it could be as broken as our
@@ -1367,7 +1293,6 @@ void Renderer::renderObjects(){
 
 			triangleCount+= objModel->getTriangleCount();
 			pointCount+= objModel->getVertexCount();
-
 			glPopMatrix();
 
 		}
@@ -1427,13 +1352,13 @@ void Renderer::renderWater(){
 	for(int j=scaledRect.p[0].y; j<scaledRect.p[1].y; ++j) {
 		glBegin(GL_TRIANGLE_STRIP);
 
-		for(int i=scaledRect.p[0].x; i<=scaledRect.p[1].x; ++i) {
+		for(int i=scaledRect.p[0].x; i<=scaledRect.p[1].x; ++i){
 
 			Tile *tc0= map->getTile(i, j);
 			Tile *tc1= map->getTile(i, j+1);
 
 			int thisTeamIndex= world->getThisTeamIndex();
-			if(tc0->getNearSubmerged() && (tc0->isExplored(thisTeamIndex) || tc1->isExplored(thisTeamIndex))) {
+			if(tc0->getNearSubmerged() && (tc0->isExplored(thisTeamIndex) || tc1->isExplored(thisTeamIndex))){
 				glNormal3f(0.f, 1.f, 0.f);
 				closed= false;
 
@@ -1615,7 +1540,6 @@ void Renderer::renderUnits(){
 			const Model *model= unit->getCurrentModel();
 			model->updateInterpolationData(unit->getAnimProgress(), unit->isAlive());
 			modelRenderer->render(model);
-
 			triangleCount+= model->getTriangleCount();
 			pointCount+= model->getVertexCount();
 

@@ -71,37 +71,45 @@ public:
 
 // =====================================================
 // 	class UnitPath
-//
-/// Holds the next cells of a Unit movement
 // =====================================================
-
-class UnitPath {
+/** Holds the next cells of a Unit movement 
+  * @extends std::list<Shared::Graphics::Vec2i>
+  */
+class UnitPath : public list<Vec2i> {
 private:
-	static const int maxBlockCount;
+	static const int maxBlockCount = 10; /**< number of frames to wait on a blocked path */
 
 private:
-	int blockCount;
-	vector<Vec2i> pathQueue;
+	int blockCount;		/**< number of frames this path has been blocked */
+	int frameRequested, /**< frame this path was requested */
+		frameReturned,	/**< frame this (initial) path was supplied by RoutePlanner */
+		frameValidated,	/**< last frame this path was validated */
+		frameRepaired,  /**< last frame this path was repaired */
+		numRepairs;		/**< number of times this path has been repaired */
 
 public:
-	UnitPath() : blockCount(0), pathQueue() {}
-	bool isBlocked()				{return blockCount >= maxBlockCount;}
-	bool isEmpty()					{return pathQueue.empty();}
+	UnitPath() : blockCount(0) {} /**< Construct path object */
+	bool isBlocked()	{return blockCount >= maxBlockCount;} /**< is this path blocked @return true if this path has been blocked for at least maxBlockCount frames */
+	bool empty()		{return list<Vec2i>::empty();}	/**< is path empty				  */
+	int  size()			{return list<Vec2i>::size();}	/**< size of path				 */
+	void clear()		{list<Vec2i>::clear(); blockCount = 0;} /**< clear the path		*/
+	void incBlockCount(){blockCount++;}		   /**< increment block counter			   */
+	void push(Vec2i &pos){push_front(pos);}	  /**< push onto front of path			  */
+	Vec2i peek()		{return front();}	 /**< peek at the next position			 */	
+	void pop()			{erase(begin());}	/**< pop the next position off the path */
 
-	void clear()					{pathQueue.clear(); blockCount = 0;}
-	void incBlockCount()			{pathQueue.clear();	blockCount++;}
-	void push(const Vec2i &path)	{pathQueue.push_back(path);}
-	Vec2i pop()						{
-		Vec2i p = pathQueue.front();
-		pathQueue.erase(pathQueue.begin());
-		return p;
-	}
-	
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
 };
 
-
+class WaypointPath : public list<Vec2i> {
+public:
+	WaypointPath() {}
+	void push(const Vec2i &pos/*, float dist*/)	{ push_front(pos); }
+	Vec2i peek() const					{return front();}
+	//float waypointToGoal() const		{ return front().second; }
+	void pop()							{erase(begin());}
+};
 
 // ===============================
 // 	class Unit
@@ -129,45 +137,48 @@ public:
 	static const int invalidId;
 
 private:
-	int id;
-	int hp;
-	int ep;
-	int loadCount;
-	int deadCount;
-	float progress;			//between 0 and 1
-	float lastAnimProgress;	//between 0 and 1
-	float animProgress;		//between 0 and 1
-	float highlight;
-	int progress2;
-	int kills;
+	int id;					/**< unique identifier  */
+	int hp;					/**< current hit points */
+	int ep;					/**< current energy points */
+	int loadCount;			/**< current 'load' (resources carried) */
+	int deadCount;			/**< how many frames this unit has been dead */
+	float progress;			/**< skill progress, between 0 and 1 */
+	float progressSpeed;
+	float animProgressSpeed;
+	int nextCommandUpdate;
+	float lastAnimProgress;	/**< animation progress last frame, between 0 and 1 */
+	float animProgress;		/**< animation progress, between 0 and 1 */
+	float highlight;		/**< alpha for selection circle effects */
+	int progress2;			/**< 'secondary' skill progress counter */
+	int kills;				/**< number of kills */
 
-	UnitReference targetRef;
+	UnitReference targetRef; 
 
-	Field currField;
-	Field targetField;
-	const Level *level;
+	Field currField;		/**< */
+	Field targetField;		/**< */
+	const Level *level;		/**< */
 
-	Vec2i pos;				/** Current position */
-	Vec2i lastPos;			/** The last position before current */
-	Vec2i nextPos;			/** Position unit is moving into next. */
-	Vec2i targetPos;		/** Position of the target, or the cell of the target we care about. */
+	Vec2i pos;				/**< Current position */
+	Vec2i lastPos;			/**< The last position before current */
+	Vec2i nextPos;			/**< Position unit is moving into next. */
+	Vec2i targetPos;		/**< Position of the target, or the cell of the target we care about. */
 	Vec3f targetVec;
 	Vec2i meetingPos;
-	bool faceTarget;		/** If true and target is set, we continue to face target. */
-	bool useNearestOccupiedCell;	/** If true, targetPos is set to target->getNearestOccupiedCell() */
+	bool faceTarget;				/**< If true and target is set, we continue to face target. */
+	bool useNearestOccupiedCell;	/**< If true, targetPos is set to target->getNearestOccupiedCell() */
 
-	float lastRotation;		//in degrees
-	float targetRotation;
-	float rotation;
+	float lastRotation;		/**< facing last frame, in degrees */
+	float targetRotation;	/**< desired facing, in degrees*/
+	float rotation;			/**< current facing, in degrees */
 
-	const UnitType *type;
-	const ResourceType *loadType;
-	const SkillType *currSkill;
+	const UnitType *type;			/**< the UnitType of this unit */
+	const ResourceType *loadType;	/**< the type if resource being carried */
+	const SkillType *currSkill;		/**< the SkillType currently being executed */
 
-	bool toBeUndertaken;
+	bool toBeUndertaken;		/**< awaiting a date with the grim reaper */
 //	bool alive;
-	bool autoRepairEnabled;
-	bool dirty;
+	bool autoRepairEnabled;		/**< is auto repair enabled */
+	bool dirty;					/**< need a bath? */
 
 	/** Effects (spells, etc.) currently effecting unit. */
 	Effects effects;
@@ -182,6 +193,7 @@ private:
 	Map *map;
 
 	UnitPath unitPath;
+	WaypointPath waypointPath;
 
 	Commands commands;
 	Observers observers;
@@ -241,6 +253,8 @@ public:
 	string getFullName() const;
 	const UnitPath *getPath() const				{return &unitPath;}
 	UnitPath *getPath()							{return &unitPath;}
+	WaypointPath *getWaypointPath()				{return &waypointPath;}
+	const WaypointPath *getWaypointPath() const {return &waypointPath;}
 	int getSpeed(const SkillType *st) const;
 	int getSpeed() const						{return getSpeed(currSkill);}
 	Unit *getMaster() const						{return master;}
@@ -255,6 +269,7 @@ public:
 	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
 	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
 	bool isMobile ()							{ return type->isMobile(); }
+
 
 	void addPet(Unit *u)						{pets.push_back(u);}
 	void petDied(Unit *u)						{pets.remove(u);}
@@ -400,14 +415,29 @@ public:
 		}
 	}
 
+	// signals, should prob replace that observer stuff above
+	typedef Unit* u_ptr;
+	typedef const UnitType* ut_ptr;
+	typedef sigslot::signal1<u_ptr>			UnitSignal;
+	typedef sigslot::signal2<u_ptr, Vec2i>	UnitPosSignal;
+	typedef sigslot::signal2<u_ptr, ut_ptr> MorphSignal;
+
+	//UnitSignal		Created;	 /**< fires when a unit is created		   */
+	//UnitSignal		Born;		/**< fires when a unit is 'born'		  */
+	//UnitPosSignal	Moving;	   /**< fires just before a unit is moved	 */
+	//UnitPosSignal	Moved;	  /**< fires after a unit has moved			*/
+	//MorphSignal		Morphed; /**<  */
+	UnitSignal		Died;	/**<  */
+
 	//other
 	void resetHighlight()								{highlight= 1.f;}
 	const CommandType *computeCommandType(const Vec2i &pos, const Unit *targetUnit= NULL) const;
-	string getDesc(bool full) const;
+	string getDesc(bool friendly) const;
 	bool computeEp();
 	bool repair(int amount = 0, float multiplier = 1.0f);
 	bool decHp(int i);
 	int update2()										{return ++progress2;}
+	void preProcessSkill();
 	bool update();
 	void update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld, bool netClient, float nextAdvanceFrames);
 	void updateMinor(const XmlNode *node);

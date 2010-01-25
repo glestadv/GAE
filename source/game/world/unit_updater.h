@@ -13,7 +13,6 @@
 #define _GLEST_GAME_UNITUPDATER_H_
 
 #include "gui.h"
-#include "path_finder.h"
 #include "particle.h"
 #include "random.h"
 #include "network_manager.h"
@@ -21,13 +20,13 @@
 using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
 
-namespace Glest { namespace Game {
+namespace Glest{ namespace Game{
 
 class Unit;
 class Map;
 class ScriptManager;
 class ParticleDamager;
-namespace Search { class PathFinder; }
+namespace Search { class RoutePlanner; }
 
 // =====================================================
 // class UnitUpdater
@@ -37,16 +36,15 @@ namespace Search { class PathFinder; }
 /// such as responding to an attack
 // =====================================================
 
-class UnitUpdater {
+class UnitUpdater{
 private:
 	friend class ParticleDamager;
 	friend class World;
 
 private:
-	static const int maxResSearchRadius = 10;
-	static const int harvestDistance = 5;
+	static const int maxResSearchRadius= 10;
+	static const int harvestDistance= 5;
 //	static const int ultraResourceFactor= 3;
-
 	/**
 	 * When a unit who can repair, but not attack is faced with a hostile, this is the percentage
 	 * of the radius that we search from the center of the intersection point for a friendly that
@@ -57,17 +55,16 @@ private:
 
 private:
 	const GameCamera *gameCamera;
-	Gui &gui;
-	World &world;
+	Gui *gui;
 	Map *map;
-	Console &console;
+	World *world;
+	Console *console;
 	ScriptManager *scriptManager;
-	Search::PathFinder *pathFinder;
+	Search::RoutePlanner *routePlanner;
 	Random random;
-	GameSettings &gameSettings;
+	GameSettings gameSettings;
 
 public:
-	UnitUpdater(Game &game);
 	void init(Game &game);
 
 	//update skills
@@ -141,7 +138,7 @@ private:
 
 	void enemiesAtDistance(const Unit *unit, const Unit *priorityUnit, int distance, vector<Unit*> &enemies);
 	bool updateAttackGeneric(Unit *unit, Command *command, const AttackCommandType *act, Unit* target, const Vec2i &targetPos);
-	/*
+/*
 	 Vec2i getNear(const Vec2i &pos, Vec2i target, int minRange, int maxRange, int targetSize = 1) {
 	  return map->getNearestPos(pos, target, targetSize, minRange, maxRange);
 	 }

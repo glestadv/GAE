@@ -34,20 +34,20 @@ namespace Glest{ namespace Game{
 // =====================================================
 
 ProduceTask::ProduceTask(UnitClass unitClass) {
-	taskClass = tcProduce;
+	taskClass = TaskClass::PRODUCE;
 	this->unitClass = unitClass;
 	unitType = NULL;
 	resourceType = NULL;
 }
 
 ProduceTask::ProduceTask(const UnitType *unitType) {
-	taskClass = tcProduce;
+	taskClass = TaskClass::PRODUCE;
 	this->unitType = unitType;
 	resourceType = NULL;
 }
 
 ProduceTask::ProduceTask(const ResourceType *resourceType) {
-	taskClass = tcProduce;
+	taskClass = TaskClass::PRODUCE;
 	unitType = NULL;
 	this->resourceType = resourceType;
 }
@@ -65,21 +65,21 @@ string ProduceTask::toString() const {
 // =====================================================
 
 BuildTask::BuildTask(const UnitType *unitType) {
-	taskClass = tcBuild;
+	taskClass = TaskClass::BUILD;
 	this->unitType = unitType;
 	resourceType = NULL;
 	forcePos = false;
 }
 
 BuildTask::BuildTask(const ResourceType *resourceType) {
-	taskClass = tcBuild;
+	taskClass = TaskClass::BUILD;
 	unitType = NULL;
 	this->resourceType = resourceType;
 	forcePos = false;
 }
 
 BuildTask::BuildTask(const UnitType *unitType, const Vec2i &pos) {
-	taskClass = tcBuild;
+	taskClass = TaskClass::BUILD;
 	this->unitType = unitType;
 	resourceType = NULL;
 	forcePos = true;
@@ -99,7 +99,7 @@ string BuildTask::toString() const {
 // =====================================================
 
 UpgradeTask::UpgradeTask(const UpgradeType *upgradeType) {
-	taskClass = tcUpgrade;
+	taskClass = TaskClass::UPGRADE;
 	this->upgradeType = upgradeType;
 }
 
@@ -362,7 +362,7 @@ void Ai::updateStatistics() {
 
 	//discover BuildTasks that are queued
 	for(Tasks::iterator ti = tasks.begin(); ti != tasks.end(); ++ti) {
-		if((*ti)->getClass() == tcBuild) {
+		if((*ti)->getClass() == TaskClass::BUILD) {
 			const BuildTask *bt = (const BuildTask *)*ti;
 			const UnitType *ut = bt->getUnitType();
 			if(ut) {
@@ -375,7 +375,7 @@ void Ai::updateStatistics() {
 			} else {
 				++unspecifiedBuildTasks;
 			}
-		} else if((*ti)->getClass() == tcUpgrade) {
+		} else if((*ti)->getClass() == TaskClass::UPGRADE) {
 		}
 	}
 

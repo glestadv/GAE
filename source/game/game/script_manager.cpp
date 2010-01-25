@@ -23,7 +23,8 @@
 
 #include "leak_dumper.h"
 
-#if DEBUG_RENDERING_ENABLED
+#if _GAE_DEBUG_EDITION_
+#	include "renderer.h"
 #	include "debug_renderer.h"
 #endif
 
@@ -389,11 +390,12 @@ void ScriptManager::init(Game *g) {
 	LUA_FUNC(debugLog);
 	LUA_FUNC(consoleMsg);
 
-#	if DEBUG_RENDERING_ENABLED
+#	if _GAE_DEBUG_EDITION_
 
 	LUA_FUNC(hilightRegion);
 	LUA_FUNC(hilightCell);
 	LUA_FUNC(clearHilights);
+	LUA_FUNC(debugSet);
 	LUA_FUNC(setFarClip);
 
 #	endif
@@ -403,10 +405,11 @@ void ScriptManager::init(Game *g) {
 	latestCasualty.id = -1;
 	gameOver= false;
 
+	triggerManager.reset(world);
+
 	if ( !scenario ) {
 		return;
 	}
-
 	//load code
 	for(int i= 0; i<scenario->getScriptCount(); ++i){
 		const Script* script= scenario->getScript(i);
@@ -442,8 +445,6 @@ void ScriptManager::init(Game *g) {
 			definedEvents.insert(*it);
 		}
 	}
-
-	triggerManager.reset(world);
 
 	//call startup function
 	if ( definedEvents.find("startup") != definedEvents.end() ) {
@@ -1259,7 +1260,7 @@ int ScriptManager::unitCountOfType(LuaHandle* luaHandle){
 	return args.getReturnCount();
 }
 
-#if DEBUG_RENDERING_ENABLED
+#if _GAE_DEBUG_EDITION_
 
 int ScriptManager::hilightRegion(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
@@ -1291,7 +1292,17 @@ int ScriptManager::hilightCell(LuaHandle *luaHandle) {
 
 int ScriptManager::clearHilights(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
-	RegionHilightCallback::clear();
+	RegionHilightCallback::blueCells.clear();
+	RegionHilightCallback::greenCells.clear();
+	return args.getReturnCount();
+}
+
+int ScriptManager::debugSet(LuaHandle *luaHandle) {
+	LuaArguments args(luaHandle);
+	string line;
+	if ( extractArgs(args, "debugSet", "str", &line) ) {
+		Renderer::getInstance().debugRenderer.commandLine(line);
+	}
 	return args.getReturnCount();
 }
 

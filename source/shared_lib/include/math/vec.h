@@ -502,6 +502,13 @@ typedef Vec2<double> Vec2d;
 typedef Vec3<double> Vec3d;
 typedef Vec4<double> Vec4d;
 
+
+
+inline ostream& operator<<(ostream &stream, const Vec2i &vec) {
+	return stream << "(" << vec.x << ", " << vec.y << ")";
+}
+
+
 #ifndef USE_SSE2_INTRINSICS
 typedef Vec3<float> Vec3f;
 typedef Vec4<float> Vec4f;

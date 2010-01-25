@@ -51,11 +51,11 @@ const string sharedLibVersionString= "v0.4.1";
 	struct Name {										\
 		enum Enum { INVALID = -1, __VA_ARGS__, COUNT };	\
 		Name() : value(INVALID) {}						\
-		explicit Name(int i) : value((Enum)i) {}		\
 		Name(Enum val) : value(val) {}					\
+		explicit Name(int i) : value((Enum)i) {}		\
 		operator Enum() const { return value; }			\
 		void operator++() {								\
-			if ( value < COUNT ) {						\
+			if (value < COUNT) {						\
 				value = (Enum)(value + 1);				\
 			}											\
 		}												\
