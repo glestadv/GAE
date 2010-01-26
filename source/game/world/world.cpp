@@ -135,6 +135,7 @@ void World::init(const XmlNode *worldNode) {
 	initExplorationState();
 	
 	if(worldNode) {
+		/* NETWORK:
 		NetworkDataBuffer buf;
 		NetworkManager &networkManager = NetworkManager::getInstance();
 		uint32 mmDataSize;
@@ -153,11 +154,14 @@ void World::init(const XmlNode *worldNode) {
 		}
 		// make sure I read every last byte
 		assert(!buf.size());
+		*/
 	}
 	computeFow();
+	/* NETWORK:
 	if (isNetworkServer()) {
 		initNetworkServer();
 	}
+	*/
 	alive = true;
 }
 
@@ -277,10 +281,13 @@ static void logUnit(Unit *unit, string action, Vec2i *oldPos, int *oldHp) {
 }
 
 void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, float nextAdvanceFrames) {
+
+	//NETWORK:
+#if 0
 	UnitReference unitRef(n);
 	Unit *unit = unitRef.getUnit();
 
-	if (unlikely(!unit)) {
+	if (true){//unlikely(!unit)) {
 		//who the fuck is that?
 		if (minor) {
 			NetworkManager::getInstance().getClientInterface()->requestFullUpdate(unitRef);
@@ -397,17 +404,20 @@ void World::doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, f
 		}
 	}
 	map.assertUnitCells(unit);
+#endif
 }
 
 //placeUnit(const Vec2i &startLoc, int radius, Unit *unit, bool spaciated)
 void World::updateClient() {
+	
+#if 0 //NETWORK:
 	// world enters an inconsistent state while executing this function, but should be consistent
 	// when it exits.
 
 	ClientInterface *clientInterface = NetworkManager::getInstance().getClientInterface();
 	// here we try to make up for the lag time between when the server sent this data and what the
 	// state on the server probably is now.
-	float nextAdvanceFrames = 1.f + clientInterface->getAvgLatency() / 2000000.f * Config::getInstance().getGsWorldUpdateFps();
+	float nextAdvanceFrames = 1.f ;//+ clientInterface->getAvgLatency() / 2000000.f * Config::getInstance().getGsWorldUpdateFps();
 	NetworkMessageUpdate *msg;
 	vector<Unit*> evicted;
 
@@ -444,7 +454,7 @@ void World::updateClient() {
 			}
 		}
 
-		if ((n = root->getChild("unit-updates", 0, false))) {
+		/*if ((n = root->getChild("unit-updates", 0, false))) {
 			for (int i = 0; i < n->getChildCount(); ++i) {
 				doClientUnitUpdate(n->getChild("unit", i), false, evicted, nextAdvanceFrames);
 			}
@@ -463,7 +473,7 @@ void World::updateClient() {
 				}
 				factions[i].update(n->getChild("faction", i));
 			}
-		}
+		}*/
 
 		delete msg;
 	}
@@ -485,6 +495,7 @@ void World::updateClient() {
 		map.assertUnitCells(unit);
 	}
 	clientInterface->sendUpdateRequests();
+#endif
 }
 
 // ==================== misc ====================
@@ -547,10 +558,12 @@ void World::update() {
 	//water effects
 	waterEffects.update();
 
+	/* NETWORK:
 	//update network clients
 	if (isNetworkClient()) {
 		updateClient();
 	}
+	*/
 
 	//update units
 	for (Factions::const_iterator f = factions.begin(); f != factions.end(); ++f) {
@@ -597,6 +610,7 @@ void World::update() {
 	}
 	assertConsistiency();
 	//if we're the server, send any updates needed to the client
+	/* //NETWORK:
 	if (isNetworkServer()) {
 		ServerInterface &si = *(NetworkManager::getInstance().getServerInterface());
 		int64 oldest = Chrono::getCurMicros() - Config::getInstance().getNetMinFullUpdateInterval() * 1000;
@@ -612,7 +626,7 @@ void World::update() {
 
 		si.sendUpdates();
 	}
-	PROFILE_STOP( "World Update" );
+	*/
 }
 
 void World::doKill(Unit *killer, Unit *killed) {

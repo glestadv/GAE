@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under
-//	the terms of the GNU General Public License as published
-//	by the Free Software Foundation; either version 2 of the
+//	You can redistribute this code and/or modify it under 
+//	the terms of the GNU General Public License as published 
+//	by the Free Software Foundation; either version 2 of the 
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -42,15 +42,9 @@ public:
 	static NetworkManager &getInstance();
 
 	NetworkManager();
-	~NetworkManager();
 	void init(NetworkRole networkRole);
 	void end();
-
-	void update() {
-		if(gameNetworkInterface) {
-			gameNetworkInterface->update();
-		}
-	}
+	void update();
 
 	bool isLocal() {
 		return !isNetworkGame();
@@ -68,26 +62,10 @@ public:
 		return networkRole == nrClient;
 	}
 
-	bool isNetworkGame() {
-		return networkRole == nrClient || getServerInterface()->getConnectedSlotCount() > 0;
-	}
-
-	GameNetworkInterface* getGameNetworkInterface() {
-		assert(gameNetworkInterface != NULL);
-		return gameNetworkInterface;
-	}
-
-	ServerInterface* getServerInterface() {
-		assert(gameNetworkInterface != NULL);
-		assert(networkRole == nrServer);
-		return static_cast<ServerInterface*>(gameNetworkInterface);
-	}
-
-	ClientInterface* getClientInterface() {
-		assert(gameNetworkInterface != NULL);
-		assert(networkRole == nrClient);
-		return static_cast<ClientInterface*>(gameNetworkInterface);
-	}
+	bool isNetworkGame();
+	GameNetworkInterface* getGameNetworkInterface();
+	ServerInterface* getServerInterface();
+	ClientInterface* getClientInterface();
 };
 
 }}//end namespace

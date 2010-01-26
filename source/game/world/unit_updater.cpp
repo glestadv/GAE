@@ -30,6 +30,7 @@
 #include "faction.h"
 #include "network_manager.h"
 #include "cartographer.h"
+#include "network_util.h"
 #include "leak_dumper.h"
 
 using namespace Shared::Graphics;
@@ -549,10 +550,10 @@ void UnitUpdater::updateBuild(Unit *unit) {
 
 			// network client has to wait for the server to tell them to begin building.  If the
 			// creates the building, we can have an id mismatch.
-			if (isNetworkClient()) {
-				unit->setCurrSkill(SkillClass::WAIT_FOR_SERVER);
+			//if (isNetworkClient()) {
+				//unit->setCurrSkill(SkillClass::WAIT_FOR_SERVER);
 				// FIXME: Might play start sound multiple times or never at all
-			} else {
+			//} else {
 				// late resource allocation
 				if (!command->isReserveResources()) {
 					command->setReserveResources(true);
@@ -579,16 +580,21 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				map->prepareTerrain(builtUnit);
 				command->setUnit(builtUnit);
 				unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
+
 				if (isNetworkGame()) {
+					/* NETWORK:
 					getServerInterface()->newUnit(builtUnit);
 					getServerInterface()->unitUpdate(unit);
 					getServerInterface()->updateFactions();
+					*/
 				}
-			}
-			if ( !builtUnit->isMobile() ) {
-				// new obstacle, inform cartographer
-				world->getCartographer()->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
-			}
+
+				//NETWORK: This was moved inside the if block because builtUnit won't exist otherwise
+				if (!builtUnit->isMobile()) {
+				pathFinder->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
+				}
+			//}
+			
 			//play start sound
 			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(bct->getStartSound(), unit->getCurrVector(), gameCamera->getPos());
@@ -656,10 +662,13 @@ void UnitUpdater::updateBuild(Unit *unit) {
 					unit->getCurrVector(),
 					gameCamera->getPos());
 			}
+			
 			if (isNetworkServer()) {
+				/* NETWORK:
 				getServerInterface()->unitUpdate(unit);
 				getServerInterface()->unitUpdate(builtUnit);
 				getServerInterface()->updateFactions();
+				*/
 			}
 		}
 	}
@@ -737,10 +746,13 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					unit->getPath()->clear();
 					unit->setCurrSkill(SkillClass::STOP);
 					unit->setLoadCount(0);
+					
 					if (isNetworkServer()) {
+						/* NETWORK:
 						// FIXME: wasteful full update here
 						getServerInterface()->unitUpdate(unit);
 						getServerInterface()->updateFactions();
+						*/
 					}
 				}
 			} else {
@@ -919,10 +931,13 @@ void UnitUpdater::updateRepair(Unit *unit) {
 								gameCamera->getPos());
 						}
 					}
+					
 					if (isNetworkServer()) {
+						/* NETWORK:
 						getServerInterface()->unitUpdate(unit);
 						getServerInterface()->unitUpdate(repaired);
 						getServerInterface()->updateFactions();
+						*/
 					}
 				}
 			}
@@ -952,10 +967,12 @@ void UnitUpdater::updateProduce(Unit *unit) {
 
 		if (unit->getProgress2() > pct->getProduced()->getProductionTime()) {
 			if (isNetworkClient()) {
+				/* NETWORK:
 				// client predict, presume the server will send us the unit soon.
 				unit->finishCommand();
 				unit->setCurrSkill(SkillClass::STOP);
 				return;
+				*/
 			}
 
 			produced = new Unit(world->getNextUnitId(), Vec2i(0), pct->getProducedUnit(), unit->getFaction(), world->getMap());
@@ -989,7 +1006,9 @@ void UnitUpdater::updateProduce(Unit *unit) {
 				unit->finishCommand();
 
 				if (isNetworkServer()) {
+					/* NETWORK:
 					getServerInterface()->newUnit(produced);
+					*/
 				}
 			}
 
@@ -1024,18 +1043,22 @@ void UnitUpdater::updateUpgrade(Unit *unit) {
 		}
 
 		if (unit->getProgress2() >= uct->getProduced()->getProductionTime()) {
+			/* NETWORK:
 			if (isNetworkClient()) {
 				// clients will wait for the server to tell them that the upgrade is finished
 				return;
 			}
+			*/
 			unit->finishCommand();
 			unit->setCurrSkill(SkillClass::STOP);
 			unit->getFaction()->finishUpgrade(uct->getProducedUpgrade());
 			unit->getFaction()->checkAdvanceSubfaction(uct->getProducedUpgrade(), true);
+			/* NETWORK:
 			if (isNetworkServer()) {
 				getServerInterface()->unitUpdate(unit);
 				getServerInterface()->updateFactions();
 			}
+			*/
 		}
 	}
 }
@@ -1089,11 +1112,12 @@ void UnitUpdater::updateMorph(Unit *unit) {
 					bool adding = !mct->getMorphUnit()->isMobile();
 					world->getCartographer()->updateMapMetrics(unit->getPos(), unit->getSize());
 				}
-
-				if(isNetworkServer()) {
+				/* NETWORK:
+				if (isNetworkServer()) {
 					getServerInterface()->unitMorph(unit);
 					getServerInterface()->updateFactions();
 				}
+				*/
 			} else {
 				unit->cancelCurrCommand();
 				if (unit->getFactionIndex() == world->getThisFactionIndex()) {
@@ -1246,9 +1270,11 @@ void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &t
 
 void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance){
 
-	if(isNetworkClient()) {
+	/* NETWORK:
+	if (isNetworkClient()) {
 		return;
 	}
+	*/
 
 	//get vars
 	float damage = (float)attacker->getAttackStrength(ast);
@@ -1287,10 +1313,12 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 			world->doKill(attacker, attacker);
 		}
 	}
+	/* NETWORK:
 	if (isNetworkServer()) {
 		getServerInterface()->minorUnitUpdate(attacker);
 		getServerInterface()->minorUnitUpdate(attacked);
 	}
+	*/
 
 	//complain
 	/*

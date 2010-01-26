@@ -214,8 +214,8 @@ private:
 	void loadSaved(const XmlNode *worldNode);
 	void moveAndEvict(Unit *unit, vector<Unit*> &evicted, Vec2i *oldPos);
 	void doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, float nextAdvanceFrames);
-	bool isNetworkServer() {return NetworkManager::getInstance().isNetworkServer();}
-	bool isNetworkClient() {return NetworkManager::getInstance().isNetworkClient();}
+	//NETWORK:bool isNetworkServer() {return NetworkManager::getInstance().isNetworkServer();}
+	//NETWORK:bool isNetworkClient() {return NetworkManager::getInstance().isNetworkClient();}
 	void doHackyCleanUp();
 };
 

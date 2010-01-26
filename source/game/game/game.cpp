@@ -203,9 +203,11 @@ void Game::init() {
 
 	ScriptManager::init(this);
 	
+	/* NETWORK:
 	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
 		gui.load(savedGame->getChild("gui"));
 	}
+	*/
 
 	//create IAs
 	aiInterfaces.resize(world.getFactionCount());
@@ -354,10 +356,12 @@ void Game::displayError(SocketException &e) {
 	paused = true;
 	stringstream errmsg;
 	char buf[512];
+	/* NETWORK:
 	const char* saveName = NetworkManager::getInstance().isServer()
 			? "network_server_auto_save" : "network_client_auto_save";
 	saveGame(saveName);
 	snprintf(buf, sizeof(buf) - 1, lang.get("YourGameWasSaved").c_str(), saveName);
+	*/
 	errmsg << e.what() << endl << buf;
 
 	mainMessageBox.init ( errmsg.str(), lang.get("Ok") );
@@ -917,12 +921,14 @@ void Game::render2d(){
 	}
 
 	//network status
+	/* NETWORK:
 	if(renderNetworkStatus && networkManager.isNetworkGame()) {
 		renderer.renderText(
 			networkManager.getGameNetworkInterface()->getStatus(),
 			coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 750, 75, false);
 	}
+	*/
 
 	//resource info
 	if(!config.getUiPhotoMode()){

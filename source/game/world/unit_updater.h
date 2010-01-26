@@ -15,7 +15,6 @@
 #include "gui.h"
 #include "particle.h"
 #include "random.h"
-#include "network_manager.h"
 
 using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
@@ -146,12 +145,6 @@ private:
 	 Vec2i getNear(const Vec2i &pos, const Unit *target, int minRange, int maxRange) {
 	  return map->getNearestPos(pos, target, minRange, maxRange);
 	 }*/
-
-	bool isLocal()							{return NetworkManager::getInstance().isLocal();}
-	bool isNetworkGame()					{return NetworkManager::getInstance().isNetworkGame();}
-	bool isNetworkServer()					{return NetworkManager::getInstance().isNetworkServer();}
-	bool isNetworkClient()					{return NetworkManager::getInstance().isNetworkClient();}
-	ServerInterface *getServerInterface()	{return NetworkManager::getInstance().getServerInterface();}
 };
 
 // =====================================================

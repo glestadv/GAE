@@ -848,10 +848,12 @@ CommandResult Unit::finishCommand() {
 	}
 
 	//send an update to the client
+	/* NETWORK:
 	NetworkManager &networkManager = NetworkManager::getInstance();
 	if(networkManager.isNetworkGame() && networkManager.isServer()) {
 		networkManager.getServerInterface()->unitUpdate(this);
 	}
+	*/
 
 	return CommandResult::SUCCESS;
 }

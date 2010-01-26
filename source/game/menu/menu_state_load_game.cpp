@@ -258,7 +258,7 @@ void MenuStateLoadGame::update(){
 			assert(connectionSlot != NULL);
 
 			if (connectionSlot->isConnected()) {
-				labelNetStatus[i].setText(connectionSlot->getDescription());
+//NETWORK:				labelNetStatus[i].setText(connectionSlot->getDescription());
 			} else {
 				labelNetStatus[i].setText(lang.get("NotConnected"));
 			}
@@ -341,7 +341,7 @@ bool MenuStateLoadGame::loadGame() {
 	root = XmlIo::getInstance().load(getFileName());
 
 	if(serverInterface) {
-		serverInterface->launchGame(gs, getFileName());
+		serverInterface->launchGame(gs/* NETWORK: , getFileName()*/);
 	}
 	program.setState(new Game(program, *gs, root));
 	return true;

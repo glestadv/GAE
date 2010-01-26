@@ -194,7 +194,7 @@ void MenuStateJoinGame::update() {
 	//update status label
 	if (clientInterface->isConnected()) {
 		buttonConnect.setText(lang.get("Disconnect"));
-		labelStatus.setText(clientInterface->getDescription());
+//NETWORK:		labelStatus.setText(clientInterface->getDescription());
 	} else {
 		buttonConnect.setText(lang.get("Connect"));
 		labelStatus.setText(lang.get("NotConnected"));
@@ -210,18 +210,20 @@ void MenuStateJoinGame::update() {
 		//intro
 		if (clientInterface->getIntroDone()) {
 			labelInfo.setText(lang.get("WaitingHost"));
-			servers.setString(clientInterface->getDescription(), Ip(labelServerIp.getText()).getString());
+//NETWORK:			servers.setString(clientInterface->getDescription(), Ip(labelServerIp.getText()).getString());
 		}
 
 		//launch
 		if (clientInterface->getLaunchGame()) {
 			servers.save(serverFileName);
-			if (clientInterface->getSavedGameFile() == "") {
+//			if (clientInterface->getSavedGameFile() == "") {
 				program.setState(new Game(program, *clientInterface->getGameSettings()));
-			} else {
+		/* NETWORK:	
+		} else {
 				XmlNode *root = XmlIo::getInstance().load(clientInterface->getSavedGameFile());
 				program.setState(new Game(program, *clientInterface->getGameSettings(), root));
 			}
+			*/
 		}
 	}
 }
