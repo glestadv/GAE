@@ -27,7 +27,7 @@
 #include "renderer.h"
 
 #include "leak_dumper.h"
-
+#include "logger.h"
 
 using namespace Shared::Util;
 

@@ -591,7 +591,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 
 				//NETWORK: This was moved inside the if block because builtUnit won't exist otherwise
 				if (!builtUnit->isMobile()) {
-				pathFinder->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
+					world->getCartographer()->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
 				}
 			//}
 			
