@@ -13,6 +13,10 @@
 #define _GLEST_GAME_CLIENTINTERFACE_H_
 
 #include <vector>
+/* used instead of vector
+#include <deque>
+#include <zlib.h>
+*/
 
 #include "network_interface.h"
 #include "game_settings.h"
@@ -21,7 +25,7 @@
 
 using Shared::Platform::Ip;
 using Shared::Platform::ClientSocket;
-using std::vector;
+using std::vector; //using std::deque;
 
 namespace Glest{ namespace Game{
 
@@ -31,16 +35,46 @@ namespace Glest{ namespace Game{
 
 class ClientInterface: public GameNetworkInterface{
 private:
+	/*
+	typedef deque<NetworkMessageUpdate*> UpdateMessages;
+	typedef vector<UnitReference> UnitReferences;
+
+	class FileReceiver {
+		string name;
+		ofstream out;
+		z_stream z;
+		char buf[4096];
+		bool compressed;
+		bool finished;
+		int nextseq;
+
+	public:
+		FileReceiver(const NetworkMessageFileHeader &msg, const string &outdir);
+		~FileReceiver();
+
+		/** @return true when file download is complete. *
+		bool processFragment(const NetworkMessageFileFragment &msg);
+		const string &getName()	const		{return name;}
+	};
+	*/
+
 	static const int messageWaitTimeout;
 	static const int waitSleepTime;
 
-private:
 	ClientSocket *clientSocket;
 	GameSettings gameSettings;
 	string serverName;
 	bool introDone;
 	bool launchGame;
 	int playerIndex;
+
+	/*
+	FileReceiver *fileReceiver;
+	string savedGameFile;
+	UpdateMessages updates;
+	UnitReferences updateRequests;
+	UnitReferences fullUpdateRequests;
+	*/
 
 public:
 	ClientInterface();
@@ -60,7 +94,8 @@ public:
 	virtual void quitGame(){}
 
 	//misc
-	virtual string getNetworkStatus() const;
+	virtual string getStatus() const;
+	//virtual void requestCommand(Command *command);
 
 	//accessors
 	string getServerName() const			{return serverName;}
@@ -68,12 +103,30 @@ public:
 	bool getIntroDone() const				{return introDone;}
 	int getPlayerIndex() const				{return playerIndex;}
 	const GameSettings *getGameSettings()	{return &gameSettings;}
+	/*
+	NetworkMessageUpdate *getNextUpdate() {
+		NetworkMessageUpdate *ret = NULL;
+		if(updates.size()) {
+			ret = updates.front();
+			updates.pop_front();
+		}
+		return ret;
+	}
+	*/
 
 	void connect(const Ip &ip, int port);
 	void reset();
 
+	/*
+	void requestUpdate(Unit *unit)				{UnitReference ur(unit); requestUpdate(ur);}
+	void requestUpdate(UnitReference &ur)		{updateRequests.push_back(ur);}
+	void requestFullUpdate(Unit *unit)			{requestFullUpdate(UnitReference(unit));}
+	void requestFullUpdate(UnitReference &ur)	{fullUpdateRequests.push_back(ur);}
+	void sendUpdateRequests();
+	*/
+
 private:
-	void waitForMessage();
+	void waitForMessage(); //NetworkMessage *waitForMessage();
 };
 
 }}//end namespace

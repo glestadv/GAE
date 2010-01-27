@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -20,7 +20,7 @@ using Shared::Platform::Socket;
 using Shared::Platform::int8;
 using Shared::Platform::int16;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 class GameSettings;
 class Command;
@@ -37,6 +37,12 @@ enum NetworkMessageType{
 
 	nmtCount
 };
+
+// NETWORK: nearly whole file changed
+// - need more description about what role a NetworkMessage plays.
+// - Should NetworkMessageXmlDoc really be a NetworkMessage or is it a network type?
+// - Perhaps NetworkMessage and NetworkMessageXmlDoc should go into network_types and this renamed to 
+// network_messages?
 
 // =====================================================
 //	class NetworkMessage

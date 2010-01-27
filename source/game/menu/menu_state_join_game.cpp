@@ -194,7 +194,7 @@ void MenuStateJoinGame::update() {
 	//update status label
 	if (clientInterface->isConnected()) {
 		buttonConnect.setText(lang.get("Disconnect"));
-//NETWORK:		labelStatus.setText(clientInterface->getDescription());
+		labelStatus.setText(clientInterface->getDescription());
 	} else {
 		buttonConnect.setText(lang.get("Connect"));
 		labelStatus.setText(lang.get("NotConnected"));
@@ -210,13 +210,13 @@ void MenuStateJoinGame::update() {
 		//intro
 		if (clientInterface->getIntroDone()) {
 			labelInfo.setText(lang.get("WaitingHost"));
-//NETWORK:			servers.setString(clientInterface->getDescription(), Ip(labelServerIp.getText()).getString());
+			servers.setString(clientInterface->getDescription(), Ip(labelServerIp.getText()).getString());
 		}
 
 		//launch
 		if (clientInterface->getLaunchGame()) {
 			servers.save(serverFileName);
-//			if (clientInterface->getSavedGameFile() == "") {
+// NETWORK:	if (clientInterface->getSavedGameFile() == "") {
 				program.setState(new Game(program, *clientInterface->getGameSettings()));
 		/* NETWORK:	
 		} else {

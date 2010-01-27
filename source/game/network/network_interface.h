@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -14,53 +14,116 @@
 
 #include <string>
 #include <vector>
+//#include <deque>
 
 #include "checksum.h"
 #include "network_message.h"
 #include "network_types.h"
+//#include "network_status.h"
 
 using std::string;
 using std::vector;
+//using std::deque;
 using Shared::Util::Checksum;
+//using Shared::Platform::int64;
 
 class Command;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 // =====================================================
 //	class NetworkInterface
 // =====================================================
-
-class NetworkInterface{
-public:
+//NETWORK: a lot different with this class
+class NetworkInterface /*: public NetworkStatus*/ {
+protected:
+/*
+	typedef deque<NetworkMessage*> MsgQueue;
+	NetworkDataBuffer txbuf;
+	NetworkDataBuffer rxbuf;
+	MsgQueue q;
+*/
 	static const int readyWaitTimeout;
 
+private:
+	string remoteHostName;
+	string remotePlayerName;
+	string description;
+
 public:
-	virtual ~NetworkInterface(){}
+	//NetworkInterface() : NetworkStatus(), txbuf(16384), rxbuf(16384) {}
+	virtual ~NetworkInterface() {}
 
-	virtual Socket* getSocket()= 0;
-	virtual const Socket* getSocket() const= 0;
+	virtual Socket* getSocket() = 0;
+	virtual const Socket* getSocket() const = 0;
 
-	string getIp() const		{return getSocket()->getIp();}
-	string getHostName() const	{return getSocket()->getHostName();}
+	string getIp() const				{return getSocket()->getIp();}
+	string getHostName() const			{return getSocket()->getHostName();}
+	string getRemoteHostName() const	{return remoteHostName;}
+	string getRemotePlayerName() const	{return remotePlayerName;}
+	string getDescription() const		{return description;}
 
-	void sendMessage(const NetworkMessage* networkMessage);
+	void setRemoteNames(const string &hostName, const string &playerName);
+	/*
+	void pop()							{if(q.empty()) throw runtime_error("queue empty"); q.pop_front();}
+
+	void send(const NetworkMessage* msg, bool flush = true);
+	bool flush();
+	void receive();
+	*/
+
+	void send(const NetworkMessage* networkMessage);
 	NetworkMessageType getNextMessageType();
 	bool receiveMessage(NetworkMessage* networkMessage);
 
-	bool isConnected();
+	/*
+#ifdef DEBUG_NETWORK
+	std::deque<NetworkMessagePing*> pingQ;
+#endif
+	NetworkMessage *peek();
+
+	NetworkMessage *nextMsg() {
+		NetworkMessage *m = peek();
+		if(m) {
+			q.pop_front();
+		}
+		return m;
+	}
+	*/
+	bool isConnected() {
+		return getSocket() && getSocket()->isConnected();
+	}
+
+	/*
+protected:
+	virtual void ping() {
+		NetworkMessagePing msg;
+		send(&msg);
+	}
+	
+	void processPing(NetworkMessagePing *ping) {
+		if(ping->isPong()) {
+			pong(ping->getTime(), ping->getTimeRcvd());
+		} else {
+			ping->setPong();
+			send(ping);
+			flush();
+		}
+		delete ping;
+	}
+	*/
 };
 
 // =====================================================
 //	class GameNetworkInterface
-// 
-// Adds functions common to servers and clients 
+//
+// Adds functions common to servers and clients
 // but not connection slots
 // =====================================================
 
-class GameNetworkInterface: public NetworkInterface{
+class GameNetworkInterface: public NetworkInterface {
 private:
-	typedef vector<NetworkCommand> Commands;
+	typedef vector<NetworkCommand> Commands; //NETWORK: uses command instead
 
 protected:
 	Commands requestedCommands;	//commands requested by the user
@@ -74,17 +137,17 @@ public:
 	GameNetworkInterface();
 
 	//message processimg
-	virtual void update()= 0;
-	virtual void updateLobby()= 0;
-	virtual void updateKeyframe(int frameCount)= 0;
-	virtual void waitUntilReady(Checksum &checksum)= 0;
+	virtual void update() = 0;
+	virtual void updateLobby() = 0;
+	virtual void updateKeyframe(int frameCount) = 0;
+	virtual void waitUntilReady(Checksum &checksum) = 0;
 
 	//message sending
-	virtual void sendTextMessage(const string &text, int teamIndex)= 0;
-	virtual void quitGame()=0;
+	virtual void sendTextMessage(const string &text, int teamIndex) = 0;
+	virtual void quitGame() = 0;
 
 	//misc
-	virtual string getNetworkStatus() const= 0;
+	virtual string getStatus() const = 0;
 
 	//access functions
 	virtual void requestCommand(const NetworkCommand *networkCommand)	{requestedCommands.push_back(*networkCommand);} 

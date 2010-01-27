@@ -356,7 +356,7 @@ void MenuStateNewGame::update() {
 			assert(connectionSlot != NULL);
 
 			if (connectionSlot->isConnected()) {
-//NETWORK:				labelNetStatus[i].setText(connectionSlot->getDescription());
+				labelNetStatus[i].setText(connectionSlot->getDescription());
 			} else {
 				labelNetStatus[i].setText(lang.get("NotConnected"));
 			}

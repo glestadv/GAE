@@ -3,9 +3,9 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -19,40 +19,43 @@
 #include "config.h"
 #include "server_interface.h"
 #include "network_message.h"
+
 #include "leak_dumper.h"
 
 using namespace std;
 using namespace Shared::Util;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 // =====================================================
 //	class ClientConnection
 // =====================================================
 
-ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex){
-	this->serverInterface= serverInterface;
-	this->playerIndex= playerIndex;
-	socket= NULL;
-	ready= false;
+ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex, bool resumeSaved) {
+	this->serverInterface = serverInterface;
+	this->playerIndex = playerIndex;
+	this->resumeSaved = resumeSaved;
+	socket = NULL;
+	ready = false;
 }
 
-ConnectionSlot::~ConnectionSlot(){
+ConnectionSlot::~ConnectionSlot() {
 	close();
 }
 
-void ConnectionSlot::update(){
-	if(socket==NULL){
-		socket= serverInterface->getServerSocket()->accept();
+void ConnectionSlot::update() {
+	// NETWORK: this method is very different
+
+	if(!socket) {
+		socket = serverInterface->getServerSocket()->accept();
 
 		//send intro message when connected
-		if(socket!=NULL){
+		if(socket) {
 			NetworkMessageIntro networkMessageIntro(getNetworkVersionString(), socket->getHostName(), playerIndex);
-			sendMessage(&networkMessageIntro);
+			send(&networkMessageIntro);
 		}
-	}
-	else{
-		if(socket->isConnected()){
+	} else {
+		if(socket->isConnected()) {
 			NetworkMessageType networkMessageType= getNextMessageType();
 
 			//process incoming commands
@@ -77,7 +80,9 @@ void ConnectionSlot::update(){
 				case nmtIntro:{
 					NetworkMessageIntro networkMessageIntro;
 					if(receiveMessage(&networkMessageIntro)){
-						name= networkMessageIntro.getName();
+						//name= networkMessageIntro.getName();
+						//NETWORK: needs to be done properly
+						setRemoteNames(networkMessageIntro.getName(), networkMessageIntro.getName());
 					}
 				}
 				break;
@@ -92,9 +97,9 @@ void ConnectionSlot::update(){
 	}
 }
 
-void ConnectionSlot::close(){
+void ConnectionSlot::close() {
 	delete socket;
-	socket= NULL;
+	socket = NULL;
 }
 
 }}//end namespace
