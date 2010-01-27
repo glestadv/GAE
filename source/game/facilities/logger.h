@@ -100,6 +100,9 @@ public:
 	void clusterInit();
 };
 
+#define LOG_NET_CLIENT(x) Logger::getClientLog().add(x);
+#define LOG_NET_SERVER(x) Logger::getServerLog().add(x);
+
 #if defined(WIN32) | defined(WIN64)
 
 class Timer {

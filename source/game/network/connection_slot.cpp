@@ -21,6 +21,7 @@
 #include "network_message.h"
 
 #include "leak_dumper.h"
+#include "logger.h"
 
 using namespace std;
 using namespace Shared::Util;
@@ -53,6 +54,7 @@ void ConnectionSlot::update() {
 		if(socket) {
 			NetworkMessageIntro networkMessageIntro(getNetworkVersionString(), socket->getHostName(), playerIndex);
 			send(&networkMessageIntro);
+			LOG_NET_SERVER( "Connection established, slot " + intToStr(playerIndex) +  " sending intro message." )
 		}
 	} else {
 		if(socket->isConnected()) {
@@ -84,10 +86,12 @@ void ConnectionSlot::update() {
 						//NETWORK: needs to be done properly
 						setRemoteNames(networkMessageIntro.getName(), networkMessageIntro.getName());
 					}
+					LOG_NET_SERVER( "Received intro message on slot " + intToStr(playerIndex) + ", name = " + getRemotePlayerName() )
 				}
 				break;
 
 				default:
+					LOG_NET_SERVER( "Unexpected message in connection slot: " + intToStr(networkMessageType) )
 					throw runtime_error("Unexpected message in connection slot: " + intToStr(networkMessageType));
 			}
 		}

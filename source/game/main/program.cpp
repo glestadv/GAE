@@ -99,6 +99,7 @@ Program::Program(Config &config, int argc, char** argv) :
 		programState(NULL),
 		crashed(false),
 		terminating(false),
+		visible(false),
 		keymap(getInput(), "keymap.ini") {
 
 	//set video mode
@@ -184,7 +185,7 @@ void Program::loop() {
 		}
 	
 		//render
-		while(renderTimer.isTime()){
+		while(renderTimer.isTime() && visible){
 			programState->render();
 		}
 	
@@ -213,10 +214,12 @@ void Program::eventResize(SizeState sizeState) {
 
 	switch(sizeState){
 	case ssMinimized:
+		visible = false;
 		//restoreVideoMode();
 		break;
 	case ssMaximized:
 	case ssRestored:
+		visible = true;
 		//setDisplaySettings();
 		//renderer.reloadResources();
 		break;

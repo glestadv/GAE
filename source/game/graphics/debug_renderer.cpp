@@ -139,13 +139,13 @@ void DebugRenderer::sceneEstablished(SceneCuller &culler) {
 		}
 
 		for (int i=0; i < culler.boundingPoints.size(); ++i) {
-			Vec2i pos(culler.boundingPoints[i].x, culler.boundingPoints[i].y);
+			Vec2i pos(int(culler.boundingPoints[i].x), int(culler.boundingPoints[i].y));
 			RegionHilightCallback::blueCells.insert(pos);
 		}
 
 		vector<Vec2f>::iterator it = culler.visiblePoly.begin();
 		for ( ; it != culler.visiblePoly.end(); ++it) {
-			Vec2i pos(it->x, it->y);
+			Vec2i pos(int(it->x), int(it->y));
 			RegionHilightCallback::greenCells.insert(pos);
 		}
 		for ( int i=0; i < culler.cellExtrema.spans.size(); ++i) {

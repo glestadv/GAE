@@ -24,11 +24,14 @@
 #include "timer.h" //NETWORK:removed
 /*
 #include "client_interface.h"
+*/
 #include "world.h"
 #include "game.h"
-*/
+
+#include "network_types.h"
 
 #include "leak_dumper.h"
+#include "logger.h"
 
 using namespace std;
 using namespace Shared::Platform;
@@ -58,13 +61,14 @@ ServerInterface::~ServerInterface(){
 
 void ServerInterface::addSlot(int playerIndex) {
 	assert(playerIndex >= 0 && playerIndex < GameConstants::maxPlayers);
-
+	LOG_NET_SERVER( "Opening slot " + intToStr(playerIndex) )
 	delete slots[playerIndex];
 	slots[playerIndex] = new ConnectionSlot(this, playerIndex, false);
 	updateListen();
 }
 
 void ServerInterface::removeSlot(int playerIndex) {
+	LOG_NET_SERVER( "Closing slot " + intToStr(playerIndex) )
 	delete slots[playerIndex];
 	slots[playerIndex] = NULL;
 	updateListen();
@@ -150,16 +154,34 @@ void ServerInterface::process(NetworkMessageUpdateRequest &msg) {
 
 void ServerInterface::updateKeyframe(int frameCount){
 
-	NetworkMessageCommandList networkMessageCommandList(frameCount);
+	NetworkMessageCommandList cmdList(frameCount);
 	
 	//build command list, remove commands from requested and add to pending
 	while(!requestedCommands.empty()){
-		if(networkMessageCommandList.addCommand(&requestedCommands.back())){
+		if(cmdList.addCommand(&requestedCommands.back())){
 			pendingCommands.push_back(requestedCommands.back());
 			requestedCommands.pop_back();
 		}
 		else{
 			break;
+		}
+	}
+
+	if (cmdList.getCommandCount()) {
+		LOG_NET_SERVER( 
+			"KeyFrame update: " + intToStr(frameCount) + ", sending " 
+			+ intToStr(cmdList.getCommandCount()) + " commands, " 
+			+ intToStr(requestedCommands.size()) + " still pending." 
+		)
+		for (int i=0; i < cmdList.getCommandCount(); ++i) {
+			const NetworkCommand * const &cmd = cmdList.getCommand(i);
+			const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
+			const UnitType * const &unitType = unit->getType();
+			const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
+			LOG_NET_SERVER( 
+				"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
+				+ cmdType->getName() + "."
+			)
 		}
 	}
 
@@ -180,7 +202,7 @@ void ServerInterface::updateKeyframe(int frameCount){
 	*/
 
 	//broadcast commands
-	broadcastMessage(&networkMessageCommandList);
+	broadcastMessage(&cmdList);
 }
 
 void ServerInterface::waitUntilReady(Checksum &checksum) {
@@ -189,6 +211,7 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 
 	chrono.start();
 
+	LOG_NET_SERVER( "Waiting for ready messages from all clients" )
 	//wait until we get a ready message from all clients
 	while(!allReady) {
 		allReady = true;
@@ -215,9 +238,11 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 				NetworkMessageType networkMessageType = slot->getNextMessageType();
 				NetworkMessageReady networkMessageReady;
 
-				if(networkMessageType == nmtReady && slot->receiveMessage(&networkMessageReady)) {
+				if(networkMessageType==nmtReady && slot->receiveMessage(&networkMessageReady)){
+					LOG_NET_SERVER( "Received ready message, slot " + intToStr(i) )
 					slot->setReady();
-				} else if(networkMessageType!=nmtInvalid) {
+				}
+				else if(networkMessageType!=nmtInvalid){
 					throw runtime_error("Unexpected network message: " + intToStr(networkMessageType));
 				} else {
 					allReady = false;
@@ -227,11 +252,14 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 
 		//check for timeout
 		if(chrono.getMillis() > readyWaitTimeout) {
+			LOG_NET_SERVER( "Timeout waiting for clients" )
 			throw runtime_error("Timeout waiting for clients");
 		}
 		//sleep(10);
 	}
 
+	LOG_NET_SERVER( "Received all ready messages, sending ready message(s)." )
+	
 	//send ready message after, so clients start delayed
 	for(int i= 0; i < GameConstants::maxPlayers; ++i) {
 		NetworkMessageReady networkMessageReady(checksum.getSum());
@@ -281,6 +309,7 @@ void ServerInterface::launchGame(const GameSettings* gameSettings){
 	}
 	*/
 	broadcastMessage(&networkMessageLaunch);	
+	LOG_NET_SERVER( "Launching game, sending launch message(s)" )
 }
 
 // NETWORK: I'm thinking the file stuff should go somewhere else.
