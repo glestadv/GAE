@@ -64,6 +64,8 @@ public:
 	string getDescription() const		{return description;}
 
 	void setRemoteNames(const string &hostName, const string &playerName);
+
+	int dataAvailable();
 	/*
 	void pop()							{if(q.empty()) throw runtime_error("queue empty"); q.pop_front();}
 

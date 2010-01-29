@@ -80,8 +80,6 @@ public:
 		return logger;
 	}
 
-	void addXmlError( const string &path, const char *error );
-
 	//void setFile(const string &fileName) {this->fileName= fileName;}
 	void setState(const string &state);
 	void resetState(const string &s)	{state= s;}
@@ -90,6 +88,9 @@ public:
 	void setProgressBar(GraphicProgressBar *v) { progressBar = v; }
 
 	void add(const string &str, bool renderScreen = false);
+	void addXmlError(const string &path, const char *error);
+	void addNetworkMsg(const string &msg);
+
 	void renderLoadingScreen();
 	void clear();
 
@@ -100,8 +101,8 @@ public:
 	void clusterInit();
 };
 
-#define LOG_NET_CLIENT(x) Logger::getClientLog().add(x);
-#define LOG_NET_SERVER(x) Logger::getServerLog().add(x);
+#define LOG_NET_CLIENT(x) Logger::getClientLog().addNetworkMsg(x);
+#define LOG_NET_SERVER(x) Logger::getServerLog().addNetworkMsg(x);
 
 #if defined(WIN32) | defined(WIN64)
 

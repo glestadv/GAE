@@ -22,6 +22,7 @@
 
 #include "leak_dumper.h"
 #include "logger.h"
+#include "world.h"
 
 using namespace std;
 using namespace Shared::Util;
@@ -63,23 +64,36 @@ void ConnectionSlot::update() {
 			//process incoming commands
 			switch(networkMessageType){
 				
-				case nmtInvalid:
-				case nmtText:
+				case NetworkMessageType::NO_MSG:
+				case NetworkMessageType::TEXT:
 					break;
 
 				//command list
-				case nmtCommandList:{
-					NetworkMessageCommandList networkMessageCommandList;
-					if(receiveMessage(&networkMessageCommandList)){
-						for(int i= 0; i<networkMessageCommandList.getCommandCount(); ++i){
-							serverInterface->requestCommand(networkMessageCommandList.getCommand(i));
+				case NetworkMessageType::COMMAND_LIST:{
+					NetworkMessageCommandList cmdList;
+					if(receiveMessage(&cmdList)){
+						LOG_NET_SERVER( 
+							"Receivied " + intToStr(cmdList.getCommandCount()) + " commands on slot " 
+							+ intToStr(playerIndex) + " frame: " + intToStr(theWorld.getFrameCount())
+						)
+						for (int i=0; i < cmdList.getCommandCount(); ++i) {
+							serverInterface->requestCommand(cmdList.getCommand(i));
+
+							const NetworkCommand * const &cmd = cmdList.getCommand(i);
+							const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
+							const UnitType * const &unitType = unit->getType();
+							const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
+							LOG_NET_SERVER( 
+								"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
+								+ cmdType->getName() + "."
+							)
 						}
 					}
 				}
 				break;
 
 				//process intro messages
-				case nmtIntro:{
+				case NetworkMessageType::INTRO: {
 					NetworkMessageIntro networkMessageIntro;
 					if(receiveMessage(&networkMessageIntro)){
 						//name= networkMessageIntro.getName();

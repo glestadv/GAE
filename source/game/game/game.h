@@ -44,19 +44,18 @@ class GraphicTextEntryBox;
 
 class Game: public ProgramState {
 public:
-	enum Speed {
-		sSlowest,
-		sVerySlow,
-		sSlow,
-		sNormal,
-		sFast,
-		sVeryFast,
-		sFastest,
 
-  		sCount
-	};
+	WRAPPED_ENUM( GameSpeed,
+		SLOWEST,
+		VERY_SLOW,
+		SLOW,
+		NORMAL,
+		FAST,
+		VERY_FAST,
+		FATEST
+	)
 
-	static const char*SpeedDesc[sCount];
+	static const char*SpeedDesc[GameSpeed::COUNT];
 
 private:
 	typedef vector<Ai*> Ais;
@@ -72,18 +71,19 @@ private:
 	const Input &input;
 	const Config &config;
 	World world;
-    AiInterfaces aiInterfaces;
-    Gui gui;
-    GameCamera gameCamera;
-    Commander commander;
-    Console console;
+	AiInterfaces aiInterfaces;
+	Gui gui;
+	GameCamera gameCamera;
+	Commander commander;
+	Console console;
 	ChatManager chatManager;
 
 	//misc
 	Checksum checksum;
-    string loadingText;
-    int mouse2d;
-    int mouseX, mouseY; //coords win32Api
+	string loadingText;
+	int mouse2d;
+	int mouseX, mouseY; //coords win32Api
+	int worldFps, lastWorldFps;
 	int updateFps, lastUpdateFps;
 	int renderFps, lastRenderFps;
 	bool paused;
@@ -91,7 +91,7 @@ private:
 	bool gameOver;
 	bool renderNetworkStatus;
 	float scrollSpeed;
-	Speed speed;
+	GameSpeed speed;
 	float fUpdateLoops;
 	float lastUpdateLoopsFraction;
 	GraphicMessageBox mainMessageBox;

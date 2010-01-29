@@ -116,7 +116,8 @@ public:
 	~World();
 	void end(); //to die before selection does
 
-	static World& getInstance () { return *singleton; }
+	static World& getInstance() { return *singleton; }
+	static bool isConstructed() { return singleton != 0; }
 
 	//get
 	int getMaxPlayers() const						{return map.getMaxPlayers();}

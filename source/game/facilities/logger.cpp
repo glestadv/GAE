@@ -20,6 +20,7 @@
 #include "components.h"
 
 #include "leak_dumper.h"
+#include "world.h"
 
 using namespace std;
 using namespace Shared::Graphics;
@@ -75,26 +76,36 @@ void Logger::add(const string &str,  bool renderScreen){
 	}
 }
 
-void Logger::clear() {
-   string s="Log file\n";
-
-   FILE *f= fopen(fileName.c_str(), "wt+");
-   if (!f) {
-      throw runtime_error("Error opening log file" + fileName);
-   }
-
-   fprintf(f, "%s", s.c_str());
-   fprintf(f, "\n");
-
-   fclose(f);
-}
-
 void Logger::addXmlError(const string &path, const char *error) {
-   static char buffer[2048];
-   sprintf(buffer, "XML Error in %s:\n %s", path.c_str(), error);
-   add(buffer);
+	static char buffer[2048];
+	sprintf(buffer, "XML Error in %s:\n %s", path.c_str(), error);
+	add(buffer);
 }
 
+void Logger::addNetworkMsg(const string &msg) {
+	stringstream ss;
+	if (World::isConstructed()) {
+		ss	<< "Frame: " << theWorld.getFrameCount(); 
+	} else {
+		ss << "Frame: 0";
+	}
+	ss << " timestamp: " << Chrono::getCurMillis() << " :: " << msg;
+	add(ss.str());
+}
+
+void Logger::clear() {
+	string s="Log file\n";
+
+	FILE *f= fopen(fileName.c_str(), "wt+");
+	if (!f) {
+		throw runtime_error("Error opening log file" + fileName);
+	}
+
+	fprintf(f, "%s", s.c_str());
+	fprintf(f, "\n");
+
+	fclose(f);
+}
 
 // ==================== PRIVATE ====================
 

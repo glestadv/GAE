@@ -22,10 +22,12 @@
 #define theConsole			(*Game::getInstance()->getConsole())
 #define theConfig			(Config::getInstance())
 #define theRoutePlanner		(*World::getInstance().getRoutePlanner())
+#define theCartographer		(*World::getInstance().getCartographer())
 #define theRenderer			(Renderer::getInstance())
 #define theNetworkManager	(NetworkManager::getInstance())
 #define theSoundRenderer	(SoundRenderer::getInstance())
 #define theLogger			(Logger::getInstance())
+#define theLang				(Lang::getInstance())
 
 #ifndef NDEBUG
 #	define LOG(x) Logger::getInstance().add(x)
@@ -89,6 +91,18 @@ namespace Search {
 				);
 
 } // end namespace Search
+
+
+REGULAR_ENUM( NetworkMessageType,
+				NO_MSG,
+				INTRO,
+				PING,
+				READY,
+				LAUNCH,
+				COMMAND_LIST,
+				TEXT,
+				QUIT
+			)
 
 /** The control type of a 'faction' (aka, player)
   * <ul><li><b>CLOSED</b> Slot closed, no faction</li>

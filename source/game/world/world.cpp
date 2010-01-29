@@ -43,7 +43,7 @@ namespace Glest { namespace Game {
 // =====================================================
 
 const float World::airHeight = 5.f;
-World *World::singleton = NULL;
+World *World::singleton = 0;
 
 // ===================== PUBLIC ========================
 
@@ -73,8 +73,7 @@ World::World(Game *game)
 }
 
 World::~World() {
-	singleton = NULL;
-	delete cartographer;
+	singleton = 0;
 }
 
 void World::end(){
@@ -85,6 +84,8 @@ void World::end(){
 		factions[i].end();
 	}
 	delete scenario;
+	delete cartographer;
+	delete routePlanner;
 	//stats will be deleted by BattleEnd
 }
 

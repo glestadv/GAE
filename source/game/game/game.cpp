@@ -47,46 +47,47 @@ namespace Glest{ namespace Game{
 
 Game *Game::singleton = NULL;
 
-Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
+Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame)
 		//main data
-		ProgramState(program),
-		gameSettings(gs),
-		savedGame(savedGame),
-		keymap(program.getKeymap()),
-		input(program.getInput()),
-		config(Config::getInstance()),
-		world(this),
-		aiInterfaces(),
-		gui(*this),
-		gameCamera(),
-		commander(),
-		console(),
-		chatManager(keymap/*, console, world.getThisTeamIndex()*/),
-
+		: ProgramState(program)
+		, gameSettings(gs)
+		, savedGame(savedGame)
+		, keymap(program.getKeymap())
+		, input(program.getInput())
+		, config(Config::getInstance())
+		, world(this)
+		, aiInterfaces()
+		, gui(*this)
+		, gameCamera()
+		, commander()
+		, console()
+		, chatManager(keymap/*, console, world.getThisTeamIndex()*/)
 		//misc
-		checksum(),
-		loadingText(""),
-		mouse2d(0),
-		updateFps(0),
-		lastUpdateFps(0),
-		renderFps(0),
-		lastRenderFps(0),
-		paused(false),
-		noInput(false),
-		gameOver(false),
-		renderNetworkStatus(true),
-		scrollSpeed(config.getUiScrollSpeed()),
-		speed(sNormal),
-		fUpdateLoops(1.f),
-		lastUpdateLoopsFraction(0.f),
-		saveBox(NULL),
-		lastMousePos(0),
-	weatherParticleSystem(NULL) {
+		, checksum()
+		, loadingText("")
+		, mouse2d(0)
+		, worldFps(0)
+		, lastWorldFps(0)
+		, updateFps(0)
+		, lastUpdateFps(0)
+		, renderFps(0)
+		, lastRenderFps(0)
+		, paused(false)
+		, noInput(false)
+		, gameOver(false)
+		, renderNetworkStatus(true)
+		, scrollSpeed(config.getUiScrollSpeed())
+		, speed(GameSpeed::NORMAL)
+		, fUpdateLoops(1.f)
+		, lastUpdateLoopsFraction(0.f)
+		, saveBox(NULL)
+		, lastMousePos(0)
+		, weatherParticleSystem(NULL) {
 	assert(!singleton);
 	singleton = this;
 }
 
-const char *Game::SpeedDesc[sCount] = {
+const char *Game::SpeedDesc[GameSpeed::COUNT] = {
 	"Slowest",
 	"VerySlow",
 	"Slow",
@@ -291,6 +292,7 @@ void Game::update() {
 
 	//misc
 	updateFps++;
+	
 	mouse2d = (mouse2d + 1) % Renderer::maxMouse2dAnim;
 
 	//console
@@ -313,6 +315,7 @@ void Game::update() {
 
 		//World
 		world.update();
+		++worldFps;
 
 		try {
 			// Commander
@@ -391,10 +394,18 @@ void Game::render(){
 // ==================== tick ====================
 
 void Game::tick(){
+	lastWorldFps = worldFps;
 	lastUpdateFps= updateFps;
 	lastRenderFps= renderFps;
+	worldFps = 0;
 	updateFps= 0;
 	renderFps= 0;
+
+	if (theNetworkManager.isNetworkClient()) {
+		LOG_NET_CLIENT( "World Frames last second : " + intToStr(lastWorldFps) )
+	} else if (theNetworkManager.isNetworkServer()) {
+		LOG_NET_SERVER( "World Frames last second : " + intToStr(lastWorldFps) )
+	}
 
 	//Win/lose check
 	checkWinner();
@@ -887,19 +898,6 @@ void Game::render2d(){
 			<< "Vertex count: " << renderer.getPointCount() << endl
 			<< "Frame count: " << world.getFrameCount() << endl;
 
-		//visible quad
-
-		/*
-		Quad2i visibleQuad= renderer.getVisibleQuad();
-
-		str << "Visible quad: ";
-		for(int i= 0; i<4; ++i){
-			str << "(" << visibleQuad.p[i].x << "," << visibleQuad.p[i].y << ") ";
-		}
-		str << endl;
-		str << "Visible quad area: " << visibleQuad.area() << endl;
-		*/
-
 		str << "Camera VAng : " << gameCamera.getVAng() << endl;
 
 		// resources
@@ -1025,37 +1023,38 @@ bool Game::hasBuilding(const Faction *faction){
 void Game::updateSpeed() {
 	Lang &lang= Lang::getInstance();
 	console.addLine(lang.get("GameSpeedSet") + " " + lang.get(SpeedDesc[speed]));
-	if(speed == sNormal) {
+	
+	if (speed == GameSpeed::NORMAL) {
 		fUpdateLoops = 1.0f;
-	} else if(speed > sNormal) {
-		fUpdateLoops = 1.0f + (float)(speed - sNormal) / (float)(sFastest - sNormal)
-			* (Config::getInstance().getGsSpeedFastest() - 1.0f);
+	} else if (speed > GameSpeed::NORMAL) {
+		fUpdateLoops = 1.0f + float(speed - GameSpeed::NORMAL) / float(GameSpeed::FATEST - GameSpeed::NORMAL)
+			* (theConfig.getGsSpeedFastest() - 1.0f);
 	} else {
-		fUpdateLoops = Config::getInstance().getGsSpeedSlowest() + (float)(speed) / (float)(sNormal)
-			* (1.0f - Config::getInstance().getGsSpeedSlowest());
+		fUpdateLoops = theConfig.getGsSpeedSlowest() + float(speed) / float(GameSpeed::NORMAL)
+			* (1.0f - theConfig.getGsSpeedSlowest());
 	}
 }
 
 void Game::incSpeed() {
-	if (speed < sFastest) {
-		speed = (Speed)(speed + 1);
+	if (speed < GameSpeed::FAST) {
+		++speed;
 		updateSpeed();
 	}
 }
 
 void Game::decSpeed() {
-	if (speed > sSlowest) {
-		speed = (Speed)(speed - 1);
+	if (speed > GameSpeed::SLOW) {
+		--speed;
 		updateSpeed();
 	}
 }
 
 void Game::resetSpeed() {
-	speed = sNormal;
+	speed = GameSpeed::NORMAL;
 	updateSpeed();
 }
 
-int Game::getUpdateLoops() {
+int Game::getUpdateLoops(){
 	if (paused || (!NetworkManager::getInstance().isNetworkGame() && (saveBox || mainMessageBox.getEnabled()))) {
 		return 0;
 	} else {

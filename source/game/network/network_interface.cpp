@@ -51,22 +51,25 @@ void NetworkInterface::send(const NetworkMessage* networkMessage/*, bool flush*/
 
 //NETWORK: this is (re)moved
 NetworkMessageType NetworkInterface::getNextMessageType(){
-	Socket* socket= getSocket();
-	int8 messageType= nmtInvalid;
+	Socket* socket = getSocket();
+	int8 messageType = NetworkMessageType::NO_MSG;
 
 	//peek message type
-	if(socket->getDataToRead()>=sizeof(messageType)){
+	if (socket->getDataToRead() >= sizeof(messageType)) {
 		socket->peek(&messageType, sizeof(messageType));
 	}
 
 	//sanity check new message type
-	if(messageType<0 || messageType>=nmtCount){
+	if (messageType < 0 || messageType >= NetworkMessageType::COUNT){
 		throw runtime_error("Invalid message type: " + intToStr(messageType));
 	}
 
-	return static_cast<NetworkMessageType>(messageType);
+	return NetworkMessageType(messageType);
 }
 
+int NetworkInterface::dataAvailable() {
+	return getSocket()->getDataToRead();
+}
 
 /** returns false if there is still data to be written *
 bool NetworkInterface::flush() {

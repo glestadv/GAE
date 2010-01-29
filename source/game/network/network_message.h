@@ -25,19 +25,6 @@ namespace Glest { namespace Game {
 class GameSettings;
 class Command;
 
-enum NetworkMessageType{
-	nmtInvalid,
-	nmtIntro,
-	nmtPing,
-	nmtReady,
-	nmtLaunch,
-	nmtCommandList,
-	nmtText,
-	nmtQuit,
-
-	nmtCount
-};
-
 // NETWORK: nearly whole file changed
 // - need more description about what role a NetworkMessage plays.
 // - Should NetworkMessageXmlDoc really be a NetworkMessage or is it a network type?

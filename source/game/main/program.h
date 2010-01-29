@@ -21,14 +21,6 @@
 #include "components.h"
 #include "keymap.h"
 
-/*
-using Shared::Graphics::Context;
-using Shared::Platform::WindowGl;
-using Shared::Platform::SizeState;
-using Shared::Platform::MouseState;
-using Shared::Platform::PerformanceTimer;
-using Shared::Platform::Ip;
-*/
 using namespace Shared::Platform;
 
 namespace Glest { namespace Game {

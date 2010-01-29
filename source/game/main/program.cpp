@@ -94,7 +94,7 @@ Program *Program::singleton = NULL;
 Program::Program(Config &config, int argc, char** argv) :
 		renderTimer(config.getRenderFpsMax(), 1),
 		tickTimer(1.f, maxTimes, -1),
-		updateTimer(config.getGsWorldUpdateFps(), maxTimes, 2),
+		updateTimer(config.getGsWorldUpdateFps(), maxTimes),
 		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10),
 		programState(NULL),
 		crashed(false),

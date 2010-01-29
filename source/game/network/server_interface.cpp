@@ -92,7 +92,7 @@ int ServerInterface::getConnectedSlotCount() {
 void ServerInterface::update(){
 
 	//update all slots
-	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
+	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if(slots[i]) {
 			slots[i]->update();
 		}
@@ -108,15 +108,14 @@ void ServerInterface::update(){
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		ConnectionSlot* connectionSlot = slots[i];
 
-		if(connectionSlot 
-				&& connectionSlot->isConnected() 
-				&& (connectionSlot->getNextMessageType() == nmtText)) {
-			NetworkMessageText networkMessageText;
-			if(connectionSlot->receiveMessage(&networkMessageText)) {
-				broadcastMessage(&networkMessageText, i);
-				chatText = networkMessageText.getText();
-				chatSender = networkMessageText.getSender();
-				chatTeamIndex = networkMessageText.getTeamIndex();
+		if (connectionSlot && connectionSlot->isConnected() 
+		&& (connectionSlot->getNextMessageType() == NetworkMessageType::TEXT)) {
+			NetworkMessageText textMsg;
+			if (connectionSlot->receiveMessage(&textMsg)) {
+				broadcastMessage(&textMsg, i);
+				chatText = textMsg.getText();
+				chatSender = textMsg.getSender();
+				chatTeamIndex = textMsg.getTeamIndex();
 				break;
 			}
 		}
@@ -166,21 +165,17 @@ void ServerInterface::updateKeyframe(int frameCount){
 			break;
 		}
 	}
-
 	if (cmdList.getCommandCount()) {
 		LOG_NET_SERVER( 
-			"KeyFrame update: " + intToStr(frameCount) + ", sending " 
-			+ intToStr(cmdList.getCommandCount()) + " commands, " 
-			+ intToStr(requestedCommands.size()) + " still pending." 
+			"KeyFrame update, sending " + intToStr(cmdList.getCommandCount()) + " commands" +
+			(requestedCommands.size() ? intToStr(requestedCommands.size()) + " still pending." : "." )
 		)
 		for (int i=0; i < cmdList.getCommandCount(); ++i) {
 			const NetworkCommand * const &cmd = cmdList.getCommand(i);
 			const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-			const UnitType * const &unitType = unit->getType();
-			const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
 			LOG_NET_SERVER( 
-				"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
-				+ cmdType->getName() + "."
+				"\tUnit: " + intToStr(unit->getId()) + " [" + unit->getType()->getName() + "] " 
+				+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
 			)
 		}
 	}
@@ -234,16 +229,15 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 			}
 			*/
 
-			if(slot && !slot->isReady()) {
-				NetworkMessageType networkMessageType = slot->getNextMessageType();
-				NetworkMessageReady networkMessageReady;
+			if (slot && !slot->isReady()) {
+				NetworkMessageType msgType = slot->getNextMessageType();
+				NetworkMessageReady readyMsg;
 
-				if(networkMessageType==nmtReady && slot->receiveMessage(&networkMessageReady)){
+				if (msgType == NetworkMessageType::READY && slot->receiveMessage(&readyMsg)) {
 					LOG_NET_SERVER( "Received ready message, slot " + intToStr(i) )
 					slot->setReady();
-				}
-				else if(networkMessageType!=nmtInvalid){
-					throw runtime_error("Unexpected network message: " + intToStr(networkMessageType));
+				} else if (msgType != NetworkMessageType::NO_MSG) {
+					throw runtime_error("Unexpected network message: " + intToStr(msgType));
 				} else {
 					allReady = false;
 				}
@@ -251,7 +245,7 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 		}
 
 		//check for timeout
-		if(chrono.getMillis() > readyWaitTimeout) {
+		if (chrono.getMillis() > readyWaitTimeout) {
 			LOG_NET_SERVER( "Timeout waiting for clients" )
 			throw runtime_error("Timeout waiting for clients");
 		}
@@ -261,12 +255,10 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 	LOG_NET_SERVER( "Received all ready messages, sending ready message(s)." )
 	
 	//send ready message after, so clients start delayed
-	for(int i= 0; i < GameConstants::maxPlayers; ++i) {
-		NetworkMessageReady networkMessageReady(checksum.getSum());
-		ConnectionSlot* slot = slots[i];
-
-		if(slot){
-			slot->send(&networkMessageReady);
+	for (int i= 0; i < GameConstants::maxPlayers; ++i) {
+		NetworkMessageReady readyMsg(checksum.getSum());
+		if (slots[i]) {
+			slots[i]->send(&readyMsg);
 		}
 	}
 }
@@ -282,20 +274,14 @@ void ServerInterface::quitGame(){
 }
 
 string ServerInterface::getStatus() const{
-	Lang &lang = Lang::getInstance();
 	string str;
-
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-		ConnectionSlot* slot = slots[i];
-		
 		str += intToStr(i) + ": ";
-
-		if(slot && slot->isConnected()) {
-				str += slot->getName(); //str += connectionSlot->getRemotePlayerName() + ": " + connectionSlot->getStatus();
+		if (slots[i] && slots[i]->isConnected()) {
+				str += slots[i]->getName(); //str += connectionSlot->getRemotePlayerName() + ": " + connectionSlot->getStatus();
 		} else {
-			str += lang.get("NotConnected");
+			str += theLang.get("NotConnected");
 		}
-
 		str += '\n';
 	}
 	return str;
@@ -473,11 +459,9 @@ void ServerInterface::sendUpdates() {
 
 void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int excludeSlot) {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-		ConnectionSlot* slot = slots[i];
-
-		if(i != excludeSlot && slot) {
-			if(slot->isConnected()) {
-				slot->send(networkMessage);
+		if(i != excludeSlot && slots[i]) {
+			if(slots[i]->isConnected()) {
+				slots[i]->send(networkMessage);
 			} else {
 				/*
 				Lang &lang = Lang::getInstance();
@@ -496,13 +480,11 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 
 void ServerInterface::updateListen() {
 	int openSlotCount = 0;
-	
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		if(slots[i] && !slots[i]->isConnected()) {
 			++openSlotCount;
 		}
 	}
-
 	serverSocket.listen(openSlotCount);
 }
 

@@ -161,28 +161,18 @@ void ClientInterface::update() {
 	while (!requestedCommands.empty() && cmdList.addCommand(&requestedCommands.back())) {
 		requestedCommands.pop_back();
 	}
-	/* NETWORK: replaces above
-	while(!requestedCommands.empty()
-			&& networkMessageCommandList.addCommand(requestedCommands.front())) {
-		requestedCommands.erase(requestedCommands.begin());
-	}
-	*/
 	if (cmdList.getCommandCount() > 0) {
-
 		LOG_NET_CLIENT(
 			"Sending command(s) to server, current frame = " + intToStr(theWorld.getFrameCount())
 		)
 		for (int i=0; i < cmdList.getCommandCount(); ++i) {
 			const NetworkCommand * const &cmd = cmdList.getCommand(i);
 			const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-			const UnitType * const &unitType = unit->getType();
-			const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
 			LOG_NET_CLIENT( 
-				"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
-				+ cmdType->getName() + "."
+				"\tUnit: " + intToStr(cmd->getUnitId()) + " [" + unit->getType()->getName() + "] " 
+				+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
 			)
 		}
-
 		send(&cmdList);
 		//flush();
 	}
@@ -233,172 +223,140 @@ void ClientInterface::sendUpdateRequests() {
 
 void ClientInterface::updateLobby() {
 	// NETWORK: this method is very different
-
-	NetworkMessageType networkMessageType= getNextMessageType();
+	NetworkMessageType msgType = getNextMessageType();
 	
-	switch(networkMessageType){
-		case nmtInvalid:
-			break;
+	if (msgType == NetworkMessageType::INTRO) {
+		NetworkMessageIntro introMsg;
+		if (receiveMessage(&introMsg)) {
+			//check consistency
+			if(theConfig.getNetConsistencyChecks() && introMsg.getVersionString() != getNetworkVersionString()) {
+				LOG_NET_CLIENT( "Server and client versions do not match (" + introMsg.getVersionString() + ")." )
+				throw runtime_error("Server and client versions do not match (" 
+							+ introMsg.getVersionString() + "). You have to use the same binaries.");
+			}
+			LOG_NET_CLIENT( "Received intro message, sending intro message reply." )
+			playerIndex = introMsg.getPlayerIndex();
+			serverName = introMsg.getName();
+			setRemoteNames(introMsg.getName(), introMsg.getName()); //NETWORK: needs to be done properly
 
-		case nmtIntro:{
-			NetworkMessageIntro networkMessageIntro;
-
-			if(receiveMessage(&networkMessageIntro)){
+			if (playerIndex < 0 || playerIndex >= GameConstants::maxPlayers) {
+				LOG_NET_CLIENT( "Intro message from server contains bad data, bailing." )
+				throw runtime_error("Intro message from server contains bad data, are you using the same version?");
+			}
+			
+			//send reply
+			NetworkMessageIntro replyMsg(getNetworkVersionString(), getHostName(), -1);
+			send(&replyMsg);
 				
-				//check consistency
-				if(Config::getInstance().getNetConsistencyChecks() && networkMessageIntro.getVersionString()!= getNetworkVersionString()){
-					LOG_NET_CLIENT( "Server and client versions do not match (" + networkMessageIntro.getVersionString() + ")." )
-					throw runtime_error("Server and client versions do not match (" + networkMessageIntro.getVersionString() + "). You have to use the same binaries.");
-				}
-
-				//send intro message
-				NetworkMessageIntro sendNetworkMessageIntro(getNetworkVersionString(), getHostName(), -1);
-
-				LOG_NET_CLIENT( "Received intro message, sending intro message return." )
-				playerIndex= networkMessageIntro.getPlayerIndex();
-				serverName= networkMessageIntro.getName();
-				setRemoteNames(networkMessageIntro.getName(), networkMessageIntro.getName()); //NETWORK: needs to be done properly
-				send(&sendNetworkMessageIntro);
-					
-				assert(playerIndex>=0 && playerIndex<GameConstants::maxPlayers);
-				introDone= true;
-			}
+			introDone= true;
 		}
-		break;
-
-		case nmtLaunch:{
-			NetworkMessageLaunch networkMessageLaunch;
-
-			if(receiveMessage(&networkMessageLaunch)){
-				networkMessageLaunch.buildGameSettings(&gameSettings);
-
-				//replace server player by network
-				for(int i= 0; i<gameSettings.getFactionCount(); ++i){
-					
-					//replace by network
-					if(gameSettings.getFactionControl(i) == ControlType::HUMAN){
-						gameSettings.setFactionControl(i, ControlType::NETWORK);
-					}
-
-					//set the faction index
-					if(gameSettings.getStartLocationIndex(i)==playerIndex){
-						gameSettings.setThisFactionIndex(i);
-					}
+	} else if (msgType == NetworkMessageType::LAUNCH) {
+		NetworkMessageLaunch launchMsg;
+		if (receiveMessage(&launchMsg)) {
+			launchMsg.buildGameSettings(&gameSettings);
+			//replace server player by network
+			for (int i= 0; i < gameSettings.getFactionCount(); ++i) {
+				//replace by network
+				if (gameSettings.getFactionControl(i) == ControlType::HUMAN) {
+					gameSettings.setFactionControl(i, ControlType::NETWORK);
 				}
-				launchGame= true;
-				LOG_NET_CLIENT( "Received launch message." )
+				//set the faction index
+				if (gameSettings.getStartLocationIndex(i)==playerIndex) {
+					gameSettings.setThisFactionIndex(i);
+				}
 			}
+			launchGame= true;
+			LOG_NET_CLIENT( "Received launch message." )
 		}
-		break;
-
-		default:
-			throw runtime_error("Unexpected network message: " + intToStr(networkMessageType));
+	} else if (msgType != NetworkMessageType::NO_MSG) {
+		throw runtime_error("Unexpected network message: " + intToStr(msgType));
 	}
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {
 	// NETWORK: this method is very different
-	bool done = false;
-
-	while(!done){
+	while (true) {
 		//wait for the next message
 		waitForMessage();
 
 		//check we have an expected message
-		NetworkMessageType networkMessageType= getNextMessageType();
+		NetworkMessageType msgType = getNextMessageType();
 
-		switch (networkMessageType) {
-			case nmtCommandList: {
-				//make sure we read the message
-				NetworkMessageCommandList cmdList;
-				while (!receiveMessage(&cmdList)) {
-					sleep(waitSleepTime);
-				}
-
-				//check that we are in the right frame
-				if (cmdList.getFrameCount() != frameCount) {
-					LOG_NET_CLIENT( "Network synchronization error, frame counts do not match." )
-					throw runtime_error("Network synchronization error, frame counts do not match");
-				}
-
-				// give all commands
-				if (cmdList.getCommandCount()) {
+		if (msgType == NetworkMessageType::COMMAND_LIST) {
+			NetworkMessageCommandList cmdList;
+			//make sure we read the message
+			while (!receiveMessage(&cmdList)) {
+				sleep(waitSleepTime);
+			}
+			//check that we are in the right frame
+			if (cmdList.getFrameCount() != frameCount) {
+				LOG_NET_CLIENT( "Network synchronization error, frame counts do not match." )
+				throw runtime_error("Network synchronization error, frame counts do not match");
+			}
+			// give all commands
+			if (cmdList.getCommandCount()) {
+				LOG_NET_CLIENT( 
+					"Keyframe update: " + intToStr(frameCount) + " received "
+					+ intToStr(cmdList.getCommandCount()) + " commands. " 
+					+ intToStr(dataAvailable()) + " bytes waiting to be read."
+				)
+				for (int i= 0; i < cmdList.getCommandCount(); ++i) {
+					pendingCommands.push_back(*cmdList.getCommand(i));
+					const NetworkCommand * const &cmd = cmdList.getCommand(i);
+					const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
 					LOG_NET_CLIENT( 
-						"Keyframe update: " + intToStr(frameCount) + " received "
-						+ intToStr(cmdList.getCommandCount()) + " commands." 
+						"\tUnit: " + intToStr(unit->getId()) + " [" + unit->getType()->getName() + "] " 
+						+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
 					)
-					for(int i= 0; i<cmdList.getCommandCount(); ++i){
-						pendingCommands.push_back(*cmdList.getCommand(i));
-						const NetworkCommand * const &cmd = cmdList.getCommand(i);
-						const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-						const UnitType * const &unitType = unit->getType();
-						const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
-						LOG_NET_CLIENT( 
-							"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
-							+ cmdType->getName() + "."
-						)
-					}
-				}
-				done= true;
-			}
-			break;
-
-			case nmtQuit:{
-				NetworkMessageQuit networkMessageQuit;
-				if(receiveMessage(&networkMessageQuit)){
-					quit= true;
-				}
-				done= true;
-			}
-			break;
-
-			case nmtText:{
-				NetworkMessageText networkMessageText;
-				if(receiveMessage(&networkMessageText)){
-					chatText= networkMessageText.getText();
-					chatSender= networkMessageText.getSender();
-					chatTeamIndex= networkMessageText.getTeamIndex();
 				}
 			}
-			break;
-
-			default:
-				LOG_NET_CLIENT( "Unexpected message in client interface: " + intToStr(networkMessageType) )
-				throw runtime_error("Unexpected message in client interface: " + intToStr(networkMessageType));
+			return;
+		} else if (msgType == NetworkMessageType::QUIT) {
+			NetworkMessageQuit quitMsg;
+			if (receiveMessage(&quitMsg)) {
+				quit = true;
+			}
+			return;
+		} else if (msgType == NetworkMessageType::TEXT) {
+			NetworkMessageText textMsg;
+			if (receiveMessage(&textMsg)) {
+				chatText = textMsg.getText();
+				chatSender = textMsg.getSender();
+				chatTeamIndex = textMsg.getTeamIndex();
+			}
+		} else {
+			LOG_NET_CLIENT( "Unexpected message in client interface: " + intToStr(msgType) )
+			throw runtime_error("Unexpected message in client interface: " + intToStr(msgType));
 		}
 	}
 }
 
 void ClientInterface::waitUntilReady(Checksum &checksum) {
 	// NETWORK: this method is very different
-	NetworkMessageReady networkMessageReady;
+	NetworkMessageReady readyMsg;
 	Chrono chrono;
-
 	chrono.start();
 
 	//send ready message
-	send(&networkMessageReady);
-
+	send(&readyMsg);
 	LOG_NET_CLIENT( "Ready, waiting for server ready message." )
 
 	//wait until we get a ready message from the server
-	while(true){
-		
-		NetworkMessageType networkMessageType= getNextMessageType();
-
-		if (networkMessageType==nmtReady) {
-			if (receiveMessage(&networkMessageReady)) {
+	while (true) {
+		NetworkMessageType msgType = getNextMessageType();
+		if (msgType == NetworkMessageType::READY) {
+			if (receiveMessage(&readyMsg)) {
 				LOG_NET_CLIENT( "Received ready message." )
 				break;
 			}
-		} else if (networkMessageType==nmtInvalid) {
-			if (chrono.getMillis()>readyWaitTimeout) {
+		} else if (msgType == NetworkMessageType::NO_MSG) {
+			if (chrono.getMillis() > readyWaitTimeout) {
 				LOG_NET_CLIENT( "Timeout waiting for server." )
 				throw runtime_error("Timeout waiting for server");
 			}
 		} else {
-			LOG_NET_CLIENT( "Unexpected network message: " + intToStr(networkMessageType) )
-			throw runtime_error("Unexpected network message: " + intToStr(networkMessageType) );
+			LOG_NET_CLIENT( "Unexpected network message: " + intToStr(msgType) )
+			throw runtime_error("Unexpected network message: " + intToStr(msgType) );
 		}
 
 		// sleep a bit
@@ -406,8 +364,7 @@ void ClientInterface::waitUntilReady(Checksum &checksum) {
 	}
 
 	//check checksum
-	if(Config::getInstance().getNetConsistencyChecks() 
-			&& networkMessageReady.getChecksum() != checksum.getSum()){
+	if (theConfig.getNetConsistencyChecks() && readyMsg.getChecksum() != checksum.getSum()) {
 		LOG_NET_CLIENT( "Checksum error, you don't have the same data as the server" )
 		throw runtime_error("Checksum error, you don't have the same data as the server");
 	}
@@ -417,32 +374,27 @@ void ClientInterface::waitUntilReady(Checksum &checksum) {
 }
 
 void ClientInterface::sendTextMessage(const string &text, int teamIndex){
-	NetworkMessageText networkMessageText(text, Config::getInstance().getNetPlayerName(), teamIndex);
-	send(&networkMessageText);
+	NetworkMessageText textMsg(text, theConfig.getNetPlayerName(), teamIndex);
+	send(&textMsg);
 }
 
 string ClientInterface::getStatus() const{
-	return Lang::getInstance().get("Server") + ": " + serverName;
+	return theLang.get("Server") + ": " + serverName;
 	//	return getRemotePlayerName() + ": " + NetworkStatus::getStatus();
 }
 
 void ClientInterface::waitForMessage() {
 	Chrono chrono;
-
 	chrono.start();
-
-	while(getNextMessageType()==nmtInvalid){
-
-		if(!isConnected()){
+	while (getNextMessageType() == NetworkMessageType::NO_MSG) {
+		if (!isConnected()) {
 			LOG_NET_CLIENT( "Disconnected." )
 			throw runtime_error("Disconnected");
 		}
-
-		if(chrono.getMillis()>messageWaitTimeout){
+		if (chrono.getMillis() > messageWaitTimeout) {
 			LOG_NET_CLIENT( "Timeout waiting for message." )
 			throw runtime_error("Timeout waiting for message");
 		}
-
 		sleep(waitSleepTime);
 	}
 }

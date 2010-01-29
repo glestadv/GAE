@@ -59,7 +59,7 @@ NetworkMessageIntro::NetworkMessageIntro(){
 }
 
 NetworkMessageIntro::NetworkMessageIntro(const string &versionString, const string &name, int playerIndex){
-	data.messageType=nmtIntro; 
+	data.messageType=NetworkMessageType::INTRO; 
 	data.versionString= versionString;
 	data.name= name;
 	data.playerIndex= static_cast<int16>(playerIndex);
@@ -70,7 +70,7 @@ bool NetworkMessageIntro::receive(Socket* socket){
 }
 
 void NetworkMessageIntro::send(Socket* socket) const{
-	assert(data.messageType==nmtIntro);
+	assert(data.messageType==NetworkMessageType::INTRO);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
 
@@ -79,11 +79,11 @@ void NetworkMessageIntro::send(Socket* socket) const{
 // =====================================================
 
 NetworkMessageReady::NetworkMessageReady(){
-	data.messageType= nmtReady; 
+	data.messageType= NetworkMessageType::READY; 
 }
 
 NetworkMessageReady::NetworkMessageReady(int32 checksum){
-	data.messageType= nmtReady; 
+	data.messageType= NetworkMessageType::READY; 
 	data.checksum= checksum;
 }
 
@@ -92,7 +92,7 @@ bool NetworkMessageReady::receive(Socket* socket){
 }
 
 void NetworkMessageReady::send(Socket* socket) const{
-	assert(data.messageType==nmtReady);
+	assert(data.messageType==NetworkMessageType::READY);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
 
@@ -105,7 +105,7 @@ NetworkMessageLaunch::NetworkMessageLaunch(){
 }
 
 NetworkMessageLaunch::NetworkMessageLaunch(const GameSettings *gameSettings){
-	data.messageType=nmtLaunch;
+	data.messageType=NetworkMessageType::LAUNCH;
 
 	data.description= gameSettings->getDescription();
 	data.map= gameSettings->getMapPath();
@@ -149,7 +149,7 @@ bool NetworkMessageLaunch::receive(Socket* socket){
 }
 
 void NetworkMessageLaunch::send(Socket* socket) const{
-	assert(data.messageType==nmtLaunch);
+	assert(data.messageType==NetworkMessageType::LAUNCH);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
 
@@ -158,7 +158,7 @@ void NetworkMessageLaunch::send(Socket* socket) const{
 // =====================================================
 
 NetworkMessageCommandList::NetworkMessageCommandList(int32 frameCount){
-	data.messageType= nmtCommandList;
+	data.messageType= NetworkMessageType::COMMAND_LIST;
 	data.frameCount= frameCount;
 	data.commandCount= 0;
 }
@@ -177,7 +177,7 @@ bool NetworkMessageCommandList::receive(Socket* socket){
 }
 
 void NetworkMessageCommandList::send(Socket* socket) const{
-	assert(data.messageType==nmtCommandList);
+	assert(data.messageType==NetworkMessageType::COMMAND_LIST);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
 
@@ -186,7 +186,7 @@ void NetworkMessageCommandList::send(Socket* socket) const{
 // =====================================================
 
 NetworkMessageText::NetworkMessageText(const string &text, const string &sender, int teamIndex){
-	data.messageType= nmtText; 
+	data.messageType= NetworkMessageType::TEXT; 
 	data.text= text;
 	data.sender= sender;
 	data.teamIndex= teamIndex;
@@ -197,7 +197,7 @@ bool NetworkMessageText::receive(Socket* socket){
 }
 
 void NetworkMessageText::send(Socket* socket) const{
-	assert(data.messageType==nmtText);
+	assert(data.messageType==NetworkMessageType::TEXT);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
 
@@ -206,7 +206,7 @@ void NetworkMessageText::send(Socket* socket) const{
 // =====================================================
 
 NetworkMessageQuit::NetworkMessageQuit(){
-	data.messageType= nmtQuit; 
+	data.messageType= NetworkMessageType::QUIT; 
 }
 
 bool NetworkMessageQuit::receive(Socket* socket){
@@ -214,7 +214,7 @@ bool NetworkMessageQuit::receive(Socket* socket){
 }
 
 void NetworkMessageQuit::send(Socket* socket) const{
-	assert(data.messageType==nmtQuit);
+	assert(data.messageType==NetworkMessageType::QUIT);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
 
