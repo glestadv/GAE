@@ -34,8 +34,8 @@ namespace Glest { namespace Game {
 // =====================================================
 
 bool NetworkMessage::receive(Socket* socket, void* data, int dataSize){
-	if(socket->getDataToRead()>=dataSize){
-		if(socket->receive(data, dataSize)!=dataSize){
+	if (socket->getDataToRead() >= dataSize) {
+		if (socket->receive(data, dataSize) != dataSize) {
 			throw runtime_error("Error receiving NetworkMessage");
 		}
 		return true;
@@ -43,8 +43,8 @@ bool NetworkMessage::receive(Socket* socket, void* data, int dataSize){
 	return false;
 }
 
-void NetworkMessage::send(Socket* socket, const void* data, int dataSize) const{
-	if(socket->send(data, dataSize)!=dataSize){
+void NetworkMessage::send(Socket* socket, const void* data, int dataSize) const {
+	if (socket->send(data, dataSize)!=dataSize) {
 		throw runtime_error("Error sending NetworkMessage");
 	}
 }
@@ -164,21 +164,28 @@ NetworkMessageCommandList::NetworkMessageCommandList(int32 frameCount){
 }
 
 bool NetworkMessageCommandList::addCommand(const NetworkCommand* networkCommand){
-	if(data.commandCount<maxCommandCount){
-		data.commands[static_cast<int>(data.commandCount)]= *networkCommand;
-		data.commandCount++;
+	if (data.commandCount < maxCommandCount) {
+		data.commands[data.commandCount++]= *networkCommand;
 		return true;
 	}
 	return false;
 }
 
-bool NetworkMessageCommandList::receive(Socket* socket){
-	return NetworkMessage::receive(socket, &data, sizeof(data));
+bool NetworkMessageCommandList::receive(Socket* socket) {
+	// read type, commandCount & frame num first.
+	if (!NetworkMessage::receive(socket, &data, 6)) {
+		return false;
+	}
+	// read data.commandCount commands.
+	if (data.commandCount) {
+		return NetworkMessage::receive(socket, &data.commands, sizeof(NetworkCommand) * data.commandCount);
+	}
+	return true;
 }
 
-void NetworkMessageCommandList::send(Socket* socket) const{
-	assert(data.messageType==NetworkMessageType::COMMAND_LIST);
-	NetworkMessage::send(socket, &data, sizeof(data));
+void NetworkMessageCommandList::send(Socket* socket) const {
+	assert(data.messageType == NetworkMessageType::COMMAND_LIST);
+	NetworkMessage::send(socket, &data, 6 + sizeof(NetworkCommand) * data.commandCount);
 }
 
 // =====================================================

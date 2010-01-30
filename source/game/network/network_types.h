@@ -109,6 +109,8 @@ enum NetworkCommandType{
 	nctSetMeetingPoint
 };
 
+#pragma pack(push, 2)
+
 class NetworkCommand{
 private:
 	int16 networkCommandType;
@@ -132,6 +134,8 @@ public:
 	int getUnitTypeId() const							{return unitTypeId;}
 	int getTargetId() const								{return targetId;}
 };
+
+#pragma pack(pop)
 
 }}//end namespace
 

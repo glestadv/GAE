@@ -157,6 +157,8 @@ public:
 //	Message to order a commands to several units
 // =====================================================
 
+#pragma pack(push, 1)
+
 class NetworkMessageCommandList: public NetworkMessage{
 private:
 	static const int maxCommandCount= 16*4;
@@ -185,6 +187,8 @@ public:
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
 };
+
+#pragma pack(pop)
 
 // =====================================================
 //	class NetworkMessageText
