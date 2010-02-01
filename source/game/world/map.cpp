@@ -259,7 +259,7 @@ Map::Map()
 		, cells(NULL)
 		, tiles(NULL)
 		, startLocations(NULL)
-		, surfaceHeights(NULL)
+		//, surfaceHeights(NULL)
 		, earthquakes() {
 
 	// If this is expanded, maintain Tile::read() and write()
@@ -275,7 +275,7 @@ Map::~Map() {
 	if(cells)			{delete[] cells;}
 	if(tiles)			{delete[] tiles;}
 	if(startLocations)	{delete[] startLocations;}
-	if (surfaceHeights)	{delete[] surfaceHeights;}
+//	if (surfaceHeights)	{delete[] surfaceHeights;}
 }
 //get
 Cell *Map::getCell(int x, int y) const {
@@ -350,9 +350,9 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 		//cells
 		cells = new Cell[w * h];
 		tiles = new Tile[tileW * tileH];
-		surfaceHeights = new float[tileW * tileH];
+		//surfaceHeights = new float[tileW * tileH]; // unused ???
 
-		float *surfaceHeight = surfaceHeights;
+		//float *surfaceHeight = surfaceHeights;
 
 		//read heightmap
 		for (int y = 0; y < tileH; ++y) {
@@ -406,6 +406,24 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 			fclose(f);
 		}
 		throw MapException(path, "Error loading map: " + path + "\n" + e.what());
+	}
+}
+
+void Map::doChecksum(Checksum &checksum) {
+	checksum.addString(title);
+	checksum.add<float>(waterLevel);
+	checksum.add<float>(heightFactor);
+	checksum.add<float>(avgHeight);
+	checksum.add<int>(w);
+	checksum.add<int>(h);
+	checksum.add<int>(tileW);
+	checksum.add<int>(tileH);
+	checksum.add<int>(maxPlayers);
+	for (int i=0; i < tileW * tileH; ++i) {
+		checksum.add<Vec3f>(tiles[i].getVertex());
+	}
+	for (int i=0; i < maxPlayers; ++i) {
+		checksum.add<Vec2i>(startLocations[i]);
 	}
 }
 
@@ -1122,10 +1140,10 @@ void Map::computeInterpolatedHeights() {
 							getTile(i + 1,     j)->getHeight() +
 							getTile(i + 1, j + 1)->getHeight() ) / 4.f);
 					}
-					}
-					}
-					}
 				}
+			}
+		}
+	}
 }
 
 

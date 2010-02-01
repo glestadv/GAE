@@ -35,7 +35,7 @@ namespace Glest{ namespace Game{
 // 	class TechTree
 // =====================================================
 
-bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum &checksum){
+bool TechTree::load(const string &dir, const set<string> &factionNames){
 	Logger &logger = Logger::getInstance();
 
 	string str;
@@ -58,7 +58,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	} else {
 		for(int i=0; i<filenames.size(); ++i){
 			str=dir+"/resources/"+filenames[i];
-			if ( ! resourceTypes[i].load(str, i, checksum) ) {
+			if ( ! resourceTypes[i].load(str, i) ) {
 				loadOk = false;
 			}
 			resourceTypeMap[filenames[i]] = &resourceTypes[i];
@@ -70,7 +70,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	string path;
 	try {
 		path= dir+"/"+basename(dir)+".xml";
-		checksum.addFile(path, true);
+		//checksum.addFile(path, true);
 		xmlTree.load(path);
 	}
 	catch ( runtime_error &e ) {
@@ -173,7 +173,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	}
 	logger.setUnitCount(numUnitTypes);
 	for (i = 0, fn = factionNames.begin(); fn != factionNames.end(); ++fn, ++i) {
-		if (!factionTypes[i].load(dir + "/factions/" + *fn, this, checksum)) {
+		if (!factionTypes[i].load(dir + "/factions/" + *fn, this)) {
 			loadOk = false;
 		} else {
 			factionTypeMap[*fn] = &factionTypes[i];
@@ -184,6 +184,35 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 		throw runtime_error("Glest Advanced Engine currently only supports 256 resource types.");
 	}
 	return loadOk;
+}
+
+void TechTree::doChecksum(Checksum &checksum) const {
+	checksum.addString(desc);
+
+	foreach_const (ResourceTypes, it, resourceTypes) {
+		it->doChecksum(checksum);
+	}
+	foreach_const (ArmorTypes, it, armorTypes) {
+		it->doChecksum(checksum);
+	}
+	foreach_const (AttackTypes, it,attackTypes) {
+		it->doChecksum(checksum);
+	}
+
+	foreach_const (ArmorTypes, armourIt, armorTypes) {
+		const ArmorType *armourType 
+			= (*const_cast<ArmorTypeMap*>(&armorTypeMap))[armourIt->getName()];
+		foreach_const (AttackTypes, attackIt, attackTypes) {
+			const AttackType *attackType 
+				= (*const_cast<AttackTypeMap*>(&attackTypeMap))[attackIt->getName()];
+			checksum.add<float>(damageMultiplierTable.getDamageMultiplier(attackType, armourType));
+		}
+	}
+	// Effects... ?
+
+	foreach_const (FactionTypes, it, factionTypes) {
+		it->doChecksum(checksum);
+	}
 }
 
 TechTree::~TechTree(){

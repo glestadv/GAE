@@ -129,6 +129,8 @@ public:
 	UnitStatsBase() {damageMultipliers.resize(damageMultiplierCount);}
 	virtual ~UnitStatsBase() {}
 
+	virtual void doChecksum(Checksum &checksum) const;
+
 	// ==================== get ====================
 
 	int getMaxHp() const					{return maxHp;}
@@ -291,6 +293,8 @@ public:
 	 * TODO: explain better.
 	 */
 	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
+
+	virtual void doChecksum(Checksum &checksum) const;
 
 	virtual void save(XmlNode *node) const;
 

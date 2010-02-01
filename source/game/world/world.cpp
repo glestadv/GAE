@@ -181,35 +181,33 @@ void World::initNetworkServer() {
 }
 
 //load tileset
-bool World::loadTileset(Checksum &checksum) {
-	tileset.load(game.getGameSettings().getTilesetPath(), checksum);
+bool World::loadTileset() {
+	tileset.load(game.getGameSettings().getTilesetPath());
 	timeFlow.init(&tileset);
 	return true;
 }
 
 //load tech
-bool World::loadTech(Checksum &checksum) {
+bool World::loadTech() {
 	set<string> names;
 	for (int i = 0; i < gs.getFactionCount(); ++i) {
 		if (gs.getFactionTypeName(i).size()) {
 			names.insert(gs.getFactionTypeName(i));
 		}
 	}
-	return techTree.load(gs.getTechPath(), names, checksum);
+	return techTree.load(gs.getTechPath(), names);
 }
 
 //load map
-bool World::loadMap(Checksum &checksum) {
+bool World::loadMap() {
 	const string &path = gs.getMapPath();
-	checksum.addFile(path, false);
 	map.load(path, &techTree, &tileset);
 	return true;
 }
 
-bool World::loadScenario(const string &path, Checksum *checksum) {
+bool World::loadScenario(const string &path) {
 	assert(!scenario);
 	scenario = new Scenario();
-	checksum->addFile(path, true);
 	scenario->load(path);
 	return true;
 }

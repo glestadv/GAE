@@ -104,7 +104,7 @@ void UnitType::preLoad(const string &dir){
 	name= basename(dir);
 }
 
-bool UnitType::load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType, Checksum &checksum){
+bool UnitType::load(int id, const string &dir, const TechTree *techTree, const FactionType *factionType){
 	this->id = id;
 	string path;
 
@@ -113,7 +113,7 @@ bool UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 	//file load
 	path= dir+"/"+name+".xml";
 
-	checksum.addFile(path, true);
+	//checksum.addFile(path, true);
 
 	XmlTree xmlTree;
 	try { xmlTree.load(path); }
@@ -408,6 +408,36 @@ bool UnitType::load(int id, const string &dir, const TechTree *techTree, const F
 		loadOk = false;
 	}
 	return loadOk;   
+}
+
+void UnitType::doChecksum(Checksum &checksum) const {
+	ProducibleType::doChecksum(checksum);
+	UnitStatsBase::doChecksum(checksum);
+
+	checksum.add<bool>(multiBuild);
+	checksum.add<bool>(multiSelect);
+	foreach_const (SkillTypes, it, skillTypes) {
+		(*it)->doChecksum(checksum);
+	}
+	foreach_const (CommandTypes, it, commandTypes) {
+		(*it)->doChecksum(checksum);
+	}
+	foreach_const (StoredResources, it, storedResources) {
+		checksum.addString(it->getType()->getName());
+		checksum.add<int>(it->getAmount());
+	}
+	foreach_const (Levels, it, levels) {
+		it->doChecksum(checksum);
+	}
+	foreach_const (Emanations, it, emanations) {
+		(*it)->doChecksum(checksum);
+	}
+
+	//meeting point
+	checksum.add<bool>(meetingPoint);
+	checksum.add<float>(halfSize);
+	checksum.add<float>(halfHeight);
+
 }
 
 // ==================== get ====================

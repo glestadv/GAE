@@ -148,10 +148,10 @@ public:
 
 	//init & load
 	void init(const XmlNode *worldNode = NULL);
-	bool loadTileset(Checksum &checksum);
-	bool loadTech(Checksum &checksum);
-	bool loadMap(Checksum &checksum);
-	bool loadScenario(const string &path, Checksum *checksum);
+	bool loadTileset();
+	bool loadTech();
+	bool loadMap();
+	bool loadScenario(const string &path);
 
 	void save(XmlNode *node) const;
 

@@ -19,6 +19,7 @@
 #include "particle_type.h"
 #include "upgrade_type.h"
 #include "flags.h"
+#include "game_constants.h"
 
 
 using Shared::Sound::StaticSound;
@@ -56,39 +57,6 @@ typedef vector<EffectType*> EffectTypes;
  */
 class EffectType: public EnhancementTypeBase, public DisplayableType {
 private:
-
-
-public:
-	/** Rather the effect is detrimental, neutral or benificial */
-	enum EffectBias {
-		ebDetrimental,
-		ebNeutral,
-		ebBenificial,
-
-		ebCount
-	};
-
-	/**
-	 * How the attempt to apply multiple instances of this effect should be
-	 * handled
-	 */
-	enum EffectStacking {
-		esStack,
-		esExtend,
-		esOverwrite,
-		esReject,
-
-  		esCount
-	};
-
-	/** Valid flag names/descriptions for values in EffectBias enum. */
-	static const char *effectBiasNames[ebCount];
-
-	/** Valid flag names/descriptions for values in EffectStacking enum. */
-	static const char *effectStackingNames[esCount];
-
-
-private:
 	EffectBias bias;
 	EffectStacking stacking;
 	unsigned int effectflags;
@@ -110,6 +78,7 @@ public:
 	EffectType();
 	virtual ~EffectType() { delete sound; }
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 
 	EffectBias getBias() const				{return bias;}
 	EffectStacking getStacking() const		{return stacking;}
@@ -150,6 +119,7 @@ private:
 public:
 	virtual ~Emanation() {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	int getRadius() const	{return radius;}
 };
 

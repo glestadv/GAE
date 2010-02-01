@@ -143,12 +143,15 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
+	// UnitType needs modifiying, the new pathfinder does not support
+	// units with multiple fields (nor did the old one), 'switching' fields
+	// will need to  be done with morphs. 
 	if(type->getField(Field::LAND)) currField = Field::LAND;
 	else if(type->getField(Field::AIR)) currField = Field::AIR;
 
-	if ( type->getField (Field::AMPHIBIOUS) ) currField = Field::AMPHIBIOUS;
-	else if ( type->getField (Field::ANY_WATER) ) currField = Field::ANY_WATER;
-	else if ( type->getField (Field::DEEP_WATER) ) currField = Field::DEEP_WATER;
+	if (type->getField (Field::AMPHIBIOUS)) currField = Field::AMPHIBIOUS;
+	else if (type->getField (Field::ANY_WATER)) currField = Field::ANY_WATER;
+	else if (type->getField (Field::DEEP_WATER)) currField = Field::DEEP_WATER;
 
 	targetField = Field::LAND;		// init just to keep it pretty in memory
 	level= NULL;

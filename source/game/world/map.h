@@ -198,7 +198,7 @@ private:
 	Cell *cells;
 	Tile *tiles;
 	Vec2i *startLocations;
-	float *surfaceHeights;
+	//float *surfaceHeights;
 
 	Earthquakes earthquakes;
 
@@ -212,6 +212,7 @@ public:
 
 	void init();
 	void load(const string &path, TechTree *techTree, Tileset *tileset);
+	void doChecksum(Checksum &checksum);
 
 	//get
 	Cell *getCell(int x, int y) const;

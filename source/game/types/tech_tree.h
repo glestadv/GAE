@@ -59,7 +59,8 @@ private:
 	DamageMultiplierTable damageMultiplierTable;
 
 public:
-    bool load(const string &dir, const set<string> &factionNames, Checksum &checksum);
+    bool load(const string &dir, const set<string> &factionNames);
+	void doChecksum(Checksum &checksum) const;
     ~TechTree();
 
     // get count

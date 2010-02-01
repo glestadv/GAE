@@ -124,10 +124,11 @@ private:
 	AmbientSounds ambientSounds;
 
 public:
-    ~Tileset();
-	void load(const string &dir, Checksum &checksum);
+	~Tileset();
+	void load(const string &dir);
+	void doChecksum(Checksum &checksum) const;
 
-    //get
+	//get
 	const SurfaceAtlas *getSurfaceAtlas() const		{return &surfaceAtlas;}
 	ObjectType *getObjectType(int i)				{return &objectTypes[i];}
 	float getSurfProb(int surf, int var) const		{return surfProbs[surf][var];}

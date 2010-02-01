@@ -163,6 +163,24 @@ STRINGY_ENUM( Property,
 					WALL
 			);
 
+/** Whether the effect is detrimental, neutral or benificial */
+STRINGY_ENUM( EffectBias,
+	DETRIMENTAL,
+	NEUTRAL,
+	BENIFICIAL
+)
+
+/**
+ * How an attempt to apply multiple instances of an effect should be
+ * handled
+ */
+STRINGY_ENUM( EffectStacking,
+	STACK,
+	EXTEND,
+	OVERWRITE,
+	REJECT
+)
+
 /** effects flags
   * effect properties:
   * <ul><li><b>ALLY</b> effects allies.</li>

@@ -30,7 +30,7 @@ namespace Glest { namespace Game {
 //  class ResourceType
 // =====================================================
 
-bool ResourceType::load(const string &dir, int id, Checksum &checksum) {
+bool ResourceType::load(const string &dir, int id) {
 
 	string path, str;
 	Renderer &renderer = Renderer::getInstance();
@@ -40,106 +40,122 @@ bool ResourceType::load(const string &dir, int id, Checksum &checksum) {
 	Logger::getInstance().add("Resource type: " + dir, true);
 	name = basename(dir);
 	path = dir + "/" + name + ".xml";
-	checksum.addFile(path, true);
-	
+	//checksum.addFile(path, true);
+
 	XmlTree xmlTree;
-   const XmlNode *resourceNode;
-   try { // tree
-      xmlTree.load(path); 
-	   resourceNode = xmlTree.getRootNode();
-      if ( ! resourceNode ) {
-         Logger::getErrorLog().addXmlError ( path, "XML file appears to lack contents." );
-         return false; // bail
-      }
-   }
-   catch ( runtime_error &e ) {
-      Logger::getErrorLog().addXmlError ( path, "Missing or wrong name of XML file." );
-      return false; // bail
-   }
-   try { // image
-      const XmlNode *imageNode;
-      imageNode = resourceNode->getChild("image");
-	   image = renderer.newTexture2D(rsGame);
-	   image->load( dir + "/" + imageNode->getAttribute("path")->getRestrictedValue() );
-   }
-   catch ( runtime_error &e ) {
-      Logger::getErrorLog().addXmlError ( path, e.what() );
-      loadOk = false; // can continue, to catch other errors
-   }   
-   const XmlNode *typeNode;
-   try { // type
+	const XmlNode *resourceNode;
+	try { // tree
+		xmlTree.load(path); 
+		resourceNode = xmlTree.getRootNode();
+		if ( ! resourceNode ) {
+			Logger::getErrorLog().addXmlError ( path, "XML file appears to lack contents." );
+			return false; // bail
+		}
+	}
+	catch ( runtime_error &e ) {
+		Logger::getErrorLog().addXmlError ( path, "Missing or wrong name of XML file." );
+		return false; // bail
+	}
+	try { // image
+		const XmlNode *imageNode;
+		imageNode = resourceNode->getChild("image");
+		image = renderer.newTexture2D(rsGame);
+		image->load( dir + "/" + imageNode->getAttribute("path")->getRestrictedValue() );
+	}
+	catch ( runtime_error &e ) {
+		Logger::getErrorLog().addXmlError ( path, e.what() );
+		loadOk = false; // can continue, to catch other errors
+	}
+	const XmlNode *typeNode;
+	try { // type
 		typeNode = resourceNode->getChild("type");
 		resourceClass = strToRc(typeNode->getAttribute("value")->getRestrictedValue());
-   }
-   catch ( runtime_error &e ) {
-      Logger::getErrorLog().addXmlError ( path, e.what() );
-      return false; // bail, can't continue without type
-   }
+	}
+	catch ( runtime_error &e ) {
+		Logger::getErrorLog().addXmlError ( path, e.what() );
+		return false; // bail, can't continue without type
+	}
 
-   switch (resourceClass) {
-   case ResourceClass::TECHTREE: 
-      try { // model
-         const XmlNode *modelNode = typeNode->getChild("model");
-         string mPath = dir + "/" + modelNode->getAttribute("path")->getRestrictedValue();
-         model = renderer.newModel(rsGame);
-         model->load(mPath);
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( path, e.what() );
-         loadOk = false; // can continue, to catch other errors
-      }
-      try { // default resources
-         const XmlNode *defaultAmountNode = typeNode->getChild("default-amount");
-         defResPerPatch = defaultAmountNode->getAttribute("value")->getIntValue();
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( path, e.what() );
-         loadOk = false; // can continue, to catch other errors
-      }
-      try { // resource number
-         const XmlNode *resourceNumberNode = typeNode->getChild("resource-number");
-         resourceNumber = resourceNumberNode->getAttribute("value")->getIntValue();
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( path, e.what() );
-         loadOk = false;
-      }
-      break;
-   case ResourceClass::TILESET: 
-      try { // default resources
-         const XmlNode *defaultAmountNode = typeNode->getChild("default-amount");
-         defResPerPatch = defaultAmountNode->getAttribute("value")->getIntValue();
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( path, e.what() );
-         loadOk = false; // can continue, to catch other errors
-      }
-      try { // object number
-         const XmlNode *tilesetObjectNode = typeNode->getChild("tileset-object");
-         tilesetObject = tilesetObjectNode->getAttribute("value")->getIntValue();
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( path, e.what() );
-         loadOk = false;
-      }
-      break;
-   case ResourceClass::CONSUMABLE: 
-      try { // interval
-         const XmlNode *intervalNode = typeNode->getChild("interval");
-         interval = intervalNode->getAttribute("value")->getIntValue();
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( path, e.what() );
-         loadOk = false;
-      }
-      break;
-   default:
-      break;
-   }
+	switch (resourceClass) {
+		case ResourceClass::TECHTREE: 
+			try { // model
+				const XmlNode *modelNode = typeNode->getChild("model");
+				string mPath = dir + "/" + modelNode->getAttribute("path")->getRestrictedValue();
+				model = renderer.newModel(rsGame);
+				model->load(mPath);
+			}
+			catch ( runtime_error e ) {
+				Logger::getErrorLog().addXmlError ( path, e.what() );
+				loadOk = false; // can continue, to catch other errors
+			}
+			try { // default resources
+				const XmlNode *defaultAmountNode = typeNode->getChild("default-amount");
+				defResPerPatch = defaultAmountNode->getAttribute("value")->getIntValue();
+			}
+			catch ( runtime_error e ) {
+				Logger::getErrorLog().addXmlError ( path, e.what() );
+				loadOk = false; // can continue, to catch other errors
+			}
+			try { // resource number
+				const XmlNode *resourceNumberNode = typeNode->getChild("resource-number");
+				resourceNumber = resourceNumberNode->getAttribute("value")->getIntValue();
+			}
+			catch ( runtime_error e ) {
+				Logger::getErrorLog().addXmlError ( path, e.what() );
+				loadOk = false;
+			}
+			break;
+		case ResourceClass::TILESET: 
+			try { // default resources
+				const XmlNode *defaultAmountNode = typeNode->getChild("default-amount");
+				defResPerPatch = defaultAmountNode->getAttribute("value")->getIntValue();
+			}
+			catch ( runtime_error e ) {
+				Logger::getErrorLog().addXmlError ( path, e.what() );
+				loadOk = false; // can continue, to catch other errors
+			}
+			try { // object number
+				const XmlNode *tilesetObjectNode = typeNode->getChild("tileset-object");
+				tilesetObject = tilesetObjectNode->getAttribute("value")->getIntValue();
+			}
+			catch ( runtime_error e ) {
+				Logger::getErrorLog().addXmlError ( path, e.what() );
+				loadOk = false;
+			}
+			break;
+		case ResourceClass::CONSUMABLE: 
+			try { // interval
+				const XmlNode *intervalNode = typeNode->getChild("interval");
+				interval = intervalNode->getAttribute("value")->getIntValue();
+			}
+			catch ( runtime_error e ) {
+				Logger::getErrorLog().addXmlError ( path, e.what() );
+				loadOk = false;
+			}
+			break;
+		default:
+			break;
+	}
 	display = resourceNode->getOptionalBoolValue("display", true);
-   return loadOk;
+	return loadOk;
 }
 
+void ResourceType::doChecksum(Checksum &checksum) const {
+	NameIdPair::doChecksum(checksum);
+	checksum.add<ResourceClass>(resourceClass);
+	if (resourceClass == ResourceClass::CONSUMABLE) {
+		checksum.add<int>(interval);
+	} else if (resourceClass != ResourceClass::STATIC) {
+		if (resourceClass == ResourceClass::TILESET) {
+			checksum.add<int>(tilesetObject);
+		} else {
+			assert(resourceClass == ResourceClass::TECHTREE);
+			checksum.add<int>(resourceNumber);
+		}
+		checksum.add<int>(defResPerPatch);
+	}
+	checksum.add<bool>(display);
+}
 
 // ==================== misc ====================
 

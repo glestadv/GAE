@@ -66,7 +66,8 @@ public:
 	//init
 	FactionType();
 	bool preLoad(const string &dir, const TechTree *techTree);
-    bool load(const string &dir, const TechTree *techTree, Checksum &checksum);
+    bool load(const string &dir, const TechTree *techTree);
+	void doChecksum(Checksum &checksum) const;
 	~FactionType();
 
     //get

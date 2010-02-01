@@ -140,20 +140,20 @@ void Game::load(){
 		logger.setSubtitle(formatString(scenarioName));
 
 	//tileset
-	if (!world.loadTileset(checksum))
+	if (!world.loadTileset())
 		throw runtime_error ( "The tileset could not be loaded. See glestadv-error.log" );
 
 	//tech, load before map because of resources
-	if (!world.loadTech(checksum))
+	if (!world.loadTech())
 		throw runtime_error ( "The techtree could not be loaded. See glestadv-error.log" );
 
 	//map
-	world.loadMap(checksum);
+	world.loadMap();
 
 	//scenario
 	if(!scenarioName.empty()){
 		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
-		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksum);
+		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml");
 	}
 
 	// finished loading
@@ -246,6 +246,7 @@ void Game::init() {
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 
 	Tileset *tileset= world.getTileset();
+	const TechTree *techTree = world.getTechTree();
 	AmbientSounds *ambientSounds= tileset->getAmbientSounds();
 
 	//rain
@@ -261,7 +262,13 @@ void Game::init() {
 	}
 
 	logger.add("Waiting for network", true);
-	networkManager.getGameNetworkInterface()->waitUntilReady(checksum);
+	// ready ?
+	if (networkManager.isNetworkGame()) {
+		tileset->doChecksum(checksum);
+		techTree->doChecksum(checksum);
+		map->doChecksum(checksum);
+		networkManager.getGameNetworkInterface()->waitUntilReady(checksum);
+	}
 	/*
 	if(networkManager.isNetworkClient()) {
 		program.setMaxUpdateBacklog(-1);
