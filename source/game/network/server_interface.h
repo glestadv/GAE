@@ -55,11 +55,13 @@ public:
 	virtual Socket* getSocket()				{return &serverSocket;}
 	virtual const Socket* getSocket() const	{return &serverSocket;}
 
+protected:
 	//message processing
 	virtual void update();
 	virtual void updateLobby(){};
 	virtual void updateKeyframe(int frameCount);
 	virtual void waitUntilReady(Checksum &checksum);
+	virtual void syncAiSeeds(int aiCount, int *seeds);
 
 	// message sending
 	virtual void sendTextMessage(const string &text, int teamIndex);
@@ -68,6 +70,7 @@ public:
 	//misc
 	virtual string getStatus() const;
 
+public:
 	ServerSocket* getServerSocket()		{return &serverSocket;}
 	void addSlot(int playerIndex);
 	void removeSlot(int playerIndex);
@@ -75,6 +78,8 @@ public:
 	int getConnectedSlotCount();
 
 	void launchGame(const GameSettings* gameSettings/*, const string savedGameFile = ""*/);
+
+	void process(NetworkMessageText &msg, int requestor);
 	/*
 	void sendFile(const string path, const string remoteName, bool compress);
 	void updateFactions()				{updateFactionsFlag = true;}

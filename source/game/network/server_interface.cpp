@@ -48,8 +48,13 @@ ServerInterface::ServerInterface() {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		slots[i] = NULL;
 	}
-	serverSocket.setBlock(false);
-	serverSocket.bind(GameConstants::serverPort);
+	try {
+		serverSocket.setBlock(false);
+		serverSocket.bind(GameConstants::serverPort);
+	} catch (runtime_error e) {
+		LOG_NETWORK(e.what());
+		throw e;
+	}
 	//updateFactionsFlag = false;
 }
 
@@ -61,14 +66,14 @@ ServerInterface::~ServerInterface(){
 
 void ServerInterface::addSlot(int playerIndex) {
 	assert(playerIndex >= 0 && playerIndex < GameConstants::maxPlayers);
-	LOG_NET_SERVER( "Opening slot " + intToStr(playerIndex) )
+	LOG_NETWORK( "Opening slot " + intToStr(playerIndex) );
 	delete slots[playerIndex];
 	slots[playerIndex] = new ConnectionSlot(this, playerIndex, false);
 	updateListen();
 }
 
 void ServerInterface::removeSlot(int playerIndex) {
-	LOG_NET_SERVER( "Closing slot " + intToStr(playerIndex) )
+	LOG_NETWORK( "Closing slot " + intToStr(playerIndex) );
 	delete slots[playerIndex];
 	slots[playerIndex] = NULL;
 	updateListen();
@@ -82,54 +87,27 @@ int ServerInterface::getConnectedSlotCount() {
 	int connectedSlotCount = 0;
 	
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-		if(slots[i]) {
+		if(slots[i] && slots[i]->isConnected()) {
 			++connectedSlotCount;
 		}
 	}
 	return connectedSlotCount;
 }
 
-void ServerInterface::update(){
-
+void ServerInterface::update() {
 	//update all slots
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
-		if(slots[i]) {
+		if (slots[i]) {
 			slots[i]->update();
 		}
 	}
-
-	//NETWORK: the rest of the method removed
-
-	//process text messages
-	chatText.clear();
-	chatSender.clear();
-	chatTeamIndex = -1;
-
-	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-		ConnectionSlot* connectionSlot = slots[i];
-
-		if (connectionSlot && connectionSlot->isConnected() 
-		&& (connectionSlot->getNextMessageType() == NetworkMessageType::TEXT)) {
-			NetworkMessageText textMsg;
-			if (connectionSlot->receiveMessage(&textMsg)) {
-				broadcastMessage(&textMsg, i);
-				chatText = textMsg.getText();
-				chatSender = textMsg.getSender();
-				chatTeamIndex = textMsg.getTeamIndex();
-				break;
-			}
-		}
-	}
 }
 
-/*
 void ServerInterface::process(NetworkMessageText &msg, int requestor) {
 	broadcastMessage(&msg, requestor);
-	chatText = msg.getText();
-	chatSender = msg.getSender();
-	chatTeamIndex = msg.getTeamIndex();
+	GameNetworkInterface::processTextMessage(msg);
 }
-
+/*
 void ServerInterface::process(NetworkMessageUpdateRequest &msg) {
 	msg.parse();
 	XmlNode *rootNode = msg.getRootNode();
@@ -165,36 +143,22 @@ void ServerInterface::updateKeyframe(int frameCount){
 			break;
 		}
 	}
-	if (cmdList.getCommandCount()) {
-		LOG_NET_SERVER( 
+
+	// log it ?
+	/*if (cmdList.getCommandCount()) {
+		LOG_NETWORK( 
 			"KeyFrame update, sending " + intToStr(cmdList.getCommandCount()) + " commands" +
 			(requestedCommands.size() ? intToStr(requestedCommands.size()) + " still pending." : "." )
-		)
+		);
 		for (int i=0; i < cmdList.getCommandCount(); ++i) {
 			const NetworkCommand * const &cmd = cmdList.getCommand(i);
 			const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-			LOG_NET_SERVER( 
+			LOG_NETWORK( 
 				"\tUnit: " + intToStr(unit->getId()) + " [" + unit->getType()->getName() + "] " 
 				+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
-			)
+			);
 		}
-	}
-
-	/* NETWORK: replaces above
-	//build command list, remove commands from requested and add to pending
-	for (int i = 0; i < requestedCommands.size(); i++){
-		if (!networkMessageCommandList.isFull()) {
-			// Clients are feeding themselves non-auto commands now.
-			if (requestedCommands[i]->isAuto()) {
-				networkMessageCommandList.addCommand(new Command(*requestedCommands[i]));
-			}
-			pendingCommands.push_back(requestedCommands[i]);
-		} else {
-			break;
-		}
-	}
-	requestedCommands.clear();
-	*/
+	}*/
 
 	//broadcast commands
 	broadcastMessage(&cmdList);
@@ -206,35 +170,17 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 
 	chrono.start();
 
-	LOG_NET_SERVER( "Waiting for ready messages from all clients" )
+	LOG_NETWORK( "Waiting for ready messages from all clients" );
 	//wait until we get a ready message from all clients
 	while(!allReady) {
 		allReady = true;
 		for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 			ConnectionSlot* slot = slots[i];
-
-			/* NETWORK: replaces below
-			if(slot) {
-				slot->flush();
-			}
-			if(slot && !slot->isReady()){
-				NetworkMessage *msg = slot->peek();
-				if(msg && msg->getType() == nmtReady){
-					slot->setReady();
-					slot->pop();
-					delete msg;
-				} else {
-					allReady = false;
-				}
-			}
-			*/
-
 			if (slot && !slot->isReady()) {
 				NetworkMessageType msgType = slot->getNextMessageType();
 				NetworkMessageReady readyMsg;
-
 				if (msgType == NetworkMessageType::READY && slot->receiveMessage(&readyMsg)) {
-					LOG_NET_SERVER( "Received ready message, slot " + intToStr(i) )
+					LOG_NETWORK( "Received ready message, slot " + intToStr(i) );
 					slot->setReady();
 				} else if (msgType != NetworkMessageType::NO_MSG) {
 					throw runtime_error("Unexpected network message: " + intToStr(msgType));
@@ -246,13 +192,12 @@ void ServerInterface::waitUntilReady(Checksum &checksum) {
 
 		//check for timeout
 		if (chrono.getMillis() > readyWaitTimeout) {
-			LOG_NET_SERVER( "Timeout waiting for clients" )
 			throw runtime_error("Timeout waiting for clients");
 		}
-		//sleep(10);
+		sleep(2);
 	}
 
-	LOG_NET_SERVER( "Received all ready messages, sending ready message(s)." )
+	LOG_NETWORK( "Received all ready messages, sending ready message(s)." );
 	
 	//send ready message after, so clients start delayed
 	for (int i= 0; i < GameConstants::maxPlayers; ++i) {
@@ -268,7 +213,10 @@ void ServerInterface::sendTextMessage(const string &text, int teamIndex){
 	broadcastMessage(&networkMessageText);
 }
 
-void ServerInterface::quitGame(){
+void ServerInterface::quitGame() {
+	string text = getHostName() + " has chosen to leave the game!";
+	NetworkMessageText networkMessageText(text,getHostName(),-1);
+	broadcastMessage(&networkMessageText, -1);
 	NetworkMessageQuit networkMessageQuit;
 	broadcastMessage(&networkMessageQuit);
 }
@@ -287,6 +235,13 @@ string ServerInterface::getStatus() const{
 	return str;
 }
 
+void ServerInterface::syncAiSeeds(int aiCount, int *seeds) {
+	assert(aiCount && seeds);
+	LOG_NETWORK("sending " + intToStr(aiCount) + " Ai random number seeds...");
+	NetworkMessageAiSeedSync seedSyncMsg(aiCount, seeds);
+	broadcastMessage(&seedSyncMsg);
+}
+
 void ServerInterface::launchGame(const GameSettings* gameSettings){
 	NetworkMessageLaunch networkMessageLaunch(gameSettings);
 	/*
@@ -294,9 +249,10 @@ void ServerInterface::launchGame(const GameSettings* gameSettings){
 		sendFile(savedGameFile, "resumed_network_game.sav", true);
 	}
 	*/
+	LOG_NETWORK( "Launching game, sending launch message(s)" );
 	broadcastMessage(&networkMessageLaunch);	
-	LOG_NET_SERVER( "Launching game, sending launch message(s)" )
 }
+
 
 // NETWORK: I'm thinking the file stuff should go somewhere else.
 #if 0
@@ -463,16 +419,13 @@ void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int
 			if(slots[i]->isConnected()) {
 				slots[i]->send(networkMessage);
 			} else {
-				/*
 				Lang &lang = Lang::getInstance();
-				string errmsg = slot->getDescription() + " (" + lang.get("Player") + " "
-						+ intToStr(slot->getPlayerIndex() + 1) + ") " + lang.get("Disconnected");
-				*/
+				string errmsg = slots[i]->getDescription() + " (" + lang.get("Player") + " "
+						+ intToStr(slots[i]->getPlayerIndex() + 1) + ") " + lang.get("Disconnected");
 				removeSlot(i);
-				/*
+				LOG_NETWORK(errmsg);
 				Game::getInstance()->getConsole()->addLine(errmsg);
 				//throw SocketException(errmsg);
-				*/
 			}
 		}
 	}

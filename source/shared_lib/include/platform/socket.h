@@ -191,7 +191,7 @@ public:
 	string getIp() const;
 
 protected:
-	static void throwException(const char *msg);
+	void handleError(const char *caller) const;
 };
 
 // =====================================================

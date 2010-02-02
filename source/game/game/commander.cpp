@@ -188,7 +188,7 @@ void Commander::updateNetwork() {
 	if(!networkManager.isNetworkGame() || (world->getFrameCount() % GameConstants::networkFramePeriod) == 0) {
 
 		//update the keyframe
-		gameNetworkInterface->updateKeyframe(world->getFrameCount());
+		gameNetworkInterface->doUpdateKeyframe(world->getFrameCount());
 
 		//give pending commands
 		for(int i = 0; i < gameNetworkInterface->getPendingCommandCount(); ++i) {

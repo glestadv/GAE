@@ -18,8 +18,11 @@
 #include "types.h"
 #include "conversion.h"
 #include "platform_util.h"
+#include "world.h"
 
 #include "leak_dumper.h"
+#include "logger.h"
+#include "network_util.h"
 
 using namespace Shared::Platform;
 using namespace Shared::Util;
@@ -36,9 +39,7 @@ const int NetworkInterface::readyWaitTimeout= 60000;	//1 minute
 
 void NetworkInterface::send(const NetworkMessage* networkMessage/*, bool flush*/){
 	Socket* socket= getSocket();
-
 	networkMessage->send(socket);
-
 	/*
 	size_t startBufSize = txbuf.size();
 	msg->writeMsg(txbuf);
@@ -63,7 +64,6 @@ NetworkMessageType NetworkInterface::getNextMessageType(){
 	if (messageType < 0 || messageType >= NetworkMessageType::COUNT){
 		throw runtime_error("Invalid message type: " + intToStr(messageType));
 	}
-
 	return NetworkMessageType(messageType);
 }
 
@@ -83,7 +83,6 @@ bool NetworkInterface::flush() {
 
 bool NetworkInterface::receiveMessage(NetworkMessage* networkMessage){
 	Socket* socket= getSocket();
-
 	return networkMessage->receive(socket);
 
 	/*
@@ -170,6 +169,13 @@ NetworkMessage *NetworkInterface::peek() {
 
 GameNetworkInterface::GameNetworkInterface() {
 	quit = false;
+}
+
+void GameNetworkInterface::processTextMessage(NetworkMessageText &msg) {
+	if (msg.getTeamIndex() == -1 
+	|| msg.getTeamIndex() == theWorld.getThisFaction()->getTeam()) {
+		chatMessages.push_back(ChatMsg(msg.getText(), msg.getSender()));
+	}
 }
 
 }}//end namespace

@@ -21,6 +21,8 @@
 #include "network_types.h"
 //#include "network_status.h"
 
+#include "logger.h"
+
 using std::string;
 using std::vector;
 //using std::deque;
@@ -131,25 +133,110 @@ protected:
 	Commands requestedCommands;	//commands requested by the user
 	Commands pendingCommands;	//commands ready to be given
 	bool quit;
-	string chatText;
-	string chatSender;
-	int chatTeamIndex;
 
-public:
-	GameNetworkInterface();
+	struct ChatMsg {
+		string text;
+		string sender;
+
+		ChatMsg(const string &txt, const string &sndr)
+				: text(txt), sender(sndr) {}
+	};
+	std::vector<ChatMsg> chatMessages;
+
+	// All network accessing virtuals were made protected so the exception handling
+	// can be done in the same place for clients and servers.
+	//
+	// For users of GameNetworkInterface, non virtual wrappers are used, see below.
 
 	//message processimg
 	virtual void update() = 0;
 	virtual void updateLobby() = 0;
 	virtual void updateKeyframe(int frameCount) = 0;
 	virtual void waitUntilReady(Checksum &checksum) = 0;
+	virtual void syncAiSeeds(int aiCount, int *seeds) = 0;
 
 	//message sending
 	virtual void sendTextMessage(const string &text, int teamIndex) = 0;
 	virtual void quitGame() = 0;
-
+	
 	//misc
 	virtual string getStatus() const = 0;
+
+public:
+	GameNetworkInterface();
+
+	void doUpdate() {
+		try {
+			update();
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
+
+	void doUpdateLobby() {
+		try {
+			updateLobby();
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
+
+	void doUpdateKeyframe(int frameCount) {
+		try {
+			updateKeyframe(frameCount);
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
+
+	void doWaitUntilReady(Checksum &checksum) {
+		try {
+			waitUntilReady(checksum);
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
+
+	void doSyncAiSeeds(int aiCount, int *seeds) {
+		try {
+			syncAiSeeds(aiCount, seeds);
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
+
+	void doSendTextMessage(const string &text, int teamIndex) {
+		try {
+			sendTextMessage(text, teamIndex);
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
+
+	void doQuitGame() {
+		try {
+			quitGame();
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
+
+	string doGetStatus() const {
+		string res;
+		try {
+			res = getStatus();
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
+		}
+	}
 
 	//access functions
 	virtual void requestCommand(const NetworkCommand *networkCommand)	{requestedCommands.push_back(*networkCommand);} 
@@ -159,9 +246,13 @@ public:
 	const NetworkCommand *getPendingNetworkCommand(int i) const			{return &pendingCommands[i];}
 	void clearPendingCommands()						{pendingCommands.clear();}
 	bool getQuit() const							{return quit;}
-	const string getChatText() const				{return chatText;}
-	const string getChatSender() const				{return chatSender;}
-	int getChatTeamIndex() const					{return chatTeamIndex;}
+	
+	bool hasChatMsg() const				{ return !chatMessages.empty(); }
+	void popChatMsg() { chatMessages.pop_back();}
+	void processTextMessage(NetworkMessageText &msg);
+
+	const string getChatText() const				{return chatMessages.back().text;}
+	const string getChatSender() const				{return chatMessages.back().sender;}
 };
 
 }}//end namespace

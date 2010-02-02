@@ -48,7 +48,7 @@ public:
 
 	void update() {
 		if(gameNetworkInterface) {
-			gameNetworkInterface->update();
+			gameNetworkInterface->doUpdate();
 		}
 	}
 

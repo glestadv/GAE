@@ -56,27 +56,24 @@ Command *NetworkCommand::toCommand() const {
 	// from Commander::buildCommand
 	assert(networkCommandType==CommandArchetype::GIVE_COMMAND);
 	
-	World &world = World::getInstance();
-	Unit* target= NULL;
-	const CommandType* ct= NULL;
-	Unit* unit= world.findUnitById(unitId);
-	const UnitType* unitType= world.findUnitTypeById(unit->getFaction()->getType(), unitTypeId);
-	
 	//validate unit
+	World &world = World::getInstance();
+	Unit* unit= world.findUnitById(unitId);
 	if(!unit){
 		throw runtime_error("Can not find unit with id: " + intToStr(unitId) + ". Game out of synch.");
 	}
 
-	ct= unit->getType()->findCommandTypeById(commandTypeId);
-
 	//validate command type
-	if(!ct){
+	const UnitType* unitType= world.findUnitTypeById(unit->getFaction()->getType(), unitTypeId);
+	const CommandType* ct = unit->getType()->findCommandTypeById(commandTypeId);
+	if (!ct) {
 		throw runtime_error("Can not find command type with id: " + intToStr(commandTypeId) + " in unit: " + unit->getType()->getName() + ". Game out of synch.");
 	}
 
 	//get target, the target might be dead due to lag, cope with it
+	Unit* target = NULL;
 	if(targetId != Unit::invalidId){
-		target= world.findUnitById(targetId);
+		target = world.findUnitById(targetId);
 	}
 
 	//create command

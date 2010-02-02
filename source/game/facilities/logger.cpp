@@ -21,6 +21,7 @@
 
 #include "leak_dumper.h"
 #include "world.h"
+#include "network_util.h"
 
 using namespace std;
 using namespace Shared::Graphics;
@@ -148,6 +149,17 @@ void Logger::renderLoadingScreen(){
 			62*metrics.getVirtualH()/100, false);
 	}
 	renderer.swapBuffers();
+}
+
+void logNetwork(string &msg) {
+	if (isNetworkServer()) {
+		Logger::getServerLog().addNetworkMsg(msg);
+	} else if (isNetworkClient()) {
+		Logger::getClientLog().addNetworkMsg(msg);
+	} else {
+		// what the ...
+		Logger::getErrorLog().addNetworkMsg(msg);
+	}
 }
 
 }}//end namespace

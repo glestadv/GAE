@@ -37,15 +37,10 @@
 #include "sigslot.h"
 
 // POSIX base
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
 #include <errno.h>
-#include <math.h>
-#include <time.h>
 
 
-// lib c++ & stl
+// c stuff
 #include <cstdlib>
 #include <cassert>
 #include <cctype>
@@ -53,19 +48,23 @@
 #include <cstring>
 #include <cstddef>
 #include <cstdio>
-#include <deque>
-#include <fstream>
+#include <ctime>
+
+// stl
 #include <algorithm>
 #include <vector>
+#include <deque>
 #include <list>
 #include <map>
-#include <deque>
+#include <stack>
+#include <set>
+
+// c++ stuff
 #include <string>
-#include <cassert>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <ctime>
 
 #include <sys/types.h>
 

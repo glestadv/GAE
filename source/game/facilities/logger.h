@@ -101,8 +101,19 @@ public:
 	void clusterInit();
 };
 
-#define LOG_NET_CLIENT(x) Logger::getClientLog().addNetworkMsg(x);
-#define LOG_NET_SERVER(x) Logger::getServerLog().addNetworkMsg(x);
+void logNetwork(string &msg);
+
+inline void logNetwork(const char *msg) { 
+	logNetwork(string(msg)); 
+}
+
+#define LOG_NETWORKING 1
+
+#if LOG_NETWORKING
+#	define LOG_NETWORK(x) logNetwork(x)
+#else
+#	define LOG_NETWORK(x) 
+#endif
 
 #if defined(WIN32) | defined(WIN64)
 

@@ -20,6 +20,7 @@
 #include "game_settings.h"
 
 #include "leak_dumper.h"
+#include "logger.h"
 
 using namespace Shared::Platform;
 using namespace Shared::Util;
@@ -35,17 +36,25 @@ namespace Glest { namespace Game {
 
 bool NetworkMessage::receive(Socket* socket, void* data, int dataSize){
 	if (socket->getDataToRead() >= dataSize) {
-		if (socket->receive(data, dataSize) != dataSize) {
-			throw runtime_error("Error receiving NetworkMessage");
+		if (socket->receive(data, dataSize) == dataSize) {
+			return true;
 		}
-		return true;
+		if (socket && socket->isConnected() /*&&socket->getSocketId() > 0*/) {
+			throw runtime_error("Error receiving NetworkMessage");
+		} else {
+			LOG_NETWORK( "socket disconnected, trying to read message." );
+		}
 	}
 	return false;
 }
 
 void NetworkMessage::send(Socket* socket, const void* data, int dataSize) const {
 	if (socket->send(data, dataSize)!=dataSize) {
-		throw runtime_error("Error sending NetworkMessage");
+		if (socket /*&& socket->getSocketId() > 0*/) {
+			throw runtime_error("Error sending NetworkMessage");
+		} else {
+			LOG_NETWORK( "socket disconnected, trying to send message.." );
+		}
 	}
 }
 
@@ -95,6 +104,35 @@ void NetworkMessageReady::send(Socket* socket) const{
 	assert(data.messageType==NetworkMessageType::READY);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
+
+
+// =====================================================
+//	class NetworkMessageAiSeedSync
+// =====================================================
+
+NetworkMessageAiSeedSync::NetworkMessageAiSeedSync(){
+	data.msgType = -1; 
+	data.seedCount = -1;
+}
+
+NetworkMessageAiSeedSync::NetworkMessageAiSeedSync(int count, int32 *seeds) {
+	assert(count > 0 && count <= maxAiSeeds);
+	data.msgType = NetworkMessageType::AI_SYNC; 
+	data.seedCount = count;
+	for (int i=0; i < count; ++i) {
+		data.seeds[i] = seeds[i];
+	}
+}
+
+bool NetworkMessageAiSeedSync::receive(Socket* socket){
+	return NetworkMessage::receive(socket, &data, sizeof(data));
+}
+
+void NetworkMessageAiSeedSync::send(Socket* socket) const{
+	assert(data.msgType == NetworkMessageType::AI_SYNC);
+	NetworkMessage::send(socket, &data, sizeof(data));
+}
+
 
 // =====================================================
 //	class NetworkMessageLaunch

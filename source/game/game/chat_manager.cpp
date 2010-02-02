@@ -92,7 +92,7 @@ bool ChatManager::keyDown(const Key &key) {
 			} else {
 				GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
 				console->addLine(gameNetworkInterface->getHostName() + ": " + text);
-				gameNetworkInterface->sendTextMessage(text, teamMode ? thisTeamIndex : -1);
+				gameNetworkInterface->doSendTextMessage(text, teamMode ? thisTeamIndex : -1);
 			}
 		}
 	} else if (key == keyBackspace) {
@@ -117,16 +117,10 @@ void ChatManager::keyPress(char c) {
 }
 
 void ChatManager::updateNetwork() {
-	GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
-	string text;
-	string sender;
-
-	if (!gameNetworkInterface->getChatText().empty()) {
-		int teamIndex = gameNetworkInterface->getChatTeamIndex();
-
-		if (teamIndex == -1 || teamIndex == thisTeamIndex) {
-			console->addLine(gameNetworkInterface->getChatSender() + ": " + gameNetworkInterface->getChatText(), true);
-		}
+	GameNetworkInterface *gni = NetworkManager::getInstance().getGameNetworkInterface();
+	while (gni->hasChatMsg()) {
+		console->addLine(gni->getChatSender() + ": " + gni->getChatText(), true);
+		gni->popChatMsg();
 	}
 }
 

@@ -33,7 +33,7 @@ using namespace Shared::Graphics;
 
 namespace Glest{ namespace Game{
 
-AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex){
+AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex, int32 randomSeed){
 	this->world= game.getWorld();
 	this->commander= game.getCommander();
 	this->console= game.getConsole();
@@ -43,7 +43,7 @@ AiInterface::AiInterface(Game &game, int factionIndex, int teamIndex){
 	timer= 0;
 
 	//init ai
-	ai.init(this);
+	ai.init(this, randomSeed);
 
 	//config
 	logLevel= Config::getInstance().getMiscAiLog();

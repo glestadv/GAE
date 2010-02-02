@@ -44,7 +44,7 @@ private:
     int logLevel;
 
 public:
-    AiInterface(Game &game, int factionIndex, int teamIndex);
+    AiInterface(Game &game, int factionIndex, int teamIndex, int32 randomSeed);
 
 	//main
     void update();

@@ -82,7 +82,7 @@ Socket::Socket(SOCKET sock){
 Socket::Socket(){
 	sock= socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 	if(sock==INVALID_SOCKET){
-		throwException("Error creating socket");
+		throw runtime_error("Error creating socket");
 	}
 	assert(sizeof(int8) == 1);
 	assert(sizeof(uint8) == 1);
@@ -95,70 +95,63 @@ Socket::Socket(){
 }
 
 Socket::~Socket(){
-	int err= closesocket(sock);
-	if(err==INVALID_SOCKET){
-		throwException("Error closing socket");
+	int err = closesocket(sock);
+	if (err) {
+		handleError(__FUNCTION__);
 	}
 }
 
 int Socket::getDataToRead(){
 	u_long size;
-
-	int err= ioctlsocket(sock, FIONREAD, &size);
-
-	if(err==SOCKET_ERROR){
-		if(WSAGetLastError()!=WSAEWOULDBLOCK){
-			throwException("Can not get data to read");
+	int err = ioctlsocket(sock, FIONREAD, &size);
+	if (err == SOCKET_ERROR) {
+		if (WSAGetLastError() == WSAEWOULDBLOCK) {
+			return 0;
 		}
+		handleError(__FUNCTION__);
 	}
-
 	return static_cast<int>(size);
 }
 
-int Socket::send(const void *data, int dataSize){
-	int err= ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
-	if(err==SOCKET_ERROR){
-		if(WSAGetLastError()!=WSAEWOULDBLOCK){
-			throwException("Can not send data");
+int Socket::send(const void *data, int dataSize) {
+	int err = ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
+	if (err == SOCKET_ERROR) {
+		if(WSAGetLastError() != WSAEWOULDBLOCK){
+			handleError(__FUNCTION__);
 		}
 	}
 	return err;
 }
 
-int Socket::receive(void *data, int dataSize){
+int Socket::receive(void *data, int dataSize) {
 	int err= recv(sock, reinterpret_cast<char*>(data), dataSize, 0);
-
-	if(err==SOCKET_ERROR){
-		if(WSAGetLastError()!=WSAEWOULDBLOCK){
-			throwException("Can not receive data");
+	if (err == SOCKET_ERROR) {
+		if (WSAGetLastError() != WSAEWOULDBLOCK) {
+			handleError(__FUNCTION__);
 		}
 	}
-
 	return err;
 }
 
-int Socket::peek(void *data, int dataSize){
+int Socket::peek(void *data, int dataSize) {
 	int err= recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_PEEK);
-
-	if(err==SOCKET_ERROR){
-		if(WSAGetLastError()!=WSAEWOULDBLOCK){
-			throwException("Can not receive data");
+	if (err == SOCKET_ERROR) {
+		if (WSAGetLastError() != WSAEWOULDBLOCK) {
+			handleError(__FUNCTION__);
 		}
 	}
-
 	return err;
 }
 
-void Socket::setBlock(bool block){
-	u_long iMode= !
-		block;
-	int err= ioctlsocket(sock, FIONBIO, &iMode);
-	if(err==SOCKET_ERROR){
-		throwException("Error setting I/O mode for socket");
+void Socket::setBlock(bool block) {
+	u_long iMode = !block;
+	int err = ioctlsocket(sock, FIONBIO, &iMode);
+	if (err == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 }
 
-bool Socket::isReadable(){
+bool Socket::isReadable() {
 	TIMEVAL tv;
 	tv.tv_sec= 0;
 	tv.tv_usec= 10;
@@ -168,41 +161,38 @@ bool Socket::isReadable(){
 	FD_SET(sock, &set);
 
 	int i= select(0, &set, NULL, NULL, &tv);
-	if(i==SOCKET_ERROR){
-		throwException("Error selecting socket");
+	if (i == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
-	return i==1;
+	return (i == 1);
 }
 
-bool Socket::isWritable(){
+bool Socket::isWritable() {
 	TIMEVAL tv;
-	tv.tv_sec= 0;
-	tv.tv_usec= 10;
+	tv.tv_sec = 0;
+	tv.tv_usec = 10;
 
 	fd_set set;
 	FD_ZERO(&set);
 	FD_SET(sock, &set);
 
-	int i= select(0, NULL, &set, NULL, &tv);
-	if(i==SOCKET_ERROR){
-		throwException("Error selecting socket");
+	int i = select(0, NULL, &set, NULL, &tv);
+	if (i == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
-	return i==1;
+	return (i == 1);
 }
 
-bool Socket::isConnected(){
-
+bool Socket::isConnected() {
 	//if the socket is not writable then it is not conencted
-	if(!isWritable()){
+	if (!isWritable()) {
 		return false;
 	}
-
 	//if the socket is readable it is connected if we can read a byte from it
-	if(isReadable()){
+	if (isReadable()) {
 		char tmp;
-		return recv(sock, &tmp, sizeof(tmp), MSG_PEEK) > 0;
+		return (recv(sock, &tmp, sizeof(tmp), MSG_PEEK) > 0);
 	}
-
 	//otherwise the socket is connected
 	return true;
 }
@@ -214,21 +204,16 @@ string Socket::getHostName() const{
 	return hostname;
 }
 
-string Socket::getIp() const{
-	hostent* info= gethostbyname(getHostName().c_str());
-	unsigned char* address;
-
-	if(info==NULL){
-		throwException("Error getting host by name");
+string Socket::getIp() const {
+	hostent* info = gethostbyname(getHostName().c_str());
+	if (!info) {
+		handleError(__FUNCTION__);
 	}
-
-	address= reinterpret_cast<unsigned char*>(info->h_addr_list[0]);
-
-	if(address==NULL)
-	{
-		throwException("Error getting host ip");
+	unsigned char* address = 
+		reinterpret_cast<unsigned char*>(info->h_addr_list[0]);
+	if (!address) {
+		throw runtime_error("Error getting host ip");
 	}
-
 	return
 		intToStr(address[0]) + "." +
 		intToStr(address[1]) + "." +
@@ -236,17 +221,26 @@ string Socket::getIp() const{
 		intToStr(address[3]);
 }
 
-void Socket::throwException(const char *msg){
-	stringstream str;
-	str << "Network error: " << msg << " (Code: " << WSAGetLastError() << ")";
-	throw runtime_error(str.str());
+void Socket::handleError(const char *caller) const {
+	const char *msg_ptr = 0;
+	int errCode = WSAGetLastError();
+	DWORD frmtFlags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER;
+	int msgRes = FormatMessage(frmtFlags,NULL, errCode, 0, (LPSTR)msg_ptr, 1024, NULL);
+	string msg = string("Socket Error in : ") + caller;
+	if (msgRes) {
+		msg += "\n" + string(msg_ptr);
+		LocalFree((HLOCAL)msg_ptr);
+	} else {
+		msg += "\nFormatMessage() call failed. :~(";
+	}	
+	throw runtime_error(msg);
 }
 
 // =====================================================
 //	class ClientSocket
 // =====================================================
 
-void ClientSocket::connect(const Ip &ip, int port){
+void ClientSocket::connect(const Ip &ip, int port) {
 	sockaddr_in addr;
 
     addr.sin_family= AF_INET;
@@ -254,11 +248,10 @@ void ClientSocket::connect(const Ip &ip, int port){
 	addr.sin_port= htons(port);
 
 	int err= ::connect(sock, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
-	if(err==SOCKET_ERROR){
-		int lastError= WSAGetLastError();
-
-		if(lastError!=WSAEWOULDBLOCK && lastError!=WSAEALREADY){
-			throwException("Can not connect");
+	if (err==SOCKET_ERROR) {
+		int errCode = WSAGetLastError();
+		if (errCode != WSAEWOULDBLOCK && errCode != WSAEALREADY) {
+			handleError(__FUNCTION__);
 		}
 	}
 }
@@ -267,33 +260,33 @@ void ClientSocket::connect(const Ip &ip, int port){
 //	class ServerSocket
 // =====================================================
 
-void ServerSocket::bind(int port){
+void ServerSocket::bind(int port) {
 	//sockaddr structure
 	sockaddr_in addr;
 	addr.sin_family= AF_INET;
 	addr.sin_addr.s_addr= INADDR_ANY;
 	addr.sin_port= htons(port);
 
-	int err= ::bind(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
-	if(err==SOCKET_ERROR){
-		throwException("Error binding socket");
+	int err = ::bind(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
+	if (err == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 }
 
-void ServerSocket::listen(int connectionQueueSize){
-	int err= ::listen(sock, connectionQueueSize);
-	if(err==SOCKET_ERROR){
-		throwException("Error listening socket");
+void ServerSocket::listen(int connectionQueueSize) {
+	int err = ::listen(sock, connectionQueueSize);
+	if (err == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 }
 
-Socket *ServerSocket::accept(){
-	SOCKET newSock= ::accept(sock, NULL, NULL);
-	if(newSock==INVALID_SOCKET){
-		if(WSAGetLastError()==WSAEWOULDBLOCK){
+Socket *ServerSocket::accept() {
+	SOCKET newSock = ::accept(sock, NULL, NULL);
+	if (newSock == INVALID_SOCKET) {
+		if (WSAGetLastError() == WSAEWOULDBLOCK) {
 			return NULL;
 		}
-		throwException("Error accepting socket connection");
+		handleError(__FUNCTION__);
 	}
 	return new Socket(newSock);
 }

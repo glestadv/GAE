@@ -115,8 +115,9 @@ string UpgradeTask::toString() const {
 // 	class Ai
 // =====================================================
 
-void Ai::init(AiInterface *aiInterface) {
+void Ai::init(AiInterface *aiInterface, int32 randomSeed) {
 	this->aiInterface = aiInterface;
+	random.init(randomSeed);
 	startLoc = random.randRange(0, aiInterface->getMapMaxPlayers() - 1);
 	upgradeCount = 0;
 	minWarriors = minMinWarriors;

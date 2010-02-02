@@ -81,6 +81,28 @@ public:
 	virtual void send(Socket* socket) const;
 };
 
+class NetworkMessageAiSeedSync : public NetworkMessage {
+private:
+	static const int maxAiSeeds = 2;
+
+private:
+	struct {
+		int8 msgType;
+		int8 seedCount;
+		int32 seeds[maxAiSeeds];
+	} data;
+
+public:
+	NetworkMessageAiSeedSync();
+	NetworkMessageAiSeedSync(int count, int32 *seeds);
+
+	int getSeedCount() const { return data.seedCount; }
+	int32 getSeed(int i) const { return data.seeds[i]; }
+
+	virtual bool receive(Socket* socket);
+	virtual void send(Socket* socket) const;
+};
+
 // =====================================================
 //	class NetworkMessageReady
 //

@@ -83,20 +83,23 @@ public:
 	virtual Socket* getSocket()					{return clientSocket;}
 	virtual const Socket* getSocket() const		{return clientSocket;}
 
+protected:
 	//message processing
 	virtual void update();
 	virtual void updateLobby();
 	virtual void updateKeyframe(int frameCount);
 	virtual void waitUntilReady(Checksum &checksum);
+	virtual void syncAiSeeds(int aiCount, int *seeds);
 
 	// message sending
 	virtual void sendTextMessage(const string &text, int teamIndex);
-	virtual void quitGame(){}
+	virtual void quitGame();
 
 	//misc
 	virtual string getStatus() const;
 	//virtual void requestCommand(Command *command);
 
+public:
 	//accessors
 	string getServerName() const			{return serverName;}
 	bool getLaunchGame() const				{return launchGame;}

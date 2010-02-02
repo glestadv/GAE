@@ -22,7 +22,7 @@
 #include "core_data.h"
 #include "metrics.h"
 #include "faction.h"
-#include "network_manager.h"
+#include "network_util.h"
 #include "checksum.h"
 #include "auto_test.h"
 #include "profiler.h"
@@ -175,7 +175,7 @@ void Game::init() {
 	mainMessageBox.init("", lang.get("Yes"), lang.get("No"));
 	mainMessageBox.setEnabled(false);
 
-#	ifdef NDEBUG
+#	if NDEBUG && NOT_TESTING_NETWORKING
 	//check fog of war
 	if(!config.getGsFogOfWarEnabled() && networkManager.isNetworkGame() ){
 		throw runtime_error("Can not play online games with fog of war disabled");
@@ -210,17 +210,42 @@ void Game::init() {
 	}
 	*/
 
-	//create IAs
+	// create (or receive) random number seeds for AIs
+	int aiCount = 0;
+	for (int i=0; i < world.getFactionCount(); ++i) {
+		if (world.getFaction(i)->getCpuControl()) {
+			++aiCount;
+		}
+	}
+	int32 *seeds = (aiCount ? new int32[aiCount] : NULL);
+
+	if (aiCount) {
+		if (!isNetworkClient()) { // if not client, make seeds
+			Random r;
+			r.init(Chrono::getCurMillis());
+			for (int i=0; i < aiCount; ++i) {
+				seeds[i] = r.rand();
+			}
+		}
+		if (isNetworkGame()) { // if net game, send or receive seeds
+			logger.add("Syncing AIs", true);
+			networkManager.getGameNetworkInterface()->doSyncAiSeeds(aiCount, seeds);
+		}
+	}
+	int seedCount = 0;
+
+	//create AIs
 	aiInterfaces.resize(world.getFactionCount());
-	for ( int i=0; i < world.getFactionCount(); ++i ) {
-		Faction *faction= world.getFaction(i);
-		if ( faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled() ) {
-			aiInterfaces[i]= new AiInterface(*this, i, faction->getTeam());
+	for (int i=0; i < world.getFactionCount(); ++i) {
+		Faction *faction = world.getFaction(i);
+		if (faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled()) {
+			aiInterfaces[i] = new AiInterface(*this, i, faction->getTeam(), seeds[seedCount++]);
 			logger.add("Creating AI for faction " + intToStr(i), true);
 		} else {
 			aiInterfaces[i]= NULL;
 		}
 	}
+	delete seeds;
 
 	//wheather particle systems
 	if(world.getTileset()->getWeather() == Weather::RAINY){
@@ -261,18 +286,21 @@ void Game::init() {
 		soundRenderer.playAmbient(ambientSounds->getSnow());
 	}
 
-	logger.add("Waiting for network", true);
 	// ready ?
-	if (networkManager.isNetworkGame()) {
+	if (isNetworkGame()) {
+		logger.add("Waiting for network", true);
 		tileset->doChecksum(checksum);
 		techTree->doChecksum(checksum);
 		map->doChecksum(checksum);
-		networkManager.getGameNetworkInterface()->waitUntilReady(checksum);
+		networkManager.getGameNetworkInterface()->doWaitUntilReady(checksum);
 	}
-	/*
-	if(networkManager.isNetworkClient()) {
+	
+	// This code should fix the client lag problem, seems to cause the
+	// client to go all 'jittery' though if the server is allowed to drop frames...
+	// currently it is set to -1 (no limit) for both
+	/*if (isNetworkClient()) { // no waiting! must catch up if lagging
 		program.setMaxUpdateBacklog(-1);
-	} else {
+	} else { // else drop frames at will
 		program.setMaxUpdateBacklog(2);
 	}*/
 
@@ -324,12 +352,11 @@ void Game::update() {
 		world.update();
 		++worldFps;
 
-		try {
-			// Commander
+		try { // Commander
 			commander.updateNetwork();
-		} catch (SocketException &e) {
-			displayError(e);
-			return;
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
+			throw e;
 		}
 
 		//Gui
@@ -342,12 +369,11 @@ void Game::update() {
 		renderer.updateParticleManager(rsGame);
 	}
 
-	try {
-		//call the chat manager
+	try { //call the chat manager		
 		chatManager.updateNetwork();
-	} catch (SocketException &e) {
-		displayError(e);
-		return;
+	} catch (runtime_error e) {
+		LOG_NETWORK(e.what());
+		throw e;
 	}
 
 	//check for quiting status
@@ -408,12 +434,6 @@ void Game::tick(){
 	updateFps= 0;
 	renderFps= 0;
 
-	if (theNetworkManager.isNetworkClient()) {
-		LOG_NET_CLIENT( "World Frames last second : " + intToStr(lastWorldFps) )
-	} else if (theNetworkManager.isNetworkServer()) {
-		LOG_NET_SERVER( "World Frames last second : " + intToStr(lastWorldFps) )
-	}
-
 	//Win/lose check
 	checkWinner();
 	gui.tick();
@@ -442,7 +462,7 @@ void Game::mouseDownLeft(int x, int y){
 		int button= 1;
 		if ( mainMessageBox.mouseClick(x, y, button) ) {
 			if ( button == 1 ) {
-				networkManager.getGameNetworkInterface()->quitGame();
+				networkManager.getGameNetworkInterface()->doQuitGame();
 				quitGame();
 			} else {
 				//close message box

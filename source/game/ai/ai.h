@@ -157,7 +157,7 @@ private:
 
 public:
     ~Ai();
-	void init(AiInterface *aiInterface);
+	void init(AiInterface *aiInterface, int32 randomSeed);
     void update();
 
     //state requests

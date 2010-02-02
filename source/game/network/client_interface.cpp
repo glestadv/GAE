@@ -134,7 +134,12 @@ ClientInterface::ClientInterface(){
 }
 
 ClientInterface::~ClientInterface() {
+	if(clientSocket && clientSocket->isConnected()) {
+		string text = getHostName() + " has chosen to leave the game!";
+		sendTextMessage(text,-1);
+	}
 	delete clientSocket;
+	clientSocket = NULL;
 	/*
 	delete fileReceiver;
 	*/
@@ -143,13 +148,16 @@ ClientInterface::~ClientInterface() {
 void ClientInterface::connect(const Ip &ip, int port) {
 	delete clientSocket;
 	clientSocket = new ClientSocket();
-	//clientSocket->setBlock(false); //NETWORK: why was moved to after connect
 	clientSocket->connect(ip, port);
 	clientSocket->setBlock(false);
-	LOG_NET_CLIENT( "connecting to " + ip.getString() + ":" + intToStr(port) )
+	LOG_NETWORK( "connecting to " + ip.getString() + ":" + intToStr(port) );
 }
 
 void ClientInterface::reset() {
+	if(clientSocket) {
+		string text = getHostName() + " has chosen to leave the game!";
+		sendTextMessage(text,-1);
+	}
 	delete clientSocket;
 	clientSocket = NULL;
 }
@@ -162,25 +170,20 @@ void ClientInterface::update() {
 		requestedCommands.pop_back();
 	}
 	if (cmdList.getCommandCount() > 0) {
-		LOG_NET_CLIENT(
+		/*LOG_NETWORK(
 			"Sending command(s) to server, current frame = " + intToStr(theWorld.getFrameCount())
-		)
+		);
 		for (int i=0; i < cmdList.getCommandCount(); ++i) {
 			const NetworkCommand * const &cmd = cmdList.getCommand(i);
 			const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-			LOG_NET_CLIENT( 
+			LOG_NETWORK( 
 				"\tUnit: " + intToStr(cmd->getUnitId()) + " [" + unit->getType()->getName() + "] " 
 				+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
-			)
-		}
+			);
+		}*/
 		send(&cmdList);
 		//flush();
 	}
-
-	//clear chat variables
-	chatText.clear();
-	chatSender.clear();
-	chatTeamIndex = -1;
 
 	/*
 	if(isConnected()) {
@@ -230,17 +233,15 @@ void ClientInterface::updateLobby() {
 		if (receiveMessage(&introMsg)) {
 			//check consistency
 			if(theConfig.getNetConsistencyChecks() && introMsg.getVersionString() != getNetworkVersionString()) {
-				LOG_NET_CLIENT( "Server and client versions do not match (" + introMsg.getVersionString() + ")." )
 				throw runtime_error("Server and client versions do not match (" 
 							+ introMsg.getVersionString() + "). You have to use the same binaries.");
 			}
-			LOG_NET_CLIENT( "Received intro message, sending intro message reply." )
+			LOG_NETWORK( "Received intro message, sending intro message reply." );
 			playerIndex = introMsg.getPlayerIndex();
 			serverName = introMsg.getName();
 			setRemoteNames(introMsg.getName(), introMsg.getName()); //NETWORK: needs to be done properly
 
 			if (playerIndex < 0 || playerIndex >= GameConstants::maxPlayers) {
-				LOG_NET_CLIENT( "Intro message from server contains bad data, bailing." )
 				throw runtime_error("Intro message from server contains bad data, are you using the same version?");
 			}
 			
@@ -266,7 +267,7 @@ void ClientInterface::updateLobby() {
 				}
 			}
 			launchGame= true;
-			LOG_NET_CLIENT( "Received launch message." )
+			LOG_NETWORK( "Received launch message." );
 		}
 	} else if (msgType != NetworkMessageType::NO_MSG) {
 		throw runtime_error("Unexpected network message: " + intToStr(msgType));
@@ -290,24 +291,23 @@ void ClientInterface::updateKeyframe(int frameCount) {
 			}
 			//check that we are in the right frame
 			if (cmdList.getFrameCount() != frameCount) {
-				LOG_NET_CLIENT( "Network synchronization error, frame counts do not match." )
 				throw runtime_error("Network synchronization error, frame counts do not match");
 			}
 			// give all commands
 			if (cmdList.getCommandCount()) {
-				LOG_NET_CLIENT( 
+				/*LOG_NETWORK( 
 					"Keyframe update: " + intToStr(frameCount) + " received "
 					+ intToStr(cmdList.getCommandCount()) + " commands. " 
 					+ intToStr(dataAvailable()) + " bytes waiting to be read."
-				)
+				);*/
 				for (int i= 0; i < cmdList.getCommandCount(); ++i) {
 					pendingCommands.push_back(*cmdList.getCommand(i));
-					const NetworkCommand * const &cmd = cmdList.getCommand(i);
+					/*const NetworkCommand * const &cmd = cmdList.getCommand(i);
 					const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-					LOG_NET_CLIENT( 
+					LOG_NETWORK( 
 						"\tUnit: " + intToStr(unit->getId()) + " [" + unit->getType()->getName() + "] " 
 						+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
-					)
+					);*/
 				}
 			}
 			return;
@@ -320,14 +320,39 @@ void ClientInterface::updateKeyframe(int frameCount) {
 		} else if (msgType == NetworkMessageType::TEXT) {
 			NetworkMessageText textMsg;
 			if (receiveMessage(&textMsg)) {
-				chatText = textMsg.getText();
-				chatSender = textMsg.getSender();
-				chatTeamIndex = textMsg.getTeamIndex();
+				GameNetworkInterface::processTextMessage(textMsg);
 			}
 		} else {
-			LOG_NET_CLIENT( "Unexpected message in client interface: " + intToStr(msgType) )
 			throw runtime_error("Unexpected message in client interface: " + intToStr(msgType));
 		}
+	}
+}
+
+void ClientInterface::syncAiSeeds(int aiCount, int *seeds) {
+	NetworkMessageAiSeedSync seedSyncMsg;
+	Chrono chrono;
+	chrono.start();
+	LOG_NETWORK( "Ready, waiting for server to send Ai random number seeds." );
+	//wait until we get a ai seed sync message from the server
+	while (true) {
+		NetworkMessageType msgType = getNextMessageType();
+		if (msgType == NetworkMessageType::AI_SYNC) {
+			if (receiveMessage(&seedSyncMsg)) {
+				LOG_NETWORK( "Received AI random number seed message." );
+				assert(seedSyncMsg.getSeedCount());
+				for (int i=0; i < seedSyncMsg.getSeedCount(); ++i) {
+					seeds[i] = seedSyncMsg.getSeed(i);
+				}
+				break;
+			}
+		} else if (msgType == NetworkMessageType::NO_MSG) {
+			if (chrono.getMillis() > readyWaitTimeout) {
+				throw runtime_error("Timeout waiting for server");
+			}
+		} else {
+			throw runtime_error("Unexpected network message: " + intToStr(msgType) );
+		}
+		sleep(2);
 	}
 }
 
@@ -339,23 +364,21 @@ void ClientInterface::waitUntilReady(Checksum &checksum) {
 
 	//send ready message
 	send(&readyMsg);
-	LOG_NET_CLIENT( "Ready, waiting for server ready message." )
+	LOG_NETWORK( "Ready, waiting for server ready message." );
 
 	//wait until we get a ready message from the server
 	while (true) {
 		NetworkMessageType msgType = getNextMessageType();
 		if (msgType == NetworkMessageType::READY) {
 			if (receiveMessage(&readyMsg)) {
-				LOG_NET_CLIENT( "Received ready message." )
+				LOG_NETWORK( "Received ready message." );
 				break;
 			}
 		} else if (msgType == NetworkMessageType::NO_MSG) {
 			if (chrono.getMillis() > readyWaitTimeout) {
-				LOG_NET_CLIENT( "Timeout waiting for server." )
 				throw runtime_error("Timeout waiting for server");
 			}
 		} else {
-			LOG_NET_CLIENT( "Unexpected network message: " + intToStr(msgType) )
 			throw runtime_error("Unexpected network message: " + intToStr(msgType) );
 		}
 
@@ -365,7 +388,6 @@ void ClientInterface::waitUntilReady(Checksum &checksum) {
 
 	//check checksum
 	if (theConfig.getNetConsistencyChecks() && readyMsg.getChecksum() != checksum.getSum()) {
-		LOG_NET_CLIENT( "Checksum error, you don't have the same data as the server" )
 		throw runtime_error("Checksum error, you don't have the same data as the server");
 	}
 
@@ -388,11 +410,9 @@ void ClientInterface::waitForMessage() {
 	chrono.start();
 	while (getNextMessageType() == NetworkMessageType::NO_MSG) {
 		if (!isConnected()) {
-			LOG_NET_CLIENT( "Disconnected." )
 			throw runtime_error("Disconnected");
 		}
 		if (chrono.getMillis() > messageWaitTimeout) {
-			LOG_NET_CLIENT( "Timeout waiting for message." )
 			throw runtime_error("Timeout waiting for message");
 		}
 		sleep(waitSleepTime);
@@ -407,5 +427,14 @@ void ClientInterface::requestCommand(Command *command) {
 	pendingCommands.push_back(command);
 }
 */
+
+void ClientInterface::quitGame() {
+	if(clientSocket && clientSocket->isConnected()) {
+		string sQuitText = getHostName() + " has chosen to leave the game!";
+		sendTextMessage(sQuitText,-1);
+	}
+	delete clientSocket;
+	clientSocket = NULL;
+}
 
 }}//end namespace

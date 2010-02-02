@@ -48,68 +48,70 @@ ConnectionSlot::~ConnectionSlot() {
 void ConnectionSlot::update() {
 	// NETWORK: this method is very different
 
-	if(!socket) {
+	if (!socket) {
 		socket = serverInterface->getServerSocket()->accept();
 
 		//send intro message when connected
-		if(socket) {
+		if (socket) {
 			NetworkMessageIntro networkMessageIntro(getNetworkVersionString(), socket->getHostName(), playerIndex);
 			send(&networkMessageIntro);
-			LOG_NET_SERVER( "Connection established, slot " + intToStr(playerIndex) +  " sending intro message." )
+			LOG_NETWORK( "Connection established, slot " + intToStr(playerIndex) +  " sending intro message." );
 		}
 	} else {
-		if(socket->isConnected()) {
-			NetworkMessageType networkMessageType= getNextMessageType();
-
+		if (socket->isConnected()) {
+			NetworkMessageType networkMessageType = getNextMessageType();
 			//process incoming commands
-			switch(networkMessageType){
-				
+			switch (networkMessageType) {
 				case NetworkMessageType::NO_MSG:
-				case NetworkMessageType::TEXT:
 					break;
-
-				//command list
-				case NetworkMessageType::COMMAND_LIST:{
-					NetworkMessageCommandList cmdList;
-					if(receiveMessage(&cmdList)){
-						LOG_NET_SERVER( 
-							"Receivied " + intToStr(cmdList.getCommandCount()) + " commands on slot " 
-							+ intToStr(playerIndex) + " frame: " + intToStr(theWorld.getFrameCount())
-						)
-						for (int i=0; i < cmdList.getCommandCount(); ++i) {
-							serverInterface->requestCommand(cmdList.getCommand(i));
-
-							const NetworkCommand * const &cmd = cmdList.getCommand(i);
-							const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-							const UnitType * const &unitType = unit->getType();
-							const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
-							LOG_NET_SERVER( 
-								"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
-								+ cmdType->getName() + "."
-							)
+				case NetworkMessageType::TEXT: {
+						NetworkMessageText textMsg;
+						if (receiveMessage(&textMsg)) {
+							serverInterface->process(textMsg, playerIndex);
+							LOG_NETWORK( "Received text message on slot " + intToStr(playerIndex) );
 						}
 					}
-				}
-				break;
+					break;
+				case NetworkMessageType::COMMAND_LIST: {
+						NetworkMessageCommandList cmdList;
+						if(receiveMessage(&cmdList)){
+							/*LOG_NETWORK( 
+								"Receivied " + intToStr(cmdList.getCommandCount()) + " commands on slot " 
+								+ intToStr(playerIndex) + " frame: " + intToStr(theWorld.getFrameCount())
+							);*/
+							for (int i=0; i < cmdList.getCommandCount(); ++i) {
+								serverInterface->requestCommand(cmdList.getCommand(i));
 
-				//process intro messages
-				case NetworkMessageType::INTRO: {
-					NetworkMessageIntro networkMessageIntro;
-					if(receiveMessage(&networkMessageIntro)){
-						//name= networkMessageIntro.getName();
-						//NETWORK: needs to be done properly
-						setRemoteNames(networkMessageIntro.getName(), networkMessageIntro.getName());
+								/*const NetworkCommand * const &cmd = cmdList.getCommand(i);
+								const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
+								const UnitType * const &unitType = unit->getType();
+								const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
+								LOG_NETWORK( 
+									"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
+									+ cmdType->getName() + "."
+								);*/
+							}
+						}
 					}
-					LOG_NET_SERVER( "Received intro message on slot " + intToStr(playerIndex) + ", name = " + getRemotePlayerName() )
-				}
-				break;
+					break;
+				case NetworkMessageType::INTRO: {
+						NetworkMessageIntro networkMessageIntro;
+						if(receiveMessage(&networkMessageIntro)){
+							//name= networkMessageIntro.getName();
+							//NETWORK: needs to be done properly
+							setRemoteNames(networkMessageIntro.getName(), networkMessageIntro.getName());
+						}
+						LOG_NETWORK( "Received intro message on slot " + intToStr(playerIndex) + ", name = " + getRemotePlayerName() );
+					}
+					break;
 
 				default:
-					LOG_NET_SERVER( "Unexpected message in connection slot: " + intToStr(networkMessageType) )
-					throw runtime_error("Unexpected message in connection slot: " + intToStr(networkMessageType));
+					string msg = "Unexpected message type: " + intToStr(networkMessageType) 
+						+ " on slot: " + intToStr(playerIndex);
+					throw runtime_error(msg);
 			}
-		}
-		else{
+		} else { // socket not connected
+			LOG_NETWORK("Slot " + intToStr(playerIndex) + " disconnected, [" + getRemotePlayerName() + "]");
 			close();
 		}
 	}
