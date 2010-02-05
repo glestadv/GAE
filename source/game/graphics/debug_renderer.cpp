@@ -79,7 +79,7 @@ DebugRenderer::DebugRenderer() {
 		showFrustum = captureFrustum = false;
 }
 
-bool findResourceMapRes(string &res) {
+bool findResourceMapRes(const string &res) {
 	ResourceMapOverlay::rt = NULL;
 	const int &n = theWorld.getTechTree()->getResourceTypeCount();
 	for (int i=0; i < n; ++i) {

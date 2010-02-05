@@ -121,7 +121,7 @@ void AnnotatedMap::revealTile(const Vec2i &pos) {
 struct MudFlinger {
 	ClusterMap *cm;
 
-	__forceinline void setDirty(const Vec2i &pos) {
+	inline void setDirty(const Vec2i &pos) {
 		Vec2i cluster = ClusterMap::cellToCluster(pos);
 		cm->setClusterDirty(cluster);
 		LOG_CLUSTER_DIRTYING( "MapMetrics changed @ pos = " << pos << endl )
@@ -426,3 +426,4 @@ list<pair<Vec2i,uint32> >* AnnotatedMap::getLocalAnnotations() {
 #endif
 
 }}}
+

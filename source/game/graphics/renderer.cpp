@@ -1273,7 +1273,7 @@ void Renderer::renderObjects(){
 			v.z += Map::mapScale / 2;
 			
 			//ambient and diffuse color is taken from cell color
-			float fowFactor= fowTex->getPixmap()->getPixelf(pos.x/Map::cellScale, pos.y/Map::cellScale);
+			float fowFactor= fowTex->getPixmap()->getPixelf(pos.x, pos.y);
 			Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
 			glColor4fv(color.ptr());
 			// FIXME: I was tired when I edited this code and it could be as broken as our
