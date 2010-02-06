@@ -48,13 +48,13 @@ World *World::singleton = NULL;
 // ===================== PUBLIC ========================
 
 World::World(Game *game) 
-		: game(*game)
+		: scenario(NULL)
+		, game(*game)
 		, gs(game->getGameSettings())
 		, stats(game->getGameSettings())
-		, posIteratorFactory(65)
-		, scenario(NULL)
 		, cartographer(NULL)
-		, routePlanner(NULL) {
+		, routePlanner(NULL)
+		, posIteratorFactory(65) {
 	Config &config = Config::getInstance();
 
 	fogOfWar = config.getGsFogOfWarEnabled();

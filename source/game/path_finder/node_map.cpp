@@ -20,10 +20,10 @@ namespace Glest { namespace Game { namespace Search {
 
 /** Construct a NodeMap */
 NodeMap::NodeMap(int w, int h) 
-		: openTop(-1)
+		: nodeLimit(-1)
+		, searchCounter(1)
 		, nodeCount(0)
-		, nodeLimit(-1) 
-		, searchCounter(1) {
+		, openTop(-1) {
 	invalidPos.x = invalidPos.y = 65535;
 	assert( !invalidPos.valid() );
 	bestH = invalidPos;

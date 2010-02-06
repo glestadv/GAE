@@ -71,7 +71,7 @@ public:
 	Edges edges;
 
 	Transition(Vec2i pos, int clear, bool vert, Field f) 
-			: nwPos(pos), clearance(clear), vertical(vert), f(f) {
+			: f(f), clearance(clear), nwPos(pos), vertical(vert) {
 		++numTransitions[f];
 	}
 	~Transition() {
@@ -283,7 +283,7 @@ private:
 	bool assertOpen();
 
 public:
-	TransitionNodeStore(int size) : stock(NULL), size(size) { 
+	TransitionNodeStore(int size) : size(size), stock(NULL) {
 		stock = new TransitionAStarNode[size]; 
 		reset();
 	}

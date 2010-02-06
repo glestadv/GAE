@@ -48,7 +48,7 @@ void Transition::zeroCounters() {
 }
 
 ClusterMap::ClusterMap(AnnotatedMap *aMap, Cartographer *carto) 
-		: aMap(aMap) , carto(carto), dirty(false) {
+		: carto(carto), aMap(aMap), dirty(false) {
 	w = aMap->getWidth() / clusterSize;
 	h = aMap->getHeight() / clusterSize;
 	vertBorders = new ClusterBorder[(w-1)*h];

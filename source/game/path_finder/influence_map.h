@@ -40,7 +40,7 @@ const Point invalidPos(-1,-1);
 // =====================================================
 template<typename iType, typename MapType> class InfluenceMap {
 public:
-	InfluenceMap(Rectangle b, iType def) : x(b.x), y(b.y), w(b.w), h(b.h), def(def) {}
+	InfluenceMap(Rectangle b, iType def) : def(def), x(b.x), y(b.y), w(b.w), h(b.h) {}
 	
 	iType getInfluence(Point pos) {
 		pos = translate(pos);

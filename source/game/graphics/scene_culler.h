@@ -209,8 +209,8 @@ private:
 public:
 	SceneCuller()
 			: activeEdge(Left)
-			, mirror_x(0)
-			, line_mirrored(false) {
+			, line_mirrored(false)
+			, mirror_x(0) {
 		visiblePoly.reserve(10);
 	}
 	void establishScene();

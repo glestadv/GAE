@@ -108,10 +108,10 @@ int GridNeighbours::width = 0;
 /** Construct RoutePlanner object */
 RoutePlanner::RoutePlanner(World *world)
 		: world(world)
+		, nsgSearchEngine(NULL)
 		, nodeStore(NULL)
-		, tNodeStore(NULL)
 		, tSearchEngine(NULL)
-		, nsgSearchEngine(NULL) {
+		, tNodeStore(NULL) {
 	theLogger.add( "Initialising SearchEngine", true );
 
 	const int &w = world->getMap()->getW();

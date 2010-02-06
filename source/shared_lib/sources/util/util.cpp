@@ -42,10 +42,10 @@ namespace Shared{ namespace Util{
 
 EnumNamesBase::EnumNamesBase(const char *valueList, size_t count, bool lazy, const char *enumName) 
 		: valueList(valueList)
-		, count(count)
+		, names(NULL)
 		, qualifiedList(NULL)
 		, qualifiedNames(NULL)
-		, names(NULL) {
+		, count(count) {
 	if(!lazy) {
 		init();
 	}

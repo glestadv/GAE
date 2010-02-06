@@ -196,8 +196,10 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 		case CommandClass::SET_MEETING_POINT:
 		case CommandClass::COUNT:
 		case CommandClass::NULL_COMMAND:
-			assert(0);
-			;
+			assert(0);  //FIXME: really assertion fail here? which can be disabled by setting NDEBUG
+			break;
+		default:
+			throw runtime_error("unhandled CommandClass");
 	}
 }
 
