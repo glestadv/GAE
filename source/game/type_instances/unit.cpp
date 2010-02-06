@@ -770,7 +770,7 @@ CommandResult Unit::giveCommand(Command *command) {
 			// need to pre-process command...
 			break;
 		default:
-			throw runtime_error("unhandled CommandClass");
+			;//throw runtime_error("unhandled CommandClass");
 	}
 
 	if(ct->isQueuable() || command->isQueue()) {
