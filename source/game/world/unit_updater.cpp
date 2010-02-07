@@ -441,11 +441,11 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 
 		//if unit arrives destPos order has ended
 		switch(routePlanner->findPath(unit, pos)) {
-		case TravelState::MOVING:
+			case TravelState::MOVING:
 				unit->setCurrSkill(act->getMoveSkillType());
 				unit->face(unit->getNextPos());
 				break;
-		case TravelState::BLOCKED:
+			case TravelState::BLOCKED:
 				if (unit->getPath()->isBlocked()) {
 					return true;
 				}
@@ -520,25 +520,26 @@ void UnitUpdater::updateBuild(Unit *unit) {
 		}
 
 		switch (routePlanner->findPath(unit, waypoint)) {
-		case TravelState::MOVING:
+			case TravelState::MOVING:
 				unit->setCurrSkill(bct->getMoveSkillType());
 				unit->face(unit->getNextPos());
 				return;
 
-		case TravelState::BLOCKED:
-			if(unit->getPath()->isBlocked()) {
-				console->addStdMessage("Blocked");
+			case TravelState::BLOCKED:
+				if(unit->getPath()->isBlocked()) {
+					console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
 				}
 				return;
 
-		case TravelState::ARRIVED:
-			if(unit->getPos() != waypoint) {
-				console->addStdMessage("Blocked");
+			case TravelState::ARRIVED:
+				if(unit->getPos() != waypoint) {
+					console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
 					return;
 				}
-				// otherwise, we fall through
+			default:
+				; // otherwise, we fall through
 		}
 
 		//if arrived destination
@@ -729,6 +730,8 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					case TravelState::BLOCKED:
 						unit->setCurrSkill(hct->getStopLoadedSkillType());
 						break;
+					default:
+						; // otherwise, we fall through
 				}
 				if (map->isNextTo(unit->getPos(), store)) {
 					//update resources
@@ -859,7 +862,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 		}
 
 		switch (routePlanner->findPath(unit, targetPos)) {
-		case TravelState::ARRIVED:
+			case TravelState::ARRIVED:
 				if (repaired && unit->getPos() != targetPos) {
 					// presume blocked
 					unit->setCurrSkill(SkillClass::STOP);
@@ -873,17 +876,19 @@ void UnitUpdater::updateRepair(Unit *unit) {
 					unit->finishCommand();
 				}
 				break;
-		case TravelState::MOVING:
+			case TravelState::MOVING:
 				unit->setCurrSkill(rct->getMoveSkillType());
 				unit->face(unit->getNextPos());
 				break;
 
-		case TravelState::BLOCKED:
-			if(unit->getPath()->isBlocked()){
+			case TravelState::BLOCKED:
+				if(unit->getPath()->isBlocked()){
 					unit->setCurrSkill(SkillClass::STOP);
 					unit->finishCommand();
 				}
 				break;
+			default:
+				; // otherwise, we fall through
 		}
 	}
 

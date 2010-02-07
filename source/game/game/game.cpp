@@ -1054,7 +1054,7 @@ void Game::updateSpeed() {
 	if (speed == GameSpeed::NORMAL) {
 		fUpdateLoops = 1.0f;
 	} else if (speed > GameSpeed::NORMAL) {
-		fUpdateLoops = 1.0f + float(speed - GameSpeed::NORMAL) / float(GameSpeed::FATEST - GameSpeed::NORMAL)
+		fUpdateLoops = 1.0f + float(speed - GameSpeed::NORMAL) / float(GameSpeed::FASTEST - GameSpeed::NORMAL)
 			* (theConfig.getGsSpeedFastest() - 1.0f);
 	} else {
 		fUpdateLoops = theConfig.getGsSpeedSlowest() + float(speed) / float(GameSpeed::NORMAL)
@@ -1063,14 +1063,14 @@ void Game::updateSpeed() {
 }
 
 void Game::incSpeed() {
-	if (speed < GameSpeed::FAST) {
+	if (speed < GameSpeed::FASTEST) {
 		++speed;
 		updateSpeed();
 	}
 }
 
 void Game::decSpeed() {
-	if (speed > GameSpeed::SLOW) {
+	if (speed > GameSpeed::SLOWEST) {
 		--speed;
 		updateSpeed();
 	}

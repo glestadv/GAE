@@ -18,7 +18,9 @@
 #include "game_camera.h"
 
 #include <vector>
+#include <list>
 #include <limits>
+#include <cassert>
 
 using namespace Shared::Math;
 using namespace std;
@@ -102,22 +104,23 @@ struct GLMatrix {
 };
 
 struct Plane {
-	union {
-		struct {
+	//union {
+		//struct {
 			Vec3f n;
 			float d;
-		};
-		struct {
-			float x, y, z, d;
-		};
-		float v[4];
-	};
+		//};
+		//struct {
+		//	float x, y, z, d;
+		//};
+		//float v[4];
+	//};
 
 	Plane() : n(0.f), d(0.f) {}
-	Plane(Vec3f normal, float dist) : n(normal), d(dist) {}
+	Plane(Vec3f normal, float dist) 
+		: n(normal), d(dist) {}
 	void normalise() { 
 		const float &len = n.length();
-		x /= len;	y /= len;	z /= len;	d /= len;
+		n.x /= len;	n.y /= len;	n.z /= len;	d /= len;
 	}
 };
 
@@ -206,8 +209,8 @@ private:
 public:
 	SceneCuller()
 			: activeEdge(Left)
-			, mirror_x(0)
-			, line_mirrored(false) {
+			, line_mirrored(false)
+			, mirror_x(0) {
 		visiblePoly.reserve(10);
 	}
 	void establishScene();

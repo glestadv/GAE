@@ -52,7 +52,7 @@ public:
 		NORMAL,
 		FAST,
 		VERY_FAST,
-		FATEST
+		FASTEST
 	)
 
 	static const char*SpeedDesc[GameSpeed::COUNT];

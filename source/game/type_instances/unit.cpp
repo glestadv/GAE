@@ -111,20 +111,20 @@ const int Unit::invalidId= -1;
 
 /** Construct Unit object */
 Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master)
-		: pos(pos)
+		: progressSpeed(0.f)
+		, animProgressSpeed(0.f)
+		, pos(pos)
 		, lastPos(pos)
 		, nextPos(pos)
 		, targetPos(0)
 		, targetVec(0.0f)
 		, meetingPos(pos)
-		, lastCommandUpdate(0)
-		, lastCommanded(0)
-		, progressSpeed(0.f)
-		, animProgressSpeed(0.f)
 		, commandCallback(NULL)
 		, hp_below_trigger(0)
 		, hp_above_trigger(0)
-		, attacked_trigger(false) {
+		, attacked_trigger(false)
+		, lastCommandUpdate(0)
+		, lastCommanded(0) {
 	Random random;
 
 	this->faction = faction;
@@ -772,6 +772,8 @@ CommandResult Unit::giveCommand(Command *command) {
 			// make path request now...
 			// need to pre-process command...
 			break;
+		default:
+			;//throw runtime_error("unhandled CommandClass");
 	}
 
 	if(ct->isQueuable() || command->isQueue()) {
@@ -1857,6 +1859,8 @@ int Unit::getSpeed(const SkillType *st) const {
 		case SkillClass::WAIT_FOR_SERVER:
 		case SkillClass::COUNT:
 			break;
+		default:
+			throw runtime_error("unhandled SkillClass");
 	}
 	return (int)(speed > 0.0f ? speed : 0.0f);
 }

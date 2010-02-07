@@ -56,7 +56,7 @@ private:
 
 public:
 	ScriptTimer(const string &name, bool real, int interval, bool periodic)
-		: name(name), real(real), periodic(periodic), interval(interval), active(true) {
+		: name(name), real(real), periodic(periodic), active(true), interval(interval) {
 			reset();
 	}
 

@@ -99,7 +99,7 @@ public:
 	void returnVec2i(const Vec2i &value);
 	void returnBool(bool val);
 
-	char* getType ( int ndx ) const;
+	const char* getType ( int ndx ) const;
 };
 
 }}//end namespace

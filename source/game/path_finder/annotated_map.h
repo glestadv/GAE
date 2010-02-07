@@ -110,7 +110,7 @@ private:
 	int width,height;
 
 public:
-	MetricMap() : width(0), height(0), metrics(NULL) { }
+	MetricMap() : metrics(NULL), width(0), height(0) { }
 	~MetricMap()			{ delete [] metrics; }
 
 	void init(int w, int h) { 
@@ -176,7 +176,7 @@ public:
 		return metrics[pos].get(field) >= size ? true : false;
 	}
 
-	bool isDirty(const Vec2i &pos) const			{ metrics[pos].isDirty();		}
+	bool isDirty(const Vec2i &pos) const			{ return metrics[pos].isDirty(); }
 	void setDirty(const Vec2i &pos, const bool val)	{ metrics[pos].setDirty(val);	}
 
 	void annotateLocal(const Unit *unit);

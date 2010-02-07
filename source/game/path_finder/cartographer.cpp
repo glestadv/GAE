@@ -36,7 +36,7 @@ namespace Glest { namespace Game { namespace Search {
 /** Construct Cartographer object. Requires game settings, factions & cell map to have been loaded.
   */
 Cartographer::Cartographer(World *world)
-		: world(world), routePlanner(0), cellMap(0) {
+		: world(world), cellMap(0), routePlanner(0) {
 	theLogger.add("Cartographer", true);
 
 	cellMap = world->getMap();

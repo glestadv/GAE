@@ -205,10 +205,6 @@ public:
 /** The movement cost function */
 class MoveCost {
 public:
-	MoveCost(const Unit *unit, const AnnotatedMap *aMap) 
-			: field(unit->getCurrField()), size(unit->getSize()), aMap(aMap) {}
-	MoveCost(const Field field, const int size, const AnnotatedMap *aMap )
-			: field(field), size(size), aMap(aMap) {}
 	/*/* unit wanting to move */
 	//const Unit *unit;
 	const int size;
@@ -216,6 +212,12 @@ public:
 
 	/** map to search on */
 	const AnnotatedMap *aMap;
+
+	MoveCost(const Unit *unit, const AnnotatedMap *aMap) 
+			: size(unit->getSize()), field(unit->getCurrField()), aMap(aMap) {}
+	MoveCost(const Field field, const int size, const AnnotatedMap *aMap )
+			: size(size), field(field), aMap(aMap) {}
+
 	/** The cost function
 	  * @param p1 position 1
 	  * @param p2 position 2 ('adjacent' p1)

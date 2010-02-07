@@ -28,12 +28,12 @@ namespace Glest { namespace Game { namespace Search {
 // 	class NodeStore
 // =====================================================
 
-NodeStore::NodeStore(int w, int h) 
-		: tmpMaxNodes(size)
-		, numNodes(0)
+NodeStore::NodeStore(int w, int h)
+		: counter(0)
 		, leastH(NULL)
-		, markerArray(w, h)
-		, counter(0) {
+		, numNodes(0)
+		, tmpMaxNodes(size)
+		, markerArray(w, h) {
 	openHeap.reserve(size / 2);
 	stock = new AStarNode[size];
 }

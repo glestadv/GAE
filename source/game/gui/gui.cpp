@@ -1125,6 +1125,8 @@ void Gui::addOrdersResultToConsole(CommandClass cc, CommandResult result) {
 	case CommandResult::SOME_FAILED:
 		console->addStdMessage("SomeOrdersFailed");
 		break;
+	default:
+		throw runtime_error("unhandled CommandResult");
 	}
 }
 
