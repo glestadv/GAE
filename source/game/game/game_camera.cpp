@@ -56,7 +56,8 @@ GameCamera::GameCamera() : pos(0.f, defaultHeight, 0.f),
 
     rotate=0;
 
-	move= Vec3f(0.f);
+	moveMouse= Vec3f(0.f);
+	moveKey= Vec3f(0.f);
 
 	maxRenderDistance = config.getRenderDistanceMax();
 	maxHeight = config.getCameraMaxDistance();
@@ -89,6 +90,7 @@ void GameCamera::setPos(Vec2f pos){
 }
 
 void GameCamera::update(){
+	Vec3f move = moveMouse+moveKey;
 
 	//move XZ
 	if(move.z){

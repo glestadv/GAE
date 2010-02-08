@@ -476,19 +476,19 @@ void Game::mouseMove(int x, int y, const MouseState &ms) {
 		if ( !noInput ) {
 			//main window
 			if (y < 10) {
-				gameCamera.setMoveZ(-scrollSpeed);
+				gameCamera.setMoveZ(-scrollSpeed, true);
 			} else if (y > metrics.getVirtualH() - 10) {
-				gameCamera.setMoveZ(scrollSpeed);
-			} else {
-				gameCamera.setMoveZ(0);
+				gameCamera.setMoveZ(scrollSpeed, true);
+			} else if(y < 20 || y > metrics.getVirtualH()-20){
+				gameCamera.setMoveZ(0, true);
 			}
 
 			if (x < 10) {
-				gameCamera.setMoveX(-scrollSpeed);
+				gameCamera.setMoveX(-scrollSpeed, true);
 			} else if (x > metrics.getVirtualW() - 10) {
-				gameCamera.setMoveX(scrollSpeed);
-			} else {
-				gameCamera.setMoveX(0);
+				gameCamera.setMoveX(scrollSpeed, true);
+			} else if(x < 20 || x > metrics.getVirtualW()-20){
+				gameCamera.setMoveX(0, true);
 			}
 		}
 
@@ -604,19 +604,19 @@ void Game::keyDown(const Key &key) {
 
 	//move camera left
 	} else if (cmd == ucCameraPosLeft) {
-		gameCamera.setMoveX(-scrollSpeed);
+		gameCamera.setMoveX(-scrollSpeed, false);
 
 	//move camera right
 	} else if (cmd == ucCameraPosRight) {
-		gameCamera.setMoveX(scrollSpeed);
+		gameCamera.setMoveX(scrollSpeed, false);
 
 	//move camera up
 	} else if (cmd == ucCameraPosUp) {
-		gameCamera.setMoveZ(scrollSpeed);
+		gameCamera.setMoveZ(scrollSpeed, false);
 
 	//move camera down
 	} else if (cmd == ucCameraPosDown) {
-		gameCamera.setMoveZ(-scrollSpeed);
+		gameCamera.setMoveZ(-scrollSpeed, false);
 
 	//switch display color
 	} else if (cmd == ucCycleDisplayColor) {
@@ -738,12 +738,12 @@ void Game::keyUp(const Key &key) {
 
 			case ucCameraPosUp:
 			case ucCameraPosDown:
-				gameCamera.setMoveZ(0);
+				gameCamera.setMoveZ(0, false);
 				break;
 
 			case ucCameraPosLeft:
 			case ucCameraPosRight:
-				gameCamera.setMoveX(0);
+				gameCamera.setMoveX(0, false);
 				break;
 
 			default:

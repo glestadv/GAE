@@ -61,7 +61,8 @@ private:
 
 	float rotate;
 
-	Vec3f move;
+	Vec3f moveMouse;
+	Vec3f moveKey;
 
 	State state;
 
@@ -95,9 +96,21 @@ public:
 	void setRotate(float rotate){this->rotate= rotate;}
 	void setPos(Vec2f pos);
 
-	void setMoveX(float f)		{this->move.x= f;}
-	void setMoveY(float f)		{this->move.y= f;}
-	void setMoveZ(float f)		{this->move.z= f;}
+	void setMoveX(float f, bool mouse){
+		if(mouse){
+			this->moveMouse.x = f;
+		}else{
+			this->moveKey.x = f;
+		}
+	}
+	void setMoveY(float f)		{this->moveMouse.y= f;}
+	void setMoveZ(float f, bool mouse){
+		if(mouse){
+			this->moveMouse.z = f;
+		}else{
+			this->moveKey.z = f;
+		}
+	}
 
 	void stop() {
 		destPos = pos;
