@@ -479,7 +479,7 @@ void Game::mouseMove(int x, int y, const MouseState &ms) {
 				gameCamera.setMoveZ(-scrollSpeed, true);
 			} else if (y > metrics.getVirtualH() - 10) {
 				gameCamera.setMoveZ(scrollSpeed, true);
-			} else if(y < 20 || y > metrics.getVirtualH()-20){
+			} else { //if(y < 20 || y > metrics.getVirtualH()-20){
 				gameCamera.setMoveZ(0, true);
 			}
 
@@ -487,7 +487,7 @@ void Game::mouseMove(int x, int y, const MouseState &ms) {
 				gameCamera.setMoveX(-scrollSpeed, true);
 			} else if (x > metrics.getVirtualW() - 10) {
 				gameCamera.setMoveX(scrollSpeed, true);
-			} else if(x < 20 || x > metrics.getVirtualW()-20){
+			} else { //if(x < 20 || x > metrics.getVirtualW()-20){
 				gameCamera.setMoveX(0, true);
 			}
 		}
