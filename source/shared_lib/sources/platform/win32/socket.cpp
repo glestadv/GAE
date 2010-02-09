@@ -2,6 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2007 Martiño Figueroa
+//				  2010		James McCulloch
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -59,7 +60,7 @@ string Ip::getString() const{
 }
 
 // =====================================================
-//	class Socket
+//	class Socket::LibraryManager
 // =====================================================
 
 Socket::LibraryManager Socket::libraryManager;
@@ -75,13 +76,106 @@ Socket::LibraryManager::~LibraryManager(){
 	WSACleanup();
 }
 
+// =====================================================
+//	class Socket::CircularBuffer
+// =====================================================
+
+/** record that we have added b bytes to the buffer */
+void Socket::CircularBuffer::operator+=(size_t b) {
+	assert(b && head + b <= buffer_size);
+	head += b;
+	if (head == buffer_size) head = 0;
+	if (head == tail) full = true;
+}
+
+/** record that we have removed b bytes from the buffer */
+void Socket::CircularBuffer::operator-=(size_t b) {
+	assert(b);
+	if (tail + b <= buffer_size) {
+		tail += b;
+		if (tail == buffer_size) tail = 0;
+	} else {
+		tail = b - (buffer_size - tail);
+	}
+	if (full) full = false;
+}
+
+/** Number of bytes available to read */
+size_t Socket::CircularBuffer::bytesAvailable() const {
+	if (full) {
+		return buffer_size;
+	} else if (head < tail) {
+		return head + buffer_size - tail;
+	} else {
+		return head - tail;
+	}
+}
+
+/** peek the next n bytes, copying them to dst if the request can be satisfied
+  * @return true if ok, false if not enough bytes are available */
+bool Socket::CircularBuffer::peekBytes(void *dst, size_t n) {
+	if (bytesAvailable() < n) {
+		return false;
+	}
+	char_ptr ptr = (char_ptr)dst;
+	if (head + n < buffer_size) {
+		memcpy(ptr, buffer + tail, n);
+	} else {
+		size_t first_n = buffer_size - head;
+		size_t second_n = n - first_n;
+		memcpy(ptr, buffer + tail, first_n);
+		memcpy(ptr + first_n, buffer, second_n);
+	}
+	return true;
+}
+
+/** read n bytes to dst, advancing tail offset ('removing' them from the buffer) 
+  * @return true if all ok, false if not enough bytes available, in which case none will be read */
+bool Socket::CircularBuffer::readBytes(void *dst, int n) {
+	if (peekBytes(dst, n)) {
+		*this -= n;
+		return true;
+	}
+	return false;
+}
+
+/** returns the maximum write length from the head, if no more bytes can be written
+  * after this (because the head would be at the tail) limit is set to true */
+int Socket::CircularBuffer::getMaxWrite(bool &limit) const {
+	if (full) {
+		limit = true;	
+		return 0;
+	}
+	if (tail > head) { // chasing tail?
+		limit = true;
+		return tail - head;
+	} else {
+		limit = tail ? false : true;
+		return buffer_size - head;
+	}
+}
+
+/** free space in buffer */
+size_t Socket::CircularBuffer::getFreeBytes() const {
+	if (full) return 0;
+	if (tail > head) {
+		return tail - head;
+	} else {
+		return buffer_size - head + tail; 
+	}
+}
+
+// =====================================================
+//	class Socket
+// =====================================================
+
 Socket::Socket(SOCKET sock){
-	this->sock= sock;
+	this->sock = sock;
 }
 
 Socket::Socket(){
-	sock= socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-	if(sock==INVALID_SOCKET){
+	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+	if (sock == INVALID_SOCKET) {
 		throw runtime_error("Error creating socket");
 	}
 	assert(sizeof(int8) == 1);
@@ -97,50 +191,66 @@ Socket::Socket(){
 Socket::~Socket(){
 	int err = closesocket(sock);
 	if (err) {
-		handleError(__FUNCTION__);
+		//handleError(__FUNCTION__); // ooops... that throws
 	}
 }
 
 int Socket::getDataToRead(){
-	u_long size;
-	int err = ioctlsocket(sock, FIONREAD, &size);
-	if (err == SOCKET_ERROR) {
-		if (WSAGetLastError() == WSAEWOULDBLOCK) {
-			return 0;
-		}
-		handleError(__FUNCTION__);
-	}
-	return static_cast<int>(size);
+	readAll();
+	return buffer.bytesAvailable();
 }
 
 int Socket::send(const void *data, int dataSize) {
-	int err = ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
-	if (err == SOCKET_ERROR) {
+	int res = ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
+	if (res == SOCKET_ERROR) {
 		if(WSAGetLastError() != WSAEWOULDBLOCK){
 			handleError(__FUNCTION__);
 		}
 	}
-	return err;
+	//cout << "sent message, " << res << " bytes.";
+	return res;
+}
+
+void Socket::readAll() {
+	bool limit;
+	int n = buffer.getMaxWrite(limit);
+	int r = recv(sock, buffer.getWritePos(), n, 0);
+	if (r == SOCKET_ERROR) {
+		if (WSAGetLastError() != WSAEWOULDBLOCK) {
+			handleError(__FUNCTION__);
+		}
+	}
+	if (r > 0) {
+		buffer += r;
+		if (r == n && !limit) {
+			n = buffer.getMaxWrite(limit);
+			int r2 = recv(sock, buffer.getWritePos(), n, 0);
+			if (r2 > 0) {
+				buffer += r2;
+			} else if (WSAGetLastError() != WSAEWOULDBLOCK) {
+				handleError(__FUNCTION__);
+			}
+			//cout << "Socket::readALL() read " << r + r2 << " bytes.\n";
+			return;
+		}
+		//cout << "Socket::readALL() read " << r << " bytes.\n";
+	}
 }
 
 int Socket::receive(void *data, int dataSize) {
-	int err= recv(sock, reinterpret_cast<char*>(data), dataSize, 0);
-	if (err == SOCKET_ERROR) {
-		if (WSAGetLastError() != WSAEWOULDBLOCK) {
-			handleError(__FUNCTION__);
-		}
+	readAll();
+	if (buffer.readBytes(data, dataSize)) {
+		return dataSize;
 	}
-	return err;
+	return 0;
 }
 
 int Socket::peek(void *data, int dataSize) {
-	int err= recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_PEEK);
-	if (err == SOCKET_ERROR) {
-		if (WSAGetLastError() != WSAEWOULDBLOCK) {
-			handleError(__FUNCTION__);
-		}
+	readAll();
+	if (buffer.peekBytes(data, dataSize)) {
+		return dataSize;
 	}
-	return err;
+	return 0;
 }
 
 void Socket::setBlock(bool block) {
@@ -189,10 +299,10 @@ bool Socket::isConnected() {
 		return false;
 	}
 	//if the socket is readable it is connected if we can read a byte from it
-	if (isReadable()) {
+	/*if (isReadable()) {
 		char tmp;
 		return (recv(sock, &tmp, sizeof(tmp), MSG_PEEK) > 0);
-	}
+	}*/
 	//otherwise the socket is connected
 	return true;
 }
@@ -222,16 +332,18 @@ string Socket::getIp() const {
 }
 
 void Socket::handleError(const char *caller) const {
-	const char *msg_ptr = 0;
-	int errCode = WSAGetLastError();
-	DWORD frmtFlags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER;
-	int msgRes = FormatMessage(frmtFlags,NULL, errCode, 0, (LPSTR)msg_ptr, 1024, NULL);
-	string msg = string("Socket Error in : ") + caller;
+	LPVOID errMsg;
+	DWORD errCode = WSAGetLastError();
+	DWORD msgRes = FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER  | FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL, errCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&errMsg, 0, NULL
+	);
+	string msg = string("Socket Error in : ") + caller + " [Error code: " + intToStr(errCode) + "]";
 	if (msgRes) {
-		msg += "\n" + string(msg_ptr);
-		LocalFree((HLOCAL)msg_ptr);
+		msg += "\n" + string((LPTSTR)errMsg);
+		LocalFree((HLOCAL)errMsg);
 	} else {
-		msg += "\nFormatMessage() call failed. :~(";
+		msg += "\nFormatMessage() call failed. :~( [Error code: " + intToStr(GetLastError())  + "]";
 	}	
 	throw runtime_error(msg);
 }

@@ -29,15 +29,10 @@
 #include "exceptions.h"
 #include "pos_iterator.h"
 
-namespace Shared{ namespace Platform{
-	class NetworkDataBuffer;
-}}
-
 namespace Glest{ namespace Game{
 
 using namespace Shared::Math;
 using Shared::Graphics::Texture2D;
-using Shared::Platform::NetworkDataBuffer;
 using Glest::Game::Util::PosCircularIteratorFactory;
 
 class Tileset;
@@ -164,13 +159,6 @@ public:
 			object->setPos(vertex); // should be centered ??? YES!!! It should, do so here, remove hack from Renderer
 		}
 	}
-
-	// I know it looks stupid using NetworkDataBuffer to save these, but then I
-	// get my multi-byte values in platform portable format, so that saved game
-	// files will work across platforms (especially when resuming an interrupted
-	// network game).
-	void read(NetworkDataBuffer &buf);
-	void write(NetworkDataBuffer &buf) const;
 };
 
 // =====================================================
@@ -308,9 +296,6 @@ public:
 
 	void computeNormals(Rect2i range);
 	void computeInterpolatedHeights(Rect2i range);
-
-	void read(NetworkDataBuffer &buf);
-	void write(NetworkDataBuffer &buf) const;
 
 	void add(Earthquake *earthquake) 			{earthquakes.push_back(earthquake);}
 	void update(float slice);

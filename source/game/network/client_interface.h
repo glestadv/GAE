@@ -97,7 +97,6 @@ protected:
 
 	//misc
 	virtual string getStatus() const;
-	//virtual void requestCommand(Command *command);
 
 public:
 	//accessors
@@ -106,30 +105,12 @@ public:
 	bool getIntroDone() const				{return introDone;}
 	int getPlayerIndex() const				{return playerIndex;}
 	const GameSettings *getGameSettings()	{return &gameSettings;}
-	/*
-	NetworkMessageUpdate *getNextUpdate() {
-		NetworkMessageUpdate *ret = NULL;
-		if(updates.size()) {
-			ret = updates.front();
-			updates.pop_front();
-		}
-		return ret;
-	}
-	*/
 
 	void connect(const Ip &ip, int port);
 	void reset();
 
-	/*
-	void requestUpdate(Unit *unit)				{UnitReference ur(unit); requestUpdate(ur);}
-	void requestUpdate(UnitReference &ur)		{updateRequests.push_back(ur);}
-	void requestFullUpdate(Unit *unit)			{requestFullUpdate(UnitReference(unit));}
-	void requestFullUpdate(UnitReference &ur)	{fullUpdateRequests.push_back(ur);}
-	void sendUpdateRequests();
-	*/
-
 private:
-	void waitForMessage(); //NetworkMessage *waitForMessage();
+	void waitForMessage();
 };
 
 }}//end namespace

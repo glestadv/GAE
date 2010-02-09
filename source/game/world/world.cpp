@@ -99,7 +99,7 @@ void World::save(XmlNode *node) const {
 	for (Factions::const_iterator i = factions.begin(); i != factions.end(); ++i) {
 		i->save(factionsNode->addChild("faction"));
 	}
-
+/*
 	NetworkDataBuffer mmbuf(0x1000); // 4kb
 	NetworkDataBuffer buf(0x10000); // 64kb
 	minimap.write(mmbuf);
@@ -108,6 +108,7 @@ void World::save(XmlNode *node) const {
 	buf.write(mmbuf.data(), mmDataSize);
 	map.write(buf);
 	buf.compressUuencodIntoXml(node->addChild("map"), 80);
+	*/
 }
 
 // ========================== init ===============================================

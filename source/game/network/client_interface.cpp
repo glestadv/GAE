@@ -135,7 +135,7 @@ ClientInterface::ClientInterface(){
 
 ClientInterface::~ClientInterface() {
 	if(clientSocket && clientSocket->isConnected()) {
-		string text = getHostName() + " has chosen to leave the game!";
+		string text = getHostName() + " has left the game!";
 		sendTextMessage(text,-1);
 	}
 	delete clientSocket;
@@ -155,7 +155,7 @@ void ClientInterface::connect(const Ip &ip, int port) {
 
 void ClientInterface::reset() {
 	if(clientSocket) {
-		string text = getHostName() + " has chosen to leave the game!";
+		string text = getHostName() + " has left the game!";
 		sendTextMessage(text,-1);
 	}
 	delete clientSocket;
@@ -248,7 +248,6 @@ void ClientInterface::updateLobby() {
 			//send reply
 			NetworkMessageIntro replyMsg(getNetworkVersionString(), getHostName(), -1);
 			send(&replyMsg);
-				
 			introDone= true;
 		}
 	} else if (msgType == NetworkMessageType::LAUNCH) {

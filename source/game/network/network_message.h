@@ -34,8 +34,10 @@ class Command;
 // =====================================================
 //	class NetworkMessage
 // =====================================================
-
-class NetworkMessage{
+/** Abstract base class for network messages, requires concrete subclasses 
+  * to implement receive(Socket*)/send(Socket*), and provides send/receive methods
+  * for them to use to accomplish this. */
+class NetworkMessage {
 public:
 	virtual ~NetworkMessage(){}
 	virtual bool receive(Socket* socket)= 0;
@@ -61,7 +63,7 @@ private:
 private:
 	struct Data{
 		int8 messageType;
-		NetworkString<maxVersionStringSize> versionString;
+		NetworkString<maxVersionStringSize> versionString; // change to uint32 ?
 		NetworkString<maxNameSize> name;
 		int16 playerIndex;
 	};
