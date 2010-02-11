@@ -44,14 +44,11 @@ Ip::Ip(unsigned char byte0, unsigned char byte1, unsigned char byte2, unsigned c
 
 
 Ip::Ip(const string& ipString){
-	int offset= 0;
-	int byteIndex= 0;
-
-	for(byteIndex= 0; byteIndex<4; ++byteIndex){
-		int dotPos= ipString.find_first_of('.', offset);
-
-		bytes[byteIndex]= atoi(ipString.substr(offset, dotPos-offset).c_str());
-		offset= dotPos+1;
+	int offset = 0;
+	for(int byteIndex = 0; byteIndex < 4; ++byteIndex) {
+		int dotPos = ipString.find_first_of('.', offset);
+		bytes[byteIndex] = atoi(ipString.substr(offset, dotPos - offset).c_str());
+		offset = dotPos + 1;
 	}
 }
 
@@ -345,7 +342,7 @@ void Socket::handleError(const char *caller) const {
 	} else {
 		msg += "\nFormatMessage() call failed. :~( [Error code: " + intToStr(GetLastError())  + "]";
 	}	
-	throw runtime_error(msg);
+	throw SocketException(msg);
 }
 
 // =====================================================

@@ -32,88 +32,6 @@ using namespace Shared::Util;
 using Shared::Platform::Chrono;
 
 namespace Glest { namespace Game {
-/*
-ClientInterface::FileReceiver::FileReceiver(const NetworkMessageFileHeader &msg, const string &outdir) :
-		name(outdir + "/" + msg.getName()),
-		out(name.c_str(), ios::binary | ios::out | ios::trunc) {
-	if(out.bad()) {
-		throw runtime_error("Failed to open new file for output: " + msg.getName());
-	}
-	compressed = msg.isCompressed();
-	finished = false;
-	nextseq = 0;
-}
-
-ClientInterface::FileReceiver::~FileReceiver() {
-}
-
-bool ClientInterface::FileReceiver::processFragment(const NetworkMessageFileFragment &msg) {
-    int zstatus;
-
-	assert(!finished);
-	if(finished) {
-		throw runtime_error(string("Received file fragment after download of file ")
-				+ name + " was already completed.");
-	}
-
-	if(!compressed) {
-		out.write(msg.getData(), msg.getDataSize());
-		if(out.bad()) {
-			throw runtime_error("Error while writing file " + name);
-		}
-	}
-
-	if(nextseq == 0){
-		z.zalloc = Z_NULL;
-		z.zfree = Z_NULL;
-		z.opaque = Z_NULL;
-		z.avail_in = 0;
-		z.next_in = Z_NULL;
-
-		if(inflateInit(&z) != Z_OK) {
-			throw runtime_error(string("Failed to initialize zstream: ") + z.msg);
-		}
-	}
-
-	if(nextseq++ != msg.getSeq()) {
-		throw runtime_error("File fragments arrived out of sequence, which isn't "
-				"supposed to happen with stream sockets.  Did somebody change "
-				"the socket implementation to datagrams?");
-	}
-
-	z.avail_in = msg.getDataSize();
-	z.next_in = (Bytef*)msg.getData();
-	do {
-		z.avail_out = sizeof(buf);
-		z.next_out = (Bytef*)buf;
-		zstatus = inflate(&z, Z_NO_FLUSH);
-		assert(zstatus != Z_STREAM_ERROR);	// state not clobbered
-		switch (zstatus) {
-		case Z_NEED_DICT:
-			zstatus = Z_DATA_ERROR;
-			// intentional fall-through
-		case Z_DATA_ERROR:
-		case Z_MEM_ERROR:
-			throw runtime_error(string("error in zstream: ") + z.msg);
-		}
-		out.write(buf, sizeof(buf) - z.avail_out);
-		if(out.bad()) {
-			throw runtime_error("Error while writing file " + name);
-		}
-	} while (z.avail_out == 0);
-
-	if(msg.isLast() && zstatus != Z_STREAM_END) {
-		throw runtime_error("Unexpected end of zstream data.");
-	}
-
-	if(msg.isLast() || zstatus == Z_STREAM_END) {
-		finished = true;
-		inflateEnd(&z);
-	}
-
-	return msg.isLast();
-}
-*/
 
 // =====================================================
 //	class ClientInterface
@@ -127,22 +45,12 @@ ClientInterface::ClientInterface(){
 	launchGame = false;
 	introDone = false;
 	playerIndex = -1;
-	/*
-	fileReceiver = NULL;
-	savedGameFile = "";
-	*/
 }
 
 ClientInterface::~ClientInterface() {
-	if(clientSocket && clientSocket->isConnected()) {
-		string text = getHostName() + " has left the game!";
-		sendTextMessage(text,-1);
-	}
+	quitGame();
 	delete clientSocket;
 	clientSocket = NULL;
-	/*
-	delete fileReceiver;
-	*/
 }
 
 void ClientInterface::connect(const Ip &ip, int port) {
@@ -154,10 +62,7 @@ void ClientInterface::connect(const Ip &ip, int port) {
 }
 
 void ClientInterface::reset() {
-	if(clientSocket) {
-		string text = getHostName() + " has left the game!";
-		sendTextMessage(text,-1);
-	}
+	quitGame();
 	delete clientSocket;
 	clientSocket = NULL;
 }
@@ -170,59 +75,9 @@ void ClientInterface::update() {
 		requestedCommands.pop_back();
 	}
 	if (cmdList.getCommandCount() > 0) {
-		/*LOG_NETWORK(
-			"Sending command(s) to server, current frame = " + intToStr(theWorld.getFrameCount())
-		);
-		for (int i=0; i < cmdList.getCommandCount(); ++i) {
-			const NetworkCommand * const &cmd = cmdList.getCommand(i);
-			const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-			LOG_NETWORK( 
-				"\tUnit: " + intToStr(cmd->getUnitId()) + " [" + unit->getType()->getName() + "] " 
-				+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
-			);
-		}*/
 		send(&cmdList);
-		//flush();
-	}
-
-	/*
-	if(isConnected()) {
-		receive();
-		MsgQueue newQ;
-
-		// pull out updates for immediate processing
-		for(MsgQueue::iterator i = q.begin(); i != q.end(); ++i) {
-			if((*i)->getType() == nmtUpdate) {
-				updates.push_back((NetworkMessageUpdate*)*i);
-			} else {
-				newQ.push_back(*i);
-			}
-		}
-		q.swap(newQ);
-		NetworkStatus::update();
-	}
-	flush();
-	*/
-}
-
-/*
-void ClientInterface::sendUpdateRequests() {
-	if(isConnected() && updateRequests.size()) {
-		NetworkMessageUpdateRequest msg;
-		UnitReferences::iterator i;
-		for(i = updateRequests.begin(); i != updateRequests.end(); ++i) {
-			msg.addUnit(*i, false);
-		}
-		for(i = fullUpdateRequests.begin(); i != fullUpdateRequests.end(); ++i) {
-			msg.addUnit(*i, true);
-		}
-		msg.writeXml();
-		msg.compress();
-		send(&msg, true);
-		updateRequests.clear();
 	}
 }
-*/
 
 void ClientInterface::updateLobby() {
 	// NETWORK: this method is very different
@@ -314,6 +169,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 			NetworkMessageQuit quitMsg;
 			if (receiveMessage(&quitMsg)) {
 				quit = true;
+				quitGame();
 			}
 			return;
 		} else if (msgType == NetworkMessageType::TEXT) {
@@ -418,19 +274,15 @@ void ClientInterface::waitForMessage() {
 	}
 }
 
-/*
-void ClientInterface::requestCommand(Command *command) {
-	if(!command->isAuto()) {
-		requestedCommands.push_back(new Command(*command));
-	}
-	pendingCommands.push_back(command);
-}
-*/
-
 void ClientInterface::quitGame() {
-	if(clientSocket && clientSocket->isConnected()) {
-		string sQuitText = getHostName() + " has chosen to leave the game!";
-		sendTextMessage(sQuitText,-1);
+	LOG_NETWORK( "Quitting" );
+	if(!quit && clientSocket && clientSocket->isConnected()) {
+		string text = getHostName() + " has left the game!";
+		sendTextMessage(text, -1);
+		LOG_NETWORK( "Sent goodbye text messsage." );
+		NetworkMessageQuit networkMessageQuit;
+		send(&networkMessageQuit);
+		LOG_NETWORK( "Sent quit message." );
 	}
 	delete clientSocket;
 	clientSocket = NULL;

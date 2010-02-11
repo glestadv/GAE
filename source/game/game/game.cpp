@@ -354,9 +354,10 @@ void Game::update() {
 
 		try { // Commander
 			commander.updateNetwork();
-		} catch (runtime_error e) {
+		} catch (SocketException e) {
 			LOG_NETWORK(e.what());
-			throw e;
+			displayError(e);
+			return;
 		}
 
 		//Gui
@@ -371,9 +372,10 @@ void Game::update() {
 
 	try { //call the chat manager		
 		chatManager.updateNetwork();
-	} catch (runtime_error e) {
+	} catch (SocketException e) {
 		LOG_NETWORK(e.what());
-		throw e;
+		displayError(e);
+		return;
 	}
 
 	//check for quiting status
