@@ -45,6 +45,7 @@ public:
 
 protected:
 	bool receive(Socket* socket, void* data, int dataSize);
+	bool peek(Socket* socket, void *data, int dataSize);
 	void send(Socket* socket, const void* data, int dataSize) const;
 };
 
@@ -181,17 +182,19 @@ public:
 //	Message to order a commands to several units
 // =====================================================
 
-#pragma pack(push, 1)
+#pragma pack(push, 2)
 
 class NetworkMessageCommandList: public NetworkMessage{
 private:
 	static const int maxCommandCount= 16*4;
 	
 private:
+	static const int dataHeaderSize = 10;
 	struct Data{
 		int8 messageType;
 		int8 commandCount;
 		int32 frameCount;
+		int32 totalB4this; //DEBUG
 		NetworkCommand commands[maxCommandCount];
 	};
 
@@ -202,6 +205,12 @@ public:
 	NetworkMessageCommandList(int32 frameCount= -1);
 
 	bool addCommand(const NetworkCommand* networkCommand);
+	//DEBUG
+	void setTotalB4This(int32 total) { 
+		assert(total >= 0);
+		data.totalB4this = total; 
+	}
+	int32 getTotalB4This() const { return data.totalB4this; }
 	
 	void clear()									{data.commandCount= 0;}
 	int getCommandCount() const						{return data.commandCount;}

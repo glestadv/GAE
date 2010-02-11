@@ -37,14 +37,8 @@ namespace Glest { namespace Game {
 //	class NetworkInterface
 // =====================================================
 //NETWORK: a lot different with this class
-class NetworkInterface /*: public NetworkStatus*/ {
+class NetworkInterface {
 protected:
-/*
-	typedef deque<NetworkMessage*> MsgQueue;
-	NetworkDataBuffer txbuf;
-	NetworkDataBuffer rxbuf;
-	MsgQueue q;
-*/
 	static const int readyWaitTimeout;
 
 private:
@@ -53,7 +47,6 @@ private:
 	string description;
 
 public:
-	//NetworkInterface() : NetworkStatus(), txbuf(16384), rxbuf(16384) {}
 	virtual ~NetworkInterface() {}
 
 	virtual Socket* getSocket() = 0;
@@ -68,54 +61,14 @@ public:
 	void setRemoteNames(const string &hostName, const string &playerName);
 
 	int dataAvailable();
-	/*
-	void pop()							{if(q.empty()) throw runtime_error("queue empty"); q.pop_front();}
-
-	void send(const NetworkMessage* msg, bool flush = true);
-	bool flush();
-	void receive();
-	*/
 
 	void send(const NetworkMessage* networkMessage);
 	NetworkMessageType getNextMessageType();
 	bool receiveMessage(NetworkMessage* networkMessage);
 
-	/*
-#ifdef DEBUG_NETWORK
-	std::deque<NetworkMessagePing*> pingQ;
-#endif
-	NetworkMessage *peek();
-
-	NetworkMessage *nextMsg() {
-		NetworkMessage *m = peek();
-		if(m) {
-			q.pop_front();
-		}
-		return m;
-	}
-	*/
 	bool isConnected() {
 		return getSocket() && getSocket()->isConnected();
 	}
-
-	/*
-protected:
-	virtual void ping() {
-		NetworkMessagePing msg;
-		send(&msg);
-	}
-	
-	void processPing(NetworkMessagePing *ping) {
-		if(ping->isPong()) {
-			pong(ping->getTime(), ping->getTimeRcvd());
-		} else {
-			ping->setPong();
-			send(ping);
-			flush();
-		}
-		delete ping;
-	}
-	*/
 };
 
 // =====================================================

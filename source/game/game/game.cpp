@@ -354,7 +354,7 @@ void Game::update() {
 
 		try { // Commander
 			commander.updateNetwork();
-		} catch (SocketException e) {
+		} catch (runtime_error e) {
 			LOG_NETWORK(e.what());
 			displayError(e);
 			return;
@@ -389,7 +389,7 @@ void Game::update() {
 	}
 }
 
-void Game::displayError(SocketException &e) {
+void Game::displayError(runtime_error &e) {
 	Lang &lang = Lang::getInstance();
 	paused = true;
 	stringstream errmsg;

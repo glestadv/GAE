@@ -129,6 +129,9 @@ void ClientInterface::updateLobby() {
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {
+	//DEBUG
+	static int commandsReceived = 0;
+
 	// NETWORK: this method is very different
 	while (true) {
 		//wait for the next message
@@ -143,10 +146,23 @@ void ClientInterface::updateKeyframe(int frameCount) {
 			while (!receiveMessage(&cmdList)) {
 				sleep(waitSleepTime);
 			}
+			
+			if (cmdList.getTotalB4This() != commandsReceived) {
+				stringstream ss;
+				ss << "ERROR: Server claims to have sent " << cmdList.getTotalB4This() << " commands in total, "
+					<< "but I have received " << commandsReceived;
+				LOG_NETWORK( ss.str() );
+			}
+
 			//check that we are in the right frame
 			if (cmdList.getFrameCount() != frameCount) {
-				throw runtime_error("Network synchronization error, frame counts do not match");
+				stringstream ss;
+				ss << "Network synchronization error, my frame count == " << frameCount
+					<< ", server frame count == " << cmdList.getFrameCount();
+				LOG_NETWORK( ss.str() );
+				throw runtime_error(ss.str());
 			}
+
 			// give all commands
 			if (cmdList.getCommandCount()) {
 				/*LOG_NETWORK( 
@@ -156,6 +172,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 				);*/
 				for (int i= 0; i < cmdList.getCommandCount(); ++i) {
 					pendingCommands.push_back(*cmdList.getCommand(i));
+					++commandsReceived;
 					/*const NetworkCommand * const &cmd = cmdList.getCommand(i);
 					const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
 					LOG_NETWORK( 
@@ -188,7 +205,7 @@ void ClientInterface::syncAiSeeds(int aiCount, int *seeds) {
 	Chrono chrono;
 	chrono.start();
 	LOG_NETWORK( "Ready, waiting for server to send Ai random number seeds." );
-	//wait until we get a ai seed sync message from the server
+	//wait until we get an ai seed sync message from the server
 	while (true) {
 		NetworkMessageType msgType = getNextMessageType();
 		if (msgType == NetworkMessageType::AI_SYNC) {

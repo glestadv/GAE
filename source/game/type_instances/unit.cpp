@@ -125,8 +125,6 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 		, attacked_trigger(false)
 		, lastCommandUpdate(0)
 		, lastCommanded(0) {
-	Random random;
-
 	this->faction = faction;
 	this->map = map;
 	this->master = master;
@@ -156,8 +154,8 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	targetField = Field::LAND;		// init just to keep it pretty in memory
 	level= NULL;
 
+	Random random(id);
 	float rot = 0.f;
-	random.init(id);
 	rot += random.randRange(-5, 5);
 
 	lastRotation = rot;

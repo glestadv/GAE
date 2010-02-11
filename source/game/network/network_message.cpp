@@ -48,6 +48,20 @@ bool NetworkMessage::receive(Socket* socket, void* data, int dataSize){
 	return false;
 }
 
+bool NetworkMessage::peek(Socket *socket, void *data, int dataSize) {
+	if (socket->getDataToRead() >= dataSize) {
+		if (socket->peek(data, dataSize) == dataSize) {
+			return true;
+		}
+		if (socket && socket->isConnected() /*&&socket->getSocketId() > 0*/) {
+			throw runtime_error("Error receiving NetworkMessage");
+		} else {
+			LOG_NETWORK( "socket disconnected, trying to read message." );
+		}
+	}
+	return false;
+}
+
 void NetworkMessage::send(Socket* socket, const void* data, int dataSize) const {
 	if (socket->send(data, dataSize)!=dataSize) {
 		if (socket /*&& socket->getSocketId() > 0*/) {
@@ -138,10 +152,12 @@ void NetworkMessageAiSeedSync::send(Socket* socket) const{
 //	class NetworkMessageLaunch
 // =====================================================
 
+/** Construct empty message (for clients to receive gamesettings into) */
 NetworkMessageLaunch::NetworkMessageLaunch(){
 	data.messageType=-1; 
 }
 
+/** Construct from GameSettings (for the server to send out) */
 NetworkMessageLaunch::NetworkMessageLaunch(const GameSettings *gameSettings){
 	data.messageType=NetworkMessageType::LAUNCH;
 
@@ -163,6 +179,7 @@ NetworkMessageLaunch::NetworkMessageLaunch(const GameSettings *gameSettings){
 	}
 }
 
+/** Fills in a GameSettings object from this message (for clients) */
 void NetworkMessageLaunch::buildGameSettings(GameSettings *gameSettings) const{
 	gameSettings->setDescription(data.description.getString());
 	gameSettings->setMapPath(data.map.getString());
@@ -210,20 +227,17 @@ bool NetworkMessageCommandList::addCommand(const NetworkCommand* networkCommand)
 }
 
 bool NetworkMessageCommandList::receive(Socket* socket) {
-	// read type, commandCount & frame num first.
-	if (!NetworkMessage::receive(socket, &data, 6)) {
+	// peek type, commandCount & frame num first.
+	if (!NetworkMessage::peek(socket, &data, dataHeaderSize)) {
 		return false;
 	}
-	// read data.commandCount commands.
-	if (data.commandCount) {
-		return NetworkMessage::receive(socket, &data.commands, sizeof(NetworkCommand) * data.commandCount);
-	}
-	return true;
+	// read 'header' (we only had a 'peek' above) + data.commandCount commands.
+	return NetworkMessage::receive(socket, &data, dataHeaderSize + sizeof(NetworkCommand) * data.commandCount);
 }
 
 void NetworkMessageCommandList::send(Socket* socket) const {
 	assert(data.messageType == NetworkMessageType::COMMAND_LIST);
-	NetworkMessage::send(socket, &data, 6 + sizeof(NetworkCommand) * data.commandCount);
+	NetworkMessage::send(socket, &data, dataHeaderSize + sizeof(NetworkCommand) * data.commandCount);
 }
 
 // =====================================================

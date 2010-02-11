@@ -181,7 +181,7 @@ private:
 	Unit *findUnit(int id);
 	char getStringFromFile(ifstream *fileStream, string *str);
 	void saveGame(string name) const;
-	void displayError(SocketException &e);
+	void displayError(runtime_error &e);
 };
 
 }}//end namespace

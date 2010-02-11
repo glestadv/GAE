@@ -167,20 +167,6 @@ void World::init(const XmlNode *worldNode) {
 	alive = true;
 }
 
-void World::initNetworkServer() {
-	// For network games, we want to randomize this so we don't send all updates at
-	// once.
-	int64 now = Chrono::getCurMicros();
-	int64 interval = Config::getInstance().getNetMinFullUpdateInterval() * 1000LL;
-
-	for (Factions::iterator f = factions.begin(); f != factions.end(); ++f) {
-		const Units &units = f->getUnits();
-		for (Units::const_iterator u = units.begin(); u != units.end(); ++u) {
-			(*u)->setLastUpdated(now + random.randRange(0, interval));
-		}
-	}
-}
-
 //load tileset
 bool World::loadTileset() {
 	tileset.load(game.getGameSettings().getTilesetPath());

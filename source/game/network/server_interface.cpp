@@ -110,14 +110,17 @@ void ServerInterface::process(NetworkMessageText &msg, int requestor) {
 }
 
 void ServerInterface::updateKeyframe(int frameCount){
-
+	//DEBUG
+	static int totalCommandsSent = 0;
 	NetworkMessageCommandList cmdList(frameCount);
+	cmdList.setTotalB4This(totalCommandsSent);
 	
 	//build command list, remove commands from requested and add to pending
 	while(!requestedCommands.empty()){
 		if(cmdList.addCommand(&requestedCommands.back())){
 			pendingCommands.push_back(requestedCommands.back());
 			requestedCommands.pop_back();
+			++totalCommandsSent;
 		}
 		else{
 			break;
