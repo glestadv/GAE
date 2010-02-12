@@ -99,7 +99,7 @@ Program::Program(Config &config, int argc, char** argv) :
 		programState(NULL),
 		crashed(false),
 		terminating(false),
-		visible(false),
+		visible(true),
 		keymap(getInput(), "keymap.ini") {
 
 	//set video mode
