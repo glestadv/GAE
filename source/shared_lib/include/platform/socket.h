@@ -98,7 +98,7 @@ private:
 		bool full;
 
 	public:
-		CircularBuffer() : head(0), tail(0), buffer(0), full(false) {
+		CircularBuffer() : buffer(0), tail(0), head(0), full(false) {
 			buffer = new char[buffer_size]; 
 		}
 		~CircularBuffer() { delete [] buffer; }

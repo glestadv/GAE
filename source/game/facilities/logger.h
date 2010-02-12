@@ -101,7 +101,7 @@ public:
 	void clusterInit();
 };
 
-void logNetwork(string &msg);
+void logNetwork(const string &msg);
 
 inline void logNetwork(const char *msg) { 
 	logNetwork(string(msg)); 

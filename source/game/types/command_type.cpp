@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <climits>
 
 #include "upgrade_type.h"
 #include "unit_type.h"

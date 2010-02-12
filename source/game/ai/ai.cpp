@@ -13,6 +13,7 @@
 #include "ai.h"
 
 #include <ctime>
+#include <climits>
 
 #include "ai_interface.h"
 #include "ai_rule.h"
@@ -26,6 +27,7 @@
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;
+
 
 namespace Glest{ namespace Game{
 

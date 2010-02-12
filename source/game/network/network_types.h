@@ -13,6 +13,7 @@
 #define _GLEST_GAME_NETWORKTYPES_H_
 
 #include <string>
+#include <stdexcept>
 
 #include "types.h"
 #include "vec.h"
@@ -31,7 +32,7 @@ class Command;
 //	class NetworkException
 // =====================================================
 
-class NetworkException : public runtime_error {
+class NetworkException : public std::runtime_error {
 public:
 	NetworkException(const string &msg) : runtime_error(msg) {}
 	NetworkException(const char *msg) : runtime_error(msg) {}

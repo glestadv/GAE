@@ -12,6 +12,7 @@
 #include "pch.h"
 
 #include <algorithm>
+#include <climits>
 
 #include "ai_rule.h"
 #include "ai.h"

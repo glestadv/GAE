@@ -86,7 +86,7 @@ void Logger::addXmlError(const string &path, const char *error) {
 void Logger::addNetworkMsg(const string &msg) {
 	stringstream ss;
 	if (World::isConstructed()) {
-		ss	<< "Frame: " << theWorld.getFrameCount(); 
+		ss << "Frame: " << theWorld.getFrameCount(); 
 	} else {
 		ss << "Frame: 0";
 	}
@@ -151,7 +151,7 @@ void Logger::renderLoadingScreen(){
 	renderer.swapBuffers();
 }
 
-void logNetwork(string &msg) {
+void logNetwork(const string &msg) {
 	if (isNetworkServer()) {
 		Logger::getServerLog().addNetworkMsg(msg);
 	} else if (isNetworkClient()) {
