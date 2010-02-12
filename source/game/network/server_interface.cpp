@@ -99,7 +99,13 @@ void ServerInterface::update() {
 	//update all slots
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (slots[i]) {
-			slots[i]->update();
+			try {
+				slots[i]->update();
+			} catch (SocketException e) {
+				const string &name = slots[i]->getName();
+				removeSlot(i);
+				doSendTextMessage("Player " + intToStr(i) + " [" + name + "] diconnected.", -1);
+			}
 		}
 	}
 }

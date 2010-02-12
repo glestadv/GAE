@@ -91,7 +91,7 @@ private:
 	typedef char* char_ptr;
 
 	class CircularBuffer {
-		static const int buffer_size = 16 * 1024;
+		static const int buffer_size = 8 * 1024;
 
 		char_ptr buffer;
 		size_t tail, head;

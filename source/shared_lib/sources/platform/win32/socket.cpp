@@ -115,10 +115,10 @@ bool Socket::CircularBuffer::peekBytes(void *dst, size_t n) {
 		return false;
 	}
 	char_ptr ptr = (char_ptr)dst;
-	if (head + n < buffer_size) {
+	if (tail + n <= buffer_size) {
 		memcpy(ptr, buffer + tail, n);
 	} else {
-		size_t first_n = buffer_size - head;
+		size_t first_n = buffer_size - tail;
 		size_t second_n = n - first_n;
 		memcpy(ptr, buffer + tail, first_n);
 		memcpy(ptr + first_n, buffer, second_n);
@@ -221,10 +221,11 @@ void Socket::readAll() {
 		buffer += r;
 		if (r == n && !limit) {
 			n = buffer.getMaxWrite(limit);
+			assert(n);
 			int r2 = recv(sock, buffer.getWritePos(), n, 0);
 			if (r2 > 0) {
 				buffer += r2;
-			} else if (WSAGetLastError() != WSAEWOULDBLOCK) {
+			} else if (r2 == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) {
 				handleError(__FUNCTION__);
 			}
 			//cout << "Socket::readALL() read " << r + r2 << " bytes.\n";
