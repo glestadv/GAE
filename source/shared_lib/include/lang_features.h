@@ -34,7 +34,7 @@
 #if defined(_MSC_VER) && _MSC_VER < 1300 /* MSVC 2003 */
 #	error This compiler has poor support for modern processors and tends to crash on some \
 		  template structures and (depending upon your service pack) even produces bad code! \
-		  Please upgrade or remove this #error and proceed at your own risk.
+		  Please upgrade to MSVC 2003 or later or remove this #error and proceed at your own risk.
 #endif
 
 /* use newer C++0x features of available */

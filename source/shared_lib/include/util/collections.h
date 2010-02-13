@@ -22,6 +22,8 @@
 #include <stdexcept>
 #include <cassert>
 #include <vector>
+#include <set>
+#include <ctime>
 #include <map>
 //#include <dequeue>
 
@@ -31,13 +33,18 @@
 
 //#include <boost/tuple/tuple.hpp>
 using std::vector;
+using std::set;
 using std::map;
 using std::range_error;
 using Shared::Platform::Chrono;
+using Shared::Util::LifecycleManager;
 //using namespace Shared::Platform;
 //using boost::tuple;
 
-namespace Shared { namespace Util {
+namespace Shared { namespace Util { namespace Playlist {
+
+template<class T> class Playlist;
+template<class T> class SerialPlaylist;
 
 //class Object;
 //class SingleSelection;
@@ -46,37 +53,243 @@ namespace Shared { namespace Util {
 //class RandomSelection
 //class RandomSelectionWithNoRepeat;
 
+// ========================================================
+// class Iterator
+// ========================================================
+
 /**
- * A simple utility class that manages the lifecycle of objects, destroying them all when the
- * LifecycleManager is destroyed.
+ * Interface for an abstract Playlist iterator.  Do not think of this in terms of an STL iterater
+ * as they are quite dissimilar.  This interface exists as an abstract means to work with derived
+ * Iterator types that related to various Playlist types.
  */
-template<class T> class LifecycleManager {
+template<class T> class Iterator {
 private:
-	typedef map<T *, shared_ptr<T> > ManagedItems;
-	ManagedItems managedItems;			/**< Items who's lifecycle is managed by this container. */
+	bool valid;
 
 public:
-	virtual ~LifecycleManager() {}
+	Iterator() : valid(true) {}
+	virtual ~Iterator() {}
 
-	/** Call to have the lifecycle of item managed by this object. */
-	T *add(T *item) {
-		if(managedItems.count(item)) {
-			throw range_error("Item already exists in SelectionContainer!");
-		}
-		managedItems[item] = shared_ptr<T>(item);
-		return item;
+	virtual bool isFinished() = 0;
+	virtual bool isReady() = 0;
+	virtual const T *getNext() = 0;
+	virtual void reset() = 0;
+	bool isValid() const	{return valid;}
+
+protected:
+	void checkValid() const	{if(unlikely(!valid)) throw runtime_error("Iterator invalid.");}
+	void invalidate()		{valid = false;}
+
+	friend class Playlist<T>;
+};
+
+// ========================================================
+// class IteratorImpl
+// ========================================================
+/**
+ * Type-injected, templatized specialization & implementation of Iterator.  Most work is delegated
+ * to the container.
+ */
+template<class PlaylistType, class T = typename PlaylistType::_ValueType>
+class IteratorImpl : public Iterator<T> {
+	friend class Playlist<T>;
+	friend class SerialPlaylist<T>;
+
+private:
+	const PlaylistType &p;
+	typename PlaylistType::_IteratorData data;
+
+public:
+	IteratorImpl(const PlaylistType &p) : p(p) {
+		p.addIterator(this);
 	}
 
-	/**
-	 * Returns a pointer to the shared_ptr object for the supplied item if it exists, NULL
-	 * otherwise.
-	 */
-	const shared_ptr<T> *getSharedPointer(T *item) const {
-		typename ManagedItems::const_iterator i = managedItems.find(item);
-		return i == managedItems.end() ? NULL : i->second;
+	virtual ~IteratorImpl() {
+		p.removeIterator(this);
+	}
+
+	bool isFinished() const	{this->checkValid(); return p.isFinished(this);}
+	bool isReady() const	{this->checkValid(); return p.isReady(this);}
+	const T *getNext()		{this->checkValid(); return p.getNext(this);}
+	void reset()			{this->checkValid(); p.reset(this);}
+};
+
+// ========================================================
+// class Item
+// ========================================================
+
+/**
+ *
+ */
+template<class T> class Item {
+public:
+	enum Type {SINGLE, MANAGED_SINGLE, SERIAL_LIST, RANDOM_LIST};
+
+private:
+	Type type;
+
+public:
+	Item(Type type) : type(type) {}
+	virtual ~Item() {}
+
+	Type getType() const	{return type;}
+	virtual shared_ptr<Iterator<T> > getIterator() = 0;
+};
+
+// ========================================================
+// class SingleItem
+// ========================================================
+
+template<class T> class SingleItem : public Item<T> {
+private:
+	const T &single;
+
+public:
+	SingleItem(const T &single) : single(single), Item<T>(Item<T>::SINGLE) {}
+	virtual ~SingleItem() {}
+};
+
+// ========================================================
+// class Playlist
+// ========================================================
+
+template<class T> class Playlist : Item<T> {
+private:
+	friend class IteratorImpl<Playlist<T> >;
+
+	typedef T _ValueType;
+	LifecycleManager<Item<T> > managedItems;		/**< Manages the lifecycle of objects when requested. */
+	set<Iterator<T> *> iterators;
+
+public:
+	Playlist(typename Item<T>::Type type) : Item<T>(type) {}
+	virtual ~Playlist() {}
+
+	virtual shared_ptr<Iterator<T> > getIterator() = 0;
+
+protected:
+	void addIterator(Iterator<T> *i)		{iterators.insert(i);}
+	void removeIterator(Iterator<T> *i)		{iterators.erase(i);}
+	void manage(Item<T> *item)		{managedItems.add(item);}
+	void unmanage(Item<T> *item)	{managedItems.remove(item);}
+	void invalidateIterators(Iterator<T> *i) {
+		foreach(Iterator<T> *i, iterators) {
+			i->invalidate();
+		}
 	}
 };
 
+// ========================================================
+// class SerialPlaylist
+// ========================================================
+
+/** Class that provides entries serially, returning the next successive selection in the list. */
+template<class T> class SerialPlaylist : public Playlist<T> {
+public:
+	static const size_t INFINITE = static_cast<size_t>(-1);
+
+private:
+	/** SerialPlaylist-specific entry type  */
+	struct Entry {
+		const Item<T> &item;
+		size_t count;
+		Entry(const Item<T> &item, size_t count) : item(item), count(count) {}
+	};
+	typedef vector<Entry> Entries;
+
+	/** SerialPlaylist-specific Iterator data (expected by class template IteratorImpl) */
+	struct _IteratorData {
+		typename Entries::iterator next;
+		size_t repitition;
+	};
+
+	typedef IteratorImpl<SerialPlaylist<T> > IteratorType;
+	friend class IteratorImpl<SerialPlaylist<T> >;
+
+private:
+	Entries entries;					/**< Collection of possible entries. */
+	bool loop;							/**< Rather or not to rewind when the last selection is reached. */
+
+public:
+	SerialPlaylist(bool loop)
+			: entries()
+			, loop(loop) {
+	}
+
+	shared_ptr<Iterator<T> > getIterator() const {
+		return shared_ptr<IteratorType>(new IteratorType(this));
+	}
+
+	/**
+	 * Adds the item to the end of the entries vector.  The item object is expected to
+	 * remain valid for the lifespan of the SerialSelection object.
+	 */
+	void add(const Item<T> &item, size_t reps = 1) {
+		this->invalidateIterators();
+		entries.push_back(Entry(item, reps));
+	}
+
+	/** Add an entry who's lifecycle will be managed by this SerialSelection object. */
+	void addManaged(Item<T> *item, size_t reps = 1) {
+		add(*item, reps);
+		this->manage(item);
+	}
+
+	/*
+	void addSingle(const T &single, size_t reps = 1) {
+		add(SingleSelection<T>(shared_ptr<T>(single)), reps);
+	}
+
+	void addManagedSingle(T *single, size_t reps = 1) {
+		add(ManagedSingleSelection<T>(shared_ptr<T>(single)), reps);
+	}
+*/
+private:
+	// Iterator functions
+	/** Returns true if this object is ready to make a selection. */
+	bool isReady(IteratorType &i) const {
+		return !entries.empty() && (loop || i.data.next != entries.end());
+	}
+
+	bool isFinished(IteratorType &i) const {
+		return isReady(i);
+	}
+
+	/** Rewinds to the first repitition of the first element. */
+	void reset(IteratorType &i) {
+		i.data.next = entries.begin();
+		i.data.repitition = 0;
+	}
+
+	/** Return the next selection in selection or NULL if there are no entries or if the end has been reached and looping is not specified. */
+	const T *getNext(IteratorType &i) const {
+		typename Entries::iterator &next = i.data.next;
+		size_t &repitition = i.data.repitition;
+
+		if(entries.empty()) {
+			return NULL;
+		}
+
+		if(next == entries.end()) {
+			if(!loop) {
+				return NULL;
+			} else {
+				next == entries.begin();
+				repitition = 0;
+			}
+		}
+
+		const T *ret = next->first->getNext();
+		if(next->second != INFINITE && ++repitition == next->second) {
+			++next;
+			repitition = 0;
+		}
+		return ret;
+	}
+};
+
+
+#if 0
 /**
  * Abstract base class for any object that can provide a pointer to a selection, which is an
  * instance of type T.  The term "selection" is used because it can refer to both a collection of
@@ -137,7 +350,7 @@ protected:
 };
 #endif
 
-/** Class that provides selections serially, returning the next successive selection in the list. */
+/** Class that provides entries serially, returning the next successive selection in the list. */
 template<class T> class SerialSelection : public Selection<T> {
 public:
 	typedef pair<const Selection<T> *, size_t> Item;	/**< A Selection and count. */
@@ -147,16 +360,16 @@ public:
 	static const size_t INFINITE = static_cast<size_t>(-1);
 
 private:
-	Selections selections;								/**< Collection of possible selections. */
+	Selections entries;									/**< Collection of possible entries. */
 	LifecycleManager<Selection<T> > managedItems;		/**< Manages the lifecycle of objects when requested. */
 	bool loop;											/**< Rather or not to rewind when the last selection is reached. */
 	mutable size_t repitition;							/**< How many times the current item has been repeated. */
-	mutable typename Selections::iterator next;	/**< The next item. */
+	mutable typename Selections::iterator next;			/**< The next item. */
 	mutable const T *last;
 
 public:
 	SerialSelection(bool loop)
-			: selections()
+			: entries()
 			, managedItems()
 			, loop(loop)
 			, repitition(0)
@@ -250,7 +463,7 @@ protected:
 	mutable const T *last;
 
 public:
-	RandomSelection(int seed)
+	RandomSelection(int seed = time(NULL))
 			: selections()
 			, managedItems()
 			, totalRandomRange(0.f)
@@ -288,7 +501,7 @@ public:
 	const T *getLast() const	{return last;}
 };
 
-#if 0
+
 /**
  * A RandomSelection that prevents repititions based upon the supplied rule set.
  *
@@ -356,15 +569,15 @@ private:
 	mutable History history;
 
 public:
-	RandomSelectionWithNoRepeat(int seed, int64 noRepeatInterval, size_t noRepeatCount = UNLIMITED_NO_REPEAT_COUNT)
+	RandomSelectionWithNoRepeat(int64 noRepeatInterval, size_t noRepeatCount = UNLIMITED_NO_REPEAT_COUNT, int seed = time(NULL))
 			: RandomSelection<T>(seed)
 			, history(noRepeatInterval, noRepeatCount) {
 	}
 
 	bool isReady() const {
-		assert(history.size() <= selections.size());
+		assert(history.size() <= this->selections.size());
 		history.clean();
-		return selections.size() - history.size();
+		return this->selections.size() - history.size();
 	}
 
 	const T *getNext() const {
@@ -372,20 +585,20 @@ public:
 			return NULL;
 		}
 
-		float value = history.getAdjustedValue(random.randRange(0.f, totalRandomRange));
-		typename Selections::const_iterator i = selections.lower_bound(value);
-		assert(i != selections.end()); // this should never happen here unless something is goofed
+		float value = history.getAdjustedValue(this->random.randRange(0.f, this->totalRandomRange));
+		typename RandomSelection<T>::Selections::const_iterator i = this->selections.lower_bound(value);
+		assert(i != this->selections.end()); // this should never happen here unless something is goofed
 		history.add(HistoryItem(i->second->second, i->first));
 
 		const T *ret = i->second->first->getNext();
 		if(ret) {
-			last = ret;
+			this->last = ret;
 		}
 		return ret;
 	}
 };
 #endif
-}} // end namespace
+}}} // end namespace
 
 #endif
 

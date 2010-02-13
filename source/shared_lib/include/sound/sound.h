@@ -39,8 +39,10 @@ private:
 	uint32 bitsPerSample;
 	uint32 size;
 
-public:
+protected:
 	Sound(const string &path);
+
+public:
 	virtual ~Sound() {};
 
 //	const Sound *getSelection() const	{return this;}

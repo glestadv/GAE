@@ -19,7 +19,7 @@
 #include "sound_factory.h"
 #include "config.h"
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 using Shared::Sound::StreamSound;
 using Shared::Sound::StaticSound;
@@ -38,6 +38,8 @@ class GuiProgram;
 
 class SoundRenderer {
 public:
+	//static const string EMPTY
+
 	static const int ambientFade = 6000;
 	static const float audibleDist = 50.f;
 
@@ -60,20 +62,20 @@ public:
 	SoundPlayer &getSoundPlayer() const	{return *soundPlayer;}
 
 	//music
-	void playMusic(const StreamSound &streamSound);
-	void stopMusic(const StreamSound &streamSound);
+	string playMusic(const Sound &sound, const string &playerName = "");
+	void stopMusic(const string &playerName = "");
 
 	//fx
-	void playFx(const StaticSound &staticSound, const Vec3f &soundPos, const Vec3f &camPos);
-	void playFx(const StaticSound &staticSound);
-
-	void playFx(const StaticSound *staticSound, const Vec3f &soundPos, const Vec3f &camPos) {if(staticSound) playFx(*staticSound, soundPos, camPos);}
-	void playFx(const StaticSound *staticSound)												{if(staticSound) playFx(*staticSound);}
+	string playFx(const Sound &sound, const Vec3f &soundPos, const Vec3f &camPos, const string &playerName = "");
+	string playFx(const Sound *sound, const Vec3f &soundPos, const Vec3f &camPos, const string &playerName = "")	{return !sound ? "" : playFx(*sound, soundPos, camPos, playerName);}
+	string playFx(const Sound &sound, const string &playerName = "");
+	string playFx(const Sound *sound, const string &playerName = "")												{return !sound ? "" : playFx(*sound, playerName);}
 
 	//ambient
-	//void playAmbient(const StaticSound &staticSound);
-	void playAmbient(const StreamSound &streamSound);
-	void stopAmbient(const StreamSound &streamSound);
+	string playAmbient(const Sound &sound, const string &playerName = "");
+	void stopAmbient(const string &playerName = "");
+
+	bool isPlaying(const string &playerName);
 
 	//misc
 	void stopAllSounds();

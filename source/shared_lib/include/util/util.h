@@ -19,6 +19,7 @@
 #include <cassert>
 #include <cstring>
 #include <vector>
+#include <map>
 #include <ostream>
 #include <boost/foreach.hpp>
 #define foreach BOOST_FOREACH
@@ -44,9 +45,11 @@ namespace Shared { namespace Xml {
 
 using std::string;
 using std::vector;
+using std::map;
 using std::ostream;
 using std::ostream;
 using std::runtime_error;
+using std::range_error;
 using Shared::Platform::NetworkDataBuffer;
 using Shared::Platform::NetSerializable;
 using Shared::Platform::uint16;
@@ -197,6 +200,50 @@ public:
 	}
 
 	ostream &getOstream() {return o;}
+};
+
+// =====================================================
+// class LifecycleManager
+// =====================================================
+
+/**
+ * A simple utility class that manages the lifecycle of objects, destroying them all when the
+ * LifecycleManager is destroyed.
+ */
+template<class T> class LifecycleManager {
+private:
+	typedef map<T *, shared_ptr<T> > ManagedItems;
+	ManagedItems managedItems;			/**< Items who's lifecycle is managed by this container. */
+
+public:
+	virtual ~LifecycleManager() {}
+
+	/** Call to have the lifecycle of item managed by this object. */
+	T *add(T *item) {
+		if(managedItems.count(item)) {
+			throw range_error("Item already exists in LifecycleManager!");
+		}
+		managedItems[item] = shared_ptr<T>(item);
+		return item;
+	}
+
+	/**
+	 * Destroys and removes the specified item.  This function should be called to destroy (delete)
+	 * an object that it manages -- you should never delete them yourself.
+	 * @returns true if the item was removed, false if it was not found.
+	 */
+	bool remove(T *item) {
+		return managedItems.erase(item);
+	}
+
+	/**
+	 * Returns a pointer to the shared_ptr object for the supplied item if it exists, NULL
+	 * otherwise.
+	 */
+	const shared_ptr<T> *getSharedPointer(T *item) const {
+		typename ManagedItems::const_iterator i = managedItems.find(item);
+		return i == managedItems.end() ? NULL : i->second;
+	}
 };
 
 // =====================================================

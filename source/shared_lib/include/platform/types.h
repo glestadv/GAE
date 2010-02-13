@@ -28,6 +28,17 @@
 #	define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
 #	include <windows.h>
 #endif
+
+#include <boost/version.hpp>
+#if BOOST_VERSION < 103600
+#	error This version of boost is screwed up, please use 1.39 or later.
+#elif BOOST_VERSION < 103900 // The latest version that I know to work with -fno-rtti
+#	error This version of boost may be screwed up.  You should make sure you are compiling with \
+	RTTI disabled (on gcc, use the -fno-rtti flag).  If you have done so and are not getting \
+	errors due to use of RTTI features in boost header files, please edit this code and \
+	appropriately adjust the boost version check.
+#endif
+
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;

@@ -27,6 +27,10 @@ using Shared::Platform::Chrono;
 
 namespace Shared { namespace Sound { namespace OpenAL {
 
+// ========================================================
+// class SoundSource
+// ========================================================
+
 class SoundSource {
 private:
 	ALuint source;
@@ -36,7 +40,6 @@ private:
 public:
 	SoundSource();
 	virtual ~SoundSource();
-
 
 	template<class T> const T *getSound() const	{return reinterpret_cast<const T *>(sound);}
 	float getVolume() const						{return volume;}
@@ -51,6 +54,10 @@ protected:
 	ALenum getFormat(const Sound &sound);
 };
 
+// ========================================================
+// class StaticSoundSource
+// ========================================================
+
 class StaticSoundSource : public SoundSource {
 private:
 	bool bufferAllocated;
@@ -64,6 +71,10 @@ public:
 
 	void play(const StaticSound &sound, float attenuation);
 };
+
+// ========================================================
+// class StreamSoundSource
+// ========================================================
 
 class StreamSoundSource : public SoundSource {
 private:
@@ -96,11 +107,10 @@ private:
 };
 
 // ==============================================================
-//	class SoundPlayerSDL
-//
-///	SoundPlayer implementation using SDL_mixer
+//	class SoundPlayerOpenAL
 // ==============================================================
 
+/** SoundPlayer implementation using OpenAL */
 class SoundPlayerOpenAL : public SoundPlayer {
 private:
 	typedef std::vector<StaticSoundSource> StaticSoundSources;

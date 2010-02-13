@@ -219,6 +219,7 @@ bool StreamSoundSource::fillBufferAndQueue(ALuint buffer) {
 	do {
 		bytesread += soundFileLoader->read(bufferdata + bytesread, STREAMFRAGMENTSIZE - bytesread);
 		if (bytesread < STREAMFRAGMENTSIZE) {
+#error this still needs to be converted to the new playlist schema
 			StreamSound* next = sound->getNext();
 			if (next == 0)
 				next = sound;
