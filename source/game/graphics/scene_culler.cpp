@@ -59,6 +59,16 @@ void SceneCuller::RayInfo::castRay() {
 	}
 }
 
+bool SceneCuller::isInside(Vec2i pos) {
+	if (pos.y >= cellExtrema.min_y && pos.y <= cellExtrema.max_y) {
+		pair<int, int> row = cellExtrema.spans[pos.y - cellExtrema.min_y];
+		if (pos.x >= row.first && pos.x <= row.second) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 /** determine visibility of cells & tiles */
 void SceneCuller::establishScene() {

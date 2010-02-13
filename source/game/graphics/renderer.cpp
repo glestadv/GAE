@@ -1454,6 +1454,18 @@ void Renderer::renderUnits(){
 	modelRenderer->begin(true, true, true, &meshCallbackTeamColor);
 
 	vector<const Unit*> toRender[GameConstants::maxPlayers];
+
+	for (int i=0; i < world->getFactionCount(); ++i) { 
+		for (int j=0; j < world->getFaction(i)->getUnitCount(); ++j) {
+			unit = world->getFaction(i)->getUnit(j);
+			//@todo take unit size into account
+			if (world->toRenderUnit(unit) && culler.isInside(unit->getPos())) {
+				toRender[i].push_back(unit);
+			}
+		}
+	}
+	/*
+	vector<const Unit*> toRender[GameConstants::maxPlayers];
 	set<const Unit*> unitsSeen;
 	for (SceneCuller::iterator it = culler.cell_begin(); it != culler.cell_end(); ++it ) {
 		const Vec2i &pos = *it;
@@ -1466,7 +1478,7 @@ void Renderer::renderUnits(){
 			}
 		}
 	}
-
+	*/
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (toRender[i].empty()) continue;
 

@@ -214,6 +214,7 @@ public:
 		visiblePoly.reserve(10);
 	}
 	void establishScene();
+	bool isInside(Vec2i pos);
 
 	class iterator {
 		friend class SceneCuller;
