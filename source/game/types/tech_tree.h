@@ -59,6 +59,7 @@ private:
 	DamageMultiplierTable damageMultiplierTable;
 
 public:
+	bool preload(const string &dir, const set<string> &factionNames, Checksum &checksum);
     bool load(const string &dir, const set<string> &factionNames, Checksum &checksum);
     ~TechTree();
 

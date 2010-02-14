@@ -147,6 +147,7 @@ public:
 
 	//init & load
 	void init(const XmlNode *worldNode = NULL);
+	void preload(Checksum &checksum);
 	bool loadTileset(Checksum &checksum);
 	bool loadTech(Checksum &checksum);
 	bool loadMap(Checksum &checksum);

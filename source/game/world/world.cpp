@@ -175,6 +175,18 @@ void World::initNetworkServer() {
 	}
 }
 
+// preload tileset and techtree for progressbar
+void World::preload(Checksum &checksum){
+	tileset.count(gs.getTilesetPath());
+	set<string> names;
+	for (int i = 0; i < gs.getFactionCount(); ++i) {
+		if (gs.getFactionTypeName(i).size()) {
+			names.insert(gs.getFactionTypeName(i));
+		}
+	}
+	techTree.preload(gs.getTechPath(), names, checksum);
+}
+
 //load tileset
 bool World::loadTileset(Checksum &checksum) {
 	tileset.load(game.getGameSettings().getTilesetPath(), checksum);

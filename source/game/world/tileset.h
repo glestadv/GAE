@@ -125,6 +125,7 @@ private:
 
 public:
     ~Tileset();
+	void count(const string &dir);
 	void load(const string &dir, Checksum &checksum);
 
     //get

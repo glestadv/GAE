@@ -138,6 +138,9 @@ void Game::load(){
 	else
 		logger.setSubtitle(formatString(scenarioName));
 
+	
+	//preload
+	world.preload(checksum);
 	//tileset
 	if (!world.loadTileset(checksum))
 		throw runtime_error ( "The tileset could not be loaded. See glestadv-error.log" );

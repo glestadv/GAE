@@ -94,6 +94,7 @@ public:
 	void clear();
 
 	void setUnitCount(int count) { totalUnits = count; unitsLoaded = 0; }
+	void addUnitCount(int val) { totalUnits += val; }
 	void unitLoaded();
 
 	void setClusterCount(int count) { totalClusters = count; clustersInit = 0; }

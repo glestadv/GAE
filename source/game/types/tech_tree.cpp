@@ -35,35 +35,9 @@ namespace Glest{ namespace Game{
 // 	class TechTree
 // =====================================================
 
-bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum &checksum){
+bool TechTree::preload(const string &dir, const set<string> &factionNames, Checksum &checksum){
 	Logger &logger = Logger::getInstance();
-
-	string str;
-	vector<string> filenames;
-	logger.add("TechTree: "+ dir, true);
 	bool loadOk = true;
-	//load resources
-	str= dir + "/resources/*.";
-
-	try {
-		findAll(str, filenames);
-		resourceTypes.resize(filenames.size());
-	} 
-	catch(const exception &e) {
-		throw runtime_error("Error loading Resource Types: "+ dir + "\n" + e.what());
-	}
-	if(resourceTypes.size() > 256) {
-		Logger::getErrorLog().addXmlError(str, "Glest Advanced Engine currently only supports 256 resource types.");
-		loadOk = false;
-	} else {
-		for(int i=0; i<filenames.size(); ++i){
-			str=dir+"/resources/"+filenames[i];
-			if ( ! resourceTypes[i].load(str, i, checksum) ) {
-				loadOk = false;
-			}
-			resourceTypeMap[filenames[i]] = &resourceTypes[i];
-		}
-	}
 
 	//load tech tree xml info
 	XmlTree	xmlTree;
@@ -171,17 +145,52 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 			numUnitTypes += factionTypes[i].getUnitTypeCount();
 		}
 	}
-	logger.setUnitCount(numUnitTypes);
+	logger.addUnitCount(numUnitTypes);
+
+	if(resourceTypes.size() > 256) {
+		throw runtime_error("Glest Advanced Engine currently only supports 256 resource types.");
+	}
+	return loadOk;
+}
+
+bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum &checksum){
+	int i;
+	set<string>::const_iterator fn;
+	bool loadOk=true;
+	
+	Logger &logger = Logger::getInstance();
+	logger.add("TechTree: "+ dir, true);
+	
+	//load resources
+	vector<string> filenames;
+	string str= dir + "/resources/*.";
+
+	try {
+		findAll(str, filenames);
+		resourceTypes.resize(filenames.size());
+	} 
+	catch(const exception &e) {
+		throw runtime_error("Error loading Resource Types: "+ dir + "\n" + e.what());
+	}
+	if(resourceTypes.size() > 256) {
+		Logger::getErrorLog().addXmlError(str, "Glest Advanced Engine currently only supports 256 resource types.");
+		loadOk = false;
+	} else {
+		for(i=0; i<filenames.size(); ++i){
+			str=dir+"/resources/"+filenames[i];
+			if ( ! resourceTypes[i].load(str, i, checksum) ) {
+				loadOk = false;
+			}
+			resourceTypeMap[filenames[i]] = &resourceTypes[i];
+		}
+	}
+
 	for (i = 0, fn = factionNames.begin(); fn != factionNames.end(); ++fn, ++i) {
 		if (!factionTypes[i].load(dir + "/factions/" + *fn, this, checksum)) {
 			loadOk = false;
 		} else {
 			factionTypeMap[*fn] = &factionTypes[i];
 		}
-	}
-
-	if(resourceTypes.size() > 256) {
-		throw runtime_error("Glest Advanced Engine currently only supports 256 resource types.");
 	}
 	return loadOk;
 }

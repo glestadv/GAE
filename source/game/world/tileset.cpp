@@ -91,6 +91,11 @@ void AmbientSounds::load(const string &dir, const XmlNode *xmlNode){
 // 	class Tileset
 // =====================================================
 
+void Tileset::count(const string &dir){
+	Logger &logger = Logger::getInstance();
+	logger.setUnitCount(objCount);
+}
+
 void Tileset::load(const string &dir, Checksum &checksum){
 	random.init(time(NULL));
 	string path= dir+"/"+basename(dir)+".xml";
@@ -122,6 +127,7 @@ void Tileset::load(const string &dir, Checksum &checksum){
 			}
 		}
 
+		Logger &logger = Logger::getInstance();
 		//object models
 		const XmlNode *objectsNode= tilesetNode->getChild("objects");
 		for(int i=0; i<objCount; ++i){
@@ -133,6 +139,8 @@ void Tileset::load(const string &dir, Checksum &checksum){
 				const XmlAttribute *pathAttribute= modelNode->getAttribute("path");
 				objectTypes[i].loadModel(dir +"/"+ pathAttribute->getRestrictedValue());
 			}
+			logger.unitLoaded();
+			logger.renderLoadingScreen();
 		}
 
 		//ambient sounds
