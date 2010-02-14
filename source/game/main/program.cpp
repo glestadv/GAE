@@ -45,6 +45,12 @@ namespace Glest { namespace Game {
 
 Program::CrashProgramState::CrashProgramState(Program &program, const exception *e) :
 		ProgramState(program) {
+	try { 
+		Renderer::getInstance().saveScreen("glestadv-crash.tga");
+	} catch(runtime_error &e) {
+		printf("%s", e.what());
+	}
+
 	msgBox.init("", "Exit");
 	if(e) {
 		fprintf(stderr, "%s\n", e->what());

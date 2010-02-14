@@ -23,6 +23,7 @@
 #include "game_util.h"
 #include "platform_util.h"
 #include "platform_main.h"
+#include "renderer.h"
 
 using namespace std;
 using namespace Shared::Platform;
@@ -37,6 +38,12 @@ namespace Glest{ namespace Game{
 class ExceptionHandler: public PlatformExceptionHandler {
 public:
 	virtual void log(const char *description, void *address, const char **backtrace, size_t count, const exception *e) {
+		try { 
+			Renderer::getInstance().saveScreen("glestadv-crash.tga");
+		} catch(runtime_error &e) {
+			printf("%s", e.what());
+		}
+
 		bool closeme = true;
 		FILE *f = fopen("gae-crash.txt", "at");
 		if(!f) {
