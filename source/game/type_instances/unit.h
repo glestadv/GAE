@@ -26,6 +26,8 @@
 #include "entity.h"
 #include "timer.h"
 
+#define UNIT_LOG(x) {}
+
 namespace Glest { namespace Game {
 
 using Shared::Graphics::ParticleSystem;

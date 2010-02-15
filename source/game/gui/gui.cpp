@@ -578,7 +578,9 @@ void Gui::giveDefaultOrders(const Vec2i &targetPos, Unit *targetUnit) {
 	addOrdersResultToConsole(activeCommandClass, result);
 	if(result == CommandResult::SUCCESS || result == CommandResult::SOME_FAILED) {
 		posObjWorld = targetPos;
-		mouse3d.show(targetPos);
+		if (!targetUnit) {
+			mouse3d.show(targetPos);
+		}
 
 		if(random.randRange(0, 1)==0){
 			SoundRenderer::getInstance().playFx(
@@ -633,8 +635,9 @@ void Gui::giveTwoClickOrders(const Vec2i &targetPos, Unit *targetUnit) {
 	addOrdersResultToConsole(activeCommandClass, result);
 
 	if(result == CommandResult::SUCCESS || result == CommandResult::SOME_FAILED) {
-		mouse3d.show(targetPos);
-
+		if (!targetUnit) {
+			mouse3d.show(targetPos);
+		}
 		if(random.randRange(0, 1) == 0) {
 			SoundRenderer::getInstance().playFx(
 				selection.getFrontUnit()->getType()->getCommandSound(),

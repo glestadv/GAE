@@ -55,7 +55,6 @@ void SceneCuller::RayInfo::castRay() {
 		// wrong, but we're about to discard that anyway.
 		Vec3f p = line.origin + line.magnitude * 1.f;
 		last_intersect = Vec2f(p.x, p.z);
-		
 	}
 }
 

@@ -180,12 +180,12 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 	}
 	// calculate and cache skill progress here.	
 	unit->preProcessSkill();
-	/*if ( unit->anyCommand() ) {		
-		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " updating command "
+
+	/*if ( unit->anyCommand() ) {
+		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " updating command "
 			+ CommandClassNames[unit->getCurrCommand()->getType()->getClass()] );	
-		} else {
-			LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " has no command!" );
-		}
+	} else {
+		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " has no command!" );
 	}*/
 }
 
@@ -312,7 +312,7 @@ void UnitUpdater::updateStop(Unit *unit) {
 	// if we have another command then stop sitting on your ass
 	if (unit->getCommands().size() > 1 && unit->getCommands().front()->getType()->getClass() == CommandClass::STOP) {
 		unit->finishCommand();
-		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " cancelling stop" );
+		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " cancelling stop" );
 		return;
 	}
 
@@ -358,9 +358,9 @@ void UnitUpdater::updateMove(Unit *unit) {
 		case TravelState::MOVING:
 			unit->setCurrSkill(mct->getMoveSkillType());
 			unit->face(unit->getNextPos());
-			LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) 
-				+ " updating move "  + "Unit is at " + Vec2iToStr(unit->getPos()) 
-				+ " now moving into " + Vec2iToStr(unit->getNextPos()) );
+			//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) 
+			//	+ " updating move "  + "Unit is at " + Vec2iToStr(unit->getPos()) 
+			//	+ " now moving into " + Vec2iToStr(unit->getNextPos()) );
 			break;
 		case TravelState::BLOCKED:
 			if(unit->getPath()->isBlocked() && !command->getUnit()){

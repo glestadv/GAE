@@ -181,7 +181,7 @@ private:
 		int min_x, max_x;
 		vector< pair<int,int> > spans;
 
-		Rect2i getBounds() const { return Rect2i(min_x, min_y, max_x, max_y); }
+		Rect2i getBounds() const { return Rect2i(min_x - 1, min_y - 1, max_x + 1, max_y + 1); }
 		void reset(int minY, int maxY);
 		void invalidate() { min_y = max_y = min_x = max_x = 0;  }
 

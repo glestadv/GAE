@@ -29,7 +29,6 @@
 
 #include "leak_dumper.h"
 
-
 using namespace Shared::Graphics;
 using namespace Shared::Util;
 
@@ -165,7 +164,7 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	loadType = NULL;
 	currSkill = getType()->getFirstStOfClass(SkillClass::STOP);	//starting skill
 //	lastSkill = currSkill;
-	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " constructed at pos(" + intToStr(pos.x) + "," + intToStr(pos.y) + ")" );
+	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " constructed at pos(" + intToStr(pos.x) + "," + intToStr(pos.y) + ")" );
 
 	toBeUndertaken = false;
 //	alive= true;
@@ -647,7 +646,7 @@ const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 /** sets the current skill */
 void Unit::setCurrSkill(const SkillType *currSkill) {
 	assert(currSkill);
-	//LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " skill set => " + SkillClassNames[currSkill->getClass()] );
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " skill set => " + SkillClassNames[currSkill->getClass()] );
 	if (currSkill->getClass() == SkillClass::STOP && this->currSkill->getClass() == SkillClass::STOP) {
 		return;
 	}
@@ -732,7 +731,7 @@ const CommandType *Unit::getFirstAvailableCt(CommandClass commandClass) const {
   */
 CommandResult Unit::giveCommand(Command *command) {
 	const CommandType *ct = command->getType();
-	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " command given: " + CommandClassNames[command->getType()->getClass()] );
+	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " command given: " + CommandClassNames[command->getType()->getClass()] );
 	if(ct->getClass() == CommandClass::SET_MEETING_POINT) {
 		if(command->isQueue() && !commands.empty()) {
 			commands.push_back(command);
@@ -810,7 +809,7 @@ CommandResult Unit::giveCommand(Command *command) {
   * @return the command now at the head of the queue (the new current command) */
 Command *Unit::popCommand() {
 	//pop front
-	//LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
 	//	+ CommandClassNames[commands.front()->getType()->getClass()] + " command popped." );
 	delete commands.front();
 	commands.erase(commands.begin());
@@ -826,7 +825,7 @@ Command *Unit::popCommand() {
 		command = commands.empty() ? NULL : commands.front();
 	}
 	//if ( command ) {
-	//	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
+	//	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
 	//		+ CommandClassNames[commands.front()->getType()->getClass()] + " command now front of queue." );
 	//}
 	return command;
@@ -839,7 +838,7 @@ CommandResult Unit::finishCommand() {
 	if(commands.empty()) {
 		return CommandResult::FAIL_UNDEFINED;
 	}
-	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
+	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
 		+ CommandClassNames[commands.front()->getType()->getClass()] + " command finished." );
 
 	Command *command = popCommand();
@@ -865,7 +864,7 @@ CommandResult Unit::cancelCommand() {
 	if(commands.empty()){
 		return CommandResult::FAIL_UNDEFINED;
 	}
-	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " queued " 
+	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " queued " 
 		+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
 
 	//undo command
@@ -887,7 +886,7 @@ CommandResult Unit::cancelCurrCommand() {
 	if(commands.empty()) {
 		return CommandResult::FAIL_UNDEFINED;
 	}
-	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " current " 
+	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " current " 
 		+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
 
 	//undo command
@@ -904,7 +903,7 @@ CommandResult Unit::cancelCurrCommand() {
   * @param startingUnit true if this is a starting unit.
   */
 void Unit::create(bool startingUnit) {
-	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " created." );
+	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " created." );
 	faction->add(this);
 	lastPos.x = lastPos.y = -1;
 	map->putUnitCells(this, pos);
@@ -917,7 +916,7 @@ void Unit::create(bool startingUnit) {
 /** Give a unit life. Called when a unit becomes 'operative'
   */
 void Unit::born(){
-	LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " born." );
+	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " born." );
 	faction->addStore(type);
 	faction->applyStaticProduction(type);
 	setCurrSkill(SkillClass::STOP);
@@ -1049,11 +1048,11 @@ void Unit::preProcessSkill() {
 	int frames = 1.0000001f / progressSpeed;
 	int end = theWorld.getFrameCount() + frames + 1;
 	/*if ( !commands.empty() ) {
-		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
+		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
 			+ CommandClassNames[commands.front()->getType()->getClass()] + " command, commencing "
 			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
 	} else {
-		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating no command, commencing "
+		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating no command, commencing "
 			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
 	}*/
 	nextCommandUpdate = end;
@@ -1075,7 +1074,7 @@ bool Unit::update() {
 	animProgress += nextUpdateFrames * animProgressSpeed;
 	nextUpdateFrames = 1.f;
 
-	//LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
 	//	+ SkillClassNames[currSkill->getClass()] + ", progress:" + floatToStr(progress) );
 
 	//update target

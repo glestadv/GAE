@@ -39,9 +39,6 @@
 #	define CONSOLE_LOG(x) {}
 #endif
 
-#define ASTAR_LOWLEVEL		aStar<PosGoal,MoveCost,DiagonalDistance>
-#define ASTAR_HIERARCHICAL	aStar<TransitionGoal,TransitionCost,TransitionHeuristic>
-
 using namespace std;
 using namespace Shared::Graphics;
 using namespace Shared::Util;
@@ -192,7 +189,7 @@ float RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const
 	DiagonalDistance heuristic(dest);
 	nsgSearchEngine->setStart(start, heuristic(start));
 
-	AStarResult r = nsgSearchEngine->ASTAR_LOWLEVEL(PosGoal(dest), moveCost, heuristic);
+	AStarResult r = nsgSearchEngine->aStar(PosGoal(dest), moveCost, heuristic);
 	if (r == AStarResult::COMPLETE && nsgSearchEngine->getGoalPos() == dest) {
 		return nsgSearchEngine->getCostTo(dest);
 	}
@@ -286,14 +283,13 @@ HAAStarResult RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &des
 HAAStarResult RoutePlanner::findWaypointPath(Unit *unit, const Vec2i &dest, WaypointPath &waypoints) {
 	TransitionGoal goal;
 	HAAStarResult setupResult = setupHierarchicalSearch(unit, dest, goal);
+	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 	if (setupResult == HAAStarResult::FAILURE) {
-		GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 		return HAAStarResult::FAILURE;
 	}
-	GridNeighbours::setSearchSpace(SearchSpace::CELLMAP);
 	TransitionCost cost(unit->getCurrField(), unit->getSize());
 	TransitionHeuristic heuristic(dest);
-	AStarResult res = tSearchEngine->ASTAR_HIERARCHICAL(goal,cost,heuristic);
+	AStarResult res = tSearchEngine->aStar(goal,cost,heuristic);
 	if (res == AStarResult::COMPLETE) {
 		WaypointPath &wpPath = *unit->getWaypointPath();
 		assert(wpPath.empty());
@@ -322,7 +318,7 @@ bool RoutePlanner::refinePath(Unit *unit) {
 	PosGoal posGoal(destPos);
 
 	nsgSearchEngine->setStart(startPos, dd(startPos));
-	AStarResult res = nsgSearchEngine->ASTAR_LOWLEVEL(posGoal, cost, dd);
+	AStarResult res = nsgSearchEngine->aStar(posGoal, cost, dd);
 	if (res != AStarResult::COMPLETE) {
 		return false;
 	}
@@ -476,7 +472,7 @@ TravelState RoutePlanner::findAerialPath(Unit *unit, const Vec2i &targetPos) {
 	nsgSearchEngine->setStart(unit->getPos(), dd(unit->getPos()));
 
 	aMap->annotateLocal(unit);
-	AStarResult res = nsgSearchEngine->ASTAR_LOWLEVEL(goal, cost, dd);
+	AStarResult res = nsgSearchEngine->aStar(goal, cost, dd);
 	aMap->clearLocalAnnotations(unit);
 	if (res == AStarResult::COMPLETE || res == AStarResult::NODE_LIMIT) {
 		Vec2i pos = nsgSearchEngine->getGoalPos();
@@ -590,7 +586,7 @@ TravelState RoutePlanner::customGoalSearch(PMap1Goal &goal, Unit *unit, const Ve
 	AStarResult r;
 	AnnotatedMap *aMap = world->getCartographer()->getMasterMap();
 	aMap->annotateLocal(unit);
-	r = nsgSearchEngine->aStar<PMap1Goal,MoveCost,DiagonalDistance>(goal, moveCost, heuristic);
+	r = nsgSearchEngine->aStar(goal, moveCost, heuristic);
 	aMap->clearLocalAnnotations(unit);
 	if (r == AStarResult::COMPLETE) {
 		Vec2i pos = nsgSearchEngine->getGoalPos();
@@ -741,7 +737,7 @@ TravelState RoutePlanner::doFullLowLevelAStar(Unit *unit, const Vec2i &dest) {
 	PosGoal goal(target);
 	se->setNodeLimit(-1);
 	se->setStart(unit->getPos(), dd(unit->getPos()));
-	AStarResult res = se->ASTAR_LOWLEVEL(goal,cost,dd);
+	AStarResult res = se->aStar(goal,cost,dd);
 	list<Vec2i>::iterator it;
 	IF_DEBUG_TEXTURES ( 
 		list<Vec2i> *nodes = NULL;
