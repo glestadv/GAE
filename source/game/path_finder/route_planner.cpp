@@ -33,7 +33,9 @@
 #	include "debug_renderer.h"
 #endif
 
-#ifndef NDEBUG
+//#define PATHFINDER_DEBUG_MESSAGES
+
+#ifdef PATHFINDER_DEBUG_MESSAGES
 #	define CONSOLE_LOG(x) {theConsole.addLine(x); theLogger.add(x);}
 #else
 #	define CONSOLE_LOG(x) {}
@@ -540,7 +542,7 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 			theConsole.addLine("Can not reach destination.");
 		}
 		return TravelState::IMPOSSIBLE;
-	} else if ( res == HAAStarResult::START_TRAP) {
+	} else if (res == HAAStarResult::START_TRAP) {
 		return TravelState::BLOCKED;
 	}
 
@@ -558,6 +560,7 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 			CONSOLE_LOG( "refinePath failed. [fresh path]" )
 			aMap->clearLocalAnnotations(unit);
 			path.incBlockCount();
+			CONSOLE_LOG( "   blockCount = " + intToStr(path.getBlockCount()) )
 			return TravelState::BLOCKED;
 		}
 	}

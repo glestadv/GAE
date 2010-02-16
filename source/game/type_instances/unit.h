@@ -102,6 +102,8 @@ public:
 
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
+
+	int getBlockCount() const { return blockCount; }
 };
 
 class WaypointPath : public list<Vec2i> {

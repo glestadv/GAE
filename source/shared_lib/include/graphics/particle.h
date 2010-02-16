@@ -249,7 +249,6 @@ protected:
 	enum State {
 		sPause,		// No updates
 		sPlay,
-		sPlayLast,	// new particles this update, then sFade
 		sFade		// No new particles
 	};
 

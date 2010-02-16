@@ -46,3 +46,10 @@ end
 function showWestEdges(x, y) 
 	debugSet("TransitionEdges="..x..","..y..":".."west");
 end
+
+function magic_cheat(fNdx)
+	giveResource('gold', fNdx, 1000);
+	createUnit('energy_source', fNdx, startLocation(fNdx));
+	createUnit('energy_source', fNdx, startLocation(fNdx));
+	for i=1, 10 do createUnit('initiate', fNdx, startLocation(fNdx)); end
+end

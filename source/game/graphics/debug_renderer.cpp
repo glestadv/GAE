@@ -123,7 +123,7 @@ void DebugRenderer::init() {
 
 	_load_debug_tex(GridTextureCallback::tex, "data/core/misc_textures/grid.bmp");
 
-	resourceMapOverlay = storeMapOverlay = gridTextures = true;
+	AAStarTextures = HAAStarOverlay = true;
 	PathFinderTextureCallBack::debugField = Field::LAND;
 
 	ResourceMapOverlay::rt = NULL;

@@ -204,10 +204,6 @@ void ParticleSystem::update() {
 				initParticle(p, i);
 			}
 		}
-
-		if (state == sPlayLast) {
-			state = sFade;
-		}
 	}
 }
 
@@ -474,15 +470,12 @@ void ProjectileParticleSystem::link(SplashParticleSystem *particleSystem) {
 }
 
 void ProjectileParticleSystem::update() {
-
 	if (state == sPlay) {
 		if (target) {
 			endPos = target->getCurrVector();
 		}
 		lastPos = pos;
 
-		Vec3f targetVector = endPos - startPos;
-		Vec3f currentVector = flatPos - startPos;
 		Vec3f flatVector;
 
 		if (trajectory == tRandom) {
@@ -509,29 +502,26 @@ void ProjectileParticleSystem::update() {
 		}
 
 		flatPos += flatVector;
-		if (endPos.dist(flatPos) <= flatVector.length() || endPos.dist(pos) > endPos.dist(lastPos)) {
-			pos = endPos;
-			state = sPlayLast;
-			model = NULL;
-		} else {
+		Vec3f targetVector = endPos - startPos;
+		Vec3f currentVector = flatPos - startPos;
 
-			// ratio
-			float t = clamp(currentVector.length() / targetVector.length(), 0.0f, 1.0f);
+		// ratio
+		float t = clamp(currentVector.length() / targetVector.length(), 0.0f, 1.0f);
 
-			// trajectory
-			switch (trajectory) {
+		// trajectory
+		switch (trajectory) {
 			case tLinear:
 				pos = flatPos;
 				break;
 
 			case tParabolic: {
-				float scaledT = 2.0f * (t - 0.5f);
-				float paraboleY = (1.0f - scaledT * scaledT) * trajectoryScale;
+					float scaledT = 2.0f * (t - 0.5f);
+					float paraboleY = (1.0f - scaledT * scaledT) * trajectoryScale;
 
-				pos = flatPos;
-				pos.y += paraboleY;
-			}
-			break;
+					pos = flatPos;
+					pos.y += paraboleY;
+				}
+				break;
 
 			case tSpiral:
 				pos = flatPos;
@@ -551,25 +541,26 @@ void ProjectileParticleSystem::update() {
 
 			default:
 				assert(false);
-			}
-		}
-
-		direction = pos - lastPos;
-		direction.normalize();
-
-		//arrive destination
-		if (state == sPlayLast) {
-			if (particleObserver) {
-				particleObserver->update(this);
-			}
-
-			if (nextParticleSystem) {
-				nextParticleSystem->setState(sPlay);
-				nextParticleSystem->setPos(endPos);
-			}
 		}
 	}
 
+	direction = pos - lastPos;
+	direction.normalize();
+
+	//arrive destination
+	if (flatPos.dist(endPos) < 0.5f) {
+		state = sFade;
+		model = NULL;
+
+		if (particleObserver) {
+			particleObserver->update(this);
+		}
+
+		if (nextParticleSystem) {
+			nextParticleSystem->setState(sPlay);
+			nextParticleSystem->setPos(endPos);
+		}
+	}
 	ParticleSystem::update();
 }
 

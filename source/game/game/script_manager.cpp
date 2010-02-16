@@ -407,6 +407,10 @@ void ScriptManager::init(Game *g) {
 
 	triggerManager.reset(world);
 
+	IF_DEBUG_EDITION(
+		luaScript.luaDoLine("dofile('debug.lua')");
+	)
+
 	if ( !scenario ) {
 		return;
 	}

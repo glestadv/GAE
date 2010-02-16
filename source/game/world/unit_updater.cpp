@@ -12,10 +12,6 @@
 #include "pch.h"
 #include "unit_updater.h"
 
-#include <algorithm>
-#include <cassert>
-#include <map>
-
 #include "sound.h"
 #include "upgrade.h"
 #include "unit.h"
@@ -127,7 +123,8 @@ void UnitUpdater::updateUnit(Unit *unit) {
 			world->moveUnitCells(unit);
 
 			//play water sound
-			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() && unit->getCurrField() == Field::LAND) {
+			if (map->getCell(unit->getPos())->getHeight() < map->getWaterLevel() 
+			&& unit->getCurrField() == Field::LAND) {
 				soundRenderer.playFx(CoreData::getInstance().getWaterSound());
 			}
 		}
@@ -171,7 +168,8 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 		const UnitType *ut = unit->getType();
 		unit->setCurrSkill(SkillClass::STOP);
 		if (unit->getMaster() && ut->hasCommandClass(CommandClass::GUARD)) {
-			unit->giveCommand(new Command(ut->getFirstCtOfClass(CommandClass::GUARD), CommandFlags(CommandProperties::AUTO), unit->getMaster()));
+			unit->giveCommand(new Command(ut->getFirstCtOfClass(CommandClass::GUARD), 
+							CommandFlags(CommandProperties::AUTO), unit->getMaster()));
 		} else {
 			if (ut->hasCommandClass(CommandClass::STOP)) {
 				unit->giveCommand(new Command(ut->getFirstCtOfClass(CommandClass::STOP), CommandFlags()));
@@ -193,7 +191,8 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 
 
 Command *UnitUpdater::doAutoAttack(Unit *unit) {
-	if (unit->getType()->hasCommandClass(CommandClass::ATTACK) || unit->getType()->hasCommandClass(CommandClass::ATTACK_STOPPED)) {
+	if (unit->getType()->hasCommandClass(CommandClass::ATTACK) 
+	|| unit->getType()->hasCommandClass(CommandClass::ATTACK_STOPPED)) {
 
 		for (int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
 			const CommandType *ct = unit->getType()->getCommandType(i);
@@ -253,7 +252,7 @@ Command *UnitUpdater::doAutoRepair(Unit *unit) {
 			if (unit->getEp() >= rst->getEpCost() && repairableOnSight(unit, &sighted, rct, rst->isSelfAllowed())) {
 				Command *newCommand;
 				newCommand = new Command(rct, CommandFlags(CommandProperties::QUEUE, CommandProperties::AUTO),
-										 Map::getNearestPos(unit->getPos(), sighted, rst->getMinRange(), rst->getMaxRange()));
+							Map::getNearestPos(unit->getPos(), sighted, rst->getMinRange(), rst->getMaxRange()));
 				newCommand->setPos2(unit->getPos());
 				return newCommand;
 			}
@@ -298,7 +297,8 @@ Command *UnitUpdater::doAutoFlee(Unit *unit) {
 			}
 		}
 		Vec2i escapePos = unit->getPos() * 2 - sighted->getPos();
-		return new Command(unit->getType()->getFirstCtOfClass(CommandClass::MOVE), CommandFlags(CommandProperties::AUTO), escapePos);
+		return new Command(unit->getType()->getFirstCtOfClass(CommandClass::MOVE),
+									CommandFlags(CommandProperties::AUTO), escapePos);
 	}
 	return NULL;
 }
@@ -363,6 +363,7 @@ void UnitUpdater::updateMove(Unit *unit) {
 			//	+ " now moving into " + Vec2iToStr(unit->getNextPos()) );
 			break;
 		case TravelState::BLOCKED:
+			unit->setCurrSkill(SkillClass::STOP);
 			if(unit->getPath()->isBlocked() && !command->getUnit()){
 				unit->finishCommand();
 			}
@@ -445,6 +446,7 @@ bool UnitUpdater::updateAttackGeneric(Unit *unit, Command *command, const Attack
 			unit->face(unit->getNextPos());
 			break;
 		case TravelState::BLOCKED:
+			unit->setCurrSkill(SkillClass::STOP);
 			if (unit->getPath()->isBlocked()) {
 				return true;
 			}
@@ -525,6 +527,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				return;
 
 			case TravelState::BLOCKED:
+				unit->setCurrSkill(SkillClass::STOP);
 				if(unit->getPath()->isBlocked()) {
 					console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
@@ -870,6 +873,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				break;
 
 			case TravelState::BLOCKED:
+				unit->setCurrSkill(SkillClass::STOP);
 				if(unit->getPath()->isBlocked()){
 					unit->setCurrSkill(SkillClass::STOP);
 					unit->finishCommand();
