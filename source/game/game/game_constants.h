@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -92,13 +92,15 @@ namespace Search {
 
 /** The control type of a 'faction' (aka, player)
   * <ul><li><b>CLOSED</b> Slot closed, no faction</li>
+  *		<li><b>CPU_EASY</b> CPU easy player</li>
   *		<li><b>CPU</b> CPU player</li>
   *		<li><b>CPU_ULTRA</b> Cheating CPU player</li>
+  *		<li><b>CPU_MEGA</b> Extreemly cheating CPU player</li>
   *		<li><b>NETWORK</b> Network player</li>
   *		<li><b>HUMAN</b> Local Player</li></ul>
   */
 STRINGY_ENUM( ControlType, 
-					CLOSED, CPU, CPU_ULTRA, NETWORK, HUMAN 
+					CLOSED, CPU_EASY, CPU, CPU_ULTRA, CPU_MEGA, NETWORK, HUMAN 
 			);
 
 /** fields of movement

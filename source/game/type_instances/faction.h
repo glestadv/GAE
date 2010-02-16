@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //				  2008 Daniel Santos <daniel.santos@pobox.com>
 //
 //	You can redistribute this code and/or modify it under
@@ -90,8 +90,11 @@ public:
 	const FactionType *getType() const					{return factionType;}
 	int getIndex() const								{return id;}
 	int getTeam() const									{return teamIndex;}
-	bool getCpuControl() const							{return control == ControlType::CPU_ULTRA || control == ControlType::CPU;}
+	bool getCpuControl() const							{return control == ControlType::CPU_EASY || control == ControlType::CPU_MEGA || control == ControlType::CPU_ULTRA || control == ControlType::CPU;}
 	bool getCpuUltraControl() const						{return control == ControlType::CPU_ULTRA;}
+	bool getCpuEasyControl() const						{return control == ControlType::CPU_EASY;}
+	bool getCpuMegaControl() const						{return control == ControlType::CPU_MEGA;}
+	ControlType getControlType() const					{return control;}
 	Unit *getUnit(int i) const							{assert(units.size() == unitMap.size()); assert(i < units.size()); return units[i];}
 	int getUnitCount() const							{return units.size();}
 	const Units &getUnits() const						{return units;}

@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -201,47 +201,141 @@ void AiRuleAddTasks::execute() {
 
 	//standard tasks
 
+//	//emergency workers
+//	if (workerCount < 4) {
+//		ai->addPriorityTask(new ProduceTask(UnitClass::WORKER));
+//	} else {
+//		if (workerCount < 5) ai->addTask(new ProduceTask(UnitClass::WORKER));
+//		if (warriorCount < 10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+//		if (warriorRatio < 0.20) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+//
+//		//TODO: Check production queue and build buildings that have significant
+//		//production backlogs
+//		if (workerCount > 7 && (ai->isStableBase() || rand->randRange(0, 100) <= (aii->isUltra() ? 20 : 5))) {
+//			if(ai->getNeededUpgrades() && rand->randRange(0, 100) <= (aii->isUltra() ? 90 : 60)) {
+//				ai->addTask(new UpgradeTask());
+//			}
+//			if(ai->getNeededBuildings() && rand->randRange(0, 100) <= (aii->isUltra() ? 50 : 25)) {
+//				ai->addTask(new BuildTask());
+//			}
+//		}
+//
+//		//workers
+//		if (workerCount < 10) ai->addTask(new ProduceTask(UnitClass::WORKER));
+//		if (workerRatio < 0.20) ai->addTask(new ProduceTask(UnitClass::WORKER));
+//		if (workerRatio < 0.30) ai->addTask(new ProduceTask(UnitClass::WORKER));
+//
+//		//warriors
+//		if (warriorRatio < 0.30) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+//		if (workerCount >= 10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+//		if (workerCount >= 15) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+//
+//		ai->updateStatistics();
+//		//buildings
+//		if (ai->getNeededBuildings() || !ai->getNeededUpgrades()) {
+//			//if(buildingCount<6 || buildingRatio<0.20) ai->addTask(new BuildTask());
+//			if (buildingCount < 10 && workerCount > 12) ai->addTask(new BuildTask());
+//		}
+//
+//		//upgrades
+//		if (upgradeCount == 0 && workerCount > 5) ai->addTask(new UpgradeTask());
+//		if (upgradeCount == 1 && workerCount > 10) ai->addTask(new UpgradeTask());
+//		if (upgradeCount == 2 && workerCount > 15) ai->addTask(new UpgradeTask());
+//		//		if (ai->isStableBase()) ai->addTask(new UpgradeTask());
+//
+//
+//
 	//emergency workers
-	if (workerCount < 4) {
+	if(workerCount<4){
 		ai->addPriorityTask(new ProduceTask(UnitClass::WORKER));
-	} else {
-		if (workerCount < 5) ai->addTask(new ProduceTask(UnitClass::WORKER));
-		if (warriorCount < 10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-		if (warriorRatio < 0.20) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-
-		//TODO: Check production queue and build buildings that have significant
-		//production backlogs
-		if (workerCount > 7 && (ai->isStableBase() || rand->randRange(0, 100) <= (aii->isUltra() ? 20 : 5))) {
-			if(ai->getNeededUpgrades() && rand->randRange(0, 100) <= (aii->isUltra() ? 90 : 60)) {
-				ai->addTask(new UpgradeTask());
+	}
+	else{
+		if(ai->getAiInterface()->getControlType()==ControlType::CPU_MEGA)
+		{
+			//workers
+			if(workerCount<5) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			if(workerCount<10) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			if(workerRatio<0.20) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			if(workerRatio<0.30) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			
+			//warriors
+			if(warriorCount<10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(warriorRatio<0.20) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(warriorRatio<0.30) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(workerCount>=10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(workerCount>=15) ai->addTask(new ProduceTask(UnitClass::WARRIOR));			
+			if(warriorCount<ai->getMinWarriors()+2) 
+			{
+				ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+				if( buildingCount>9 )
+				{
+					ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+					ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+				}
+				if( buildingCount>12 )
+				{
+					ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+					ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+				}
 			}
-			if(ai->getNeededBuildings() && rand->randRange(0, 100) <= (aii->isUltra() ? 50 : 25)) {
-				ai->addTask(new BuildTask());
-			}
+			
+			//buildings
+			if(buildingCount<6 || buildingRatio<0.20) ai->addTask(new BuildTask());
+			if(buildingCount<10 && workerCount>12) ai->addTask(new BuildTask());
+			//upgrades
+			if(upgradeCount==0 && workerCount>5) ai->addTask(new UpgradeTask());
+			if(upgradeCount==1 && workerCount>10) ai->addTask(new UpgradeTask());
+			if(upgradeCount==2 && workerCount>15) ai->addTask(new UpgradeTask());
+			if(ai->isStableBase()) ai->addTask(new UpgradeTask());
 		}
-
-		//workers
-		if (workerCount < 10) ai->addTask(new ProduceTask(UnitClass::WORKER));
-		if (workerRatio < 0.20) ai->addTask(new ProduceTask(UnitClass::WORKER));
-		if (workerRatio < 0.30) ai->addTask(new ProduceTask(UnitClass::WORKER));
-
-		//warriors
-		if (warriorRatio < 0.30) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-		if (workerCount >= 10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-		if (workerCount >= 15) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-
-		ai->updateStatistics();
-		//buildings
-		if (ai->getNeededBuildings() || !ai->getNeededUpgrades()) {
-			//if(buildingCount<6 || buildingRatio<0.20) ai->addTask(new BuildTask());
-			if (buildingCount < 10 && workerCount > 12) ai->addTask(new BuildTask());
+		else if(ai->getAiInterface()->getControlType()==ControlType::CPU_EASY)
+		{// Easy CPU
+			//workers
+			if(workerCount<buildingCount+2) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			if(workerCount>5 && workerRatio<0.20) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			
+			//warriors
+			if(warriorCount<10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(warriorRatio<0.20) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(warriorRatio<0.30) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(workerCount>=10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(workerCount>=15) ai->addTask(new ProduceTask(UnitClass::WARRIOR));			
+			
+			//buildings
+			if(buildingCount<6 || buildingRatio<0.20) ai->addTask(new BuildTask());
+			if(buildingCount<10 && ai->isStableBase()) ai->addTask(new BuildTask());
+			
+			//upgrades
+			if(upgradeCount==0 && workerCount>6) ai->addTask(new UpgradeTask());
+			if(upgradeCount==1 && workerCount>7) ai->addTask(new UpgradeTask());
+			if(upgradeCount==2 && workerCount>9) ai->addTask(new UpgradeTask());
+			//if(ai->isStableBase()) ai->addTask(new UpgradeTask());
 		}
-
-		//upgrades
-		if (upgradeCount == 0 && workerCount > 5) ai->addTask(new UpgradeTask());
-		if (upgradeCount == 1 && workerCount > 10) ai->addTask(new UpgradeTask());
-		if (upgradeCount == 2 && workerCount > 15) ai->addTask(new UpgradeTask());
-//		if (ai->isStableBase()) ai->addTask(new UpgradeTask());
+		else
+		{// normal CPU / UltraCPU ...
+			//workers
+			if(workerCount<5) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			if(workerCount<10) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			if(workerRatio<0.20) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			if(workerRatio<0.30) ai->addTask(new ProduceTask(UnitClass::WORKER));
+			
+			//warriors
+			if(warriorCount<10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(warriorRatio<0.20) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(warriorRatio<0.30) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(workerCount>=10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
+			if(workerCount>=15) ai->addTask(new ProduceTask(UnitClass::WARRIOR));			
+			
+			//buildings
+			if(buildingCount<6 || buildingRatio<0.20) ai->addTask(new BuildTask());
+			if(buildingCount<10 && workerCount>12) ai->addTask(new BuildTask());
+			
+			//upgrades
+			if(upgradeCount==0 && workerCount>5) ai->addTask(new UpgradeTask());
+			if(upgradeCount==1 && workerCount>10) ai->addTask(new UpgradeTask());
+			if(upgradeCount==2 && workerCount>15) ai->addTask(new UpgradeTask());
+			if(ai->isStableBase()) ai->addTask(new UpgradeTask());
+		}
 	}
 }
 
@@ -452,9 +546,140 @@ void AiRuleProduce::produceSpecific(const ProduceTask *pt) {
 		}
 
 		//produce from random producer
-		if (!producers.empty()) {
-			int producerIndex = producers[ai->getRandom()->randRange(0, producers.size() - 1)];
-			aiInterface->giveCommand(producerIndex, defCt);
+		if(!producers.empty()){
+			if(aiInterface->getControlType()==ControlType::CPU_MEGA)
+			{// mega cpu trys to balance the commands to the producers
+				int randomstart=ai->getRandom()->randRange(0, producers.size()-1);
+				int lowestCommandCount=1000000;
+				int currentProducerIndex=producers[randomstart];
+				int bestIndex=-1;
+				int besti=0;
+				int currentCommandCount=0;
+//				printf("command sizes: ");
+				for(unsigned int i=randomstart; i<producers.size()+randomstart; i++)
+				{
+					currentProducerIndex=producers[i%(producers.size())];
+//					printf("%d ,",aiInterface->getMyUnit(currentProducerIndex)->getCommandSize());
+					currentCommandCount=aiInterface->getMyUnit(currentProducerIndex)->getCommandSize();
+					if( currentCommandCount==1 &&
+						aiInterface->getMyUnit(currentProducerIndex)->getCurrCommand()->getType()->getClass()==CommandClass::STOP)
+					{// special for non buildings
+						currentCommandCount=0;
+					}
+				    if(lowestCommandCount>currentCommandCount)
+					{
+						lowestCommandCount=aiInterface->getMyUnit(currentProducerIndex)->getCommandSize();
+						bestIndex=currentProducerIndex;
+						besti=i%(producers.size());
+					}
+				}
+				
+//				printf("\ncurrent team=%d  producercount=%d   bestindex=%d  commandsize=%d besti=%d\n",
+//					aiInterface->getMyUnit(currentProducerIndex)->getTeam(),
+//					producers.size(),
+//					bestIndex,
+//					aiInterface->getMyUnit(currentProducerIndex)->getCommandSize(),
+//					besti
+//					);
+				
+				if(	aiInterface->getMyUnit(bestIndex)->getCommandSize()>2)
+				{
+					// maybe we need another producer of this kind if possible!
+					if(aiInterface->reqsOk(aiInterface->getMyUnit(bestIndex)->getType()))
+					{ 
+						if(ai->getCountOfClass(UnitClass::BUILDING)>5)
+							ai->addTask(new BuildTask(aiInterface->getMyUnit(bestIndex)->getType()));
+					}
+					// need to calculte another producer, maybe its better to produce another warrior with another producer 
+					vector<int> backupProducers;
+//					printf("start ----- need to calculate a new producer! \n");
+					// find another producer unit which is free and produce any kind of warrior.
+					//for each unit
+					for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
+						const UnitType *ut= aiInterface->getMyUnit(i)->getType();
+//						printf("unit%d\n",i);
+						//for each command
+						for(int j=0; j<ut->getCommandTypeCount(); ++j){
+							const CommandType *ct= ut->getCommandType(j);
+//							printf("command%d\n",j);
+							//if the command is produce
+							if(ct->getClass()==CommandClass::PRODUCE)
+							{
+								const UnitType *unitType= static_cast<const UnitType*>(ct->getProduced());								
+								if(unitType->hasSkillClass(SkillClass::ATTACK) && !unitType->hasCommandClass(CommandClass::HARVEST) && aiInterface->reqsOk(ct))
+								{//this can produce a warrior
+										backupProducers.push_back(i);
+								} 
+							}
+						}	
+					}
+					if(!backupProducers.empty())
+					{
+//						printf("Number of possible backupproducers %d",backupProducers.size());
+					
+						vector<int> productionCommandIndexes;
+						int randomstart=ai->getRandom()->randRange(0, backupProducers.size()-1);
+						int lowestCommandCount=1000000;
+						int currentProducerIndex=backupProducers[randomstart];
+						int bestIndex=-1;
+						int currentCommandCount=0;
+//						printf("command sizes: ");
+						for(unsigned int i=randomstart; i<backupProducers.size()+randomstart; i++)
+						{
+							currentProducerIndex=backupProducers[i%(backupProducers.size())];
+//							printf("%d ,",aiInterface->getMyUnit(currentProducerIndex)->getCommandSize());
+							currentCommandCount=aiInterface->getMyUnit(currentProducerIndex)->getCommandSize();
+							if( currentCommandCount==1 &&
+								aiInterface->getMyUnit(currentProducerIndex)->getCurrCommand()->getType()->getClass()==CommandClass::STOP)
+							{// special for non buildings
+								currentCommandCount=0;
+							}
+						    if(lowestCommandCount>currentCommandCount)
+							{
+								lowestCommandCount=currentCommandCount;
+								bestIndex=currentProducerIndex;
+								if(lowestCommandCount==0) break;
+							}
+						}
+						// a good producer is found, lets choose a warrior production
+						const UnitType *ut=aiInterface->getMyUnit(bestIndex)->getType();
+						for(int j=0; j<ut->getCommandTypeCount(); ++j){
+							const CommandType *ct= ut->getCommandType(j);
+				
+							//if the command is produce
+							if(ct->getClass()==CommandClass::PRODUCE)
+							{
+								const UnitType *unitType= static_cast<const UnitType*>(ct->getProduced());								
+								if(unitType->hasSkillClass(SkillClass::ATTACK) && !unitType->hasCommandClass(CommandClass::HARVEST) && aiInterface->reqsOk(ct))
+								{//this can produce a warrior
+										productionCommandIndexes.push_back(j);
+								} 
+							}
+						}
+						int commandIndex=productionCommandIndexes[ai->getRandom()->randRange(0, productionCommandIndexes.size()-1)];
+						aiInterface->giveCommand(bestIndex, ut->getCommandType(commandIndex));
+//						printf("\nbestindex=%d\n",bestIndex);
+//						printf("end ----- need to calculate a new producer! \n");
+					}
+					else
+					{// do it like normal CPU
+						aiInterface->giveCommand(bestIndex, defCt);
+					}
+				}
+				else
+				{	
+					if(currentCommandCount==0)
+					{
+						aiInterface->giveCommand(bestIndex, defCt);
+					}
+					aiInterface->giveCommand(bestIndex, defCt);
+				}
+			}
+			else
+			{
+				int producerIndex= producers[ai->getRandom()->randRange(0, producers.size()-1)];
+				aiInterface->giveCommand(producerIndex, defCt);
+			}
 		}
 	}
 }

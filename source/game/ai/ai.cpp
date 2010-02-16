@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -120,6 +120,7 @@ void Ai::init(AiInterface *aiInterface) {
 	startLoc = random.randRange(0, aiInterface->getMapMaxPlayers() - 1);
 	upgradeCount = 0;
 	minWarriors = minMinWarriors;
+	randomMinWarriorsReached= false;
 	baseSeen = false;
 
 	//add ai rules
@@ -481,18 +482,71 @@ void Ai::sendScoutPatrol(){
 	}
 }
 
-void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
 
+
+void Ai::massiveAttack(const Vec2i &pos, Field field, bool ultraAttack){
+	int producerWarriorCount=0;
+	int maxProducerWarriors=random.randRange(1,11);
     for(int i=0; i<aiInterface->getMyUnitCount(); ++i){
+    	bool isWarrior;
         const Unit *unit= aiInterface->getMyUnit(i);
 		const AttackCommandType *act= unit->getType()->getFirstAttackCommand(field==Field::AIR?Zone::AIR:Zone::LAND);
-		bool isWarrior= !unit->getType()->hasCommandClass(CommandClass::HARVEST) && !unit->getType()->hasCommandClass(CommandClass::PRODUCE);
-		bool alreadyAttacking= unit->getCurrSkill()->getClass()==SkillClass::ATTACK;
+		if(act!=NULL && unit->getType()->hasCommandClass(CommandClass::PRODUCE))
+		{
+			producerWarriorCount++;
+		}
+		
+		if(aiInterface->getControlType()==ControlType::CPU_MEGA)
+		{
+			if(producerWarriorCount>maxProducerWarriors)
+			{
+				if(
+					unit->getCommandSize()>0 &&
+					unit->getCurrCommand()->getType()!=NULL && (
+				    unit->getCurrCommand()->getType()->getClass()==CommandClass::BUILD || 
+					unit->getCurrCommand()->getType()->getClass()==CommandClass::MORPH || 
+					unit->getCurrCommand()->getType()->getClass()==CommandClass::PRODUCE
+					)
+				)
+				{
+					isWarrior=false;
+				}
+				else
+				{
+					isWarrior=!unit->getType()->hasCommandClass(CommandClass::HARVEST);
+				}
+			}
+			else
+			{
+				isWarrior= !unit->getType()->hasCommandClass(CommandClass::HARVEST) && !unit->getType()->hasCommandClass(CommandClass::PRODUCE);  
+			}
+		}
+		else
+		{
+			isWarrior= !unit->getType()->hasCommandClass(CommandClass::HARVEST) && !unit->getType()->hasCommandClass(CommandClass::PRODUCE);
+		}
+		
+		
+		bool alreadyAttacking= unit->getCurrSkill()->getClass()==SkillClass::ATTACK; 
 		if(!alreadyAttacking && act!=NULL && (ultraAttack || isWarrior)){
 			aiInterface->giveCommand(i, act, pos);
 		}
     }
-    if(minWarriors<maxMinWarriors){
+
+    if(aiInterface->getControlType()==ControlType::CPU_EASY)
+	{
+		minWarriors+= 1;
+	}
+	else if(aiInterface->getControlType()==ControlType::CPU_MEGA)
+	{
+		minWarriors+= 3;
+		if(minWarriors>maxMinWarriors-1 || randomMinWarriorsReached)
+		{
+			randomMinWarriorsReached=true;
+			minWarriors=random.randRange(maxMinWarriors-10, maxMinWarriors*2);
+		}
+	}
+	else if(minWarriors<maxMinWarriors){
 		minWarriors+= 3;
 	}
 	aiInterface->printLog(2, "Massive attack to pos: "+ intToStr(pos.x)+", "+intToStr(pos.y)+"\n");

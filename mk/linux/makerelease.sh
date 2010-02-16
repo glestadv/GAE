@@ -10,9 +10,10 @@ rm -rf $RELEASEDIR
 mkdir -p $RELEASEDIR
 # copy sources
 pushd "`pwd`/../../source"
-find glest_game/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
+find game/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
 find shared_lib/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
-find glest_map_editor/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
+find map_editor/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
+find test/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
 popd
 AUTOCONFSTUFF="configure.ac autogen.sh Jamrules Jamfile `find mk/jam -name "*.jam"` `find mk/autoconf -name "*.m4" -o -name "config.*" -o -name "*sh"`"
 

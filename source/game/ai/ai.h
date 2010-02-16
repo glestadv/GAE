@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -138,6 +138,7 @@ private:
     AiInterface *aiInterface;
 	AiRules aiRules;
     int startLoc;
+    bool randomMinWarriorsReached;
 	int upgradeCount;
 	int minWarriors;
 	Tasks tasks;
@@ -181,6 +182,7 @@ public:
 		return count < 0 ? 0 : count;
 	}
 	bool isRepairable(const Unit *u) const;
+	int getMinWarriors() {return minWarriors;}
 
 	//tasks
 	void addTask(const Task *task);

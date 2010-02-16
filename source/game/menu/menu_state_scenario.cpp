@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Martiño Figueroa
+//	Copyright (C) 2001-2005 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -228,9 +228,13 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo
 			if (resMultAttrib) {
 				scenarioInfo->resourceMultipliers[i] = resMultAttrib->getFloatValue();
 			} else {
-				if (factionControl == ControlType::CPU_ULTRA) {
+				if (factionControl == ControlType::CPU_MEGA) {
+					scenarioInfo->resourceMultipliers[i] = 4.f;
+				}
+				else if (factionControl == ControlType::CPU_ULTRA) {
 					scenarioInfo->resourceMultipliers[i] = 3.f;
-				} else {
+				} 
+				else {
 					scenarioInfo->resourceMultipliers[i] = 1.f;
 				}
 			}

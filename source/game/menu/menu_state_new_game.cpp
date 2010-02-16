@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Martiño Figueroa
+//	Copyright (C) 2001-2005 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -389,7 +389,11 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings) {
 			}
 			if (ct == ControlType::CPU_ULTRA) {
 				gameSettings->setResourceMultiplier(factionCount, 3.f);
-			} else {
+			}
+			else if (ct == ControlType::CPU_MEGA) {
+				gameSettings->setResourceMultiplier(factionCount, 4.f);
+			}
+			else {
 				gameSettings->setResourceMultiplier(factionCount, 1.f);
 			}
 			gameSettings->setFactionControl(factionCount, ct);

@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -446,6 +446,7 @@ const AttackCommandType *UnitType::getFirstAttackCommand(Zone zone) const{
 	}
 	return NULL;
 }
+
 
 const RepairCommandType *UnitType::getFirstRepairCommand(const UnitType *repaired) const{
 	for(int i=0; i<commandTypes.size(); ++i){

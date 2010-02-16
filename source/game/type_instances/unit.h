@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -397,6 +397,7 @@ public:
 		assert(!commands.empty());
 		return commands.front();
 	}
+	unsigned int getCommandSize() const;
 	CommandResult giveCommand(Command *command);		//give a command
 	CommandResult finishCommand();						//command finished
 	CommandResult cancelCommand();						//cancel command on back of queue

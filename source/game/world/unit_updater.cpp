@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -730,11 +730,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				if (map->isNextTo(unit->getPos(), store)) {
 					//update resources
 					int resourceAmount = unit->getLoadCount();
-					// Just do this all players ???
-					if (unit->getFaction()->getCpuUltraControl()) {
-						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
-						//resourceAmount *= ultraResourceFactor; // Pull from GameSettings
-					}
+					resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
 					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
 					scriptManager->onResourceHarvested();

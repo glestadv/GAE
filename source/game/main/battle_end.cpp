@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -79,11 +79,17 @@ void BattleEnd::render() {
 		string controlString;
 
 		switch (gs.getFactionControl(i)) {
+		case ControlType::CPU_EASY:
+			controlString = lang.get("CpuEasy");
+			break;
 		case ControlType::CPU:
 			controlString = lang.get("Cpu");
 			break;
 		case ControlType::CPU_ULTRA:
 			controlString = lang.get("CpuUltra");
+			break;
+		case ControlType::CPU_MEGA:
+			controlString = lang.get("CpuMega");
 			break;
 		case ControlType::NETWORK:
 			controlString = lang.get("Network");
