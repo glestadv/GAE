@@ -318,6 +318,19 @@ ScriptManager::UnitInfo		ScriptManager::latestCreated,
 
 #define LUA_FUNC(x) luaScript.registerFunction(x, #x)
 
+void ScriptManager::cleanUp() {
+	code = displayText = "";
+	gameOver = false;
+	timers.clear();
+	newTimerQueue.clear();
+	definedEvents.clear();
+	while (!messageQueue.empty()) messageQueue.pop();
+	latestCreated.id = -1;
+	latestCasualty.id = -1;
+	gameOver= false;
+	triggerManager.reset(world);
+}
+
 void ScriptManager::init(Game *g) {
 	game = g;
 	world = game->getWorld();
@@ -326,6 +339,8 @@ void ScriptManager::init(Game *g) {
 	//setup message box
 	messageBox.init("", Lang::getInstance().get("Ok"));
 	messageBox.setEnabled(false);
+
+	cleanUp();
 
 	luaScript.startUp();
 	luaScript.atPanic(panicFunc);
@@ -399,13 +414,6 @@ void ScriptManager::init(Game *g) {
 	LUA_FUNC(setFarClip);
 
 #	endif
-
-	//last created unit
-	latestCreated.id = -1;
-	latestCasualty.id = -1;
-	gameOver= false;
-
-	triggerManager.reset(world);
 
 	IF_DEBUG_EDITION(
 		luaScript.luaDoLine("dofile('debug.lua')");

@@ -261,6 +261,7 @@ private:
 	static World *world;
 
 public:
+	static void cleanUp();
 	static void init(Game *game);
 
 	static void doSomeLua(string &code);
