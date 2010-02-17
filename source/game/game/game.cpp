@@ -678,11 +678,12 @@ void Game::keyDown(const Key &key) {
 
 	//save
 	} else if (cmd == ucMenuSave) {
-		if (!saveBox) {
+		/*if (!saveBox) {
 			Shared::Platform::mkdir("savegames", true);
 			saveBox = new GraphicTextEntryBox();
 			saveBox->init(lang.get("Save"), lang.get("Cancel"), lang.get("SaveGame"), lang.get("Name"));
-		}
+		}*/
+		console.addLine("Save feature disabled: to be enabled in 0.3");
 
 	//group
 	} else if (key.getCode() >= key0 && key.getCode() < key0 + Selection::maxGroups) {
