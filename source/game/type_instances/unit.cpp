@@ -1041,14 +1041,10 @@ void Unit::preProcessSkill() {
 		if (pos.x != nextPos.x && pos.y != nextPos.y) {
 			//if moving in diagonal move slower
 			progressSpeed *= 0.71f;
-			//LOGMOVE("Diagonal.");
-		}// else {
-		//	LOGMOVE("straight.");
-		//}
-
+		}
 		//if moving to a higher cell move slower else move faster
 		float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();
-		float heightFactor = clamp(1.f + heightDiff / 1.25f, 0.2f, 5.f);
+		float heightFactor = clamp(1.f + heightDiff / 5.f, 0.2f, 5.f);
 		progressSpeed *= heightFactor;
 		animProgressSpeed *= heightFactor;
 	}
