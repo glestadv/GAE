@@ -173,7 +173,7 @@ void SceneCuller::getFrustumExtents() {
 			newRays = 0;
 		}
 		for (int i=0; i < newRays; ++i) {
-			float frac = ((float)(i+1)) / ((float)(newRays+1));
+			float frac = float(i+1) / float(newRays+1);
 			rays.insert(it2, RayInfo(*it1, *it2, frac));
 			//RayInfo ray(*it1, *it2, frac);
 			//cout << "interpolated ray: " << ray.line.origin << ", " << ray.line.magnitude << endl;
@@ -186,6 +186,7 @@ void SceneCuller::getFrustumExtents() {
 		// push them out a bit, to avoid jaggies...
 		Vec2f push_dir = it->last_intersect - centreView;
 		push_dir.normalize();
+		push_dir *= 2;
 		in.push_back(it->last_intersect + push_dir);
 	}
 	in.push_back(in.front()); // close poly
