@@ -190,7 +190,7 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	listBoxFogOfWar.init(437, 470 - GameConstants::maxPlayers * 30, 75);
 	listBoxFogOfWar.pushBackItem(lang.get("No"));
 	listBoxFogOfWar.pushBackItem(lang.get("Yes"));
-	listBoxFogOfWar.setSelectedItemIndex(config.getGsFogOfWarEnabled() ? 1 : 0);
+	listBoxFogOfWar.setSelectedItemIndex(1);
 
 	//msgBox = NULL;
 }
@@ -242,7 +242,7 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 	} else if (listBoxRandomize.mouseClick(x, y)) {
 		config.setUiLastRandStartLocs(listBoxRandomize.getSelectedItemIndex());
 	} else if (listBoxFogOfWar.mouseClick(x, y)) {
-		config.setGsFogOfWarEnabled(listBoxFogOfWar.getSelectedItemIndex());
+		//config.setGsFogOfWarEnabled(listBoxFogOfWar.getSelectedItemIndex());
 	} else {
 		for (int i = 0; i < mapInfo.players; ++i) {
 			//ensure thet only 1 human player is present
@@ -380,6 +380,7 @@ void MenuStateNewGame::loadGameSettings(GameSettings *gameSettings) {
 	gameSettings->setDefaultVictoryConditions(true);
 	gameSettings->setDefaultResources(true);
 	gameSettings->setDefaultUnits(true);
+	gameSettings->setFogOfWar(listBoxFogOfWar.getSelectedItemIndex() == 1);
 
 	for (int i = 0; i < mapInfo.players; ++i) {
 		ControlType ct = enum_cast<ControlType>(listBoxControls[i].getSelectedItemIndex());

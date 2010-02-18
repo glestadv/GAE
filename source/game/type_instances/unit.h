@@ -25,6 +25,7 @@
 #include "math_util.h"
 #include "entity.h"
 #include "timer.h"
+#include "logger.h"
 
 namespace Glest { namespace Game {
 
@@ -53,6 +54,9 @@ class Game;
 class World;
 class UnitState;
 
+//#define UNIT_LOG(x) theLogger.add(x)
+#define UNIT_LOG(x) {}
+
 // =====================================================
 // 	class UnitObserver
 // =====================================================
@@ -73,7 +77,7 @@ public:
 // 	class UnitPath
 // =====================================================
 /** Holds the next cells of a Unit movement 
-  * @extends std::list<Shared::Graphics::Vec2i>
+  * @extends std::list<Shared::Math::Vec2i>
   */
 class UnitPath : public list<Vec2i> {
 private:
@@ -81,11 +85,6 @@ private:
 
 private:
 	int blockCount;		/**< number of frames this path has been blocked */
-	int frameRequested, /**< frame this path was requested */
-		frameReturned,	/**< frame this (initial) path was supplied by RoutePlanner */
-		frameValidated,	/**< last frame this path was validated */
-		frameRepaired,  /**< last frame this path was repaired */
-		numRepairs;		/**< number of times this path has been repaired */
 
 public:
 	UnitPath() : blockCount(0) {} /**< Construct path object */

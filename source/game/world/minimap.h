@@ -53,7 +53,7 @@ private:
 
 public:
     void init(int x, int y, const World *world);
-	Minimap();
+	Minimap( bool FoW);
 	~Minimap();
 
 	const Texture2D *getFowTexture() const	{return fowTex;}

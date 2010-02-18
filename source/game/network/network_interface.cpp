@@ -36,18 +36,9 @@ namespace Glest { namespace Game {
 
 const int NetworkInterface::readyWaitTimeout= 60000;	//1 minute
 
-
-void NetworkInterface::send(const NetworkMessage* networkMessage/*, bool flush*/){
+void NetworkInterface::send(const NetworkMessage* networkMessage) {
 	Socket* socket= getSocket();
 	networkMessage->send(socket);
-	/*
-	size_t startBufSize = txbuf.size();
-	msg->writeMsg(txbuf);
-	addDataSent(txbuf.size() - startBufSize);
-	if(flush) {
-		NetworkInterface::flush();
-	}
-	*/
 }
 
 //NETWORK: this is (re)moved
@@ -71,45 +62,9 @@ int NetworkInterface::dataAvailable() {
 	return getSocket()->getDataToRead();
 }
 
-/** returns false if there is still data to be written *
-bool NetworkInterface::flush() {
-	if(txbuf.size()) {
-		txbuf.pop(getSocket()->send(txbuf.data(), txbuf.size()));
-		return !txbuf.size();
-	}
-	return true;
-}
-*/
-
 bool NetworkInterface::receiveMessage(NetworkMessage* networkMessage){
 	Socket* socket= getSocket();
 	return networkMessage->receive(socket);
-
-	/*
-	int bytesReceived;
-	NetworkMessage *m;
-	Socket* socket= getSocket();
-	
-	rxbuf.ensureRoom(32768);
-	while((bytesReceived = socket->receive(rxbuf.data(), rxbuf.room())) > 0) {
-		addDataRecieved(bytesReceived);
-		rxbuf.resize(rxbuf.size() + bytesReceived);
-		while((m = NetworkMessage::readMsg(rxbuf))) {
-
-			// respond immediately to pings
-			if(m->getType() == nmtPing) {
-#ifdef DEBUG_NETWORK
-				pingQ.push_back((NetworkMessagePing*)m);
-#else
-				processPing((NetworkMessagePing*)m);
-#endif
-			} else {
-				q.push_back(m);
-			}
-		}
-		rxbuf.ensureRoom(32768);
-	}
-	*/
 }
 
 void NetworkInterface::setRemoteNames(const string &hostName, const string &playerName) {
@@ -123,45 +78,6 @@ void NetworkInterface::setRemoteNames(const string &hostName, const string &play
 	}
 	description = str.str();
 }
-/*	
-NetworkMessage *NetworkInterface::peek() {
-#ifdef DEBUG_NETWORK
-	receive();
-	
-	int now = Chrono::getCurMillis();
-
-	while(!pingQ.empty()) {
-		NetworkMessagePing *ping = pingQ.front();
-		if(ping->getSimRxTime() < now) {
-			processPing(ping);
-			pingQ.pop_front();
-		} else {
-			break;
-		} 
-	}
-
-	if(!q.empty()) {
-		NetworkMessage *msg = q.front();
-		return msg->getSimRxTime() < now ? msg : NULL;
-	} else {
-		return NULL;
-	}
-#else
-	// more processor, more accurate ping times
-	receive();
-	return q.empty() ? NULL : q.front();
-	
-	// less processor, less accurate ping times
-	/*
-	if(!q.empty()) {
-		return q.front();
-	} else {
-		receive();
-		return q.empty() ? NULL : q.front();
-	}*
-#endif
-}
-*/
 
 // =====================================================
 //	class GameNetworkInterface
@@ -169,6 +85,20 @@ NetworkMessage *NetworkInterface::peek() {
 
 GameNetworkInterface::GameNetworkInterface() {
 	quit = false;
+}
+
+void GameNetworkInterface::requestCommand(Command *command) {
+	Unit *unit = command->getCommandedUnit();
+	
+	if (command->isAuto()) {
+		pendingCommands.push_back(command);
+	}
+
+	if (command->getArchetype() == CommandArchetype::GIVE_COMMAND) {
+		requestedCommands.push_back(NetworkCommand(command));
+	} else if (command->getArchetype() == CommandArchetype::CANCEL_COMMAND) {
+		requestedCommands.push_back(NetworkCommand(nctCancelCommand, unit, Vec2i(-1)));
+	}
 }
 
 void GameNetworkInterface::processTextMessage(NetworkMessageText &msg) {

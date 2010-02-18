@@ -75,7 +75,6 @@ Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame)
 		, paused(false)
 		, noInput(false)
 		, gameOver(false)
-		, renderNetworkStatus(true)
 		, scrollSpeed(config.getUiScrollSpeed())
 		, speed(GameSpeed::NORMAL)
 		, fUpdateLoops(1.f)
@@ -120,7 +119,6 @@ Game::~Game() {
 // ==================== init and load ====================
 
 void Game::load(){
-	//Logger::getInstance().setState(Lang::getInstance().get("Loading"));
 	Logger &logger= Logger::getInstance();
 	string mapName= gameSettings.getMapPath();
 	string tilesetName= gameSettings.getTilesetPath();
@@ -134,24 +132,24 @@ void Game::load(){
 
 	logger.setState(Lang::getInstance().get("Loading"));
 
-	if(scenarioName.empty())
+	if(scenarioName.empty()) {
 		logger.setSubtitle(formatString(mapName)+" - "+formatString(tilesetName)+" - "+formatString(techName));
-	else
+	} else {
 		logger.setSubtitle(formatString(scenarioName));
-
+	}
 	//tileset
-	if (!world.loadTileset())
+	if (!world.loadTileset()) {
 		throw runtime_error ( "The tileset could not be loaded. See glestadv-error.log" );
-
+	}
 	//tech, load before map because of resources
-	if (!world.loadTech())
+	if (!world.loadTech()) {
 		throw runtime_error ( "The techtree could not be loaded. See glestadv-error.log" );
-
+	}
 	//map
 	world.loadMap();
 
 	//scenario
-	if(!scenarioName.empty()){
+	if (!scenarioName.empty()) {
 		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
 		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml");
 	}
@@ -175,25 +173,15 @@ void Game::init() {
 	mainMessageBox.init("", lang.get("Yes"), lang.get("No"));
 	mainMessageBox.setEnabled(false);
 
-#	if NDEBUG && NOT_TESTING_NETWORKING
-	//check fog of war
-	if(!config.getGsFogOfWarEnabled() && networkManager.isNetworkGame() ){
-		throw runtime_error("Can not play online games with fog of war disabled");
-	}
-#	endif
-
-	// (very) minor performance hack
-	renderNetworkStatus = networkManager.isNetworkGame();
-
 	// init world, and place camera
 	commander.init(&world);
 
+	// setup progress bar (used for ClusterMap init)
 	GraphicProgressBar progressBar;
 	progressBar.init(345, 550, 300, 20);
 	logger.setProgressBar(&progressBar);
 
-	world.init(savedGame ? savedGame->getChild("world") : NULL);
-
+	world.init();
 	logger.setProgressBar(NULL);
 
 	gui.init();
@@ -203,12 +191,6 @@ void Game::init() {
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
 	ScriptManager::init(this);
-	
-	/* NETWORK:
-	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
-		gui.load(savedGame->getChild("gui"));
-	}
-	*/
 
 	// create (or receive) random number seeds for AIs
 	int aiCount = 0;
@@ -279,13 +261,11 @@ void Game::init() {
 		logger.add("Starting ambient stream", true);
 		soundRenderer.playAmbient(ambientSounds->getRain());
 	}
-
 	//snow
 	if(tileset->getWeather()==Weather::SNOWY && ambientSounds->isEnabledSnow()){
 		logger.add("Starting ambient stream", true);
 		soundRenderer.playAmbient(ambientSounds->getSnow());
 	}
-
 	// ready ?
 	if (isNetworkGame()) {
 		logger.add("Waiting for network", true);
@@ -294,28 +274,20 @@ void Game::init() {
 		map->doChecksum(checksum);
 		networkManager.getGameNetworkInterface()->doWaitUntilReady(checksum);
 	}
-	
-	// This code should fix the client lag problem, seems to cause the
-	// client to go all 'jittery' though if the server is allowed to drop frames...
-	// currently it is set to -1 (no limit) for both
-	/*if (isNetworkClient()) { // no waiting! must catch up if lagging
-		program.setMaxUpdateBacklog(-1);
-	} else { // else drop frames at will
-		program.setMaxUpdateBacklog(2);
-	}*/
+	// set maximum update timer back log
+	if (!isNetworkGame()) {
+		program.setMaxUpdateBacklog(2); // non-network game, may drop frames
+	} else {
+		program.setMaxUpdateBacklog(-1); // network games must always catch up
+	}
 
 	logger.add("Starting music stream", true);
 	StrSound *gameMusic= world.getThisFaction()->getType()->getMusic();
 	soundRenderer.playMusic(gameMusic);
 
 	logger.add("Launching game");
-	program.resetTimers();
-
-	if ( savedGame ) {
-		delete savedGame;
-		savedGame = NULL;
-	}
 	logger.setLoading(false);
+	program.resetTimers();
 }
 
 
@@ -601,29 +573,8 @@ void Game::keyDown(const Key &key) {
 		return; // key consumed, we're done here
 	}
 	// if ChatManger does not use this key, we keep processing
-	// network status
-	if (isNetworkGame) {
-		switch (cmd) {
-			// on
-			case ucNetworkStatusOn:
-				renderNetworkStatus = true;
-				return;
 
-			// off
-			case ucNetworkStatusOff:
-				renderNetworkStatus = false;
-				return;
-
-			// toggle
-			case ucNetworkStatusToggle:
-				renderNetworkStatus = !renderNetworkStatus;
-				return;
-			default:
-				break;
-		}
-
-		// save screenshot
-	} else if (cmd == ucSaveScreenshot) {
+	if (cmd == ucSaveScreenshot) {
 		Shared::Platform::mkdir("screens", true);
 		int i;
 		const int MAX_SCREENSHOTS = 100;
@@ -834,16 +785,17 @@ void Game::render3d(){
 
 	//init
 	renderer.reset3d();
+	
 	renderer.loadGameCameraMatrix();
 	renderer.computeVisibleArea();
 	renderer.setupLighting();
-
+	
 	//shadow map
 	renderer.renderShadowsToTexture();
-
+	
 	//clear buffers
 	renderer.clearBuffers();
-
+	
 	//surface
 	renderer.renderSurface();
 
@@ -1118,12 +1070,12 @@ void Game::showMessageBox(const string &text, const string &header, bool toggle)
 }
 
 void Game::saveGame(string name) const {
-	XmlNode root("saved-game");
+	/*XmlNode root("saved-game");
 	root.addAttribute("version", "1");
 	gui.save(root.addChild("gui"));
 	gameSettings.save(root.addChild("settings"));
 	world.save(root.addChild("world"));
-	XmlIo::getInstance().save("savegames/" + name + ".sav", &root);
+	XmlIo::getInstance().save("savegames/" + name + ".sav", &root);*/
 }
 
 }}//end namespace

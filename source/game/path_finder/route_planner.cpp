@@ -33,7 +33,7 @@
 #	include "debug_renderer.h"
 #endif
 
-#ifndef NDEBUG
+#if defined(DEBUG)
 #	define CONSOLE_LOG(x) {theConsole.addLine(x); theLogger.add(x);}
 #else
 #	define CONSOLE_LOG(x) {}
@@ -792,7 +792,6 @@ TravelState RoutePlanner::doFullLowLevelAStar(Unit *unit, const Vec2i &dest) {
   * @param finalPos the position unit wishes to be
   * @return finalPos if free and occupyable by unit, else the closest such position, or the unit's 
   * current position if none found
-  * @todo reimplement with Dijkstra search
   */
 Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPos) {
 	//unit data
@@ -807,16 +806,6 @@ Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPo
 	}
 
 	//find nearest pos
-
-	// Local annotate target if visible
-	// set 
-
-	// REPLACE ME!
-	//
-	// Use the new super-dooper SearchEngine, do a Dijkstra search from target, 
-	// with a GoalFunc that returns true if the cell is unoccupid (and clearnce > unit.size).
-	// Now that's efficient... ;-)
-
 	Vec2i nearestPos = unitPos;
 	float nearestDist = unitPos.dist(finalPos);
 	for ( int i = -maxFreeSearchRadius; i <= maxFreeSearchRadius; ++i ) {

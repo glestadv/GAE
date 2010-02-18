@@ -24,6 +24,7 @@
 #include "logger.h"
 #include "timer.h"
 
+#include "game.h"
 #include "world.h"
 
 using namespace std;
@@ -118,6 +119,7 @@ void ClientInterface::updateLobby() {
 				//set the faction index
 				if (gameSettings.getStartLocationIndex(i)==playerIndex) {
 					gameSettings.setThisFactionIndex(i);
+					gameSettings.setFactionControl(i, ControlType::HUMAN);
 				}
 			}
 			launchGame= true;
@@ -253,16 +255,13 @@ void ClientInterface::waitUntilReady(Checksum &checksum) {
 		} else {
 			throw runtime_error("Unexpected network message: " + intToStr(msgType) );
 		}
-
 		// sleep a bit
 		sleep(waitSleepTime);
 	}
-
 	//check checksum
 	if (theConfig.getNetConsistencyChecks() && readyMsg.getChecksum() != checksum.getSum()) {
 		throw runtime_error("Checksum error, you don't have the same data as the server");
 	}
-
 	//delay the start a bit, so clients have nore room to get messages
 	sleep(GameConstants::networkExtraLatency);
 }

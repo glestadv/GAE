@@ -116,14 +116,12 @@ public:
 	int getEpCost() const				{return epCost;}
 	int getSpeed() const				{return speed;}
 	int getAnimSpeed() const			{return animSpeed;}
-	const Model *getAnimation() const	{
-
-		return animations.front();}
+	const Model *getAnimation() const	{return animations.front();}
 	StaticSound *getSound() const		{return sounds.getRandSound();}
 	float getSoundStartTime() const		{return soundStartTime;}
 	int getMaxRange() const				{return maxRange;}
 	int getMinRange() const				{return minRange;}
-	float getStartTime() const				{return startTime;}
+	float getStartTime() const			{return startTime;}
 
 	//other
 	virtual string toString() const		{return Lang::getInstance().get(typeName);}

@@ -137,7 +137,6 @@ public:
 	const Faction *getFaction(int i) const			{return &factions[i];}
 	Faction *getFaction(int i) 						{return &factions[i];}
 	const Minimap *getMinimap() const				{return &minimap;}
-//	const Stats &getStats() const					{return stats;}
 	Stats &getStats() 								{return stats;}
 	const WaterEffects *getWaterEffects() const		{return &waterEffects;}
 	int getNextUnitId()								{return nextUnitId++;}
@@ -147,13 +146,11 @@ public:
 	const PosCircularIteratorFactory &getPosIteratorFactory() {return posIteratorFactory;}
 
 	//init & load
-	void init(const XmlNode *worldNode = NULL);
+	void init();
 	bool loadTileset();
 	bool loadTech();
 	bool loadMap();
 	bool loadScenario(const string &path);
-
-	void save(XmlNode *node) const;
 
 	//misc
 	void update();
@@ -190,9 +187,9 @@ public:
 	void unfogMap(const Vec4i &rect, int time);
 
 #ifdef _GAE_DEBUG_EDITION_
+	// these should be in DebugRenderer
 	void loadPFDebugTextures();
 	Texture2D *PFDebugTextures[18];
-	//int getNumPathPos() { return map.PathPositions.size(); }
 #endif
 
 private:

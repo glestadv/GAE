@@ -13,10 +13,6 @@
 #define _GLEST_GAME_CLIENTINTERFACE_H_
 
 #include <vector>
-/* used instead of vector
-#include <deque>
-#include <zlib.h>
-*/
 
 #include "network_interface.h"
 #include "game_settings.h"
@@ -32,32 +28,8 @@ namespace Glest{ namespace Game{
 // =====================================================
 //	class ClientInterface
 // =====================================================
-
 class ClientInterface: public GameNetworkInterface{
 private:
-	/*
-	typedef deque<NetworkMessageUpdate*> UpdateMessages;
-	typedef vector<UnitReference> UnitReferences;
-
-	class FileReceiver {
-		string name;
-		ofstream out;
-		z_stream z;
-		char buf[4096];
-		bool compressed;
-		bool finished;
-		int nextseq;
-
-	public:
-		FileReceiver(const NetworkMessageFileHeader &msg, const string &outdir);
-		~FileReceiver();
-
-		/** @return true when file download is complete. *
-		bool processFragment(const NetworkMessageFileFragment &msg);
-		const string &getName()	const		{return name;}
-	};
-	*/
-
 	static const int messageWaitTimeout;
 	static const int waitSleepTime;
 
@@ -67,14 +39,6 @@ private:
 	bool introDone;
 	bool launchGame;
 	int playerIndex;
-
-	/*
-	FileReceiver *fileReceiver;
-	string savedGameFile;
-	UpdateMessages updates;
-	UnitReferences updateRequests;
-	UnitReferences fullUpdateRequests;
-	*/
 
 public:
 	ClientInterface();
@@ -90,6 +54,7 @@ protected:
 	virtual void updateKeyframe(int frameCount);
 	virtual void waitUntilReady(Checksum &checksum);
 	virtual void syncAiSeeds(int aiCount, int *seeds);
+	//virtual void logUnit(int id);
 
 	// message sending
 	virtual void sendTextMessage(const string &text, int teamIndex);

@@ -29,6 +29,12 @@
 #define theLogger			(Logger::getInstance())
 #define theLang				(Lang::getInstance())
 
+#if _GAE_DEBUG_EDITION_
+#	define IF_DEBUG_EDITION(x) x
+#else
+#	define IF_DEBUG_EDITION(x)
+#endif
+
 #ifndef NDEBUG
 #	define LOG(x) Logger::getInstance().add(x)
 #else
@@ -102,6 +108,7 @@ REGULAR_ENUM( NetworkMessageType,
 				LAUNCH,
 				COMMAND_LIST,
 				TEXT,
+				LOG_UNIT,
 				QUIT
 			)
 
@@ -375,8 +382,8 @@ REGULAR_ENUM( CommandProperties,
 REGULAR_ENUM( CommandArchetype,
 					GIVE_COMMAND,
 					CANCEL_COMMAND,
-				//	SET_METTING_POINT,
-					SET_AUTO_REPAIR
+					SET_MEETING_POINT
+				//	SET_AUTO_REPAIR
 			);
 
 // =====================================================

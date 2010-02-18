@@ -89,7 +89,6 @@ private:
 	bool paused;
 	bool noInput;
 	bool gameOver;
-	bool renderNetworkStatus;
 	float scrollSpeed;
 	GameSpeed speed;
 	float fUpdateLoops;

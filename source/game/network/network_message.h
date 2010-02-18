@@ -31,9 +31,9 @@ class Command;
 // - Perhaps NetworkMessage and NetworkMessageXmlDoc should go into network_types and this renamed to 
 // network_messages?
 
-// =====================================================
+// ==============================================================
 //	class NetworkMessage
-// =====================================================
+// ==============================================================
 /** Abstract base class for network messages, requires concrete subclasses 
   * to implement receive(Socket*)/send(Socket*), and provides send/receive methods
   * for them to use to accomplish this. */
@@ -49,14 +49,12 @@ protected:
 	void send(Socket* socket, const void* data, int dataSize) const;
 };
 
-// =====================================================
+// ==============================================================
 //	class NetworkMessageIntro
-//
-//	Message sent from the server to the client
-//	when the client connects and vice versa
-// =====================================================
-
-class NetworkMessageIntro: public NetworkMessage{
+// ==============================================================
+/**	Message sent from the server to the client
+  *	when the client connects and vice versa */
+class NetworkMessageIntro : public NetworkMessage {
 private:
 	static const int maxVersionStringSize= 64;
 	static const int maxNameSize= 16;
@@ -84,6 +82,10 @@ public:
 	virtual void send(Socket* socket) const;
 };
 
+// ==============================================================
+//	class NetworkMessageAiSeedSync
+// ==============================================================
+/** Message sent if there are AI players, to seed their Random objects */
 class NetworkMessageAiSeedSync : public NetworkMessage {
 private:
 	static const int maxAiSeeds = 2;
@@ -106,13 +108,11 @@ public:
 	virtual void send(Socket* socket) const;
 };
 
-// =====================================================
+// ==============================================================
 //	class NetworkMessageReady
-//
-//	Message sent at the beggining of the game
-// =====================================================
-
-class NetworkMessageReady: public NetworkMessage{
+// ==============================================================
+/**	Message sent at the beggining of the game */
+class NetworkMessageReady : public NetworkMessage {
 private:
 	struct Data{
 		int8 messageType;
@@ -132,14 +132,11 @@ public:
 	virtual void send(Socket* socket) const;
 };
 
-// =====================================================
+// ==============================================================
 //	class NetworkMessageLaunch
-//
-//	Message sent from the server to the client
-//	to launch the game
-// =====================================================
-
-class NetworkMessageLaunch: public NetworkMessage{
+// ==============================================================
+/**	Message sent from the server to the client to launch the game */
+class NetworkMessageLaunch : public NetworkMessage {
 private:
 	static const int maxStringSize= 256;
 
@@ -153,14 +150,16 @@ private:
 		NetworkString<maxStringSize> factionTypeNames[GameConstants::maxPlayers]; //faction names
 
 		int8 factionControls[GameConstants::maxPlayers];
+		float resourceMultipliers[GameConstants::maxPlayers];
 
 		int8 thisFactionIndex;
 		int8 factionCount;
 		int8 teams[GameConstants::maxPlayers];
 		int8 startLocationIndex[GameConstants::maxPlayers];
 		int8 defaultResources;
-        int8 defaultUnits;
-        int8 defaultVictoryConditions;
+		int8 defaultUnits;
+		int8 defaultVictoryConditions;
+		int8 fogOfWar;
 	};
 
 private:
@@ -176,15 +175,12 @@ public:
 	virtual void send(Socket* socket) const;
 };
 
-// =====================================================
+// ==============================================================
 //	class CommandList
-//
-//	Message to order a commands to several units
-// =====================================================
-
+// ==============================================================
+/**	Message to issue commands to several units */
 #pragma pack(push, 2)
-
-class NetworkMessageCommandList: public NetworkMessage{
+class NetworkMessageCommandList : public NetworkMessage {
 private:
 	static const int maxCommandCount= 16*4;
 	
@@ -220,16 +216,13 @@ public:
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
 };
-
 #pragma pack(pop)
 
-// =====================================================
+// ==============================================================
 //	class NetworkMessageText
-//
-//	Chat text message
-// =====================================================
-
-class NetworkMessageText: public NetworkMessage{
+// ==============================================================
+/**	Chat text message */
+class NetworkMessageText : public NetworkMessage {
 private:
 	static const int maxStringSize= 64;
 
@@ -258,11 +251,9 @@ public:
 
 // =====================================================
 //	class NetworkMessageQuit
-//
-//	Message sent at the beggining of the game
 // =====================================================
-
-class NetworkMessageQuit: public NetworkMessage{
+/** Message sent at the beggining of the game */
+class NetworkMessageQuit: public NetworkMessage {
 private:
 	struct Data{
 		int8 messageType;

@@ -181,17 +181,7 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 	}
 	// calculate and cache skill progress here.	
 	unit->preProcessSkill();
-	/*if ( unit->anyCommand() ) {		
-		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " updating command "
-			+ CommandClassNames[unit->getCurrCommand()->getType()->getClass()] );	
-		} else {
-			LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " has no command!" );
-		}
-	}*/
 }
-
-// ==================== updateStop ====================
-
 
 Command *UnitUpdater::doAutoAttack(Unit *unit) {
 	if (unit->getType()->hasCommandClass(CommandClass::ATTACK) || unit->getType()->hasCommandClass(CommandClass::ATTACK_STOPPED)) {
@@ -304,6 +294,8 @@ Command *UnitUpdater::doAutoFlee(Unit *unit) {
 	return NULL;
 }
 
+// ==================== updateStop ====================
+
 void UnitUpdater::updateStop(Unit *unit) {
 	Command *command = unit->getCurrCommand();
 	const StopCommandType *sct = static_cast<const StopCommandType*>(command->getType());
@@ -313,7 +305,6 @@ void UnitUpdater::updateStop(Unit *unit) {
 	// if we have another command then stop sitting on your ass
 	if (unit->getCommands().size() > 1 && unit->getCommands().front()->getType()->getClass() == CommandClass::STOP) {
 		unit->finishCommand();
-		LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " cancelling stop" );
 		return;
 	}
 
@@ -326,10 +317,10 @@ void UnitUpdater::updateStop(Unit *unit) {
 	}
 
 	//we can repair any ally => repair it
-	if ((autoCmd = doAutoRepair(unit))) {
-		unit->giveCommand(autoCmd);
-		return;
-	}
+//	if ((autoCmd = doAutoRepair(unit))) {
+//		unit->giveCommand(autoCmd);
+//		return;
+//	}
 
 	//see any unit and cant attack it => run
 	if ((autoCmd = doAutoFlee(unit))) {
@@ -359,9 +350,6 @@ void UnitUpdater::updateMove(Unit *unit) {
 		case TravelState::MOVING:
 			unit->setCurrSkill(mct->getMoveSkillType());
 			unit->face(unit->getNextPos());
-			LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) 
-				+ " updating move "  + "Unit is at " + Vec2iToStr(unit->getPos()) 
-				+ " now moving into " + Vec2iToStr(unit->getNextPos()) );
 			break;
 		case TravelState::BLOCKED:
 			if(unit->getPath()->isBlocked() && !command->getUnit()){
@@ -692,22 +680,22 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				switch (routePlanner->findPathToResource(unit, command->getPos(), r->getType())) {
 					case TravelState::ARRIVED:
 						if (map->isResourceNear(unit->getPos(), r->getType(), targetPos)) {
-					//if it finds resources it starts harvesting
-					unit->setCurrSkill(hct->getHarvestSkillType());
-					unit->setTargetPos(targetPos);
-							command->setPos(targetPos);
-					unit->face(targetPos);
-					unit->setLoadCount(0);
-					unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
+							//if it finds resources it starts harvesting
+							unit->setCurrSkill(hct->getHarvestSkillType());
+							unit->setTargetPos(targetPos);
+									command->setPos(targetPos);
+							unit->face(targetPos);
+							unit->setLoadCount(0);
+							unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
 						}
 						break;
 					case TravelState::MOVING:
-							unit->setCurrSkill(hct->getMoveSkillType());
-							unit->face(unit->getNextPos());
-							break;
-						default:
+						unit->setCurrSkill(hct->getMoveSkillType());
+						unit->face(unit->getNextPos());
+						break;
+					default:
 						unit->setCurrSkill(SkillClass::STOP);
-							break;
+						break;
 					}
 			} else {
 				//if can't harvest, search for another resource
@@ -1274,13 +1262,6 @@ void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &t
 }
 
 void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance){
-
-	/* NETWORK:
-	if (isNetworkClient()) {
-		return;
-	}
-	*/
-
 	//get vars
 	float damage = (float)attacker->getAttackStrength(ast);
 	int var = ast->getAttackVar();

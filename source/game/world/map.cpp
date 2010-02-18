@@ -189,7 +189,7 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 		}
 
 
-		//cells
+		// Tiles & Cells
 		cells = new Cell[w * h];
 		tiles = new Tile[tileW * tileH];
 		//surfaceHeights = new float[tileW * tileH]; // unused ???
@@ -338,40 +338,41 @@ bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resour
 
 
 // ==================== free cells ====================
-bool Map::fieldsCompatible ( Cell *cell, Field mf ) const {
-   if ( mf == Field::AIR || mf == Field::AMPHIBIOUS
-	||  (mf == Field::LAND && ! cell->isDeepSubmerged ()) 
-   ||  (mf == Field::ANY_WATER && cell->isSubmerged ())
-   ||  (mf == Field::DEEP_WATER && cell->isDeepSubmerged ()) )
-      return true;
-   return false;
+bool Map::fieldsCompatible(Cell *cell, Field mf) const {
+	if (mf == Field::AIR || mf == Field::AMPHIBIOUS
+	|| (mf == Field::LAND && ! cell->isDeepSubmerged()) 
+	|| (mf == Field::ANY_WATER && cell->isSubmerged())
+	|| (mf == Field::DEEP_WATER && cell->isDeepSubmerged())) {
+		return true;
+	}
+	return false;
 }
 
 bool Map::isFreeCell(const Vec2i &pos, Field field) const {
-   if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
-      return false;
-   if ( field != Field::AIR && !getTile(toTileCoords(pos))->isFree() )
-      return false;
-   // leave ^^^ that
-   // replace all the rest with lookups into the map metrics...
+	if ( !isInside(pos) || !getCell(pos)->isFree(field == Field::AIR ? Zone::AIR : Zone::LAND) )
+		return false;
+	if ( field != Field::AIR && !getTile(toTileCoords(pos))->isFree() )
+		return false;
+	// leave ^^^ that
+	// replace all the rest with lookups into the map metrics...
 	//return masterMap->canOccupy ( pos, 1, field );
-   // placeUnit() needs to use this... and the metrics aren't constructed at that point...
+	// placeUnit() needs to use this... and the metrics aren't constructed at that point...
 	if ( field == Field::LAND && getCell(pos)->isDeepSubmerged() )
-      return false;
+		return false;
 	if ( field == Field::LAND && (pos.x > getW() - 4 || pos.y > getH() - 4) )
-      return false;
+		return false;
 	if ( field == Field::ANY_WATER && !getCell(pos)->isSubmerged() )
-      return false;
+		return false;
 	if ( field == Field::DEEP_WATER && !getCell(pos)->isDeepSubmerged() )
-      return false;
-   return true;
+		return false;
+	return true;
 }
 /*
 bool Map::isFreeCell(const Vec2i &pos, Zone field) const
 {
-   if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
-      return false;
-   return true;
+	if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
+		return false;
+	return true;
 }
 */
 // Is the Cell at 'pos' (for the given 'field') either free or does it contain 'unit'
@@ -402,7 +403,7 @@ bool Map::isFreeCellOrHasUnit(const Vec2i &pos, Field field, const Unit *unit) c
 // Is the Cell at 'pos' (for the given 'field') either free or does it contain any of the units in 'units'
 bool Map::isFreeCellOrHaveUnits(const Vec2i &pos, Field field, const Selection::UnitContainer &units) const {
 	if(isInside(pos)) {
-      Unit *containedUnit = getCell(pos)->getUnit(field);
+		Unit *containedUnit = getCell(pos)->getUnit(field);
 		if ( containedUnit && fieldsCompatible(getCell(pos), field) ) {
 			Selection::UnitContainer::const_iterator i;
 			for(i = units.begin(); i != units.end(); ++i) 
@@ -426,7 +427,7 @@ bool Map::isAproxFreeCell(const Vec2i &pos, Field field, int teamIndex) const {
 			return field == Field::LAND ? sc->isFree() && !getCell(pos)->isDeepSubmerged() : true;
 		} else {
 			return true;
-	}
+		}
 	}
 	return false;
 }

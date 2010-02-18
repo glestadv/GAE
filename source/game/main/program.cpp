@@ -92,7 +92,7 @@ Program *Program::singleton = NULL;
 // ===================== PUBLIC ========================
 
 Program::Program(Config &config, int argc, char** argv) :
-		renderTimer(config.getRenderFpsMax(), 1),
+		renderTimer(config.getRenderFpsMax(), 1, 0),
 		tickTimer(1.f, maxTimes, -1),
 		updateTimer(config.getGsWorldUpdateFps(), maxTimes),
 		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10),

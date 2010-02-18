@@ -22,6 +22,7 @@ namespace Glest { namespace Game {
 //	class NetworkCommand // NETWORK: this isn't used
 // =====================================================
 
+/** Construct from command with archetype == GIVE_COMMAND */
 NetworkCommand::NetworkCommand(Command *command) {
 	this->networkCommandType= command->getArchetype();
 	this->unitId= command->getCommandedUnit()->getId();
@@ -42,6 +43,17 @@ NetworkCommand::NetworkCommand(Command *command) {
 	}
 }
 
+/** Construct archetype CANCEL_COMMAND */
+NetworkCommand::NetworkCommand(NetworkCommandType type, const Unit *unit, const Vec2i &pos) {
+	this->networkCommandType = type;
+	this->unitId = unit->getId();
+	this->commandTypeId = -1;
+	this->positionX= pos.x;
+	this->positionY= pos.y;
+	this->unitTypeId = -1;
+	this->targetId = -1;
+}
+
 NetworkCommand::NetworkCommand(int networkCommandType, int unitId, int commandTypeId, const Vec2i &pos, int unitTypeId, int targetId){
 	this->networkCommandType= networkCommandType;
 	this->unitId= unitId;
@@ -53,14 +65,15 @@ NetworkCommand::NetworkCommand(int networkCommandType, int unitId, int commandTy
 }
 
 Command *NetworkCommand::toCommand() const {
-	// from Commander::buildCommand
-	assert(networkCommandType==CommandArchetype::GIVE_COMMAND);
-	
 	//validate unit
 	World &world = World::getInstance();
 	Unit* unit= world.findUnitById(unitId);
-	if(!unit){
+	if (!unit) {
 		throw runtime_error("Can not find unit with id: " + intToStr(unitId) + ". Game out of synch.");
+	}
+
+	if (networkCommandType == nctCancelCommand) {
+		return new Command(CommandArchetype::CANCEL_COMMAND, 0, Vec2i(-1), unit);
 	}
 
 	//validate command type
@@ -72,7 +85,7 @@ Command *NetworkCommand::toCommand() const {
 
 	//get target, the target might be dead due to lag, cope with it
 	Unit* target = NULL;
-	if(targetId != Unit::invalidId){
+	if (targetId != Unit::invalidId) {
 		target = world.findUnitById(targetId);
 	}
 

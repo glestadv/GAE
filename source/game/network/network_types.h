@@ -17,6 +17,7 @@
 
 #include "types.h"
 #include "vec.h"
+#include "unit.h"
 
 using std::string;
 using Shared::Platform::int8;
@@ -125,6 +126,7 @@ private:
 public:
 	NetworkCommand(){};
 	NetworkCommand(Command *command);
+	NetworkCommand(NetworkCommandType type, const Unit *unit, const Vec2i &pos);
 	NetworkCommand(int networkCommandType, int unitId, int commandTypeId= -1, const Vec2i &pos= Vec2i(0), int unitTypeId= -1, int targetId= -1);
 
 	Command *toCommand() const;

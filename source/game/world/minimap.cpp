@@ -37,11 +37,11 @@ namespace Glest{ namespace Game{
 
 const float Minimap::exploredAlpha= 0.5f;
 
-Minimap::Minimap(){
+Minimap::Minimap(bool FoW){
 	fowPixmap0= NULL;
 	fowPixmap1= NULL;
-	fogOfWar= Config::getInstance().getGsFogOfWarEnabled();
-	shroudOfDarkness = Config::getInstance().getGsShroudOfDarknessEnabled();
+	fogOfWar = FoW;
+	shroudOfDarkness = FoW;
 }
 
 void Minimap::init(int w, int h, const World *world){

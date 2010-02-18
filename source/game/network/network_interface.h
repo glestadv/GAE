@@ -107,6 +107,7 @@ protected:
 	virtual void updateKeyframe(int frameCount) = 0;
 	virtual void waitUntilReady(Checksum &checksum) = 0;
 	virtual void syncAiSeeds(int aiCount, int *seeds) = 0;
+	//virtual void logUnit(int id) = 0;
 
 	//message sending
 	virtual void sendTextMessage(const string &text, int teamIndex) = 0;
@@ -192,8 +193,13 @@ public:
 	}
 
 	//access functions
-	virtual void requestCommand(const NetworkCommand *networkCommand)	{requestedCommands.push_back(*networkCommand);} 
-	virtual void requestCommand(Command *command)	{requestedCommands.push_back(NetworkCommand(command));}
+
+	virtual void requestCommand(const NetworkCommand *networkCommand) {
+		requestedCommands.push_back(*networkCommand);
+	} 
+	
+	virtual void requestCommand(Command *command);
+	
 	int getPendingCommandCount() const				{return pendingCommands.size();}
 	Command *getPendingCommand(int i)				{return pendingCommands[i].toCommand();}
 	const NetworkCommand *getPendingNetworkCommand(int i) const			{return &pendingCommands[i];}

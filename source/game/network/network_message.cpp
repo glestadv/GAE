@@ -168,14 +168,16 @@ NetworkMessageLaunch::NetworkMessageLaunch(const GameSettings *gameSettings){
 	data.factionCount= gameSettings->getFactionCount();
 	data.thisFactionIndex= gameSettings->getThisFactionIndex();
 	data.defaultResources= gameSettings->getDefaultResources();
-    data.defaultUnits= gameSettings->getDefaultUnits();
-    data.defaultVictoryConditions= gameSettings->getDefaultVictoryConditions();
+	data.defaultUnits= gameSettings->getDefaultUnits();
+	data.defaultVictoryConditions= gameSettings->getDefaultVictoryConditions();
+	data.fogOfWar = gameSettings->getFogOfWar();
 
 	for(int i= 0; i<data.factionCount; ++i){
 		data.factionTypeNames[i]= gameSettings->getFactionTypeName(i);
 		data.factionControls[i]= gameSettings->getFactionControl(i);
 		data.teams[i]= gameSettings->getTeam(i);
 		data.startLocationIndex[i]= gameSettings->getStartLocationIndex(i);
+		data.resourceMultipliers[i] = gameSettings->getResourceMultilpier(i);
 	}
 }
 
@@ -188,14 +190,16 @@ void NetworkMessageLaunch::buildGameSettings(GameSettings *gameSettings) const{
 	gameSettings->setFactionCount(data.factionCount);
 	gameSettings->setThisFactionIndex(data.thisFactionIndex);
 	gameSettings->setDefaultResources(data.defaultResources);
-    gameSettings->setDefaultUnits(data.defaultUnits);
-    gameSettings->setDefaultVictoryConditions(data.defaultVictoryConditions);
+	gameSettings->setDefaultUnits(data.defaultUnits);
+	gameSettings->setDefaultVictoryConditions(data.defaultVictoryConditions);
+	gameSettings->setFogOfWar(data.fogOfWar);
 
 	for(int i= 0; i<data.factionCount; ++i){
 		gameSettings->setFactionTypeName(i, data.factionTypeNames[i].getString());
 		gameSettings->setFactionControl(i, static_cast<ControlType>(data.factionControls[i]));
 		gameSettings->setTeam(i, data.teams[i]);
 		gameSettings->setStartLocationIndex(i, data.startLocationIndex[i]);
+		gameSettings->setResourceMultiplier(i, data.resourceMultipliers[i]);
 	}
 }
 

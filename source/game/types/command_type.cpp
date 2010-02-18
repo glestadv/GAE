@@ -134,10 +134,7 @@ unitTypeIndex(-1) {
 void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 	switch(cc) {
 		case CommandClass::STOP:
-			if(unit->getLastCommandUpdate() > 250000) {
-				unitUpdater->updateStop(unit);
-				unit->resetLastCommandUpdated();
-			}			
+			unitUpdater->updateStop(unit);
 			break;
 
 		case CommandClass::MOVE:
