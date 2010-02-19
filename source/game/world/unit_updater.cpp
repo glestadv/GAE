@@ -227,6 +227,7 @@ Command *UnitUpdater::doAutoAttack(Unit *unit) {
 
 
 Command *UnitUpdater::doAutoRepair(Unit *unit) {
+	/*
 	if (unit->getType()->hasCommandClass(CommandClass::REPAIR) && unit->isAutoRepairEnabled()) {
 
 		for (int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
@@ -250,6 +251,7 @@ Command *UnitUpdater::doAutoRepair(Unit *unit) {
 			}
 		}
 	}
+	*/
 	return NULL;
 }
 

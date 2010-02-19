@@ -146,10 +146,7 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			break;
 
 		case CommandClass::ATTACK_STOPPED:
-			if(unit->getLastCommandUpdate() > 250000) {
-				unitUpdater->updateAttackStopped(unit);
-				unit->resetLastCommandUpdated();
-			}			
+			unitUpdater->updateAttackStopped(unit);
 			break;
 
 		case CommandClass::BUILD:
@@ -181,10 +178,7 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			break;
 
 		case CommandClass::GUARD:
-			if(unit->getCurrSkill()->getClass() != SkillClass::STOP || unit->getLastCommandUpdate() > 250000) {
-				unitUpdater->updateGuard(unit);
-				unit->resetLastCommandUpdated();
-			}
+			unitUpdater->updateGuard(unit);
 			break;
 
 		case CommandClass::PATROL:
