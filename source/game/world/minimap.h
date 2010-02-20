@@ -17,10 +17,6 @@
 #include "pixmap.h"
 #include "texture.h"
 
-namespace Shared { namespace Platform {
-	class NetworkDataBuffer;
-}}
-
 namespace Glest{ namespace Game{
 
 using Shared::Math::Vec4f;
@@ -28,15 +24,14 @@ using Shared::Math::Vec3f;
 using Shared::Math::Vec2i;
 using Shared::Graphics::Pixmap2D;
 using Shared::Graphics::Texture2D;
-using Shared::Platform::NetworkDataBuffer;
 
 class World;
 class Map;
 
 enum ExplorationState{
-    esNotExplored,
-    esExplored,
-    esVisible
+	esNotExplored,
+	esExplored,
+	esVisible
 };
 
 // =====================================================
@@ -57,8 +52,8 @@ private:
 	static const float exploredAlpha;
 
 public:
-    void init(int x, int y, const World *world);
-	Minimap();
+	void init(int x, int y, const World *world);
+	Minimap( bool FoW);
 	~Minimap();
 
 	const Texture2D *getFowTexture() const	{return fowTex;}
@@ -75,13 +70,8 @@ public:
 		}
 	}
 
-	void read(NetworkDataBuffer &buf);
-	void write(NetworkDataBuffer &buf) const;
-	void synthesize(const Map *map, int team);
-
 private:
 	void computeTexture(const World *world);
-	static void writeRepition(NetworkDataBuffer &buf, uint8 lastResult, uint32 count, int x, int y);
 };
 
 }}//end namespace

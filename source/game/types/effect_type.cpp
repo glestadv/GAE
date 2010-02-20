@@ -24,8 +24,8 @@ namespace Glest{ namespace Game{
 // =====================================================
 
 EffectType::EffectType() : lightColor(0.0f) {
-	bias = ebNeutral;
-	stacking = esStack;
+	bias = EffectBias::NEUTRAL;
+	stacking = EffectStacking::STACK;
 
 	duration = 0;
 	chance = 100.0f;
@@ -45,8 +45,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 	bool loadOk = true;
 	//name
 	try { name = effectNode->getAttribute("name")->getRestrictedValue(); }
-	catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 	//bigtime hack
@@ -56,15 +56,15 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 	try {
 		tmp = effectNode->getAttribute("bias")->getRestrictedValue();
 		if (tmp == "detrimental") 
-			bias = ebDetrimental;
+			bias = EffectBias::DETRIMENTAL;
 		else if (tmp == "neutral")
-			bias = ebNeutral;
+			bias = EffectBias::NEUTRAL;
 		else if (tmp == "benificial")
-			bias = ebBenificial;
+			bias = EffectBias::BENIFICIAL;
 		else
 			throw runtime_error("Not a valid value for bias: " + tmp + ": " + dir);
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -72,17 +72,17 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 	try {
 		tmp = effectNode->getAttribute("stacking")->getRestrictedValue();
 		if(tmp == "stack")
-			stacking = esStack;
+			stacking = EffectStacking::STACK;
 		else if(tmp == "extend")
-			stacking = esExtend;
+			stacking = EffectStacking::EXTEND;
 		else if(tmp == "overwrite")
-			stacking = esOverwrite;
+			stacking = EffectStacking::OVERWRITE;
 		else if(tmp == "reject")
-			stacking = esReject;
+			stacking = EffectStacking::REJECT;
 		else
 			throw runtime_error("Not a valid value for stacking: " + tmp + ": " + dir);
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -111,8 +111,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			flags.set(EffectTypeFlag::ALLY, true);
 			flags.set(EffectTypeFlag::FOE, true);
 		}
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -123,15 +123,15 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			chance = attr->getFloatValue();
 		else
 			chance = 100.0f;
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
 	//duration
 	try { duration = effectNode->getAttribute("duration")->getIntValue(); }
-	catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -142,8 +142,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			damageType = tt->getAttackType(attr->getRestrictedValue());
 		}
 	}
-	catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -155,8 +155,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 		} else {
 			display = true;
 		}
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -167,8 +167,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			image = Renderer::getInstance().newTexture2D(rsGame);
 			image->load(dir + "/" + attr->getRestrictedValue());
 		}
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -195,8 +195,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			light = false;
 		}
 	}
-	catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 	//particle
@@ -207,8 +207,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			//	   	particleSystemType = new ParticleSystemType();
 			//	   	particleSystemType->load(effectNode,  dir + "/" + path);
 		}
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -222,8 +222,8 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 			sound = new StaticSound();
 			sound->load(dir + "/" + path);
 		}
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 
@@ -239,14 +239,40 @@ bool EffectType::load(const XmlNode *effectNode, const string &dir, const TechTr
 				recourse[i] = effectType;
 			}
 		}
-	} catch ( runtime_error e ) {
-		Logger::getErrorLog().addXmlError ( dir, e.what () );
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
 		loadOk = false;
 	}
 	if(hpRegeneration >= 0 && damageType) {
 		damageType = NULL;
 	}
 	return loadOk;
+}
+
+void EffectType::doChecksum(Checksum &checksum) const {
+	NameIdPair::doChecksum(checksum);
+	EnhancementTypeBase::doChecksum(checksum);
+
+	checksum.add<EffectBias>(bias);
+	checksum.add<EffectStacking>(stacking);
+	checksum.add<unsigned int>(effectflags);
+
+	checksum.add<int>(duration);
+	checksum.add<float>(chance);
+	checksum.add<bool>(light);
+	checksum.add<Vec3f>(lightColor);
+
+	checksum.add<float>(soundStartTime);
+	checksum.add<bool>(loopSound);
+	
+	foreach_const (EffectTypes, it, recourse) {
+		(*it)->doChecksum(checksum);
+	}
+	foreach_enum (EffectTypeFlag, f) {
+		checksum.add<bool>(flags.get(f));
+	}
+	checksum.addString(damageType->getName());
+	checksum.add<bool>(display);
 }
 
 void EffectType::getDesc(string &str) const {
@@ -297,12 +323,17 @@ bool Emanation::load(const XmlNode *n, const string &dir, const TechTree *tt, co
 	EffectType::load(n, dir, tt, ft);
 
 	//radius
-   try { radius = n->getAttribute("radius")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().add ( dir, e.what () );
-      return false;
-   }
-   return true;
+	try { radius = n->getAttribute("radius")->getIntValue(); }
+	catch (runtime_error e) {
+		Logger::getErrorLog().add ( dir, e.what () );
+		return false;
+	}
+	return true;
+}
+
+void Emanation::doChecksum(Checksum &checksum) const {
+	EffectType::doChecksum(checksum);
+	checksum.add<int>(radius);
 }
 
 }}//end namespace

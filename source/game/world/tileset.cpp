@@ -96,11 +96,9 @@ void Tileset::count(const string &dir){
 	logger.setUnitCount(objCount);
 }
 
-void Tileset::load(const string &dir, Checksum &checksum){
+void Tileset::load(const string &dir){
 	random.init(time(NULL));
 	string path= dir+"/"+basename(dir)+".xml";
-
-	checksum.addFile(path, true);
 
 	try{
 		Logger::getInstance().add("Tileset: "+dir, true);
@@ -207,6 +205,25 @@ void Tileset::load(const string &dir, Checksum &checksum){
 	catch(const exception &e){
 		throw runtime_error("Error: " + path + "\n" + e.what());
 	}
+}
+
+void Tileset::doChecksum(Checksum &checksum) const {
+	for (int i=0; i < objCount; ++i) {
+		checksum.add<bool>(objectTypes[i].getWalkable());
+		checksum.add<bool>(objectTypes[i].isATree());
+	}
+	for (int i=0; i < surfCount; ++i) {
+		foreach_const (SurfProbs, it, surfProbs[i]) {
+			checksum.add<float>(*it);
+		}
+	}
+	checksum.add<bool>(fog);
+	checksum.add<int>(fogMode);
+	checksum.add<float>(fogDensity);
+	checksum.add<Vec3f>(fogColor);
+	checksum.add<Vec3f>(sunLightColor);
+	checksum.add<Vec3f>(moonLightColor);
+	checksum.add<Weather>(weather);
 }
 
 Tileset::~Tileset(){

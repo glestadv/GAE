@@ -52,11 +52,19 @@ const string sharedLibVersionString= "v0.4.1";
 		enum Enum { INVALID = -1, __VA_ARGS__, COUNT };	\
 		Name() : value(INVALID) {}						\
 		Name(Enum val) : value(val) {}					\
-		explicit Name(int i) : value((Enum)i) {}		\
+		explicit Name(int i) {							\
+			if (i >= 0 && i < COUNT) value = (Enum)i;	\
+			else value = INVALID;						\
+		}												\
 		operator Enum() const { return value; }			\
 		void operator++() {								\
 			if (value < COUNT) {						\
-				value = (Enum)(value + 1);				\
+				value = Enum(value + 1);				\
+			}											\
+		}												\
+		void operator--() {								\
+			if (value > 0) {							\
+				value = Enum(value - 1);				\
 			}											\
 		}												\
 	private:											\
@@ -127,6 +135,10 @@ public:
     const char* operator[](E e) const {return get(e, E::COUNT);} // passing E::COUNT here will inline the value in EnumNamesBase::get()
     E match(const char *value) const {return enum_cast<E>(_match(value));} // this will inline a function call to the fairly large _match() function
 };
+
+#define foreach(CollectionClass, it, collection) for(CollectionClass::iterator it = collection.begin(); it != collection.end(); ++it)
+#define foreach_const(CollectionClass, it, collection) for(CollectionClass::const_iterator it = collection.begin(); it != collection.end(); ++it)
+#define foreach_enum(Enum, val) for(Enum val(0); val < Enum::COUNT; ++val)
 
 void findAll(const string &path, vector<string> &results, bool cutExtension = false);
 

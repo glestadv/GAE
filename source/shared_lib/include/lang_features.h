@@ -118,7 +118,7 @@
 
 /* MS Visual Studio 2003 or higher compiler */
 #ifdef _MSC_VER
-#	define __always_inline			inline						/* none for MSVS */
+#	define __always_inline			__forceinline
 #	define __noinline				__declspec(noinline)
 #	define __aligned_pre(x)			__declspec(align(x))		/* put *before* declaration */
 #	define __novtable				__declspec(novtable)

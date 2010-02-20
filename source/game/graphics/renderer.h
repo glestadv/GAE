@@ -33,10 +33,7 @@
 #include "scene_culler.h"
 
 #if _GAE_DEBUG_EDITION_
-#	define IF_DEBUG_EDITION(x) x
 #	include "debug_renderer.h"
-#else
-#	define IF_DEBUG_EDITION(x)
 #endif
 
 namespace Glest { namespace Game {

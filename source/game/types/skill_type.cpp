@@ -159,6 +159,30 @@ void SkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, c
 	}
 }
 
+void SkillType::doChecksum(Checksum &checksum) const {
+	checksum.add<SkillClass>(skillClass);
+	foreach_const (EffectTypes, it, effectTypes) {
+		(*it)->doChecksum(checksum);
+	}
+	checksum.addString(name);
+	checksum.add<int>(epCost);
+	checksum.add<int>(speed);
+	checksum.add<int>(animSpeed);
+	checksum.add<int>(minRange);
+	checksum.add<int>(maxRange);
+	checksum.add<int>(effectsRemoved);
+	checksum.add<bool>(removeBenificialEffects);
+	checksum.add<bool>(removeDetrimentalEffects);
+	checksum.add<bool>(removeAllyEffects);
+	checksum.add<bool>(removeEnemyEffects);
+	checksum.add<float>(startTime);
+	checksum.add<bool>(projectile);
+	checksum.add<bool>(splash);
+	checksum.add<bool>(splashDamageAll);
+	checksum.add<int>(splashRadius);
+
+}
+
 void SkillType::descEffects(string &str, const Unit *unit) const {
 	for(EffectTypes::const_iterator i = effectTypes.begin(); i != effectTypes.end(); ++i) {
 		str += "Effect: ";
@@ -311,6 +335,13 @@ void TargetBasedSkillType::load(const XmlNode *sn, const string &dir, const Tech
 	zones.load(fieldsNode ? fieldsNode : attackFieldsNode, dir, tt, ft);
 }
 
+void TargetBasedSkillType::doChecksum(Checksum &checksum) const {
+	SkillType::doChecksum(checksum);
+	foreach_enum (Zone, z) {
+		checksum.add<bool>(zones.get(z));
+	}
+}
+
 void TargetBasedSkillType::getDesc(string &str, const Unit *unit, const char* rangeDesc) const {
 	Lang &lang= Lang::getInstance();
 
@@ -368,6 +399,18 @@ void AttackSkillType::load(const XmlNode *sn, const string &dir, const TechTree 
 		earthquakeType = new EarthquakeType(attackStrength, attackType);
 		earthquakeType->load(earthquakeNode, dir, tt, ft);
 	}
+}
+
+void AttackSkillType::doChecksum(Checksum &checksum) const {
+	TargetBasedSkillType::doChecksum(checksum);
+
+	checksum.add<int>(attackStrength);
+	checksum.add<int>(attackVar);
+	checksum.add<float>(attackPctStolen);
+	checksum.add<float>(attackPctVar);
+	attackType->doChecksum(checksum);
+	
+	// earthquakeType ??
 }
 
 void AttackSkillType::getDesc(string &str, const Unit *unit) const {
@@ -479,6 +522,15 @@ void RepairSkillType::load(const XmlNode *sn, const string &dir, const TechTree 
 	}
 }
 
+void RepairSkillType::doChecksum(Checksum &checksum) const {
+	SkillType::doChecksum(checksum);
+	checksum.add<int>(amount);
+	checksum.add<float>(multiplier);
+	checksum.add<bool>(petOnly);
+	checksum.add<bool>(selfOnly);
+	checksum.add<bool>(selfAllowed);
+}
+
 void RepairSkillType::getDesc(string &str, const Unit *unit) const {
 	Lang &lang= Lang::getInstance();
 //	descRange(str, unit, "MaxRange");
@@ -513,6 +565,22 @@ void ProduceSkillType::load(const XmlNode *sn, const string &dir, const TechTree
 	}
 }
 
+void ProduceSkillType::doChecksum(Checksum &checksum) const {
+	SkillType::doChecksum(checksum);
+	checksum.add<bool>(pet);
+	checksum.add<int>(maxPets);
+}
+
+// ===============================
+// 	class DieSkillType
+// ===============================
+
+void DieSkillType::doChecksum(Checksum &checksum) const {
+	SkillType::doChecksum(checksum);
+	checksum.add<bool>(fade);
+}
+
+
 // ===============================
 // 	class FallDownSkillType
 // ===============================
@@ -530,6 +598,10 @@ void FallDownSkillType::load(const XmlNode *sn, const string &dir, const TechTre
 	agility = sn->getChildFloatValue("agility");
 }
 
+void FallDownSkillType::doChecksum(Checksum &checksum) const {
+	SkillType::doChecksum(checksum);
+	checksum.add<float>(agility);
+}
 // ===============================
 // 	class GetUpSkillType
 // ===============================

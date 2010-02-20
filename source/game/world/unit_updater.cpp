@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -26,6 +26,7 @@
 #include "faction.h"
 #include "network_manager.h"
 #include "cartographer.h"
+#include "network_util.h"
 #include "leak_dumper.h"
 
 using namespace Shared::Graphics;
@@ -178,17 +179,7 @@ void UnitUpdater::updateUnitCommand(Unit *unit) {
 	}
 	// calculate and cache skill progress here.	
 	unit->preProcessSkill();
-
-	/*if ( unit->anyCommand() ) {
-		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " updating command "
-			+ CommandClassNames[unit->getCurrCommand()->getType()->getClass()] );	
-	} else {
-		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(unit->getId()) + " has no command!" );
-	}*/
 }
-
-// ==================== updateStop ====================
-
 
 Command *UnitUpdater::doAutoAttack(Unit *unit) {
 	if (unit->getType()->hasCommandClass(CommandClass::ATTACK) 
@@ -235,6 +226,7 @@ Command *UnitUpdater::doAutoAttack(Unit *unit) {
 
 
 Command *UnitUpdater::doAutoRepair(Unit *unit) {
+	/*
 	if (unit->getType()->hasCommandClass(CommandClass::REPAIR) && unit->isAutoRepairEnabled()) {
 
 		for (int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
@@ -258,6 +250,7 @@ Command *UnitUpdater::doAutoRepair(Unit *unit) {
 			}
 		}
 	}
+	*/
 	return NULL;
 }
 
@@ -302,6 +295,8 @@ Command *UnitUpdater::doAutoFlee(Unit *unit) {
 	}
 	return NULL;
 }
+
+// ==================== updateStop ====================
 
 void UnitUpdater::updateStop(Unit *unit) {
 	Command *command = unit->getCurrCommand();
@@ -551,48 +546,37 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				return;
 			}
 
-			// network client has to wait for the server to tell them to begin building.  If the
-			// creates the building, we can have an id mismatch.
-			if (isNetworkClient()) {
-				unit->setCurrSkill(SkillClass::WAIT_FOR_SERVER);
-				// FIXME: Might play start sound multiple times or never at all
-			} else {
-				// late resource allocation
-				if (!command->isReserveResources()) {
-					command->setReserveResources(true);
-					if (unit->checkCommand(*command) != CommandResult::SUCCESS) {
-						if (unit->getFactionIndex() == world->getThisFactionIndex()) {
-							console->addStdMessage("BuildingNoRes");
-						}
-						unit->finishCommand();
-						return;
+			// late resource allocation
+			if (!command->isReserveResources()) {
+				command->setReserveResources(true);
+				if (unit->checkCommand(*command) != CommandResult::SUCCESS) {
+					if (unit->getFactionIndex() == world->getThisFactionIndex()) {
+						console->addStdMessage("BuildingNoRes");
 					}
-					unit->getFaction()->applyCosts(command->getUnitType());
+					unit->finishCommand();
+					return;
 				}
-
-				builtUnit = new Unit(world->getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world->getMap());
-				builtUnit->create();
-
-				if (!builtUnitType->hasSkillClass(SkillClass::BE_BUILT)) {
-					throw runtime_error("Unit " + builtUnitType->getName() + " has no be_built skill");
-				}
-
-				builtUnit->setCurrSkill(SkillClass::BE_BUILT);
-				unit->setCurrSkill(bct->getBuildSkillType());
-				unit->setTarget(builtUnit, true, true);
-				map->prepareTerrain(builtUnit);
-				command->setUnit(builtUnit);
-				unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
-				if (isNetworkGame()) {
-					getServerInterface()->newUnit(builtUnit);
-					getServerInterface()->unitUpdate(unit);
-					getServerInterface()->updateFactions();
-				}
+				unit->getFaction()->applyCosts(command->getUnitType());
 			}
-			if ( !builtUnit->isMobile() ) {
-				// new obstacle, inform cartographer
+
+			builtUnit = new Unit(world->getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world->getMap());
+			builtUnit->create();
+
+			if (!builtUnitType->hasSkillClass(SkillClass::BE_BUILT)) {
+				throw runtime_error("Unit " + builtUnitType->getName() + " has no be_built skill");
+			}
+
+			builtUnit->setCurrSkill(SkillClass::BE_BUILT);
+			unit->setCurrSkill(bct->getBuildSkillType());
+			unit->setTarget(builtUnit, true, true);
+			map->prepareTerrain(builtUnit);
+			command->setUnit(builtUnit);
+			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
+
+			if (!builtUnit->isMobile()) {
 				world->getCartographer()->updateMapMetrics(builtUnit->getPos(), builtUnit->getSize());
 			}
+			
 			//play start sound
 			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(bct->getStartSound(), unit->getCurrVector(), gameCamera->getPos());
@@ -660,11 +644,6 @@ void UnitUpdater::updateBuild(Unit *unit) {
 					unit->getCurrVector(),
 					gameCamera->getPos());
 			}
-			if (isNetworkServer()) {
-				getServerInterface()->unitUpdate(unit);
-				getServerInterface()->unitUpdate(builtUnit);
-				getServerInterface()->updateFactions();
-			}
 		}
 	}
 }
@@ -730,7 +709,11 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				if (map->isNextTo(unit->getPos(), store)) {
 					//update resources
 					int resourceAmount = unit->getLoadCount();
-					resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
+					// Just do this for all players ???
+					if (unit->getFaction()->getCpuUltraControl()) {
+						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
+						//resourceAmount *= ultraResourceFactor; // Pull from GameSettings
+					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
 					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
 					scriptManager->onResourceHarvested();
@@ -739,13 +722,8 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					unit->getPath()->clear();
 					unit->setCurrSkill(SkillClass::STOP);
 					unit->setLoadCount(0);
-					if (isNetworkServer()) {
-						// FIXME: wasteful full update here
-						getServerInterface()->unitUpdate(unit);
-						getServerInterface()->updateFactions();
-					}
 				}
-			} else {
+			} else { // no store found, give up
 				unit->finishCommand();
 			}
 		}
@@ -924,11 +902,6 @@ void UnitUpdater::updateRepair(Unit *unit) {
 								gameCamera->getPos());
 						}
 					}
-					if (isNetworkServer()) {
-						getServerInterface()->unitUpdate(unit);
-						getServerInterface()->unitUpdate(repaired);
-						getServerInterface()->updateFactions();
-					}
 				}
 			}
 		}
@@ -956,13 +929,6 @@ void UnitUpdater::updateProduce(Unit *unit) {
 		unit->update2();
 
 		if (unit->getProgress2() > pct->getProduced()->getProductionTime()) {
-			if (isNetworkClient()) {
-				// client predict, presume the server will send us the unit soon.
-				unit->finishCommand();
-				unit->setCurrSkill(SkillClass::STOP);
-				return;
-			}
-
 			produced = new Unit(world->getNextUnitId(), Vec2i(0), pct->getProducedUnit(), unit->getFaction(), world->getMap());
 
 			//if no longer a valid subfaction, let them have the unit, but make
@@ -992,10 +958,6 @@ void UnitUpdater::updateProduce(Unit *unit) {
 				}
 
 				unit->finishCommand();
-
-				if (isNetworkServer()) {
-					getServerInterface()->newUnit(produced);
-				}
 			}
 
 			unit->setCurrSkill(SkillClass::STOP);
@@ -1029,18 +991,10 @@ void UnitUpdater::updateUpgrade(Unit *unit) {
 		}
 
 		if (unit->getProgress2() >= uct->getProduced()->getProductionTime()) {
-			if (isNetworkClient()) {
-				// clients will wait for the server to tell them that the upgrade is finished
-				return;
-			}
 			unit->finishCommand();
 			unit->setCurrSkill(SkillClass::STOP);
 			unit->getFaction()->finishUpgrade(uct->getProducedUpgrade());
 			unit->getFaction()->checkAdvanceSubfaction(uct->getProducedUpgrade(), true);
-			if (isNetworkServer()) {
-				getServerInterface()->unitUpdate(unit);
-				getServerInterface()->updateFactions();
-			}
 		}
 	}
 }
@@ -1093,11 +1047,6 @@ void UnitUpdater::updateMorph(Unit *unit) {
 					// obstacle added or removed, update annotated maps
 					bool adding = !mct->getMorphUnit()->isMobile();
 					world->getCartographer()->updateMapMetrics(unit->getPos(), unit->getSize());
-				}
-
-				if(isNetworkServer()) {
-					getServerInterface()->unitMorph(unit);
-					getServerInterface()->updateFactions();
 				}
 			} else {
 				unit->cancelCurrCommand();
@@ -1250,17 +1199,12 @@ void UnitUpdater::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &t
 }
 
 void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance){
-
-	if(isNetworkClient()) {
-		return;
-	}
-
 	//get vars
 	float damage = (float)attacker->getAttackStrength(ast);
 	int var = ast->getAttackVar();
 	int armor = attacked->getArmor();
 	float damageMultiplier = world->getTechTree()->getDamageMultiplier(ast->getAttackType(),
-			attacked->getType()->getArmorType());
+							 attacked->getType()->getArmorType());
 	int startingHealth = attacked->getHp();
 	int actualDamage;
 
@@ -1292,11 +1236,6 @@ void UnitUpdater::damage(Unit *attacker, const AttackSkillType* ast, Unit *attac
 			world->doKill(attacker, attacker);
 		}
 	}
-	if (isNetworkServer()) {
-		getServerInterface()->minorUnitUpdate(attacker);
-		getServerInterface()->minorUnitUpdate(attacked);
-	}
-
 	//complain
 	/*
 	const Vec3f &attackerVec = attacked->getCurrVector();
@@ -1562,7 +1501,7 @@ bool UnitUpdater::unitOnRange(const Unit *unit, int range, Unit **rangedPtr,
 		Targets enemies;
 		Vec2i pos;
 		PosCircularIteratorOrdered pci(*map, unit->getPos(), world->getPosIteratorFactory()
-				.getInsideOutIterator(1, (int)roundf(range + halfSize)));
+									   .getInsideOutIterator(1, (int)roundf(range + halfSize)));
 
 		while (pci.getNext(pos, distance)) {
 

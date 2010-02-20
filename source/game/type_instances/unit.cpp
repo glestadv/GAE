@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Marti�o Figueroa
+//	Copyright (C) 2001-2008 Marti?o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -124,8 +124,6 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 		, attacked_trigger(false)
 		, lastCommandUpdate(0)
 		, lastCommanded(0) {
-	Random random;
-
 	this->faction = faction;
 	this->map = map;
 	this->master = master;
@@ -142,18 +140,21 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	progress2 = 0;
 	kills = 0;
 
+	// UnitType needs modifiying, the new pathfinder does not support
+	// units with multiple fields (nor did the old one), 'switching' fields
+	// will need to  be done with morphs. 
 	if(type->getField(Field::LAND)) currField = Field::LAND;
 	else if(type->getField(Field::AIR)) currField = Field::AIR;
 
-	if ( type->getField (Field::AMPHIBIOUS) ) currField = Field::AMPHIBIOUS;
-	else if ( type->getField (Field::ANY_WATER) ) currField = Field::ANY_WATER;
-	else if ( type->getField (Field::DEEP_WATER) ) currField = Field::DEEP_WATER;
+	if (type->getField (Field::AMPHIBIOUS)) currField = Field::AMPHIBIOUS;
+	else if (type->getField (Field::ANY_WATER)) currField = Field::ANY_WATER;
+	else if (type->getField (Field::DEEP_WATER)) currField = Field::DEEP_WATER;
 
 	targetField = Field::LAND;		// init just to keep it pretty in memory
 	level= NULL;
 
+	Random random(id);
 	float rot = 0.f;
-	random.init(id);
 	rot += random.randRange(-5, 5);
 
 	lastRotation = rot;
@@ -164,7 +165,7 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	loadType = NULL;
 	currSkill = getType()->getFirstStOfClass(SkillClass::STOP);	//starting skill
 //	lastSkill = currSkill;
-	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " constructed at pos(" + intToStr(pos.x) + "," + intToStr(pos.y) + ")" );
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " constructed at pos(" + intToStr(pos.x) + "," + intToStr(pos.y) + ")" );
 
 	toBeUndertaken = false;
 //	alive= true;
@@ -765,20 +766,6 @@ CommandResult Unit::giveCommand(Command *command) {
 			}
 		}
 	}
-	switch ( ct->getClass() ) {
-		case CommandClass::MOVE:
-		case CommandClass::ATTACK:
-		case CommandClass::BUILD:
-		case CommandClass::REPAIR:
-		case CommandClass::GUARD:
-		case CommandClass::PATROL:
-			// make path request now...
-			// need to pre-process command...
-			break;
-		default:
-			;//throw runtime_error("unhandled CommandClass");
-	}
-
 	if(ct->isQueuable() || command->isQueue()) {
 		//cancel current command if it is not queuable or marked to be queued
 		if(!commands.empty() && !commands.front()->getType()->isQueuable() && !command->isQueue()) {
@@ -845,8 +832,8 @@ CommandResult Unit::finishCommand() {
 	if(commands.empty()) {
 		return CommandResult::FAIL_UNDEFINED;
 	}
-	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
-		+ CommandClassNames[commands.front()->getType()->getClass()] + " command finished." );
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
+	//	+ CommandClassNames[commands.front()->getType()->getClass()] + " command finished." );
 
 	Command *command = popCommand();
 
@@ -854,13 +841,6 @@ CommandResult Unit::finishCommand() {
 	if(command && command->getType()->getClass() == CommandClass::PATROL) {
 		command->setPos2(pos);
 	}
-
-	//send an update to the client
-	NetworkManager &networkManager = NetworkManager::getInstance();
-	if(networkManager.isNetworkGame() && networkManager.isServer()) {
-		networkManager.getServerInterface()->unitUpdate(this);
-	}
-
 	return CommandResult::SUCCESS;
 }
 
@@ -871,8 +851,8 @@ CommandResult Unit::cancelCommand() {
 	if(commands.empty()){
 		return CommandResult::FAIL_UNDEFINED;
 	}
-	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " queued " 
-		+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " queued " 
+	//	+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
 
 	//undo command
 	undoCommand(*commands.back());
@@ -893,8 +873,8 @@ CommandResult Unit::cancelCurrCommand() {
 	if(commands.empty()) {
 		return CommandResult::FAIL_UNDEFINED;
 	}
-	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " current " 
-		+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " current " 
+	//	+ CommandClassNames[commands.front()->getType()->getClass()] + " command cancelled." );
 
 	//undo command
 	undoCommand(*commands.front());
@@ -910,7 +890,7 @@ CommandResult Unit::cancelCurrCommand() {
   * @param startingUnit true if this is a starting unit.
   */
 void Unit::create(bool startingUnit) {
-	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " created." );
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " created." );
 	faction->add(this);
 	lastPos.x = lastPos.y = -1;
 	map->putUnitCells(this, pos);
@@ -923,7 +903,7 @@ void Unit::create(bool startingUnit) {
 /** Give a unit life. Called when a unit becomes 'operative'
   */
 void Unit::born(){
-	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " born." );
+	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " born." );
 	faction->addStore(type);
 	faction->applyStaticProduction(type);
 	setCurrSkill(SkillClass::STOP);
@@ -968,7 +948,9 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	} else {
 		faction->deApplyStaticCosts(type);
 	}
+
 	Died(this);
+
 	notifyObservers(UnitObserver::eKill);
 	clearCommands();
 	//kill or free pets
@@ -981,8 +963,8 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	Renderer::getInstance().getParticleManager()->checkTargets(this);
 
 	// random decay time
-	//deadCount = Random(id).randRange(-256, 256);
-	deadCount = 0;
+	deadCount = Random(id).randRange(-256, 256);
+	//deadCount = 0;
 }
 
 // =================== Referencers ===================
@@ -1050,14 +1032,16 @@ void Unit::preProcessSkill() {
 	}
 	int frames = 1.0000001f / progressSpeed;
 	int end = theWorld.getFrameCount() + frames + 1;
-	/*if ( !commands.empty() ) {
+	/*
+	if ( !commands.empty() ) {
 		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
 			+ CommandClassNames[commands.front()->getType()->getClass()] + " command, commencing "
 			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
 	} else {
 		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating no command, commencing "
 			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
-	}*/
+	}
+	*/
 	nextCommandUpdate = end;
 }
 

@@ -29,15 +29,10 @@
 #include "exceptions.h"
 #include "pos_iterator.h"
 
-namespace Shared{ namespace Platform{
-	class NetworkDataBuffer;
-}}
-
 namespace Glest{ namespace Game{
 
 using namespace Shared::Math;
 using Shared::Graphics::Texture2D;
-using Shared::Platform::NetworkDataBuffer;
 using Glest::Game::Util::PosCircularIteratorFactory;
 
 class Tileset;
@@ -71,10 +66,10 @@ public:
 	}
 
 	// get
-	Unit *getUnit( Zone zone ) const		{return units[zone];}
-	Unit *getUnit( Field field ) {return getUnit( field==Field::AIR?Zone::AIR:Zone::LAND );}
+	Unit *getUnit( Zone zone ) const	{return units[zone];}
+	Unit *getUnit( Field field )		{return getUnit( field==Field::AIR?Zone::AIR:Zone::LAND );}
 	float getHeight() const				{return height;}
-	SurfaceType getType() const { return surfaceType; }
+	SurfaceType getType() const 		{ return surfaceType; }
 
 	bool isSubmerged () const { return surfaceType != SurfaceType::LAND; }
 	bool isDeepSubmerged () const { return surfaceType == SurfaceType::DEEP_WATER; }
@@ -164,13 +159,6 @@ public:
 			object->setPos(vertex); // should be centered ??? YES!!! It should, do so here, remove hack from Renderer
 		}
 	}
-
-	// I know it looks stupid using NetworkDataBuffer to save these, but then I
-	// get my multi-byte values in platform portable format, so that saved game
-	// files will work across platforms (especially when resuming an interrupted
-	// network game).
-	void read(NetworkDataBuffer &buf);
-	void write(NetworkDataBuffer &buf) const;
 };
 
 // =====================================================
@@ -198,7 +186,7 @@ private:
 	Cell *cells;
 	Tile *tiles;
 	Vec2i *startLocations;
-	float *surfaceHeights;
+	//float *surfaceHeights;
 
 	Earthquakes earthquakes;
 
@@ -212,6 +200,7 @@ public:
 
 	void init();
 	void load(const string &path, TechTree *techTree, Tileset *tileset);
+	void doChecksum(Checksum &checksum);
 
 	//get
 	Cell *getCell(int x, int y) const;
@@ -307,9 +296,6 @@ public:
 
 	void computeNormals(Rect2i range);
 	void computeInterpolatedHeights(Rect2i range);
-
-	void read(NetworkDataBuffer &buf);
-	void write(NetworkDataBuffer &buf) const;
 
 	void add(Earthquake *earthquake) 			{earthquakes.push_back(earthquake);}
 	void update(float slice);

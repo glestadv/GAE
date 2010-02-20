@@ -65,9 +65,100 @@ string Ip::getString() const{
 	return intToStr(bytes[0]) + "." + intToStr(bytes[1]) + "." + intToStr(bytes[2]) + "." + intToStr(bytes[3]);
 }
 
+// =====================================================
+//	class Socket::CircularBuffer
+// =====================================================
+
+/** record that we have added b bytes to the buffer */
+void Socket::CircularBuffer::operator+=(size_t b) {
+	assert(b && head + b <= buffer_size);
+	head += b;
+	if (head == buffer_size) head = 0;
+	if (head == tail) full = true;
+}
+
+/** record that we have removed b bytes from the buffer */
+void Socket::CircularBuffer::operator-=(size_t b) {
+	assert(b);
+	if (tail + b <= buffer_size) {
+		tail += b;
+		if (tail == buffer_size) tail = 0;
+	} else {
+		tail = b - (buffer_size - tail);
+	}
+	if (full) full = false;
+}
+
+/** Number of bytes available to read */
+size_t Socket::CircularBuffer::bytesAvailable() const {
+	if (full) {
+		return buffer_size;
+	} else if (head < tail) {
+		return head + buffer_size - tail;
+	} else {
+		return head - tail;
+	}
+}
+
+/** peek the next n bytes, copying them to dst if the request can be satisfied
+  * @return true if ok, false if not enough bytes are available */
+bool Socket::CircularBuffer::peekBytes(void *dst, size_t n) {
+	if (bytesAvailable() < n) {
+		return false;
+	}
+	char_ptr ptr = (char_ptr)dst;
+	if (tail + n <= buffer_size) {
+		memcpy(ptr, buffer + tail, n);
+	} else {
+		size_t first_n = buffer_size - tail;
+		size_t second_n = n - first_n;
+		memcpy(ptr, buffer + tail, first_n);
+		memcpy(ptr + first_n, buffer, second_n);
+	}
+	return true;
+}
+
+/** read n bytes to dst, advancing tail offset ('removing' them from the buffer) 
+  * @return true if all ok, false if not enough bytes available, in which case none will be read */
+bool Socket::CircularBuffer::readBytes(void *dst, int n) {
+	if (peekBytes(dst, n)) {
+		*this -= n;
+		return true;
+	}
+	return false;
+}
+
+/** returns the maximum write length from the head, if no more bytes can be written
+  * after this (because the head would be at the tail) limit is set to true */
+int Socket::CircularBuffer::getMaxWrite(bool &limit) const {
+	if (full) {
+		limit = true;	
+		return 0;
+	}
+	if (tail > head) { // chasing tail?
+		limit = true;
+		return tail - head;
+	} else {
+		limit = tail ? false : true;
+		return buffer_size - head;
+	}
+}
+
+/** free space in buffer */
+size_t Socket::CircularBuffer::getFreeBytes() const {
+	if (full) return 0;
+	if (tail > head) {
+		return tail - head;
+	} else {
+		return buffer_size - head + tail; 
+	}
+}
+
 // ===============================================
 //	class Socket
 // ===============================================
+
+#define SOCKET_ERROR (-1)
 
 Socket::Socket(int sock){
 	this->sock= sock;
@@ -76,7 +167,7 @@ Socket::Socket(int sock){
 Socket::Socket(){
 	sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(sock < 0) {
-		throwException("Error creating socket");
+		throw SocketException("Error creating socket");
 	}
 	// some basic sanity checks on our types
 	assert(sizeof(int8) == 1);
@@ -93,56 +184,45 @@ Socket::~Socket() {
 	::close(sock);
 }
 
-int Socket::getDataToRead(){
-	unsigned long size;
-
-	/* ioctl isn't posix, but the following seems to work on all modern
-	* unixes */
-	int err= ioctl(sock, FIONREAD, &size);
-
-	if(err < 0 && errno != EAGAIN){
-		throwException("Can not get data to read");
-	}
-
-	return static_cast<int>(size);
+int Socket::getDataToRead() {
+	readAll();
+	return buffer.bytesAvailable();
 }
 
 int Socket::send(const void *data, int dataSize) {
 	ssize_t bytesSent = ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
 
 	if(bytesSent != dataSize) {
-		throwException("failed to send data on socket");
+		if (bytesSent == SOCKET_ERROR) {
+			handleError(__FUNCTION__);
+		} else {
+			throw SocketException("failed to send data on socket");
+		}
 	}
-
-	return static_cast<int>(bytesSent);
+	return int(bytesSent);
 }
 
 int Socket::receive(void *data, int dataSize) {
-	ssize_t bytesReceived = recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_DONTWAIT);
-
-	if(bytesReceived < 0 && errno != EAGAIN) {
-		throwException("error while receiving socket data");
+	readAll();
+	if (buffer.readBytes(data, dataSize)) {
+		return dataSize;
 	}
-
-	return static_cast<int>(bytesReceived);
+	return 0;
 }
 
 int Socket::peek(void *data, int dataSize) {
-	ssize_t bytesReceived = recv(sock, reinterpret_cast<char*>(data), dataSize, MSG_PEEK);
-
-	if(bytesReceived < 0 && errno != EAGAIN) {
-		throwException("Can not receive data");
+	readAll();
+	if (buffer.peekBytes(data, dataSize)) {
+		return dataSize;
 	}
-
-	return static_cast<int>(bytesReceived);
+	return 0;
 }
-
 
 void Socket::setBlock(bool block) {
 	int err = fcntl(sock, F_SETFL, block ? 0 : O_NONBLOCK);
 
-	if(err < 0) {
-		throwException("Error setting I/O mode for socket");
+	if (err == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 }
 
@@ -156,8 +236,8 @@ bool Socket::isReadable(){
 	FD_SET(sock, &set);
 
 	int i= select(sock+1, &set, NULL, NULL, &tv);
-	if(i<0){
-		throwException("Error selecting socket");
+	if (i == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 	return i==1;
 }
@@ -172,8 +252,8 @@ bool Socket::isWritable(){
 	FD_SET(sock, &set);
 
 	int i= select(sock+1, NULL, &set, NULL, &tv);
-	if(i<0){
-		throwException("Error selecting socket");
+	if (i == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 	return i==1;
 }
@@ -185,15 +265,45 @@ bool Socket::isConnected(){
 		return false;
 	}
 
+	// All input is 'drained' into our own buffer now, this needs sorting out
+	// this would be unreliable (I think...) 
 	//if the socket is readable it is connected if we can read a byte from it
 	if(isReadable()){
-		char tmp;
-		return recv(sock, &tmp, sizeof(tmp), MSG_PEEK) > 0;
+	//	char tmp;
+		return true;// recv(sock, &tmp, sizeof(tmp), MSG_PEEK) > 0;
 	}
 
 	//otherwise the socket is connected
 	return true;
 }
+
+void Socket::readAll() {
+	bool limit;
+	int n = buffer.getMaxWrite(limit);
+	int r = recv(sock, buffer.getWritePos(), n, 0);
+	if (r == SOCKET_ERROR) {
+		if (errno != EAGAIN) {
+			handleError(__FUNCTION__);
+		}
+	}
+	if (r > 0) {
+		buffer += r;
+		if (r == n && !limit) {
+			n = buffer.getMaxWrite(limit);
+			assert(n);
+			int r2 = recv(sock, buffer.getWritePos(), n, 0);
+			if (r2 > 0) {
+				buffer += r2;
+			} else if (r2 == SOCKET_ERROR && errno != EAGAIN) {
+				handleError(__FUNCTION__);
+			}
+			//cout << "Socket::readALL() read " << r + r2 << " bytes.\n";
+			return;
+		}
+		//cout << "Socket::readALL() read " << r << " bytes.\n";
+	}
+}
+
 
 string Socket::getHostName() const {
 	const int strSize= 256;
@@ -223,10 +333,11 @@ string Socket::getIp() const{
 		intToStr(address[3]);
 }
 
-void Socket::throwException(const char *str){
+void Socket::handleError(const char *caller) const {
 	std::stringstream msg;
-	msg << str << " (Error: " << strerror(errno) << ")";
-	throw runtime_error(msg.str());
+	msg << "Socket Error in : " << caller << " [Error code: " << errno << "]\n";
+	msg << strerror(errno);
+	throw SocketException(msg.str());
 }
 
 // ===============================================
@@ -242,8 +353,8 @@ void ClientSocket::connect(const Ip &ip, int port){
 	addr.sin_port= htons(port);
 
 	int err= ::connect(sock, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr));
-	if(err < 0) {
-		throwException("Error connecting socket");
+	if (err == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 }
 
@@ -262,25 +373,25 @@ void ServerSocket::bind(int port){
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
 	int err= ::bind(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
-	if(err < 0) {
-		throwException("Error binding socket");
+	if (err == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 }
 
 void ServerSocket::listen(int connectionQueueSize){
 	int err= ::listen(sock, connectionQueueSize);
-	if(err < 0) {
-		throwException("Error listening socket");
+	if (err == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
 	}
 }
 
 Socket *ServerSocket::accept(){
 	int newSock= ::accept(sock, NULL, NULL);
 	if(newSock < 0) {
-		if(errno == EAGAIN)
+		if(errno == EAGAIN) {
 			return NULL;
-
-		throwException("Error accepting socket connection");
+		}
+		handleError(__FUNCTION__);
 	}
 	return new Socket(newSock);
 }

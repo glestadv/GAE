@@ -106,7 +106,7 @@ CommandResult Commander::tryCancelCommand(const Selection *selection) const{
 
 	return CommandResult::SUCCESS;
 }
-
+/*
 void Commander::trySetAutoRepairEnabled(const Selection &selection, CommandFlags flags, bool enabled) const{
 	const Selection::UnitContainer &units = selection.getUnits();
 	for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
@@ -114,7 +114,7 @@ void Commander::trySetAutoRepairEnabled(const Selection &selection, CommandFlags
 				Command::invalidPos, *i));
 	}
 }
-
+*/
 // ==================== PRIVATE ====================
 
 Vec2i Commander::computeRefPos(const Selection &selection) const{
@@ -188,11 +188,12 @@ void Commander::updateNetwork() {
 	if(!networkManager.isNetworkGame() || (world->getFrameCount() % GameConstants::networkFramePeriod) == 0) {
 
 		//update the keyframe
-		gameNetworkInterface->updateKeyframe(world->getFrameCount());
+		gameNetworkInterface->doUpdateKeyframe(world->getFrameCount());
 
 		//give pending commands
-		for(int i = 0; i < gameNetworkInterface->getPendingCommandCount(); ++i) {
-			giveCommand(gameNetworkInterface->getPendingCommand(i));
+		for (int i = 0; i < gameNetworkInterface->getPendingCommandCount(); ++i) {
+			Command *cmd = gameNetworkInterface->getPendingCommand(i);
+			giveCommand(cmd);
 		}
 		gameNetworkInterface->clearPendingCommands();
 	}
@@ -212,10 +213,12 @@ void Commander::giveCommand(Command *command) const {
 				unit->cancelCommand();
 				delete command;
 				break;
+			/*
 			case CommandArchetype::SET_AUTO_REPAIR:
 				unit->setAutoRepairEnabled(command->isAutoRepairEnabled());
 				delete command;
 				break;
+			*/
 			default:
 				assert(false);
 		}

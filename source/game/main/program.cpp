@@ -98,13 +98,14 @@ Program *Program::singleton = NULL;
 // ===================== PUBLIC ========================
 
 Program::Program(Config &config, int argc, char** argv) :
-		renderTimer(config.getRenderFpsMax(), 1),
+		renderTimer(config.getRenderFpsMax(), 1, 0),
 		tickTimer(1.f, maxTimes, -1),
-		updateTimer(config.getGsWorldUpdateFps(), maxTimes, 2),
+		updateTimer(config.getGsWorldUpdateFps(), maxTimes, 1),
 		updateCameraTimer(GameConstants::cameraFps, maxTimes, 10),
 		programState(NULL),
 		crashed(false),
 		terminating(false),
+		visible(true),
 		keymap(getInput(), "keymap.ini") {
 
 	//set video mode
@@ -190,7 +191,7 @@ void Program::loop() {
 		}
 	
 		//render
-		while(renderTimer.isTime()){
+		while(renderTimer.isTime() && visible){
 			programState->render();
 		}
 	
@@ -219,10 +220,12 @@ void Program::eventResize(SizeState sizeState) {
 
 	switch(sizeState){
 	case ssMinimized:
+		visible = false;
 		//restoreVideoMode();
 		break;
 	case ssMaximized:
 	case ssRestored:
+		visible = true;
 		//setDisplaySettings();
 		//renderer.reloadResources();
 		break;

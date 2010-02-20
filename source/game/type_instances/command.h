@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Marti�o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -35,34 +35,33 @@ typedef Flags<CommandProperties, CommandProperties::COUNT, uint8> CommandFlags;
 ///	A unit command
 // =====================================================
 
-class Command : public NetworkWriteable {
+class Command {
 public:
 
 	static const Vec2i invalidPos;
 
 private:
 	CommandArchetype archetype;
-    const CommandType *type;
+	const CommandType *type;
 	CommandFlags flags;
-    Vec2i pos;
-    Vec2i pos2;					//for patrol command, the position traveling away from.
+	Vec2i pos;
+	Vec2i pos2;					//for patrol command, the position traveling away from.
 	UnitReference unitRef;		//target unit, used to move and attack optinally
 	UnitReference unitRef2;		//for patrol command, the unit traveling away from.
 	const UnitType *unitType;	//used for build
 	Unit *commandedUnit;
 
 public:
-    //constructor
-    Command(CommandArchetype archetype, CommandFlags flags, const Vec2i &pos = invalidPos, Unit *commandedUnit = NULL);
-    Command(const CommandType *type, CommandFlags flags, const Vec2i &pos = invalidPos, Unit *commandedUnit = NULL);
-    Command(const CommandType *type, CommandFlags flags, Unit *unit, Unit *commandedUnit = NULL);
-    Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, const UnitType *unitType, Unit *commandedUnit = NULL);
+	//constructor
+	Command(CommandArchetype archetype, CommandFlags flags, const Vec2i &pos = invalidPos, Unit *commandedUnit = NULL);
+	Command(const CommandType *type, CommandFlags flags, const Vec2i &pos = invalidPos, Unit *commandedUnit = NULL);
+	Command(const CommandType *type, CommandFlags flags, Unit *unit, Unit *commandedUnit = NULL);
+	Command(const CommandType *type, CommandFlags flags, const Vec2i &pos, const UnitType *unitType, Unit *commandedUnit = NULL);
 	Command(const XmlNode *node, const UnitType *ut, const FactionType *ft);
-	Command(NetworkDataBuffer &buf);
-//	Command(const Command &);
+
 	// allow default ctor
 
-    //get
+	//get
 	CommandArchetype getArchetype() const		{return archetype;}
 	const CommandType *getType() const			{return type;}
 	CommandFlags getFlags() const				{return flags;}
@@ -80,7 +79,7 @@ public:
 	bool hasPos() const							{return pos.x != -1;}
 	bool hasPos2() const						{return pos2.x != -1;}
 
-    //set
+	//set
 	void setType(const CommandType *type)				{this->type= type;}
 	void setFlags(CommandFlags flags)					{this->flags = flags;}
 	void setQueue(bool queue)							{flags.set(CommandProperties::QUEUE, queue);}
@@ -99,23 +98,6 @@ public:
 	void swap();
 	void popPos()										{pos = pos2; pos2 = invalidPos;}
 	void save(XmlNode *node) const;
-
-	// NetworkWriteable methods
-	void write(NetworkDataBuffer &buf) const;
-	void read(NetworkDataBuffer &buf);
-	size_t getNetSize() const;
-	size_t getMaxNetSize() const						{return Command::getStaticMaxNetSize();}
-	static size_t getStaticMaxNetSize() {
-		return	  sizeof(uint16)		// id of unit command is being issued to
-				+ sizeof(uint8)			// archtype + flags
-				+ sizeof(uint8)			// fields present
-				+ sizeof(uint8)			// command id (unit type-specific)
-				+ sizeof(uint16) * 2	// pos
-				+ sizeof(uint16) * 2	// pos2
-				+ sizeof(uint16)		// target (unit id)
-				+ sizeof(uint16)		// target2 (unit id)
-				+ sizeof(uint8);		// unitTypeId
-	}
 };
 
 }}//end namespace

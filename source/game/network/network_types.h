@@ -13,12 +13,11 @@
 #define _GLEST_GAME_NETWORKTYPES_H_
 
 #include <string>
-#include <limits.h>
+#include <stdexcept>
 
 #include "types.h"
 #include "vec.h"
-#include "command.h"
-#include "socket.h"
+#include "unit.h"
 
 using std::string;
 using Shared::Platform::int8;
@@ -28,24 +27,30 @@ using Shared::Math::Vec2i;
 
 namespace Glest { namespace Game {
 
-class NetworkException : public runtime_error {
+class Command;
+
+// =====================================================
+//	class NetworkException
+// =====================================================
+
+class NetworkException : public std::runtime_error {
 public:
 	NetworkException(const string &msg) : runtime_error(msg) {}
 	NetworkException(const char *msg) : runtime_error(msg) {}
 };
-	
+
 // =====================================================
 //	class NetworkString
 // =====================================================
 
-template<int S> class NetworkString : public NetworkWriteable {
+template<int S>
+class NetworkString{
 private:
-	uint16 size;	//size excluding null terminator, max of S - 1
 	char buffer[S];
-	string s;
 
 public:
-	NetworkString() /*: s() */{
+	/*
+	NetworkString() /*: s() *{
 		assert(S && S < USHRT_MAX);
 		size = 0;
 		*buffer = 0;
@@ -54,14 +59,20 @@ public:
 		assert(S && S < USHRT_MAX);
 		(*this) = str;
 	}
+	*/
+	NetworkString()						{memset(buffer, 0, S);}
+	void operator=(const string& str)	{strncpy(buffer, str.c_str(), S-1);}
 	string getString() const			{return buffer;}
+
+	/*
+
 	void operator=(const string &str) {
 		/*
 		s = str;
 		if(s.size() > S) {
 			s.resize(S);
 		}
-		*/
+		*
 		size = (uint16)(str.size() < S ? str.size() : S - 1);
 		strncpy(buffer, str.c_str(), size);
 		buffer[size] = 0;
@@ -87,7 +98,47 @@ public:
 		buf.read(buffer, size);
 		buffer[size] = 0;
 	}
+	*/
 };
+
+// =====================================================
+//	class NetworkCommand
+// =====================================================
+
+enum NetworkCommandType{
+	nctGiveCommand,
+	nctCancelCommand,
+	nctSetMeetingPoint
+};
+
+#pragma pack(push, 2)
+
+class NetworkCommand{
+private:
+	int16 networkCommandType;
+	int16 unitId;
+	int16 commandTypeId;
+	int16 positionX;
+	int16 positionY;
+	int16 unitTypeId;
+	int16 targetId;
+
+public:
+	NetworkCommand(){};
+	NetworkCommand(Command *command);
+	NetworkCommand(NetworkCommandType type, const Unit *unit, const Vec2i &pos);
+	NetworkCommand(int networkCommandType, int unitId, int commandTypeId= -1, const Vec2i &pos= Vec2i(0), int unitTypeId= -1, int targetId= -1);
+
+	Command *toCommand() const;
+	NetworkCommandType getNetworkCommandType() const	{return static_cast<NetworkCommandType>(networkCommandType);}
+	int getUnitId() const								{return unitId;}
+	int getCommandTypeId() const						{return commandTypeId;}
+	Vec2i getPosition() const							{return Vec2i(positionX, positionY);}
+	int getUnitTypeId() const							{return unitTypeId;}
+	int getTargetId() const								{return targetId;}
+};
+
+#pragma pack(pop)
 
 }}//end namespace
 

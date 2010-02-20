@@ -26,7 +26,7 @@
 #include "socket.h"
 
 #include "leak_dumper.h"
-
+#include "logger.h"
 
 namespace Glest { namespace Game {
 
@@ -205,7 +205,7 @@ void MenuStateJoinGame::update() {
 	if (clientInterface->isConnected()) {
 
 		//update lobby
-		clientInterface->updateLobby();
+		clientInterface->doUpdateLobby();
 
 		//intro
 		if (clientInterface->getIntroDone()) {
@@ -216,12 +216,14 @@ void MenuStateJoinGame::update() {
 		//launch
 		if (clientInterface->getLaunchGame()) {
 			servers.save(serverFileName);
-			if (clientInterface->getSavedGameFile() == "") {
+// NETWORK:	if (clientInterface->getSavedGameFile() == "") {
 				program.setState(new Game(program, *clientInterface->getGameSettings()));
-			} else {
+		/* NETWORK:	
+		} else {
 				XmlNode *root = XmlIo::getInstance().load(clientInterface->getSavedGameFile());
 				program.setState(new Game(program, *clientInterface->getGameSettings(), root));
 			}
+			*/
 		}
 	}
 }
@@ -290,6 +292,7 @@ void MenuStateJoinGame::connectToServer() {
 		msgBox = new GraphicMessageBox();
 		msgBox->init(lang.get("UnableToJoin"), lang.get("Ok"));
 		printf("\n%s", e.what());
+		LOG_NETWORK(e.what());
 	}
 
 	labelServerIp.setText(serverIp.getString() + '_');

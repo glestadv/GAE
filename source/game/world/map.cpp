@@ -79,164 +79,6 @@ void Tile::deleteResource() {
 	object= NULL;
 }
 
-/*
-This version of the function does it the right way by creating the new object if it doesn't exist,
-etc.
-void Tile::load(const XmlNode *node, World *world) {
-	XmlNode *n;
-	Vec2i pos;
-	pos.x = node->getAttribute("x")->getIntValue();
-	pos.y = node->getAttribute("y")->getIntValue();
-	n = node->getChild("object", 0, false);
-	if (n) {
-		int objectClass = n->getAttribute("value")->getIntValue();
-		ObjectType *objectType = world->getTileset()->getObjectType(objectClass);
-		object = new Object(objectType, vertex);
-	}
-	n = node->getChild("resource", 0, false);
-	if (n) {
-		if (!object) {
-			object = new Object(NULL, vertex);
-		}
-		object->setResource(world->getTechTree()->getResourceType(n->getAttribute("type")->getValue()), world->getMap()->toUnitCoords(pos));
-		object->getResource()->setAmount(n->getAttribute("amount")->getIntValue());
-	}
-	n = node->getChild("explored", 0, false);
-	if (n) {
-		for (int i = 0; i < n->getChildCount(); i++) {
-			explored[n->getChildIntValue("team")] = true;
-		}
-	}
-}
-*/
-/** Reads saved data for this cell from a binary source. */
-void Tile::read(NetworkDataBuffer &buf) {
-	uint8 a;
-	buf.read(a);
-	explored[0] = a & 0x01;
-	explored[1] = a & 0x02;
-	explored[2] = a & 0x04;
-	explored[3] = a & 0x08;
-
-	if(a & 0x10) {
-		/* We're not using object or resource type right now, but leave them in comments in case
-		   we do later.
-		if(a & 0x20) {
-			uint8 objectType;
-			buf.read(objectType);
-		}
-
-		if(a & 0x40) {
-			uint8 resourceTypeId;
-			buf.read(resourceTypeId);
-
-			if(a & 0x80) {
-				uint32 resourceAmount;
-				buf.read(resourceAmount);
-				assert(object && object->getResource());
-				if(object && object->getResource()) {
-					object->getResource()->setAmount(resourceAmount);
-				}
-			}
-		}*/
-
-		// If there is an object, with a resource and that amount differs from the default
-		if((a & 0x60) == 0x60) {
-			// sanity check, let's have a real exception rather than crash if these don't match.
-			if(!object) {
-				throw runtime_error("Expected Tile at " + Conversion::toStr(vertex.x) + ", "
-						+ Conversion::toStr(vertex.z) + " to have an object, but it did not.  This "
-						"probably means that you modified the map since this game was saved or if "
-						"this is a network game, that you have a different map than the server.");
-			}
-			if(!object->getResource()) {
-				throw runtime_error("Expected Tile at " + Conversion::toStr(vertex.x) + ", "
-						+ Conversion::toStr(vertex.z) + " to have a resource, but it did not.  This "
-						"probably means that you modified the map since this game was saved or if "
-						"this is a network game, that you have a different map than the server.");
-			}
-
-			if(a & 0x80) {
-				uint32 amount32;
-				buf.read(amount32);
-				object->getResource()->setAmount(amount32);
-			} else {
-				uint16 amount16;
-				buf.read(amount16);
-				object->getResource()->setAmount(amount16);
-			}
-		}
-	} else if(object) {
-		delete object;
-		object = NULL;
-	}
-}
-
-/**
- * Saves data for this surface cell. No bit left behind.
- * byte 0:
- *   bits 0-3: explored states for each team (only 4 teams supported)
- *   bit 4: high if there is an object
- *   bit 5: high if object has a resource
- *   bit 6: high if resource amount differs from default (amount coming in next bytes)
- *   bit 7: high if amount is 32 bits, low if amount is 16 bits.
- * bytes 1-4 (optional, depending upon byte 0, bits 6 and 7):
- */
-void Tile::write(NetworkDataBuffer &buf) const {
-	uint8 a = (explored[0] ? 0x01 : 0)
-			| (explored[1] ? 0x02 : 0)
-			| (explored[2] ? 0x04 : 0)
-			| (explored[3] ? 0x08 : 0);
-//	uint8 objectType = 0;
-//	uint8 resourceTypeId = 0;
-	uint32 amount32 = 0;
-	if(object) {
-		a = a | 0x10;
-//		const ObjectType *ot = object->getType();
-//		if(ot) {
-//			objectType = ot->getClass();
-//			a = a | 0x20;
-//		}
-		Resource *r = object->getResource();
-		if(r) {
-			a = a | 0x20;
-			const ResourceType *rt = r->getType();
-//			resourceTypeId = rt->getId();
-			amount32 = r->getAmount();
-			if(amount32 != rt->getDefResPerPatch()) {
-				a = a | 0x40;
-				if(amount32 > USHRT_MAX) {
-					a = a | 0x80;
-				}
-			}
-		}
-	}
-	buf.write(a);
-
-	/*	We have no reason to store these right now, so let's leave them out but keep them in
-		comments for now in case we decide we need it for something in the near future.
-	if(a & 0x20) {
-		buf.write(objectType);
-	}
-
-	if(a & 0x40) {
-		buf.write(resourceTypeId);
-	}
-	*/
-
-	// If there is an object, with a resource and that amount differs from the default
-	if((a & 0x70) == 0x70) {
-		// do we need 32 bits or can we use 16?
-		if(a & 0x80) {
-			buf.write(amount32);
-		} else {
-			uint16 amount16 = (uint16)amount32;
-			buf.write(amount16);
-		}
-	}
-}
-
-
 // =====================================================
 // 	class Map
 // =====================================================
@@ -259,7 +101,7 @@ Map::Map()
 		, cells(NULL)
 		, tiles(NULL)
 		, startLocations(NULL)
-		, surfaceHeights(NULL)
+		//, surfaceHeights(NULL)
 		, earthquakes() {
 
 	// If this is expanded, maintain Tile::read() and write()
@@ -275,7 +117,7 @@ Map::~Map() {
 	if(cells)			{delete[] cells;}
 	if(tiles)			{delete[] tiles;}
 	if(startLocations)	{delete[] startLocations;}
-	if (surfaceHeights)	{delete[] surfaceHeights;}
+//	if (surfaceHeights)	{delete[] surfaceHeights;}
 }
 //get
 Cell *Map::getCell(int x, int y) const {
@@ -347,12 +189,12 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 		}
 
 
-		//cells
+		// Tiles & Cells
 		cells = new Cell[w * h];
 		tiles = new Tile[tileW * tileH];
-		surfaceHeights = new float[tileW * tileH];
+		//surfaceHeights = new float[tileW * tileH]; // unused ???
 
-		float *surfaceHeight = surfaceHeights;
+		//float *surfaceHeight = surfaceHeights;
 
 		//read heightmap
 		for (int y = 0; y < tileH; ++y) {
@@ -409,6 +251,24 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 	}
 }
 
+void Map::doChecksum(Checksum &checksum) {
+	checksum.addString(title);
+	checksum.add<float>(waterLevel);
+	checksum.add<float>(heightFactor);
+	checksum.add<float>(avgHeight);
+	checksum.add<int>(w);
+	checksum.add<int>(h);
+	checksum.add<int>(tileW);
+	checksum.add<int>(tileH);
+	checksum.add<int>(maxPlayers);
+	for (int i=0; i < tileW * tileH; ++i) {
+		checksum.add<Vec3f>(tiles[i].getVertex());
+	}
+	for (int i=0; i < maxPlayers; ++i) {
+		checksum.add<Vec2i>(startLocations[i]);
+	}
+}
+
 void Map::init() {
 	Logger::getInstance().add("Heightmap computations", true);
 	smoothSurface();
@@ -454,53 +314,6 @@ void Map::calcAvgAltitude() {
 	//cout << "average map height = " << avgHeight << endl;
 }
 
-void Map::read(NetworkDataBuffer &buf) {
-
-	for(int y = 0; y < tileH; ++y) {
-		for(int x = 0; x < tileW; ++x) {
-			getTile(x, y)->read(buf);
-		}
-	}
-/*
-	int thisTeam = world->getThisTeamIndex();
-	Minimap *minimap = (Minimap *)world->getMinimap();
-
-	// smooth edges of fow alpha
-	for(int y = 0; y < tileH; ++y) {
-		for(int x = 0; x < tileW; ++x) {
-			if(!getTile(x, y)->isExplored(thisTeam)) {
-				continue;
-			}
-			// count the adjacent area of surrounding tiles that are explored, for a total of 100%
-			float adjacent =
-					  (x + 1 < tileW	&& getTile(x + 1, y)->isExplored(thisTeam) ? 0.1029f : 0.0f)
-					+ (x - 1 >= 0		&& getTile(x - 1, y)->isExplored(thisTeam) ? 0.1029f : 0.0f)
-					+ (y + 1 < tileH	&& getTile(x, y + 1)->isExplored(thisTeam) ? 0.1029f : 0.0f)
-					+ (y - 1 >= 0		&& getTile(x, y - 1)->isExplored(thisTeam) ? 0.1029f : 0.0f)
-					+ (x + 1 < tileW	&& y + 1 < tileH	&& getTile(x + 1, y + 1)->isExplored(thisTeam) ? 0.1471f : 0.0f)
-					+ (x + 1 < tileW	&& y - 1 >= 0		&& getTile(x + 1, y - 1)->isExplored(thisTeam) ? 0.1471f : 0.0f)
-					+ (x - 1 >= 0		&& y + 1 < tileH	&& getTile(x - 1, y + 1)->isExplored(thisTeam) ? 0.1471f : 0.0f)
-					+ (x - 1 >= 0		&& y - 1 >= 0		&& getTile(x - 1, y - 1)->isExplored(thisTeam) ? 0.1471f : 0.0f);
-			// if less than 80%, it remains the same, otherwise, we raise the alpha
-			if(adjacent >= 0.80f) {
-				// alpha between 0.25 and 0.5 depending upon how many surrounding tiles are explored
-				minimap->incFowTextureAlphaSurface(Vec2i(x, y), 0.25f + (adjacent - 0.8f) * 1.25f);
-			}
-		}
-	}
-
-	minimap->updateFowTex(1.f);
-*/
-}
-
-void Map::write(NetworkDataBuffer &buf) const {
-	for(int y = 0; y < tileH; ++y) {
-		for(int x = 0; x < tileW; ++x) {
-			getTile(x, y)->write(buf);
-		}
-	}
-}
-
 // ==================== is ====================
 
 /**
@@ -525,17 +338,18 @@ bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resour
 
 
 // ==================== free cells ====================
-bool Map::fieldsCompatible ( Cell *cell, Field mf ) const {
-	if ( mf == Field::AIR || mf == Field::AMPHIBIOUS
-	||  (mf == Field::LAND && ! cell->isDeepSubmerged ()) 
-	||  (mf == Field::ANY_WATER && cell->isSubmerged ())
-	||  (mf == Field::DEEP_WATER && cell->isDeepSubmerged ()) )
+bool Map::fieldsCompatible(Cell *cell, Field mf) const {
+	if (mf == Field::AIR || mf == Field::AMPHIBIOUS
+	|| (mf == Field::LAND && ! cell->isDeepSubmerged()) 
+	|| (mf == Field::ANY_WATER && cell->isSubmerged())
+	|| (mf == Field::DEEP_WATER && cell->isDeepSubmerged())) {
 		return true;
+	}
 	return false;
 }
 
 bool Map::isFreeCell(const Vec2i &pos, Field field) const {
-	if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
+	if ( !isInside(pos) || !getCell(pos)->isFree(field == Field::AIR ? Zone::AIR : Zone::LAND) )
 		return false;
 	if ( field != Field::AIR && !getTile(toTileCoords(pos))->isFree() )
 		return false;
@@ -554,11 +368,10 @@ bool Map::isFreeCell(const Vec2i &pos, Field field) const {
 	return true;
 }
 /*
-bool Map::isFreeCell(const Vec2i &pos, Zone field) const
-{
-   if ( !isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND) )
-      return false;
-   return true;
+bool Map::isFreeCell(const Vec2i &pos, Zone field) const {
+	if (!isInside(pos) || !getCell(pos)->isFree(field==Field::AIR?Zone::AIR:Zone::LAND))
+		return false;
+	return true;
 }
 */
 // Is the Cell at 'pos' (for the given 'field') either free or does it contain 'unit'
@@ -1070,11 +883,11 @@ void Map::flattenTerrain(const Unit *unit) {
 			&&   unit->getType ()->getFieldMapCell ( relPos ) != 'f' ) {
 				continue;
 			}
-			Cell *c= getCell(pos);
-			Tile *sc= getTile(toTileCoords(pos));
+			Cell *c = getCell(pos);
+			Tile *sc = getTile(toTileCoords(pos));
 			//we change height if pos is inside world, if its free or ocupied by the currenty building
-			if ( isInside(pos) && sc->getObject()==NULL 
-			&&   (c->getUnit(Zone::LAND)==NULL || c->getUnit(Zone::LAND)==unit) ) {
+			if (isInside(pos) && sc->getObject() == NULL
+			&& (c->getUnit(Zone::LAND) == NULL || c->getUnit(Zone::LAND) == unit)) {
 				sc->setHeight(refHeight);
 			}
 		}

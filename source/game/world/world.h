@@ -116,7 +116,8 @@ public:
 	~World();
 	void end(); //to die before selection does
 
-	static World& getInstance () { return *singleton; }
+	static World& getInstance() { return *singleton; }
+	static bool isConstructed() { return singleton != 0; }
 
 	//get
 	int getMaxPlayers() const						{return map.getMaxPlayers();}
@@ -136,7 +137,6 @@ public:
 	const Faction *getFaction(int i) const			{return &factions[i];}
 	Faction *getFaction(int i) 						{return &factions[i];}
 	const Minimap *getMinimap() const				{return &minimap;}
-//	const Stats &getStats() const					{return stats;}
 	Stats &getStats() 								{return stats;}
 	const WaterEffects *getWaterEffects() const		{return &waterEffects;}
 	int getNextUnitId()								{return nextUnitId++;}
@@ -146,14 +146,12 @@ public:
 	const PosCircularIteratorFactory &getPosIteratorFactory() {return posIteratorFactory;}
 
 	//init & load
-	void init(const XmlNode *worldNode = NULL);
-	void preload(Checksum &checksum);
-	bool loadTileset(Checksum &checksum);
-	bool loadTech(Checksum &checksum);
-	bool loadMap(Checksum &checksum);
-	bool loadScenario(const string &path, Checksum *checksum);
-
-	void save(XmlNode *node) const;
+	void init();
+	void preload();
+	bool loadTileset();
+	bool loadTech();
+	bool loadMap();
+	bool loadScenario(const string &path);
 
 	//misc
 	void update();
@@ -190,9 +188,9 @@ public:
 	void unfogMap(const Vec4i &rect, int time);
 
 #ifdef _GAE_DEBUG_EDITION_
+	// these should be in DebugRenderer
 	void loadPFDebugTextures();
 	Texture2D *PFDebugTextures[18];
-	//int getNumPathPos() { return map.PathPositions.size(); }
 #endif
 
 private:
@@ -215,8 +213,8 @@ private:
 	void loadSaved(const XmlNode *worldNode);
 	void moveAndEvict(Unit *unit, vector<Unit*> &evicted, Vec2i *oldPos);
 	void doClientUnitUpdate(XmlNode *n, bool minor, vector<Unit*> &evicted, float nextAdvanceFrames);
-	bool isNetworkServer() {return NetworkManager::getInstance().isNetworkServer();}
-	bool isNetworkClient() {return NetworkManager::getInstance().isNetworkClient();}
+	//NETWORK:bool isNetworkServer() {return NetworkManager::getInstance().isNetworkServer();}
+	//NETWORK:bool isNetworkClient() {return NetworkManager::getInstance().isNetworkClient();}
 	void doHackyCleanUp();
 };
 

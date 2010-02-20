@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <climits>
 
 #include "upgrade_type.h"
 #include "unit_type.h"
@@ -27,7 +28,7 @@
 #include "renderer.h"
 
 #include "leak_dumper.h"
-
+#include "logger.h"
 
 using namespace Shared::Util;
 
@@ -68,8 +69,8 @@ void AttackSkillTypes::getDesc(string &str, const Unit *unit) const {
 	}
 }
 
-const AttackSkillType *AttackSkillTypes::getPreferredAttack(const Unit *unit,
-		const Unit *target, int rangeToTarget) const {
+const AttackSkillType *AttackSkillTypes::getPreferredAttack(
+		const Unit *unit, const Unit *target, int rangeToTarget) const {
 	const AttackSkillType *ast = NULL;
 
 	if(types.size() == 1) {
@@ -121,22 +122,19 @@ const AttackSkillType *AttackSkillTypes::getPreferredAttack(const Unit *unit,
 
 int CommandType::nextId = 0;
 
-CommandType::CommandType(const char* name, CommandClass cc, Clicks clicks, bool queuable) :
-		RequirableType(getNextId(), name, NULL),
-		cc(cc),
-		clicks(clicks),
-		queuable(queuable),
-		unitType(NULL),
-		unitTypeIndex(-1) {
+CommandType::CommandType(const char* name, CommandClass cc, Clicks clicks, bool queuable)
+		: RequirableType(getNextId(), name, NULL)
+		, cc(cc)
+		, clicks(clicks)
+		, queuable(queuable)
+		, unitType(NULL)
+		, unitTypeIndex(-1) {
 }
 
 void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 	switch(cc) {
 		case CommandClass::STOP:
-			if(unit->getLastCommandUpdate() > 250000) {
-				unitUpdater->updateStop(unit);
-				unit->resetLastCommandUpdated();
-			}			
+			unitUpdater->updateStop(unit);
 			break;
 
 		case CommandClass::MOVE:
@@ -148,10 +146,7 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			break;
 
 		case CommandClass::ATTACK_STOPPED:
-			if(unit->getLastCommandUpdate() > 250000) {
-				unitUpdater->updateAttackStopped(unit);
-				unit->resetLastCommandUpdated();
-			}			
+			unitUpdater->updateAttackStopped(unit);
 			break;
 
 		case CommandClass::BUILD:
@@ -183,10 +178,7 @@ void CommandType::update(UnitUpdater *unitUpdater, Unit *unit) const{
 			break;
 
 		case CommandClass::GUARD:
-			if(unit->getCurrSkill()->getClass() != SkillClass::STOP || unit->getLastCommandUpdate() > 250000) {
-				unitUpdater->updateGuard(unit);
-				unit->resetLastCommandUpdated();
-			}
+			unitUpdater->updateGuard(unit);
 			break;
 
 		case CommandClass::PATROL:
@@ -207,16 +199,16 @@ void CommandType::setUnitTypeAndIndex(const UnitType *unitType, int unitTypeInde
 	if(unitType->getId() > UCHAR_MAX) {
 		stringstream str;
 		str <<  "A maximum of " << UCHAR_MAX << " unit types are currently allowed per faction.  "
-				"This limit is only imposed for network data compactness and can be easily changed "
-				"if you *really* need that many different unit types. Do you really?";
+			"This limit is only imposed for network data compactness and can be easily changed "
+			"if you *really* need that many different unit types. Do you really?";
 		throw runtime_error(str.str());
 	}
 
 	if(unitType->getId() > UCHAR_MAX) {
 		stringstream str;
 		str <<  "A maximum of " << UCHAR_MAX << " commands are currently allowed per unit.  "
-				"This limit is only imposed for network data compactness and can be easily changed "
-				"if you *really* need that many commands. Do you really?";
+			"This limit is only imposed for network data compactness and can be easily changed "
+			"if you *really* need that many commands. Do you really?";
 		throw runtime_error(str.str());
 	}
 
@@ -231,6 +223,11 @@ bool CommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, 
 	return RequirableType::load(n, dir, tt, ft) && ok;
 }
 
+void CommandType::doChecksum(Checksum &checksum) const {
+	RequirableType::doChecksum(checksum);
+	checksum.add<CommandClass>(cc);
+}
+
 // =====================================================
 // 	class MoveBaseCommandType
 // =====================================================
@@ -239,16 +236,15 @@ bool MoveBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
 	bool loadOk = CommandType::load(n, dir, tt, ft);
 
 	//move
-   try { 
-	   string skillName= n->getChild("move-skill")->getAttribute("value")->getRestrictedValue();
-      const SkillType *st = unitType->getSkillType(skillName, SkillClass::MOVE);
-	   moveSkillType= static_cast<const MoveSkillType*>(st);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      loadOk = false;
-   }
-   return loadOk;
+	try { 
+		string skillName= n->getChild("move-skill")->getAttribute("value")->getRestrictedValue();
+		const SkillType *st = unitType->getSkillType(skillName, SkillClass::MOVE);
+		moveSkillType= static_cast<const MoveSkillType*>(st);
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError ( dir, e.what() );
+		loadOk = false;
+	}
+	return loadOk;
 }
 
 // =====================================================
@@ -259,15 +255,14 @@ bool StopBaseCommandType::load(const XmlNode *n, const string &dir, const TechTr
 	bool loadOk = CommandType::load(n, dir, tt, ft);
 
 	//stop
-   try {
-	   string skillName= n->getChild("stop-skill")->getAttribute("value")->getRestrictedValue();
-	   stopSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, SkillClass::STOP));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what() );
-      return false;
-   }
-   return loadOk;
+	try {
+		string skillName= n->getChild("stop-skill")->getAttribute("value")->getRestrictedValue();
+		stopSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, SkillClass::STOP));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError ( dir, e.what() );
+		return false;
+	}
+	return loadOk;
 }
 // ===============================
 // 	class AttackCommandTypeBase
@@ -277,67 +272,63 @@ bool AttackCommandTypeBase::load(const XmlNode *n, const string &dir, const Tech
 	const AttackSkillType *ast;
 	string skillName;
 	const XmlNode *attackSkillNode = n->getChild("attack-skill", 0, false);
-   bool loadOk = true;
+	bool loadOk = true;
 	//single attack skill
 	if(attackSkillNode) {
-      try {
-         skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
-	      ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, SkillClass::ATTACK));
-	      attackSkillTypes.push_back(ast, AttackSkillPreferences());
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( dir, e.what () );
-         loadOk = false;
-      }
-	} 
-   else { //multiple attack skills
-      try {
-         const XmlNode *flagsNode;
-		   const XmlNode *attackSkillsNode;
+		try {
+			skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
+			ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, SkillClass::ATTACK));
+			attackSkillTypes.push_back(ast, AttackSkillPreferences());
+		} catch (runtime_error e) {
+			Logger::getErrorLog().addXmlError(dir, e.what ());
+			loadOk = false;
+		}
+	} else { //multiple attack skills
+		try {
+			const XmlNode *flagsNode;
+			const XmlNode *attackSkillsNode;
 
-         attackSkillsNode = n->getChild("attack-skills", 0, false);
-		   if(!attackSkillsNode)
-			   throw runtime_error("Must specify either a single <attack-skill> node or an <attack-skills> node with nested <attack-skill>s.");
-		   int count = attackSkillsNode->getChildCount();
+			attackSkillsNode = n->getChild("attack-skills", 0, false);
+			if(!attackSkillsNode)
+				throw runtime_error("Must specify either a single <attack-skill> node or an <attack-skills> node with nested <attack-skill>s.");
+			int count = attackSkillsNode->getChildCount();
 
-		   for(int i = 0; i < count; ++i) {
-            try {
-			      AttackSkillPreferences prefs;
-			      attackSkillNode = attackSkillsNode->getChild("attack-skill", i);
-			      skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
-			      ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, SkillClass::ATTACK));
-			      flagsNode = attackSkillNode->getChild("flags", 0, false);
-			      if(flagsNode) {
-				      prefs.load(flagsNode, dir, tt, ft);
-			      }
-			      attackSkillTypes.push_back(ast, prefs);
-            }
-            catch ( runtime_error e ) {
-               Logger::getErrorLog().addXmlError ( dir, e.what () );
-               loadOk = false;
-            }
-		   }
-      }
-      catch ( runtime_error e ) {
-         Logger::getErrorLog().addXmlError ( dir, e.what () );
-         loadOk = false;
-      }
+			for(int i = 0; i < count; ++i) {
+				try {
+					AttackSkillPreferences prefs;
+					attackSkillNode = attackSkillsNode->getChild("attack-skill", i);
+					skillName = attackSkillNode->getAttribute("value")->getRestrictedValue();
+					ast = static_cast<const AttackSkillType*>(unitType->getSkillType(skillName, SkillClass::ATTACK));
+					flagsNode = attackSkillNode->getChild("flags", 0, false);
+					if(flagsNode) {
+						prefs.load(flagsNode, dir, tt, ft);
+					}
+					attackSkillTypes.push_back(ast, prefs);
+				}
+				catch (runtime_error e) {
+					Logger::getErrorLog().addXmlError(dir, e.what ());
+					loadOk = false;
+				}
+			}
+		} catch (runtime_error e) {
+			Logger::getErrorLog().addXmlError(dir, e.what ());
+			loadOk = false;
+		}
 	}
 	if ( loadOk ) attackSkillTypes.init();
-   return loadOk;
+	return loadOk;
 }
 
-/** Returns an attack skill for the given field if one exists. *//*
+/** Returns an attack skill for the given field if one exists. */ /*
 const AttackSkillType * AttackCommandTypeBase::getAttackSkillType(Field field) const {
-	for(AttackSkillTypes::const_iterator i = attackSkillTypes.begin();
-		   i != attackSkillTypes.end(); i++) {
+	for(AttackSkillTypes::const_iterator i = attackSkillTypes.begin(); i != attackSkillTypes.end(); i++) {
 		if(i->first->getField(field)) {
 			return i->first;
 		}
 	}
 	return NULL;
 }
-*/
+ */
 
 // =====================================================
 // 	class AttackCommandType
@@ -370,66 +361,70 @@ bool BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	bool loadOk = MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//build
-   try {
-	   string skillName= n->getChild("build-skill")->getAttribute("value")->getRestrictedValue();
-	   buildSkillType= static_cast<const BuildSkillType*>(unitType->getSkillType(skillName, SkillClass::BUILD));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		string skillName= n->getChild("build-skill")->getAttribute("value")->getRestrictedValue();
+		buildSkillType= static_cast<const BuildSkillType*>(unitType->getSkillType(skillName, SkillClass::BUILD));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 	//buildings built
-   try {
-	   const XmlNode *buildingsNode= n->getChild("buildings");
-	   for(int i=0; i<buildingsNode->getChildCount(); ++i){
-		   const XmlNode *buildingNode= buildingsNode->getChild("building", i);
-		   string name= buildingNode->getAttribute("name")->getRestrictedValue();
-		   buildings.push_back(ft->getUnitType(name));
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		const XmlNode *buildingsNode= n->getChild("buildings");
+		for(int i=0; i<buildingsNode->getChildCount(); ++i){
+			const XmlNode *buildingNode= buildingsNode->getChild("building", i);
+			string name= buildingNode->getAttribute("name")->getRestrictedValue();
+			buildings.push_back(ft->getUnitType(name));
+		}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 
 	//start sound
-   try { 
-	   const XmlNode *startSoundNode= n->getChild("start-sound");
-	   if(startSoundNode->getAttribute("enabled")->getBoolValue()){
-		   startSounds.resize(startSoundNode->getChildCount());
-		   for(int i=0; i<startSoundNode->getChildCount(); ++i){
-			   const XmlNode *soundFileNode= startSoundNode->getChild("sound-file", i);
-			   string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-			   StaticSound *sound= new StaticSound();
-			   sound->load(dir + "/" + path);
-			   startSounds[i]= sound;
-		   }
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try { 
+		const XmlNode *startSoundNode= n->getChild("start-sound");
+		if(startSoundNode->getAttribute("enabled")->getBoolValue()){
+			startSounds.resize(startSoundNode->getChildCount());
+			for(int i=0; i<startSoundNode->getChildCount(); ++i){
+				const XmlNode *soundFileNode= startSoundNode->getChild("sound-file", i);
+				string path= soundFileNode->getAttribute("path")->getRestrictedValue();
+				StaticSound *sound= new StaticSound();
+				sound->load(dir + "/" + path);
+				startSounds[i]= sound;
+			}
+		}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 
 	//built sound
-   try {
-	   const XmlNode *builtSoundNode= n->getChild("built-sound");
-	   if(builtSoundNode->getAttribute("enabled")->getBoolValue()){
-		   builtSounds.resize(builtSoundNode->getChildCount());
-		   for(int i=0; i<builtSoundNode->getChildCount(); ++i){
-			   const XmlNode *soundFileNode= builtSoundNode->getChild("sound-file", i);
-			   string path= soundFileNode->getAttribute("path")->getRestrictedValue();
-			   StaticSound *sound= new StaticSound();
-			   sound->load(dir + "/" + path);
-			   builtSounds[i]= sound;
-		   }
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try {
+		const XmlNode *builtSoundNode= n->getChild("built-sound");
+		if(builtSoundNode->getAttribute("enabled")->getBoolValue()){
+			builtSounds.resize(builtSoundNode->getChildCount());
+			for(int i=0; i<builtSoundNode->getChildCount(); ++i){
+				const XmlNode *soundFileNode= builtSoundNode->getChild("sound-file", i);
+				string path= soundFileNode->getAttribute("path")->getRestrictedValue();
+				StaticSound *sound= new StaticSound();
+				sound->load(dir + "/" + path);
+				builtSounds[i]= sound;
+			}
+		}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
+}
+
+void BuildCommandType::doChecksum(Checksum &checksum) const {
+	MoveBaseCommandType::doChecksum(checksum);
+	checksum.addString(buildSkillType->getName());
+	for (int i=0; i < buildings.size(); ++i) {
+		checksum.addString(buildings[i]->getName());
+	}
 }
 
 // =====================================================
@@ -439,58 +434,66 @@ bool BuildCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 bool HarvestCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
 	bool loadOk = MoveBaseCommandType::load(n, dir, tt, ft);
 
-   string skillName;
+	string skillName;
 	//harvest
-   try {
-	   skillName= n->getChild("harvest-skill")->getAttribute("value")->getRestrictedValue();
-	   harvestSkillType= static_cast<const HarvestSkillType*>(unitType->getSkillType(skillName, SkillClass::HARVEST));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		skillName= n->getChild("harvest-skill")->getAttribute("value")->getRestrictedValue();
+		harvestSkillType= static_cast<const HarvestSkillType*>(unitType->getSkillType(skillName, SkillClass::HARVEST));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 	//stop loaded
-   try { 
-      skillName= n->getChild("stop-loaded-skill")->getAttribute("value")->getRestrictedValue();
-      stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, SkillClass::STOP));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try { 
+		skillName= n->getChild("stop-loaded-skill")->getAttribute("value")->getRestrictedValue();
+		stopLoadedSkillType= static_cast<const StopSkillType*>(unitType->getSkillType(skillName, SkillClass::STOP));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 
 	//move loaded
-   try {
-	   skillName= n->getChild("move-loaded-skill")->getAttribute("value")->getRestrictedValue();
-	   moveLoadedSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, SkillClass::MOVE));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		skillName= n->getChild("move-loaded-skill")->getAttribute("value")->getRestrictedValue();
+		moveLoadedSkillType= static_cast<const MoveSkillType*>(unitType->getSkillType(skillName, SkillClass::MOVE));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 	//resources can harvest
-   try { 
-	   const XmlNode *resourcesNode= n->getChild("harvested-resources");
-	   for(int i=0; i<resourcesNode->getChildCount(); ++i){
-		   const XmlNode *resourceNode= resourcesNode->getChild("resource", i);
-		   harvestedResources.push_back(tt->getResourceType(resourceNode->getAttribute("name")->getRestrictedValue()));
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   try { maxLoad= n->getChild("max-load")->getAttribute("value")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   try { hitsPerUnit= n->getChild("hits-per-unit")->getAttribute("value")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try { 
+		const XmlNode *resourcesNode= n->getChild("harvested-resources");
+		for(int i=0; i<resourcesNode->getChildCount(); ++i){
+			const XmlNode *resourceNode= resourcesNode->getChild("resource", i);
+			harvestedResources.push_back(tt->getResourceType(resourceNode->getAttribute("name")->getRestrictedValue()));
+		}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	try { maxLoad= n->getChild("max-load")->getAttribute("value")->getIntValue(); }
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	try { hitsPerUnit= n->getChild("hits-per-unit")->getAttribute("value")->getIntValue(); }
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
+}
+
+void HarvestCommandType::doChecksum(Checksum &checksum) const {
+	MoveBaseCommandType::doChecksum(checksum);
+	checksum.addString(moveLoadedSkillType->getName());
+	checksum.addString(harvestSkillType->getName());
+	checksum.addString(stopLoadedSkillType->getName());
+	for (int i=0; i < harvestedResources.size(); ++i) {
+		checksum.addString(harvestedResources[i]->getName());
+	}
+	checksum.add<int>(maxLoad);
+	checksum.add<int>(hitsPerUnit);
 }
 
 void HarvestCommandType::getDesc(string &str, const Unit *unit) const{
@@ -525,27 +528,33 @@ bool RepairCommandType::load(const XmlNode *n, const string &dir, const TechTree
 	bool loadOk = MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//repair
-   try {
-	   string skillName= n->getChild("repair-skill")->getAttribute("value")->getRestrictedValue();
-	   repairSkillType= static_cast<const RepairSkillType*>(unitType->getSkillType(skillName, SkillClass::REPAIR));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		string skillName= n->getChild("repair-skill")->getAttribute("value")->getRestrictedValue();
+		repairSkillType= static_cast<const RepairSkillType*>(unitType->getSkillType(skillName, SkillClass::REPAIR));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 	//repaired units
-   try {
-	   const XmlNode *unitsNode= n->getChild("repaired-units");
-	   for(int i=0; i<unitsNode->getChildCount(); ++i){
-		   const XmlNode *unitNode= unitsNode->getChild("unit", i);
-		   repairableUnits.push_back(ft->getUnitType(unitNode->getAttribute("name")->getRestrictedValue()));
-	   }
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try {
+		const XmlNode *unitsNode= n->getChild("repaired-units");
+		for(int i=0; i<unitsNode->getChildCount(); ++i){
+			const XmlNode *unitNode= unitsNode->getChild("unit", i);
+			repairableUnits.push_back(ft->getUnitType(unitNode->getAttribute("name")->getRestrictedValue()));
+		}
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
+}
+
+void RepairCommandType::doChecksum(Checksum &checksum) const {
+	MoveBaseCommandType::doChecksum(checksum);
+	checksum.addString(repairSkillType->getName());
+	for (int i=0; i < repairableUnits.size(); ++i) {
+		checksum.addString(repairableUnits[i]->getName());
+	}
 }
 
 void RepairCommandType::getDesc(string &str, const Unit *unit) const{
@@ -584,27 +593,31 @@ bool RepairCommandType::isRepairableUnitType(const UnitType *unitType) const{
 
 //varios
 bool ProduceCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
-   bool loadOk = CommandType::load(n, dir, tt, ft);
+	bool loadOk = CommandType::load(n, dir, tt, ft);
 
 	//produce
-   try { 
-      string skillName= n->getChild("produce-skill")->getAttribute("value")->getRestrictedValue();
-	   produceSkillType= static_cast<const ProduceSkillType*>(unitType->getSkillType(skillName, SkillClass::PRODUCE));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try { 
+		string skillName= n->getChild("produce-skill")->getAttribute("value")->getRestrictedValue();
+		produceSkillType= static_cast<const ProduceSkillType*>(unitType->getSkillType(skillName, SkillClass::PRODUCE));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 
-   try { 
-      string producedUnitName= n->getChild("produced-unit")->getAttribute("name")->getRestrictedValue();
-	   producedUnit= ft->getUnitType(producedUnitName);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try { 
+		string producedUnitName= n->getChild("produced-unit")->getAttribute("name")->getRestrictedValue();
+		producedUnit= ft->getUnitType(producedUnitName);
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
+}
+
+void ProduceCommandType::doChecksum(Checksum &checksum) const {
+	CommandType::doChecksum(checksum);
+	checksum.addString(produceSkillType->getName());
+	checksum.addString(producedUnit->getName());
 }
 
 void ProduceCommandType::getDesc(string &str, const Unit *unit) const {
@@ -629,23 +642,27 @@ bool UpgradeCommandType::load(const XmlNode *n, const string &dir, const TechTre
 	bool loadOk = CommandType::load(n, dir, tt, ft);
 
 	//upgrade
-   try {
-   	string skillName= n->getChild("upgrade-skill")->getAttribute("value")->getRestrictedValue();
-	   upgradeSkillType= static_cast<const UpgradeSkillType*>(unitType->getSkillType(skillName, SkillClass::UPGRADE));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   try {
-	   string producedUpgradeName= n->getChild("produced-upgrade")->getAttribute("name")->getRestrictedValue();
-	   producedUpgrade= ft->getUpgradeType(producedUpgradeName);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try {
+		string skillName= n->getChild("upgrade-skill")->getAttribute("value")->getRestrictedValue();
+		upgradeSkillType= static_cast<const UpgradeSkillType*>(unitType->getSkillType(skillName, SkillClass::UPGRADE));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	try {
+		string producedUpgradeName= n->getChild("produced-upgrade")->getAttribute("name")->getRestrictedValue();
+		producedUpgrade= ft->getUpgradeType(producedUpgradeName);
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
+}
+
+void UpgradeCommandType::doChecksum(Checksum &checksum) const {
+	CommandType::doChecksum(checksum);
+	checksum.addString(upgradeSkillType->getName());
+	checksum.addString(producedUpgrade->getName());
 }
 
 string UpgradeCommandType::getReqDesc() const{
@@ -663,30 +680,35 @@ const ProducibleType *UpgradeCommandType::getProduced() const{
 bool MorphCommandType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft){
 	bool loadOk = CommandType::load(n, dir, tt, ft);
 	//morph skill
-   try {
-      string skillName= n->getChild("morph-skill")->getAttribute("value")->getRestrictedValue();
-	   morphSkillType= static_cast<const MorphSkillType*>(unitType->getSkillType(skillName, SkillClass::MORPH));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		string skillName= n->getChild("morph-skill")->getAttribute("value")->getRestrictedValue();
+		morphSkillType= static_cast<const MorphSkillType*>(unitType->getSkillType(skillName, SkillClass::MORPH));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 	//morph unit
-   try {
-      string morphUnitName= n->getChild("morph-unit")->getAttribute("name")->getRestrictedValue();
-	   morphUnit= ft->getUnitType(morphUnitName);
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
+	try {
+		string morphUnitName= n->getChild("morph-unit")->getAttribute("name")->getRestrictedValue();
+		morphUnit= ft->getUnitType(morphUnitName);
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
 	//discount
-   try { discount= n->getChild("discount")->getAttribute("value")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try { discount= n->getChild("discount")->getAttribute("value")->getIntValue(); }
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
+}
+
+void MorphCommandType::doChecksum(Checksum &checksum) const {
+	CommandType::doChecksum(checksum);
+	checksum.addString(morphSkillType->getName());
+	checksum.addString(morphUnit->getName());
+	checksum.add<int>(discount);
 }
 
 void MorphCommandType::getDesc(string &str, const Unit *unit) const{
@@ -718,15 +740,14 @@ bool CastSpellCommandType::load(const XmlNode *n, const string &dir, const TechT
 	bool loadOk = MoveBaseCommandType::load(n, dir, tt, ft);
 
 	//cast spell
-   try {
-	   string skillName= n->getChild("cast-spell-skill")->getAttribute("value")->getRestrictedValue();
-	   castSpellSkillType= static_cast<const CastSpellSkillType*>(unitType->getSkillType(skillName, SkillClass::CAST_SPELL));
-   }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try {
+		string skillName= n->getChild("cast-spell-skill")->getAttribute("value")->getRestrictedValue();
+		castSpellSkillType= static_cast<const CastSpellSkillType*>(unitType->getSkillType(skillName, SkillClass::CAST_SPELL));
+	} catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
 }
 
 void CastSpellCommandType::getDesc(string &str, const Unit *unit) const{
@@ -745,14 +766,18 @@ bool GuardCommandType::load(const XmlNode *n, const string &dir, const TechTree 
 	bool loadOk = AttackCommandType::load(n, dir, tt, ft);
 
 	//distance
-   try { maxDistance = n->getChild("max-distance")->getAttribute("value")->getIntValue(); }
-   catch ( runtime_error e ) {
-      Logger::getErrorLog().addXmlError ( dir, e.what () );
-      loadOk = false;
-   }
-   return loadOk;
+	try { maxDistance = n->getChild("max-distance")->getAttribute("value")->getIntValue(); }
+	catch (runtime_error e) {
+		Logger::getErrorLog().addXmlError(dir, e.what ());
+		loadOk = false;
+	}
+	return loadOk;
 }
 
+void GuardCommandType::doChecksum(Checksum &checksum) const {
+	AttackCommandType::doChecksum(checksum);
+	checksum.add<int>(maxDistance);
+}
 // =====================================================
 // 	class CommandFactory
 // =====================================================

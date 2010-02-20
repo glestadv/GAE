@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -25,6 +25,7 @@
 #include "math_util.h"
 #include "entity.h"
 #include "timer.h"
+#include "logger.h"
 
 #define UNIT_LOG(x) {}
 
@@ -55,6 +56,9 @@ class Game;
 class World;
 class UnitState;
 
+//#define UNIT_LOG(x) theLogger.add(x)
+#define UNIT_LOG(x) {}
+
 // =====================================================
 // 	class UnitObserver
 // =====================================================
@@ -75,7 +79,7 @@ public:
 // 	class UnitPath
 // =====================================================
 /** Holds the next cells of a Unit movement 
-  * @extends std::list<Shared::Graphics::Vec2i>
+  * @extends std::list<Shared::Math::Vec2i>
   */
 class UnitPath : public list<Vec2i> {
 private:
@@ -83,11 +87,6 @@ private:
 
 private:
 	int blockCount;		/**< number of frames this path has been blocked */
-	int frameRequested, /**< frame this path was requested */
-		frameReturned,	/**< frame this (initial) path was supplied by RoutePlanner */
-		frameValidated,	/**< last frame this path was validated */
-		frameRepaired,  /**< last frame this path was repaired */
-		numRepairs;		/**< number of times this path has been repaired */
 
 public:
 	UnitPath() : blockCount(0) {} /**< Construct path object */
@@ -102,9 +101,7 @@ public:
 
 	void read(const XmlNode *node);
 	void write(XmlNode *node) const;
-
-	int getBlockCount() const { return blockCount; }
-};
+	int getBlockCount() const { return blockCount; }};
 
 class WaypointPath : public list<Vec2i> {
 public:

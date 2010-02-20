@@ -94,7 +94,7 @@ Particle::BlendEquation Particle::getBlendEquation(const string &s) {
 // =====================================================
 
 ParticleSystemBase::ParticleSystemBase() :
-		random((intptr_t)this & 0xffffffff),
+		random(0),
 		srcBlendFactor(Particle::BLEND_FUNC_SRC_ALPHA),
 		destBlendFactor(Particle::BLEND_FUNC_ONE),
 		blendEquationMode(Particle::BLEND_EQUATION_FUNC_ADD),
@@ -120,7 +120,7 @@ ParticleSystemBase::ParticleSystemBase() :
 }
 
 ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &model) :
-		random((intptr_t)this & 0xffffffff),
+		random(0),
 		srcBlendFactor(model.srcBlendFactor),
 		destBlendFactor(model.destBlendFactor),
 		blendEquationMode(model.blendEquationMode),

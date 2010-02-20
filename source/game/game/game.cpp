@@ -22,7 +22,7 @@
 #include "core_data.h"
 #include "metrics.h"
 #include "faction.h"
-#include "network_manager.h"
+#include "network_util.h"
 #include "checksum.h"
 #include "auto_test.h"
 #include "profiler.h"
@@ -47,46 +47,46 @@ namespace Glest{ namespace Game{
 
 Game *Game::singleton = NULL;
 
-Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame) :
+Game::Game(Program &program, const GameSettings &gs, XmlNode *savedGame)
 		//main data
-		ProgramState(program),
-		gameSettings(gs),
-		savedGame(savedGame),
-		keymap(program.getKeymap()),
-		input(program.getInput()),
-		config(Config::getInstance()),
-		world(this),
-		aiInterfaces(),
-		gui(*this),
-		gameCamera(),
-		commander(),
-		console(),
-		chatManager(keymap/*, console, world.getThisTeamIndex()*/),
-
+		: ProgramState(program)
+		, gameSettings(gs)
+		, savedGame(savedGame)
+		, keymap(program.getKeymap())
+		, input(program.getInput())
+		, config(Config::getInstance())
+		, world(this)
+		, aiInterfaces()
+		, gui(*this)
+		, gameCamera()
+		, commander()
+		, console()
+		, chatManager(keymap/*, console, world.getThisTeamIndex()*/)
 		//misc
-		checksum(),
-		loadingText(""),
-		mouse2d(0),
-		updateFps(0),
-		lastUpdateFps(0),
-		renderFps(0),
-		lastRenderFps(0),
-		paused(false),
-		noInput(false),
-		gameOver(false),
-		renderNetworkStatus(true),
-		scrollSpeed(config.getUiScrollSpeed()),
-		speed(sNormal),
-		fUpdateLoops(1.f),
-		lastUpdateLoopsFraction(0.f),
-		saveBox(NULL),
-		lastMousePos(0),
-	weatherParticleSystem(NULL) {
+		, checksum()
+		, loadingText("")
+		, mouse2d(0)
+		, worldFps(0)
+		, lastWorldFps(0)
+		, updateFps(0)
+		, lastUpdateFps(0)
+		, renderFps(0)
+		, lastRenderFps(0)
+		, paused(false)
+		, noInput(false)
+		, gameOver(false)
+		, scrollSpeed(config.getUiScrollSpeed())
+		, speed(GameSpeed::NORMAL)
+		, fUpdateLoops(1.f)
+		, lastUpdateLoopsFraction(0.f)
+		, saveBox(NULL)
+		, lastMousePos(0)
+		, weatherParticleSystem(NULL) {
 	assert(!singleton);
 	singleton = this;
 }
 
-const char *Game::SpeedDesc[sCount] = {
+const char *Game::SpeedDesc[GameSpeed::COUNT] = {
 	"Slowest",
 	"VerySlow",
 	"Slow",
@@ -113,13 +113,13 @@ Game::~Game() {
 	world.end();	//must die before selection because of referencers
 	singleton = NULL;
 	logger.setLoading(true);
+	program.setMaxUpdateBacklog(1);
 }
 
 
 // ==================== init and load ====================
 
 void Game::load(){
-	//Logger::getInstance().setState(Lang::getInstance().get("Loading"));
 	Logger &logger= Logger::getInstance();
 	string mapName= gameSettings.getMapPath();
 	string tilesetName= gameSettings.getTilesetPath();
@@ -133,29 +133,29 @@ void Game::load(){
 
 	logger.setState(Lang::getInstance().get("Loading"));
 
-	if(scenarioName.empty())
+	if(scenarioName.empty()) {
 		logger.setSubtitle(formatString(mapName)+" - "+formatString(tilesetName)+" - "+formatString(techName));
-	else
+	} else {
 		logger.setSubtitle(formatString(scenarioName));
-
+	}
 	
 	//preload
-	world.preload(checksum);
+	world.preload();
 	//tileset
-	if (!world.loadTileset(checksum))
+	if (!world.loadTileset()) {
 		throw runtime_error ( "The tileset could not be loaded. See glestadv-error.log" );
-
+	}
 	//tech, load before map because of resources
-	if (!world.loadTech(checksum))
+	if (!world.loadTech()) {
 		throw runtime_error ( "The techtree could not be loaded. See glestadv-error.log" );
-
+	}
 	//map
-	world.loadMap(checksum);
+	world.loadMap();
 
 	//scenario
-	if(!scenarioName.empty()){
+	if (!scenarioName.empty()) {
 		Lang::getInstance().loadScenarioStrings(scenarioPath, scenarioName);
-		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml", &checksum);
+		world.loadScenario(scenarioPath + "/" + scenarioName + ".xml");
 	}
 
 	// finished loading
@@ -177,25 +177,15 @@ void Game::init() {
 	mainMessageBox.init("", lang.get("Yes"), lang.get("No"));
 	mainMessageBox.setEnabled(false);
 
-#	ifdef NDEBUG
-		//check fog of war
-		if(!config.getGsFogOfWarEnabled() && networkManager.isNetworkGame() ){
-			throw runtime_error("Can not play online games with fog of war disabled");
-		}
-#	endif
-
-	// (very) minor performance hack
-	renderNetworkStatus = networkManager.isNetworkGame();
-
 	// init world, and place camera
 	commander.init(&world);
 
+	// setup progress bar (used for ClusterMap init)
 	GraphicProgressBar progressBar;
 	progressBar.init(345, 550, 300, 20);
 	logger.setProgressBar(&progressBar);
 
-	world.init(savedGame ? savedGame->getChild("world") : NULL);
-
+	world.init();
 	logger.setProgressBar(NULL);
 
 	gui.init();
@@ -205,22 +195,43 @@ void Game::init() {
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
 
 	ScriptManager::init(this);
-	
-	if(savedGame && (!networkManager.isNetworkGame() || networkManager.isServer())) {
-		gui.load(savedGame->getChild("gui"));
-	}
 
-	//create IAs
+	// create (or receive) random number seeds for AIs
+	int aiCount = 0;
+	for (int i=0; i < world.getFactionCount(); ++i) {
+		if (world.getFaction(i)->getCpuControl()) {
+			++aiCount;
+		}
+	}
+	int32 *seeds = (aiCount ? new int32[aiCount] : NULL);
+
+	if (aiCount) {
+		if (!isNetworkClient()) { // if not client, make seeds
+			Random r;
+			r.init(Chrono::getCurMillis());
+			for (int i=0; i < aiCount; ++i) {
+				seeds[i] = r.rand();
+			}
+		}
+		if (isNetworkGame()) { // if net game, send or receive seeds
+			logger.add("Syncing AIs", true);
+			networkManager.getGameNetworkInterface()->doSyncAiSeeds(aiCount, seeds);
+		}
+	}
+	int seedCount = 0;
+
+	//create AIs
 	aiInterfaces.resize(world.getFactionCount());
-	for ( int i=0; i < world.getFactionCount(); ++i ) {
-		Faction *faction= world.getFaction(i);
-		if ( faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled() ) {
-			aiInterfaces[i]= new AiInterface(*this, i, faction->getTeam());
+	for (int i=0; i < world.getFactionCount(); ++i) {
+		Faction *faction = world.getFaction(i);
+		if (faction->getCpuControl() && ScriptManager::getPlayerModifiers(i)->getAiEnabled()) {
+			aiInterfaces[i] = new AiInterface(*this, i, faction->getTeam(), seeds[seedCount++]);
 			logger.add("Creating AI for faction " + intToStr(i), true);
 		} else {
 			aiInterfaces[i]= NULL;
 		}
 	}
+	delete seeds;
 
 	//wheather particle systems
 	if(world.getTileset()->getWeather() == Weather::RAINY){
@@ -246,6 +257,7 @@ void Game::init() {
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 
 	Tileset *tileset= world.getTileset();
+	const TechTree *techTree = world.getTechTree();
 	AmbientSounds *ambientSounds= tileset->getAmbientSounds();
 
 	//rain
@@ -253,34 +265,33 @@ void Game::init() {
 		logger.add("Starting ambient stream", true);
 		soundRenderer.playAmbient(ambientSounds->getRain());
 	}
-
 	//snow
 	if(tileset->getWeather()==Weather::SNOWY && ambientSounds->isEnabledSnow()){
 		logger.add("Starting ambient stream", true);
 		soundRenderer.playAmbient(ambientSounds->getSnow());
 	}
-
-	logger.add("Waiting for network", true);
-	networkManager.getGameNetworkInterface()->waitUntilReady(checksum);
-	/*
-	if(networkManager.isNetworkClient()) {
-		program.setMaxUpdateBacklog(-1);
+	// ready ?
+	if (isNetworkGame()) {
+		logger.add("Waiting for network", true);
+		tileset->doChecksum(checksum);
+		techTree->doChecksum(checksum);
+		map->doChecksum(checksum);
+		networkManager.getGameNetworkInterface()->doWaitUntilReady(checksum);
+	}
+	// set maximum update timer back log
+	if (!isNetworkGame()) {
+		program.setMaxUpdateBacklog(2); // non-network game, may drop frames
 	} else {
-		program.setMaxUpdateBacklog(2);
-	}*/
+		program.setMaxUpdateBacklog(-1); // network games must always catch up
+	}
 
 	logger.add("Starting music stream", true);
 	StrSound *gameMusic= world.getThisFaction()->getType()->getMusic();
 	soundRenderer.playMusic(gameMusic);
 
 	logger.add("Launching game");
-	program.resetTimers();
-
-	if ( savedGame ) {
-		delete savedGame;
-		savedGame = NULL;
-	}
 	logger.setLoading(false);
+	program.resetTimers();
 }
 
 
@@ -292,6 +303,7 @@ void Game::update() {
 
 	//misc
 	updateFps++;
+	
 	mouse2d = (mouse2d + 1) % Renderer::maxMouse2dAnim;
 
 	//console
@@ -314,11 +326,12 @@ void Game::update() {
 
 		//World
 		world.update();
+		++worldFps;
 
-		try {
-			// Commander
+		try { // Commander
 			commander.updateNetwork();
-		} catch (SocketException &e) {
+		} catch (runtime_error e) {
+			LOG_NETWORK(e.what());
 			displayError(e);
 			return;
 		}
@@ -333,10 +346,10 @@ void Game::update() {
 		renderer.updateParticleManager(rsGame);
 	}
 
-	try {
-		//call the chat manager
+	try { //call the chat manager		
 		chatManager.updateNetwork();
-	} catch (SocketException &e) {
+	} catch (SocketException e) {
+		LOG_NETWORK(e.what());
 		displayError(e);
 		return;
 	}
@@ -352,15 +365,17 @@ void Game::update() {
 	}
 }
 
-void Game::displayError(SocketException &e) {
+void Game::displayError(runtime_error &e) {
 	Lang &lang = Lang::getInstance();
 	paused = true;
 	stringstream errmsg;
 	char buf[512];
+	/* NETWORK:
 	const char* saveName = NetworkManager::getInstance().isServer()
 			? "network_server_auto_save" : "network_client_auto_save";
 	saveGame(saveName);
 	snprintf(buf, sizeof(buf) - 1, lang.get("YourGameWasSaved").c_str(), saveName);
+	*/
 	errmsg << e.what() << endl << buf;
 
 	mainMessageBox.init ( errmsg.str(), lang.get("Ok") );
@@ -390,8 +405,10 @@ void Game::render(){
 // ==================== tick ====================
 
 void Game::tick(){
+	lastWorldFps = worldFps;
 	lastUpdateFps= updateFps;
 	lastRenderFps= renderFps;
+	worldFps = 0;
 	updateFps= 0;
 	renderFps= 0;
 
@@ -423,7 +440,7 @@ void Game::mouseDownLeft(int x, int y){
 		int button= 1;
 		if ( mainMessageBox.mouseClick(x, y, button) ) {
 			if ( button == 1 ) {
-				networkManager.getGameNetworkInterface()->quitGame();
+				networkManager.getGameNetworkInterface()->doQuitGame();
 				quitGame();
 			} else {
 				//close message box
@@ -560,29 +577,8 @@ void Game::keyDown(const Key &key) {
 		return; // key consumed, we're done here
 	}
 	// if ChatManger does not use this key, we keep processing
-	// network status
-	if (isNetworkGame) {
-		switch (cmd) {
-			// on
-			case ucNetworkStatusOn:
-				renderNetworkStatus = true;
-				return;
 
-			// off
-			case ucNetworkStatusOff:
-				renderNetworkStatus = false;
-				return;
-
-			// toggle
-			case ucNetworkStatusToggle:
-				renderNetworkStatus = !renderNetworkStatus;
-				return;
-			default:
-				break;
-		}
-
-		// save screenshot
-	} else if (cmd == ucSaveScreenshot) {
+	if (cmd == ucSaveScreenshot) {
 		Shared::Platform::mkdir("screens", true);
 		int i;
 		const int MAX_SCREENSHOTS = 100;
@@ -794,16 +790,17 @@ void Game::render3d(){
 
 	//init
 	renderer.reset3d();
+	
 	renderer.loadGameCameraMatrix();
 	renderer.computeVisibleArea();
 	renderer.setupLighting();
-
+	
 	//shadow map
 	renderer.renderShadowsToTexture();
-
+	
 	//clear buffers
 	renderer.clearBuffers();
-
+	
 	//surface
 	renderer.renderSurface();
 
@@ -879,6 +876,7 @@ void Game::render2d(){
 			<< "PosObjWord: " << gui.getPosObjWorld().x << "," << gui.getPosObjWorld().y << endl
 			<< "Render FPS: " << lastRenderFps << endl
 			<< "Update FPS: " << lastUpdateFps << endl
+			<< "World FPS: " << lastWorldFps << endl
 			<< "GameCamera pos: " << gameCamera.getPos().x
 				<< "," << gameCamera.getPos().y
 				<< "," << gameCamera.getPos().z << endl
@@ -886,19 +884,6 @@ void Game::render2d(){
 			<< "Triangle count: " << renderer.getTriangleCount() << endl
 			<< "Vertex count: " << renderer.getPointCount() << endl
 			<< "Frame count: " << world.getFrameCount() << endl;
-
-		//visible quad
-
-		/*
-		Quad2i visibleQuad= renderer.getVisibleQuad();
-
-		str << "Visible quad: ";
-		for(int i= 0; i<4; ++i){
-			str << "(" << visibleQuad.p[i].x << "," << visibleQuad.p[i].y << ") ";
-		}
-		str << endl;
-		str << "Visible quad area: " << visibleQuad.area() << endl;
-		*/
 
 		str << "Camera VAng : " << gameCamera.getVAng() << endl;
 
@@ -921,12 +906,14 @@ void Game::render2d(){
 	}
 
 	//network status
+	/* NETWORK:
 	if(renderNetworkStatus && networkManager.isNetworkGame()) {
 		renderer.renderText(
 			networkManager.getGameNetworkInterface()->getStatus(),
 			coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 750, 75, false);
 	}
+	*/
 
 	//resource info
 	if(!config.getUiPhotoMode()){
@@ -1023,37 +1010,38 @@ bool Game::hasBuilding(const Faction *faction){
 void Game::updateSpeed() {
 	Lang &lang= Lang::getInstance();
 	console.addLine(lang.get("GameSpeedSet") + " " + lang.get(SpeedDesc[speed]));
-	if(speed == sNormal) {
+	
+	if (speed == GameSpeed::NORMAL) {
 		fUpdateLoops = 1.0f;
-	} else if(speed > sNormal) {
-		fUpdateLoops = 1.0f + (float)(speed - sNormal) / (float)(sFastest - sNormal)
-			* (Config::getInstance().getGsSpeedFastest() - 1.0f);
+	} else if (speed > GameSpeed::NORMAL) {
+		fUpdateLoops = 1.0f + float(speed - GameSpeed::NORMAL) / float(GameSpeed::FASTEST - GameSpeed::NORMAL)
+			* (theConfig.getGsSpeedFastest() - 1.0f);
 	} else {
-		fUpdateLoops = Config::getInstance().getGsSpeedSlowest() + (float)(speed) / (float)(sNormal)
-			* (1.0f - Config::getInstance().getGsSpeedSlowest());
+		fUpdateLoops = theConfig.getGsSpeedSlowest() + float(speed) / float(GameSpeed::NORMAL)
+			* (1.0f - theConfig.getGsSpeedSlowest());
 	}
 }
 
 void Game::incSpeed() {
-	if (speed < sFastest) {
-		speed = (Speed)(speed + 1);
+	if (speed < GameSpeed::FASTEST) {
+		++speed;
 		updateSpeed();
 	}
 }
 
 void Game::decSpeed() {
-	if (speed > sSlowest) {
-		speed = (Speed)(speed - 1);
+	if (speed > GameSpeed::SLOWEST) {
+		--speed;
 		updateSpeed();
 	}
 }
 
 void Game::resetSpeed() {
-	speed = sNormal;
+	speed = GameSpeed::NORMAL;
 	updateSpeed();
 }
 
-int Game::getUpdateLoops() {
+int Game::getUpdateLoops(){
 	if (paused || (!NetworkManager::getInstance().isNetworkGame() && (saveBox || mainMessageBox.getEnabled()))) {
 		return 0;
 	} else {
@@ -1088,12 +1076,12 @@ void Game::showMessageBox(const string &text, const string &header, bool toggle)
 }
 
 void Game::saveGame(string name) const {
-	XmlNode root("saved-game");
+	/*XmlNode root("saved-game");
 	root.addAttribute("version", "1");
 	gui.save(root.addChild("gui"));
 	gameSettings.save(root.addChild("settings"));
 	world.save(root.addChild("world"));
-	XmlIo::getInstance().save("savegames/" + name + ".sav", &root);
+	XmlIo::getInstance().save("savegames/" + name + ".sav", &root);*/
 }
 
 }}//end namespace

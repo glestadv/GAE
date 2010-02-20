@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -22,7 +22,7 @@ using Shared::Platform::ServerSocket;
 using Shared::Platform::Socket;
 using std::vector;
 
-namespace Glest{ namespace Game{
+namespace Glest { namespace Game {
 
 class ServerInterface;
 
@@ -47,7 +47,7 @@ public:
 	void setReady()					{ready = true;}
 	int getPlayerIndex() const		{return playerIndex;}
 	bool isReady() const			{return ready;}
-	string getName () {return "";}
+	string getName() const			{return "";}
 
 protected:
 	virtual Socket* getSocket()				{return socket;}

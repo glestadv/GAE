@@ -44,19 +44,18 @@ class GraphicTextEntryBox;
 
 class Game: public ProgramState {
 public:
-	enum Speed {
-		sSlowest,
-		sVerySlow,
-		sSlow,
-		sNormal,
-		sFast,
-		sVeryFast,
-		sFastest,
 
-  		sCount
-	};
+	WRAPPED_ENUM( GameSpeed,
+		SLOWEST,
+		VERY_SLOW,
+		SLOW,
+		NORMAL,
+		FAST,
+		VERY_FAST,
+		FASTEST
+	)
 
-	static const char*SpeedDesc[sCount];
+	static const char*SpeedDesc[GameSpeed::COUNT];
 
 private:
 	typedef vector<Ai*> Ais;
@@ -72,26 +71,26 @@ private:
 	const Input &input;
 	const Config &config;
 	World world;
-    AiInterfaces aiInterfaces;
-    Gui gui;
-    GameCamera gameCamera;
-    Commander commander;
-    Console console;
+	AiInterfaces aiInterfaces;
+	Gui gui;
+	GameCamera gameCamera;
+	Commander commander;
+	Console console;
 	ChatManager chatManager;
 
 	//misc
 	Checksum checksum;
-    string loadingText;
-    int mouse2d;
-    int mouseX, mouseY; //coords win32Api
+	string loadingText;
+	int mouse2d;
+	int mouseX, mouseY; //coords win32Api
+	int worldFps, lastWorldFps;
 	int updateFps, lastUpdateFps;
 	int renderFps, lastRenderFps;
 	bool paused;
 	bool noInput;
 	bool gameOver;
-	bool renderNetworkStatus;
 	float scrollSpeed;
-	Speed speed;
+	GameSpeed speed;
 	float fUpdateLoops;
 	float lastUpdateLoopsFraction;
 	GraphicMessageBox mainMessageBox;
@@ -104,10 +103,10 @@ private:
 
 public:
 	Game(Program &program, const GameSettings &gs, XmlNode *savedGame = NULL);
-    ~Game();
+	~Game();
 	static Game *getInstance()				{return singleton;}
 
-    //get
+	//get
 	GameSettings &getGameSettings()			{return gameSettings;}
 	const Keymap &getKeymap() const			{return keymap;}
 	const Input &getInput() const			{return input;}
@@ -122,9 +121,9 @@ public:
 	World *getWorld()						{return &world;}
 	const World *getWorld() const			{return &world;}
 
-    //init
-    virtual void load();
-    virtual void init();
+	//init
+	virtual void load();
+	virtual void init();
 	virtual void update();
 	virtual void updateCamera();
 	virtual void render();
@@ -134,19 +133,19 @@ public:
 	void unlockInput()	{ noInput = false;	}
 
 
-    //Event managing
-    virtual void keyDown(const Key &key);
-    virtual void keyUp(const Key &key);
-    virtual void keyPress(char c);
-    virtual void mouseDownLeft(int x, int y);
-    virtual void mouseDownRight(int x, int y)			{gui.mouseDownRight(x, y);}
-    virtual void mouseUpLeft(int x, int y)				{gui.mouseUpLeft(x, y);}
-    virtual void mouseUpRight(int x, int y)				{gui.mouseUpRight(x, y);}
-    virtual void mouseDownCenter(int x, int y)			{gameCamera.stop();}
-    virtual void mouseUpCenter(int x, int y)			{}
-    virtual void mouseDoubleClickLeft(int x, int y);
+	//Event managing
+	virtual void keyDown(const Key &key);
+	virtual void keyUp(const Key &key);
+	virtual void keyPress(char c);
+	virtual void mouseDownLeft(int x, int y);
+	virtual void mouseDownRight(int x, int y)			{gui.mouseDownRight(x, y);}
+	virtual void mouseUpLeft(int x, int y)				{gui.mouseUpLeft(x, y);}
+	virtual void mouseUpRight(int x, int y)				{gui.mouseUpRight(x, y);}
+	virtual void mouseDownCenter(int x, int y)			{gameCamera.stop();}
+	virtual void mouseUpCenter(int x, int y)			{}
+	virtual void mouseDoubleClickLeft(int x, int y);
 	virtual void eventMouseWheel(int x, int y, int zDelta);
-    virtual void mouseMove(int x, int y, const MouseState &mouseState);
+	virtual void mouseMove(int x, int y, const MouseState &mouseState);
 
 	void setCameraCell(int x, int y) {
 		gameCamera.setPos(Vec2f(static_cast<float>(x), static_cast<float>(y)));
@@ -157,8 +156,8 @@ public:
 
 private:
 	//render
-    void render3d();
-    void render2d();
+	void render3d();
+	void render2d();
 
 	//misc
 	void _init();
@@ -181,7 +180,7 @@ private:
 	Unit *findUnit(int id);
 	char getStringFromFile(ifstream *fileStream, string *str);
 	void saveGame(string name) const;
-	void displayError(SocketException &e);
+	void displayError(runtime_error &e);
 };
 
 }}//end namespace

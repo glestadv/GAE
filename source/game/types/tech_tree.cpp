@@ -35,7 +35,7 @@ namespace Glest{ namespace Game{
 // 	class TechTree
 // =====================================================
 
-bool TechTree::preload(const string &dir, const set<string> &factionNames, Checksum &checksum){
+bool TechTree::preload(const string &dir, const set<string> &factionNames){
 	Logger &logger = Logger::getInstance();
 	bool loadOk = true;
 
@@ -44,16 +44,15 @@ bool TechTree::preload(const string &dir, const set<string> &factionNames, Check
 	string path;
 	try {
 		path= dir+"/"+basename(dir)+".xml";
-		checksum.addFile(path, true);
 		xmlTree.load(path);
 	}
-	catch ( runtime_error &e ) {
+	catch (runtime_error &e) {
 		Logger::getErrorLog().addXmlError ( path, "File missing or wrongly named." );
 		return false;
 	}
 	const XmlNode *techTreeNode;
 	try { techTreeNode= xmlTree.getRootNode(); }
-	catch ( runtime_error &e ) {
+	catch (runtime_error &e) {
 		Logger::getErrorLog().addXmlError ( path, "File appears to lack contents." );
 		return false;
 	}
@@ -72,14 +71,14 @@ bool TechTree::preload(const string &dir, const set<string> &factionNames, Check
 				attackTypes[i].setId(i);
 				attackTypeMap[name] = &attackTypes[i];
 			}
-			catch ( runtime_error &e ) { 
-				Logger::getErrorLog().addXmlError ( path, e.what() );
+			catch (runtime_error &e) { 
+				Logger::getErrorLog().addXmlError(path, e.what());
 				loadOk = false; 
 			}
 		}
 	}
-	catch ( runtime_error &e ) {
-		Logger::getErrorLog().addXmlError ( path, e.what() );
+	catch (runtime_error &e) {
+		Logger::getErrorLog().addXmlError(path, e.what());
 		loadOk = false;
 	}
 
@@ -96,14 +95,14 @@ bool TechTree::preload(const string &dir, const set<string> &factionNames, Check
 				armorTypes[i].setId(i);
 				armorTypeMap[name] = &armorTypes[i];
 			}
-			catch ( runtime_error &e ) { 
-				Logger::getErrorLog().addXmlError ( path, e.what() );
+			catch (runtime_error &e) { 
+				Logger::getErrorLog().addXmlError(path, e.what());
 				loadOk = false; 
 			}
 		}  
 	}
-	catch ( runtime_error &e ) {
-		Logger::getErrorLog().addXmlError ( path, e.what() );
+	catch (runtime_error &e) {
+		Logger::getErrorLog().addXmlError(path, e.what());
 		loadOk = false;
 	}
 
@@ -153,7 +152,7 @@ bool TechTree::preload(const string &dir, const set<string> &factionNames, Check
 	return loadOk;
 }
 
-bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum &checksum){
+bool TechTree::load(const string &dir, const set<string> &factionNames){
 	int i;
 	set<string>::const_iterator fn;
 	bool loadOk=true;
@@ -178,7 +177,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	} else {
 		for(i=0; i<filenames.size(); ++i){
 			str=dir+"/resources/"+filenames[i];
-			if ( ! resourceTypes[i].load(str, i, checksum) ) {
+			if (!resourceTypes[i].load(str, i)) {
 				loadOk = false;
 			}
 			resourceTypeMap[filenames[i]] = &resourceTypes[i];
@@ -186,7 +185,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames, Checksum
 	}
 
 	for (i = 0, fn = factionNames.begin(); fn != factionNames.end(); ++fn, ++i) {
-		if (!factionTypes[i].load(dir + "/factions/" + *fn, this, checksum)) {
+		if (!factionTypes[i].load(dir + "/factions/" + *fn, this)) {
 			loadOk = false;
 		} else {
 			factionTypeMap[*fn] = &factionTypes[i];
@@ -199,27 +198,55 @@ TechTree::~TechTree(){
 	Logger::getInstance().add("Tech tree", !Program::getInstance()->isTerminating());
 }
 
+void TechTree::doChecksum(Checksum &checksum) const {
+	checksum.addString(desc);
+
+	foreach_const (ResourceTypes, it, resourceTypes) {
+		it->doChecksum(checksum);
+	}
+	foreach_const (ArmorTypes, it, armorTypes) {
+		it->doChecksum(checksum);
+	}
+	foreach_const (AttackTypes, it, attackTypes) {
+		it->doChecksum(checksum);
+	}
+
+	foreach_const (ArmorTypes, armourIt, armorTypes) {
+		const ArmorType *armourType 
+			= (*const_cast<ArmorTypeMap*>(&armorTypeMap))[armourIt->getName()];
+		foreach_const (AttackTypes, attackIt, attackTypes) {
+			const AttackType *attackType 
+				= (*const_cast<AttackTypeMap*>(&attackTypeMap))[attackIt->getName()];
+			checksum.add<float>(damageMultiplierTable.getDamageMultiplier(attackType, armourType));
+		}
+	}
+	// Effects... ?
+
+	foreach_const (FactionTypes, it, factionTypes) {
+		it->doChecksum(checksum);
+	}
+}
 
 // ==================== get ====================
 
 const ResourceType *TechTree::getTechResourceType(int i) const{
 
-     for(int j=0; j<getResourceTypeCount(); ++j){
-          const ResourceType *rt= getResourceType(j);
-          if(rt->getResourceNumber()==i && rt->getClass()==ResourceClass::TECHTREE)
-               return getResourceType(j);
-     }
+	for(int j=0; j<getResourceTypeCount(); ++j){
+		const ResourceType *rt= getResourceType(j);
+		if(rt->getResourceNumber()==i && rt->getClass()==ResourceClass::TECHTREE)
+			return getResourceType(j);
+	}
 
-     return getFirstTechResourceType();
+	return getFirstTechResourceType();
 }
 
 const ResourceType *TechTree::getFirstTechResourceType() const{
-     for(int i=0; i<getResourceTypeCount(); ++i){
-          const ResourceType *rt= getResourceType(i);
-          if(rt->getResourceNumber()==1 && rt->getClass()==ResourceClass::TECHTREE)
-               return getResourceType(i);
-     }
-	 throw runtime_error("This tech tree has no tech resources, one at least is required");
+	for(int i=0; i<getResourceTypeCount(); ++i){
+		const ResourceType *rt= getResourceType(i);
+		if(rt->getResourceNumber()==1 && rt->getClass()==ResourceClass::TECHTREE)
+			return getResourceType(i);
+	}
+	throw runtime_error("This tech tree has no tech resources, one at least is required");
 }
 
 int TechTree::addEffectType(EffectType *et) {

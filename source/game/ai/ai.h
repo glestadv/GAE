@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Marti�o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -135,10 +135,10 @@ private:
 	typedef vector<Unit *> repairers;
 
 private:
-    AiInterface *aiInterface;
+	AiInterface *aiInterface;
 	AiRules aiRules;
-    int startLoc;
-    bool randomMinWarriorsReached;
+	int startLoc;
+	bool randomMinWarriorsReached;
 	int upgradeCount;
 	int minWarriors;
 	Tasks tasks;
@@ -157,14 +157,14 @@ private:
 	UpgradeTypes availableUpgrades;
 
 public:
-    ~Ai();
-	void init(AiInterface *aiInterface);
-    void update();
+	~Ai();
+	void init(AiInterface *aiInterface, int32 randomSeed);
+	void update();
 
-    //state requests
+	//state requests
 	AiInterface *getAiInterface() const		{return aiInterface;}
 	Random* getRandom()						{return &random;}
-    int getCountOfType(const UnitType *ut);
+	int getCountOfType(const UnitType *ut);
 
 	int getCountOfClass(UnitClass uc);
 	float getRatioOfClass(UnitClass uc);
@@ -196,11 +196,11 @@ public:
 	void addExpansion(const Vec2i &pos);
 	Vec2i getRandomHomePosition();
 
-    //actions
-    void sendScoutPatrol();
-    void massiveAttack(const Vec2i &pos, Field field, bool ultraAttack= false);
-    void returnBase(int unitIndex);
-    void harvest(int unitIndex);
+	//actions
+	void sendScoutPatrol();
+	void massiveAttack(const Vec2i &pos, Field field, bool ultraAttack= false);
+	void returnBase(int unitIndex);
+	void harvest(int unitIndex);
 };
 
 }}//end namespace

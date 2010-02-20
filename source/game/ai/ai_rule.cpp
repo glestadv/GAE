@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -12,6 +12,7 @@
 #include "pch.h"
 
 #include <algorithm>
+#include <climits>
 
 #include "ai_rule.h"
 #include "ai.h"
@@ -246,7 +247,7 @@ void AiRuleAddTasks::execute() {
 //
 //
 	//emergency workers
-	if(workerCount<4){
+	if (workerCount < 4) {
 		ai->addPriorityTask(new ProduceTask(UnitClass::WORKER));
 	}
 	else{
@@ -328,7 +329,7 @@ void AiRuleAddTasks::execute() {
 			
 			//buildings
 			if(buildingCount<6 || buildingRatio<0.20) ai->addTask(new BuildTask());
-			if(buildingCount<10 && workerCount>12) ai->addTask(new BuildTask());
+			if (buildingCount < 10 && workerCount > 12) ai->addTask(new BuildTask());
 			
 			//upgrades
 			if(upgradeCount==0 && workerCount>5) ai->addTask(new UpgradeTask());

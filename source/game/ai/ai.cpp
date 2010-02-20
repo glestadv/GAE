@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Marti�o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -13,6 +13,7 @@
 #include "ai.h"
 
 #include <ctime>
+#include <climits>
 
 #include "ai_interface.h"
 #include "ai_rule.h"
@@ -26,6 +27,7 @@
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;
+
 
 namespace Glest{ namespace Game{
 
@@ -115,8 +117,9 @@ string UpgradeTask::toString() const {
 // 	class Ai
 // =====================================================
 
-void Ai::init(AiInterface *aiInterface) {
+void Ai::init(AiInterface *aiInterface, int32 randomSeed) {
 	this->aiInterface = aiInterface;
+	random.init(randomSeed);
 	startLoc = random.randRange(0, aiInterface->getMapMaxPlayers() - 1);
 	upgradeCount = 0;
 	minWarriors = minMinWarriors;

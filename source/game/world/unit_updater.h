@@ -26,7 +26,10 @@ class Unit;
 class Map;
 class ScriptManager;
 class ParticleDamager;
-namespace Search { class RoutePlanner; }
+
+namespace Search { 
+	class RoutePlanner; 
+}
 
 // =====================================================
 //	class UnitUpdater
@@ -139,9 +142,9 @@ private:
 	void enemiesAtDistance(const Unit *unit, const Unit *priorityUnit, int distance, vector<Unit*> &enemies);
 	bool updateAttackGeneric(Unit *unit, Command *command, const AttackCommandType *act, Unit* target, const Vec2i &targetPos);
 /*
-	Vec2i getNear(const Vec2i &pos, Vec2i target, int minRange, int maxRange, int targetSize = 1) {
-		return map->getNearestPos(pos, target, targetSize, minRange, maxRange);
-	}
+	 Vec2i getNear(const Vec2i &pos, Vec2i target, int minRange, int maxRange, int targetSize = 1) {
+	  return map->getNearestPos(pos, target, targetSize, minRange, maxRange);
+	 }
 
 	Vec2i getNear(const Vec2i &pos, const Unit *target, int minRange, int maxRange) {
 		return map->getNearestPos(pos, target, minRange, maxRange);

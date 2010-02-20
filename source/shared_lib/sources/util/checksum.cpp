@@ -48,27 +48,4 @@ void Checksum::addString(const string &value){
 	}
 }
 
-void Checksum::addFile(const string &path, bool text){
-
-	FILE* file = fopen(path.c_str(), "rb");
-
-	if(!file) {
-		throw runtime_error("Can not open file: " + path);
-	}
-
-	addString(basename(path));
-
-	while(!feof(file)) {
-		int8 byte= 0;
-
-		fread(&byte, 1, 1, file);
-		if(text && !isprint(byte)) {
-			continue;
-		}
-		addByte(byte);
-	}
-
-	fclose(file);
-}
-
 }}//end namespace

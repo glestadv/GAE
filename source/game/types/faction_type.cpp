@@ -77,7 +77,7 @@ bool FactionType::preLoad(const string &dir, const TechTree *techTree) {
 }
 
 //load a faction, given a directory
-bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &checksum) {
+bool FactionType::load(const string &dir, const TechTree *techTree) {
 	Logger &logger = Logger::getInstance();
 	logger.add("Faction type: "+ dir, true);
 	name = basename(dir);
@@ -86,7 +86,7 @@ bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 
 	//open xml file
 	string path = dir+"/"+name+".xml";
-	checksum.addFile(path, true);
+	//checksum.addFile(path, true);
 	XmlTree xmlTree;
 	try { 
 		xmlTree.load(path); 
@@ -119,7 +119,7 @@ bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 	// b1) load units
 	for (int i = 0; i < unitTypes.size(); ++i) {
 		string str = dir + "/units/" + unitTypes[i].getName();
-		if (!unitTypes[i].load(i, str, techTree, this, checksum)) {
+		if (!unitTypes[i].load(i, str, techTree, this)) {
 			loadOk = false;
 		}
 		logger.unitLoaded();
@@ -128,7 +128,7 @@ bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 	// b2) load upgrades
 	for (int i = 0; i < upgradeTypes.size(); ++i) {
 		string str= dir + "/upgrades/" + upgradeTypes[i].getName();
-		if (!upgradeTypes[i].load(str, techTree, this, checksum)) {
+		if (!upgradeTypes[i].load(str, techTree, this)) {
 			loadOk = false;
 		}
 	}
@@ -220,6 +220,27 @@ bool FactionType::load(const string &dir, const TechTree *techTree, Checksum &ch
 		}
 	}
 	return loadOk;
+}
+
+void FactionType::doChecksum(Checksum &checksum) const {
+	checksum.addString(name);
+	foreach_const (UnitTypes, it, unitTypes) {
+		it->doChecksum(checksum);
+	}
+	foreach_const (UpgradeTypes, it, upgradeTypes) {
+		it->doChecksum(checksum);
+	}
+	foreach_const (StartingUnits, it, startingUnits) {
+		checksum.addString(it->first->getName());
+		checksum.add<int>(it->second);
+	}
+	foreach_const (Resources, it, startingResources) {
+		checksum.addString(it->getType()->getName());
+		checksum.add<int>(it->getAmount());
+	}
+	foreach_const (Subfactions, it, subfactions) {
+		checksum.addString(*it);
+	}
 }
 
 FactionType::~FactionType(){

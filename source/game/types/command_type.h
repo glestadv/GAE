@@ -72,6 +72,12 @@ public:
 		types.push_back(ast);
 		associatedPrefs.push_back(pref);
 	}
+
+	void doChecksum(Checksum &checksum) const {
+		for (int i=0; i < types.size(); ++i) {
+			checksum.addString(types[i]->getName());
+		}
+	}
 };
 
 // =====================================================
@@ -99,6 +105,7 @@ public:
 
 	virtual void update(UnitUpdater *unitUpdater, Unit *unit) const;
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void setUnitTypeAndIndex(const UnitType *unitType, int unitTypeIndex);
 	virtual void getDesc(string &str, const Unit *unit) const = 0;
 	virtual string toString() const						{return Lang::getInstance().get(name);}
@@ -130,6 +137,10 @@ protected:
 public:
 	MoveBaseCommandType(const char* name, CommandClass commandTypeClass, Clicks clicks) :
 			CommandType(name, commandTypeClass, clicks) {}
+	virtual void doChecksum(Checksum &checksum) const {
+		CommandType::doChecksum(checksum);
+		checksum.addString(moveSkillType->getName());
+	}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const	{moveSkillType->getDesc(str, unit);}
 	const MoveSkillType *getMoveSkillType() const				{return moveSkillType;}
@@ -146,6 +157,10 @@ protected:
 public:
 	StopBaseCommandType(const char* name, CommandClass commandTypeClass, Clicks clicks) :
 			CommandType(name, commandTypeClass, clicks) {}
+	virtual void doChecksum(Checksum &checksum) const {
+		CommandType::doChecksum(checksum);
+		checksum.addString(stopSkillType->getName());
+	}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const	{stopSkillType->getDesc(str, unit);}
 	const StopSkillType *getStopSkillType() const				{return stopSkillType;}
@@ -180,7 +195,9 @@ protected:
 public:
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft, const UnitType *ut);
 	virtual void getDesc(string &str, const Unit *unit) const {attackSkillTypes.getDesc(str, unit);}
-
+	virtual void doChecksum(Checksum &checksum) const {
+		attackSkillTypes.doChecksum(checksum);
+	}
 // const AttackSkillType *getAttackSkillType() const	{return attackSkillTypes.begin()->first;}
 // const AttackSkillType *getAttackSkillType(Field field) const;
 	const AttackSkillTypes *getAttackSkillTypes() const	{return &attackSkillTypes;}
@@ -196,6 +213,10 @@ public:
 	AttackCommandType(const char* name = "Attack", CommandClass commandTypeClass = CommandClass::ATTACK, Clicks clicks = Clicks::TWO) :
 			MoveBaseCommandType(name, commandTypeClass, clicks) {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const {
+		MoveBaseCommandType::doChecksum(checksum);
+		AttackCommandTypeBase::doChecksum(checksum);
+	}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		AttackCommandTypeBase::getDesc(str, unit);
 		MoveBaseCommandType::getDesc(str, unit);
@@ -210,6 +231,10 @@ class AttackStoppedCommandType: public StopBaseCommandType, public AttackCommand
 public:
 	AttackStoppedCommandType() : StopBaseCommandType("AttackStopped", CommandClass::ATTACK_STOPPED, Clicks::ONE) {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const {
+		StopBaseCommandType::doChecksum(checksum);
+		AttackCommandTypeBase::doChecksum(checksum);
+	}
 	virtual void getDesc(string &str, const Unit *unit) const {
 		AttackCommandTypeBase::getDesc(str, unit);
 	}
@@ -231,6 +256,7 @@ public:
 	BuildCommandType() : MoveBaseCommandType("Build", CommandClass::BUILD, Clicks::TWO) {}
 	~BuildCommandType();
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const {
 		buildSkillType->getDesc(str, unit);
 	}
@@ -260,6 +286,7 @@ private:
 public:
 	HarvestCommandType() : MoveBaseCommandType("Harvest", CommandClass::HARVEST, Clicks::TWO) {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const;
 
 	//get
@@ -287,6 +314,7 @@ public:
 	RepairCommandType() : MoveBaseCommandType("Repair", CommandClass::REPAIR, Clicks::TWO) {}
 	~RepairCommandType();
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const;
 
 	//get
@@ -307,6 +335,7 @@ private:
 public:
 	ProduceCommandType() : CommandType("Produce", CommandClass::PRODUCE, Clicks::ONE, true) {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const;
 
 	virtual string getReqDesc() const;
@@ -330,6 +359,7 @@ private:
 public:
 	UpgradeCommandType() : CommandType("Upgrade", CommandClass::UPGRADE, Clicks::ONE, true) {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual string getReqDesc() const;
 	virtual const ProducibleType *getProduced() const;
 	virtual void getDesc(string &str, const Unit *unit) const {
@@ -355,6 +385,7 @@ private:
 public:
 	MorphCommandType() : CommandType("Morph", CommandClass::MORPH, Clicks::ONE) {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const;
 	virtual string getReqDesc() const;
 	virtual const ProducibleType *getProduced() const;
@@ -393,6 +424,7 @@ public:
 	GuardCommandType(const char* name = "Guard", CommandClass commandTypeClass = CommandClass::GUARD, Clicks clicks = Clicks::TWO) :
 			AttackCommandType(name, commandTypeClass, clicks) {}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	int getMaxDistance() const {return maxDistance;}
 };
 

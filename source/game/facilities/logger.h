@@ -80,8 +80,6 @@ public:
 		return logger;
 	}
 
-	void addXmlError( const string &path, const char *error );
-
 	//void setFile(const string &fileName) {this->fileName= fileName;}
 	void setState(const string &state);
 	void resetState(const string &s)	{state= s;}
@@ -90,6 +88,9 @@ public:
 	void setProgressBar(GraphicProgressBar *v) { progressBar = v; }
 
 	void add(const string &str, bool renderScreen = false);
+	void addXmlError(const string &path, const char *error);
+	void addNetworkMsg(const string &msg);
+
 	void renderLoadingScreen();
 	void clear();
 
@@ -100,6 +101,20 @@ public:
 	void setClusterCount(int count) { totalClusters = count; clustersInit = 0; }
 	void clusterInit();
 };
+
+void logNetwork(const string &msg);
+
+inline void logNetwork(const char *msg) { 
+	logNetwork(string(msg)); 
+}
+
+#define LOG_NETWORKING 1
+
+#if LOG_NETWORKING
+#	define LOG_NETWORK(x) logNetwork(x)
+#else
+#	define LOG_NETWORK(x) 
+#endif
 
 #if defined(WIN32) | defined(WIN64)
 

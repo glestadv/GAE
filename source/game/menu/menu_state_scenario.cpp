@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Marti�o Figueroa
+//	Copyright (C) 2001-2005 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -197,13 +197,13 @@ void MenuStateScenario::loadScenarioInfo(string file, ScenarioInfo *scenarioInfo
 	if ( tmp ) {
 		scenarioInfo->fogOfWar = tmp->getAttribute("value")->getBoolValue();
 	} else {
-		scenarioInfo->fogOfWar = Config::getInstance().getGsFogOfWarEnabled();
+		scenarioInfo->fogOfWar = true;
 	}
 	tmp = scenarioNode->getOptionalChild("shroud-of-darkness");
 	if ( tmp ) {
 		scenarioInfo->shroudOfDarkness = tmp->getAttribute("value")->getBoolValue();
 	} else {
-		scenarioInfo->shroudOfDarkness = Config::getInstance().getGsFogOfWarEnabled();
+		scenarioInfo->shroudOfDarkness = true;
 	}
 
 	const XmlNode *playersNode = scenarioNode->getChild("players");
@@ -307,8 +307,8 @@ void MenuStateScenario::loadGameSettings(const ScenarioInfo *scenarioInfo, GameS
 			factionCount++;
 		}
 	}
-	Config::getInstance().setGsFogOfWarEnabled(scenarioInfo->fogOfWar);
-	Config::getInstance().setGsShroudOfDarknessEnabled(scenarioInfo->shroudOfDarkness);
+	gs->setFogOfWar(scenarioInfo->fogOfWar);
+	//Config::getInstance().setGsShroudOfDarknessEnabled(scenarioInfo->shroudOfDarkness);
 	gs->setFactionCount(factionCount);
 }
 

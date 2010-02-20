@@ -95,6 +95,7 @@ public:
 	SkillType(SkillClass skillClass, const char* typeName);
 	virtual ~SkillType();
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const = 0;
 	void descEffects(string &str, const Unit *unit) const;
 	void descEffectsRemoved(string &str, const Unit *unit) const;
@@ -115,14 +116,12 @@ public:
 	int getEpCost() const				{return epCost;}
 	int getSpeed() const				{return speed;}
 	int getAnimSpeed() const			{return animSpeed;}
-	const Model *getAnimation() const	{
-
-		return animations.front();}
+	const Model *getAnimation() const	{return animations.front();}
 	StaticSound *getSound() const		{return sounds.getRandSound();}
 	float getSoundStartTime() const		{return soundStartTime;}
 	int getMaxRange() const				{return maxRange;}
 	int getMinRange() const				{return minRange;}
-	float getStartTime() const				{return startTime;}
+	float getStartTime() const			{return startTime;}
 
 	//other
 	virtual string toString() const		{return Lang::getInstance().get(typeName);}
@@ -176,6 +175,7 @@ public:
 		descSpeed(str, unit, "WalkSpeed");
 		descEpCost(str, unit);
 	}
+	//virtual void doChecksum(Checksum &checksum) const;
 };
 /*
 class RangedType {
@@ -205,6 +205,7 @@ public:
 	TargetBasedSkillType(SkillClass skillClass, const char* typeName);
 	virtual ~TargetBasedSkillType();
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const	{getDesc(str, unit, "Range");}
 	virtual void getDesc(string &str, const Unit *unit, const char* rangeDesc) const;
 
@@ -231,6 +232,7 @@ public:
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const;
+	virtual void doChecksum(Checksum &checksum) const;
 
 	//get
 	int getAttackStrength() const				{return attackStrength;}
@@ -282,6 +284,7 @@ public:
 	virtual ~RepairSkillType() { delete splashParticleSystemType; }
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const;
 
 	int getAmount() const		{return amount;}
@@ -304,6 +307,7 @@ private:
 public:
 	ProduceSkillType();
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const {
 		descSpeed(str, unit, "ProductionSpeed");
 		descEpCost(str, unit);
@@ -363,6 +367,7 @@ public:
 	bool getFade() const	{return fade;}
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const {}
 };
 
@@ -389,6 +394,7 @@ public:
 	FallDownSkillType(const SkillType *model);
 
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual void doChecksum(Checksum &checksum) const;
 	virtual void getDesc(string &str, const Unit *unit) const {}
 
 	float getAgility() const {return agility;}

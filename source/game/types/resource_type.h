@@ -42,7 +42,8 @@ private:
 	bool display;
 
 public:
-	bool load(const string &dir, int id, Checksum &checksum);
+	bool load(const string &dir, int id);
+	virtual void doChecksum(Checksum &checksum) const;
 
 	//get
 	ResourceClass getClass() const	{return resourceClass;}

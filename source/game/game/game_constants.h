@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
+//	Copyright (C) 2001-2008 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -22,10 +22,18 @@
 #define theConsole			(*Game::getInstance()->getConsole())
 #define theConfig			(Config::getInstance())
 #define theRoutePlanner		(*World::getInstance().getRoutePlanner())
+#define theCartographer		(*World::getInstance().getCartographer())
 #define theRenderer			(Renderer::getInstance())
 #define theNetworkManager	(NetworkManager::getInstance())
 #define theSoundRenderer	(SoundRenderer::getInstance())
 #define theLogger			(Logger::getInstance())
+#define theLang				(Lang::getInstance())
+
+#if _GAE_DEBUG_EDITION_
+#	define IF_DEBUG_EDITION(x) x
+#else
+#	define IF_DEBUG_EDITION(x)
+#endif
 
 #ifndef NDEBUG
 #	define LOG(x) Logger::getInstance().add(x)
@@ -90,6 +98,20 @@ namespace Search {
 
 } // end namespace Search
 
+
+REGULAR_ENUM( NetworkMessageType,
+				NO_MSG,
+				INTRO,
+				PING,
+				AI_SYNC,
+				READY,
+				LAUNCH,
+				COMMAND_LIST,
+				TEXT,
+				LOG_UNIT,
+				QUIT
+			)
+
 /** The control type of a 'faction' (aka, player)
   * <ul><li><b>CLOSED</b> Slot closed, no faction</li>
   *		<li><b>CPU_EASY</b> CPU easy player</li>
@@ -150,6 +172,24 @@ STRINGY_ENUM( Property,
 					ROTATED_CLIMB,
 					WALL
 			);
+
+/** Whether the effect is detrimental, neutral or benificial */
+STRINGY_ENUM( EffectBias,
+	DETRIMENTAL,
+	NEUTRAL,
+	BENIFICIAL
+)
+
+/**
+ * How an attempt to apply multiple instances of an effect should be
+ * handled
+ */
+STRINGY_ENUM( EffectStacking,
+	STACK,
+	EXTEND,
+	OVERWRITE,
+	REJECT
+)
 
 /** effects flags
   * effect properties:
@@ -344,8 +384,8 @@ REGULAR_ENUM( CommandProperties,
 REGULAR_ENUM( CommandArchetype,
 					GIVE_COMMAND,
 					CANCEL_COMMAND,
-				//	SET_METTING_POINT,
-					SET_AUTO_REPAIR
+					SET_MEETING_POINT
+				//	SET_AUTO_REPAIR
 			);
 
 // =====================================================
