@@ -33,7 +33,7 @@ namespace Shared { namespace Util {
 	
 Properties::Properties() {}
 
-void Properties::load(const string &path, bool trim) {
+void Properties::load(const string &path, bool trim, bool caseSensitive) {
 	locale loc;
 	ifstream fileStream;
 	char lineBuffer[maxLine];
@@ -87,6 +87,9 @@ void Properties::load(const string &path, bool trim) {
 				value.erase(value.size() - 1);
 			}
 		}
+		for (int i=0; i < key.size(); ++i) {
+			key[i] = tolower(key[i]);
+		}
 		propertyMap.insert(PropertyPair(key, value));
 		propertyVector.push_back(PropertyPair(key, value));
 	}
@@ -116,7 +119,11 @@ void Properties::clear(){
 
 const string *Properties::_getString(const string &key, bool required) const {
 	PropertyMap::const_iterator it;
-	it = propertyMap.find(key);
+	string lkey = key;
+	for (int i=0; i < lkey.size(); ++i) {
+		lkey[i] = tolower(lkey[i]);
+	}
+	it = propertyMap.find(lkey);
 	if(it == propertyMap.end()) {
 		if(required) {
 			throw runtime_error("Value not found in propertyMap: " + key + ", loaded from: " + path);

@@ -48,6 +48,10 @@
 using std::string;
 using Shared::Util::SimpleDataBuffer;
 
+namespace Test {
+	class CircularBufferTest;
+}
+
 namespace Shared { namespace Platform {
 
 // =====================================================
@@ -77,6 +81,7 @@ public:
 // =====================================================
 
 class Socket {
+	friend class Test::CircularBufferTest;
 #if defined(WIN32) || defined(WIN64)
 	class LibraryManager {
 	public:
@@ -91,14 +96,17 @@ private:
 	typedef char* char_ptr;
 
 	class CircularBuffer {
-		static const int buffer_size = 8 * 1024;
+		int buffer_size;
 
 		char_ptr buffer;
 		size_t tail, head;
 		bool full;
 
 	public:
-		CircularBuffer() : buffer(0), tail(0), head(0), full(false) {
+		CircularBuffer(int size = 8 * 1024) 
+				: buffer_size(size), buffer(0)
+				, tail(0), head(0), full(false) {
+			assert(buffer_size > 0);
 			buffer = new char[buffer_size]; 
 		}
 		~CircularBuffer() { delete [] buffer; }

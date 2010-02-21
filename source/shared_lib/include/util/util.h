@@ -98,42 +98,42 @@ E enum_cast(unsigned i) {
 
 class EnumNamesBase {
 private:
-    const char *valueList;
-    const char **names;
-    const char *qualifiedList;
-    const char **qualifiedNames;
-    size_t count;
+	const char *valueList;
+	const char **names;
+	const char *qualifiedList;
+	const char **qualifiedNames;
+	size_t count;
 
 public:
-    EnumNamesBase(const char *valueList, size_t count, bool lazy, const char *enumName = NULL);
-    ~EnumNamesBase();
+	EnumNamesBase(const char *valueList, size_t count, bool lazy, const char *enumName = NULL);
+	~EnumNamesBase();
 
 protected:
-    const char *get(int i, size_t count) const { // using count as local instead of data member to compile out memory access (as long as a constant is passed for count)
-        if (!names) {
-            const_cast<EnumNamesBase*>(this)->init();
-        }
-		if (i < 0 || i >= count) {
+	const char *get(int i, size_t count) const { // using count as local instead of data member to compile out memory access (as long as a constant is passed for count)
+		if (!names) {
+			const_cast<EnumNamesBase*>(this)->init();
+		}
+		if (i < 0 || i >= int(count)) {
 			return "invalid value";
 		}
-        return qualifiedNames ? qualifiedNames[i] : names[i];
-    }
+		return qualifiedNames ? qualifiedNames[i] : names[i];
+	}
 
-    int _match(const char *value) const;
+	int _match(const char *value) const;
 
 private:
-    void init();
+	void init();
 };
 
 template<typename E>
 class EnumNames : public EnumNamesBase {
 public:
-    EnumNames(const char *valueList, size_t count, bool lazy, const char *enumName = NULL) 
+	EnumNames(const char *valueList, size_t count, bool lazy, const char *enumName = NULL) 
 		: EnumNamesBase(valueList, count, lazy, enumName) {}
-    ~EnumNames() {}
+	~EnumNames() {}
 
-    const char* operator[](E e) const {return get(e, E::COUNT);} // passing E::COUNT here will inline the value in EnumNamesBase::get()
-    E match(const char *value) const {return enum_cast<E>(_match(value));} // this will inline a function call to the fairly large _match() function
+	const char* operator[](E e) const {return get(e, E::COUNT);} // passing E::COUNT here will inline the value in EnumNamesBase::get()
+	E match(const char *value) const {return enum_cast<E>(_match(value));} // this will inline a function call to the fairly large _match() function
 };
 
 #define foreach(CollectionClass, it, collection) for(CollectionClass::iterator it = collection.begin(); it != collection.end(); ++it)

@@ -54,7 +54,7 @@ public:
 		const UnitType* unitType = NULL) const;
 	CommandResult tryCancelCommand(const Selection *selection) const;
 	
-	//void trySetAutoRepairEnabled(const Selection &selection, CommandFlags flags, bool enabled) const;
+	void trySetAutoRepairEnabled(const Selection &selection, CommandFlags flags, bool enabled) const;
 
 private:
 	CommandResult pushCommand(Command *command) const;

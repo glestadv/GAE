@@ -106,15 +106,17 @@ CommandResult Commander::tryCancelCommand(const Selection *selection) const{
 
 	return CommandResult::SUCCESS;
 }
-/*
+
 void Commander::trySetAutoRepairEnabled(const Selection &selection, CommandFlags flags, bool enabled) const{
+	/*
 	const Selection::UnitContainer &units = selection.getUnits();
 	for(Selection::UnitIterator i = units.begin(); i != units.end(); ++i) {
 		pushCommand(new Command(CommandArchetype::SET_AUTO_REPAIR, CommandFlags(CommandProperties::AUTO_REPAIR_ENABLED, enabled),
 				Command::invalidPos, *i));
 	}
+	*/
 }
-*/
+
 // ==================== PRIVATE ====================
 
 Vec2i Commander::computeRefPos(const Selection &selection) const{

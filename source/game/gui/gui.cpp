@@ -734,10 +734,10 @@ void Gui::mouseDownDisplayUnitSkills(int posDisplay) {
 		} else {
 			// not our click
 		}
-//	} else if(posDisplay == autoRepairPos) {
-//		bool newState = selection.getAutoRepairState() == arsOn ? false : true;
-//		commander->trySetAutoRepairEnabled(selection,
-//				CommandFlags(CommandProperties::QUEUE, input.isShiftDown()), newState);
+	} else if(posDisplay == autoRepairPos) {
+		bool newState = selection.getAutoRepairState() == arsOn ? false : true;
+		commander->trySetAutoRepairEnabled(selection,
+				CommandFlags(CommandProperties::QUEUE, input.isShiftDown()), newState);
 	} else if(posDisplay == meetingPointPos) {
 		activePos= posDisplay;
 		selectingMeetingPoint= true;
