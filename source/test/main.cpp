@@ -17,6 +17,7 @@
 #include "reverse_rect_iter_test.h"
 //#include "node_pool_test.h"
 #include "influence_map_test.h"
+#include "circular_buffer_test.h"
 
 #include "leak_dumper.h"
 
@@ -26,13 +27,14 @@ namespace Test {
 using namespace Test;
 
 int main(int argc, char **argv) {
-	CppUnit::TextUi::TestRunner runner;
+	CppUnit::TextUi::TestRunner tester;
 
-	runner.addTest(Test::ReverseRectIteratorTest::suite());
-	//runner.addTest(Test::NodePoolTest::suite());
-	runner.addTest(Test::InfluenceMapTest::suite());
+	tester.addTest(Test::ReverseRectIteratorTest::suite());
+	//tester.addTest(Test::NodePoolTest::suite());
+	tester.addTest(Test::InfluenceMapTest::suite());
+	tester.addTest(Test::CircularBufferTest::suite());
 
-	runner.run();
+	tester.run();
 
 	char line[256];
 	std::cout << "[Enter] to exit.";

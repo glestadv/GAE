@@ -26,37 +26,20 @@ InfluenceMapTest::InfluenceMapTest() {
 InfluenceMapTest::~InfluenceMapTest() {
 }
 
+#define ADD_TEST(Class, Method) suiteOfTests->addTest( \
+	new CppUnit::TestCaller<Class>(#Method, &Class::Method));
+
 CppUnit::Test *InfluenceMapTest::suite() {
 	CppUnit::TestSuite *suiteOfTests = new CppUnit::TestSuite("InfluenceMapTest");
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testSquareTypeMap",
-			&InfluenceMapTest::testSquareTypeMap));
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testRectPatchMap",
-			&InfluenceMapTest::testRectPatchMap));
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testRectFlowMap",
-			&InfluenceMapTest::testRectFlowMap));
-
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testPatchMap1",
-			&InfluenceMapTest::testPatchMap1));
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testPatchMap2",
-			&InfluenceMapTest::testPatchMap2));
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testPatchMap3",
-			&InfluenceMapTest::testPatchMap3));
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testPatchMap4",
-			&InfluenceMapTest::testPatchMap4));
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testPatchMap5",
-			&InfluenceMapTest::testPatchMap5));
-	suiteOfTests->addTest(new CppUnit::TestCaller<InfluenceMapTest>(
-			"testPatchMap6",
-			&InfluenceMapTest::testPatchMap6));
-
+	ADD_TEST(InfluenceMapTest, testSquareTypeMap);
+	ADD_TEST(InfluenceMapTest, testRectPatchMap);
+	ADD_TEST(InfluenceMapTest, testRectFlowMap);
+	ADD_TEST(InfluenceMapTest, testPatchMap1);
+	ADD_TEST(InfluenceMapTest, testPatchMap2);
+	ADD_TEST(InfluenceMapTest, testPatchMap3);
+	ADD_TEST(InfluenceMapTest, testPatchMap4);
+	ADD_TEST(InfluenceMapTest, testPatchMap5);
+	ADD_TEST(InfluenceMapTest, testPatchMap6);
 	return suiteOfTests;
 }
 
@@ -65,7 +48,6 @@ void InfluenceMapTest::setUp() {
 
 void InfluenceMapTest::tearDown() {
 }
-
 
 #define TEST_SET(p,pv,nv)						\
 	CPPUNIT_ASSERT(iMap.getInfluence(p)==pv);	\

@@ -147,7 +147,7 @@ private:
 public:
 	Properties();
 	void clear();
-	void load(const string &path, bool trim = true, bool caseSensitive = false);
+	void load(const string &path, bool trim = true);
 	void save(const string &path);
 
 	int getPropertyCount()	{return propertyVector.size();}

@@ -33,7 +33,7 @@ namespace Shared { namespace Util {
 	
 Properties::Properties() {}
 
-void Properties::load(const string &path, bool trim, bool caseSensitive) {
+void Properties::load(const string &path, bool trim) {
 	locale loc;
 	ifstream fileStream;
 	char lineBuffer[maxLine];

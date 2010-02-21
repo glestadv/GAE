@@ -9,43 +9,48 @@
 //	License, or (at your option) any later version
 // ==============================================================
 
-#ifndef _TEST_NODE_POOL_H_
-#define _TEST_NODE_POOL_H_
+#ifndef _TEST_CIRCULAR_BUFFER_H_
+#define _TEST_CIRCULAR_BUFFER_H_
 
 #include <cppunit/TestFixture.h>
 #include <cppunit/Test.h>
 #include <cppunit/TestSuite.h>
 
-#include "node_pool.h"
-#include "vec.h"
+#include "socket.h"
 
-using namespace Glest::Game::Search;
-using Shared::Graphics::Vec2i;
+using Shared::Platform::Socket;
 
 namespace Test {
 
 // =====================================================
-//	class NodePoolTest
+//	class AnnotatedMapTest
 // =====================================================
 
-class NodePoolTest : public CppUnit::TestFixture {
+class CircularBufferTest : public CppUnit::TestFixture {
 private:
-	NodeStore *store;
-	NodePool *pool;
+	char *alpha_data;
+	size_t alpha_size;
+	char *num_data;
+	size_t num_size;
+	char *alpha_num_data;
+	size_t alpha_num_size;
+	char *hex_data;
+	size_t hex_size;
 
 public:
-	NodePoolTest();
-	~NodePoolTest();
+	CircularBufferTest();
+	~CircularBufferTest();
 
 	static CppUnit::Test *suite();
 	void setUp();
 	void tearDown();
 	
-	void testSetOpen();
-	void testOpenListOrder();
-	void testOpenListUpdate();
+	void testBasicOps();
+	void testRollOver();
+	void testPerfectFill();
+	void testPeek();
 };
 
-} // end namespace
+} // end namespace Test
 
-#endif // _TEST_NODE_POOL_H_
+#endif // _TEST_CIRCULAR_BUFFER_H_
