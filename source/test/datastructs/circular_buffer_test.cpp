@@ -115,7 +115,7 @@ void CircularBufferTest::testRollOver() {
 	int mem_free = buffer.getFreeBytes();
 	CPPUNIT_ASSERT(mem_free == 2 * hex_size); // 32 bytes of free space
 
-	char *my_data = alpha_data;
+	const char *my_data = alpha_data;
 	int to_write = alpha_size;
 
 	// alpha_data will now need be written in two phases...

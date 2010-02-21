@@ -28,13 +28,13 @@ namespace Test {
 
 class CircularBufferTest : public CppUnit::TestFixture {
 private:
-	char *alpha_data;
+	const char *alpha_data;
 	size_t alpha_size;
-	char *num_data;
+	const char *num_data;
 	size_t num_size;
-	char *alpha_num_data;
+	const char *alpha_num_data;
 	size_t alpha_num_size;
-	char *hex_data;
+	const char *hex_data;
 	size_t hex_size;
 
 public:

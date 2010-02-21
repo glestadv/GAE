@@ -49,8 +49,8 @@ private:
 	char buffer[S];
 
 public:
-	/*
-	NetworkString() /*: s() *{
+#if 0
+	NetworkString() /*: s() */{
 		assert(S && S < USHRT_MAX);
 		size = 0;
 		*buffer = 0;
@@ -59,20 +59,19 @@ public:
 		assert(S && S < USHRT_MAX);
 		(*this) = str;
 	}
-	*/
+#endif
 	NetworkString()						{memset(buffer, 0, S);}
 	void operator=(const string& str)	{strncpy(buffer, str.c_str(), S-1);}
 	string getString() const			{return buffer;}
 
-	/*
-
+#if 0
 	void operator=(const string &str) {
 		/*
 		s = str;
 		if(s.size() > S) {
 			s.resize(S);
 		}
-		*
+		*/
 		size = (uint16)(str.size() < S ? str.size() : S - 1);
 		strncpy(buffer, str.c_str(), size);
 		buffer[size] = 0;
@@ -98,7 +97,7 @@ public:
 		buf.read(buffer, size);
 		buffer[size] = 0;
 	}
-	*/
+#endif
 };
 
 // =====================================================

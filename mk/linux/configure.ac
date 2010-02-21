@@ -95,6 +95,9 @@ NP_FINDLIB([OPENAL], [OpenAL], [OpenAL],
 
 CHECK_LUA([], [AC_MSG_ERROR([Please install lua 5.1])])
 
+AM_PATH_CPPUNIT([1.10.2], CPPUNIT="yes")
+AC_SUBST(CPPUNIT)
+
 AX_CHECK_GL
 if test "$no_gl" = "yes"; then
     AC_MSG_ERROR([You need to have OpenGL headers and libraries installed])
