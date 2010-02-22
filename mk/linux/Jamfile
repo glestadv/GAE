@@ -10,7 +10,6 @@ SubDir TOP shared_lib ;
 LIB_DIRS =
 	platform
 	platform/sdl
-	platform/posix
 	util
 	math
 	graphics
