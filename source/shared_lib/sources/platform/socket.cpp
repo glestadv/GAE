@@ -14,10 +14,7 @@
 #include "pch.h"
 #include "socket.h"
 
-#include <stdexcept>
-
 #include "conversion.h"
-
 #include "leak_dumper.h"
 
 using namespace std;
@@ -27,16 +24,31 @@ using namespace Shared::Util;
 #	define SOCKET_ERROR (-1)
 #endif
 
+#ifndef INVALID_SOCKET
+#	define INVALID_SOCKET (-1) 
+#endif
+
+#if defined(HAVE_SYS_IOCTL_H)
+#	define BSD_COMP /* needed for FIONREAD on Solaris2 */
+#	include <sys/ioctl.h>
+#endif
+
+#if defined(HAVE_SYS_FILIO_H) /* needed for FIONREAD on Solaris 2.5 */
+#	include <sys/filio.h>
+#endif
+
 #ifdef USE_POSIX_SOCKETS
 #	define socket_close ::close
 #	define get_error() errno
 #	define NO_DATA_AVAILABLE EAGAIN
 #	define IF_POSIX(x) x
+#	define TIMEVAL struct timeval
 #elif defined(WIN32) || defined(WIN64)
 #	define socket_close closesocket
 #	define get_error() WSAGetLastError()
 #	define NO_DATA_AVAILABLE WSAEWOULDBLOCK
 #	define IF_POSIX(x) x
+#	define ioctl ioctlsocket
 #else
 #	error not Windows and USE_POSIX_SOCKETS not defined
 #endif
@@ -285,7 +297,7 @@ int Socket::peek(void *data, int dataSize) {
 
 void Socket::setBlock(bool block) {
 	u_long iMode = !block;
-	int err = ioctlsocket(sock, FIONBIO, &iMode);
+	int err = ioctl(sock, FIONBIO, &iMode);
 	if (err == SOCKET_ERROR) {
 		handleError(__FUNCTION__);
 	}
