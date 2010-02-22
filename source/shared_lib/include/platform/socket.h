@@ -143,6 +143,8 @@ public:
 	string getHostName() const;
 	string getIp() const;
 
+	void close();
+
 protected:
 	void handleError(const char *caller) const;
 	void readAll();

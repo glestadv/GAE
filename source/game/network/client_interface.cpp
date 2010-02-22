@@ -94,15 +94,18 @@ void ClientInterface::updateLobby() {
 			}
 			LOG_NETWORK( "Received intro message, sending intro message reply." );
 			playerIndex = introMsg.getPlayerIndex();
-			serverName = introMsg.getName();
-			setRemoteNames(introMsg.getName(), introMsg.getName()); //NETWORK: needs to be done properly
+			serverName = introMsg.getHostName();
+			
+			setRemoteNames(introMsg.getHostName(), introMsg.getPlayerName());
 
 			if (playerIndex < 0 || playerIndex >= GameConstants::maxPlayers) {
 				throw runtime_error("Intro message from server contains bad data, are you using the same version?");
 			}
 			
 			//send reply
-			NetworkMessageIntro replyMsg(getNetworkVersionString(), getHostName(), -1);
+			NetworkMessageIntro replyMsg(
+				getNetworkVersionString(), theConfig.getNetPlayerName(), getHostName(), -1);
+			
 			send(&replyMsg);
 			introDone= true;
 		}
@@ -126,7 +129,9 @@ void ClientInterface::updateLobby() {
 			LOG_NETWORK( "Received launch message." );
 		}
 	} else if (msgType != NetworkMessageType::NO_MSG) {
-		throw runtime_error("Unexpected network message: " + intToStr(msgType));
+		LOG_NETWORK( "Received bad message type : " + intToStr(msgType) );
+		reset();
+		//throw runtime_error("Unexpected network message: " + intToStr(msgType));
 	}
 }
 
@@ -293,9 +298,9 @@ void ClientInterface::waitForMessage() {
 void ClientInterface::quitGame() {
 	LOG_NETWORK( "Quitting" );
 	if(!quit && clientSocket && clientSocket->isConnected()) {
-		string text = getHostName() + " has left the game!";
-		sendTextMessage(text, -1);
-		LOG_NETWORK( "Sent goodbye text messsage." );
+		//string text = getHostName() + " has left the game!";
+		//sendTextMessage(text, -1);
+		//LOG_NETWORK( "Sent goodbye text messsage." );
 		NetworkMessageQuit networkMessageQuit;
 		send(&networkMessageQuit);
 		LOG_NETWORK( "Sent quit message." );

@@ -62,117 +62,6 @@ void Faction::init(const FactionType *factionType, ControlType control, TechTree
 	texture->load("data/core/faction_textures/faction" + intToStr(id) + ".tga");
 }
 
-void Faction::load(const XmlNode *node, World *world, const FactionType *ft, ControlType control,
-		TechTree *tt) {
-	XmlNode *n;
-	Map * map = world->getMap();
-
-	this->factionType = ft;
-	this->control = control;
-	this->lastAttackNotice = 0;
-	this->lastEnemyNotice = 0;
-
-	id = node->getChildIntValue("id");
-	name = node->getChildStringValue("name");
-	teamIndex = node->getChildIntValue("teamIndex");
-	startLocationIndex = node->getChildIntValue("startLocationIndex");
-	thisFaction = node->getChildBoolValue("thisFaction");
-	subfaction = node->getChildIntValue("subfaction");
-	time_t lastAttackNotice = 0;
-	time_t lastEnemyNotice = 0;
-	lastEventLoc = node->getChildVec3fValue("lastEventLoc");
-
-	upgradeManager.load(node->getChild("upgrades"), factionType);
-
-	n = node->getChild("resources");
-	resources.resize(n->getChildCount());
-	store.resize(n->getChildCount());
-	for (int i = 0; i < n->getChildCount(); ++i) {
-		XmlNode *resourceNode = n->getChild("resource", i);
-		const ResourceType *rt = tt->getResourceType(resourceNode->getChildStringValue("type"));
-		resources[i].init(rt, resourceNode->getChildIntValue("amount"));
-		store[i].init(rt, resourceNode->getChildIntValue("store"));
-	}
-
-	n = node->getChild("units");
-	units.reserve(n->getChildCount());
-	assert(units.empty() && unitMap.empty());
-	for (int i = 0; i < n->getChildCount(); ++i) {
-		new Unit(n->getChild("unit", i), this, map, tt);
-//  add(new Unit(n->getChild("unit", i), world, this, map, tt));
-	}
-
-	subfaction = node->getChildIntValue("subfaction"); //reset in case unit construction changed it
-	texture = Renderer::getInstance().newTexture2D(rsGame);
-	texture->load("data/core/faction_textures/faction" + intToStr(id) + ".tga");
-	assert(units.size() == unitMap.size());
-}
-
-void Faction::save(XmlNode *node) const {
-	XmlNode *n;
-
-	node->addChild("id", id);
-	node->addChild("name", name);
-	node->addChild("teamIndex", teamIndex);
-	node->addChild("startLocationIndex", startLocationIndex);
-	node->addChild("thisFaction", thisFaction);
-	node->addChild("subfaction", subfaction);
-	node->addChild("lastEventLoc", lastEventLoc);
-	upgradeManager.save(node->addChild("upgrades"));
-
-	n = node->addChild("resources");
-	for (int i = 0; i < resources.size(); ++i) {
-		assert(resources[i].getType() == store[i].getType());
-
-		XmlNode *resourceNode = n->addChild("resource");
-		resourceNode->addChild("type", resources[i].getType()->getName());
-		resourceNode->addChild("amount", resources[i].getAmount());
-		resourceNode->addChild("store", store[i].getAmount());
-	}
-
-	n = node->addChild("units");
-	for (Units::const_iterator i = units.begin(); i != units.end(); i++) {
-		(*i)->save(n->addChild("unit"));
-	}
-}
-
-void Faction::writeUpdate(XmlNode *node) const {
-	XmlNode *n;
-
-	node->addChild("subfaction", subfaction);
-	node->addChild("lastEventLoc", lastEventLoc);
-	upgradeManager.save(node->addChild("upgrades"));
-
-	n = node->addChild("resources");
-	for (int i = 0; i < resources.size(); ++i) {
-		assert(resources[i].getType() == store[i].getType());
-
-		XmlNode *resourceNode = n->addChild("resource");
-		resourceNode->addAttribute("type", resources[i].getType()->getName());
-		resourceNode->addAttribute("amount", intToStr(resources[i].getAmount()));
-		resourceNode->addAttribute("store", intToStr(store[i].getAmount()));
-	}
-}
-
-void Faction::update(const XmlNode *node) {
-	XmlNode *n;
-	const TechTree *tt = World::getCurrWorld()->getTechTree();
-
-	subfaction = node->getChildIntValue("subfaction");
-	lastEventLoc = node->getChildVec3fValue("lastEventLoc");
-	upgradeManager.load(node->getChild("upgrades"), factionType);
-
-	n = node->getChild("resources");
-	resources.resize(n->getChildCount());
-	store.resize(n->getChildCount());
-	for (int i = 0; i < n->getChildCount(); ++i) {
-		XmlNode *resourceNode = n->getChild("resource", i);
-		const ResourceType *rt = tt->getResourceType(resourceNode->getAttribute("type")->getValue());
-		resources[i].init(rt, resourceNode->getAttribute("amount")->getIntValue());
-		store[i].init(rt, resourceNode->getAttribute("store")->getIntValue());
-	}
-}
-
 void Faction::end() {
 	deleteValues(units.begin(), units.end());
 }
@@ -388,7 +277,7 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 	//decrease resources
 	for (int i = 0; i < p->getCostCount(); ++i) {
 		const ResourceType *rt = p->getCost(i)->getType();
-		if (rt->getClass() == ResourceClass::STATIC) {
+		if (rt->getClass() == ResourceClass::STATIC && rt->getRecoupCost()) {
 			int cost = p->getCost(i)->getAmount();
 			incResourceAmount(rt, cost);
 		}
@@ -396,18 +285,17 @@ void Faction::deApplyStaticCosts(const ProducibleType *p) {
 }
 
 //deapply static costs, but not negative costs, for when building gets killed
-void Faction::deApplyStaticConsumption(const ProducibleType *p){
-   
-    //decrease resources
+void Faction::deApplyStaticConsumption(const ProducibleType *p) {
+	//decrease resources
 	for(int i=0; i<p->getCostCount(); ++i){
 		const ResourceType *rt= p->getCost(i)->getType();
 		if(rt->getClass()==ResourceClass::STATIC){
-            int cost= p->getCost(i)->getAmount();
+			int cost= p->getCost(i)->getAmount();
 			if(cost>0){
 				incResourceAmount(rt, cost);
 			}
-        }    
-    }
+		}
+	}
 }
 
 //apply resource on interval (cosumable resouces)

@@ -63,7 +63,8 @@ private:
 	struct Data{
 		int8 messageType;
 		NetworkString<maxVersionStringSize> versionString; // change to uint32 ?
-		NetworkString<maxNameSize> name;
+		NetworkString<maxNameSize> playerName;
+		NetworkString<maxNameSize> hostName;
 		int16 playerIndex;
 	};
 
@@ -72,10 +73,11 @@ private:
 
 public:
 	NetworkMessageIntro();
-	NetworkMessageIntro(const string &versionString, const string &name, int playerIndex);
+	NetworkMessageIntro(const string &versionString, const string &pName, const string &hName, int playerIndex);
 
 	string getVersionString() const		{return data.versionString.getString();}
-	string getName() const				{return data.name.getString();}
+	string getPlayerName() const		{return data.playerName.getString();}
+	string getHostName() const			{return data.hostName.getString();}
 	int getPlayerIndex() const			{return data.playerIndex;}
 
 	virtual bool receive(Socket* socket);

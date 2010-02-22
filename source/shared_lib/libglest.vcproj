@@ -484,11 +484,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\quaternion.h"
+				RelativePath=".\include\math\quaternion.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\math\quaternion.h"
+				RelativePath=".\include\graphics\quaternion.h"
 				>
 			</File>
 			<File
@@ -520,11 +520,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\socket.h"
+				RelativePath=".\include\platform\socket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\socket.h"
+				RelativePath=".\include\platform\win32\socket.h"
 				>
 			</File>
 			<File
@@ -576,11 +576,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\thread.h"
+				RelativePath=".\include\platform\win32\thread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\thread.h"
+				RelativePath=".\include\platform\thread.h"
 				>
 			</File>
 			<File
@@ -604,11 +604,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\vec.h"
+				RelativePath=".\include\math\vec.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\math\vec.h"
+				RelativePath=".\include\graphics\vec.h"
 				>
 			</File>
 			<File
@@ -620,11 +620,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File
@@ -1160,7 +1160,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\sources\platform\win32\socket.cpp"
+				RelativePath=".\sources\platform\socket.cpp"
 				>
 			</File>
 			<File

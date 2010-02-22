@@ -56,8 +56,9 @@ Program::CrashProgramState::CrashProgramState(Program &program, const exception 
 		fprintf(stderr, "%s\n", e->what());
 		msgBox.setText(string("Exception: ") + e->what());
 	} else {
-		msgBox.setText("Glest Advanced Engine has crashed.  Please help us improve GAE by emailing "
-				" the file gae-crash.txt to " + gaeMailString + ".");
+		msgBox.setText("Glest Advanced Engine has crashed."
+					   "\nPlease help us improve GAE by emailing the file"
+					   "\ngae-crash.txt to " + gaeMailString + ".");
 	}
 	mouse2dAnim = mouseY = mouseX = 0;
 	this->e = e;

@@ -287,7 +287,7 @@ public:
 	static void onHPAboveTrigger(const Unit *unit) { triggerManager.onHPAbove(unit); }
 	static void onAttackedTrigger(const Unit *unit){ triggerManager.onAttacked(unit); }
 
-	static void addErrorMessage(const char *txt=NULL, bool quietly = false);
+	static void addErrorMessage(const char *txt=NULL, bool quietly = true);
 	static void addErrorMessage(const string &txt) {
 		addErrorMessage(txt.c_str());
 	}

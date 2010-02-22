@@ -31,10 +31,12 @@ using Shared::Util::Checksum;
 class ResourceType: public DisplayableType {
 private:
 	ResourceClass resourceClass;
-	int tilesetObject;	//used only if class==ResourceClass::TILESET
-	int resourceNumber;	//used only if class==ResourceClass::TECHTREE, resource number in the map
-	int interval;		//used only if class==ResourceClass::CONSUMABLE
-	int defResPerPatch;	//used only if class==ResourceClass::TILESET || class==ResourceClass::TECHTREE
+	int tilesetObject;	// used only if class == ResourceClass::TILESET
+	int resourceNumber;	// used only if class == ResourceClass::TECHTREE, resource number in the map
+	int interval;		// used only if class == ResourceClass::CONSUMABLE
+	int defResPerPatch;	// used only if class == ResourceClass::TILESET || class == ResourceClass::TECHTREE
+	bool recoupCost;	// used only if class == ResourceClass::STATIC
+
 	Model *model;
 	/**
 	 * Rather or not to display this resource at the top of the screen (defaults to true).
@@ -51,6 +53,7 @@ public:
 	int getResourceNumber() const	{return resourceNumber;}
 	int getInterval() const			{return interval;}
 	int getDefResPerPatch() const	{return defResPerPatch;}
+	bool getRecoupCost() const		{ return recoupCost; }
 	const Model *getModel() const	{return model;}
 	bool isDisplay() const			{return display;}
 

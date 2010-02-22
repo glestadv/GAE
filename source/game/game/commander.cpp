@@ -84,9 +84,6 @@ CommandResult Commander::tryGiveCommand(
 				} else {
 					result = pushCommand(new Command(effectiveCt, flags, Command::invalidPos, *i));
 				}
-				if(result == CommandResult::SUCCESS) {
-					(*i)->resetLastCommanded();
-				}
 				results.push_back(result);
 			} else {
 				results.push_back(CommandResult::FAIL_UNDEFINED);

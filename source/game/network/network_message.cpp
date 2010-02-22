@@ -81,10 +81,11 @@ NetworkMessageIntro::NetworkMessageIntro(){
 	data.playerIndex= -1;
 }
 
-NetworkMessageIntro::NetworkMessageIntro(const string &versionString, const string &name, int playerIndex){
-	data.messageType=NetworkMessageType::INTRO; 
-	data.versionString= versionString;
-	data.name= name;
+NetworkMessageIntro::NetworkMessageIntro(const string &versionString, const string &pName, const string &hName, int playerIndex){
+	data.messageType = NetworkMessageType::INTRO; 
+	data.versionString = versionString;
+	data.playerName = pName;
+	data.hostName = hName;
 	data.playerIndex= static_cast<int16>(playerIndex);
 }
 

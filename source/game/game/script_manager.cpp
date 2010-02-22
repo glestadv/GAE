@@ -593,11 +593,11 @@ void ScriptManager::addErrorMessage(const char *txt, bool quietly) {
 	theLogger.getErrorLog().add(err);
 	theConsole.addLine(err);
 	
-	if ( !quietly ) {
+	if (!quietly) {
 		theGame.pause();
 		ScriptManagerMessage msg(err, "Error");
 		messageQueue.push(msg);
-		if ( !messageBox.getEnabled() ) {
+		if (!messageBox.getEnabled()) {
 			messageBox.setEnabled(true);
 			messageBox.setText(wrapString(messageQueue.front().getText(), messageWrapCount));
 			messageBox.setHeader(messageQueue.front().getHeader());
@@ -620,10 +620,10 @@ void ScriptManager::addErrorMessage(const char *txt, bool quietly) {
   * @return true if arguments were extracted successfully, false if there was an error
   */
 bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const char *arg_desc, ...) {
-	if ( !*arg_desc ) {
-		if ( luaArgs.getArgumentCount() ) {
+	if (!*arg_desc) {
+		if (luaArgs.getArgumentCount()) {
 			addErrorMessage(string(caller) + "(): expected 0 arguments, got " 
-					+ intToStr(luaArgs.getArgumentCount()) );
+					+ intToStr(luaArgs.getArgumentCount()));
 			return false;
 		} else {
 			return true;
@@ -631,10 +631,10 @@ bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const
 	}
 	const char *ptr = arg_desc;
 	int expected = 1;
-	while ( *ptr ) {
-		if ( *ptr++ == ',' ) expected++;
+	while (*ptr) {
+		if (*ptr++ == ',') expected++;
 	}
-	if ( expected != luaArgs.getArgumentCount() ) {
+	if (expected != luaArgs.getArgumentCount()) {
 		addErrorMessage(string(caller) + "(): expected " + intToStr(expected) 
 			+ " arguments, got " + intToStr(luaArgs.getArgumentCount()));
 		return false;
@@ -644,16 +644,16 @@ bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const
 	char *tmp = strcpy (new char[strlen(arg_desc)], arg_desc);
 	char *tok = strtok(tmp, ",");
 	try {
-		while ( tok ) {
-			if ( strcmp(tok,"int") == 0 ) {
+		while (tok) {
+			if (strcmp(tok,"int") == 0) {
 				*va_arg(vArgs,int*) = luaArgs.getInt(-expected);
-			} else if ( strcmp(tok,"str") == 0 ) {
+			} else if (strcmp(tok,"str") == 0) {
 				*va_arg(vArgs,string*) = luaArgs.getString(-expected);
-			} else if ( strcmp(tok,"bln") == 0 ) {
+			} else if (strcmp(tok,"bln") == 0) {
 				*va_arg(vArgs,bool*) = luaArgs.getBoolean(-expected);
-			} else if ( strcmp(tok,"v2i") == 0 ) {
+			} else if (strcmp(tok,"v2i") == 0) {
 				*va_arg(vArgs,Vec2i*) = luaArgs.getVec2i(-expected);
-			} else if ( strcmp(tok,"v4i") == 0 ) {
+			} else if (strcmp(tok,"v4i") == 0) {
 				*va_arg(vArgs,Vec4i*) = luaArgs.getVec4i(-expected);
 			} else {
 				throw runtime_error("ScriptManager::extractArgs() passed bad arg_desc string");
@@ -661,7 +661,7 @@ bool ScriptManager::extractArgs(LuaArguments &luaArgs, const char *caller, const
 			--expected;
 			tok = strtok(NULL, ",");
 		}
-	} catch ( LuaError e ) {
+	} catch (LuaError e) {
 		addErrorMessage("Error: " + string(caller) + "() " + e.desc());
 		va_end(vArgs);
 		return false;
@@ -679,7 +679,7 @@ int ScriptManager::panicFunc(LuaHandle *luaHandle) {
 int ScriptManager::debugLog(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	string msg;
-	if ( extractArgs(args, "debugLog", "str", &msg) ) {
+	if (extractArgs(args, "debugLog", "str", &msg)) {
 		Logger::getErrorLog().add(msg);
 	}
 	return args.getReturnCount();
@@ -688,7 +688,7 @@ int ScriptManager::debugLog(LuaHandle *luaHandle) {
 int ScriptManager::consoleMsg (LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	string msg;
-	if ( extractArgs(args, "consoleMsg", "str", &msg) ) {
+	if (extractArgs(args, "consoleMsg", "str", &msg)) {
 		theConsole.addLine(msg);
 	}
 	return args.getReturnCount();
@@ -699,10 +699,10 @@ int ScriptManager::setTimer(LuaHandle* luaHandle) {
 	string name, type;
 	int period;
 	bool repeat;
-	if ( extractArgs(args, "setTimer", "str,str,int,bln", &name, &type, &period, &repeat) ) {
-		if ( type == "real" ) {
+	if (extractArgs(args, "setTimer", "str,str,int,bln", &name, &type, &period, &repeat)) {
+		if (type == "real") {
 			newTimerQueue.push_back(ScriptTimer(name, true, period, repeat));
-		} else if ( type == "game" ) {
+		} else if (type == "game") {
 			newTimerQueue.push_back(ScriptTimer(name, false, period, repeat));
 		} else {
 			addErrorMessage("setTimer(): invalid type '" + type + "'");
@@ -714,17 +714,17 @@ int ScriptManager::setTimer(LuaHandle* luaHandle) {
 int ScriptManager::stopTimer(LuaHandle* luaHandle){
 	LuaArguments args(luaHandle);
 	string name;
-	if ( extractArgs(args, "stopTimer", "str", &name) ) {
+	if (extractArgs(args, "stopTimer", "str", &name)) {
 		vector<ScriptTimer>::iterator i;
 		bool killed = false;
-		for ( i = timers.begin(); i != timers.end(); ++i ) {
-			if ( i->getName() == name ) {
+		for (i = timers.begin(); i != timers.end(); ++i) {
+			if (i->getName() == name) {
 				i->kill ();
 				killed = true;
 				break;
 			}
 		}
-		if ( !killed ) {
+		if (!killed) {
 			addErrorMessage("stopTimer(): timer '" + name + "' not found.");
 		}
 	} 
@@ -735,8 +735,8 @@ int ScriptManager::registerRegion(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	string name;
 	Vec4i rect;
-	if ( extractArgs(args, "registerRegion", "str,v4i", &name, &rect) ) {
-		if ( !triggerManager.registerRegion(name, rect) ) {
+	if (extractArgs(args, "registerRegion", "str,v4i", &name, &rect)) {
+		if (!triggerManager.registerRegion(name, rect)) {
 			stringstream ss;
 			ss << "registerRegion(): with name='" << name << "' at " << rect
 				<< "failed, a region with that name is already registered.";
@@ -749,8 +749,8 @@ int ScriptManager::registerRegion(LuaHandle* luaHandle) {
 int ScriptManager::registerEvent(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	string name, condition;
-	if ( extractArgs(args, "registerEvent", "str", &name) ) {
-		if ( triggerManager.registerEvent(name) == -1 ) {
+	if (extractArgs(args, "registerEvent", "str", &name)) {
+		if (triggerManager.registerEvent(name) == -1) {
 			addErrorMessage("registerEvent(): event '" + name + "' is already registered");
 		}
 	}
@@ -762,7 +762,7 @@ int ScriptManager::setUnitTriggerX(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int id, ud;
 	string cond, evnt;
-	if ( extractArgs(args, "setUnitTriggerX", "int,str,str,int", &id, &cond, &evnt, &ud) ) {
+	if (extractArgs(args, "setUnitTriggerX", "int,str,str,int", &id, &cond, &evnt, &ud)) {
 		doUnitTrigger(id, cond, evnt, ud);
 	}
 	return args.getReturnCount();
@@ -772,7 +772,7 @@ int ScriptManager::setUnitTrigger(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	int id;
 	string cond, evnt;
-	if ( extractArgs(args, "setUnitTrigger", "int,str,str", &id, &cond, &evnt) ) {
+	if (extractArgs(args, "setUnitTrigger", "int,str,str", &id, &cond, &evnt)) {
 		doUnitTrigger(id, cond, evnt, 0);
 	}
 	return args.getReturnCount();
@@ -780,14 +780,14 @@ int ScriptManager::setUnitTrigger(LuaHandle* luaHandle) {
 
 void ScriptManager::doUnitTrigger(int id, string &cond, string &evnt, int ud) {
 	bool did_something = false;
-	if ( cond == "attacked" ) { 
+	if (cond == "attacked") { 
 		triggerManager.addAttackedTrigger(id, evnt, ud);
 		did_something = true;
-	} else if ( cond == "death" ) { // nop
+	} else if (cond == "death") { // nop
 		triggerManager.addDeathTrigger(id, evnt, ud);
 		did_something = true;
-	} else if ( cond == "enemy_sighted" ) { // nop
-	} else if ( cond == "command_callback") {
+	} else if (cond == "enemy_sighted") { // nop
+	} else if (cond == "command_callback") {
 		if ( triggerManager.addCommandCallback(id,evnt) == -1 ) {
 			addErrorMessage("setUnitTrigger(): unit id invalid " + intToStr(id));
 		}

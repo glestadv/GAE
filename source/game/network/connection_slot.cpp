@@ -53,7 +53,8 @@ void ConnectionSlot::update() {
 
 		//send intro message when connected
 		if (socket) {
-			NetworkMessageIntro networkMessageIntro(getNetworkVersionString(), socket->getHostName(), playerIndex);
+			NetworkMessageIntro networkMessageIntro(
+				getNetworkVersionString(), theConfig.getNetPlayerName(), socket->getHostName(), playerIndex);
 			send(&networkMessageIntro);
 			LOG_NETWORK( "Connection established, slot " + intToStr(playerIndex) +  " sending intro message." );
 		}
@@ -100,19 +101,23 @@ void ConnectionSlot::update() {
 			}
 			break;
 		case NetworkMessageType::INTRO: {
-				NetworkMessageIntro networkMessageIntro;
-				if(receiveMessage(&networkMessageIntro)){
-					//name= networkMessageIntro.getName();
-					//NETWORK: needs to be done properly
-					setRemoteNames(networkMessageIntro.getName(), networkMessageIntro.getName());
+				NetworkMessageIntro msg;
+				if (receiveMessage(&msg)) {
+					LOG_NETWORK (
+						"Received intro message on slot " + intToStr(playerIndex) + ", host name = " 
+						+ msg.getHostName() + ", player name = " + msg.getPlayerName()
+					);
+					setRemoteNames(msg.getHostName(), msg.getPlayerName());
 				}
-				LOG_NETWORK( "Received intro message on slot " + intToStr(playerIndex) + ", name = " + getRemotePlayerName() );
 			}
 			break;
 
-		case NetworkMessageType::QUIT:
-			LOG_NETWORK( "Received quit message in slot " + intToStr(playerIndex) );
-			close();
+		case NetworkMessageType::QUIT: {
+				LOG_NETWORK( "Received quit message in slot " + intToStr(playerIndex) );
+				string msg = getRemotePlayerName() + " [" + getRemoteHostName() + "] has quit the game!";
+				close();
+				serverInterface->doSendTextMessage(msg, -1);
+			}
 			break;
 
 		default:
@@ -129,6 +134,9 @@ void ConnectionSlot::update() {
 }
 
 void ConnectionSlot::close() {
+	if (socket) {
+		socket->close();
+	}
 	delete socket;
 	socket = NULL;
 }

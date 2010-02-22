@@ -79,11 +79,11 @@ private:
 	static ResourceTypes neededResources;
 
 public:
-    void init(const FactionType *factionType, ControlType control, TechTree *techTree,
-         int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources);
+	void init(const FactionType *factionType, ControlType control, TechTree *techTree,
+		int factionIndex, int teamIndex, int startLocationIndex, bool thisFaction, bool giveResources);
 	void end();
 
-    //get
+	//get
 	const Resource *getResource(const ResourceType *rt) const;
 	const Resource *getResource(int i) const			{assert(i < resources.size()); return &resources[i];}
 	int getStoreAmount(const ResourceType *rt) const;
@@ -118,7 +118,7 @@ public:
 	void applyStaticProduction(const ProducibleType *p);
 	void deApplyCosts(const ProducibleType *p);
 	void deApplyStaticCosts(const ProducibleType *p);
-   void deApplyStaticConsumption(const ProducibleType *p);
+	void deApplyStaticConsumption(const ProducibleType *p);
 	void applyCostsOnInterval();
 	bool checkCosts(const ProducibleType *pt);
 
@@ -131,7 +131,7 @@ public:
 	//diplomacy
 	bool isAlly(const Faction *faction)	const			{return teamIndex == faction->getTeam();}
 
-    //other
+	//other
 	Unit *findUnit(int id) {
 		assert(units.size() == unitMap.size());
 		UnitMap::iterator it = unitMap.find(id);
@@ -150,12 +150,6 @@ public:
 	//resources
 	void incResourceAmount(const ResourceType *rt, int amount);
 	void setResourceBalance(const ResourceType *rt, int balance);
-
-	void load(const XmlNode *node, World *world, const FactionType *ft, ControlType control, TechTree *tt);
-//	void reinit(World *world);
-	void save(XmlNode *node) const;
-	void writeUpdate(XmlNode *node) const;
-	void update(const XmlNode *node);
 
 private:
 	void limitResourcesToStore();

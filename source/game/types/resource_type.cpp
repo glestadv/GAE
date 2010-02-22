@@ -31,7 +31,6 @@ namespace Glest { namespace Game {
 // =====================================================
 
 bool ResourceType::load(const string &dir, int id) {
-
 	string path, str;
 	Renderer &renderer = Renderer::getInstance();
 	this->id = id;
@@ -40,7 +39,6 @@ bool ResourceType::load(const string &dir, int id) {
 	Logger::getInstance().add("Resource type: " + dir, true);
 	name = basename(dir);
 	path = dir + "/" + name + ".xml";
-	//checksum.addFile(path, true);
 
 	XmlTree xmlTree;
 	const XmlNode *resourceNode;
@@ -129,6 +127,19 @@ bool ResourceType::load(const string &dir, int id) {
 				interval = intervalNode->getAttribute("value")->getIntValue();
 			}
 			catch (runtime_error e) {
+				Logger::getErrorLog().addXmlError(path, e.what());
+				loadOk = false;
+			}
+			break;
+		case ResourceClass::STATIC:
+			try {
+				const XmlNode *recoupCostNode= typeNode->getChild("recoup_cost", 0, false);
+				if (recoupCostNode) {
+					recoupCost = recoupCostNode->getAttribute("value")->getBoolValue();
+				} else {
+					recoupCost = true;
+				}
+			} catch (runtime_error e) {
 				Logger::getErrorLog().addXmlError(path, e.what());
 				loadOk = false;
 			}

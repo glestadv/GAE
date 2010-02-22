@@ -47,7 +47,7 @@ public:
 	void setReady()					{ready = true;}
 	int getPlayerIndex() const		{return playerIndex;}
 	bool isReady() const			{return ready;}
-	string getName() const			{return "";}
+	string getName() const			{return getRemotePlayerName();}
 
 protected:
 	virtual Socket* getSocket()				{return socket;}

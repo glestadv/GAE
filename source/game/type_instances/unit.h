@@ -99,8 +99,6 @@ public:
 	Vec2i peek()		{return front();}	 /**< peek at the next position			 */	
 	void pop()			{erase(begin());}	/**< pop the next position off the path */
 
-	void read(const XmlNode *node);
-	void write(XmlNode *node) const;
 	int getBlockCount() const { return blockCount; }};
 
 class WaypointPath : public list<Vec2i> {
@@ -144,9 +142,9 @@ private:
 	int loadCount;			/**< current 'load' (resources carried) */
 	int deadCount;			/**< how many frames this unit has been dead */
 	float progress;			/**< skill progress, between 0 and 1 */
-	float progressSpeed;
-	float animProgressSpeed;
-	int nextCommandUpdate;
+	float progressSpeed;	/**< cached progress */
+	float animProgressSpeed;/**< cached animation progress */
+	int nextCommandUpdate;	/**< frame next command update will occur */
 	float lastAnimProgress;	/**< animation progress last frame, between 0 and 1 */
 	float animProgress;		/**< animation progress, between 0 and 1 */
 	float highlight;		/**< alpha for selection circle effects */
@@ -206,14 +204,10 @@ private:
 	int hp_above_trigger;		// if non-zero, call the Trigger manager when HP rises above this
 	bool attacked_trigger;
  	
-	int64 lastCommandUpdate;	// microseconds
-	int64 lastUpdated;			// microseconds
-	int64 lastCommanded;		// milliseconds
 	float nextUpdateFrames;
 
 public:
 	Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master = NULL);
-	Unit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld = true);
 	~Unit();
 
 	//queries
@@ -266,11 +260,7 @@ public:
 	const Commands &getCommands() const			{return commands;}
 	const RepairCommandType *getRepairCommandType(const Unit *u) const;
 	int getDeadCount() const					{return deadCount;}
-	const int64 &getLastUpdated() const			{return lastUpdated;}
-	int64 getLastCommanded() const				{return Chrono::getCurMillis() - lastCommanded;}
-	int64 getLastCommandUpdate() const			{return Chrono::getCurMicros() - lastCommandUpdate;}
 	bool isMobile ()							{ return type->isMobile(); }
-
 
 	void addPet(Unit *u)						{pets.push_back(u);}
 	void petDied(Unit *u)						{pets.remove(u);}
@@ -341,7 +331,6 @@ public:
 	bool isAPet() const					{return master;}
 	bool isAutoRepairEnabled() const	{return autoRepairEnabled;}
 	bool isDirty()						{return dirty;}
-	bool wasRecentlyCommanded() const	{return getLastCommanded() < 750;}
 
 	//set
 	void setCurrField(Field currField)					{this->currField = currField;}
@@ -361,11 +350,8 @@ public:
 		notifyObservers(UnitObserver::eStateChange);
 	}
 	void setDirty(bool dirty)							{this->dirty = dirty;}
-	void setLastUpdated(const int64 &lastUpdated)		{this->lastUpdated = lastUpdated;}
 	void setNextUpdateFrames(float nextUpdateFrames)	{this->nextUpdateFrames = nextUpdateFrames;}
-	void resetLastCommanded()							{lastCommanded = Chrono::getCurMillis();}
-	void resetLastCommandUpdated()						{lastCommandUpdate = Chrono::getCurMicros();}
-
+	
 	//render related
 	const Model *getCurrentModel() const				{return currSkill->getAnimation();}
 	Vec3f getCurrVector() const							{return getCurrVectorFlat() + Vec3f(0.f, type->getHalfHeight(), 0.f);}
@@ -406,7 +392,6 @@ public:
 	void kill()											{kill(pos, true);}
 	void kill(const Vec2i &lastPos, bool removeFromCells);
 	void undertake()									{faction->remove(this);}
-	void save(XmlNode *node, bool morphed = false) const;
 
 	//observers
 	void addObserver(UnitObserver *unitObserver)		{observers.push_back(unitObserver);}
@@ -441,11 +426,7 @@ public:
 	int update2()										{return ++progress2;}
 	void preProcessSkill();
 	bool update();
-	void update(const XmlNode *node, const TechTree *tt, bool creation, bool putInWorld, bool netClient, float nextAdvanceFrames);
-	void updateMinor(const XmlNode *node);
-	void writeMinorUpdate(XmlNode *node) const;
 	void face(const Vec2i &nextPos);
-
 
 	Unit *tick();
 	void applyUpgrade(const UpgradeType *upgradeType);
@@ -459,9 +440,6 @@ public:
 	void remove(Effect *e);
 	void effectExpired(Effect *effect);
 	bool doRegen(int hpRegeneration, int epRegeneration);
-
-//	void writeState(UnitState &us);
-//	void readState(UnitState &us);
 
 private:
 	float computeHeight(const Vec2i &pos) const;
