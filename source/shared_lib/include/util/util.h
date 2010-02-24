@@ -45,7 +45,7 @@ namespace Shared { namespace Xml {
 
 namespace Shared { namespace Util {
 
-const string sharedLibVersionString= "v0.4.1";
+const string sharedLibVersionString= "v0.5";
 
 #define WRAPPED_ENUM(Name,...)							\
 	struct Name {										\
