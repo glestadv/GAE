@@ -161,7 +161,8 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	networkManager.init(nrServer);
 	labelNetwork.init(50, 50);
 	try {
-		labelNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIp() + ":" + intToStr(GameConstants::serverPort));
+		labelNetwork.setText(lang.get("Address") + ": " + networkManager.getServerInterface()->getIp() 
+			+ ":" + intToStr(GameConstants::serverPort));
 	} catch (const exception &e) {
 		labelNetwork.setText(lang.get("Address") + ": ? " + e.what());
 	}
@@ -211,6 +212,11 @@ void MenuStateNewGame::mouseClick(int x, int y, MouseButton mouseButton) {
 	} else if (buttonReturn.mouseClick(x, y)) {
 		soundRenderer.playFx(coreData.getClickSoundA());
 		config.save();
+		for (int i=0; i < GameConstants::maxPlayers; ++i) {
+			if (listBoxControls[i].getSelectedItemIndex() == ControlType::NETWORK) {
+				serverInterface->removeSlot(i);
+			}
+		}		
 		mainMenu->setState(new MenuStateRoot(program, mainMenu));
 	} else if (buttonPlayNow.mouseClick(x, y)) {
 		if (isUnconnectedSlots()) {
