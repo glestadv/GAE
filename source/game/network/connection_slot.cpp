@@ -46,13 +46,12 @@ ConnectionSlot::~ConnectionSlot() {
 }
 
 void ConnectionSlot::update() {
-	// NETWORK: this method is very different
-
 	if (!socket) {
 		socket = serverInterface->getServerSocket()->accept();
 
 		//send intro message when connected
 		if (socket) {
+			socket->setBlock(false);
 			NetworkMessageIntro networkMessageIntro(
 				getNetworkVersionString(), theConfig.getNetPlayerName(), socket->getHostName(), playerIndex);
 			send(&networkMessageIntro);
@@ -81,8 +80,8 @@ void ConnectionSlot::update() {
 		case NetworkMessageType::COMMAND_LIST: {
 				NetworkMessageCommandList cmdList;
 				if(receiveMessage(&cmdList)){
-					/*LOG_NETWORK( 
-						"Receivied " + intToStr(cmdList.getCommandCount()) + " commands on slot " 
+					/*LOG_NETWORK(
+						"Receivied " + intToStr(cmdList.getCommandCount()) + " commands on slot "
 						+ intToStr(playerIndex) + " frame: " + intToStr(theWorld.getFrameCount())
 					);*/
 					for (int i=0; i < cmdList.getCommandCount(); ++i) {
@@ -92,8 +91,8 @@ void ConnectionSlot::update() {
 						const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
 						const UnitType * const &unitType = unit->getType();
 						const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
-						LOG_NETWORK( 
-							"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] " 
+						LOG_NETWORK(
+							"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] "
 							+ cmdType->getName() + "."
 						);*/
 					}
@@ -104,7 +103,7 @@ void ConnectionSlot::update() {
 				NetworkMessageIntro msg;
 				if (receiveMessage(&msg)) {
 					LOG_NETWORK (
-						"Received intro message on slot " + intToStr(playerIndex) + ", host name = " 
+						"Received intro message on slot " + intToStr(playerIndex) + ", host name = "
 						+ msg.getHostName() + ", player name = " + msg.getPlayerName()
 					);
 					setRemoteNames(msg.getHostName(), msg.getPlayerName());
@@ -125,7 +124,7 @@ void ConnectionSlot::update() {
 			ss << "Unexpected message type: " << networkMessageType << " on slot: " << playerIndex;
 			LOG_NETWORK( ss.str() );
 			ss.clear();
-			ss << "Player " << playerIndex << " [" << getName() 
+			ss << "Player " << playerIndex << " [" << getName()
 				<< "] was disconnected because they sent the server bad data.";
 			serverInterface->doSendTextMessage(ss.str(), -1);
 			close();

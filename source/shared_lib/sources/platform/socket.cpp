@@ -1,9 +1,9 @@
 // ==============================================================
 //	This file is part of Glest Shared Library (www.glest.org)
 //
-//	Copyright (C) 2001-2007 Martiño Figueroa
+//	Copyright (C) 2001-2007 MartiÃ±o Figueroa
 //				  2005		Matthias Braun <matze@braunis.de>
-//				  2010		James McCulloch
+//				  2010		James McCulloch <silnarm at gmail>
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -25,7 +25,7 @@ using namespace Shared::Util;
 #endif
 
 #ifndef INVALID_SOCKET
-#	define INVALID_SOCKET (-1) 
+#	define INVALID_SOCKET (-1)
 #endif
 
 #if defined(HAVE_SYS_IOCTL_H)
@@ -47,7 +47,7 @@ using namespace Shared::Util;
 #	define socket_close closesocket
 #	define get_error() WSAGetLastError()
 #	define NO_DATA_AVAILABLE WSAEWOULDBLOCK
-#	define IF_POSIX(x) x
+#	define IF_POSIX(x)
 #	define ioctl ioctlsocket
 #else
 #	error not Windows and USE_POSIX_SOCKETS not defined
@@ -159,7 +159,7 @@ bool Socket::CircularBuffer::peekBytes(void *dst, size_t n) {
 	return true;
 }
 
-/** read n bytes to dst, advancing tail offset ('removing' them from the buffer) 
+/** read n bytes to dst, advancing tail offset ('removing' them from the buffer)
   * @return true if all ok, false if not enough bytes available, in which case none will be read */
 bool Socket::CircularBuffer::readBytes(void *dst, int n) {
 	if (peekBytes(dst, n)) {
@@ -173,7 +173,7 @@ bool Socket::CircularBuffer::readBytes(void *dst, int n) {
   * after this (because the head would be at the tail) limit is set to true */
 int Socket::CircularBuffer::getMaxWrite(bool &limit) const {
 	if (full) {
-		limit = true;	
+		limit = true;
 		return 0;
 	}
 	if (tail > head) { // chasing tail?
@@ -191,7 +191,7 @@ size_t Socket::CircularBuffer::getFreeBytes() const {
 	if (tail > head) {
 		return tail - head;
 	} else {
-		return buffer_size - head + tail; 
+		return buffer_size - head + tail;
 	}
 }
 
@@ -237,7 +237,7 @@ int Socket::getDataToRead(){
 }
 
 int Socket::send(const void *data, int dataSize) {
-	int res = ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
+	ssize_t res = ::send(sock, reinterpret_cast<const char*>(data), dataSize, 0);
 	if (res == SOCKET_ERROR) {
 		if (get_error() != NO_DATA_AVAILABLE) {
 			handleError(__FUNCTION__);
@@ -296,8 +296,12 @@ int Socket::peek(void *data, int dataSize) {
 }
 
 void Socket::setBlock(bool block) {
-	u_long iMode = !block;
-	int err = ioctl(sock, FIONBIO, &iMode);
+#	ifdef USE_POSIX_SOCKETS
+		int err = fcntl(sock, F_SETFL, block ? 0 : O_NONBLOCK);
+#	else
+		u_long iMode = !block;
+		int err = ioctl(sock, FIONBIO, &iMode);
+#	endif
 	if (err == SOCKET_ERROR) {
 		handleError(__FUNCTION__);
 	}
@@ -315,7 +319,7 @@ bool Socket::isReadable() {
 	FD_ZERO(&set);
 	FD_SET(sock, &set);
 
-	int i= select(0, &set, NULL, NULL, &tv);
+	int i= select(sock + 1, &set, NULL, NULL, &tv);
 	if (i == SOCKET_ERROR) {
 		handleError(__FUNCTION__);
 	}
@@ -334,7 +338,7 @@ bool Socket::isWritable() {
 	FD_ZERO(&set);
 	FD_SET(sock, &set);
 
-	int i = select(0, NULL, &set, NULL, &tv);
+	int i = select(sock + 1, NULL, &set, NULL, &tv);
 	if (i == SOCKET_ERROR) {
 		handleError(__FUNCTION__);
 	}
@@ -371,7 +375,7 @@ string Socket::getIp() const {
 	if (!info) {
 		handleError(__FUNCTION__);
 	}
-	unsigned char* address = 
+	unsigned char* address =
 		reinterpret_cast<unsigned char*>(info->h_addr_list[0]);
 	if (!address) {
 		throw runtime_error("Error getting host ip");
@@ -386,7 +390,7 @@ string Socket::getIp() const {
 void Socket::handleError(const char *caller) const {
 	std::stringstream msg;
 	int errCode = get_error();
-	msg << "Socket Error in : " << caller << " [Error code: " << errCode << "]\n";
+	msg << "Socket Error in : " << caller << "() [Error code: " << errCode << "]\n";
 
 #if defined(WIN32) || defined(WIN64)
 	LPVOID errMsg;
@@ -399,7 +403,7 @@ void Socket::handleError(const char *caller) const {
 		LocalFree((HLOCAL)errMsg);
 	} else {
 		msg << "\nFormatMessage() call failed. :~( [Error code: " << GetLastError() << "]";
-	}	
+	}
 #else
 	msg << strerror(errCode);
 #endif
@@ -414,7 +418,7 @@ void ClientSocket::connect(const Ip &ip, int port) {
 	sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 
-    addr.sin_family= AF_INET;
+	addr.sin_family= AF_INET;
 	addr.sin_addr.s_addr= inet_addr(ip.getString().c_str());
 	addr.sin_port= htons(port);
 
@@ -426,7 +430,8 @@ void ClientSocket::connect(const Ip &ip, int port) {
 		} else {
 
 			// TODO
-			// wait a bit, check writable
+			// wait a bit, check writable, try again
+			//cout << "::connect() error, WOULD_BLOCK.\n";
 
 		}
 	}
