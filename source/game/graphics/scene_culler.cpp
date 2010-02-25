@@ -72,8 +72,12 @@ bool SceneCuller::isInside(Vec2i pos) {
 /** determine visibility of cells & tiles */
 void SceneCuller::establishScene() {
 	extractFrustum();
-	getFrustumExtents();
-	setVisibleExtrema();
+	if (getFrustumExtents()) {
+		setVisibleExtrema();
+	} else {
+		cellExtrema.invalidate();
+		tileExtrema.invalidate();
+	}
 }
 
 /** Intersection of 3 planes */
@@ -141,7 +145,7 @@ void SceneCuller::extractFrustum() {
 }
 
 /** project frustum edges onto a plane at avg map height & clip result to map bounds */
-void SceneCuller::getFrustumExtents() {
+bool SceneCuller::getFrustumExtents() {
 	const GameCamera *cam = Game::getInstance()->getGameCamera();
 
 	Vec2f centreView(0.f);
@@ -183,6 +187,9 @@ void SceneCuller::getFrustumExtents() {
 	vector<Vec2f> &in = boundingPoints;
 	in.clear();
 	for (list<RayInfo>::iterator it = rays.begin(); it != rays.end(); ++it) {
+		if (!it->valid) {
+			return false;
+		}
 		// push them out a bit, to avoid jaggies...
 		Vec2f push_dir = it->last_intersect - centreView;
 		push_dir.normalize();
@@ -191,6 +198,7 @@ void SceneCuller::getFrustumExtents() {
 	}
 	in.push_back(in.front()); // close poly
 	clipVisibleQuad(in);
+	return true;
 }
 
 /** the visit function of the line algorithm, sets cell & tile extrema as edges are evaluated */

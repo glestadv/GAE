@@ -41,14 +41,12 @@ using namespace Shared::Util;
 #	define socket_close ::close
 #	define get_error() errno
 #	define NO_DATA_AVAILABLE EAGAIN
-#	define IF_POSIX(x) x
 #	define TIMEVAL struct timeval
 #elif defined(WIN32) || defined(WIN64)
 #	define socket_close closesocket
 #	define get_error() WSAGetLastError()
 #	define NO_DATA_AVAILABLE WSAEWOULDBLOCK
-#	define IF_POSIX(x)
-#	define ioctl ioctlsocket
+	typedef int ssize_t;
 #else
 #	error not Windows and USE_POSIX_SOCKETS not defined
 #endif
@@ -300,7 +298,7 @@ void Socket::setBlock(bool block) {
 		int err = fcntl(sock, F_SETFL, block ? 0 : O_NONBLOCK);
 #	else
 		u_long iMode = !block;
-		int err = ioctl(sock, FIONBIO, &iMode);
+		int err = ioctlsocket(sock, FIONBIO, &iMode);
 #	endif
 	if (err == SOCKET_ERROR) {
 		handleError(__FUNCTION__);

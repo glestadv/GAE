@@ -147,6 +147,7 @@ private:
 		Line  line;
 		float last_u;
 		Vec2f last_intersect;
+		bool valid;
 
 		// construct from two points (near,far)
 		RayInfo(Vec3f pt1, Vec3f pt2) {
@@ -157,12 +158,16 @@ private:
 			}
 			line.magnitude = pt2 - pt1;
 			castRay();
+			if (last_u > 0.f) valid = true;
+			else valid = false;
 		}
 		// constrcut from two other rays, interpolating line 
 		RayInfo(const RayInfo &ri1, const RayInfo &ri2, const float frac) {
 			line.origin = (ri1.line.origin + ri2.line.origin) * frac;
 			line.magnitude = (ri1.line.magnitude + ri2.line.magnitude) * frac;
 			castRay();
+			if (last_u > 0.f) valid = true;
+			else valid = false;
 		}
 		void castRay();
 	};
@@ -192,7 +197,7 @@ private:
 	bool isSphereInFrustum(const Vec3f &centre, const float radius) const;
 
 	Vec3f intersection(const Plane &p1, const Plane &p2, const Plane &p3) const;
-	void getFrustumExtents();
+	bool getFrustumExtents();
 	void clipVisibleQuad(vector<Vec2f> &in);
 	void setVisibleExtrema();
 
