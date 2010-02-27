@@ -69,7 +69,8 @@ private:
 		miMiscHelp,
 
 		miBrushHeight,
-		miBrushSurface = miBrushHeight + heightCount + 1,
+		miPirateBrushHeight = miBrushHeight + heightCount + 1,
+		miBrushSurface = miPirateBrushHeight + heightCount + 1,
 		miBrushObject = miBrushSurface + surfaceCount + 1,
 		miBrushResource = miBrushObject + objectCount + 1,
 		miBrushStartLocation = miBrushResource + resourceCount + 1,
@@ -88,6 +89,8 @@ private:
 	wxMenu *menuMisc;
 	wxMenu *menuBrush;
 	wxMenu *menuBrushHeight;
+	wxMenu *menuPirateBrushHeight;
+
 	wxMenu *menuBrushSurface;
 	wxMenu *menuBrushObject;
 	wxMenu *menuBrushResource;
@@ -136,6 +139,7 @@ public:
 	void onMenuMiscHelp(wxCommandEvent &event);
 
 	void onMenuBrushHeight(wxCommandEvent &event);
+	void onMenuPirateBrushHeight(wxCommandEvent &event);
 	void onMenuBrushSurface(wxCommandEvent &event);
 	void onMenuBrushObject(wxCommandEvent &event);
 	void onMenuBrushResource(wxCommandEvent &event);

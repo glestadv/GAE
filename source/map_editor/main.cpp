@@ -95,13 +95,22 @@ MainWindow::MainWindow():
 	//brush
 	menuBrush = new wxMenu();
 
-	//height
+	// Glest height brush
 	menuBrushHeight = new wxMenu();
 	for (int i = 0; i < heightCount; ++i) {
 		menuBrushHeight->AppendCheckItem(miBrushHeight + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
 	}
 	menuBrushHeight->Check(miBrushHeight + 1 + heightCount / 2, true);
 	menuBrush->Append(miBrushHeight, wxT("Height"), menuBrushHeight);
+
+
+	// ZombiePirate height brush
+	menuPirateBrushHeight = new wxMenu();
+	for (int i = 0; i < heightCount; ++i) {
+		menuPirateBrushHeight->AppendCheckItem(miPirateBrushHeight + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
+	}
+	menuPirateBrushHeight->Check(miPirateBrushHeight + 1 + heightCount / 2, true);
+	menuBrush->Append(miPirateBrushHeight, wxT("Smooth"), menuPirateBrushHeight);
 
 	//surface
 	menuBrushSurface = new wxMenu();
@@ -389,6 +398,14 @@ void MainWindow::onMenuBrushHeight(wxCommandEvent &event) {
 	enabledGroup = 0;
 }
 
+void MainWindow::onMenuPirateBrushHeight(wxCommandEvent &event) {
+	uncheckBrush();
+	menuPirateBrushHeight->Check(event.GetId(), true);
+	height = event.GetId() - miPirateBrushHeight - heightCount / 2 - 1;
+	enabledGroup = 5;
+}
+
+
 void MainWindow::onMenuBrushSurface(wxCommandEvent &event) {
 	uncheckBrush();
 	menuBrushSurface->Check(event.GetId(), true);
@@ -426,7 +443,7 @@ void MainWindow::onMenuRadius(wxCommandEvent &event) {
 void MainWindow::change(int x, int y) {
 	switch (enabledGroup) {
 	case 0:
-		program->changeMapHeight(x, y, height, radius);
+		program->glestChangeMapHeight(x, y, height, radius);
 		break;
 	case 1:
 		program->changeMapSurface(x, y, surface, radius);
@@ -440,12 +457,18 @@ void MainWindow::change(int x, int y) {
 	case 4:
 		program->changeStartLocation(x, y, startLocation);
 		break;
+	case 5:
+		program->pirateChangeMapHeight(x, y, height, radius);
+		break;
 	}
 }
 
 void MainWindow::uncheckBrush() {
 	for (int i = 0; i < heightCount; ++i) {
 		menuBrushHeight->Check(miBrushHeight + i + 1, false);
+	}
+	for (int i = 0; i < heightCount; ++i) {
+		menuPirateBrushHeight->Check(miPirateBrushHeight + i + 1, false);
 	}
 	for (int i = 0; i < surfaceCount; ++i) {
 		menuBrushSurface->Check(miBrushSurface + i + 1, false);
@@ -493,6 +516,7 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(miMiscHelp, MainWindow::onMenuMiscHelp)
 
 	EVT_MENU_RANGE(miBrushHeight + 1, miBrushHeight + heightCount, MainWindow::onMenuBrushHeight)
+	EVT_MENU_RANGE(miPirateBrushHeight + 1, miPirateBrushHeight + heightCount, MainWindow::onMenuPirateBrushHeight)
 	EVT_MENU_RANGE(miBrushSurface + 1, miBrushSurface + surfaceCount, MainWindow::onMenuBrushSurface)
 	EVT_MENU_RANGE(miBrushObject + 1, miBrushObject + objectCount, MainWindow::onMenuBrushObject)
 	EVT_MENU_RANGE(miBrushResource + 1, miBrushResource + resourceCount, MainWindow::onMenuBrushResource)

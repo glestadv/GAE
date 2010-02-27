@@ -78,7 +78,7 @@ static int get_dist(int delta_x, int delta_y) {
 	return static_cast<int>(sqrtf(dx * dx + dy * dy));
 }
 
-void Map::changeHeight(int x, int y, int height, int radius) {
+void Map::glestChangeHeight(int x, int y, int height, int radius) {
 
 	for (int i = x - radius + 1; i < x + radius; i++) {
 		for (int j = y - radius + 1; j < y + radius; j++) {
@@ -101,6 +101,146 @@ void Map::changeHeight(int x, int y, int height, int radius) {
 					}
 				}
 			}
+		}
+	}
+}
+
+
+void Map::pirateChangeHeight(int x, int y, int height, int radius) {
+	// Make sure not to try and blanket change the height over the bounds
+	// Find our goal height for the centre of the brush
+	int goalAlt;
+	int overBounds = refAlt + height;
+	if (overBounds > 20) {
+		goalAlt = 20;
+	}
+	else if (overBounds < 0) {
+		goalAlt = 0;
+	} else {
+		goalAlt = overBounds;
+	}
+
+	// Get Old height reference points and compute gradients
+	// from the heights of the sides and corners of the brush to the centre goal height
+	float gradient[3][3]; // [i][j]
+	int indexI = 0;
+	for (int i = x - radius; i <= x + radius; i += radius) {
+	int indexJ = 0;
+		for (int j = y - radius; j <= y + radius; j += radius) {
+			// round off the corners
+			int ti, tj;
+			if (abs(i - x) == abs(j - y)) {
+				ti = (i - x) * 0.707 + x + 0.5;
+				tj = (j - y) * 0.707 + y + 0.5;
+			} else {
+				ti = i;
+				tj = j;
+			}
+			if (inside(ti, tj)) {
+				gradient[indexI][indexJ] = (cells[ti][tj].height - goalAlt) / radius;
+			//} else if (dist == 0) {
+				//gradient[indexI][indexJ] = 0;
+			} else {
+				// assume outside the map bounds is height 10
+				gradient[indexI][indexJ] = (10.0 - goalAlt) / radius;
+			}
+			//std::cout << "gradient[" << indexI << "][" << indexJ << "] = " << gradient[indexI][indexJ] << std::endl;
+			//std::cout << "derived from height " << cells[ti][tj].height << " at " << ti << " " << tj << std::endl;
+			indexJ++;
+		}
+		indexI++;
+	}
+	//std::cout << endl;
+
+	// A brush with radius n cells should have a true radius of n-1 distance
+	radius -= 1;
+	for (int i = x - radius; i <= x + radius; i++) {
+		for (int j = y - radius; j <= y + radius; j++) {
+			if (inside(i, j)) {
+					// Normalize di and dj and round them to an int so they can be used as indicies
+					float normIf = (float(i - x)/ radius);
+					float normJf = (float(j - y)/ radius);
+					int normI[2];
+					int normJ[2];
+					float usedGrad;
+
+					// Build a search box to find the gradients we are concerned about
+					// Find the nearest i indices
+					if (normIf < -0.33) {
+						normI[0] = 0;
+						if (normIf == 0) {
+							normI[1] = 0;
+						} else {
+							normI[1] = 1;
+						}
+					} else if (normIf < 0.33) {
+						normI[0] = 1;
+						if (normIf > 0) {
+							normI[1] = 2;
+						} else if (normIf < 0) {
+							normI[1] = 0;
+						} else /*(normIf == 0)*/ {
+							normI[1] = 1;
+						}
+					} else {
+						normI[0] = 2;
+						if (normIf == 1) {
+							normI[1] = 2;
+						} else {
+							normI[1] = 1;
+						}
+					}
+					// find nearest j indices
+					if (normJf < -0.33) {
+						normJ[0] = 0;
+						if (normJf == 0) {
+							normJ[1] = 0;
+						} else {
+							normJ[1] = 1;
+						}
+					} else if (normJf < 0.33) {
+						normJ[0] = 1;
+						if (normJf > 0) {
+							normJ[1] = 2;
+						} else if (normJf < 0) {
+							normJ[1] = 0;
+						} else /*(normJf == 0)*/ {
+							normJ[1] = 1;
+						}
+					} else {
+						normJ[0] = 2;
+						if (normJf == 1) {
+							normJ[1] = 2;
+						} else {
+							normJ[1] = 1;
+						}
+					}
+
+					// Determine which gradients to use and take a weighted average
+					if (abs(normIf) > abs(normJf)) {
+						usedGrad =
+								gradient[normI[0]] [normJ[0]] * abs(normJf) +
+								gradient[normI[0]] [normJ[1]] * (1 - abs(normJf));
+					} else if (abs(normIf) < abs(normJf)) {
+						usedGrad =
+								gradient[normI[0]] [normJ[0]] * abs(normIf) +
+								gradient[normI[1]] [normJ[0]] * (1 - abs(normIf));
+					} else {
+						usedGrad =
+								gradient[normI[0]] [normJ[0]];
+					}
+
+
+					float newAlt = usedGrad * get_dist(i - x, j - y) + goalAlt;
+
+					// if the change in height and what is supposed to be the change in height
+					// are the same sign then we can change the height
+					if (	((newAlt - cells[i][j].height) > 0 && height > 0) ||
+							((newAlt - cells[i][j].height) < 0 && height < 0) ||
+							height == 0) {
+						cells[i][j].height = newAlt;
+					}
+				}
 		}
 	}
 }

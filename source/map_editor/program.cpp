@@ -34,8 +34,12 @@ Program::~Program() {
 	delete map;
 }
 
-void Program::changeMapHeight(int x, int y, int Height, int radius) {
-	map->changeHeight((x - ofsetX) / cellSize, (y + ofsetY) / cellSize, Height, radius);
+void Program::glestChangeMapHeight(int x, int y, int Height, int radius) {
+	map->glestChangeHeight((x - ofsetX) / cellSize, (y + ofsetY) / cellSize, Height, radius);
+}
+
+void Program::pirateChangeMapHeight(int x, int y, int Height, int radius) {
+	map->pirateChangeHeight((x - ofsetX) / cellSize, (y + ofsetY) / cellSize, Height, radius);
 }
 
 void Program::changeMapSurface(int x, int y, int surface, int radius) {

@@ -35,7 +35,8 @@ public:
 	~Program();
 
 	//map cell change
-	void changeMapHeight(int x, int y, int Height, int radius);
+	void glestChangeMapHeight(int x, int y, int Height, int radius);
+	void pirateChangeMapHeight(int x, int y, int Height, int radius);
 	void changeMapSurface(int x, int y, int surface, int radius);
 	void changeMapObject(int x, int y, int object, int radius);
 	void changeMapResource(int x, int y, int resource, int radius);

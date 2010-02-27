@@ -377,7 +377,11 @@ void AttackSkillType::load(const XmlNode *sn, const string &dir, const TechTree 
 	TargetBasedSkillType::load(sn, dir, tt, ft);
 
 	//misc
-	attackStrength= sn->getChild("attack-strenght")->getAttribute("value")->getIntValue();
+	if (sn->getOptionalChild("attack-strenght")) { // support vanilla-glest typo
+		attackStrength = sn->getChild("attack-strenght")->getAttribute("value")->getIntValue();
+	} else {
+		attackStrength = sn->getChild("attack-strength")->getAttribute("value")->getIntValue();
+	}
 	attackVar= sn->getChild("attack-var")->getAttribute("value")->getIntValue();
 	maxRange= sn->getOptionalIntValue("attack-range");
 	string attackTypeName= sn->getChild("attack-type")->getAttribute("value")->getRestrictedValue();
