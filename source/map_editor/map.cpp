@@ -349,7 +349,7 @@ void Map::changeObject(int x, int y, int object, int radius) {
 
 void Map::setObject(int x, int y, int object) {
 	cells[x][y].object = object;
-	cells[x][y].resource = 0;
+	if (object != 0) cells[x][y].resource = 0;
 }
 
 void Map::changeResource(int x, int y, int resource, int radius) {
@@ -371,7 +371,7 @@ void Map::changeResource(int x, int y, int resource, int radius) {
 
 void Map::setResource(int x, int y, int resource) {
 	cells[x][y].resource = resource;
-	cells[x][y].object = 0;
+	if (resource != 0) cells[x][y].object = 0;
 }
 
 void Map::changeStartLocation(int x, int y, int faction) {
