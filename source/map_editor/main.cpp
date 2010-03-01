@@ -52,7 +52,7 @@ MainWindow::MainWindow():
 	object = 0;
 	resource = 0;
 	startLocation = 1;
-	enabledGroup = 0;
+	enabledGroup = ctLocation;
 
 
 	//gl canvas
@@ -73,6 +73,8 @@ MainWindow::MainWindow():
 
 	//edit
 	menuEdit = new wxMenu();
+	menuEdit->Append(miEditUndo, wxT("Undo"));
+	menuEdit->Append(miEditRedo, wxT("Redo"));
 	menuEdit->Append(miEditReset, wxT("Reset"));
 	menuEdit->Append(miEditResetPlayers, wxT("Reset Players"));
 	menuEdit->Append(miEditResize, wxT("Resize"));
@@ -110,7 +112,7 @@ MainWindow::MainWindow():
 		menuPirateBrushHeight->AppendCheckItem(miPirateBrushHeight + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
 	}
 	menuPirateBrushHeight->Check(miPirateBrushHeight + 1 + heightCount / 2, true);
-	menuBrush->Append(miPirateBrushHeight, wxT("Smooth"), menuPirateBrushHeight);
+	menuBrush->Append(miPirateBrushHeight, wxT("Gradient"), menuPirateBrushHeight);
 
 	//surface
 	menuBrushSurface = new wxMenu();
@@ -152,8 +154,11 @@ MainWindow::MainWindow():
 	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 2, wxT("2 - Player 2"));
 	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 3, wxT("3 - Player 3"));
 	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 4, wxT("4 - Player 4"));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 5, wxT("5 - Player 5 "));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 6, wxT("6 - Player 6 "));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 7, wxT("7 - Player 7 "));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 8, wxT("8 - Player 8 "));
 	menuBrush->Append(miBrushStartLocation, wxT("Player"), menuBrushStartLocation);
-
 	menuBar->Append(menuBrush, wxT("Brush"));
 
 	//radius
@@ -165,6 +170,11 @@ MainWindow::MainWindow():
 	menuBar->Append(menuRadius, wxT("Radius"));
 
 	SetMenuBar(menuBar);
+
+#ifndef WIN32
+	timer = new wxTimer(this);
+	timer->Start(100);
+#endif
 }
 
 void MainWindow::init(string fname) {
@@ -187,8 +197,14 @@ MainWindow::~MainWindow() {
 	delete glCanvas;
 }
 
+void MainWindow::onTimer(wxTimerEvent &event) {
+	wxPaintEvent paintEvent;
+	onPaint(paintEvent);
+}
+
 void MainWindow::onMouseDown(wxMouseEvent &event) {
 	if (event.LeftIsDown()) {
+		program->setUndoPoint(enabledGroup);
 		program->setRefAlt(event.GetX(), event.GetY());
 		change(event.GetX(), event.GetY());
 	}
@@ -263,6 +279,16 @@ void MainWindow::onMenuFileSaveAs(wxCommandEvent &event) {
 
 void MainWindow::onMenuFileExit(wxCommandEvent &event) {
 	Close();
+}
+
+void MainWindow::onMenuEditUndo(wxCommandEvent &event) {
+	std::cout << "Undo Pressed" << std::endl;
+	program->undo();
+}
+
+void MainWindow::onMenuEditRedo(wxCommandEvent &event) {
+	std::cout << "Redo Pressed" << std::endl;
+	program->redo();
 }
 
 void MainWindow::onMenuEditReset(wxCommandEvent &event) {
@@ -395,14 +421,14 @@ void MainWindow::onMenuBrushHeight(wxCommandEvent &event) {
 	uncheckBrush();
 	menuBrushHeight->Check(event.GetId(), true);
 	height = event.GetId() - miBrushHeight - heightCount / 2 - 1;
-	enabledGroup = 0;
+	enabledGroup = ctGlestHeight;
 }
 
 void MainWindow::onMenuPirateBrushHeight(wxCommandEvent &event) {
 	uncheckBrush();
 	menuPirateBrushHeight->Check(event.GetId(), true);
 	height = event.GetId() - miPirateBrushHeight - heightCount / 2 - 1;
-	enabledGroup = 5;
+	enabledGroup = ctPirateHeight;
 }
 
 
@@ -410,28 +436,28 @@ void MainWindow::onMenuBrushSurface(wxCommandEvent &event) {
 	uncheckBrush();
 	menuBrushSurface->Check(event.GetId(), true);
 	surface = event.GetId() - miBrushSurface;
-	enabledGroup = 1;
+	enabledGroup = ctSurface;
 }
 
 void MainWindow::onMenuBrushObject(wxCommandEvent &event) {
 	uncheckBrush();
 	menuBrushObject->Check(event.GetId(), true);
 	object = event.GetId() - miBrushObject - 1;
-	enabledGroup = 2;
+	enabledGroup = ctObject;
 }
 
 void MainWindow::onMenuBrushResource(wxCommandEvent &event) {
 	uncheckBrush();
 	menuBrushResource->Check(event.GetId(), true);
 	resource = event.GetId() - miBrushResource - 1;
-	enabledGroup = 3;
+	enabledGroup = ctResource;
 }
 
 void MainWindow::onMenuBrushStartLocation(wxCommandEvent &event) {
 	uncheckBrush();
 	menuBrushStartLocation->Check(event.GetId(), true);
 	startLocation = event.GetId() - miBrushStartLocation - 1;
-	enabledGroup = 4;
+	enabledGroup = ctLocation;
 }
 
 void MainWindow::onMenuRadius(wxCommandEvent &event) {
@@ -442,22 +468,22 @@ void MainWindow::onMenuRadius(wxCommandEvent &event) {
 
 void MainWindow::change(int x, int y) {
 	switch (enabledGroup) {
-	case 0:
+	case ctGlestHeight:
 		program->glestChangeMapHeight(x, y, height, radius);
 		break;
-	case 1:
+	case ctSurface:
 		program->changeMapSurface(x, y, surface, radius);
 		break;
-	case 2:
+	case ctObject:
 		program->changeMapObject(x, y, object, radius);
 		break;
-	case 3:
+	case ctResource:
 		program->changeMapResource(x, y, resource, radius);
 		break;
-	case 4:
+	case ctLocation:
 		program->changeStartLocation(x, y, startLocation);
 		break;
-	case 5:
+	case ctPirateHeight:
 		program->pirateChangeMapHeight(x, y, height, radius);
 		break;
 	}
@@ -491,6 +517,7 @@ void MainWindow::uncheckRadius() {
 }
 
 BEGIN_EVENT_TABLE(MainWindow, wxFrame)
+	EVT_TIMER(-1, MainWindow::onTimer)
 	EVT_CLOSE(MainWindow::onClose)
 	EVT_LEFT_DOWN(MainWindow::onMouseDown)
 	EVT_MOTION(MainWindow::onMouseMove)
@@ -500,6 +527,8 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(miFileSaveAs, MainWindow::onMenuFileSaveAs)
 	EVT_MENU(miFileExit, MainWindow::onMenuFileExit)
 
+	EVT_MENU(miEditUndo, MainWindow::onMenuEditUndo)
+	EVT_MENU(miEditRedo, MainWindow::onMenuEditRedo)
 	EVT_MENU(miEditReset, MainWindow::onMenuEditReset)
 	EVT_MENU(miEditResetPlayers, MainWindow::onMenuEditResetPlayers)
 	EVT_MENU(miEditResize, MainWindow::onMenuEditResize)

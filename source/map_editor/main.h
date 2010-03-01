@@ -43,7 +43,7 @@ private:
 	static const int surfaceCount = 5;
 	static const int objectCount = 11;
 	static const int resourceCount = 6;
-	static const int startLocationCount = 4;
+	static const int startLocationCount = 8;
 	static const int radiusCount = 9;
 
 private:
@@ -53,6 +53,8 @@ private:
 		miFileSaveAs,
 		miFileExit,
 
+		miEditUndo,
+		miEditRedo,
 		miEditReset,
 		miEditResetPlayers,
 		miEditResize,
@@ -83,6 +85,8 @@ private:
 	Program *program;
 	int lastX, lastY;
 
+	wxTimer *timer;
+
 	wxMenuBar *menuBar;
 	wxMenu *menuFile;
 	wxMenu *menuEdit;
@@ -105,7 +109,7 @@ private:
 	int object;
 	int resource;
 	int startLocation;
-	int enabledGroup;
+	ChangeType enabledGroup;
 
 public:
 	MainWindow();
@@ -123,6 +127,8 @@ public:
 	void onMenuFileSaveAs(wxCommandEvent &event);
 	void onMenuFileExit(wxCommandEvent &event);
 
+	void onMenuEditUndo(wxCommandEvent &event);
+	void onMenuEditRedo(wxCommandEvent &event);
 	void onMenuEditReset(wxCommandEvent &event);
 	void onMenuEditResetPlayers(wxCommandEvent &event);
 	void onMenuEditResize(wxCommandEvent &event);
@@ -145,6 +151,8 @@ public:
 	void onMenuBrushResource(wxCommandEvent &event);
 	void onMenuBrushStartLocation(wxCommandEvent &event);
 	void onMenuRadius(wxCommandEvent &event);
+
+	void onTimer(wxTimerEvent &event);
 
 	void change(int x, int y);
 

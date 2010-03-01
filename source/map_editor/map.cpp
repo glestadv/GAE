@@ -120,6 +120,12 @@ void Map::pirateChangeHeight(int x, int y, int height, int radius) {
 		goalAlt = overBounds;
 	}
 
+	// If the radius is 1 don't bother doing any calculations
+	if (radius == 1) {
+		cells[x][y].height = goalAlt;
+		return;
+	}
+
 	// Get Old height reference points and compute gradients
 	// from the heights of the sides and corners of the brush to the centre goal height
 	float gradient[3][3]; // [i][j]
@@ -156,7 +162,8 @@ void Map::pirateChangeHeight(int x, int y, int height, int radius) {
 	radius -= 1;
 	for (int i = x - radius; i <= x + radius; i++) {
 		for (int j = y - radius; j <= y + radius; j++) {
-			if (inside(i, j)) {
+			int dist = get_dist(i - x, j - y);
+			if (inside(i, j) && dist < radius) {
 					// Normalize di and dj and round them to an int so they can be used as indicies
 					float normIf = (float(i - x)/ radius);
 					float normJf = (float(j - y)/ radius);
@@ -231,7 +238,7 @@ void Map::pirateChangeHeight(int x, int y, int height, int radius) {
 					}
 
 
-					float newAlt = usedGrad * get_dist(i - x, j - y) + goalAlt;
+					float newAlt = usedGrad * dist + goalAlt;
 
 					// if the change in height and what is supposed to be the change in height
 					// are the same sign then we can change the height
@@ -243,6 +250,10 @@ void Map::pirateChangeHeight(int x, int y, int height, int radius) {
 				}
 		}
 	}
+}
+
+void Map::setHeight(int x, int y, float height) {
+	cells[x][y].height = height;
 }
 
 void Map::setRefAlt(int x, int y) {
@@ -315,6 +326,10 @@ void Map::changeSurface(int x, int y, int surface, int radius) {
 	}
 }
 
+void Map::setSurface(int x, int y, int surface) {
+	cells[x][y].surface = surface;
+}
+
 void Map::changeObject(int x, int y, int object, int radius) {
 	int i, j;
 	int dist;
@@ -332,6 +347,11 @@ void Map::changeObject(int x, int y, int object, int radius) {
 	}
 }
 
+void Map::setObject(int x, int y, int object) {
+	cells[x][y].object = object;
+	cells[x][y].resource = 0;
+}
+
 void Map::changeResource(int x, int y, int resource, int radius) {
 	int i, j;
 	int dist;
@@ -347,6 +367,11 @@ void Map::changeResource(int x, int y, int resource, int radius) {
 			}
 		}
 	}
+}
+
+void Map::setResource(int x, int y, int resource) {
+	cells[x][y].resource = resource;
+	cells[x][y].object = 0;
 }
 
 void Map::changeStartLocation(int x, int y, int faction) {
@@ -470,16 +495,15 @@ void Map::resize(int w, int h, float alt, int surf) {
 	}
 }
 
-void Map::resetFactions(int maxFactions) {
-	if (maxFactions < 1 || maxFactions > 4) {
-		throw runtime_error("Max Factions must be in the range 1-4");
-		return;
+void Map::resetFactions(int maxPlayers) {
+	if (maxPlayers<1 || maxPlayers>8){
+		throw runtime_error("Max Players must be in the range 1-8");
 	}
 
 	if (startLocations != NULL)
 		delete startLocations;
 
-	this->maxFactions = maxFactions;
+	maxFactions = maxPlayers;
 
 	startLocations = new StartLocation[maxFactions];
 	for (int i = 0; i < maxFactions; i++) {

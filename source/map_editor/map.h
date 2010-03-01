@@ -105,6 +105,11 @@ public:
 	void changeResource(int x, int y, int resource, int radius);
 	void changeStartLocation(int x, int y, int player);
 
+	void setHeight(int x, int y, float height);
+	void setSurface(int x, int y, int surface);
+	void setObject(int x, int y, int object);
+	void setResource(int x, int y, int resource);
+
 	void flipX();
 	void flipY();
 	void reset(int w, int h, float alt, int surf);
