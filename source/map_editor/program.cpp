@@ -38,6 +38,9 @@ UndoPoint::UndoPoint(ChangeType change) {
 	resource = NULL;
 
 	switch (change) {
+		// Back up everything
+		case ctAll:
+		// Back up heights
 		case ctGlestHeight:
 		case ctPirateHeight:
 			// Build an array of heights from the map
@@ -49,8 +52,9 @@ UndoPoint::UndoPoint(ChangeType change) {
 					 height[i][j] = Program::map->getHeight(i, j);
 				}
 			}
-			std::cout << "Built the array" << std::endl;
-			break;
+			//std::cout << "Built the array" << std::endl;
+			if (change != ctAll) break;
+		// Back up surfaces
 		case ctSurface:
 			surface = new int*[w];
 			for (int i = 0; i < w; i++) {
@@ -59,28 +63,24 @@ UndoPoint::UndoPoint(ChangeType change) {
 					 surface[i][j] = Program::map->getSurface(i, j);
 				}
 			}
-			break;
+			if (change != ctAll) break;
+		// Back up both objects and resources if either changes
 		case ctObject:
-					object = new int*[w];
+		case ctResource:
+			object = new int*[w];
 			for (int i = 0; i < w; i++) {
 				object[i] = new int [h];
 				for (int j = 0; j < h; j++) {
 					 object[i][j] = Program::map->getObject(i, j);
 				}
 			}
-			break;
-		case ctResource:
-					resource = new int*[w];
+			resource = new int*[w];
 			for (int i = 0; i < w; i++) {
 				resource[i] = new int [h];
 				for (int j = 0; j < h; j++) {
 					 resource[i][j] = Program::map->getResource(i, j);
 				}
 			}
-			break;
-		case ctLocation:
-			break;
-		case ctAll:
 			break;
 	}
 
@@ -136,6 +136,9 @@ UndoPoint::~UndoPoint() {
 void UndoPoint::revert() {
 	//std::cout << "attempting to revert last changes to " << undoID << std::endl;
 	switch (change) {
+		// Revert Everything
+		case ctAll:
+		// Revert Heights
 		case ctGlestHeight:
 		case ctPirateHeight:
 			// Restore the array of heights to the map
@@ -145,7 +148,8 @@ void UndoPoint::revert() {
 					 Program::map->setHeight(i, j, height[i][j]);
 				}
 			}
-			break;
+			if (change != ctAll) break;
+		// Revert surfaces
 		case ctSurface:
 			//std::cout << "attempting to restore the surface array" << std::endl;
 			for (int i = 0; i < w; i++) {
@@ -153,22 +157,20 @@ void UndoPoint::revert() {
 					 Program::map->setSurface(i, j, surface[i][j]);
 				}
 			}
-			break;
+			if (change != ctAll) break;
+		// Revert objects and resources
 		case ctObject:
+		case ctResource:
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
 					 Program::map->setObject(i, j, object[i][j]);
 				}
 			}
-			break;
-		case ctResource:
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
 					 Program::map->setResource(i, j, resource[i][j]);
 				}
 			}
-			break;
-		case ctLocation:
 			break;
 	}
 	//std::cout << "reverted changes (we hope)" << std::endl;
@@ -219,7 +221,8 @@ void Program::changeStartLocation(int x, int y, int player) {
 }
 
 void Program::setUndoPoint(ChangeType change) {
-	std::cout << "attempting to set a new UndoPoint from change " << change << std::endl;
+	if (change == ctLocation) return;
+	//std::cout << "attempting to set a new UndoPoint from change " << change << std::endl;
 	if (undoIterator != NULL && undoIterator->getNext() != NULL) {
 		//std::cout << "possibly deleting the head of the list" << std::endl;
 		//std::cout << "======================================" << std::endl;
