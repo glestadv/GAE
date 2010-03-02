@@ -292,6 +292,7 @@ void MainWindow::onMenuEditRedo(wxCommandEvent &event) {
 }
 
 void MainWindow::onMenuEditReset(wxCommandEvent &event) {
+	program->setUndoPoint(ctAll);
 	SimpleDialog simpleDialog;
 	simpleDialog.addValue("Altitude", "10");
 	simpleDialog.addValue("Surface", "1");
