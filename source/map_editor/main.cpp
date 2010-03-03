@@ -22,7 +22,7 @@ using namespace std;
 
 namespace MapEditor {
 
-const string MainWindow::versionString = "v1.5.0";
+const string MainWindow::versionString = "v1.5.0-beta";
 const string MainWindow::winHeader = "Glest Map Editor " + versionString + " - Built: " + __DATE__;
 
 // ===============================================
@@ -56,8 +56,9 @@ MainWindow::MainWindow():
 
 
 	//gl canvas
-	glCanvas = new GlCanvas(this);
-
+	int args[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER };
+	glCanvas = new GlCanvas(this,args);
+	
 	//menus
 	menuBar = new wxMenuBar();
 
@@ -126,26 +127,26 @@ MainWindow::MainWindow():
 	//objects
 	menuBrushObject = new wxMenu();
 	menuBrushObject->AppendCheckItem(miBrushObject + 1, wxT("0 - None"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 2, wxT("1 - Tree"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 3, wxT("2 - Dead Tree"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 4, wxT("3 - Stone"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 5, wxT("4 - Bush"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 6, wxT("5 - Water Object"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 7, wxT("6 - Custom 1"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 8, wxT("7 - Custom 2"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 9, wxT("8 - Custom 3"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 10, wxT("9 - Custom 4"));
-	menuBrushObject->AppendCheckItem(miBrushObject + 11, wxT("10 - Custom 5"));
+	menuBrushObject->AppendCheckItem(miBrushObject+2, wxT("1 - Tree (unwalkable/harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+3, wxT("2 - DeadTree/Cactuses/Thornbush (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+4, wxT("3 - Stone (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+5, wxT("4 - Bush/Grass/Fern (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+6, wxT("5 - Water Object/Reed/Papyrus (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+7, wxT("6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+8, wxT("7 - C2 Hanged/Impaled (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+9, wxT("8 - C3, Statues (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+10, wxT("9 - Big Rock (Mountain) (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+11, wxT("10 - Invisible Blocking Object (unwalkable)"));
 	menuBrush->Append(miBrushObject, wxT("Object"), menuBrushObject);
 
 	//resources
 	menuBrushResource = new wxMenu();
 	menuBrushResource->AppendCheckItem(miBrushResource + 1, wxT("0 - None"));
-	menuBrushResource->AppendCheckItem(miBrushResource + 2, wxT("1 - Custom 1"));
-	menuBrushResource->AppendCheckItem(miBrushResource + 3, wxT("2 - Custom 2"));
-	menuBrushResource->AppendCheckItem(miBrushResource + 4, wxT("3 - Custom 3"));
-	menuBrushResource->AppendCheckItem(miBrushResource + 5, wxT("4 - Custom 4"));
-	menuBrushResource->AppendCheckItem(miBrushResource + 6, wxT("5 - Custom 5"));
+	menuBrushResource->AppendCheckItem(miBrushResource+2, wxT("1 - gold  (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+3, wxT("2 - stone (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+4, wxT("3 - custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+5, wxT("4 - custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+6, wxT("5 - custom"));
 	menuBrush->Append(miBrushResource, wxT("Resource"), menuBrushResource);
 
 	//players
@@ -296,14 +297,14 @@ void MainWindow::onMenuEditReset(wxCommandEvent &event) {
 	SimpleDialog simpleDialog;
 	simpleDialog.addValue("Altitude", "10");
 	simpleDialog.addValue("Surface", "1");
-	simpleDialog.addValue("Height", "64");
 	simpleDialog.addValue("Width", "64");
+	simpleDialog.addValue("Height", "64");
 	simpleDialog.show();
 
 	try {
 		program->reset(
-			Conversion::strToInt(simpleDialog.getValue("Height")),
 			Conversion::strToInt(simpleDialog.getValue("Width")),
+			Conversion::strToInt(simpleDialog.getValue("Height")),
 			Conversion::strToInt(simpleDialog.getValue("Altitude")),
 			Conversion::strToInt(simpleDialog.getValue("Surface")));
 	} catch (const exception &e) {
@@ -408,7 +409,10 @@ void MainWindow::onMenuMiscResetZoomAndPos(wxCommandEvent &event) {
 }
 
 void MainWindow::onMenuMiscAbout(wxCommandEvent &event) {
-	wxMessageDialog(NULL, wxT("Glest Map Editor - Copyright 2004 The Glest Team"), wxT("About")).ShowModal();
+	wxMessageDialog(
+		NULL,
+		wxT("Glest Map Editor - Copyright 2004 The Glest Team\n(with improvements by titi & zombiepirate)."),
+		wxT("About")).ShowModal();
 }
 
 void MainWindow::onMenuMiscHelp(wxCommandEvent &event) {
@@ -558,8 +562,8 @@ END_EVENT_TABLE()
 // class GlCanvas
 // =====================================================
 
-GlCanvas::GlCanvas(MainWindow * mainWindow):
-		wxGLCanvas(mainWindow, -1, wxDefaultPosition) {
+GlCanvas::GlCanvas(MainWindow *	mainWindow, int* args)
+		: wxGLCanvas(mainWindow, -1, wxDefaultPosition, wxDefaultSize, 0, wxT("GLCanvas"), args) {
 	this->mainWindow = mainWindow;
 }
 
