@@ -41,59 +41,68 @@ wxString ToUnicode(const string& str) {
 // class MainWindow
 // ===============================================
 
-MainWindow::MainWindow():
-		wxFrame(NULL, -1,  ToUnicode(winHeader), wxDefaultPosition, wxSize(800, 600)) {
-	lastX = 0;
-	lastY = 0;
-
-	radius = 1;
-	height = 5;
-	surface = 1;
-	object = 0;
-	resource = 0;
-	startLocation = 1;
-	enabledGroup = ctLocation;
-
+MainWindow::MainWindow()
+		: fileModified(false)
+		, lastX(0), lastY(0)
+		, radius(1)
+		, height(0)
+		, surface(1)
+		, object(0)
+		, resource(0)
+		, startLocation(1)
+		, enabledGroup(ctHeight)
+		, currentBrush(btHeight)
+		, wxFrame(NULL, -1,  ToUnicode(winHeader), wxDefaultPosition, wxSize(800, 600)) {
+	// menu item hot keys
+	wxAcceleratorEntry accel[] = {
+		wxAcceleratorEntry(		wxACCEL_CTRL,				'o', miFileLoad),
+		wxAcceleratorEntry(		wxACCEL_CTRL,				's', miFileSave),
+		wxAcceleratorEntry(wxACCEL_CTRL | wxACCEL_SHIFT,	's', miFileSaveAs),
+		
+		wxAcceleratorEntry(		wxACCEL_CTRL,				'z', miEditUndo),
+		wxAcceleratorEntry(		wxACCEL_CTRL,				'y', miEditRedo),
+	};
+	SetAcceleratorTable(wxAcceleratorTable(5, accel));
 
 	//gl canvas
 	int args[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER };
-	glCanvas = new GlCanvas(this,args);
+	glCanvas = new GlCanvas(this, args);
 	
 	//menus
 	menuBar = new wxMenuBar();
 
 	//file
 	menuFile = new wxMenu();
-	menuFile->Append(miFileLoad, wxT("Load"));
+	menuFile->Append(miFileLoad, wxT("&Open"));
 	menuFile->AppendSeparator();
-	menuFile->Append(miFileSave, wxT("Save"));
-	menuFile->Append(miFileSaveAs, wxT("Save As"));
+	menuFile->Append(miFileSave, wxT("&Save"));
+	menuFile->Append(miFileSaveAs, wxT("Save &As"));
 	menuFile->AppendSeparator();
-	menuFile->Append(miFileExit, wxT("Exit"));
-	menuBar->Append(menuFile, wxT("File"));
+	menuFile->Append(miFileExit, wxT("E&xit"));
+	menuBar->Append(menuFile, wxT("&File"));
 
 	//edit
 	menuEdit = new wxMenu();
-	menuEdit->Append(miEditUndo, wxT("Undo"));
-	menuEdit->Append(miEditRedo, wxT("Redo"));
-	menuEdit->Append(miEditReset, wxT("Reset"));
-	menuEdit->Append(miEditResetPlayers, wxT("Reset Players"));
-	menuEdit->Append(miEditResize, wxT("Resize"));
-	menuEdit->Append(miEditFlipX, wxT("Flip X"));
-	menuEdit->Append(miEditFlipY, wxT("Flip Y"));
-	menuEdit->Append(miEditRandomizeHeights, wxT("Randomize Heights"));
-	menuEdit->Append(miEditRandomize, wxT("Randomize"));
-	menuEdit->Append(miEditSwitchSurfaces, wxT("Switch Surfaces"));
-	menuEdit->Append(miEditInfo, wxT("Info"));
-	menuEdit->Append(miEditAdvanced, wxT("Advanced"));
-	menuBar->Append(menuEdit, wxT("Edit"));
+	menuEdit->Append(miEditUndo, wxT("&Undo"));
+	menuEdit->Append(miEditRedo, wxT("&Redo"));
+	menuEdit->Append(miEditReset, wxT("Rese&t"));
+	menuEdit->Append(miEditResetPlayers, wxT("Reset &Players"));
+	menuEdit->Append(miEditResize, wxT("Re&size"));
+	menuEdit->Append(miEditFlipX, wxT("Flip &X"));
+	menuEdit->Append(miEditFlipY, wxT("Flip &Y"));
+	menuEdit->Append(miEditRandomizeHeights, wxT("Randomize &Heights"));
+	menuEdit->Append(miEditRandomize, wxT("Randomi&ze"));
+	menuEdit->Append(miEditSwitchSurfaces, wxT("Switch Su&rfaces"));
+	menuEdit->Append(miEditInfo, wxT("&Info"));
+	menuEdit->Append(miEditAdvanced, wxT("&Advanced"));
+	menuBar->Append(menuEdit, wxT("&Edit"));
 
 	//misc
 	menuMisc = new wxMenu();
-	menuMisc->Append(miMiscResetZoomAndPos, wxT("Reset zoom and pos"));
-	menuMisc->Append(miMiscAbout, wxT("About"));
-	menuMisc->Append(miMiscHelp, wxT("Help"));
-	menuBar->Append(menuMisc, wxT("Misc"));
+	menuMisc->Append(miMiscResetZoomAndPos, wxT("&Reset zoom and pos"));
+	menuMisc->Append(miMiscAbout, wxT("&About"));
+	menuMisc->Append(miMiscHelp, wxT("&Help"));
+	menuBar->Append(menuMisc, wxT("&Misc"));
 
 	//brush
 	menuBrush = new wxMenu();
@@ -103,74 +112,84 @@ MainWindow::MainWindow():
 	for (int i = 0; i < heightCount; ++i) {
 		menuBrushHeight->AppendCheckItem(miBrushHeight + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
 	}
-	menuBrushHeight->Check(miBrushHeight + 1 + heightCount / 2, true);
-	menuBrush->Append(miBrushHeight, wxT("Height"), menuBrushHeight);
+	menuBrushHeight->Check(miBrushHeight + (heightCount + 1) / 2, true);
+	menuBrush->Append(miBrushHeight, wxT("&Height"), menuBrushHeight);
 
+	enabledGroup = ctHeight;
 
 	// ZombiePirate height brush
-	menuPirateBrushHeight = new wxMenu();
+	menuBrushGradient = new wxMenu();
 	for (int i = 0; i < heightCount; ++i) {
-		menuPirateBrushHeight->AppendCheckItem(miPirateBrushHeight + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
+		menuBrushGradient->AppendCheckItem(miBrushGradient + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
 	}
-	menuPirateBrushHeight->Check(miPirateBrushHeight + 1 + heightCount / 2, true);
-	menuBrush->Append(miPirateBrushHeight, wxT("Gradient"), menuPirateBrushHeight);
+	menuBrush->Append(miBrushGradient, wxT("&Gradient"), menuBrushGradient);
 
 	//surface
 	menuBrushSurface = new wxMenu();
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 1, wxT("1 - Grass"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 2, wxT("2 - Secondary Grass"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 3, wxT("3 - Road"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 4, wxT("4 - Stone"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, wxT("5 - Custom"));
-	menuBrush->Append(miBrushSurface, wxT("Surface"), menuBrushSurface);
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 1, wxT("&1 - Grass"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 2, wxT("&2 - Secondary Grass"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 3, wxT("&3 - Road"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 4, wxT("&4 - Stone"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, wxT("&5 - Custom"));
+	menuBrush->Append(miBrushSurface, wxT("&Surface"), menuBrushSurface);
 
 	//objects
 	menuBrushObject = new wxMenu();
-	menuBrushObject->AppendCheckItem(miBrushObject + 1, wxT("0 - None"));
-	menuBrushObject->AppendCheckItem(miBrushObject+2, wxT("1 - Tree (unwalkable/harvestable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+3, wxT("2 - DeadTree/Cactuses/Thornbush (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+4, wxT("3 - Stone (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+5, wxT("4 - Bush/Grass/Fern (walkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+6, wxT("5 - Water Object/Reed/Papyrus (walkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+7, wxT("6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+8, wxT("7 - C2 Hanged/Impaled (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+9, wxT("8 - C3, Statues (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+10, wxT("9 - Big Rock (Mountain) (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+11, wxT("10 - Invisible Blocking Object (unwalkable)"));
-	menuBrush->Append(miBrushObject, wxT("Object"), menuBrushObject);
+	menuBrushObject->AppendCheckItem(miBrushObject + 1, wxT("&0 - None (erase)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+2, wxT("&1 - Tree (unwalkable/harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+3, wxT("&2 - DeadTree/Cactuses/Thornbush (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+4, wxT("&3 - Stone (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+5, wxT("&4 - Bush/Grass/Fern (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+6, wxT("&5 - Water Object/Reed/Papyrus (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+7, wxT("&6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+8, wxT("&7 - C2 Hanged/Impaled (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+9, wxT("&8 - C3, Statues (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+10, wxT("&9 - Big Rock (Mountain) (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+11, wxT("10 &- Invisible Blocking Object (unwalkable)"));
+	menuBrush->Append(miBrushObject, wxT("&Object"), menuBrushObject);
 
 	//resources
 	menuBrushResource = new wxMenu();
-	menuBrushResource->AppendCheckItem(miBrushResource + 1, wxT("0 - None"));
-	menuBrushResource->AppendCheckItem(miBrushResource+2, wxT("1 - gold  (unwalkable)"));
-	menuBrushResource->AppendCheckItem(miBrushResource+3, wxT("2 - stone (unwalkable)"));
-	menuBrushResource->AppendCheckItem(miBrushResource+4, wxT("3 - custom"));
-	menuBrushResource->AppendCheckItem(miBrushResource+5, wxT("4 - custom"));
-	menuBrushResource->AppendCheckItem(miBrushResource+6, wxT("5 - custom"));
-	menuBrush->Append(miBrushResource, wxT("Resource"), menuBrushResource);
+	menuBrushResource->AppendCheckItem(miBrushResource + 1, wxT("&0 - None"));
+	menuBrushResource->AppendCheckItem(miBrushResource+2, wxT("&1 - gold  (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+3, wxT("&2 - stone (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+4, wxT("&3 - custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+5, wxT("&4 - custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+6, wxT("&5 - custom"));
+	menuBrush->Append(miBrushResource, wxT("&Resource"), menuBrushResource);
 
 	//players
 	menuBrushStartLocation = new wxMenu();
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 1, wxT("1 - Player 1"));
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 2, wxT("2 - Player 2"));
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 3, wxT("3 - Player 3"));
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 4, wxT("4 - Player 4"));
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 5, wxT("5 - Player 5 "));
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 6, wxT("6 - Player 6 "));
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 7, wxT("7 - Player 7 "));
-	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 8, wxT("8 - Player 8 "));
-	menuBrush->Append(miBrushStartLocation, wxT("Player"), menuBrushStartLocation);
-	menuBar->Append(menuBrush, wxT("Brush"));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 1, wxT("&1 - Player 1"));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 2, wxT("&2 - Player 2"));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 3, wxT("&3 - Player 3"));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 4, wxT("&4 - Player 4"));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 5, wxT("&5 - Player 5 "));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 6, wxT("&6 - Player 6 "));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 7, wxT("&7 - Player 7 "));
+	menuBrushStartLocation->AppendCheckItem(miBrushStartLocation + 8, wxT("&8 - Player 8 "));
+	menuBrush->Append(miBrushStartLocation, wxT("&Player"), menuBrushStartLocation);
+	menuBar->Append(menuBrush, wxT("&Brush"));
 
 	//radius
 	menuRadius = new wxMenu();
-	for (int i = 0; i < radiusCount; ++i) {
-		menuRadius->AppendCheckItem(miRadius + i, ToUnicode(intToStr(i + 1)));
+	for (int i = 1; i <= radiusCount; ++i) {
+		menuRadius->AppendCheckItem(miRadius + i, ToUnicode("&" + intToStr(i)));
 	}
-	menuRadius->Check(miRadius, true);
-	menuBar->Append(menuRadius, wxT("Radius"));
+	menuRadius->Check(miRadius + 1, true);
+	menuBar->Append(menuRadius, wxT("&Radius"));
 
 	SetMenuBar(menuBar);
+
+	CreateStatusBar(StatusItems::COUNT);
+	
+	fileName = "New (unsaved) map";
+	this->GetStatusBar()->SetStatusStyles(StatusItems::COUNT, status_styles);
+	SetStatusText(wxT("File = " + fileName), StatusItems::FILE_NAME);
+	SetStatusText(wxT("Brush = Height"), StatusItems::BRUSH_TYPE);
+	SetStatusText(wxT("Value = 0"), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Radius = 1"), StatusItems::BRUSH_RADIUS);
+
 
 #ifndef WIN32
 	timer = new wxTimer(this);
@@ -208,6 +227,9 @@ void MainWindow::onMouseDown(wxMouseEvent &event) {
 		program->setUndoPoint(enabledGroup);
 		program->setRefAlt(event.GetX(), event.GetY());
 		change(event.GetX(), event.GetY());
+		if (!isDirty()) {
+			setDirty(true);
+		}
 	}
 	wxPaintEvent ev;
 	onPaint(ev);
@@ -249,6 +271,10 @@ void MainWindow::onMenuFileLoad(wxCommandEvent &event) {
 	if (fileDialog.ShowModal() == wxID_OK) {
 		fileName = fileDialog.GetPath().ToAscii();
 		program->loadMap(fileName);
+		string name = cutLastExt(basename(fileName));
+		SetStatusText(wxT("File = " + name), StatusItems::FILE_NAME);
+		this->fileName = name;
+		setDirty(false);
 	}
 
 	currentFile = fileName;
@@ -261,6 +287,17 @@ void MainWindow::onMenuFileSave(wxCommandEvent &event) {
 		onMenuFileSaveAs(ev);
 	} else {
 		program->saveMap(currentFile);
+		setDirty(false);
+	}
+}
+
+
+void MainWindow::setDirty(bool val) { 
+	fileModified = val;
+	if (fileModified) {
+		SetStatusText("File: " + fileName + "*", StatusItems::FILE_NAME);
+	} else {
+		SetStatusText("File: " + fileName, StatusItems::FILE_NAME);
 	}
 }
 
@@ -272,6 +309,9 @@ void MainWindow::onMenuFileSaveAs(wxCommandEvent &event) {
 	if (fileDialog.ShowModal() == wxID_OK) {
 		fileName = fileDialog.GetPath().ToAscii();
 		program->saveMap(fileName);
+		string name = cutLastExt(basename(fileName));
+		fileName = name;
+		setDirty(false);
 	}
 
 	currentFile = fileName;
@@ -284,12 +324,16 @@ void MainWindow::onMenuFileExit(wxCommandEvent &event) {
 
 void MainWindow::onMenuEditUndo(wxCommandEvent &event) {
 	std::cout << "Undo Pressed" << std::endl;
-	program->undo();
+	if (program->undo()) {
+		onPaint(wxPaintEvent());
+	}
 }
 
 void MainWindow::onMenuEditRedo(wxCommandEvent &event) {
 	std::cout << "Redo Pressed" << std::endl;
-	program->redo();
+	if (program->redo()) {
+		onPaint(wxPaintEvent());
+	}
 }
 
 void MainWindow::onMenuEditReset(wxCommandEvent &event) {
@@ -422,58 +466,77 @@ void MainWindow::onMenuMiscHelp(wxCommandEvent &event) {
 		wxT("Help")).ShowModal();
 }
 
-void MainWindow::onMenuBrushHeight(wxCommandEvent &event) {
+void MainWindow::onMenuBrushHeight(wxCommandEvent &e) {
 	uncheckBrush();
-	menuBrushHeight->Check(event.GetId(), true);
-	height = event.GetId() - miBrushHeight - heightCount / 2 - 1;
-	enabledGroup = ctGlestHeight;
+	menuBrushHeight->Check(e.GetId(), true);
+	height = e.GetId() - miBrushHeight - heightCount / 2 - 1;
+	enabledGroup = ctHeight;
+	currentBrush = btHeight;
+	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
+	SetStatusText(wxT("Value: " + intToStr(height)), StatusItems::BRUSH_VALUE);
 }
 
-void MainWindow::onMenuPirateBrushHeight(wxCommandEvent &event) {
+void MainWindow::onMenuBrushGradient(wxCommandEvent &e) {
 	uncheckBrush();
-	menuPirateBrushHeight->Check(event.GetId(), true);
-	height = event.GetId() - miPirateBrushHeight - heightCount / 2 - 1;
-	enabledGroup = ctPirateHeight;
+	menuBrushGradient->Check(e.GetId(), true);
+	height = e.GetId() - miBrushGradient - heightCount / 2 - 1;
+	enabledGroup = ctGradient;
+	currentBrush = btGradient;
+	SetStatusText(wxT("Brush: Gradient"), StatusItems::BRUSH_TYPE);
+	SetStatusText(wxT("Value: " + intToStr(height)), StatusItems::BRUSH_VALUE);
 }
 
 
-void MainWindow::onMenuBrushSurface(wxCommandEvent &event) {
+void MainWindow::onMenuBrushSurface(wxCommandEvent &e) {
 	uncheckBrush();
-	menuBrushSurface->Check(event.GetId(), true);
-	surface = event.GetId() - miBrushSurface;
+	menuBrushSurface->Check(e.GetId(), true);
+	surface = e.GetId() - miBrushSurface;
 	enabledGroup = ctSurface;
+	currentBrush = btSurface;
+	SetStatusText(wxT("Brush: Surface"), StatusItems::BRUSH_TYPE);	
+	SetStatusText(wxT("Value: " + intToStr(surface) + " " + surface_descs[surface - 1]), StatusItems::BRUSH_VALUE);
 }
 
-void MainWindow::onMenuBrushObject(wxCommandEvent &event) {
+void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
 	uncheckBrush();
-	menuBrushObject->Check(event.GetId(), true);
-	object = event.GetId() - miBrushObject - 1;
+	menuBrushObject->Check(e.GetId(), true);
+	object = e.GetId() - miBrushObject - 1;
 	enabledGroup = ctObject;
+	currentBrush = btObject;
+	SetStatusText(wxT("Brush: Object"), StatusItems::BRUSH_TYPE);
+	SetStatusText(wxT("Value: " + intToStr(object) + " " + object_descs[object]), StatusItems::BRUSH_VALUE);
 }
 
-void MainWindow::onMenuBrushResource(wxCommandEvent &event) {
+void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
 	uncheckBrush();
-	menuBrushResource->Check(event.GetId(), true);
-	resource = event.GetId() - miBrushResource - 1;
+	menuBrushResource->Check(e.GetId(), true);
+	resource = e.GetId() - miBrushResource - 1;
 	enabledGroup = ctResource;
+	currentBrush = btResource;
+	SetStatusText(wxT("Brush: Resource"), StatusItems::BRUSH_TYPE);
+	SetStatusText(wxT("Value: " + intToStr(resource) + " " + resource_descs[resource]), StatusItems::BRUSH_VALUE);
 }
 
-void MainWindow::onMenuBrushStartLocation(wxCommandEvent &event) {
+void MainWindow::onMenuBrushStartLocation(wxCommandEvent &e) {
 	uncheckBrush();
-	menuBrushStartLocation->Check(event.GetId(), true);
-	startLocation = event.GetId() - miBrushStartLocation - 1;
+	menuBrushStartLocation->Check(e.GetId(), true);
+	startLocation = e.GetId() - miBrushStartLocation;
 	enabledGroup = ctLocation;
+	currentBrush = btStartLocation;
+	SetStatusText(wxT("Brush: Start Locations"), StatusItems::BRUSH_TYPE);
+	SetStatusText(wxT("Value: " + intToStr(startLocation)), StatusItems::BRUSH_VALUE);
 }
 
-void MainWindow::onMenuRadius(wxCommandEvent &event) {
+void MainWindow::onMenuRadius(wxCommandEvent &e) {
 	uncheckRadius();
-	menuRadius->Check(event.GetId(), true);
-	radius = event.GetId() - miRadius + 1;
+	menuRadius->Check(e.GetId(), true);
+	radius = e.GetId() - miRadius;
+	SetStatusText(wxT("Radius: " + intToStr(radius)), StatusItems::BRUSH_RADIUS);
 }
 
 void MainWindow::change(int x, int y) {
 	switch (enabledGroup) {
-	case ctGlestHeight:
+	case ctHeight:
 		program->glestChangeMapHeight(x, y, height, radius);
 		break;
 	case ctSurface:
@@ -486,9 +549,9 @@ void MainWindow::change(int x, int y) {
 		program->changeMapResource(x, y, resource, radius);
 		break;
 	case ctLocation:
-		program->changeStartLocation(x, y, startLocation);
+		program->changeStartLocation(x, y, startLocation - 1);
 		break;
-	case ctPirateHeight:
+	case ctGradient:
 		program->pirateChangeMapHeight(x, y, height, radius);
 		break;
 	}
@@ -499,7 +562,7 @@ void MainWindow::uncheckBrush() {
 		menuBrushHeight->Check(miBrushHeight + i + 1, false);
 	}
 	for (int i = 0; i < heightCount; ++i) {
-		menuPirateBrushHeight->Check(miPirateBrushHeight + i + 1, false);
+		menuBrushGradient->Check(miBrushGradient + i + 1, false);
 	}
 	for (int i = 0; i < surfaceCount; ++i) {
 		menuBrushSurface->Check(miBrushSurface + i + 1, false);
@@ -516,16 +579,98 @@ void MainWindow::uncheckBrush() {
 }
 
 void MainWindow::uncheckRadius() {
-	for (int i = 0; i < radiusCount; ++i) {
+	for (int i = 1; i <= radiusCount; ++i) {
 		menuRadius->Check(miRadius + i, false);
 	}
 }
 
+void MainWindow::onKeyDown(wxKeyEvent &e) {
+	if (e.GetModifiers() == wxMOD_ALT	// Alt + number == change brush Radius
+	&& (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '9')) {
+		radius = e.GetKeyCode() - 48;	// '1'-'9' == 1-9
+		onMenuRadius(wxCommandEvent(wxEVT_NULL, miRadius + radius));
+		return;
+	}
+
+	if (currentBrush == btHeight || currentBrush == btGradient) { // 'height' brush
+		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
+			height = e.GetKeyCode() - 48; // '0'-'5' == 0-5
+			if (e.GetModifiers() == wxMOD_CONTROL) { // Ctrl means negative
+				height  = -height ;
+			}
+			int id_offset = heightCount / 2 + height + 1;
+			if (currentBrush == btHeight) {
+				onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + id_offset));
+			} else {
+				onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + id_offset));
+			}
+			return;
+		}
+	}
+	if (currentBrush == btSurface) { // surface texture
+		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '5') {
+			surface = e.GetKeyCode() - 48; // '1'-'5' == 1-5
+			onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
+			return;
+		}
+	}
+	if (currentBrush == btObject) {
+		bool valid = true;
+		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '9') {
+			object = e.GetKeyCode() - 48; // '1'-'9' == 1-9
+		} else if (e.GetKeyCode() == '0') { // '0' == 10
+			object = 10;
+		} else if (e.GetKeyCode() == '-') {	// '-' == 0
+			object = 0;
+		} else {
+			valid = false;
+		}
+		if (valid) {
+			onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
+			return;
+		}
+	}
+	if (currentBrush == btResource) {
+		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
+			resource = e.GetKeyCode() - 48;	// '0'-'5' == 0-5
+			onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
+			return;
+		}
+	}
+	if (currentBrush == btStartLocation) {
+		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '8') {
+			startLocation = e.GetKeyCode() - 48; // '1'-'8' == 0-7
+			onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation));
+			return;
+		}
+	}
+	if (e.GetKeyCode() == 'H') {
+		onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + height + heightCount / 2 + 1));
+	} else if (e.GetKeyCode() == 'G') {
+		onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + height + heightCount / 2 + 1));
+	} else if (e.GetKeyCode() == 'S') {
+		onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
+	} else if (e.GetKeyCode() == 'O') {
+		onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
+	} else if (e.GetKeyCode() == 'R') {
+		onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
+	} else if (e.GetKeyCode() == 'L') {
+		onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation + 1));
+	} else {
+		e.Skip();
+	}
+}
+
 BEGIN_EVENT_TABLE(MainWindow, wxFrame)
+	
 	EVT_TIMER(-1, MainWindow::onTimer)
+	
 	EVT_CLOSE(MainWindow::onClose)
+
 	EVT_LEFT_DOWN(MainWindow::onMouseDown)
 	EVT_MOTION(MainWindow::onMouseMove)
+
+	EVT_KEY_DOWN(MainWindow::onKeyDown)
 
 	EVT_MENU(miFileLoad, MainWindow::onMenuFileLoad)
 	EVT_MENU(miFileSave, MainWindow::onMenuFileSave)
@@ -550,7 +695,7 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(miMiscHelp, MainWindow::onMenuMiscHelp)
 
 	EVT_MENU_RANGE(miBrushHeight + 1, miBrushHeight + heightCount, MainWindow::onMenuBrushHeight)
-	EVT_MENU_RANGE(miPirateBrushHeight + 1, miPirateBrushHeight + heightCount, MainWindow::onMenuPirateBrushHeight)
+	EVT_MENU_RANGE(miBrushGradient + 1, miBrushGradient + heightCount, MainWindow::onMenuBrushGradient)
 	EVT_MENU_RANGE(miBrushSurface + 1, miBrushSurface + surfaceCount, MainWindow::onMenuBrushSurface)
 	EVT_MENU_RANGE(miBrushObject + 1, miBrushObject + objectCount, MainWindow::onMenuBrushObject)
 	EVT_MENU_RANGE(miBrushResource + 1, miBrushResource + resourceCount, MainWindow::onMenuBrushResource)
@@ -575,7 +720,13 @@ void GlCanvas::onMouseMove(wxMouseEvent &event) {
 	mainWindow->onMouseMove(event);
 }
 
+void GlCanvas::onKeyDown(wxKeyEvent &event) {
+	mainWindow->onKeyDown(event);
+}
+
 BEGIN_EVENT_TABLE(GlCanvas, wxGLCanvas)
+	EVT_KEY_DOWN(GlCanvas::onKeyDown)
+
 	EVT_LEFT_DOWN(GlCanvas::onMouseDown)
 	EVT_MOTION(GlCanvas::onMouseMove)
 END_EVENT_TABLE()

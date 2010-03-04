@@ -15,17 +15,20 @@
 #include "map.h"
 #include "renderer.h"
 
+#include <stack>
+
 namespace MapEditor {
 
 class MainWindow;
 
 enum ChangeType {
-	ctGlestHeight,
+	ctNone = -1,
+	ctHeight,
 	ctSurface,
 	ctObject,
 	ctResource,
 	ctLocation,
-	ctPirateHeight,
+	ctGradient,
 	ctAll
 };
 
@@ -45,33 +48,36 @@ class UndoPoint {
 		ChangeType change;
 
 		// Pointers to arrays of each property
-		int **surface;
-		int **object;
-		int **resource;
-		float **height;
+		int *surface;
+		int *object;
+		int *resource;
+		float *height;
 
 		// Map width and height
 		static int w;
 		static int h;
 
-		// Pointers to the next and previous nodes of the list
-		// The current pointer is a static pointer to the front of the list
-		UndoPoint *next;
-		UndoPoint *previous;
-		static UndoPoint *current;
-
 	public:
-		UndoPoint(ChangeType change);
+		UndoPoint();
 		~UndoPoint();
+		void init(ChangeType change);
 		void revert();
 
-		int undoID;
-
-		inline UndoPoint* getNext() const 		{ return next; }
-		inline UndoPoint* getPrevious() const 	{ return previous; }
 		inline ChangeType getChange() const 	{ return change; }
-		inline void setNext(UndoPoint *n) 				{ this->next = n; }
-		inline void setPrevious(UndoPoint *p)			{ this->previous = p; }
+};
+
+class ChangeStack : public std::stack<UndoPoint> {
+public:
+	static const int maxSize = 100;
+
+	void clear() { c.clear(); }
+
+	void push(UndoPoint p) {
+		if (c.size() >= maxSize) {
+			c.pop_front();
+		}
+		stack<UndoPoint>::push(p);
+	}
 };
 
 // ===============================================
@@ -86,11 +92,7 @@ private:
 	static Map *map;
 	friend class UndoPoint;
 
-	// Every mouse click this will be changed
-	UndoPoint *undoIterator;
-	// This pointer just holds the base of the list in case we want to
-	// Redo from the base or shorten the list from the base
-	UndoPoint *undoBase;
+	ChangeStack undoStack, redoStack;
 
 public:
 	Program(int w, int h);
@@ -105,8 +107,8 @@ public:
 	void changeStartLocation(int x, int y, int player);
 
 	void setUndoPoint(ChangeType change);
-	void undo();
-	void redo();
+	bool undo();
+	bool redo();
 
 	//map ops
 	void reset(int w, int h, int alt, int surf);

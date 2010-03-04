@@ -20,6 +20,8 @@
 
 #include "program.h"
 
+#include "util.h"
+
 using std::string;
 using std::vector;
 using std::pair;
@@ -27,6 +29,54 @@ using std::pair;
 namespace MapEditor {
 
 class GlCanvas;
+
+enum BrushType {
+	btHeight,
+	btGradient,
+	btSurface,
+	btObject,
+	btResource,
+	btStartLocation
+};
+
+WRAPPED_ENUM( StatusItems,
+	NULL_ENTRY,
+	FILE_NAME,
+	BRUSH_TYPE,
+	BRUSH_VALUE,
+	BRUSH_RADIUS
+)
+
+int status_styles[StatusItems::COUNT] = {
+	-1,
+	-1,
+	100,
+	100,
+	100,
+};
+
+const char *object_descs[] = {
+	"None (Erase)",
+	"Tree",
+	"DeadTree",
+	"Stone",
+	"Bush",
+	"Water Object",
+	"BigTree/DeadTree",
+	"Hanged/Impaled",
+	"Statues",
+	"Big Rock",
+	"Invisible Blocking"
+};
+
+const char *resource_descs[] = {
+	"None (Erase)", "Gold", "Stone", "Custom", "Custom", "Custom"
+};
+
+
+const char *surface_descs[] = {
+	"Grass", "Alt. Grass", "Road", "Stone", "Custom"
+};
 
 // =====================================================
 //	class MainWindow
@@ -71,8 +121,8 @@ private:
 		miMiscHelp,
 
 		miBrushHeight,
-		miPirateBrushHeight = miBrushHeight + heightCount + 1,
-		miBrushSurface = miPirateBrushHeight + heightCount + 1,
+		miBrushGradient = miBrushHeight + heightCount + 1,
+		miBrushSurface = miBrushGradient + heightCount + 1,
 		miBrushObject = miBrushSurface + surfaceCount + 1,
 		miBrushResource = miBrushObject + objectCount + 1,
 		miBrushStartLocation = miBrushResource + resourceCount + 1,
@@ -93,7 +143,7 @@ private:
 	wxMenu *menuMisc;
 	wxMenu *menuBrush;
 	wxMenu *menuBrushHeight;
-	wxMenu *menuPirateBrushHeight;
+	wxMenu *menuBrushGradient;
 
 	wxMenu *menuBrushSurface;
 	wxMenu *menuBrushObject;
@@ -103,6 +153,7 @@ private:
 
 	string currentFile;
 
+	BrushType currentBrush;
 	int height;
 	int surface;
 	int radius;
@@ -110,6 +161,9 @@ private:
 	int resource;
 	int startLocation;
 	ChangeType enabledGroup;
+
+	string fileName;
+	bool fileModified;
 
 public:
 	MainWindow();
@@ -121,6 +175,7 @@ public:
 	void onMouseDown(wxMouseEvent &event);
 	void onMouseMove(wxMouseEvent &event);
 	void onPaint(wxPaintEvent &event);
+	void onKeyDown(wxKeyEvent &e);
 
 	void onMenuFileLoad(wxCommandEvent &event);
 	void onMenuFileSave(wxCommandEvent &event);
@@ -145,7 +200,7 @@ public:
 	void onMenuMiscHelp(wxCommandEvent &event);
 
 	void onMenuBrushHeight(wxCommandEvent &event);
-	void onMenuPirateBrushHeight(wxCommandEvent &event);
+	void onMenuBrushGradient(wxCommandEvent &event);
 	void onMenuBrushSurface(wxCommandEvent &event);
 	void onMenuBrushObject(wxCommandEvent &event);
 	void onMenuBrushResource(wxCommandEvent &event);
@@ -158,6 +213,10 @@ public:
 
 	void uncheckBrush();
 	void uncheckRadius();
+
+	bool isDirty() const	{ return fileModified; }
+	void setDirty(bool val);
+
 };
 
 // =====================================================
@@ -173,6 +232,7 @@ public:
 
 	void onMouseDown(wxMouseEvent &event);
 	void onMouseMove(wxMouseEvent &event);
+	void onKeyDown(wxKeyEvent &event);
 
 private:
 	MainWindow *mainWindow;

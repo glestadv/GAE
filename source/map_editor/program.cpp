@@ -21,116 +21,77 @@ namespace MapEditor {
 ////////////////////////////
 // class UndoPoint
 ////////////////////////////
-int UndoPoint::undoCount = 0;
 int UndoPoint::w = 0;
 int UndoPoint::h = 0;
-UndoPoint *UndoPoint::current = NULL;
 
+UndoPoint::UndoPoint() 
+		: height(0)
+		, surface(0)
+		, object(0)
+		, resource(0) 
+		, change(ctNone) {
+	w = Program::map->getW();
+	h = Program::map->getH();
+}
+/*
 UndoPoint::UndoPoint(ChangeType change) {
 	w = Program::map->getW();
 	h = Program::map->getH();
 
-	undoID = undoCount;
+	init(change);
+}*/
 
-	height = NULL;
-	surface = NULL;
-	object = NULL;
-	resource = NULL;
-
+void UndoPoint::init(ChangeType change) {
+	this->change = change;
 	switch (change) {
 		// Back up everything
 		case ctAll:
 		// Back up heights
-		case ctGlestHeight:
-		case ctPirateHeight:
+		case ctHeight:
+		case ctGradient:
 			// Build an array of heights from the map
 			//std::cout << "Building an array of heights to use for our UndoPoint" << std::endl;
-			height = new float*[w];
-			for (int i = 0; i < w; i++) {
-				height[i] = new float [h];
-				for (int j = 0; j < h; j++) {
-					 height[i][j] = Program::map->getHeight(i, j);
+			height = new float[w * h];
+			for (int i = 0; i < w; ++i) {
+				for (int j = 0; j < h; ++j) {
+					 height[j * w + i] = Program::map->getHeight(i, j);
 				}
 			}
 			//std::cout << "Built the array" << std::endl;
 			if (change != ctAll) break;
 		// Back up surfaces
 		case ctSurface:
-			surface = new int*[w];
-			for (int i = 0; i < w; i++) {
-				surface[i] = new int [h];
-				for (int j = 0; j < h; j++) {
-					 surface[i][j] = Program::map->getSurface(i, j);
+			surface = new int[w * h];
+			for (int i = 0; i < w; ++i) {
+				for (int j = 0; j < h; ++j) {
+					 surface[j * w + i] = Program::map->getSurface(i, j);
 				}
 			}
 			if (change != ctAll) break;
 		// Back up both objects and resources if either changes
 		case ctObject:
 		case ctResource:
-			object = new int*[w];
-			for (int i = 0; i < w; i++) {
-				object[i] = new int [h];
-				for (int j = 0; j < h; j++) {
-					 object[i][j] = Program::map->getObject(i, j);
+			object = new int[w * h];
+			for (int i = 0; i < w; ++i) {
+				for (int j = 0; j < h; ++j) {
+					 object[j * w + i] = Program::map->getObject(i, j);
 				}
 			}
-			resource = new int*[w];
-			for (int i = 0; i < w; i++) {
-				resource[i] = new int [h];
-				for (int j = 0; j < h; j++) {
-					 resource[i][j] = Program::map->getResource(i, j);
+			resource = new int[w * h];
+			for (int i = 0; i < w; ++i) {
+				for (int j = 0; j < h; ++j) {
+					 resource[j * w + i] = Program::map->getResource(i, j);
 				}
 			}
 			break;
 	}
-
-	this->change = change;
-
-	undoCount++;
-	//std::cout << "Increased undoCount to " << undoCount << std::endl;
-	//std::cout << "Appending new change to the list" << std::endl;
-	if (current != NULL) {
-		current->setNext(this);
-		previous = current;
-	} else {
-		previous = NULL;
-	}
-	current = this;
-	next = NULL;
 }
 
 UndoPoint::~UndoPoint() {
-	//std::cout << "attempting to delete an UndoPoint" << std::endl;
-	if (height != NULL) {
-		//std::cout << "deleting heights" << std::endl;
-		for (int i = 0; i < w; i++) {
-			delete height[i];
-		}
-	}
-	if (resource != NULL) {
-		//std::cout << "deleting resources" << std::endl;
-		for (int i = 0; i < w; i++) {
-			delete resource[i];
-		}
-	}
-	if (object != NULL) {
-		//std::cout << "deleting objects" << std::endl;
-		for (int i = 0; i < w; i++) {
-			delete object[i];
-		}
-	}
-	if (surface != NULL) {
-		//std::cout << "deleting surfaces" << std::endl;
-		for (int i = 0; i < w; i++) {
-			delete surface[i];
-		}
-	}
-	// Make sure our links don't break
-	//std::cout << "fixing the list" << std::endl;
-	if (previous != NULL) previous->setNext(next);
-	if (next != NULL) next->setPrevious(previous);
-	if (this == current) current = previous;
-	//std::cout << "Current id is now " << current->undoID << std::endl;
+	delete [] height;
+	delete [] resource;
+	delete [] object;
+	delete [] surface;
 }
 
 void UndoPoint::revert() {
@@ -139,13 +100,13 @@ void UndoPoint::revert() {
 		// Revert Everything
 		case ctAll:
 		// Revert Heights
-		case ctGlestHeight:
-		case ctPirateHeight:
+		case ctHeight:
+		case ctGradient:
 			// Restore the array of heights to the map
 			//std::cout << "attempting to restore the height array" << std::endl;
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
-					 Program::map->setHeight(i, j, height[i][j]);
+					 Program::map->setHeight(i, j, height[j * w + i]);
 				}
 			}
 			if (change != ctAll) break;
@@ -154,7 +115,7 @@ void UndoPoint::revert() {
 			//std::cout << "attempting to restore the surface array" << std::endl;
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
-					 Program::map->setSurface(i, j, surface[i][j]);
+					 Program::map->setSurface(i, j, surface[j * w + i]);
 				}
 			}
 			if (change != ctAll) break;
@@ -163,12 +124,12 @@ void UndoPoint::revert() {
 		case ctResource:
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
-					 Program::map->setObject(i, j, object[i][j]);
+					 Program::map->setObject(i, j, object[j * w + i]);
 				}
 			}
 			for (int i = 0; i < w; i++) {
 				for (int j = 0; j < h; j++) {
-					 Program::map->setResource(i, j, resource[i][j]);
+					 Program::map->setResource(i, j, resource[j * w + i]);
 				}
 			}
 			break;
@@ -188,8 +149,6 @@ Program::Program(int w, int h) {
 	ofsetY = 0;
 	map = new Map();
 	renderer.init(w, h);
-	undoIterator = NULL;
-	undoBase = NULL;
 }
 
 Program::~Program() {
@@ -222,64 +181,37 @@ void Program::changeStartLocation(int x, int y, int player) {
 
 void Program::setUndoPoint(ChangeType change) {
 	if (change == ctLocation) return;
-	//std::cout << "attempting to set a new UndoPoint from change " << change << std::endl;
-	if (undoIterator != NULL && undoIterator->getNext() != NULL) {
-		//std::cout << "possibly deleting the head of the list" << std::endl;
-		//std::cout << "======================================" << std::endl;
-		//std::cout << "The head of the list is " << undoIterator->undoID << std::endl;
-		UndoPoint *undoTemp = undoIterator->getNext();
-		//std::cout << "undoTemp (undoIterator-next) is " << undoTemp->undoID << std::endl;
-		while (undoTemp != NULL && undoTemp->getNext() != NULL) {
-			undoTemp = undoTemp->getNext();
-			//std::cout << "undoTemp is now " << undoTemp->undoID << std::endl;
-			//std::cout << "deleted id " << undoTemp->getPrevious()->undoID << std::endl;
-			delete undoTemp->getPrevious();
-			if (undoTemp->getNext() == NULL) {
-				//std::cout << "deleted id " << undoTemp->undoID << std::endl;
-				delete undoTemp;
-				undoTemp = NULL;
-				//std::cout << "finished deleting the head of the list" << std::endl;
-				//std::cout << "======================================" << std::endl;
-			}
-		}
-	}
-	undoIterator = new UndoPoint(change);
-	if (undoBase == NULL) {
-		undoBase = undoIterator;
-	}
-	//std::cout << "set a new UndoPoint id " << undoIterator->undoID << std::endl;
+
+	undoStack.push(UndoPoint());
+	undoStack.top().init(change);
+
+	redoStack.clear();
 }
 
-void Program::undo() {
-	if (undoIterator != NULL) {
-		if (undoIterator->getNext() == NULL) {
-			//std::cout << "Backing up the newest change" << std::endl;
-			new UndoPoint(undoIterator->getChange());
-		}
-		//std::cout << "Undoing changes" << std::endl;
-		undoIterator->revert();
-		undoIterator = undoIterator->getPrevious();
-		//if (undoIterator != NULL) std::cout << "UndoIterator is now id " << undoIterator->undoID << std::endl;
-		//else std::cout << "UndoIterator is NULL" << std::endl;
-	} //else std::cout << "No changes to undo" << std::endl;
+bool Program::undo() {
+	if (undoStack.empty()) {
+		return false;
+	}
+	// push current state onto redo stack
+	redoStack.push(UndoPoint());
+	redoStack.top().init(undoStack.top().getChange());
+
+	undoStack.top().revert();
+	undoStack.pop();
+	return true;
 }
 
-void Program::redo() {
-	if (undoIterator != NULL) {
-		if (undoIterator->getNext() != NULL && undoIterator->getNext()->getNext() != NULL) {
-			//std::cout << "Redoing changes" << std::endl;
-			undoIterator = undoIterator->getNext();
-				undoIterator->getNext()->revert();
-			//std::cout << "UndoIterator is now id " << undoIterator->undoID << std::endl;
-		} //else std::cout << "No changes to redo" << std::endl;
-	} else {
-		if (undoBase != NULL && undoBase->getNext() != NULL) {
-			//std::cout << "Redoing changes" << std::endl;
-			undoIterator = undoBase;
-			undoIterator->getNext()->revert();
-			//std::cout << "UndoIterator is now id " << undoIterator->undoID << std::endl;
-		} //else std::cout << "No changes to redo" << std::endl;
+bool Program::redo() {
+	if (redoStack.empty()) {
+		return false;
 	}
+	// push current state onto undo stack
+	undoStack.push(UndoPoint());
+	undoStack.top().init(redoStack.top().getChange());
+
+	redoStack.top().revert();
+	redoStack.pop();
+	return true;
 }
 
 void Program::renderMap(int w, int h) {
@@ -311,6 +243,8 @@ void Program::switchMapSurfaces(int surf1, int surf2) {
 }
 
 void Program::reset(int w, int h, int alt, int surf) {
+	undoStack.clear();
+	redoStack.clear();
 	map->reset(w, h, (float) alt, surf);
 }
 
@@ -362,6 +296,8 @@ void Program::setMapAdvanced(int altFactor, int waterLevel) {
 }
 
 void Program::loadMap(const string &path) {
+	undoStack.clear();
+	redoStack.clear();
 	map->loadFromFile(path);
 }
 

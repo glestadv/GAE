@@ -69,11 +69,11 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 				showWater = (showWater > 0)? showWater:0;
 				Vec3f surfColor;
 				switch (map->getSurface(i, j)) {
-				case 1: surfColor = Vec3f(0.0, 0.8f * alt, 0.f + showWater); break;
-				case 2: surfColor = Vec3f(0.4f * alt, 0.6f * alt, 0.f + showWater); break;
-				case 3: surfColor = Vec3f(0.6f * alt, 0.3f * alt, 0.f + showWater); break;
-				case 4: surfColor = Vec3f(0.7f * alt, 0.7f * alt, 0.7f * alt + showWater); break;
-				case 5: surfColor = Vec3f(1.0f * alt, 0.f, 0.f + showWater); break;
+					case 1: surfColor = Vec3f(0.0, 0.8f * alt, 0.f + showWater); break;
+					case 2: surfColor = Vec3f(0.4f * alt, 0.6f * alt, 0.f + showWater); break;
+					case 3: surfColor = Vec3f(0.6f * alt, 0.3f * alt, 0.f + showWater); break;
+					case 4: surfColor = Vec3f(0.7f * alt, 0.7f * alt, 0.7f * alt + showWater); break;
+					case 5: surfColor = Vec3f(0.7f * alt, 0.5f * alt, 0.3f * alt + showWater); break;
 				}
 
 				glColor3fv(surfColor.ptr());
@@ -87,17 +87,17 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 
 				//objects
 				switch (map->getObject(i, j)) {
-				case 0: glColor3f(0.f, 0.f, 0.f); break;
-				case 1: glColor3f(1.f, 0.f, 0.f); break;
-				case 2: glColor3f(1.f, 1.f, 1.f); break;
-				case 3: glColor3f(0.5f, 0.5f, 1.f); break;
-				case 4: glColor3f(0.f, 0.f, 1.f); break;
-				case 5: glColor3f(0.5f, 0.5f, 0.5f); break;
-				case 6: glColor3f(1.f, 0.8f, 0.5f); break;
-				case 7: glColor3f(0.f, 1.f, 1.f); break;
-				case 8: glColor3f(0.7f, 0.1f, 0.3f); break;
-				case 9: glColor3f(0.5f, 1.f, 0.1f); break;
-				case 10: glColor3f(1.f, 0.2f, 0.8f); break;
+					case 0: glColor3f(0.f, 0.f, 0.f); break;
+					case 1: glColor3f(1.f, 0.f, 0.f); break;
+					case 2: glColor3f(1.f, 1.f, 1.f); break;
+					case 3: glColor3f(0.5f, 0.5f, 1.f); break;
+					case 4: glColor3f(0.f, 0.f, 1.f); break;
+					case 5: glColor3f(0.5f, 0.5f, 0.5f); break;
+					case 6: glColor3f(1.f, 0.8f, 0.5f); break;
+					case 7: glColor3f(0.f, 1.f, 1.f); break;
+					case 8: glColor3f(0.7f, 0.1f, 0.3f); break;
+					case 9: glColor3f(0.5f, 1.f, 0.1f); break;
+					case 10: glColor3f(1.f, 0.2f, 0.8f); break;
 				}
 
 				if (map->getObject(i, j) != 0) {
@@ -145,11 +145,11 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 
 				//resources
 				switch (map->getResource(i, j)) {
-				case 1: glColor3f(1.f, 1.f, 0.f); break;
-				case 2: glColor3f(0.5f, 0.5f, 0.5f); break;
-				case 3: glColor3f(1.f, 0.f, 0.f); break;
-				case 4: glColor3f(0.f, 0.f, 1.f); break;
-				case 5: glColor3f(0.5f, 0.5f, 1.f); break;
+					case 1: glColor3f(1.f, 1.f, 0.f); break;
+					case 2: glColor3f(0.5f, 0.5f, 0.5f); break;
+					case 3: glColor3f(1.f, 0.f, 0.f); break;
+					case 4: glColor3f(0.f, 0.f, 1.f); break;
+					case 5: glColor3f(0.5f, 0.5f, 1.f); break;
 				}
 
 				if (map->getResource(i, j) != 0) {
