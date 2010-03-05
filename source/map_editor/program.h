@@ -124,9 +124,9 @@ public:
 	void saveMap(const string &path);
 
 	//map misc
-	void setMapTitle(const string &title);
-	void setMapDesc(const string &desc);
-	void setMapAuthor(const string &author);
+	bool setMapTitle(const string &title);
+	bool setMapDesc(const string &desc);
+	bool setMapAuthor(const string &author);
 	void setMapAdvanced(int altFactor, int waterLevel);
 
 	//misc

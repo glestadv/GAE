@@ -256,16 +256,28 @@ void Program::resetFactions(int maxFactions) {
 	map->resetFactions(maxFactions);
 }
 
-void Program::setMapTitle(const string &title) {
-	map->setTitle(title);
+bool Program::setMapTitle(const string &title) {
+	if (map->getTitle() != title) {
+		map->setTitle(title);
+		return true;
+	}
+	return false;
 }
 
-void Program::setMapDesc(const string &desc) {
-	map->setDesc(desc);
+bool Program::setMapDesc(const string &desc) {
+	if (map->getDesc() != desc) {
+		map->setDesc(desc);
+		return true;
+	}
+	return false;
 }
 
-void Program::setMapAuthor(const string &author) {
-	map->setAuthor(author);
+bool Program::setMapAuthor(const string &author) {
+	if (map->getAuthor() != author) {
+		map->setAuthor(author);
+		return true;
+	}
+	return false;
 }
 
 void Program::setOfset(int x, int y) {

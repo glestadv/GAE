@@ -22,7 +22,7 @@ using namespace std;
 
 namespace MapEditor {
 
-const string MainWindow::versionString = "v1.5.0-beta";
+const string MainWindow::versionString = "v1.5.0-beta3";
 const string MainWindow::winHeader = "Glest Map Editor " + versionString + " - Built: " + __DATE__;
 
 // ===============================================
@@ -184,12 +184,12 @@ MainWindow::MainWindow()
 	CreateStatusBar(StatusItems::COUNT);
 	
 	fileName = "New (unsaved) map";
-	this->GetStatusBar()->SetStatusStyles(StatusItems::COUNT, status_styles);
-	SetStatusText(wxT("File = " + fileName), StatusItems::FILE_NAME);
-	SetStatusText(wxT("Brush = Height"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value = 0"), StatusItems::BRUSH_VALUE);
-	SetStatusText(wxT("Radius = 1"), StatusItems::BRUSH_RADIUS);
-
+	GetStatusBar()->SetStatusWidths(StatusItems::COUNT, status_widths);
+	SetStatusText(wxT("File: " + fileName), StatusItems::FILE_NAME);
+	SetStatusText(wxT("Type: Glest Map (gbm)"), StatusItems::FILE_TYPE);
+	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
+	SetStatusText(wxT("Value: 0"), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Radius: 1"), StatusItems::BRUSH_RADIUS);
 
 #ifndef WIN32
 	timer = new wxTimer(this);
@@ -201,11 +201,15 @@ void MainWindow::init(string fname) {
 	glCanvas->SetCurrent();
 	program = new Program(GetClientSize().x, GetClientSize().y);
 
-	if(!fname.empty()){
+	fileName = "New (unsaved) Map";
+	if (!fname.empty() && fileExists(fname)) {
 		program->loadMap(fname);
 		currentFile = fname;
-		SetTitle(ToUnicode(winHeader + "; " + currentFile));
+		fileName = cutLastExt(basename(fname));
 	}
+	SetTitle(ToUnicode(winHeader + "; " + currentFile));
+	setDirty(false);
+	setExtension();
 }
 
 void MainWindow::onClose(wxCloseEvent &event) {
@@ -215,6 +219,32 @@ void MainWindow::onClose(wxCloseEvent &event) {
 MainWindow::~MainWindow() {
 	delete program;
 	delete glCanvas;
+}
+
+void MainWindow::setDirty(bool val) {
+	if (fileModified && val) {
+		return;
+	}
+	fileModified = val;
+	if (fileModified) {
+		SetStatusText("File: " + fileName + "*", StatusItems::FILE_NAME);
+	} else {
+		SetStatusText("File: " + fileName, StatusItems::FILE_NAME);
+	}
+}
+
+void MainWindow::setExtension() {
+	string extnsn = ext(currentFile);
+	if (extnsn == "gbm" || extnsn == "mgm") {
+		currentFile = cutLastExt(currentFile);
+	}
+	if (Program::getMap()->getMaxFactions() <= 4) {
+		SetStatusText(wxT("Type: Glest Map (gbm)"), StatusItems::FILE_TYPE);
+		currentFile += ".gbm";
+	} else {
+		SetStatusText(wxT("Type: Mega Map (mgm)"), StatusItems::FILE_TYPE);
+		currentFile += ".mgm";
+	}
 }
 
 void MainWindow::onTimer(wxTimerEvent &event) {
@@ -264,21 +294,16 @@ void MainWindow::onPaint(wxPaintEvent &event) {
 }
 
 void MainWindow::onMenuFileLoad(wxCommandEvent &event) {
-	string fileName;
-
 	wxFileDialog fileDialog(this);
-	fileDialog.SetWildcard(wxT("Glest Binary Map (*.gbm)|*.gbm"));
+	fileDialog.SetWildcard(wxT("Glest Map (*.gbm)|*.gbm|Mega Map (*.mgm)|*.mgm"));
 	if (fileDialog.ShowModal() == wxID_OK) {
-		fileName = fileDialog.GetPath().ToAscii();
-		program->loadMap(fileName);
-		string name = cutLastExt(basename(fileName));
-		SetStatusText(wxT("File = " + name), StatusItems::FILE_NAME);
-		this->fileName = name;
+		currentFile = fileDialog.GetPath().ToAscii();
+		program->loadMap(currentFile);
+		fileName = cutLastExt(basename(currentFile));
 		setDirty(false);
+		setExtension();
+		SetTitle(ToUnicode(winHeader + "; " + currentFile));
 	}
-
-	currentFile = fileName;
-	SetTitle(ToUnicode(winHeader + "; " + currentFile));
 }
 
 void MainWindow::onMenuFileSave(wxCommandEvent &event) {
@@ -286,34 +311,23 @@ void MainWindow::onMenuFileSave(wxCommandEvent &event) {
 		wxCommandEvent ev;
 		onMenuFileSaveAs(ev);
 	} else {
+		setExtension();
 		program->saveMap(currentFile);
 		setDirty(false);
 	}
 }
 
-
-void MainWindow::setDirty(bool val) { 
-	fileModified = val;
-	if (fileModified) {
-		SetStatusText("File: " + fileName + "*", StatusItems::FILE_NAME);
-	} else {
-		SetStatusText("File: " + fileName, StatusItems::FILE_NAME);
-	}
-}
-
 void MainWindow::onMenuFileSaveAs(wxCommandEvent &event) {
-	string fileName;
-
-	wxFileDialog fileDialog(this, wxT("Select file"), wxT(""), wxT(""), wxT("*.gbm"), wxSAVE);
-	fileDialog.SetWildcard(wxT("Glest Binary Map (*.gbm)|*.gbm"));
+	wxFileDialog fileDialog(this, wxT("Select file"), wxT(""), wxT(""), wxT("*.gbm|*.mgm"), wxSAVE);
+	fileDialog.SetWildcard(wxT("Glest Map (*.gbm)|*.gbm|Mega Map (*.mgm)|*.mgm"));
 	if (fileDialog.ShowModal() == wxID_OK) {
-		fileName = fileDialog.GetPath().ToAscii();
-		program->saveMap(fileName);
-		string name = cutLastExt(basename(fileName));
-		fileName = name;
+		currentFile = fileDialog.GetPath().ToAscii();
+		program->saveMap(currentFile);
 		setDirty(false);
+		fileName = cutLastExt(basename(currentFile));
 	}
-
+	SetStatusText(wxT("File: ") + fileName);
+	setExtension();
 	currentFile = fileName;
 	SetTitle(ToUnicode(winHeader + "; " + currentFile));
 }
@@ -326,6 +340,7 @@ void MainWindow::onMenuEditUndo(wxCommandEvent &event) {
 	std::cout << "Undo Pressed" << std::endl;
 	if (program->undo()) {
 		onPaint(wxPaintEvent());
+		setDirty();
 	}
 }
 
@@ -333,6 +348,7 @@ void MainWindow::onMenuEditRedo(wxCommandEvent &event) {
 	std::cout << "Redo Pressed" << std::endl;
 	if (program->redo()) {
 		onPaint(wxPaintEvent());
+		setDirty();
 	}
 }
 
@@ -354,7 +370,8 @@ void MainWindow::onMenuEditReset(wxCommandEvent &event) {
 	} catch (const exception &e) {
 		wxMessageDialog(NULL, ToUnicode(e.what()), wxT("Exception"), wxOK | wxICON_ERROR).ShowModal();
 	}
-
+	currentFile = "";
+	fileName = "New (unsaved) map";
 }
 
 void MainWindow::onMenuEditResetPlayers(wxCommandEvent &event) {
@@ -367,6 +384,8 @@ void MainWindow::onMenuEditResetPlayers(wxCommandEvent &event) {
 	} catch (const exception &e) {
 		wxMessageDialog(NULL, ToUnicode(e.what()), wxT("Exception"), wxOK | wxICON_ERROR).ShowModal();
 	}
+	setDirty();
+	setExtension();
 }
 
 void MainWindow::onMenuEditResize(wxCommandEvent &event) {
@@ -386,22 +405,27 @@ void MainWindow::onMenuEditResize(wxCommandEvent &event) {
 	} catch (const exception &e) {
 		wxMessageDialog(NULL, ToUnicode(e.what()), wxT("Exception"), wxOK | wxICON_ERROR).ShowModal();
 	}
+	setDirty();
 }
 
 void MainWindow::onMenuEditFlipX(wxCommandEvent &event) {
 	program->flipX();
+	setDirty();
 }
 
 void MainWindow::onMenuEditFlipY(wxCommandEvent &event) {
 	program->flipY();
+	setDirty();
 }
 
 void MainWindow::onMenuEditRandomizeHeights(wxCommandEvent &event) {
 	program->randomizeMapHeights();
+	setDirty();
 }
 
 void MainWindow::onMenuEditRandomize(wxCommandEvent &event) {
 	program->randomizeMap();
+	setDirty();
 }
 
 void MainWindow::onMenuEditSwitchSurfaces(wxCommandEvent &event) {
@@ -417,6 +441,7 @@ void MainWindow::onMenuEditSwitchSurfaces(wxCommandEvent &event) {
 	} catch (const exception &e) {
 		wxMessageDialog(NULL, ToUnicode(e.what()), wxT("Exception"), wxOK | wxICON_ERROR).ShowModal();
 	}
+	setDirty();
 }
 
 void MainWindow::onMenuEditInfo(wxCommandEvent &event) {
@@ -427,9 +452,13 @@ void MainWindow::onMenuEditInfo(wxCommandEvent &event) {
 
 	simpleDialog.show();
 
-	program->setMapTitle(simpleDialog.getValue("Title"));
-	program->setMapDesc(simpleDialog.getValue("Desc"));
-	program->setMapAuthor(simpleDialog.getValue("Author"));
+	if (program->setMapTitle(simpleDialog.getValue("Title"))
+	|| program->setMapDesc(simpleDialog.getValue("Desc"))
+	|| program->setMapAuthor(simpleDialog.getValue("Author"))) {
+		if (!isDirty()) {
+			setDirty(true);
+		}
+	}
 }
 
 void MainWindow::onMenuEditAdvanced(wxCommandEvent &event) {
@@ -446,6 +475,7 @@ void MainWindow::onMenuEditAdvanced(wxCommandEvent &event) {
 	} catch (const exception &e) {
 		wxMessageDialog(NULL, ToUnicode(e.what()), wxT("Exception"), wxOK | wxICON_ERROR).ShowModal();
 	}
+	setDirty();
 }
 
 void MainWindow::onMenuMiscResetZoomAndPos(wxCommandEvent &event) {
@@ -455,7 +485,7 @@ void MainWindow::onMenuMiscResetZoomAndPos(wxCommandEvent &event) {
 void MainWindow::onMenuMiscAbout(wxCommandEvent &event) {
 	wxMessageDialog(
 		NULL,
-		wxT("Glest Map Editor - Copyright 2004 The Glest Team\n(with improvements by titi & zombiepirate)."),
+		wxT("Glest Map Editor - Copyright 2004 The Glest Team\n(with improvements by others, 2010)."),
 		wxT("About")).ShowModal();
 }
 
@@ -473,7 +503,7 @@ void MainWindow::onMenuBrushHeight(wxCommandEvent &e) {
 	enabledGroup = ctHeight;
 	currentBrush = btHeight;
 	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: " + intToStr(height)), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + intToStr(height), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushGradient(wxCommandEvent &e) {
@@ -483,7 +513,7 @@ void MainWindow::onMenuBrushGradient(wxCommandEvent &e) {
 	enabledGroup = ctGradient;
 	currentBrush = btGradient;
 	SetStatusText(wxT("Brush: Gradient"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: " + intToStr(height)), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + intToStr(height), StatusItems::BRUSH_VALUE);
 }
 
 
@@ -494,7 +524,7 @@ void MainWindow::onMenuBrushSurface(wxCommandEvent &e) {
 	enabledGroup = ctSurface;
 	currentBrush = btSurface;
 	SetStatusText(wxT("Brush: Surface"), StatusItems::BRUSH_TYPE);	
-	SetStatusText(wxT("Value: " + intToStr(surface) + " " + surface_descs[surface - 1]), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + intToStr(surface) + " " + surface_descs[surface - 1], StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
@@ -504,7 +534,7 @@ void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
 	enabledGroup = ctObject;
 	currentBrush = btObject;
 	SetStatusText(wxT("Brush: Object"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: " + intToStr(object) + " " + object_descs[object]), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + intToStr(object) + " " + object_descs[object], StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
@@ -514,7 +544,7 @@ void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
 	enabledGroup = ctResource;
 	currentBrush = btResource;
 	SetStatusText(wxT("Brush: Resource"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: " + intToStr(resource) + " " + resource_descs[resource]), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + intToStr(resource) + " " + resource_descs[resource], StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushStartLocation(wxCommandEvent &e) {
@@ -524,14 +554,14 @@ void MainWindow::onMenuBrushStartLocation(wxCommandEvent &e) {
 	enabledGroup = ctLocation;
 	currentBrush = btStartLocation;
 	SetStatusText(wxT("Brush: Start Locations"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: " + intToStr(startLocation)), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + intToStr(startLocation), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuRadius(wxCommandEvent &e) {
 	uncheckRadius();
 	menuRadius->Check(e.GetId(), true);
 	radius = e.GetId() - miRadius;
-	SetStatusText(wxT("Radius: " + intToStr(radius)), StatusItems::BRUSH_RADIUS);
+	SetStatusText(wxT("Radius: ") + intToStr(radius), StatusItems::BRUSH_RADIUS);
 }
 
 void MainWindow::change(int x, int y) {

@@ -42,17 +42,19 @@ enum BrushType {
 WRAPPED_ENUM( StatusItems,
 	NULL_ENTRY,
 	FILE_NAME,
+	FILE_TYPE,
 	BRUSH_TYPE,
 	BRUSH_VALUE,
 	BRUSH_RADIUS
 )
 
-int status_styles[StatusItems::COUNT] = {
+int status_widths[StatusItems::COUNT] = {
+	-1,
+	-2,
+	-2,
 	-1,
 	-1,
-	100,
-	100,
-	100,
+	-1,
 };
 
 const char *object_descs[] = {
@@ -214,9 +216,10 @@ public:
 	void uncheckBrush();
 	void uncheckRadius();
 
+private:
 	bool isDirty() const	{ return fileModified; }
-	void setDirty(bool val);
-
+	void setDirty(bool val=true);
+	void setExtension();
 };
 
 // =====================================================
