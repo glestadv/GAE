@@ -17,6 +17,8 @@
 
 #include <stack>
 
+using std::stack;
+
 namespace MapEditor {
 
 class MainWindow;

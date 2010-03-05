@@ -53,16 +53,6 @@ MainWindow::MainWindow()
 		, enabledGroup(ctHeight)
 		, currentBrush(btHeight)
 		, wxFrame(NULL, -1,  ToUnicode(winHeader), wxDefaultPosition, wxSize(800, 600)) {
-	// menu item hot keys
-	wxAcceleratorEntry accel[] = {
-		wxAcceleratorEntry(		wxACCEL_CTRL,				'o', miFileLoad),
-		wxAcceleratorEntry(		wxACCEL_CTRL,				's', miFileSave),
-		wxAcceleratorEntry(wxACCEL_CTRL | wxACCEL_SHIFT,	's', miFileSaveAs),
-		
-		wxAcceleratorEntry(		wxACCEL_CTRL,				'z', miEditUndo),
-		wxAcceleratorEntry(		wxACCEL_CTRL,				'y', miEditRedo),
-	};
-	SetAcceleratorTable(wxAcceleratorTable(5, accel));
 
 	//gl canvas
 	int args[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER };
@@ -73,18 +63,18 @@ MainWindow::MainWindow()
 
 	//file
 	menuFile = new wxMenu();
-	menuFile->Append(miFileLoad, wxT("&Open"));
+	menuFile->Append(wxID_OPEN);
 	menuFile->AppendSeparator();
-	menuFile->Append(miFileSave, wxT("&Save"));
-	menuFile->Append(miFileSaveAs, wxT("Save &As"));
+	menuFile->Append(wxID_SAVE);
+	menuFile->Append(wxID_SAVEAS);
 	menuFile->AppendSeparator();
-	menuFile->Append(miFileExit, wxT("E&xit"));
+	menuFile->Append(wxID_EXIT);
 	menuBar->Append(menuFile, wxT("&File"));
 
 	//edit
 	menuEdit = new wxMenu();
-	menuEdit->Append(miEditUndo, wxT("&Undo"));
-	menuEdit->Append(miEditRedo, wxT("&Redo"));
+	menuEdit->Append(miEditUndo, wxT("&Undo\tCTRL+z"));
+	menuEdit->Append(miEditRedo, wxT("&Redo\tCTRL+y"));
 	menuEdit->Append(miEditReset, wxT("Rese&t"));
 	menuEdit->Append(miEditResetPlayers, wxT("Reset &Players"));
 	menuEdit->Append(miEditResize, wxT("Re&size"));
@@ -174,7 +164,7 @@ MainWindow::MainWindow()
 	//radius
 	menuRadius = new wxMenu();
 	for (int i = 1; i <= radiusCount; ++i) {
-		menuRadius->AppendCheckItem(miRadius + i, ToUnicode("&" + intToStr(i)));
+		menuRadius->AppendCheckItem(miRadius + i, ToUnicode("&" + intToStr(i) + "\tALT+" + intToStr(i)));
 	}
 	menuRadius->Check(miRadius + 1, true);
 	menuBar->Append(menuRadius, wxT("&Radius"));
@@ -185,7 +175,7 @@ MainWindow::MainWindow()
 	
 	fileName = "New (unsaved) map";
 	GetStatusBar()->SetStatusWidths(StatusItems::COUNT, status_widths);
-	SetStatusText(wxT("File: " + fileName), StatusItems::FILE_NAME);
+	SetStatusText(wxT("File: ") + ToUnicode(fileName), StatusItems::FILE_NAME);
 	SetStatusText(wxT("Type: Glest Map (gbm)"), StatusItems::FILE_TYPE);
 	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
 	SetStatusText(wxT("Value: 0"), StatusItems::BRUSH_VALUE);
@@ -227,9 +217,9 @@ void MainWindow::setDirty(bool val) {
 	}
 	fileModified = val;
 	if (fileModified) {
-		SetStatusText("File: " + fileName + "*", StatusItems::FILE_NAME);
+		SetStatusText(wxT("File: ") + ToUnicode(fileName) + wxT("*"), StatusItems::FILE_NAME);
 	} else {
-		SetStatusText("File: " + fileName, StatusItems::FILE_NAME);
+		SetStatusText(wxT("File: ") + ToUnicode(fileName), StatusItems::FILE_NAME);
 	}
 }
 
@@ -326,7 +316,7 @@ void MainWindow::onMenuFileSaveAs(wxCommandEvent &event) {
 		setDirty(false);
 		fileName = cutLastExt(basename(currentFile));
 	}
-	SetStatusText(wxT("File: ") + fileName);
+	SetStatusText(wxT("File: ") + ToUnicode(fileName));
 	setExtension();
 	currentFile = fileName;
 	SetTitle(ToUnicode(winHeader + "; " + currentFile));
@@ -339,7 +329,7 @@ void MainWindow::onMenuFileExit(wxCommandEvent &event) {
 void MainWindow::onMenuEditUndo(wxCommandEvent &event) {
 	std::cout << "Undo Pressed" << std::endl;
 	if (program->undo()) {
-		onPaint(wxPaintEvent());
+		Refresh();
 		setDirty();
 	}
 }
@@ -347,7 +337,7 @@ void MainWindow::onMenuEditUndo(wxCommandEvent &event) {
 void MainWindow::onMenuEditRedo(wxCommandEvent &event) {
 	std::cout << "Redo Pressed" << std::endl;
 	if (program->redo()) {
-		onPaint(wxPaintEvent());
+		Refresh();
 		setDirty();
 	}
 }
@@ -503,7 +493,7 @@ void MainWindow::onMenuBrushHeight(wxCommandEvent &e) {
 	enabledGroup = ctHeight;
 	currentBrush = btHeight;
 	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + intToStr(height), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(height)), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushGradient(wxCommandEvent &e) {
@@ -513,7 +503,7 @@ void MainWindow::onMenuBrushGradient(wxCommandEvent &e) {
 	enabledGroup = ctGradient;
 	currentBrush = btGradient;
 	SetStatusText(wxT("Brush: Gradient"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + intToStr(height), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(height)), StatusItems::BRUSH_VALUE);
 }
 
 
@@ -524,7 +514,7 @@ void MainWindow::onMenuBrushSurface(wxCommandEvent &e) {
 	enabledGroup = ctSurface;
 	currentBrush = btSurface;
 	SetStatusText(wxT("Brush: Surface"), StatusItems::BRUSH_TYPE);	
-	SetStatusText(wxT("Value: ") + intToStr(surface) + " " + surface_descs[surface - 1], StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(surface)) + wxT(" ") + ToUnicode(surface_descs[surface - 1]), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
@@ -534,7 +524,7 @@ void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
 	enabledGroup = ctObject;
 	currentBrush = btObject;
 	SetStatusText(wxT("Brush: Object"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + intToStr(object) + " " + object_descs[object], StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(object)) + wxT(" ") + ToUnicode(object_descs[object]), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
@@ -544,7 +534,7 @@ void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
 	enabledGroup = ctResource;
 	currentBrush = btResource;
 	SetStatusText(wxT("Brush: Resource"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + intToStr(resource) + " " + resource_descs[resource], StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(resource)) + wxT(" ") + ToUnicode(resource_descs[resource]), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushStartLocation(wxCommandEvent &e) {
@@ -554,14 +544,14 @@ void MainWindow::onMenuBrushStartLocation(wxCommandEvent &e) {
 	enabledGroup = ctLocation;
 	currentBrush = btStartLocation;
 	SetStatusText(wxT("Brush: Start Locations"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + intToStr(startLocation), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(startLocation)), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuRadius(wxCommandEvent &e) {
 	uncheckRadius();
 	menuRadius->Check(e.GetId(), true);
 	radius = e.GetId() - miRadius;
-	SetStatusText(wxT("Radius: ") + intToStr(radius), StatusItems::BRUSH_RADIUS);
+	SetStatusText(wxT("Radius: ") + ToUnicode(intToStr(radius)), StatusItems::BRUSH_RADIUS);
 }
 
 void MainWindow::change(int x, int y) {
@@ -614,82 +604,75 @@ void MainWindow::uncheckRadius() {
 	}
 }
 
-void MainWindow::onKeyDown(wxKeyEvent &e) {
-	if (e.GetModifiers() == wxMOD_ALT	// Alt + number == change brush Radius
-	&& (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '9')) {
-		radius = e.GetKeyCode() - 48;	// '1'-'9' == 1-9
-		onMenuRadius(wxCommandEvent(wxEVT_NULL, miRadius + radius));
-		return;
-	}
-
-	if (currentBrush == btHeight || currentBrush == btGradient) { // 'height' brush
-		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
-			height = e.GetKeyCode() - 48; // '0'-'5' == 0-5
-			if (e.GetModifiers() == wxMOD_CONTROL) { // Ctrl means negative
-				height  = -height ;
-			}
-			int id_offset = heightCount / 2 + height + 1;
-			if (currentBrush == btHeight) {
-				onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + id_offset));
-			} else {
-				onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + id_offset));
-			}
-			return;
-		}
-	}
-	if (currentBrush == btSurface) { // surface texture
-		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '5') {
-			surface = e.GetKeyCode() - 48; // '1'-'5' == 1-5
-			onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
-			return;
-		}
-	}
-	if (currentBrush == btObject) {
-		bool valid = true;
-		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '9') {
-			object = e.GetKeyCode() - 48; // '1'-'9' == 1-9
-		} else if (e.GetKeyCode() == '0') { // '0' == 10
-			object = 10;
-		} else if (e.GetKeyCode() == '-') {	// '-' == 0
-			object = 0;
-		} else {
-			valid = false;
-		}
-		if (valid) {
-			onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
-			return;
-		}
-	}
-	if (currentBrush == btResource) {
-		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
-			resource = e.GetKeyCode() - 48;	// '0'-'5' == 0-5
-			onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
-			return;
-		}
-	}
-	if (currentBrush == btStartLocation) {
-		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '8') {
-			startLocation = e.GetKeyCode() - 48; // '1'-'8' == 0-7
-			onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation));
-			return;
-		}
-	}
-	if (e.GetKeyCode() == 'H') {
-		onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + height + heightCount / 2 + 1));
-	} else if (e.GetKeyCode() == 'G') {
-		onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + height + heightCount / 2 + 1));
-	} else if (e.GetKeyCode() == 'S') {
-		onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
-	} else if (e.GetKeyCode() == 'O') {
-		onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
-	} else if (e.GetKeyCode() == 'R') {
-		onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
-	} else if (e.GetKeyCode() == 'L') {
-		onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation + 1));
-	} else {
-		e.Skip();
-	}
-}
+// void MainWindow::onKeyDown(wxKeyEvent &e) {
+// 	if (currentBrush == btHeight || currentBrush == btGradient) { // 'height' brush
+// 		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
+// 			height = e.GetKeyCode() - 48; // '0'-'5' == 0-5
+// 			if (e.GetModifiers() == wxMOD_CONTROL) { // Ctrl means negative
+// 				height  = -height ;
+// 			}
+// 			int id_offset = heightCount / 2 + height + 1;
+// 			if (currentBrush == btHeight) {
+// 				onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + id_offset));
+// 			} else {
+// 				onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + id_offset));
+// 			}
+// 			return;
+// 		}
+// 	}
+// 	if (currentBrush == btSurface) { // surface texture
+// 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '5') {
+// 			surface = e.GetKeyCode() - 48; // '1'-'5' == 1-5
+// 			onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
+// 			return;
+// 		}
+// 	}
+// 	if (currentBrush == btObject) {
+// 		bool valid = true;
+// 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '9') {
+// 			object = e.GetKeyCode() - 48; // '1'-'9' == 1-9
+// 		} else if (e.GetKeyCode() == '0') { // '0' == 10
+// 			object = 10;
+// 		} else if (e.GetKeyCode() == '-') {	// '-' == 0
+// 			object = 0;
+// 		} else {
+// 			valid = false;
+// 		}
+// 		if (valid) {
+// 			onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
+// 			return;
+// 		}
+// 	}
+// 	if (currentBrush == btResource) {
+// 		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
+// 			resource = e.GetKeyCode() - 48;	// '0'-'5' == 0-5
+// 			onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
+// 			return;
+// 		}
+// 	}
+// 	if (currentBrush == btStartLocation) {
+// 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '8') {
+// 			startLocation = e.GetKeyCode() - 48; // '1'-'8' == 0-7
+// 			onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation));
+// 			return;
+// 		}
+// 	}
+// 	if (e.GetKeyCode() == 'H') {
+// 		onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + height + heightCount / 2 + 1));
+// 	} else if (e.GetKeyCode() == 'G') {
+// 		onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + height + heightCount / 2 + 1));
+// 	} else if (e.GetKeyCode() == 'S') {
+// 		onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
+// 	} else if (e.GetKeyCode() == 'O') {
+// 		onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
+// 	} else if (e.GetKeyCode() == 'R') {
+// 		onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
+// 	} else if (e.GetKeyCode() == 'L') {
+// 		onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation + 1));
+// 	} else {
+// 		e.Skip();
+// 	}
+// }
 
 BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	
@@ -700,12 +683,12 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_LEFT_DOWN(MainWindow::onMouseDown)
 	EVT_MOTION(MainWindow::onMouseMove)
 
-	EVT_KEY_DOWN(MainWindow::onKeyDown)
+	//EVT_KEY_DOWN(MainWindow::onKeyDown)
 
-	EVT_MENU(miFileLoad, MainWindow::onMenuFileLoad)
-	EVT_MENU(miFileSave, MainWindow::onMenuFileSave)
-	EVT_MENU(miFileSaveAs, MainWindow::onMenuFileSaveAs)
-	EVT_MENU(miFileExit, MainWindow::onMenuFileExit)
+	EVT_MENU(wxID_OPEN, MainWindow::onMenuFileLoad)
+	EVT_MENU(wxID_SAVE, MainWindow::onMenuFileSave)
+	EVT_MENU(wxID_SAVEAS, MainWindow::onMenuFileSaveAs)
+	EVT_MENU(wxID_EXIT, MainWindow::onMenuFileExit)
 
 	EVT_MENU(miEditUndo, MainWindow::onMenuEditUndo)
 	EVT_MENU(miEditRedo, MainWindow::onMenuEditRedo)
@@ -750,12 +733,12 @@ void GlCanvas::onMouseMove(wxMouseEvent &event) {
 	mainWindow->onMouseMove(event);
 }
 
-void GlCanvas::onKeyDown(wxKeyEvent &event) {
-	mainWindow->onKeyDown(event);
-}
+// void GlCanvas::onKeyDown(wxKeyEvent &event) {
+// 	mainWindow->onKeyDown(event);
+// }
 
 BEGIN_EVENT_TABLE(GlCanvas, wxGLCanvas)
-	EVT_KEY_DOWN(GlCanvas::onKeyDown)
+	//EVT_KEY_DOWN(GlCanvas::onKeyDown)
 
 	EVT_LEFT_DOWN(GlCanvas::onMouseDown)
 	EVT_MOTION(GlCanvas::onMouseMove)
