@@ -135,6 +135,6 @@ if $(CPPUNIT) = "yes" {
   ;
   Application testsuite : $(GLEST_TEST_SOURCES) ;
   LinkWith testsuite : glestlib ;
-  ExternalLibs testsuite : CPPUNIT ;
+  ExternalLibs testsuite : SDL CPPUNIT ;
   IncludeDir testsuite : ../shared_lib/$(LIB_INCLUDE_DIRS) $(GLEST_TEST_DIRS) ../game/$(GLEST_DIRS) ;
 }
