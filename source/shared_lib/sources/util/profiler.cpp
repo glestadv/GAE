@@ -14,6 +14,8 @@
 
 #ifdef SL_PROFILE
 
+#include "FSFactory.hpp"
+
 #include <stdexcept>
 
 using namespace std;
@@ -95,8 +97,11 @@ Profiler::~Profiler(){
 	FILE *f= fopen("profiler.log", "w");
 	if ( f ) {
 		fprintf(f, "Profiler Results\n\n");
-		rootSection->print(f);
+		rootSection->print(f);  //FIXME: physfs stuff
 		fclose(f);
+		//ostream *ofs = FSFactory::getInstance()->getOStream("profiler.log");
+		//*ofs << "Profiler Results\n\n";
+		//delete ofs;
 	}
 }
 

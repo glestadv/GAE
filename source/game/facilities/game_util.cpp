@@ -10,6 +10,7 @@
 // ==============================================================
 
 #include "pch.h"
+#include "projectConfig.h"
 #include "game_util.h"
 
 #include "util.h"
@@ -25,14 +26,16 @@ using namespace Shared::Util;
 namespace Glest{ namespace Game{
 
 const string mailString= "contact_game@glest.org";
-const string gaeMailString= "daniel.santos@pobox.com";
+const string gaeMailString= CONTACT_STRING;
 
 const string glestVersionString= "v3.2.2";
 
 #if _GAE_DEBUG_EDITION_
-	const string gaeVersionString= "v0.2.13_DE-beta1";
+	//const string gaeVersionString= "v0.2.13_DE-beta1";
+	const string gaeVersionString= VERSION_STRING;
 #else
-	const string gaeVersionString= "v0.2.13-beta1";
+	//const string gaeVersionString= "v0.2.13-beta1";
+	const string gaeVersionString= VERSION_STRING;
 #endif
 
 string getCrashDumpFileName(){

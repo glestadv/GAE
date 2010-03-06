@@ -18,6 +18,7 @@
 #include "metrics.h"
 #include "lang.h"
 #include "components.h"
+#include "FSFactory.hpp"
 
 #include "leak_dumper.h"
 #include "world.h"
@@ -55,11 +56,20 @@ void Logger::clusterInit() {
 }
 
 void Logger::add(const string &str,  bool renderScreen){
-	FILE *f=fopen(fileName.c_str(), "at+");
+/*	FILE *f=fopen(fileName.c_str(), "at+");
 	if (f) {
 		fprintf(f, "%d: %s\n", (int)(clock() / 1000), str.c_str());
 		fclose(f);
-	}
+	}*/
+	FileOps *f = FSFactory::getInstance()->getFileOps();
+	f->openAppend(fileName.c_str());
+	//FIXME: ugly
+	stringstream sstream;
+	sstream << (int)(clock() / 1000) << ": " << str << endl;
+	string s = sstream.str();
+	f->write((void*)s.c_str(), sizeof(char), s.size());
+	delete f;
+	
 	if (loadingGame && renderScreen) {
 		if (f == NULL) {
 			throw runtime_error("Error opening log file" + fileName);

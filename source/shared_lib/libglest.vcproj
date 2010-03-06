@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="include/math;../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/lua;include/xml"
+				AdditionalIncludeDirectories="include/math;../../../deps/include/lua;../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/lua;include/xml;include/physfs"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;XML_LIBRARY;NO_GL_ASSERTIONS;USE_PCH=1"
 				StringPooling="true"
 				MinimalRebuild="true"
@@ -117,7 +117,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua;include/math"
+				AdditionalIncludeDirectories="../../../deps/include;include;include/graphics;include/graphics/gl;include/platform;include/platform/win32;include/sound;include/sound/ds8;include/util;include/xml;include/lua;include/math;include/tinyxml"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;XML_LIBRARY;USE_PCH=1"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -352,6 +352,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\physfs\FileOps.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\include\graphics\font.h"
 				>
 			</File>
@@ -361,6 +365,10 @@
 			</File>
 			<File
 				RelativePath=".\include\graphics\font_manager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\physfs\FSFactory.hpp"
 				>
 			</File>
 			<File
@@ -385,6 +393,14 @@
 			</File>
 			<File
 				RelativePath=".\include\graphics\graphics_interface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\physfs\ifile_stream.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\include\physfs\ifile_streambuf.hpp"
 				>
 			</File>
 			<File
@@ -436,6 +452,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\physfs\ofile_stream.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\include\physfs\ofile_streambuf.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\include\graphics\gl\opengl.h"
 				>
 			</File>
@@ -453,6 +477,10 @@
 			</File>
 			<File
 				RelativePath=".\include\pch.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\physfs\PhysFileOps.hpp"
 				>
 			</File>
 			<File
@@ -556,6 +584,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\physfs\StdFileOps.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\include\graphics\text_renderer.h"
 				>
 			</File>
@@ -576,11 +608,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\thread.h"
+				RelativePath=".\include\platform\thread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\thread.h"
+				RelativePath=".\include\platform\win32\thread.h"
 				>
 			</File>
 			<File
@@ -620,11 +652,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File
@@ -736,6 +768,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\sources\physfs\FileOps.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\sources\graphics\font.cpp"
 				>
 				<FileConfiguration
@@ -796,6 +832,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\sources\physfs\FSFactory.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\sources\platform\win32\gl_wrap.cpp"
 				>
 			</File>
@@ -854,6 +894,14 @@
 						DebugInformationFormat="3"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\sources\physfs\ifile_stream.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\physfs\ifile_streambuf.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\sources\platform\input.cpp"
@@ -946,6 +994,14 @@
 						DebugInformationFormat="3"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\sources\physfs\ofile_stream.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\physfs\ofile_streambuf.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\sources\graphics\gl\opengl.cpp"
@@ -1042,6 +1098,10 @@
 						UsePrecompiledHeader="1"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\sources\physfs\PhysFileOps.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\sources\graphics\pixmap.cpp"
@@ -1181,6 +1241,10 @@
 			</File>
 			<File
 				RelativePath=".\sources\sound\ds8\sound_player_ds8.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\physfs\StdFileOps.cpp"
 				>
 			</File>
 			<File

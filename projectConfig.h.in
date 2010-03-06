@@ -1,0 +1,24 @@
+// used in code, processed by cmake
+#ifndef _PROJECTCONFIG_H_
+#define _PROJECTCONFIG_H_
+
+
+#cmakedefine USE_SDL
+#cmakedefine USE_POSIX_SOCKETS
+#cmakedefine X11_AVAILABLE
+
+#cmakedefine HAVE_GLOB_H
+#cmakedefine HAVE_SYS_IOCTL_H
+#cmakedefine HAVE_SYS_FILIO_H
+#cmakedefine HAVE_SYS_TIME_H
+#cmakedefine HAVE_BYTESWAP_H
+
+
+#define VERSION_STRING "@GLEST_VERSION@"
+#define CONTACT_STRING "@CONTACT@"
+
+// trailed slash is needed
+#define DEFAULT_CONFIG_DIR "@CONFIG_DIR@"
+#define DEFAULT_DATA_DIR   "@DATA_DIR@"
+
+#endif

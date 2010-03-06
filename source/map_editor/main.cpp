@@ -16,6 +16,7 @@
 #include <ctime>
 
 #include "conversion.h"
+#include "FSFactory.hpp"
 
 using namespace Shared::Util;
 using namespace std;
@@ -823,6 +824,8 @@ void SimpleDialog::show() {
 // ===============================================
 
 bool App::OnInit() {
+	FSFactory::getInstance()->usePhysFS(false);
+	
 	string fileparam;
 	if(argc==2){
 		fileparam = wxFNCONV(argv[1]);

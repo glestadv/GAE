@@ -17,6 +17,8 @@
 #include "vec.h"
 #include "types.h"
 
+#include "FileOps.hpp"
+
 using std::string;
 using namespace Shared::Platform;
 using namespace Shared::Math;
@@ -54,7 +56,7 @@ public:
 
 class PixmapIoTga: public PixmapIo{
 private:
-	FILE *file;
+	FileOps *file;
 
 public:
 	PixmapIoTga();
@@ -74,7 +76,7 @@ public:
 
 class PixmapIoBmp: public PixmapIo{
 private:
-	FILE *file;
+	FileOps *file;
 
 public:
 	PixmapIoBmp();

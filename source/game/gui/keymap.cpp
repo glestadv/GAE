@@ -17,6 +17,7 @@
 
 #include "keymap.h"
 #include "util.h"
+#include "FSFactory.hpp"
 
 #include "leak_dumper.h"
 
@@ -198,12 +199,8 @@ Keymap::Keymap(const Input &input, const char* fileName) :
 		//entries[i] = EntryPair(commandInfo[i]);
 	}
 	
-	if(fileName) {
-		std::ifstream in(fileName, ios_base::in);
-		if(!in.fail()) {
-			in.close();
-			load(fileName);
-		}
+	if(fileName && Shared::Util::fileExists(fileName)) {
+		load(fileName);
 	}
 }
 
@@ -250,7 +247,8 @@ void Keymap::load(const char *path) {
 
 void Keymap::save(const char *path) {
 	try {
-		ofstream out(path, ios_base::out | ios_base::trunc);
+		//ofstream out((configDir + path).c_str(), ios_base::out | ios_base::trunc);
+		ostream *out = FSFactory::getInstance()->getOStream(path);
 		size_t maxSize = 0;
 		for(int i = ucNone + 1; i != ucCount; ++i) {
 			size_t size = strlen(getCommandName((UserCommand)i));
@@ -261,12 +259,13 @@ void Keymap::save(const char *path) {
 		for(int i = ucNone + 1; i != ucCount; ++i) {
 			const char* name = getCommandName((UserCommand)i);
 			size_t size = strlen(name);
-			out << getCommandName((UserCommand)i);
+			*out << getCommandName((UserCommand)i);
 			for(int j = size; j < maxSize; ++j) {
-				out << " ";
+				*out << " ";
 			}
-			out << " = " << entries[i].toString() << endl;
+			*out << " = " << entries[i].toString() << endl;
 		}
+		delete out;
 	} catch (runtime_error &e) {
 		stringstream str;
 		str << "Failed to save key map file: " << path << endl << e.what();

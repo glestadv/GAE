@@ -16,6 +16,7 @@
 #include <stdexcept>
 
 #include "util.h"
+#include "FSFactory.hpp"
 
 #include "leak_dumper.h"
 

@@ -20,6 +20,7 @@
 #include "metrics.h"
 #include "components.h"
 #include "keymap.h"
+#include "CmdArgs.h"
 
 using namespace Shared::Platform;
 
@@ -107,7 +108,7 @@ private:
 	const Program &operator =(const Program &);
 	
 public:
-	Program(Config &config, int argc, char** argv);
+	Program(Config &config, CmdArgs &args);
 	~Program();
 	static Program *getInstance()	{return singleton;}
 

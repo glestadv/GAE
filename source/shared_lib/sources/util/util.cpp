@@ -24,6 +24,7 @@
 #include "platform_util.h"
 #include "xml_parser.h"
 #include "zlib.h"
+#include "FSFactory.hpp"
 
 // Hack
 #if defined(WIN32) || defined(WIN64)
@@ -402,6 +403,13 @@ void uudecode(void *dest, size_t *destSize, const char *src) {
 
 //finds all filenames like path and stores them in results
 void findAll(const string &path, vector<string> &results, bool cutExtension){
+	FSFactory *fsfac = FSFactory::getInstance();
+	if(fsfac->physFS){
+		results.clear();
+		vector<string> strings = FSFactory::findAll(path, cutExtension);
+		results.insert(results.begin(), strings.begin(), strings.end());
+	}else{
+	
 	slist<string> l;
 	DirIterator di;
 	char *p = initDirIterator(path, di);
@@ -444,6 +452,8 @@ void findAll(const string &path, vector<string> &results, bool cutExtension){
 	results.clear();
 	for(slist<string>::iterator li = l.begin(); li != l.end(); ++li) {
 		results.push_back(*li);
+	}
+	
 	}
 }
 
@@ -606,12 +616,18 @@ string replaceBy(const string &s, char c1, char c2){
 // ==================== misc ====================
 
 bool fileExists(const string &path){
+	if(FSFactory::getInstance()->physFS){
+		FSFactory::fileExists(path);
+	}else{
+		
 	FILE* file= fopen(path.c_str(), "rb");
 	if(file!=NULL){
 		fclose(file);
 		return true;
 	}
 	return false;
+	
+	}
 }
 
 }}//end namespace

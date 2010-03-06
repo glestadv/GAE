@@ -98,6 +98,15 @@ CHECK_LUA([], [AC_MSG_ERROR([Please install lua 5.1])])
 AM_PATH_CPPUNIT([1.10.2], CPPUNIT="yes")
 AC_SUBST(CPPUNIT)
 
+# Look for PhysicsFS 
+AC_CHECK_HEADER(physfs.h, , AC_MSG_ERROR([PhysicsFS header not found.]))
+AC_CHECK_LIB(physfs,
+		PHYSFS_init,
+		AC_SUBST([PHYSFS_LIBS],
+		[-lphysfs]),
+		AC_MSG_ERROR([PhysicsFS not found.]),
+		[-pthread])
+
 AX_CHECK_GL
 if test "$no_gl" = "yes"; then
     AC_MSG_ERROR([You need to have OpenGL headers and libraries installed])
@@ -116,6 +125,8 @@ AM_CONDITIONAL([ZLIB], [test "x$have_zlib" = "xyes"])
 AM_OPTIONS_WXCONFIG
 AM_PATH_WXCONFIG([2.6.0], [WX_AVAILABLE="yes"], [WX_AVAILABLE="no"], [std,gl], [--unicode=yes])
 AC_SUBST([WX_AVAILABLE])
+
+AC_CONFIG_HEADER([projectConfig.h])
 
 AC_INIT_JAM
 AC_CONFIG_FILES([Jamconfig])

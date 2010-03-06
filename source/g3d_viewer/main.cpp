@@ -4,6 +4,7 @@
 
 #include "graphics_interface.h"
 #include "util.h"
+#include "FSFactory.hpp"
 
 using namespace Shared::Platform; 
 using namespace Shared::Graphics;
@@ -18,25 +19,81 @@ using namespace std;
 #	define STRCONV(x) x
 #endif
 
-namespace Shared{ namespace G3dViewer{
+namespace Shared { namespace G3dViewer {
+
+TeamColourDialog::TeamColourDialog(Renderer *renderer) 
+		: editIndex(0), renderer(renderer), colourDialog(0) {
+	memset(btnColour, 0, sizeof(void*) * 4);
+	memset(bitmaps, 0, sizeof(void*) * 4);
+
+	for (int i=0; i < 4; ++i) {
+		colours[i] = wxColour();
+	}
+	colours[0].Set(renderer->colours[3*0+0], renderer->colours[3*0+1], renderer->colours[3*0+2], 0xFF);
+	colours[1].Set(renderer->colours[3*1+0], renderer->colours[3*1+1], renderer->colours[3*1+2], 0xFF);
+	colours[2].Set(renderer->colours[3*2+0], renderer->colours[3*2+1], renderer->colours[3*2+2], 0xFF);
+	colours[3].Set(renderer->colours[3*3+0], renderer->colours[3*3+1], renderer->colours[3*3+2], 0xFF);
+
+	Create(0, 0, wxT("Customise Team Colours"));
+	CreateChildren();
+}
+
+TeamColourDialog::~TeamColourDialog() {
+	delete colourDialog;
+}
+
+void TeamColourDialog::CreateChildren() {
+	SetSize(150, 150, 230, 340);
+
+	for (int i=0; i < 4; ++i) {
+		char buf[32];
+		sprintf(buf, "Player %d Colour", (i+1));
+		wxPoint pos(10, 80 * i + 10);
+		wxSize size(160, 40);
+		btnColour[i] = new wxButton(this, MainWindow::miCount + i, STRCONV(buf), pos, size);
+		
+		pos.x += 165;
+		size.x = 40;
+		size.y = 40;
+		bitmaps[i] = new wxStaticBitmap(this, -1, wxNullBitmap, pos, size);
+		bitmaps[i]->SetBackgroundColour(colours[i]);
+	}
+	colourDialog = new wxColourDialog();
+}
+
+void TeamColourDialog::onColourBtn(wxCommandEvent &event) {
+	editIndex = event.GetId() - MainWindow::miCount;
+	if (colourDialog->ShowModal() == wxID_OK) {
+		wxColour colour = colourDialog->GetColourData().GetColour();
+		colours[editIndex] = colour;
+		bitmaps[editIndex]->SetBackgroundColour(colours[editIndex]);
+		bitmaps[editIndex]->Refresh();
+		renderer->resetTeamTexture(editIndex, colour.Red(), colour.Green(), colour.Blue());
+	}
+}
+
+BEGIN_EVENT_TABLE(TeamColourDialog, wxDialog)
+	EVT_BUTTON(MainWindow::miCount + 0, TeamColourDialog::onColourBtn)
+	EVT_BUTTON(MainWindow::miCount + 1, TeamColourDialog::onColourBtn)
+	EVT_BUTTON(MainWindow::miCount + 2, TeamColourDialog::onColourBtn)
+	EVT_BUTTON(MainWindow::miCount + 3, TeamColourDialog::onColourBtn)
+END_EVENT_TABLE()
 
 // ===============================================
 // 	class MainWindow
 // ===============================================
 
-const string MainWindow::versionString= "v1.3.4";
+const string MainWindow::versionString= "v1.3.4+";
 const string MainWindow::winHeader= "G3D viewer " + versionString + " - Built: " + __DATE__;
 
-MainWindow::MainWindow(const string &modelPath): 
-	wxFrame(
-		NULL, -1, STRCONV(winHeader.c_str()),
-		wxPoint(Renderer::windowX, Renderer::windowY), 
-		wxSize(Renderer::windowW, Renderer::windowH))
-{
+MainWindow::MainWindow(const string &modelPath)
+		: wxFrame( NULL, -1, STRCONV(winHeader.c_str()),
+			wxPoint(Renderer::windowX, Renderer::windowY), 
+			wxSize(Renderer::windowW, Renderer::windowH) ) {
 	renderer= Renderer::getInstance();
-	this->modelPath= modelPath;
-	model= NULL;
-	playerColor= Renderer::pcRed;
+	this->modelPath = modelPath;
+	model = NULL;
+	playerColor = 0;
 
 	speed= 0.025f;
 	
@@ -66,14 +123,16 @@ MainWindow::MainWindow(const string &modelPath):
 
 	//custom color
 	menuCustomColor= new wxMenu();
-	menuCustomColor->AppendCheckItem(miColorRed, wxT("Red"));
-	menuCustomColor->AppendCheckItem(miColorBlue, wxT("Blue"));
-	menuCustomColor->AppendCheckItem(miColorYellow, wxT("Yellow"));
-	menuCustomColor->AppendCheckItem(miColorGreen, wxT("Green"));
+	menuCustomColor->AppendCheckItem(miColorOne, wxT("Faction 1"));
+	menuCustomColor->AppendCheckItem(miColorTwo, wxT("Faction 2"));
+	menuCustomColor->AppendCheckItem(miColorThree, wxT("Faction 3"));
+	menuCustomColor->AppendCheckItem(miColorFour, wxT("Faction 4"));
+	menuCustomColor->AppendCheckItem(miColourAll, wxT("Show All"));
+	menuCustomColor->Append(miColourEdit, wxT("Edit Colours"));
 	menu->Append(menuCustomColor, wxT("Custom Color"));
 
 	menuMode->Check(miModeGrid, true);
-	menuCustomColor->Check(miColorRed, true);
+	menuCustomColor->Check(miColorOne, true);
 
 	SetMenuBar(menu);
 
@@ -88,6 +147,8 @@ MainWindow::MainWindow(const string &modelPath):
 
 	CreateStatusBar();
 
+	colourDialog = new TeamColourDialog(renderer);
+
 	timer = new wxTimer(this);
 	timer->Start(40);
 }
@@ -97,6 +158,7 @@ MainWindow::~MainWindow(){
 	delete model;
 	delete timer;
 	delete glCanvas;
+	delete colourDialog;
 }
 
 void MainWindow::init(){
@@ -110,12 +172,33 @@ void MainWindow::init(){
 	}
 }
 
-void MainWindow::onPaint(wxPaintEvent &event){
-	renderer->reset(GetClientSize().x, GetClientSize().y, playerColor);
-	renderer->transform(rotX, rotY, zoom);
-	renderer->renderGrid();
-	
-	renderer->renderTheModel(model, anim);
+void MainWindow::onPaint(wxPaintEvent &event) {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	if (playerColor == -1) {
+		int w = GetClientSize().x / 2;
+		int h = GetClientSize().y / 2;
+		int x = 0, y = 0;
+		for (++playerColor; playerColor < 4; ++playerColor) {
+			renderer->reset(x, y, w, h, playerColor);
+			renderer->transform(rotX, rotY, zoom);
+			renderer->renderGrid();
+			
+			renderer->renderTheModel(model, anim);
+			if (!x) {
+				x = w;
+			} else {
+				y = h;
+				x = 0;
+			}
+		}
+		playerColor = -1;
+	} else {
+		renderer->reset(0, 0, GetClientSize().x, GetClientSize().y, playerColor);
+		renderer->transform(rotX, rotY, zoom);
+		renderer->renderGrid();
+		
+		renderer->renderTheModel(model, anim);
+	}
 	glCanvas->SwapBuffers();
 }
 
@@ -181,44 +264,60 @@ void MainWindow::onMenuSpeedFaster(wxCommandEvent &event){
 	speed*= 1.5f;
 }
 
-void MainWindow::onMenuColorRed(wxCommandEvent &event){
-	playerColor= Renderer::pcRed;
-	menuCustomColor->Check(miColorRed, true);
-	menuCustomColor->Check(miColorBlue, false);
-	menuCustomColor->Check(miColorYellow, false);
-	menuCustomColor->Check(miColorGreen, false);
+void MainWindow::onMenuColorOne(wxCommandEvent &event){
+	playerColor = 0;
+	menuCustomColor->Check(miColorOne, true);
+	menuCustomColor->Check(miColorTwo, false);
+	menuCustomColor->Check(miColorThree, false);
+	menuCustomColor->Check(miColorFour, false);
+	menuCustomColor->Check(miColourAll, false);
 }
 
-void MainWindow::onMenuColorBlue(wxCommandEvent &event){
-	playerColor= Renderer::pcBlue;
-	menuCustomColor->Check(miColorRed, false);
-	menuCustomColor->Check(miColorBlue, true);
-	menuCustomColor->Check(miColorYellow, false);
-	menuCustomColor->Check(miColorGreen, false);
+void MainWindow::onMenuColorTwo(wxCommandEvent &event){
+	playerColor = 1;
+	menuCustomColor->Check(miColorOne, false);
+	menuCustomColor->Check(miColorTwo, true);
+	menuCustomColor->Check(miColorThree, false);
+	menuCustomColor->Check(miColorFour, false);
+	menuCustomColor->Check(miColourAll, false);
 }
 
-void MainWindow::onMenuColorYellow(wxCommandEvent &event){
-	playerColor= Renderer::pcYellow;
-	menuCustomColor->Check(miColorRed, false);
-	menuCustomColor->Check(miColorBlue, false);
-	menuCustomColor->Check(miColorYellow, true);
-	menuCustomColor->Check(miColorGreen, false);
+void MainWindow::onMenuColorThree(wxCommandEvent &event){
+	playerColor = 2;
+	menuCustomColor->Check(miColorOne, false);
+	menuCustomColor->Check(miColorTwo, false);
+	menuCustomColor->Check(miColorThree, true);
+	menuCustomColor->Check(miColorFour, false);
+	menuCustomColor->Check(miColourAll, false);
 }
 
-void MainWindow::onMenuColorGreen(wxCommandEvent &event){
-	playerColor= Renderer::pcGreen;
-	menuCustomColor->Check(miColorRed, false);
-	menuCustomColor->Check(miColorBlue, false);
-	menuCustomColor->Check(miColorYellow, false);
-	menuCustomColor->Check(miColorGreen, true);
+void MainWindow::onMenuColorFour(wxCommandEvent &event){
+	playerColor = 3;
+	menuCustomColor->Check(miColorOne, false);
+	menuCustomColor->Check(miColorTwo, false);
+	menuCustomColor->Check(miColorThree, false);
+	menuCustomColor->Check(miColorFour, true);
+	menuCustomColor->Check(miColourAll, false);
+}
+
+void MainWindow::onMenuColorAll(wxCommandEvent &event){
+	playerColor = -1;
+	menuCustomColor->Check(miColorOne, false);
+	menuCustomColor->Check(miColorTwo, false);
+	menuCustomColor->Check(miColorThree, false);
+	menuCustomColor->Check(miColorFour, false);
+	menuCustomColor->Check(miColourAll, true);
+}
+
+void MainWindow::onMenuColorEdit(wxCommandEvent &event){	
+	colourDialog->Show();
 }
 
 void MainWindow::onTimer(wxTimerEvent &event){
-	wxPaintEvent paintEvent;
-	
-	anim= anim+speed;
-	if(anim>1.0f){
-		anim-= 1.f;
+	wxPaintEvent paintEvent;	
+	anim = anim + speed;
+	if (anim > 1.0f) {
+		anim -= 1.f;
 	}
 	onPaint(paintEvent);
 }	
@@ -248,10 +347,12 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(miSpeedFaster, MainWindow::onMenuSpeedFaster)
 	EVT_MENU(miSpeedSlower, MainWindow::onMenuSpeedSlower)
 
-	EVT_MENU(miColorRed, MainWindow::onMenuColorRed)
-	EVT_MENU(miColorBlue, MainWindow::onMenuColorBlue)
-	EVT_MENU(miColorYellow, MainWindow::onMenuColorYellow)
-	EVT_MENU(miColorGreen, MainWindow::onMenuColorGreen)
+	EVT_MENU(miColorOne, MainWindow::onMenuColorOne)
+	EVT_MENU(miColorTwo, MainWindow::onMenuColorTwo)
+	EVT_MENU(miColorThree, MainWindow::onMenuColorThree)
+	EVT_MENU(miColorFour, MainWindow::onMenuColorFour)
+	EVT_MENU(miColourAll, MainWindow::onMenuColorAll)
+	EVT_MENU(miColourEdit, MainWindow::onMenuColorEdit)
 END_EVENT_TABLE()
 
 // =====================================================
@@ -276,6 +377,8 @@ END_EVENT_TABLE()
 // ===============================================
 
 bool App::OnInit(){
+	FSFactory::getInstance()->usePhysFS(false);
+	
 	string modelPath;
 	if(argc==2){
 		modelPath= wxFNCONV(argv[1]);

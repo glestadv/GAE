@@ -13,6 +13,7 @@
 #define _GLEST_GAME_CLIENTINTERFACE_H_
 
 #include <vector>
+#include <fstream>
 
 #include "network_interface.h"
 #include "game_settings.h"
