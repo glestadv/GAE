@@ -57,7 +57,7 @@ MainWindow::MainWindow()
 	//gl canvas
 	int args[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER };
 	glCanvas = new GlCanvas(this, args);
-	
+
 	//menus
 	menuBar = new wxMenuBar();
 
@@ -171,10 +171,18 @@ MainWindow::MainWindow()
 
 	SetMenuBar(menuBar);
 
-	CreateStatusBar(StatusItems::COUNT);
-	
 	fileName = "New (unsaved) map";
+	int status_widths[StatusItems::COUNT] = {
+		10, // empty
+		-2, // File name
+		-2, // File type
+		-2, // Brush Type
+		-2, // Brush 'Value'
+		-1, // Brush Radius
+	};
+	CreateStatusBar(StatusItems::COUNT);
 	GetStatusBar()->SetStatusWidths(StatusItems::COUNT, status_widths);
+
 	SetStatusText(wxT("File: ") + ToUnicode(fileName), StatusItems::FILE_NAME);
 	SetStatusText(wxT("Type: Glest Map (gbm)"), StatusItems::FILE_TYPE);
 	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
@@ -185,6 +193,7 @@ MainWindow::MainWindow()
 	timer = new wxTimer(this);
 	timer->Start(100);
 #endif
+	glCanvas->SetFocus();
 }
 
 void MainWindow::init(string fname) {
@@ -224,6 +233,9 @@ void MainWindow::setDirty(bool val) {
 }
 
 void MainWindow::setExtension() {
+	if (currentFile.empty()) {
+		return;
+	}
 	string extnsn = ext(currentFile);
 	if (extnsn == "gbm" || extnsn == "mgm") {
 		currentFile = cutLastExt(currentFile);
@@ -250,9 +262,10 @@ void MainWindow::onMouseDown(wxMouseEvent &event) {
 		if (!isDirty()) {
 			setDirty(true);
 		}
+		wxPaintEvent ev;
+		onPaint(ev);
 	}
-	wxPaintEvent ev;
-	onPaint(ev);
+	event.Skip();
 }
 
 void MainWindow::onMouseMove(wxMouseEvent &event) {
@@ -261,6 +274,7 @@ void MainWindow::onMouseMove(wxMouseEvent &event) {
 	int x = event.GetX();
 	int y = event.GetY();
 
+	bool doPaint = true;
 	if (event.LeftIsDown()) {
 		change(x, y);
 	} else if (event.MiddleIsDown()) {
@@ -270,16 +284,20 @@ void MainWindow::onMouseMove(wxMouseEvent &event) {
 		}
 	} else if (event.RightIsDown()) {
 		program->setOfset(x - lastX, y - lastY);
+	} else {
+		doPaint = false;
 	}
 	lastX = x;
 	lastY = y;
-	wxPaintEvent ev;
-	onPaint(ev);
+	if (doPaint) {
+		wxPaintEvent ev;
+		onPaint(ev);
+	}
+	event.Skip();
 }
 
 void MainWindow::onPaint(wxPaintEvent &event) {
 	program->renderMap(GetClientSize().x, GetClientSize().y);
-
 	glCanvas->SwapBuffers();
 }
 
@@ -312,13 +330,11 @@ void MainWindow::onMenuFileSaveAs(wxCommandEvent &event) {
 	fileDialog.SetWildcard(wxT("Glest Map (*.gbm)|*.gbm|Mega Map (*.mgm)|*.mgm"));
 	if (fileDialog.ShowModal() == wxID_OK) {
 		currentFile = fileDialog.GetPath().ToAscii();
+		setExtension();
 		program->saveMap(currentFile);
-		setDirty(false);
 		fileName = cutLastExt(basename(currentFile));
+		setDirty(false);
 	}
-	SetStatusText(wxT("File: ") + ToUnicode(fileName));
-	setExtension();
-	currentFile = fileName;
 	SetTitle(ToUnicode(winHeader + "; " + currentFile));
 }
 
@@ -513,8 +529,10 @@ void MainWindow::onMenuBrushSurface(wxCommandEvent &e) {
 	surface = e.GetId() - miBrushSurface;
 	enabledGroup = ctSurface;
 	currentBrush = btSurface;
-	SetStatusText(wxT("Brush: Surface"), StatusItems::BRUSH_TYPE);	
-	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(surface)) + wxT(" ") + ToUnicode(surface_descs[surface - 1]), StatusItems::BRUSH_VALUE);
+	SetStatusText(wxT("Brush: Surface"), StatusItems::BRUSH_TYPE);
+	SetStatusText(
+		wxT("Value: ") + ToUnicode(intToStr(surface)) + wxT(" ")
+		+ ToUnicode(surface_descs[surface - 1]), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
@@ -524,7 +542,9 @@ void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
 	enabledGroup = ctObject;
 	currentBrush = btObject;
 	SetStatusText(wxT("Brush: Object"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(object)) + wxT(" ") + ToUnicode(object_descs[object]), StatusItems::BRUSH_VALUE);
+	SetStatusText(
+		wxT("Value: ") + ToUnicode(intToStr(object)) + wxT(" ")
+		+ ToUnicode(object_descs[object]), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
@@ -534,7 +554,9 @@ void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
 	enabledGroup = ctResource;
 	currentBrush = btResource;
 	SetStatusText(wxT("Brush: Resource"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(resource)) + wxT(" ") + ToUnicode(resource_descs[resource]), StatusItems::BRUSH_VALUE);
+	SetStatusText(
+		wxT("Value: ") + ToUnicode(intToStr(resource)) + wxT(" ")
+		+ ToUnicode(resource_descs[resource]), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushStartLocation(wxCommandEvent &e) {
@@ -604,85 +626,97 @@ void MainWindow::uncheckRadius() {
 	}
 }
 
-// void MainWindow::onKeyDown(wxKeyEvent &e) {
-// 	if (currentBrush == btHeight || currentBrush == btGradient) { // 'height' brush
-// 		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
-// 			height = e.GetKeyCode() - 48; // '0'-'5' == 0-5
-// 			if (e.GetModifiers() == wxMOD_CONTROL) { // Ctrl means negative
-// 				height  = -height ;
-// 			}
-// 			int id_offset = heightCount / 2 + height + 1;
-// 			if (currentBrush == btHeight) {
-// 				onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + id_offset));
-// 			} else {
-// 				onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + id_offset));
-// 			}
-// 			return;
-// 		}
-// 	}
-// 	if (currentBrush == btSurface) { // surface texture
-// 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '5') {
-// 			surface = e.GetKeyCode() - 48; // '1'-'5' == 1-5
-// 			onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
-// 			return;
-// 		}
-// 	}
-// 	if (currentBrush == btObject) {
-// 		bool valid = true;
-// 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '9') {
-// 			object = e.GetKeyCode() - 48; // '1'-'9' == 1-9
-// 		} else if (e.GetKeyCode() == '0') { // '0' == 10
-// 			object = 10;
-// 		} else if (e.GetKeyCode() == '-') {	// '-' == 0
-// 			object = 0;
-// 		} else {
-// 			valid = false;
-// 		}
-// 		if (valid) {
-// 			onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
-// 			return;
-// 		}
-// 	}
-// 	if (currentBrush == btResource) {
-// 		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
-// 			resource = e.GetKeyCode() - 48;	// '0'-'5' == 0-5
-// 			onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
-// 			return;
-// 		}
-// 	}
-// 	if (currentBrush == btStartLocation) {
-// 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '8') {
-// 			startLocation = e.GetKeyCode() - 48; // '1'-'8' == 0-7
-// 			onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation));
-// 			return;
-// 		}
-// 	}
-// 	if (e.GetKeyCode() == 'H') {
-// 		onMenuBrushHeight(wxCommandEvent(wxEVT_NULL, miBrushHeight + height + heightCount / 2 + 1));
-// 	} else if (e.GetKeyCode() == 'G') {
-// 		onMenuBrushGradient(wxCommandEvent(wxEVT_NULL, miBrushGradient + height + heightCount / 2 + 1));
-// 	} else if (e.GetKeyCode() == 'S') {
-// 		onMenuBrushSurface(wxCommandEvent(wxEVT_NULL, miBrushSurface + surface));
-// 	} else if (e.GetKeyCode() == 'O') {
-// 		onMenuBrushObject(wxCommandEvent(wxEVT_NULL, miBrushObject + object + 1));
-// 	} else if (e.GetKeyCode() == 'R') {
-// 		onMenuBrushResource(wxCommandEvent(wxEVT_NULL, miBrushResource + resource + 1));
-// 	} else if (e.GetKeyCode() == 'L') {
-// 		onMenuBrushStartLocation(wxCommandEvent(wxEVT_NULL, miBrushStartLocation + startLocation + 1));
-// 	} else {
-// 		e.Skip();
-// 	}
-// }
+ void MainWindow::onKeyDown(wxKeyEvent &e) {
+ 	if (currentBrush == btHeight || currentBrush == btGradient) { // 'height' brush
+ 		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
+ 			height = e.GetKeyCode() - 48; // '0'-'5' == 0-5
+ 			if (e.GetModifiers() == wxMOD_CONTROL) { // Ctrl means negative
+ 				height  = -height ;
+ 			}
+ 			int id_offset = heightCount / 2 + height + 1;
+ 			if (currentBrush == btHeight) {
+ 				wxCommandEvent evt(wxEVT_NULL, miBrushHeight + id_offset);
+ 				onMenuBrushHeight(evt);
+ 			} else {
+ 				wxCommandEvent evt(wxEVT_NULL, miBrushGradient + id_offset);
+ 				onMenuBrushGradient(evt);
+ 			}
+ 			return;
+ 		}
+ 	}
+ 	if (currentBrush == btSurface) { // surface texture
+ 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '5') {
+ 			surface = e.GetKeyCode() - 48; // '1'-'5' == 1-5
+ 			wxCommandEvent evt(wxEVT_NULL, miBrushSurface + surface);
+ 			onMenuBrushSurface(evt);
+ 			return;
+ 		}
+ 	}
+ 	if (currentBrush == btObject) {
+ 		bool valid = true;
+ 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '9') {
+ 			object = e.GetKeyCode() - 48; // '1'-'9' == 1-9
+ 		} else if (e.GetKeyCode() == '0') { // '0' == 10
+ 			object = 10;
+ 		} else if (e.GetKeyCode() == '-') {	// '-' == 0
+ 			object = 0;
+ 		} else {
+ 			valid = false;
+ 		}
+ 		if (valid) {
+ 			wxCommandEvent evt(wxEVT_NULL, miBrushObject + object + 1);
+ 			onMenuBrushObject(evt);
+ 			return;
+ 		}
+ 	}
+ 	if (currentBrush == btResource) {
+ 		if (e.GetKeyCode() >= '0' && e.GetKeyCode() <= '5') {
+ 			resource = e.GetKeyCode() - 48;	// '0'-'5' == 0-5
+ 			wxCommandEvent evt(wxEVT_NULL, miBrushResource + resource + 1);
+ 			onMenuBrushResource(evt);
+ 			return;
+ 		}
+ 	}
+ 	if (currentBrush == btStartLocation) {
+ 		if (e.GetKeyCode() >= '1' && e.GetKeyCode() <= '8') {
+ 			startLocation = e.GetKeyCode() - 48; // '1'-'8' == 0-7
+ 			wxCommandEvent evt(wxEVT_NULL, miBrushStartLocation + startLocation);
+ 			onMenuBrushStartLocation(evt);
+ 			return;
+ 		}
+ 	}
+ 	if (e.GetKeyCode() == 'H') {
+ 		wxCommandEvent evt(wxEVT_NULL, miBrushHeight + height + heightCount / 2 + 1);
+ 		onMenuBrushHeight(evt);
+ 	} else if (e.GetKeyCode() == 'G') {
+ 		wxCommandEvent evt(wxEVT_NULL, miBrushGradient + height + heightCount / 2 + 1);
+ 		onMenuBrushGradient(evt);
+ 	} else if (e.GetKeyCode() == 'S') {
+		wxCommandEvent evt(wxEVT_NULL, miBrushSurface + surface);
+		onMenuBrushSurface(evt);
+ 	} else if (e.GetKeyCode() == 'O') {
+ 		wxCommandEvent evt(wxEVT_NULL, miBrushObject + object + 1);
+ 		onMenuBrushObject(evt);
+ 	} else if (e.GetKeyCode() == 'R') {
+ 		wxCommandEvent evt(wxEVT_NULL, miBrushResource + resource + 1);
+ 		onMenuBrushResource(evt);
+ 	} else if (e.GetKeyCode() == 'L') {
+ 		wxCommandEvent evt(wxEVT_NULL, miBrushStartLocation + startLocation + 1);
+ 		onMenuBrushStartLocation(evt);
+ 	} else {
+ 		e.Skip();
+	}
+}
 
 BEGIN_EVENT_TABLE(MainWindow, wxFrame)
-	
+
 	EVT_TIMER(-1, MainWindow::onTimer)
-	
+
 	EVT_CLOSE(MainWindow::onClose)
 
-	EVT_LEFT_DOWN(MainWindow::onMouseDown)
-	EVT_MOTION(MainWindow::onMouseMove)
-
+	// these are 'handled' by GlCanvas and funneled to these handlers
+	//EVT_LEFT_DOWN(MainWindow::onMouseDown)
+	//EVT_MOTION(MainWindow::onMouseMove)
 	//EVT_KEY_DOWN(MainWindow::onKeyDown)
 
 	EVT_MENU(wxID_OPEN, MainWindow::onMenuFileLoad)
@@ -733,12 +767,12 @@ void GlCanvas::onMouseMove(wxMouseEvent &event) {
 	mainWindow->onMouseMove(event);
 }
 
-// void GlCanvas::onKeyDown(wxKeyEvent &event) {
-// 	mainWindow->onKeyDown(event);
-// }
+ void GlCanvas::onKeyDown(wxKeyEvent &event) {
+ 	mainWindow->onKeyDown(event);
+ }
 
 BEGIN_EVENT_TABLE(GlCanvas, wxGLCanvas)
-	//EVT_KEY_DOWN(GlCanvas::onKeyDown)
+	EVT_KEY_DOWN(GlCanvas::onKeyDown)
 
 	EVT_LEFT_DOWN(GlCanvas::onMouseDown)
 	EVT_MOTION(GlCanvas::onMouseMove)

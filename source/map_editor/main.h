@@ -48,24 +48,15 @@ WRAPPED_ENUM( StatusItems,
 	BRUSH_RADIUS
 )
 
-int status_widths[StatusItems::COUNT] = {
-	-1,
-	-2,
-	-2,
-	-1,
-	-1,
-	-1,
-};
-
 const char *object_descs[] = {
 	"None (Erase)",
 	"Tree",
-	"DeadTree",
+	"Dead Tree",
 	"Stone",
 	"Bush",
 	"Water Object",
-	"BigTree/DeadTree",
-	"Hanged/Impaled",
+	"Big/Dead Tree",
+	"Trophy Corpse",
 	"Statues",
 	"Big Rock",
 	"Invisible Blocking"
