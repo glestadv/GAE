@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -168,10 +168,10 @@ void Renderer::renderMap(Map *map, int x, int y, int clientW, int clientH, int c
 	glLineWidth(3);
 	for (int i = 0; i < map->getMaxFactions(); i++) {
 		switch (i) {
-			case 0: glColor3f(1.f, 1.f, 0.f); break;
-			case 1: glColor3f(0.5f, 0.5f, 0.5f); break;
-			case 2: glColor3f(1.f, 0.f, 0.f); break;
-			case 3: glColor3f(0.f, 0.f, 1.f); break;
+			case 0: glColor3f(1.f, 0.f, 0.f); break;
+			case 1: glColor3f(0.f, 0.f, 1.f); break;
+			case 2: glColor3f(0.f, 1.f, 0.f); break;
+			case 3: glColor3f(1.f, 1.f, 0.f); break;
 			case 4: glColor3f(1.f, 1.f, 1.f); break;
 			case 5: glColor3f(0.f, 1.f, 0.8f); break;
 			case 6: glColor3f(1.f, 0.8f, 0.f); break;

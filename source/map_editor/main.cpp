@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -120,7 +120,7 @@ MainWindow::MainWindow()
 	menuBrushSurface->AppendCheckItem(miBrushSurface + 2, wxT("&2 - Secondary Grass"));
 	menuBrushSurface->AppendCheckItem(miBrushSurface + 3, wxT("&3 - Road"));
 	menuBrushSurface->AppendCheckItem(miBrushSurface + 4, wxT("&4 - Stone"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, wxT("&5 - Custom"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, wxT("&5 - Ground"));
 	menuBrush->Append(miBrushSurface, wxT("&Surface"), menuBrushSurface);
 
 	//objects
@@ -133,9 +133,9 @@ MainWindow::MainWindow()
 	menuBrushObject->AppendCheckItem(miBrushObject+6, wxT("&5 - Water Object/Reed/Papyrus (walkable)"));
 	menuBrushObject->AppendCheckItem(miBrushObject+7, wxT("&6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
 	menuBrushObject->AppendCheckItem(miBrushObject+8, wxT("&7 - C2 Hanged/Impaled (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+9, wxT("&8 - C3, Statues (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+10, wxT("&9 - Big Rock (Mountain) (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+11, wxT("10 &- Invisible Blocking Object (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+9, wxT("&8 - C3 Statues (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+10, wxT("&9 - C4 Big Rock (Mountain) (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+11, wxT("10 &- C5 Invisible Blocking Object (unwalkable)"));
 	menuBrush->Append(miBrushObject, wxT("&Object"), menuBrushObject);
 
 	//resources
