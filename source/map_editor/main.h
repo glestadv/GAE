@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -43,6 +43,7 @@ WRAPPED_ENUM( StatusItems,
 	NULL_ENTRY,
 	FILE_NAME,
 	FILE_TYPE,
+	CURR_OBJECT,
 	BRUSH_TYPE,
 	BRUSH_VALUE,
 	BRUSH_RADIUS
@@ -68,7 +69,7 @@ const char *resource_descs[] = {
 
 
 const char *surface_descs[] = {
-	"Grass", "Alt. Grass", "Road", "Stone", "Custom"
+	"Grass", "Alt. Grass", "Road", "Stone", "Ground"
 };
 
 // =====================================================
@@ -153,6 +154,9 @@ private:
 	int object;
 	int resource;
 	int startLocation;
+	int resourceUnderMouse;
+	int objectUnderMouse;
+	
 	ChangeType enabledGroup;
 
 	string fileName;

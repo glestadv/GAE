@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -153,6 +153,28 @@ Program::Program(int w, int h) {
 
 Program::~Program() {
 	delete map;
+}
+
+int Program::getObject(int x, int y) {
+	int i=(x - ofsetX) / cellSize;
+	int j= (y + ofsetY) / cellSize;
+	if (map->inside(i, j)) {
+		map->getObject(i,j);
+	}
+	else{
+		return 0;
+	}
+}
+
+int Program::getResource(int x, int y) {
+	int i=(x - ofsetX) / cellSize;
+	int j= (y + ofsetY) / cellSize;
+	if (map->inside(i, j)) {
+		map->getResource(i,j);
+	}
+	else{
+		return 0;
+	}
 }
 
 void Program::glestChangeMapHeight(int x, int y, int Height, int radius) {
