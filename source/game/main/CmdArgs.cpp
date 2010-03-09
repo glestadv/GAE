@@ -37,7 +37,7 @@ bool CmdArgs::parse(int argc, char **argv){
 				<< "  -server           startup and immediately host a game\n"
 				<< "  -client IP        startup and immediately connect to server IP\n"
 				<< "  -configdir path   set location of configs and logs to path\n"
-				<< "  -datadir path     set location \n";
+				<< "  -datadir path     set location of data\n";
 			return true;
 		}else{
 			cout << "unknown argument: " << argv[i] << endl;

@@ -247,7 +247,6 @@ void Keymap::load(const char *path) {
 
 void Keymap::save(const char *path) {
 	try {
-		//ofstream out((configDir + path).c_str(), ios_base::out | ios_base::trunc);
 		ostream *out = FSFactory::getInstance()->getOStream(path);
 		size_t maxSize = 0;
 		for(int i = ucNone + 1; i != ucCount; ++i) {

@@ -137,6 +137,8 @@ if(WIN32)
 else(WIN32)
 	# for linux, default: tarball, to get deb-package run 'cpack -G DEB'
 	# TODO: try to add some general dependencies for deb and rpm
+	set(CPACK_RPM_PACKAGE_REQUIRES "zlib >= 1.2, physfs >= 2.0, libogg >= 1.1, libvorbis >= 1.2, lua >= 5.1, SDL >= 1.2")
+
 	set(CPACK_GENERATOR "TBZ2")
 	set(CPACK_STRIP_FILES "TRUE")
 endif(WIN32)

@@ -32,10 +32,6 @@ using namespace Shared::Platform;
 using namespace Shared::Util;
 
 
-string configDir = DEFAULT_CONFIG_DIR;
-string dataDir = DEFAULT_DATA_DIR;
-
-
 namespace Glest{ namespace Game{
 
 // =====================================================
@@ -98,6 +94,8 @@ public:
 // =====================================================
 
 int glestMain(int argc, char** argv) {
+	string configDir = DEFAULT_CONFIG_DIR;
+	string dataDir = DEFAULT_DATA_DIR;
 	CmdArgs args;
 	if(args.parse(argc, argv)){
 		// quick exit
@@ -125,7 +123,7 @@ int glestMain(int argc, char** argv) {
 	mkdir(configDir+"/addons/", true);
 	
 	FSFactory *fsfac = FSFactory::getInstance();
-	fsfac->initPhysFS(argv[0], configDir.c_str());
+	fsfac->initPhysFS(argv[0], configDir.c_str(), dataDir.c_str());
 	fsfac->usePhysFS(true);
 
 	Config &config = Config::getInstance();
