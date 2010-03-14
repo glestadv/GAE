@@ -47,7 +47,13 @@ public:
 			addByte(*byte);
 		}
 	}
-	void addString(const string &value);
+
+	template <>
+	void add<string>(string value) {
+		for(int i=0; i < value.size(); ++i) {
+			addByte(value[i]);
+		}
+	}
 };
 
 }}//end namespace

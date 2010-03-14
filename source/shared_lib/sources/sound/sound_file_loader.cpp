@@ -19,7 +19,6 @@
 #include "leak_dumper.h"
 
 using namespace Shared::Platform;
-using namespace std;
 
 namespace Shared{ namespace Sound{
 

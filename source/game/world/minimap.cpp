@@ -45,8 +45,8 @@ Minimap::Minimap(bool FoW){
 }
 
 void Minimap::init(int w, int h, const World *world){
-	int scaledW= w/Map::cellScale;
-	int scaledH= h/Map::cellScale;
+	int scaledW = w / GameConstants::cellScale;
+	int scaledH = h / GameConstants::cellScale;
 
 	Renderer &renderer= Renderer::getInstance();
 

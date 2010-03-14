@@ -17,17 +17,16 @@
 
 #include "types.h"
 #include "vec.h"
-#include "unit.h"
 
 using std::string;
-using Shared::Platform::int8;
-using Shared::Platform::int16;
-using Shared::Platform::int32;
 using Shared::Math::Vec2i;
+using namespace Shared::Platform;
 
 namespace Glest { namespace Game {
 
+class Unit;
 class Command;
+class ProjectileParticleSystem;
 
 // =====================================================
 //	class NetworkException
@@ -111,32 +110,78 @@ enum NetworkCommandType{
 };
 
 #pragma pack(push, 2)
+	class NetworkCommand {
+	private:
+		int16 networkCommandType;
+		int16 unitId;
+		int16 commandTypeId;
+		int16 positionX;
+		int16 positionY;
+		int16 unitTypeId;
+		int16 targetId;
 
-class NetworkCommand{
-private:
-	int16 networkCommandType;
-	int16 unitId;
-	int16 commandTypeId;
-	int16 positionX;
-	int16 positionY;
-	int16 unitTypeId;
-	int16 targetId;
+	public:
+		NetworkCommand(){};
+		NetworkCommand(Command *command);
+		NetworkCommand(NetworkCommandType type, const Unit *unit, const Vec2i &pos);
+		NetworkCommand(int networkCommandType, int unitId, int commandTypeId= -1, const Vec2i &pos= Vec2i(0), int unitTypeId= -1, int targetId= -1);
 
-public:
-	NetworkCommand(){};
-	NetworkCommand(Command *command);
-	NetworkCommand(NetworkCommandType type, const Unit *unit, const Vec2i &pos);
-	NetworkCommand(int networkCommandType, int unitId, int commandTypeId= -1, const Vec2i &pos= Vec2i(0), int unitTypeId= -1, int targetId= -1);
+		Command *toCommand() const;
+		NetworkCommandType getNetworkCommandType() const	{return static_cast<NetworkCommandType>(networkCommandType);}
+		int getUnitId() const								{return unitId;}
+		int getCommandTypeId() const						{return commandTypeId;}
+		Vec2i getPosition() const							{return Vec2i(positionX, positionY);}
+		int getUnitTypeId() const							{return unitTypeId;}
+		int getTargetId() const								{return targetId;}
+	};
+#pragma pack(pop)
 
-	Command *toCommand() const;
-	NetworkCommandType getNetworkCommandType() const	{return static_cast<NetworkCommandType>(networkCommandType);}
-	int getUnitId() const								{return unitId;}
-	int getCommandTypeId() const						{return commandTypeId;}
-	Vec2i getPosition() const							{return Vec2i(positionX, positionY);}
-	int getUnitTypeId() const							{return unitTypeId;}
-	int getTargetId() const								{return targetId;}
-};
+WRAPPED_ENUM( NetUpdateType,
+	BASIC_SKILL,
+	MOVE_SKILL,
+	TARGET_SKILL,
+	PROJECTILE
+)
 
+#pragma pack(push, 1)
+	struct BasicSkillUpdate {
+		static inline NetUpdateType type_id() { return NetUpdateType::BASIC_SKILL; }
+		uint8 type		: 2; // == 0
+		uint8 skillId	: 6;
+		BasicSkillUpdate(const Unit *unit);
+		BasicSkillUpdate(const char *ptr) { *this = *((BasicSkillUpdate*)ptr); }
+	}; // 1 byte
+
+	struct MoveSkillUpdate {
+		static inline NetUpdateType type_id() { return NetUpdateType::MOVE_SKILL; }
+		uint8 type			: 2; // == 1
+		uint8 skillId		: 6;
+		uint8 end_offset	: 8;
+		int8  offsetX		: 2;
+		int8  offsetY		: 2;
+		int8  padding		: 4;
+		MoveSkillUpdate(const Unit *unit);
+		MoveSkillUpdate(const char *ptr) { *this = *((MoveSkillUpdate*)ptr); }
+		Vec2i posOffset() const { return Vec2i(offsetX, offsetY); }
+	}; // 3 bytes
+
+	struct TargetSkillUpdate {
+		static inline NetUpdateType type_id() { return NetUpdateType::TARGET_SKILL; }
+		uint8  type			:  2; // == 2
+		uint8  skillId		:  6;
+		uint32 targetId		: 24;
+		TargetSkillUpdate(const Unit *unit);
+		TargetSkillUpdate(const char *ptr) { *this = *((TargetSkillUpdate*)ptr); }
+	}; // 4 bytes
+
+	struct ProjectileUpdate {
+		static inline NetUpdateType type_id() { return NetUpdateType::PROJECTILE; }
+		uint8  type			:  2; // == 3
+		uint8  skillId		:  6;
+		uint8 end_offset	:  8;
+		ProjectileUpdate(const Unit *unit, ProjectileParticleSystem *pps);
+		ProjectileUpdate(const char *ptr) { *this = *((ProjectileUpdate*)ptr); }
+	}; // 2 bytes
 #pragma pack(pop)
 
 }}//end namespace

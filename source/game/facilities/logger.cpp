@@ -23,7 +23,6 @@
 #include "world.h"
 #include "network_util.h"
 
-using namespace std;
 using namespace Shared::Graphics;
 
 namespace Glest{ namespace Game{

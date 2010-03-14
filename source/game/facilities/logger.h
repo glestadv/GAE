@@ -19,7 +19,8 @@
 
 #include "timer.h"
 
-using namespace std;
+using std::deque;
+using std::string;
 
 namespace Glest { namespace Game {
 

@@ -31,8 +31,12 @@
 
 #if _GAE_DEBUG_EDITION_
 #	define IF_DEBUG_EDITION(x) x
+#	define IF_NOT_DEBUG_EDITION(x)
+#	define WORLD_FPS (theConfig.getGsWorldUpdateFps())
 #else
 #	define IF_DEBUG_EDITION(x)
+#	define IF_NOT_DEBUG_EDITION(x) x
+#	define WORLD_FPS (GameConstants::updateFps)
 #endif
 
 #ifndef NDEBUG
@@ -54,6 +58,33 @@ using Shared::Util::EnumNames;
 	  */
 
 namespace Glest { namespace Game {
+
+// =====================================================
+//	namespace GameConstants
+// =====================================================
+
+namespace GameConstants {
+	/** skill speed divider @see somewhere else */
+	const float speedDivider= 100.f;
+	/** number of frames until a corpse is removed */
+	const int maxDeadCount= 1000;	//time in until the corpse disapears
+	/** time of selection circle effect 'flashes' */
+	const float highlightTime= 0.5f;
+	/** the invalid unit ID */
+	const int invalidId= -1;
+
+	const int maxPlayers= 4;
+	const int serverPort= 61357;
+	IF_NOT_DEBUG_EDITION(
+		const int updateFps= 40;
+	)
+	const int cameraFps= 100;
+	const int networkFramePeriod= 10;
+	const int networkExtraLatency= 200;
+
+	const int cellScale = 2;
+	const int mapScale = 2;
+}
 
 namespace Search {
 	/** result set for path finding 
@@ -108,7 +139,8 @@ REGULAR_ENUM( NetworkMessageType,
 				LAUNCH,
 				COMMAND_LIST,
 				TEXT,
-				LOG_UNIT,
+				KEY_FRAME,
+				SKILL_CYCLE_TABLE,
 				QUIT
 			)
 
@@ -352,11 +384,10 @@ STRINGY_ENUM( SkillClass,
 					PRODUCE,
 					UPGRADE,
 					MORPH,
-					DIE,
+					DIE,		// == 10, == 11 skill classes
 					CAST_SPELL,
 					FALL_DOWN,
-					GET_UP,
-					WAIT_FOR_SERVER
+					GET_UP		// == 13, == 14 skill classes
 			);
 
 /** weather set
@@ -387,20 +418,6 @@ REGULAR_ENUM( CommandArchetype,
 					SET_MEETING_POINT
 				//	SET_AUTO_REPAIR
 			);
-
-// =====================================================
-//	class GameConstants
-// =====================================================
-
-class GameConstants{
-public:
-	static const int maxPlayers= 4;
-	static const int serverPort= 61357;
-//	static const int updateFps= 40;
-	static const int cameraFps= 100;
-	static const int networkFramePeriod= 10;
-	static const int networkExtraLatency= 200;
-};
 
 }}//end namespace
 

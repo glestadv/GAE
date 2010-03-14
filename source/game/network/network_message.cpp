@@ -22,9 +22,11 @@
 #include "leak_dumper.h"
 #include "logger.h"
 
+#include "tech_tree.h"
+#include "unit.h"
+
 using namespace Shared::Platform;
 using namespace Shared::Util;
-using namespace std;
 
 namespace Glest { namespace Game {
 
@@ -278,8 +280,228 @@ bool NetworkMessageQuit::receive(Socket* socket){
 }
 
 void NetworkMessageQuit::send(Socket* socket) const{
-	assert(data.messageType==NetworkMessageType::QUIT);
+	assert(data.messageType == NetworkMessageType::QUIT);
 	NetworkMessage::send(socket, &data, sizeof(data));
 }
 
+// =====================================================
+//	class SkillCycleTable
+// =====================================================
+
+void SkillCycleTable::create(const TechTree *techTree) {
+	const FactionType *ft;
+	const UnitType *ut;
+	const SkillType *st;
+	for (int i=0; i < techTree->getFactionTypeCount(); ++i) {
+		ft = techTree->getFactionType(i);
+		for (int j=0; j < ft->getUnitTypeCount(); ++j) {
+			ut = ft->getUnitType(j);
+			for (int k=0; k < ut->getSkillTypeCount(); ++k) {
+				st = ut->getSkillType(k);
+				SkillIdTriple id(ft->getId(), ut->getId(), st->getId());
+				cycleTable[id] = st->calculateCycleTime();
+			}
+		}
+	}
+}
+
+struct SkillCycleTableMsgHeader {
+	int32  type		:  8;
+	uint32 dataSize : 24;
+};
+
+void SkillCycleTable::send(Socket *socket) const {
+	size_t numEntries = cycleTable.size();
+	size_t dataSize = numEntries * (sizeof(SkillIdTriple) + sizeof(CycleInfo));
+	size_t totalSize = sizeof(SkillCycleTableMsgHeader) + dataSize;
+	char* buffer = new char[totalSize];
+	char *ptr = buffer;
+
+	assert(dataSize < 16777216);
+	assert( (1<<24) == 16777216);
+	SkillCycleTableMsgHeader* hdr = (SkillCycleTableMsgHeader*)buffer;
+	hdr->type = NetworkMessageType::SKILL_CYCLE_TABLE;
+	hdr->dataSize = dataSize;
+	ptr += sizeof(SkillCycleTableMsgHeader);
+
+	foreach_const (CycleMap, it, cycleTable) {
+		memcpy(ptr, &it->first, sizeof(SkillIdTriple));
+		ptr += sizeof(SkillIdTriple);
+		memcpy(ptr, &it->second, sizeof(CycleInfo));
+		ptr += sizeof(CycleInfo);
+	}
+	assert(ptr == buffer + totalSize);
+	try {
+		cout << "sending SkillCycleTable " << totalSize << " bytes.\n";
+		socket->send(buffer, totalSize);
+	} catch (...) {
+		delete [] buffer;
+		throw;
+	}
+	delete [] buffer;
+}
+
+struct SkillIdCycleInfoPair {
+	SkillIdTriple id;
+	CycleInfo info;
+};
+
+bool SkillCycleTable::receive(Socket *socket) {
+	SkillCycleTableMsgHeader hdr;
+	const size_t &hdrSize = sizeof(SkillCycleTableMsgHeader);
+	if (!socket->peek(&hdr, hdrSize)) {
+		return false;
+	}
+	size_t totalSize = hdrSize + hdr.dataSize;
+	char *buffer = new char[totalSize];
+	try {
+		if (socket->receive(buffer, totalSize) == totalSize) {
+			cout << "received SkillCycleTable " << totalSize << " bytes.\n";
+			SkillIdCycleInfoPair *data = (SkillIdCycleInfoPair*)(buffer + hdrSize);
+			const size_t items = hdr.dataSize / sizeof(SkillIdCycleInfoPair);
+			assert(hdr.dataSize % sizeof(SkillIdCycleInfoPair) == 0);
+			for (size_t i=0; i < items; ++i) {
+				cycleTable.insert(std::make_pair(data[i].id, data[i].info));
+			}
+			delete [] buffer;
+			return true;
+		} else {
+			delete [] buffer;
+			return false;
+		}
+	} catch(...) {
+		delete [] buffer;
+		throw;
+	}
+}
+
+const CycleInfo& SkillCycleTable::lookUp(const Unit *unit) {
+	SkillIdTriple id(
+		unit->getFaction()->getType()->getId(),
+		unit->getType()->getId(),
+		unit->getCurrSkill()->getId()
+	);
+	return cycleTable[id];
+}
+
+// =====================================================
+//	class KeyFrame
+// =====================================================
+
+struct KeyFrameMsgHeader {
+	int8	type;
+	uint8	cmdCount;
+	uint16	checksumCount;
+	//uint16 updateCount;
+	//uint16 updateSize;
+	int32 frame;
+
+};
+
+bool KeyFrame::receive(Socket* socket) {
+	KeyFrameMsgHeader  header;
+	if (socket->peek(&header, sizeof(KeyFrameMsgHeader ))) {
+		assert(header.type == NetworkMessageType::KEY_FRAME);
+		this->frame = header.frame;
+		this->checksumCount = header.checksumCount;
+		//this->updateCount = header.updateCount;
+		//this->updateSize = header.updateSize;
+		this->cmdCount = header.cmdCount;
+		size_t headerSize = sizeof(KeyFrameMsgHeader );
+		size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
+		size_t totalSize = headerSize + checksumCount * sizeof(int32) + commandsSize;
+		if (socket->getDataToRead() >= totalSize) {
+			socket->receive(&header, headerSize);
+			if (checksumCount) {
+				socket->receive(checksums, checksumCount * sizeof(int32));
+			}
+//			if (updateSize) {
+//				socket->receive(updateBuffer, updateSize);
+//			}
+			if (commandsSize) {
+				socket->receive(commands, commandsSize);
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+	return false;
+}
+
+void KeyFrame::send(Socket* socket) const {
+	KeyFrameMsgHeader header;
+	header.type = NetworkMessageType::KEY_FRAME;
+	header.frame = this->frame;
+	header.cmdCount = this->cmdCount;
+	header.checksumCount = this->checksumCount;
+/*
+	header.updateCount = this->updateCount;
+	header.updateSize = this->updateSize;
+*/
+	size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
+	size_t headerSize = sizeof(KeyFrameMsgHeader);
+
+	socket->send(&header, sizeof(KeyFrameMsgHeader));
+	if (checksumCount) {
+		socket->send(checksums, checksumCount * sizeof(int32));
+	}
+//	if (updateSize) {
+//		socket->send(updateBuffer, updateSize);
+//	}
+	if (commandsSize) {
+		socket->send(commands, commandsSize);
+	}
+}
+/*
+NetUpdateType KeyFrame::getNextType() const {
+	if (readPtr - updateBuffer >= updateSize) {
+		throw runtime_error("sync error, insufficient updates in keyframe");
+	}
+	return NetUpdateType(((BasicSkillUpdate*)readPtr)->type);
+}
+
+void KeyFrame::checkType(NetUpdateType type, size_t size) {
+	if (readPtr - updateBuffer + size > updateSize) {
+		throw runtime_error("sync error, insufficient updates in keyframe");
+	}
+	if (((BasicSkillUpdate*)readPtr)->type != type) {
+		throw runtime_error("sync error, unexpected update type in keyframe");
+	}
+}
+
+template <typename UpdateType>
+void KeyFrame::addUpdate(UpdateType update) {
+	assert(writePtr - updateBuffer + sizeof(UpdateType) < buffer_size);
+	memcpy(writePtr, &update, sizeof(UpdateType));
+	writePtr += sizeof(UpdateType);
+	++updateCount;
+	updateSize += sizeof(UpdateType);
+}
+
+
+void KeyFrame::addSkillUpdate(Unit *unit) {
+	switch (unit->getCurrSkill()->getClass()) {
+		case SkillClass::MOVE:
+			{	MoveSkillUpdate update(unit);
+				addUpdate(update);
+			}
+			break;
+		case SkillClass::ATTACK:
+		case SkillClass::REPAIR:
+			{	TargetSkillUpdate update(unit);
+				addUpdate(update);
+			}
+			break;
+		default:
+			{	BasicSkillUpdate update(unit);
+				addUpdate(update);
+			}
+	}
+}
+
+void KeyFrame::addProjectilUpdate(ProjectileUpdate updt) {
+	addUpdate(updt);
+}
+*/
 }}//end namespace

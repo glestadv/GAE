@@ -21,7 +21,6 @@
 #include "texture.h"
 #include "model_header.h"
 
-using namespace std;
 using namespace Shared::Math;
 
 namespace Shared { namespace Graphics {

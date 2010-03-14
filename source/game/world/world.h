@@ -152,6 +152,7 @@ public:
 	bool loadTech();
 	bool loadMap();
 	bool loadScenario(const string &path);
+	void activateUnits();
 
 	//misc
 	void update();

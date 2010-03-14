@@ -103,7 +103,6 @@
 	#include <GL/glx.h>
 #endif
 
-
 // vorbis
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
@@ -114,6 +113,24 @@
 	#include <dsound.h>
 #endif
 
+using std::exception;
+using std::runtime_error;
+using std::range_error;
+
+using std::fstream;
+using std::ifstream;
+using std::ofstream;
+
+using std::istream;
+using std::ostream;
+using std::ios_base;
+
+using std::cout;
+using std::endl;
+
+using std::vector;
+using std::list;
+using std::pair;
+
 #endif // USE_PCH
 #endif // _SHARED_PCH_H_
-

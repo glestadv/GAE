@@ -22,6 +22,7 @@
 
 #include "leak_dumper.h"
 #include "platform_util.h"
+#include "random.h"
 #include "xml_parser.h"
 #include "zlib.h"
 
@@ -34,7 +35,6 @@
 
 #include "leak_dumper.h"
 
-using namespace std;
 using namespace Shared::Platform;
 using Shared::Xml::XmlNode;
 
@@ -143,6 +143,35 @@ void EnumNamesBase::init() {
 	assert(curName == count);
 }
 
+int Random::rand() {
+	lastNumber = (a * lastNumber + b) % m;
+	return lastNumber;
+}
+
+int Random::randRange(int min, int max) {
+	assert(min <= max);
+	int diff = max - min;
+	assert(diff < m);
+	if (!diff) return min;
+	int res = min + (rand() % diff);
+	assert(res >= min && res <= max);
+	return res;
+}
+
+float Random::randRange(float min, float max) {
+	assert(min <= max);
+	float rand01 = float(Random::rand()) / (m - 1);
+	float res = min + (max - min) * rand01;
+	assert(res >= min && res <= max);
+	return res;
+}
+/*
+fixed Random::randRange(fixed min, fixed max) {
+	fixed res;
+	res.raw() = randRange(min.raw(), max.raw());
+	return res;
+}
+*/
 // =====================================================
 //	class SimpleDataBuffer
 // =====================================================

@@ -25,8 +25,6 @@
 
 using namespace Shared::Platform;
 
-using namespace std;
-
 namespace Shared{ namespace Graphics{
 
 using namespace Util;

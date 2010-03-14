@@ -13,6 +13,7 @@
 #include "network_types.h"
 #include "command.h"
 #include "world.h"
+#include "unit.h"
 
 #include "leak_dumper.h"
 
@@ -85,7 +86,7 @@ Command *NetworkCommand::toCommand() const {
 
 	//get target, the target might be dead due to lag, cope with it
 	Unit* target = NULL;
-	if (targetId != Unit::invalidId) {
+	if (targetId != GameConstants::invalidId) {
 		target = world.findUnitById(targetId);
 	}
 
@@ -104,5 +105,41 @@ Command *NetworkCommand::toCommand() const {
 	return command;
 }
 
+
+BasicSkillUpdate::BasicSkillUpdate(const Unit *unit) {
+	this->type = type_id();
+	this->skillId = unit->getCurrSkill()->getId();
+}
+
+MoveSkillUpdate::MoveSkillUpdate(const Unit *unit) {
+	assert(unit->getCurrSkill()->getClass() == SkillClass::MOVE);
+	this->type = type_id();
+	this->skillId = unit->getCurrSkill()->getId();
+
+	Vec2i offset = unit->getNextPos() - unit->getPos();
+	assert(offset.x >= -1 && offset.x <= 1 && offset.y >= -1 && offset.y <= 1);
+	assert(offset.x || offset.y);
+	this->offsetX = offset.x;
+	this->offsetY = offset.y;
+
+	assert(unit->getNextCommandUpdate() - theWorld.getFrameCount() < 256);
+	this->end_offset = unit->getNextCommandUpdate() - theWorld.getFrameCount();
+}
+
+TargetSkillUpdate::TargetSkillUpdate(const Unit *unit) {
+	this->type = type_id();
+	this->skillId = unit->getCurrSkill()->getId();
+
+	assert(unit->getTarget());
+	this->targetId = unit->getTarget()->getId();
+}
+
+ProjectileUpdate::ProjectileUpdate(const Unit *unit, ProjectileParticleSystem *pps) {
+	this->type = type_id();
+	this->skillId = unit->getCurrSkill()->getId();
+
+	assert(pps->getEndFrame() - theWorld.getFrameCount() < 256);
+	this->end_offset = pps->getEndFrame() - theWorld.getFrameCount();
+}
 
 }}//end namespace

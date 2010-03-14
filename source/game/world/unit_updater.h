@@ -17,7 +17,6 @@
 #include "random.h"
 #include "network_manager.h"
 
-using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
 
 namespace Glest{ namespace Game{
@@ -54,7 +53,7 @@ private:
 	 * can attack.  This is used to decide if the repiarer stays put in to backup a friendly who
 	 * we presume will be fighting, of if the repairer flees.
 	 */
-	static const float repairerToFriendlySearchRadius;
+	static const fixed repairerToFriendlySearchRadius;
 
 private:
 	const GameCamera *gameCamera;
@@ -74,7 +73,8 @@ public:
 	void updateUnit(Unit *unit);
 
 	//update commands
-	void updateUnitCommand(Unit *unit);
+	//void updateUnitCommand(Unit *unit);
+	//void updateUnitCommand(Unit *unit, NetUpdateType type);
 	void updateStop(Unit *unit);
 	void updateMove(Unit *unit);
 	void updateAttack(Unit *unit);
@@ -93,12 +93,12 @@ private:
 	//attack
 	void hit(Unit *attacker);
 	void hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked = NULL);
-	void damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, float distance);
+	void damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, fixed distance);
 	void startAttackSystems(Unit *unit, const AttackSkillType* ast);
 
 	//effects
 	void applyEffects(Unit *source, const EffectTypes &effectTypes, const Vec2i &targetPos, Field targetField, int splashRadius);
-	void applyEffects(Unit *source, const EffectTypes &effectTypes, Unit *dest, float distance);
+	void applyEffects(Unit *source, const EffectTypes &effectTypes, Unit *dest, fixed distance);
 	void appyEffect(Unit *unit, Effect *effect);
 	void updateEmanations(Unit *unit);
 
@@ -161,7 +161,8 @@ private:
 //	class ParticleDamager
 // =====================================================
 
-class ParticleDamager: public ParticleObserver {
+//@todo remove ParticleObserver from Shared
+class ParticleDamager {
 public:
 	UnitReference attackerRef;
 	const AttackSkillType* ast;
@@ -171,10 +172,9 @@ public:
 	Field targetField;
 	UnitReference targetRef;
 
-
 public:
 	ParticleDamager(Unit *attacker, Unit *target, UnitUpdater *unitUpdater, const GameCamera *gameCamera);
-	virtual void update(ParticleSystem *particleSystem);
+	void execute(ParticleSystem *particleSystem);
 };
 
 }}//end namespace

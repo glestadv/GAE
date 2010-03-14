@@ -25,7 +25,6 @@
 
 using Shared::Math::Vec2i;
 
-using namespace std;
 using namespace Shared::Platform;
 
 namespace Glest { namespace Game { namespace Search {

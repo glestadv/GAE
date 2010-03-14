@@ -24,10 +24,13 @@
 #include "logger.h"
 #include "timer.h"
 
+#include "network_util.h"
+
 #include "game.h"
 #include "world.h"
 
-using namespace std;
+#include "random.h"
+
 using namespace Shared::Platform;
 using namespace Shared::Util;
 using Shared::Platform::Chrono;
@@ -41,7 +44,7 @@ namespace Glest { namespace Game {
 const int ClientInterface::messageWaitTimeout = 10000;	//10 seconds
 const int ClientInterface::waitSleepTime = 5; // changed from 50, no obvious effect
 
-ClientInterface::ClientInterface(){
+ClientInterface::ClientInterface() {
 	clientSocket = NULL;
 	launchGame = false;
 	introDone = false;
@@ -77,6 +80,76 @@ void ClientInterface::update() {
 	}
 	if (cmdList.getCommandCount() > 0) {
 		send(&cmdList);
+	}
+}
+
+void ClientInterface::createSkillCycleTable(const TechTree *) {
+	Chrono chrono;
+	chrono.start();
+	LOG_NETWORK( "waiting for server to send Skill Cycle Table." );
+	while (true) {
+		NetworkMessageType msgType = getNextMessageType();
+		if (msgType == NetworkMessageType::SKILL_CYCLE_TABLE) {
+			if (receiveMessage(&skillCycleTable)) {
+				LOG_NETWORK( "Received Skill Cycle Table." );
+				break;
+			}
+		} else if (msgType == NetworkMessageType::NO_MSG) {
+			if (chrono.getMillis() > readyWaitTimeout) {
+				throw runtime_error("Timeout waiting for server");
+			}
+		} else {
+			throw runtime_error("Unexpected network message: " + intToStr(msgType) );
+		}
+		sleep(2);
+	}
+}
+
+void ClientInterface::unitBorn(Unit *unit, int32 cs) {
+	int32 server_cs = keyFrame.getNextChecksum();
+	if (cs != server_cs) {
+		stringstream ss;
+		ss << "Sync Error: unitBorn() , unit type: " << unit->getType()->getName() 
+			<< " unit id: " << unit->getId() << " faction: " << unit->getFactionIndex();
+		LOG_NETWORK( ss.str() );
+		LOG_NETWORK( "\tserver checksum " + intToHex(server_cs) + " my checksum " + intToHex(cs) );
+		throw runtime_error("Sync error: ClientInterface::unitBorn() checksum mismatch.");
+	}
+}
+
+void ClientInterface::updateUnitCommand(Unit *unit, int32 cs) {
+	if (cs != keyFrame.getNextChecksum()) {
+		stringstream ss;
+		ss << "Sync Error: updateUnitCommand() , unit type: " << unit->getType()->getName()
+			<< ", skill class: " << SkillClassNames[unit->getCurrSkill()->getClass()];
+		LOG_NETWORK( ss.str() );
+		throw runtime_error("Sync error: ClientInterface::updateUnitCommand() checksum mismatch.");
+	}
+}
+
+void ClientInterface::updateProjectile(Unit *unit, int endFrame, int32 cs) {
+	if (cs != keyFrame.getNextChecksum()) {
+		stringstream ss;
+		ss << "Sync Error: updateProjectile(), unit id: " << unit->getId() << " skill: " 
+			<< unit->getCurrSkill()->getName();
+		if (unit->getCurrCommand()->getUnit()) {
+			ss << " target id: " << unit->getCurrCommand()->getUnit()->getId();
+		} else {
+			ss << " target pos: " << unit->getCurrCommand()->getPos();
+		}
+		ss << " end frame: " << endFrame;
+		LOG_NETWORK( ss.str() );
+		throw runtime_error("Sync error: ClientInterface::updateProjectile() checksum mismatch.");
+	}
+}
+
+void ClientInterface::updateAnim(Unit *unit, int32 cs) {
+	if (cs != keyFrame.getNextChecksum()) {
+		const CycleInfo &inf = skillCycleTable.lookUp(unit);
+		stringstream ss;
+		ss << "updateAnim() unit id: " << unit->getId() << " attack offset: " << inf.getAttackOffset();
+		LOG_NETWORK( ss.str() );
+		throw runtime_error("Sync error: ClientInterface::updateAnim() checksum mismatch.");
 	}
 }
 
@@ -129,78 +202,53 @@ void ClientInterface::updateLobby() {
 			LOG_NETWORK( "Received launch message." );
 		}
 	} else if (msgType != NetworkMessageType::NO_MSG) {
-		LOG_NETWORK( "Received bad message type : " + intToStr(msgType) );
+		LOG_NETWORK( "Received bad message type : " + intToStr(msgType) + ". Resetting connection." );
 		reset();
 		//throw runtime_error("Unexpected network message: " + intToStr(msgType));
 	}
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {
-	//DEBUG
-	static int commandsReceived = 0;
+	// give all commands from last KeyFrame
+	for (size_t i=0; i < keyFrame.getCmdCount(); ++i) {
+		pendingCommands.push_back(*keyFrame.getCmd(i));
+	}
 
-	// NETWORK: this method is very different
+	keyFrame.reset();
+
 	while (true) {
-		//wait for the next message
 		waitForMessage();
-
-		//check we have an expected message
 		NetworkMessageType msgType = getNextMessageType();
-
-		if (msgType == NetworkMessageType::COMMAND_LIST) {
-			NetworkMessageCommandList cmdList;
-			//make sure we read the message
-			while (!receiveMessage(&cmdList)) {
-				sleep(waitSleepTime);
+		if (msgType == NetworkMessageType::KEY_FRAME) {
+			// make sure we read the message 
+			{	Chrono chrono;
+				chrono.start();
+				while (!receiveMessage(&keyFrame)) {
+					sleep(waitSleepTime);
+					if (chrono.getMillis() > messageWaitTimeout) {
+						cout << "timout.\n";
+						throw runtime_error("Timeout waiting for key frame.");
+					}
+				}
 			}
-			
-			if (cmdList.getTotalB4This() != commandsReceived) {
-				stringstream ss;
-				ss << "ERROR: Server claims to have sent " << cmdList.getTotalB4This() << " commands in total, "
-					<< "but I have received " << commandsReceived;
-				LOG_NETWORK( ss.str() );
-			}
-
 			//check that we are in the right frame
-			if (cmdList.getFrameCount() != frameCount) {
+			if (keyFrame.getFrameCount() != frameCount + GameConstants::networkFramePeriod) {
 				stringstream ss;
-				ss << "Network synchronization error, my frame count == " << frameCount
-					<< ", server frame count == " << cmdList.getFrameCount();
+				ss << "Network synchronization error, frame count mismatch";
 				LOG_NETWORK( ss.str() );
 				throw runtime_error(ss.str());
-			}
-
-			// give all commands
-			if (cmdList.getCommandCount()) {
-				/*LOG_NETWORK( 
-					"Keyframe update: " + intToStr(frameCount) + " received "
-					+ intToStr(cmdList.getCommandCount()) + " commands. " 
-					+ intToStr(dataAvailable()) + " bytes waiting to be read."
-				);*/
-				for (int i= 0; i < cmdList.getCommandCount(); ++i) {
-					pendingCommands.push_back(*cmdList.getCommand(i));
-					++commandsReceived;
-					/*const NetworkCommand * const &cmd = cmdList.getCommand(i);
-					const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-					LOG_NETWORK( 
-						"\tUnit: " + intToStr(unit->getId()) + " [" + unit->getType()->getName() + "] " 
-						+ unit->getType()->findCommandTypeById(cmd->getCommandTypeId())->getName() + "."
-					);*/
-				}
 			}
 			return;
 		} else if (msgType == NetworkMessageType::QUIT) {
 			NetworkMessageQuit quitMsg;
-			if (receiveMessage(&quitMsg)) {
-				quit = true;
-				quitGame();
-			}
+			receiveMessage(&quitMsg);
+			quit = true;
+			quitGame();
 			return;
 		} else if (msgType == NetworkMessageType::TEXT) {
 			NetworkMessageText textMsg;
-			if (receiveMessage(&textMsg)) {
-				GameNetworkInterface::processTextMessage(textMsg);
-			}
+			receiveMessage(&textMsg);
+			GameInterface::processTextMessage(textMsg);
 		} else {
 			throw runtime_error("Unexpected message in client interface: " + intToStr(msgType));
 		}
@@ -208,6 +256,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 }
 
 void ClientInterface::syncAiSeeds(int aiCount, int *seeds) {
+	assert(aiCount && seeds);
 	NetworkMessageAiSeedSync seedSyncMsg;
 	Chrono chrono;
 	chrono.start();
@@ -284,7 +333,8 @@ string ClientInterface::getStatus() const{
 void ClientInterface::waitForMessage() {
 	Chrono chrono;
 	chrono.start();
-	while (getNextMessageType() == NetworkMessageType::NO_MSG) {
+	NetworkMessageType nextType;
+	while ((nextType = getNextMessageType()) == NetworkMessageType::NO_MSG) {
 		if (!isConnected()) {
 			throw runtime_error("Disconnected");
 		}
@@ -293,6 +343,13 @@ void ClientInterface::waitForMessage() {
 		}
 		sleep(waitSleepTime);
 	}
+
+	//DEBUG .. induced delay
+	/*Shared::Util::Random rand(Chrono::getCurTicks());
+	if (rand.randRange(1, 100) <= 10) {
+		sleep(rand.randRange(50,100));
+	}*/
+
 }
 
 void ClientInterface::quitGame() {

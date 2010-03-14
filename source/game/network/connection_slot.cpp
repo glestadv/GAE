@@ -24,7 +24,6 @@
 #include "logger.h"
 #include "world.h"
 
-using namespace std;
 using namespace Shared::Util;
 
 namespace Glest { namespace Game {
@@ -52,6 +51,7 @@ void ConnectionSlot::update() {
 		//send intro message when connected
 		if (socket) {
 			socket->setBlock(false);
+			socket->setNoDelay();
 			NetworkMessageIntro networkMessageIntro(
 				getNetworkVersionString(), theConfig.getNetPlayerName(), socket->getHostName(), playerIndex);
 			send(&networkMessageIntro);
@@ -80,21 +80,8 @@ void ConnectionSlot::update() {
 		case NetworkMessageType::COMMAND_LIST: {
 				NetworkMessageCommandList cmdList;
 				if(receiveMessage(&cmdList)){
-					/*LOG_NETWORK(
-						"Receivied " + intToStr(cmdList.getCommandCount()) + " commands on slot "
-						+ intToStr(playerIndex) + " frame: " + intToStr(theWorld.getFrameCount())
-					);*/
 					for (int i=0; i < cmdList.getCommandCount(); ++i) {
 						serverInterface->requestCommand(cmdList.getCommand(i));
-
-						/*const NetworkCommand * const &cmd = cmdList.getCommand(i);
-						const Unit * const &unit = theWorld.findUnitById(cmd->getUnitId());
-						const UnitType * const &unitType = unit->getType();
-						const CommandType * const &cmdType = unitType->findCommandTypeById(cmd->getCommandTypeId());
-						LOG_NETWORK(
-							"\tUnit: " + intToStr(unit->getId()) + " [" + unitType->getName() + "] "
-							+ cmdType->getName() + "."
-						);*/
 					}
 				}
 			}
@@ -102,7 +89,7 @@ void ConnectionSlot::update() {
 		case NetworkMessageType::INTRO: {
 				NetworkMessageIntro msg;
 				if (receiveMessage(&msg)) {
-					LOG_NETWORK (
+					LOG_NETWORK(
 						"Received intro message on slot " + intToStr(playerIndex) + ", host name = "
 						+ msg.getHostName() + ", player name = " + msg.getPlayerName()
 					);
@@ -119,15 +106,16 @@ void ConnectionSlot::update() {
 			}
 			break;
 
-		default:
-			stringstream ss;
-			ss << "Unexpected message type: " << networkMessageType << " on slot: " << playerIndex;
-			LOG_NETWORK( ss.str() );
-			ss.clear();
-			ss << "Player " << playerIndex << " [" << getName()
-				<< "] was disconnected because they sent the server bad data.";
-			serverInterface->doSendTextMessage(ss.str(), -1);
-			close();
+		default: {
+				stringstream ss;
+				ss << "Unexpected message type: " << networkMessageType << " on slot: " << playerIndex;
+				LOG_NETWORK( ss.str() );
+				ss.clear();
+				ss << "Player " << playerIndex << " [" << getName()
+					<< "] was disconnected because they sent the server bad data.";
+				serverInterface->doSendTextMessage(ss.str(), -1);
+				close();
+			}
 			return;
 	}
 }

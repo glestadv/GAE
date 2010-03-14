@@ -112,7 +112,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
+				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
@@ -352,6 +352,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\math\fixed.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\graphics\font.h"
 				>
 			</File>
@@ -484,11 +488,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\math\quaternion.h"
+				RelativePath=".\include\graphics\quaternion.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\quaternion.h"
+				RelativePath=".\include\math\quaternion.h"
 				>
 			</File>
 			<File
@@ -520,11 +524,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\socket.h"
+				RelativePath=".\include\platform\win32\socket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\socket.h"
+				RelativePath=".\include\platform\socket.h"
 				>
 			</File>
 			<File
@@ -576,11 +580,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\thread.h"
+				RelativePath=".\include\platform\thread.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\thread.h"
+				RelativePath=".\include\platform\win32\thread.h"
 				>
 			</File>
 			<File
@@ -592,11 +596,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\types.h"
+				RelativePath=".\include\platform\win32\types.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\types.h"
+				RelativePath=".\include\platform\types.h"
 				>
 			</File>
 			<File
@@ -604,15 +608,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\graphics\vec.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\graphics\vec.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\math\vec.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\vec.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\vec.h"
 				>
 			</File>
 			<File
@@ -620,11 +624,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File
@@ -885,6 +889,10 @@
 			</File>
 			<File
 				RelativePath=".\sources\lua\lua_script.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\sources\math\math_util.cpp"
 				>
 			</File>
 			<File
@@ -1303,7 +1311,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
+						UsePrecompiledHeader="2"
 					/>
 				</FileConfiguration>
 				<FileConfiguration

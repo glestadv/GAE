@@ -196,6 +196,8 @@ void Game::init() {
 
 	ScriptManager::init(this);
 
+	GameInterface *gni = networkManager.getGameInterface();
+
 	// create (or receive) random number seeds for AIs
 	int aiCount = 0;
 	for (int i=0; i < world.getFactionCount(); ++i) {
@@ -204,19 +206,8 @@ void Game::init() {
 		}
 	}
 	int32 *seeds = (aiCount ? new int32[aiCount] : NULL);
-
-	if (aiCount) {
-		if (!isNetworkClient()) { // if not client, make seeds
-			Random r;
-			r.init(Chrono::getCurMillis());
-			for (int i=0; i < aiCount; ++i) {
-				seeds[i] = r.rand();
-			}
-		}
-		if (isNetworkGame()) { // if net game, send or receive seeds
-			logger.add("Syncing AIs", true);
-			networkManager.getGameNetworkInterface()->doSyncAiSeeds(aiCount, seeds);
-		}
+	if (seeds) {
+		gni->doSyncAiSeeds(aiCount, seeds);
 	}
 	int seedCount = 0;
 
@@ -232,6 +223,10 @@ void Game::init() {
 		}
 	}
 	delete seeds;
+
+	cout << "Skill Cycle Table...\n";
+	gni->doCreateSkillCycleTable(world.getTechTree());
+	cout << "Skill Cycle Table Done\n";
 
 	//wheather particle systems
 	if(world.getTileset()->getWeather() == Weather::RAINY){
@@ -276,14 +271,27 @@ void Game::init() {
 		tileset->doChecksum(checksum);
 		techTree->doChecksum(checksum);
 		map->doChecksum(checksum);
-		networkManager.getGameNetworkInterface()->doWaitUntilReady(checksum);
+		gni->doWaitUntilReady(checksum);
 	}
+	// if client, wait for first key frame
+	if (isNetworkClient()) {
+		cout << "Waiting for first key frame...\n";
+		ClientInterface *iClient = theNetworkManager.getClientInterface();
+		iClient->doUpdateKeyframe(0);
+		cout << "got first key frame.\n";
+		LOG_NETWORK( "Got first key frame, starting game.\n" );
+	}
+
 	// set maximum update timer back log
 	if (!isNetworkGame()) {
 		program.setMaxUpdateBacklog(2); // non-network game, may drop frames
 	} else {
 		program.setMaxUpdateBacklog(-1); // network games must always catch up
 	}
+
+	cout << "Activating units...\n";
+	world.activateUnits();
+	cout << "Units activated\n";
 
 	logger.add("Starting music stream", true);
 	StrSound *gameMusic= world.getThisFaction()->getType()->getMusic();
@@ -355,7 +363,7 @@ void Game::update() {
 	}
 
 	//check for quiting status
-	if(NetworkManager::getInstance().getGameNetworkInterface()->getQuit()) {
+	if(NetworkManager::getInstance().getGameInterface()->getQuit()) {
 		quitGame();
 	}
 
@@ -440,7 +448,7 @@ void Game::mouseDownLeft(int x, int y){
 		int button= 1;
 		if ( mainMessageBox.mouseClick(x, y, button) ) {
 			if ( button == 1 ) {
-				networkManager.getGameNetworkInterface()->doQuitGame();
+				networkManager.getGameInterface()->doQuitGame();
 				quitGame();
 			} else {
 				//close message box
@@ -909,7 +917,7 @@ void Game::render2d(){
 	/* NETWORK:
 	if(renderNetworkStatus && networkManager.isNetworkGame()) {
 		renderer.renderText(
-			networkManager.getGameNetworkInterface()->getStatus(),
+			networkManager.getGameInterface()->getStatus(),
 			coreData.getMenuFontNormal(),
 			gui.getDisplay()->getColor(), 750, 75, false);
 	}

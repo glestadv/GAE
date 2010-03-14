@@ -75,7 +75,7 @@ public:
 
 	void doChecksum(Checksum &checksum) const {
 		for (int i=0; i < types.size(); ++i) {
-			checksum.addString(types[i]->getName());
+			checksum.add(types[i]->getName());
 		}
 	}
 };
@@ -139,7 +139,7 @@ public:
 			CommandType(name, commandTypeClass, clicks) {}
 	virtual void doChecksum(Checksum &checksum) const {
 		CommandType::doChecksum(checksum);
-		checksum.addString(moveSkillType->getName());
+		checksum.add(moveSkillType->getName());
 	}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const	{moveSkillType->getDesc(str, unit);}
@@ -159,7 +159,7 @@ public:
 			CommandType(name, commandTypeClass, clicks) {}
 	virtual void doChecksum(Checksum &checksum) const {
 		CommandType::doChecksum(checksum);
-		checksum.addString(stopSkillType->getName());
+		checksum.add(stopSkillType->getName());
 	}
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void getDesc(string &str, const Unit *unit) const	{stopSkillType->getDesc(str, unit);}

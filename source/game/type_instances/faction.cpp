@@ -398,7 +398,7 @@ void Faction::setResourceBalance(const ResourceType *rt, int balance) {
 
 void Faction::add(Unit *unit) {
 	units.push_back(unit);
-	unitMap.insert(make_pair(unit->getId(), unit));
+	unitMap.insert(std::make_pair(unit->getId(), unit));
 }
 
 void Faction::remove(Unit *unit) {

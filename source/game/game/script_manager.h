@@ -26,11 +26,11 @@
 #include "game_constants.h"
 #include "logger.h"
 
-using namespace std;
 using Shared::Math::Vec2i;
 using Shared::Math::Vec4i;
 using Shared::Platform::Chrono;
 using namespace Shared::Lua;
+using std::queue;
 
 namespace Glest{ namespace Game {
 

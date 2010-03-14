@@ -26,6 +26,7 @@
 #include "route_planner.h"
 #include "cartographer.h"
 #include "lang_features.h"
+#include "earthquake_type.h"
 
 #if _GAE_DEBUG_EDITION_
 #	include "debug_renderer.h"
@@ -179,11 +180,14 @@ void World::updateEarthquakes(float seconds) {
 			Unit *attacker = (*ei)->getCause();
 
 			for (dri = damageReport.begin(); dri != damageReport.end(); ++dri) {
-				float multiplier = techTree.getDamageMultiplier(
+				fixed multiplier = techTree.getDamageMultiplier(
 						at, dri->first->getType()->getArmorType());
+
+				///@todo make fixed point ... use multiplier
+
 				float intensity = dri->second.intensity;
 				float count = (float)dri->second.count;
-				float damage = intensity * maxDps * multiplier;
+				float damage = intensity * maxDps;// * multiplier;
 
 				if (!(*ei)->getType()->isAffectsAllies() && attacker->isAlly(dri->first)) {
 					continue;
@@ -441,6 +445,10 @@ Unit *World::nearestStore(const Vec2i &pos, int factionIndex, const ResourceType
 	}
 	return currUnit;
 }
+
+///@todo collect all distinct error conditions from the scripting interface, put them in an
+/// and enum with a table of string messages... then make error handling in ScriptManager less shit
+
 /** @return unit id, or -1 if factionindex invalid, or -2 if unitName invalid, or -3 if 
   * a position could not be found for the new unit, -4 if pos invalid */
 int World::createUnit(const string &unitName, int factionIndex, const Vec2i &pos){
@@ -895,7 +903,8 @@ void World::initUnits() {
 
 				if (placeUnit(map.getStartLocation(startLocationIndex), generationArea, unit, true)) {
 					unit->create(true);
-					unit->born();
+					// sends updates, must be done after all other init
+					//unit->born();
 
 				} else {
 					throw runtime_error("Unit cant be placed, this error is caused because there "
@@ -914,6 +923,14 @@ void World::initUnits() {
 	}
 	map.computeNormals();
 	map.computeInterpolatedHeights();
+}
+
+void World::activateUnits() {
+	foreach (Factions, fIt, factions) {
+		foreach_const (Units, uIt, fIt->getUnits()) {
+			(*uIt)->born();
+		}
+	}
 }
 
 void World::initMap() {
@@ -964,7 +981,7 @@ void World::doUnfog() {
 void World::exploreCells(const Vec2i &newPos, int sightRange, int teamIndex) {
 
 	Vec2i newSurfPos = Map::toTileCoords(newPos);
-	int surfSightRange = sightRange / Map::cellScale + 1;
+	int surfSightRange = sightRange / GameConstants::cellScale + 1;
 	int sweepRange = surfSightRange + indirectSightRange + 1;
 
 	//explore
@@ -1034,7 +1051,7 @@ void World::computeFow() {
 	}
 	
 	//compute texture
-	if ( unfogActive ) { // scripted map reveal
+	if (unfogActive) { // scripted map reveal
 		doUnfog();
 	}	
 	for (int i = 0; i < getFactionCount(); ++i) {
@@ -1050,7 +1067,7 @@ void World::computeFow() {
 				float distance;
 
 				//iterate through all cells
-				PosCircularIteratorSimple pci(map, unit->getPos(), sightRange + indirectSightRange);
+				PosCircularIteratorSimple pci(map.getBounds(), unit->getPos(), sightRange + indirectSightRange);
 				while (pci.getNext(pos, distance)) {
 					Vec2i surfPos = Map::toTileCoords(pos);
 
@@ -1080,12 +1097,9 @@ void World::computeFow() {
 
 
 void World::hackyCleanUp(Unit *unit) {
-	for (Units::const_iterator i = newlydead.begin(); i != newlydead.end(); ++i) {
-		if (unit == *i) {
-			return;
-		}
+	if (std::find(newlydead.begin(), newlydead.end(), unit) == newlydead.end()) {
+		newlydead.push_back(unit);
 	}
-	newlydead.push_back(unit);
 }
 
 }}//end namespace

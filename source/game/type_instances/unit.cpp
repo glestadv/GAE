@@ -28,6 +28,10 @@
 #include "cartographer.h"
 
 #include "leak_dumper.h"
+#include "network_util.h"
+
+#define UNIT_LOG(x) {}
+//#define UNIT_LOG(x) { theLogger.add(x); }
 
 using namespace Shared::Graphics;
 using namespace Shared::Util;
@@ -38,27 +42,20 @@ namespace Glest{ namespace Game{
 // 	class Unit
 // =====================================================
 
-/** skill speed divider @see somewhere else */
-const float Unit::speedDivider= 100.f;
-/** number of frames until a corpse is removed */
-const int Unit::maxDeadCount= 1000;	//time in until the corpse disapears
-/** time (in seconds ?) of selection circle effect 'flashes' */
-const float Unit::highlightTime= 0.5f;
-/** the invalid unit ID */
-const int Unit::invalidId= -1;
-
 // ============================ Constructor & destructor =============================
 
 /** Construct Unit object */
 Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master)
-		: progressSpeed(0.f)
+		: /*progressSpeed(0.f)
 		, animProgressSpeed(0.f)
-		, pos(pos)
+		, */pos(pos)
 		, lastPos(pos)
 		, nextPos(pos)
 		, targetPos(0)
 		, targetVec(0.0f)
 		, meetingPos(pos)
+		, lastCommandUpdate(0)
+		, nextCommandUpdate(0)
 		, commandCallback(NULL)
 		, hp_below_trigger(0)
 		, hp_above_trigger(0)
@@ -72,9 +69,9 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	ep = 0;
 	loadCount = 0;
 	deadCount = 0;
-	progress= 0;
-	lastAnimProgress = 0;
-	animProgress = 0;
+//	progress= 0;
+//	lastAnimProgress = 0;
+//	animProgress = 0;
 	highlight = 0.f;
 	progress2 = 0;
 	kills = 0;
@@ -114,8 +111,6 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	hp = type->getMaxHp() / 20;
 
 	fire = NULL;
-
-	nextUpdateFrames = 1.f;
 }
 
 /** delete stuff */
@@ -306,21 +301,27 @@ const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 	return NULL;
 }
 
+float Unit::getProgress() const {
+	return float(theWorld.getFrameCount() - lastCommandUpdate) 
+			/	float(nextCommandUpdate - lastCommandUpdate);
+}
+
+float Unit::getAnimProgress() const {
+	return float(theWorld.getFrameCount() - lastAnimReset) 
+			/	float(nextAnimReset - lastAnimReset);
+}
+
 // ====================================== set ======================================
 
 /** sets the current skill */
-void Unit::setCurrSkill(const SkillType *currSkill) {
-	assert(currSkill);
+void Unit::setCurrSkill(const SkillType *newSkill) {
+	assert(newSkill);
 	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " skill set => " + SkillClassNames[currSkill->getClass()] );
-	if (currSkill->getClass() == SkillClass::STOP && this->currSkill->getClass() == SkillClass::STOP) {
+	if (newSkill->getClass() == SkillClass::STOP && currSkill->getClass() == SkillClass::STOP) {
 		return;
 	}
-	if (currSkill->getClass() != this->currSkill->getClass()) {
-		animProgress = 0;
-		lastAnimProgress = 0;
-	}
 	progress2 = 0;
-	this->currSkill = currSkill;
+	currSkill = newSkill;
 	notifyObservers(UnitObserver::eStateChange);
 }
 
@@ -576,9 +577,24 @@ void Unit::born(){
 	hp= type->getMaxHp();
 	faction->checkAdvanceSubfaction(type, true);
 	theWorld.getCartographer()->applyUnitVisibility(this);
-	preProcessSkill();
-	nextCommandUpdate--;
+
+	GameInterface *iNet = theNetworkManager.getGameInterface();
+	iNet->doUnitBorn(this);
 }
+
+void checkTargets(const Unit *dead) {
+	typedef list<ParticleSystem*> psList;
+	const psList &list = theRenderer.getParticleManager()->getList();
+	foreach_const (psList, it, list) {
+		if (*it && (*it)->isProjectile()) {
+			ProjectileParticleSystem* pps = static_cast<ProjectileParticleSystem*>(*it);
+			if (pps->getTarget() == dead) {
+				pps->setTarget(NULL);
+			}
+		}
+	}
+}
+
 
 /**
  * Do everything that should happen when a unit dies, except remove them from the faction.  Should
@@ -624,7 +640,7 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 		master.getUnit()->petDied(this);
 	}
 	// hack... 'tracking' particle systems might reference this, 'this' will soon be deleted...
-	Renderer::getInstance().getParticleManager()->checkTargets(this);
+	checkTargets(this);
 
 	// random decay time
 	deadCount = Random(id).randRange(-256, 256);
@@ -675,58 +691,96 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 	return commandType;
 }
 
-void Unit::preProcessSkill() {
-	//speed
-	static const float speedModifier = 1.f / (float)speedDivider / (float)Config::getInstance().getGsWorldUpdateFps();
+/** called to update animation cycle on a dead unit */
+void Unit::updateAnimDead() {
+	assert(currSkill->getClass() == SkillClass::DIE);
+	// if dead, set startFrame to last frame, endFrame to this frame
+	// to keep the cycle at the 'end' so getAnimProgress() always returns 1.f
+	const int &frame = theWorld.getFrameCount();
+	this->lastAnimReset = frame - 1;
+	this->nextAnimReset = frame;
+}
 
-	progressSpeed = getSpeed() * speedModifier;
-	animProgressSpeed = currSkill->getAnimSpeed() * speedModifier;
-	//speed modifiers
-	if(currSkill->getClass() == SkillClass::MOVE) {
-
-		if (pos.x != nextPos.x && pos.y != nextPos.y) {
-			//if moving in diagonal move slower
-			progressSpeed *= 0.71f;
-		}
+/** called at the end of an animation cycle, or on anim reset, sets next cycle end frame,
+  * sound start time and attack start time
+  * @param frameOffset the number of frames the new anim cycle with take
+  * @param soundOffset the number of frames from now to start the skill sound (or -1 if no sound)
+  * @param attackOffset the number  of frames from now to start attack systems (or -1 if no attack)*/
+void Unit::updateAnimCycle(int frameOffset, int soundOffset, int attackOffset) {
+	assert(currSkill->getClass() != SkillClass::DIE);
+	if (frameOffset == -1) { // hacky handle move skill
+		assert(currSkill->getClass() == SkillClass::MOVE);
+		static const float speedModifier = 1.f / GameConstants::speedDivider / float(WORLD_FPS);
+		float animSpeed = currSkill->getAnimSpeed() * speedModifier;
 		//if moving to a higher cell move slower else move faster
 		float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();
 		float heightFactor = clamp(1.f + heightDiff / 5.f, 0.2f, 5.f);
-		progressSpeed *= heightFactor;
-		animProgressSpeed *= heightFactor;
+		animSpeed *= heightFactor;
+
+		// calculate skill cycle length
+		frameOffset = int(1.0000001f / animSpeed);
 	}
-	int frames = 1.0000001f / progressSpeed;
-	int end = theWorld.getFrameCount() + frames + 1;
-	/*
-	if ( !commands.empty() ) {
-		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
-			+ CommandClassNames[commands.front()->getType()->getClass()] + " command, commencing "
-			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
+	const int &frame = theWorld.getFrameCount();
+	assert(frameOffset > 0);
+	this->lastAnimReset = frame;
+	this->nextAnimReset = frame + frameOffset;
+	if (soundOffset > 0) {
+		this->soundStartFrame = frame + soundOffset;
 	} else {
-		UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating no command, commencing "
-			+ SkillClassNames[currSkill->getClass()] + " skill cycle, will finish @ " + intToStr(end) );
+		this->soundStartFrame = -1;
 	}
-	*/
+	if (attackOffset > 0) {
+		this->attackStartFrame = frame + attackOffset;
+	} else {
+		this->attackStartFrame = -1;
+	}
+
+}
+
+/** called after a command is updated and a skill is selected
+  * @param frameOffset the number of frames the next skill cycle with take */
+void Unit::updateSkillCycle(int frameOffset) {
+	assert(currSkill->getClass() != SkillClass::MOVE || isNetworkClient());
+	lastCommandUpdate = theWorld.getFrameCount();
+	nextCommandUpdate = theWorld.getFrameCount() + frameOffset;
+}
+
+/** called by the server only, updates a skill cycle for the move skill */
+void Unit::updateMoveSkillCycle() {
+	//assert(!isNetworkClient());
+	assert(currSkill->getClass() == SkillClass::MOVE);
+	static const float speedModifier = 1.f / GameConstants::speedDivider / float(WORLD_FPS);
+
+	float progressSpeed = getSpeed() * speedModifier;
+	if (pos.x != nextPos.x && pos.y != nextPos.y) { //if moving in diagonal move slower
+		progressSpeed *= 0.71f;
+	}
+	//if moving to a higher cell move slower else move faster
+	float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();
+	float heightFactor = clamp(1.f + heightDiff / 5.f, 0.2f, 5.f);
+	progressSpeed *= heightFactor;
+
+	// calculate skill cycle length
+	int frames = int(1.0000001f / progressSpeed) + 1;
+	int end = theWorld.getFrameCount() + frames;
+	lastCommandUpdate = theWorld.getFrameCount();
 	nextCommandUpdate = end;
+
+	// sanity check [network size checks, move to ServerInterface]
+	assert(frames > 0 && frames < 256);
+	assert(currSkill->getClass() < 256);
+	assert(currSkill->getId() < 256);
 }
 
 /** @return true when the current skill has completed a cycle */
 bool Unit::update() {
-	assert(progress <= 1.f);
+	//assert(progress <= 1.f);
 	PROFILE_START( "Unit Update" );
 
 	//highlight
 	if(highlight > 0.f) {
-		highlight -= 1.f / (highlightTime * Config::getInstance().getGsWorldUpdateFps());
+		highlight -= 1.f / (GameConstants::highlightTime * WORLD_FPS);
 	}
-
-	//update progresses
-	lastAnimProgress = animProgress;
-	progress += nextUpdateFrames * progressSpeed;
-	animProgress += nextUpdateFrames * animProgressSpeed;
-	nextUpdateFrames = 1.f;
-
-	//UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " updating " 
-	//	+ SkillClassNames[currSkill->getClass()] + ", progress:" + floatToStr(progress) );
 
 	//update target
 	updateTarget();
@@ -734,35 +788,29 @@ bool Unit::update() {
 	//rotation
 	if(currSkill->getClass() != SkillClass::STOP) {
 		const int rotFactor = 2;
-		if(progress < 1.f / rotFactor) {
+		if(getProgress() < 1.f / rotFactor) {
 			if(type->getFirstStOfClass(SkillClass::MOVE)) {
 				if(abs(lastRotation - targetRotation) < 180) {
-					rotation = lastRotation + (targetRotation - lastRotation) * progress * rotFactor;
+					rotation = lastRotation + (targetRotation - lastRotation) * getProgress() * rotFactor;
 				} else {
 					float rotationTerm = targetRotation > lastRotation ? -360.f : + 360.f;
-					rotation = lastRotation + (targetRotation - lastRotation + rotationTerm) * progress * rotFactor;
+					rotation = lastRotation + (targetRotation - lastRotation + rotationTerm) 
+						* getProgress() * rotFactor;
 				}
 			}
 		}
 	}
-
-	//checks
-	if(animProgress > 1.f) {
-		animProgress = currSkill->getClass() == SkillClass::DIE ? 1.f : 0.f;
-	}
-
+	// check for cycle completion
 	bool ret = false;
-	//checks
-	if(progress >= 1.f) {
+	
+	// '>=' because nextCommandUpdate can be < frameCount if unit is dead
+	if (theWorld.getFrameCount() >= this->getNextCommandUpdate()) {
 		lastRotation = targetRotation;
-
 		if(currSkill->getClass() != SkillClass::DIE) {
-			progress = 0.f;
 			ret = true;
-		} else { 
-			progress = 1.f;
+		} else {
 			deadCount++;
-			if (deadCount >= maxDeadCount) {
+			if (deadCount >= GameConstants::maxDeadCount) {
 				toBeUndertaken = true;
 			}
 		}
@@ -772,7 +820,7 @@ bool Unit::update() {
 }
 
 /**
- * Do positive and/or negative Hp and Ep regeneration. This method is
+ * Do positive or negative Hp and Ep regeneration. This method is
  * provided to reduce redundant code in a number of other places, mostly in
  * UnitUpdater.
  *
@@ -876,7 +924,7 @@ bool Unit::computeEp() {
   * @param multiplier a multiplier for amount
   * @return true if this unit is now at max hp
   */
-bool Unit::repair(int amount, float multiplier) {
+bool Unit::repair(int amount, fixed multiplier) {
 	if (!isAlive()) {
 		return false;
 	}
@@ -885,7 +933,7 @@ bool Unit::repair(int amount, float multiplier) {
 	if (!amount) {
 		amount = getType()->getMaxHp() / type->getProductionTime() + 1;
 	}
-	amount = (int)((float)amount * multiplier);
+	amount = (amount * multiplier).intp();
 
 	//increase hp
 	hp += amount;
@@ -1226,7 +1274,7 @@ void Unit::effectExpired(Effect *e){
   * @param pos location ground reference
   * @return the height this unit 'stands' at
   */
-inline float Unit::computeHeight(const Vec2i &pos) const {
+float Unit::computeHeight(const Vec2i &pos) const {
 	float height = map->getCell(pos)->getHeight();
 
 	if (currField == Field::AIR) {
@@ -1401,7 +1449,7 @@ CommandResult Unit::undoCommand(const Command &command) {
 
 /**
  * Recalculate the unit's stats (contained in base class
- * EnhancementTypeBase) to take into account changes in the effects and/or
+ * EnhancementType) to take into account changes in the effects and/or
  * totalUpgrade objects.
  */
 void Unit::recalculateStats() {
@@ -1465,12 +1513,13 @@ void Unit::recalculateStats() {
 		}
 	}*/
 }
+
 /** query the speed at which a skill type is executed 
   * @param st the SkillType
   * @return the speed value this unit would execute st at
   */
 int Unit::getSpeed(const SkillType *st) const {
-	float speed = (float)st->getSpeed();
+	fixed speed = st->getSpeed();
 	switch(st->getClass()) {
 		case SkillClass::MOVE:
 		case SkillClass::GET_UP:
@@ -1501,13 +1550,12 @@ int Unit::getSpeed(const SkillType *st) const {
 		case SkillClass::DIE:
 		case SkillClass::CAST_SPELL:
 		case SkillClass::FALL_DOWN:
-		case SkillClass::WAIT_FOR_SERVER:
 		case SkillClass::COUNT:
 			break;
 		default:
 			throw runtime_error("unhandled SkillClass");
 	}
-	return (int)(speed > 0.0f ? speed : 0.0f);
+	return (speed > 0 ? speed.intp() : 0);
 }
 
 /** query number of pets of a given type @param unitType type of pets to count 

@@ -502,13 +502,6 @@ typedef Vec2<double> Vec2d;
 typedef Vec3<double> Vec3d;
 typedef Vec4<double> Vec4d;
 
-
-
-inline ostream& operator<<(ostream &stream, const Vec2i &vec) {
-	return stream << "(" << vec.x << ", " << vec.y << ")";
-}
-
-
 #ifndef USE_SSE2_INTRINSICS
 typedef Vec3<float> Vec3f;
 typedef Vec4<float> Vec4f;
@@ -981,10 +974,10 @@ public:
 inline Vec3f::Vec3f(const Vec4f &v): SSE2Vec4f(v) {}
 #endif // USE_SSE2
 
-ostream& operator<<(ostream &lhs, Vec3f &pt);
-ostream& operator<<(ostream &lhs, Vec2i &pt);
-ostream& operator<<(ostream &lhs, Vec2f &pt);
-ostream& operator<<(ostream &lhs, Vec4i &rhs);
+ostream& operator<<(ostream &lhs, const Vec3f &pt);
+ostream& operator<<(ostream &lhs, const Vec2i &pt);
+ostream& operator<<(ostream &lhs, const Vec2f &pt);
+ostream& operator<<(ostream &lhs, const Vec4i &rhs);
 
 }} //end namespace
 

@@ -173,28 +173,25 @@ CommandResult Commander::computeResult(const CommandResultContainer &results) co
 
 CommandResult Commander::pushCommand(Command *command) const {
 	assert(command->getCommandedUnit());
-	GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
+	GameInterface *gameInterface = NetworkManager::getInstance().getGameInterface();
 	CommandResult result = command->getCommandedUnit()->checkCommand(*command);
-	gameNetworkInterface->requestCommand(command);
+	gameInterface->requestCommand(command);
 	return result;
 }
 
 void Commander::updateNetwork() {
 	NetworkManager &networkManager = NetworkManager::getInstance();
-	GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
+	GameInterface *gni = NetworkManager::getInstance().getGameInterface();
 
-	//check that this is a keyframe
-	if(!networkManager.isNetworkGame() || (world->getFrameCount() % GameConstants::networkFramePeriod) == 0) {
-
+	if (!networkManager.isNetworkGame() || world->getFrameCount() % GameConstants::networkFramePeriod == 0) {
 		//update the keyframe
-		gameNetworkInterface->doUpdateKeyframe(world->getFrameCount());
-
+		gni->doUpdateKeyframe(world->getFrameCount());
 		//give pending commands
-		for (int i = 0; i < gameNetworkInterface->getPendingCommandCount(); ++i) {
-			Command *cmd = gameNetworkInterface->getPendingCommand(i);
+		for (int i = 0; i < gni->getPendingCommandCount(); ++i) {
+			Command *cmd = gni->getPendingCommand(i);
 			giveCommand(cmd);
 		}
-		gameNetworkInterface->clearPendingCommands();
+		gni->clearPendingCommands();
 	}
 }
 

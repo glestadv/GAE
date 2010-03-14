@@ -25,7 +25,6 @@
 #include "platform_main.h"
 #include "renderer.h"
 
-using namespace std;
 using namespace Shared::Platform;
 using namespace Shared::Util;
 

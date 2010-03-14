@@ -25,6 +25,13 @@ namespace Glest { namespace Game {
 class GameSettings;
 class Command;
 
+class TechTree;
+class FactionType;
+class UnitType;
+class SkillType;
+class Unit;
+class NetworkInterface;
+
 // NETWORK: nearly whole file changed
 // - need more description about what role a NetworkMessage plays.
 // - Should NetworkMessageXmlDoc really be a NetworkMessage or is it a network type?
@@ -66,10 +73,7 @@ private:
 		NetworkString<maxNameSize> playerName;
 		NetworkString<maxNameSize> hostName;
 		int16 playerIndex;
-	};
-
-private:
-	Data data;
+	} data;
 
 public:
 	NetworkMessageIntro();
@@ -82,6 +86,7 @@ public:
 
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
+	static size_t getSize() { return sizeof(Data); }
 };
 
 // ==============================================================
@@ -93,7 +98,7 @@ private:
 	static const int maxAiSeeds = 2;
 
 private:
-	struct {
+	struct Data {
 		int8 msgType;
 		int8 seedCount;
 		int32 seeds[maxAiSeeds];
@@ -108,6 +113,7 @@ public:
 
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
+	static size_t getSize() { return sizeof(Data); }
 };
 
 // ==============================================================
@@ -119,10 +125,7 @@ private:
 	struct Data{
 		int8 messageType;
 		int32 checksum;
-	};
-
-private:
-	Data data;
+	} data;
 
 public:
 	NetworkMessageReady();
@@ -132,6 +135,7 @@ public:
 
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
+	static size_t getSize() { return sizeof(Data); }
 };
 
 // ==============================================================
@@ -162,10 +166,7 @@ private:
 		int8 defaultUnits;
 		int8 defaultVictoryConditions;
 		int8 fogOfWar;
-	};
-
-private:
-	Data data;
+	} data;
 
 public:
 	NetworkMessageLaunch();
@@ -175,6 +176,7 @@ public:
 
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
+	static size_t getSize() { return sizeof(Data); }
 };
 
 // ==============================================================
@@ -183,33 +185,23 @@ public:
 /**	Message to issue commands to several units */
 #pragma pack(push, 2)
 class NetworkMessageCommandList : public NetworkMessage {
+	friend class NetworkInterface;
 private:
 	static const int maxCommandCount= 16*4;
 	
 private:
-	static const int dataHeaderSize = 10;
+	static const int dataHeaderSize = 6;
 	struct Data{
 		int8 messageType;
 		int8 commandCount;
 		int32 frameCount;
-		int32 totalB4this; //DEBUG
 		NetworkCommand commands[maxCommandCount];
-	};
-
-private:
-	Data data;
+	} data;
 
 public:
 	NetworkMessageCommandList(int32 frameCount= -1);
 
 	bool addCommand(const NetworkCommand* networkCommand);
-	//DEBUG
-	void setTotalB4This(int32 total) { 
-		assert(total >= 0);
-		data.totalB4this = total; 
-	}
-	int32 getTotalB4This() const { return data.totalB4this; }
-	
 	void clear()									{data.commandCount= 0;}
 	int getCommandCount() const						{return data.commandCount;}
 	int getFrameCount() const						{return data.frameCount;}
@@ -234,10 +226,7 @@ private:
 		NetworkString<maxStringSize> text;
 		NetworkString<maxStringSize> sender;
 		int8 teamIndex;
-	};
-
-private:
-	Data data;
+	} data;
 
 public:
 	NetworkMessageText(){}
@@ -249,26 +238,189 @@ public:
 
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
+	static size_t getSize() { return sizeof(Data); }
 };
 
 // =====================================================
 //	class NetworkMessageQuit
 // =====================================================
-/** Message sent at the beggining of the game */
+/** Message sent by clients to quit nicely, or by the server to terminate the game */
 class NetworkMessageQuit: public NetworkMessage {
 private:
 	struct Data{
 		int8 messageType;
-	};
-
-private:
-	Data data;
+	} data;
 
 public:
 	NetworkMessageQuit();
 
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
+	static size_t getSize() { return sizeof(Data); }
+};
+
+class SkillIdTriple {
+	int factionTypeId;
+	int unitTypeId;
+	int skillTypeId;
+
+public:
+	SkillIdTriple(int ftId, int utId, int stId) 
+			: factionTypeId(ftId)
+			, unitTypeId(utId)
+			, skillTypeId(stId) {
+	}
+
+	int getFactionTypeId() const { return factionTypeId; }
+	int getUnitTypeId() const { return unitTypeId; }
+	int getSkillTypeId() const { return skillTypeId; }
+
+	bool operator==(const SkillIdTriple &other) const {
+		return memcmp(this, &other, sizeof(SkillIdTriple));
+	}
+
+	bool operator<(const SkillIdTriple &other) const {
+		if (factionTypeId < other.getFactionTypeId()) return true;
+		if (factionTypeId > other.getFactionTypeId()) return false;
+
+		if (unitTypeId < other.getUnitTypeId()) return true;
+		if (unitTypeId > other.getUnitTypeId()) return false;
+
+		if (skillTypeId < other.getSkillTypeId()) return true;
+		// (skillTypeId >= other.getSkillTypeId())
+		return false;
+	}
+};
+
+class CycleInfo {
+	int skillFrames, animFrames;
+	int soundOffset, attackOffset;
+
+public:
+	CycleInfo()
+			: skillFrames(-1)
+			, animFrames(-1)
+			, soundOffset(-1)
+			, attackOffset(-1) {
+	}
+
+	CycleInfo(int sFrames, int aFrames, int sOffset = -1, int aOffset = -1) 
+			: skillFrames(sFrames)
+			, animFrames(aFrames)
+			, soundOffset(sOffset)
+			, attackOffset(aOffset) {
+	}
+
+	int getSkillFrames() const	{ return skillFrames;	}
+	int getAnimFrames() const	{ return animFrames;	}
+	int getSoundOffset() const	{ return soundOffset;	}
+	int getAttackOffset() const { return attackOffset;	}
+
+};
+
+class SkillCycleTable : public NetworkMessage {
+private:
+	typedef std::map<SkillIdTriple, CycleInfo> CycleMap;
+	CycleMap cycleTable;
+
+public:
+	SkillCycleTable() {}
+
+	void create(const TechTree *techTree);
+
+	const CycleInfo& lookUp(SkillIdTriple id) {
+		return cycleTable[id];
+	}
+	const CycleInfo& lookUp(int ftId, int utId, int stId) {
+		return cycleTable[SkillIdTriple(ftId, utId, stId)];
+	}
+	const CycleInfo& lookUp(const Unit *unit);
+
+	virtual bool receive(Socket* socket);
+	virtual void send(Socket* socket) const;
+};
+
+class KeyFrame : public NetworkMessage {
+private:
+	//static const int buffer_size = 1024 * 8;
+	static const int max_cmds = 512;
+	static const int max_checksums = 2048;
+	typedef char* char_ptr;
+
+	int32 frame;
+
+	int32	checksumCount;
+	int32	checksums[max_checksums];
+	uint32	checksumCounter;
+
+/*
+	char updateBuffer[buffer_size];
+	char_ptr writePtr, readPtr;
+	size_t updateCount, updateSize;
+*/
+	NetworkCommand commands[max_cmds];
+	size_t cmdCount;
+
+	//void checkType(NetUpdateType type, size_t size);
+
+	//template <typename UpdateType>
+	//void addUpdate(UpdateType update);
+
+public:
+	KeyFrame() {
+		reset();
+	}
+
+	virtual bool receive(Socket* socket);
+	virtual void send(Socket* socket) const;
+
+	void setFrameCount(int fc) { frame = fc; }
+	int getFrameCount() const { return frame; }
+
+	const size_t& getCmdCount() const	{ return cmdCount; }
+	const NetworkCommand* getCmd(size_t ndx) const { return &commands[ndx]; }
+
+	int32 getNextChecksum() { 
+		assert(checksumCounter < checksumCount);
+		if (checksumCounter >= checksumCount) {
+			throw runtime_error("sync error: insufficient checksums in keyframe.");
+		}
+		return checksums[checksumCounter++];
+	}
+
+	void addChecksum(int32 cs) {
+		assert(checksumCount < max_checksums);
+		if (checksumCount >= max_checksums) {
+			throw runtime_error("Error: insufficient room for checksums in keyframe, increase KeyFrame::max_checksums.");
+		}
+		checksums[checksumCount++] = cs;
+	}
+	
+/*
+	NetUpdateType getNextType() const;
+
+	template <typename UpdateType>
+	UpdateType getNextUpdate() {
+		checkType(UpdateType::type_id(), sizeof(UpdateType));
+		UpdateType update(readPtr);
+		readPtr += sizeof(UpdateType);
+		return update;
+	}
+*/
+	void add(NetworkCommand &nc) {
+		assert(cmdCount < max_cmds);
+		memcpy(&commands[cmdCount++], &nc, sizeof(NetworkCommand));		
+	}
+
+	void reset() {
+		checksumCounter = checksumCount = 0;
+		/*updateCount = updateSize =*/ cmdCount = 0;
+		//writePtr = updateBuffer;
+		//readPtr = updateBuffer;
+	}
+
+	//void addSkillUpdate(Unit *unit);
+	//void addProjectilUpdate(ProjectileUpdate updt);
 };
 
 }}//end namespace

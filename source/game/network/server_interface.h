@@ -28,7 +28,7 @@ namespace Glest { namespace Game {
 //	class ServerInterface
 // =====================================================
 
-class ServerInterface: public GameNetworkInterface{
+class ServerInterface: public GameInterface{
 private:
 	ConnectionSlot* slots[GameConstants::maxPlayers];
 	ServerSocket serverSocket;
@@ -47,26 +47,33 @@ protected:
 	virtual void updateKeyframe(int frameCount);
 	virtual void waitUntilReady(Checksum &checksum);
 	virtual void syncAiSeeds(int aiCount, int *seeds);
-	//virtual void logUnit(int id);
+	virtual void createSkillCycleTable(const TechTree *techTree);
 
 	// message sending
 	virtual void sendTextMessage(const string &text, int teamIndex);
 	virtual void quitGame();
+
+	// unit/projectile updates
+	virtual void updateUnitCommand(Unit *unit, int32);
+	virtual void unitBorn(Unit *unit, int32);
+	virtual void updateProjectile(Unit *unit, int, int32);
+	virtual void updateAnim(Unit *unit, int32);
 
 	//misc
 	virtual string getStatus() const;
 
 public:
 	ServerSocket* getServerSocket()		{return &serverSocket;}
+
+	// ConnectionSlot management
 	void addSlot(int playerIndex);
 	void removeSlot(int playerIndex);
 	ConnectionSlot* getSlot(int playerIndex);
 	int getConnectedSlotCount();
-
+	
 	void launchGame(const GameSettings* gameSettings);
-
 	void process(NetworkMessageText &msg, int requestor);
-
+	
 private:
 	void broadcastMessage(const NetworkMessage* networkMessage, int excludeSlot= -1);
 	void updateListen();

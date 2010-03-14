@@ -1213,13 +1213,13 @@ void Gui::computeBuildPositions(const Vec2i &end) {
 	if(abs(offset.x) > abs(offset.y)) {
 		count = abs(offset.x / size) + 1;
 		offsetAdjusted.x = (offset.x / size) * size;
-		float mulit = (float)offset.x / (float)offsetAdjusted.x;
-		offsetAdjusted.y = (float)offset.y * mulit;
+		float mulit = float(offset.x) / float(offsetAdjusted.x);
+		offsetAdjusted.y = int(float(offset.y) * mulit);
 	} else {
 		count = abs(offset.y / size) + 1;
 		offsetAdjusted.y = (offset.y / size) * size;
-		float mulit = (float)offset.y / (float)offsetAdjusted.y;
-		offsetAdjusted.x = (float)offset.x * mulit;
+		float mulit = float(offset.y) / float(offsetAdjusted.y);
+		offsetAdjusted.x = int(float(offset.x * mulit));
 	}
 
 	buildPositions.resize(count);

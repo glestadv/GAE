@@ -15,6 +15,7 @@
 #include "game_constants.h"
 
 using std::set;
+using std::numeric_limits;
 
 namespace Glest { namespace Game { 
 

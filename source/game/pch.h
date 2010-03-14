@@ -35,6 +35,11 @@
 #include "types.h"
 #include "game_constants.h"
 #include "sigslot.h"
+#include "util.h"
+
+#define FIXED_THROW_ON_OVERFLOW 1
+#define FIXED_THROW_ON_DIVIDE_BY_ZERO 1
+#include "fixed.h"
 
 // POSIX base
 #include <stdlib.h>
@@ -43,7 +48,6 @@
 #include <errno.h>
 #include <math.h>
 #include <time.h>
-
 
 // lib c
 #include <cstdlib>
@@ -70,6 +74,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <queue>
 #include <deque>
 
 
@@ -119,6 +124,34 @@
 	#include <winsock.h>
 	#include <dsound.h>
 #endif
+
+using std::string;
+using std::stringstream;
+
+using std::exception;
+using std::runtime_error;
+using std::range_error;
+
+using std::fstream;
+using std::ifstream;
+using std::ofstream;
+
+using std::istream;
+using std::ostream;
+using std::ios_base;
+
+using std::cout;
+using std::endl;
+
+using std::vector;
+using std::list;
+using std::deque;
+using std::queue;
+using std::set;
+using std::map;
+using std::pair;
+
+using std::numeric_limits;
 
 #endif // USE_PCH
 #endif // _SHARED_PCH_H_

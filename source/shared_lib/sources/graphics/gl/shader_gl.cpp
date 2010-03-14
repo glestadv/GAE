@@ -18,9 +18,6 @@
 
 #include "leak_dumper.h"
 
-
-using namespace std;
-
 namespace Shared{ namespace Graphics{ namespace Gl{
 
 // =====================================================
