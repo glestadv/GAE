@@ -1,0 +1,26 @@
+/* XPM */
+static const char *brush_object_custom3[] = {
+/* columns rows colors chars-per-pixel */
+"16 16 4 1",
+"  c #000000",
+". c #008000",
+"X c #FF00FF",
+"o c None",
+/* pixels */
+"oooooooooooooooo",
+"oooooooooooooooo",
+"oooooooooo   ooo",
+"ooooooooo ooo oo",
+"ooooooooooooo oo",
+"ooooooooooo  ooo",
+"ooooooooooooo oo",
+"ooooooooooooo oo",
+"ooooooooo ooo oo",
+"oooooooooo   ooo",
+"ooooX.Xooooooooo",
+"oooX.X.Xoooooooo",
+"ooo.X.X.oooooooo",
+"oo.X.X.X.ooooooo",
+"ooX.X.X.Xooooooo",
+"................"
+};

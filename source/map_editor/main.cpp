@@ -17,6 +17,9 @@
 
 #include "conversion.h"
 
+#include "icons.h"
+
+
 using namespace Shared::Util;
 using namespace std;
 
@@ -73,8 +76,8 @@ MainWindow::MainWindow()
 
 	//edit
 	menuEdit = new wxMenu();
-	menuEdit->Append(miEditUndo, wxT("&Undo\tCTRL+z"));
-	menuEdit->Append(miEditRedo, wxT("&Redo\tCTRL+y"));
+	menuEdit->Append(miEditUndo, wxT("&Undo\tCTRL+Z"));
+	menuEdit->Append(miEditRedo, wxT("&Redo\tCTRL+Y"));
 	menuEdit->Append(miEditReset, wxT("Rese&t"));
 	menuEdit->Append(miEditResetPlayers, wxT("Reset &Players"));
 	menuEdit->Append(miEditResize, wxT("Re&size"));
@@ -190,6 +193,71 @@ MainWindow::MainWindow()
 	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
 	SetStatusText(wxT("Value: 0"), StatusItems::BRUSH_VALUE);
 	SetStatusText(wxT("Radius: 1"), StatusItems::BRUSH_RADIUS);
+	
+	wxToolBar *toolbar = new wxToolBar(this, wxID_ANY);
+	toolbar->AddTool(miRadius + 1, _("radius1"), wxBitmap(radius_1));
+	toolbar->AddTool(miRadius + 2, _("radius2"), wxBitmap(radius_2));
+	toolbar->AddTool(miRadius + 3, _("radius3"), wxBitmap(radius_3));
+	toolbar->AddTool(miRadius + 4, _("radius4"), wxBitmap(radius_4));
+	toolbar->AddTool(miRadius + 5, _("radius5"), wxBitmap(radius_5));
+	toolbar->AddTool(miRadius + 6, _("radius6"), wxBitmap(radius_6));
+	toolbar->AddTool(miRadius + 7, _("radius7"), wxBitmap(radius_7));
+	toolbar->AddTool(miRadius + 8, _("radius8"), wxBitmap(radius_8));
+	toolbar->AddTool(miRadius + 9, _("radius9"), wxBitmap(radius_9));
+	toolbar->AddSeparator();
+	toolbar->AddTool(miBrushSurface + 1, _("brush_grass1"), wxBitmap(brush_surface_grass1), _("Grass"));
+	toolbar->AddTool(miBrushSurface + 2, _("brush_grass2"), wxBitmap(brush_surface_grass2), _("Secondary Grass"));
+	toolbar->AddTool(miBrushSurface + 3, _("brush_road"), wxBitmap(brush_surface_road), _("Road"));
+	toolbar->AddTool(miBrushSurface + 4, _("brush_stone"), wxBitmap(brush_surface_stone), _("Stone"));
+	toolbar->AddTool(miBrushSurface + 5, _("brush_custom"), wxBitmap(brush_surface_custom), _("Ground"));
+	toolbar->AddSeparator();
+	toolbar->AddTool(miBrushObject + 1, _("brush_none"), wxBitmap(brush_none), _("None (erase)"));
+	toolbar->AddTool(miBrushObject + 2, _("brush_none"), wxBitmap(brush_object_bush), _("Tree (unwalkable/harvestable)"));
+	toolbar->AddTool(miBrushObject + 3, _("brush_none"), wxBitmap(brush_object_custom1), _("DeadTree/Cactuses/Thornbush (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 4, _("brush_none"), wxBitmap(brush_object_custom2), _("Stone (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 5, _("brush_none"), wxBitmap(brush_object_custom3), _("Bush/Grass/Fern (walkable)"));
+	toolbar->AddTool(miBrushObject + 6, _("brush_none"), wxBitmap(brush_object_custom4), _("Water Object/Reed/Papyrus (walkable)"));
+	toolbar->AddTool(miBrushObject + 7, _("brush_none"), wxBitmap(brush_object_custom5), _("C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
+	toolbar->AddTool(miBrushObject + 8, _("brush_none"), wxBitmap(brush_object_dead_tree), _("C2 Hanged/Impaled (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 9, _("brush_none"), wxBitmap(brush_object_stone), _("C3, Statues (unwalkable))"));
+	toolbar->AddTool(miBrushObject +10, _("brush_none"), wxBitmap(brush_object_tree), _("Big Rock (Mountain) (unwalkable)"));
+	toolbar->AddTool(miBrushObject +11, _("brush_none"), wxBitmap(brush_object_water_object), _("Invisible Blocking Object (unwalkable)"));
+	toolbar->AddSeparator();
+	toolbar->AddTool(toolPlayer, _("brush_player"), wxBitmap(brush_players_player));
+	toolbar->Realize();
+
+	wxToolBar *toolbar2 = new wxToolBar(this, wxID_ANY);
+	toolbar2->AddTool(miBrushGradient + 1, _("brush_gradient_n5"), wxBitmap(brush_gradient_n5));
+	toolbar2->AddTool(miBrushGradient + 2, _("brush_gradient_n4"), wxBitmap(brush_gradient_n4));
+	toolbar2->AddTool(miBrushGradient + 3, _("brush_gradient_n3"), wxBitmap(brush_gradient_n3));
+	toolbar2->AddTool(miBrushGradient + 4, _("brush_gradient_n2"), wxBitmap(brush_gradient_n2));
+	toolbar2->AddTool(miBrushGradient + 5, _("brush_gradient_n1"), wxBitmap(brush_gradient_n1));
+	toolbar2->AddTool(miBrushGradient + 6, _("brush_gradient_0"), wxBitmap(brush_gradient_0));
+	toolbar2->AddTool(miBrushGradient + 7, _("brush_gradient_p1"), wxBitmap(brush_gradient_p1));
+	toolbar2->AddTool(miBrushGradient + 8, _("brush_gradient_p2"), wxBitmap(brush_gradient_p2));
+	toolbar2->AddTool(miBrushGradient + 9, _("brush_gradient_p3"), wxBitmap(brush_gradient_p3));
+	toolbar2->AddTool(miBrushGradient +10, _("brush_gradient_p4"), wxBitmap(brush_gradient_p4));
+	toolbar2->AddTool(miBrushGradient +11, _("brush_gradient_p5"), wxBitmap(brush_gradient_p5));
+	toolbar2->AddSeparator();
+	toolbar2->AddTool(miBrushHeight + 1, _("brush_height_n5"), wxBitmap(brush_height_n5));
+	toolbar2->AddTool(miBrushHeight + 2, _("brush_height_n4"), wxBitmap(brush_height_n4));
+	toolbar2->AddTool(miBrushHeight + 3, _("brush_height_n3"), wxBitmap(brush_height_n3));
+	toolbar2->AddTool(miBrushHeight + 4, _("brush_height_n2"), wxBitmap(brush_height_n2));
+	toolbar2->AddTool(miBrushHeight + 5, _("brush_height_n1"), wxBitmap(brush_height_n1));
+	toolbar2->AddTool(miBrushHeight + 6, _("brush_height_0"), wxBitmap(brush_height_0));
+	toolbar2->AddTool(miBrushHeight + 7, _("brush_height_p1"), wxBitmap(brush_height_p1));
+	toolbar2->AddTool(miBrushHeight + 8, _("brush_height_p2"), wxBitmap(brush_height_p2));
+	toolbar2->AddTool(miBrushHeight + 9, _("brush_height_p3"), wxBitmap(brush_height_p3));
+	toolbar2->AddTool(miBrushHeight +10, _("brush_height_p4"), wxBitmap(brush_height_p4));
+	toolbar2->AddTool(miBrushHeight +11, _("brush_height_p5"), wxBitmap(brush_height_p5));
+	toolbar2->Realize();
+	
+	wxBoxSizer *boxsizer = new wxBoxSizer(wxVERTICAL);
+	boxsizer->Add(toolbar, 0, wxEXPAND);
+	boxsizer->Add(toolbar2, 0, wxEXPAND);
+	boxsizer->Add(glCanvas, 1, wxEXPAND);
+	this->SetSizer(boxsizer);
+	this->Layout();
 
 #ifndef WIN32
 	timer = new wxTimer(this);
@@ -198,9 +266,13 @@ MainWindow::MainWindow()
 	glCanvas->SetFocus();
 }
 
+void MainWindow::onToolPlayer(wxCommandEvent& event){
+	PopupMenu(menuBrushStartLocation);
+}
+
 void MainWindow::init(string fname) {
 	glCanvas->SetCurrent();
-	program = new Program(GetClientSize().x, GetClientSize().y);
+	program = new Program(glCanvas->GetClientSize().x, glCanvas->GetClientSize().y);
 
 	fileName = "New (unsaved) Map";
 	if (!fname.empty() && fileExists(fname)) {
@@ -777,6 +849,8 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU_RANGE(miBrushResource + 1, miBrushResource + resourceCount, MainWindow::onMenuBrushResource)
 	EVT_MENU_RANGE(miBrushStartLocation + 1, miBrushStartLocation + startLocationCount, MainWindow::onMenuBrushStartLocation)
 	EVT_MENU_RANGE(miRadius, miRadius + radiusCount, MainWindow::onMenuRadius)
+	
+	EVT_TOOL(toolPlayer, MainWindow::onToolPlayer)
 END_EVENT_TABLE()
 
 // =====================================================

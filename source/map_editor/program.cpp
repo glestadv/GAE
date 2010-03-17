@@ -25,11 +25,11 @@ int UndoPoint::w = 0;
 int UndoPoint::h = 0;
 
 UndoPoint::UndoPoint() 
-		: height(0)
+		: change(ctNone)
 		, surface(0)
 		, object(0)
-		, resource(0) 
-		, change(ctNone) {
+		, resource(0)
+		, height(0) {
 	w = Program::map->getW();
 	h = Program::map->getH();
 }
@@ -159,9 +159,8 @@ int Program::getObject(int x, int y) {
 	int i=(x - ofsetX) / cellSize;
 	int j= (y + ofsetY) / cellSize;
 	if (map->inside(i, j)) {
-		map->getObject(i,j);
-	}
-	else{
+		return map->getObject(i,j);
+	}else{
 		return 0;
 	}
 }
@@ -170,9 +169,8 @@ int Program::getResource(int x, int y) {
 	int i=(x - ofsetX) / cellSize;
 	int j= (y + ofsetY) / cellSize;
 	if (map->inside(i, j)) {
-		map->getResource(i,j);
-	}
-	else{
+		return map->getResource(i,j);
+	}else{
 		return 0;
 	}
 }

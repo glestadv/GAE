@@ -114,6 +114,8 @@ private:
 		miMiscAbout,
 		miMiscHelp,
 
+		toolPlayer,
+
 		miBrushHeight,
 		miBrushGradient = miBrushHeight + heightCount + 1,
 		miBrushSurface = miBrushGradient + heightCount + 1,
@@ -203,6 +205,8 @@ public:
 	void onMenuBrushResource(wxCommandEvent &event);
 	void onMenuBrushStartLocation(wxCommandEvent &event);
 	void onMenuRadius(wxCommandEvent &event);
+	
+	void onToolPlayer(wxCommandEvent &event);
 
 	void onTimer(wxTimerEvent &event);
 
