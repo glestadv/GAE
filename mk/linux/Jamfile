@@ -138,3 +138,13 @@ if $(CPPUNIT) = "yes" {
   ExternalLibs testsuite : SDL CPPUNIT ;
   IncludeDir testsuite : ../shared_lib/$(LIB_INCLUDE_DIRS) $(GLEST_TEST_DIRS) ../game/$(GLEST_DIRS) ;
 }
+
+### glexemel ###
+if $(XML) = "yes" {
+  SubDir TOP glexemel ;
+
+  Application g2xml : g2xml.c g3dv4.h ;
+
+  Application xml2g : xml2g.c g3dv4.h ;
+  ExternalLibs xml2g : XML ;
+}

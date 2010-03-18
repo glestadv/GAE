@@ -98,6 +98,11 @@ CHECK_LUA([], [AC_MSG_ERROR([Please install lua 5.1])])
 AM_PATH_CPPUNIT([1.10.2], CPPUNIT="yes")
 AC_SUBST(CPPUNIT)
 
+AM_PATH_XML2([2.0.0], XML="yes")
+AC_SUBST(XML)
+XML_CFLAGS="$XML_CPPFLAGS"
+AC_SUBST(XML_CFLAGS)
+
 # Look for PhysicsFS 
 AC_CHECK_HEADER(physfs.h, , AC_MSG_ERROR([PhysicsFS header not found.]))
 AC_CHECK_LIB(physfs,
