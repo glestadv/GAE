@@ -87,12 +87,12 @@ public:
 // ===============================================
 
 class Program {
+	friend class UndoPoint;
 private:
 	Renderer renderer;
 	int ofsetX, ofsetY;
 	int cellSize;
 	static Map *map;
-	friend class UndoPoint;
 
 	ChangeStack undoStack, redoStack;
 

@@ -45,16 +45,16 @@ wxString ToUnicode(const string& str) {
 // ===============================================
 
 MainWindow::MainWindow()
-		: fileModified(false)
-		, lastX(0), lastY(0)
-		, radius(1)
+		: lastX(0), lastY(0)
+		, currentBrush(btHeight)
 		, height(0)
 		, surface(1)
+		, radius(1)
 		, object(0)
 		, resource(0)
 		, startLocation(1)
 		, enabledGroup(ctHeight)
-		, currentBrush(btHeight)
+		, fileModified(false)
 		, wxFrame(NULL, -1,  ToUnicode(winHeader), wxDefaultPosition, wxSize(800, 600)) {
 
 	//gl canvas
@@ -193,7 +193,7 @@ MainWindow::MainWindow()
 	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
 	SetStatusText(wxT("Value: 0"), StatusItems::BRUSH_VALUE);
 	SetStatusText(wxT("Radius: 1"), StatusItems::BRUSH_RADIUS);
-	
+
 	wxToolBar *toolbar = new wxToolBar(this, wxID_ANY);
 	toolbar->AddTool(miRadius + 1, _("radius1"), wxBitmap(radius_1));
 	toolbar->AddTool(miRadius + 2, _("radius2"), wxBitmap(radius_2));
@@ -212,16 +212,16 @@ MainWindow::MainWindow()
 	toolbar->AddTool(miBrushSurface + 5, _("brush_custom"), wxBitmap(brush_surface_custom), _("Ground"));
 	toolbar->AddSeparator();
 	toolbar->AddTool(miBrushObject + 1, _("brush_none"), wxBitmap(brush_none), _("None (erase)"));
-	toolbar->AddTool(miBrushObject + 2, _("brush_none"), wxBitmap(brush_object_bush), _("Tree (unwalkable/harvestable)"));
-	toolbar->AddTool(miBrushObject + 3, _("brush_none"), wxBitmap(brush_object_custom1), _("DeadTree/Cactuses/Thornbush (unwalkable)"));
-	toolbar->AddTool(miBrushObject + 4, _("brush_none"), wxBitmap(brush_object_custom2), _("Stone (unwalkable)"));
-	toolbar->AddTool(miBrushObject + 5, _("brush_none"), wxBitmap(brush_object_custom3), _("Bush/Grass/Fern (walkable)"));
-	toolbar->AddTool(miBrushObject + 6, _("brush_none"), wxBitmap(brush_object_custom4), _("Water Object/Reed/Papyrus (walkable)"));
-	toolbar->AddTool(miBrushObject + 7, _("brush_none"), wxBitmap(brush_object_custom5), _("C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
-	toolbar->AddTool(miBrushObject + 8, _("brush_none"), wxBitmap(brush_object_dead_tree), _("C2 Hanged/Impaled (unwalkable)"));
-	toolbar->AddTool(miBrushObject + 9, _("brush_none"), wxBitmap(brush_object_stone), _("C3, Statues (unwalkable))"));
-	toolbar->AddTool(miBrushObject +10, _("brush_none"), wxBitmap(brush_object_tree), _("Big Rock (Mountain) (unwalkable)"));
-	toolbar->AddTool(miBrushObject +11, _("brush_none"), wxBitmap(brush_object_water_object), _("Invisible Blocking Object (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 2, _("brush_none"), wxBitmap(brush_object_tree), _("Tree (unwalkable/harvestable)"));
+	toolbar->AddTool(miBrushObject + 3, _("brush_none"), wxBitmap(brush_object_dead_tree), _("DeadTree/Cactuses/Thornbush (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 4, _("brush_none"), wxBitmap(brush_object_stone), _("Stone (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 5, _("brush_none"), wxBitmap(brush_object_bush), _("Bush/Grass/Fern (walkable)"));
+	toolbar->AddTool(miBrushObject + 6, _("brush_none"), wxBitmap(brush_object_water_object), _("Water Object/Reed/Papyrus (walkable)"));
+	toolbar->AddTool(miBrushObject + 7, _("brush_none"), wxBitmap(brush_object_custom1), _("C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
+	toolbar->AddTool(miBrushObject + 8, _("brush_none"), wxBitmap(brush_object_custom2), _("C2 Hanged/Impaled (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 9, _("brush_none"), wxBitmap(brush_object_custom3), _("C3, Statues (unwalkable))"));
+	toolbar->AddTool(miBrushObject +10, _("brush_none"), wxBitmap(brush_object_custom4), _("Big Rock (Mountain) (unwalkable)"));
+	toolbar->AddTool(miBrushObject +11, _("brush_none"), wxBitmap(brush_object_custom5), _("Invisible Blocking Object (unwalkable)"));
 	toolbar->AddSeparator();
 	toolbar->AddTool(toolPlayer, _("brush_player"), wxBitmap(brush_players_player));
 	toolbar->Realize();
@@ -256,6 +256,7 @@ MainWindow::MainWindow()
 	boxsizer->Add(toolbar, 0, wxEXPAND);
 	boxsizer->Add(toolbar2, 0, wxEXPAND);
 	boxsizer->Add(glCanvas, 1, wxEXPAND);
+	
 	this->SetSizer(boxsizer);
 	this->Layout();
 
@@ -328,11 +329,11 @@ void MainWindow::onTimer(wxTimerEvent &event) {
 	onPaint(paintEvent);
 }
 
-void MainWindow::onMouseDown(wxMouseEvent &event) {
+void MainWindow::onMouseDown(wxMouseEvent &event, int x, int y) {
 	if (event.LeftIsDown()) {
 		program->setUndoPoint(enabledGroup);
-		program->setRefAlt(event.GetX(), event.GetY());
-		change(event.GetX(), event.GetY());
+		program->setRefAlt(x, y);
+		change(x, y);
 		if (!isDirty()) {
 			setDirty(true);
 		}
@@ -342,13 +343,8 @@ void MainWindow::onMouseDown(wxMouseEvent &event) {
 	event.Skip();
 }
 
-void MainWindow::onMouseMove(wxMouseEvent &event) {
+void MainWindow::onMouseMove(wxMouseEvent &event, int x, int y) {
 	int dif;
-
-	int x = event.GetX();
-	int y = event.GetY();
-
-	bool doPaint = true;
 	if (event.LeftIsDown()) {
 		change(x, y);
 	} else if (event.MiddleIsDown()) {
@@ -359,29 +355,23 @@ void MainWindow::onMouseMove(wxMouseEvent &event) {
 	} else if (event.RightIsDown()) {
 		program->setOfset(x - lastX, y - lastY);
 	} else {
-		doPaint = false;
-	}
-	lastX = x;
-	lastY = y;
-	if (doPaint) {
-		wxPaintEvent ev;
-		onPaint(ev);
-	}
-	else {
-		int currResource = program->getResource(x,y);
-		if(currResource>0){
+		int currResource = program->getResource(x, y);
+		if (currResource > 0) {
 			SetStatusText(wxT("Resource: ") + ToUnicode(resource_descs[currResource]), StatusItems::CURR_OBJECT);
 			resourceUnderMouse = currResource;
 			objectUnderMouse = 0;
-		}
-		else {
-			int currObject = program->getObject(x,y);
+		} else {
+			int currObject = program->getObject(x, y);
 			SetStatusText(wxT("Object: ") + ToUnicode(object_descs[currObject]), StatusItems::CURR_OBJECT);
 			resourceUnderMouse = 0;
 			objectUnderMouse = currObject;				
 		}
 	}
-	
+	lastX = x;
+	lastY = y;
+
+	wxPaintEvent ev;
+	onPaint(ev);
 	event.Skip();
 }
 
@@ -434,7 +424,8 @@ void MainWindow::onMenuFileExit(wxCommandEvent &event) {
 void MainWindow::onMenuEditUndo(wxCommandEvent &event) {
 	std::cout << "Undo Pressed" << std::endl;
 	if (program->undo()) {
-		Refresh();
+		wxPaintEvent e;
+		onPaint(e);
 		setDirty();
 	}
 }
@@ -442,7 +433,8 @@ void MainWindow::onMenuEditUndo(wxCommandEvent &event) {
 void MainWindow::onMenuEditRedo(wxCommandEvent &event) {
 	std::cout << "Redo Pressed" << std::endl;
 	if (program->redo()) {
-		Refresh();
+		wxPaintEvent e;
+		onPaint(e);
 		setDirty();
 	}
 }
@@ -778,18 +770,14 @@ void MainWindow::uncheckRadius() {
  		wxCommandEvent evt(wxEVT_NULL, miBrushHeight + height + heightCount / 2 + 1);
  		onMenuBrushHeight(evt);
  	} else if (e.GetKeyCode() == ' ') {	
-		if( resourceUnderMouse != 0 )
-		{
+		if (resourceUnderMouse != 0) {
 			wxCommandEvent evt(wxEVT_NULL, miBrushResource + resourceUnderMouse + 1);
  			onMenuBrushResource(evt);
-		}
-		else
-		{
+		} else {
 			wxCommandEvent evt(wxEVT_NULL, miBrushObject + objectUnderMouse + 1);
  			onMenuBrushObject(evt);
 		}
- 	}
- 	else if (e.GetKeyCode() == 'G') {
+ 	} else if (e.GetKeyCode() == 'G') {
  		wxCommandEvent evt(wxEVT_NULL, miBrushGradient + height + heightCount / 2 + 1);
  		onMenuBrushGradient(evt);
  	} else if (e.GetKeyCode() == 'S') {
@@ -862,17 +850,33 @@ GlCanvas::GlCanvas(MainWindow *	mainWindow, int* args)
 	this->mainWindow = mainWindow;
 }
 
+void translateCoords(wxWindow *wnd, int &x, int &y) {
+	int cx, cy;
+	wnd->GetPosition(&cx, &cy);
+	x += cx;
+	y += cy;
+}
+
 void GlCanvas::onMouseDown(wxMouseEvent &event) {
-	mainWindow->onMouseDown(event);
+	int x, y;
+	event.GetPosition(&x, &y);
+	translateCoords(this, x, y);
+	mainWindow->onMouseDown(event, x, y);
 }
 
 void GlCanvas::onMouseMove(wxMouseEvent &event) {
-	mainWindow->onMouseMove(event);
+	int x, y;
+	event.GetPosition(&x, &y);
+	translateCoords(this, x, y);
+	mainWindow->onMouseMove(event, x, y);
 }
 
- void GlCanvas::onKeyDown(wxKeyEvent &event) {
- 	mainWindow->onKeyDown(event);
- }
+void GlCanvas::onKeyDown(wxKeyEvent &event) {
+	int x, y;
+	event.GetPosition(&x, &y);
+	translateCoords(this, x, y);
+	mainWindow->onKeyDown(event);
+}
 
 BEGIN_EVENT_TABLE(GlCanvas, wxGLCanvas)
 	EVT_KEY_DOWN(GlCanvas::onKeyDown)

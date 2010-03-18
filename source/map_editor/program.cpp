@@ -156,8 +156,8 @@ Program::~Program() {
 }
 
 int Program::getObject(int x, int y) {
-	int i=(x - ofsetX) / cellSize;
-	int j= (y + ofsetY) / cellSize;
+	int i = (x - ofsetX) / cellSize;
+	int j = (y + ofsetY) / cellSize;
 	if (map->inside(i, j)) {
 		return map->getObject(i,j);
 	}else{
@@ -166,11 +166,11 @@ int Program::getObject(int x, int y) {
 }
 
 int Program::getResource(int x, int y) {
-	int i=(x - ofsetX) / cellSize;
-	int j= (y + ofsetY) / cellSize;
+	int i = (x - ofsetX) / cellSize;
+	int j = (y + ofsetY) / cellSize;
 	if (map->inside(i, j)) {
 		return map->getResource(i,j);
-	}else{
+	} else {
 		return 0;
 	}
 }

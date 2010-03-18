@@ -171,8 +171,10 @@ public:
 	void init(string fname);
 
 	void onClose(wxCloseEvent &event);
-	void onMouseDown(wxMouseEvent &event);
-	void onMouseMove(wxMouseEvent &event);
+
+	void onMouseDown(wxMouseEvent &event, int x, int y);
+	void onMouseMove(wxMouseEvent &event, int x, int y);
+
 	void onPaint(wxPaintEvent &event);
 	void onKeyDown(wxKeyEvent &e);
 
