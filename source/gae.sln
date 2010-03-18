@@ -23,6 +23,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "g3d_viewer", "g3d_viewer\g3
 		{A29E0F89-0584-4E22-A163-7A676E17E9E1} = {A29E0F89-0584-4E22-A163-7A676E17E9E1}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test2", "test\test2.vcproj", "{71EC6156-E860-4535-BF20-27052A86E5B0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A29E0F89-0584-4E22-A163-7A676E17E9E1} = {A29E0F89-0584-4E22-A163-7A676E17E9E1}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -82,6 +87,16 @@ Global
 		{1ACEE8EA-A0FB-4759-B647-5A881FFDA499}.Speedy Debug|Win32.Build.0 = Debug|Win32
 		{1ACEE8EA-A0FB-4759-B647-5A881FFDA499}.Ultra Debug|Win32.ActiveCfg = Debug|Win32
 		{1ACEE8EA-A0FB-4759-B647-5A881FFDA499}.Ultra Debug|Win32.Build.0 = Debug|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Debug|Win32.Build.0 = Debug|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Release|Win32.ActiveCfg = Release+SSE2|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Release|Win32.Build.0 = Release+SSE2|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Release+SSE2|Win32.ActiveCfg = Release+SSE2|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Release+SSE2|Win32.Build.0 = Release+SSE2|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Speedy Debug|Win32.ActiveCfg = Debug|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Speedy Debug|Win32.Build.0 = Debug|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Ultra Debug|Win32.ActiveCfg = Debug|Win32
+		{71EC6156-E860-4535-BF20-27052A86E5B0}.Ultra Debug|Win32.Build.0 = Debug|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

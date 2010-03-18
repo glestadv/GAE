@@ -105,7 +105,16 @@ void ConnectionSlot::update() {
 				serverInterface->doSendTextMessage(msg, -1);
 			}
 			break;
-
+#		if _RECORD_GAME_STATE_
+		case NetworkMessageType::SYNC_ERROR: {
+				SyncError e;
+				receiveMessage(&e);
+				int frame = e.getFrame();
+				serverInterface->dumpFrame(frame);
+				throw runtime_error("Sync error. GameState records dumped.");
+			}
+			break;
+#		endif
 		default: {
 				stringstream ss;
 				ss << "Unexpected message type: " << networkMessageType << " on slot: " << playerIndex;

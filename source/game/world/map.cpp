@@ -41,6 +41,21 @@ namespace Glest{ namespace Game{
 
 using Search::Cartographer;
 
+Cell *Map::getCell(int x, int y) const {
+	assert ( this->isInside ( x,y ) );
+	return &cells[y * w + x];
+}
+Cell *Map::getCell(const Vec2i &pos) const {
+	return getCell(pos.x, pos.y);
+}
+Tile *Map::getTile(int sx, int sy) const { 
+	assert ( this->isInsideTile ( sx,sy ) );
+	return &tiles[sy*tileW+sx];
+}
+Tile *Map::getTile(const Vec2i &sPos) const {
+	return getTile(sPos.x, sPos.y);
+}
+
 // =====================================================
 // 	class Map
 // =====================================================
@@ -78,21 +93,7 @@ Map::~Map() {
 	if(startLocations)	{delete[] startLocations;}
 //	if (surfaceHeights)	{delete[] surfaceHeights;}
 }
-//get
-Cell *Map::getCell(int x, int y) const {
-	assert ( this->isInside ( x,y ) );
-	return &cells[y * w + x];
-}
-Cell *Map::getCell(const Vec2i &pos) const {
-	return getCell(pos.x, pos.y);
-}
-Tile *Map::getTile(int sx, int sy) const { 
-	assert ( this->isInsideTile ( sx,sy ) );
-	return &tiles[sy*tileW+sx];
-}
-Tile *Map::getTile(const Vec2i &sPos) const {
-	return getTile(sPos.x, sPos.y);
-}
+
 void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 	FILE *f = NULL;
 
@@ -571,7 +572,7 @@ bool Map::getNearestFreePos(Vec2i &result, const Unit *unit, const Vec2i &target
 
 /**
  * Used for adjacent position calculations -- if candidate is closer to start than minDistance, then
- * minDistance is set to that distance and the value of candicate is copied into result.
+ * minDistance is set to that distance and the value of candidate is copied into result.
  */
 inline void Map::findNearest(Vec2i &result, const Vec2i &start, const Vec2i &candidate, fixed &minDistance) {
 	fixed dist = fixedDist(candidate, start);
@@ -633,7 +634,7 @@ Vec2i Map::getNearestAdjacentPos(const Vec2i &start, int size, const Vec2i &targ
 bool Map::getNearestAdjacentFreePos(Vec2i &result, const Unit *unit, const Vec2i &start, int size,
 		const Vec2i &target, Field field, int targetSize) const {
 	int sideSize = targetSize + size;
-	fixed noneFound = h + w;
+	fixed noneFound = fixed::max_int();
 	fixed minDistance = noneFound;
 
 	int topY = target.y - size;

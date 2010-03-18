@@ -601,7 +601,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			unit->finishCommand();
 			unit->setCurrSkill(SkillClass::STOP);
 			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), true);
-			scriptManager->onUnitCreated(builtUnit);
+			ScriptManager::onUnitCreated(builtUnit);
 			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(
 					bct->getBuiltSound(),
@@ -679,7 +679,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
 					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
-					scriptManager->onResourceHarvested();
+					ScriptManager::onResourceHarvested();
 
 					//if next to a store unload resources
 					unit->getPath()->clear();
@@ -854,7 +854,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				unit->setCurrSkill(SkillClass::STOP);
 				if (!wasBuilt) {
 					//building finished
-					scriptManager->onUnitCreated(repaired);
+					ScriptManager::onUnitCreated(repaired);
 					if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 						// try to find finish build sound
 						BuildCommandType *bct = (BuildCommandType *)unit->getType()->getFirstCtOfClass(CommandClass::BUILD);
@@ -1435,7 +1435,7 @@ inline bool UnitUpdater::attackableOnRange(const Unit *unit, Unit **rangedPtr,
 // =====================================================
 
 /** Utility class for managing multiple targets by distance. */
-class Targets : public std::set<Unit *> {
+class Targets : public std::map<Unit*, fixed> {
 private:
 	Unit *nearest;
 	fixed distance;
@@ -1445,7 +1445,7 @@ public:
 
 	void record(Unit *target, fixed dist) {
 		if (find(target) == end()) {
-			insert(target);
+			insert(std::make_pair(target, dist));
 		}
 		if (dist < distance) {
 			nearest = target;
@@ -1453,8 +1453,26 @@ public:
 		}
 	}
 
-	Unit *getNearest() {
+	Unit* getNearest() {
 		return nearest;
+	}
+
+	Unit* getNearestSkillClass(SkillClass sc) {
+		foreach(Targets, it, *this) {
+			if (it->first->getType()->hasSkillClass(sc)) {
+				return it->first;
+			}
+		}
+		return false;
+	}
+
+	Unit* getNearestHpRatio(fixed hpRatio) {
+		foreach(Targets, it, *this) {
+			if (it->first->getHpRatioFixed() < hpRatio) {
+				return it->first;
+			}
+		}
+		return false;
 	}
 };
 
@@ -1528,8 +1546,8 @@ unitOnRange_exitLoop:
 /** rangedPtr should point to a pointer that is either NULL or a valid Unit */
 bool UnitUpdater::repairableOnRange(
 		const Unit *unit,
-		Vec2i center,
-		int centerSize,
+		Vec2i centre,
+		int centreSize,
 		Unit **rangedPtr,
 		const RepairCommandType *rct,
 		const RepairSkillType *rst,
@@ -1537,21 +1555,15 @@ bool UnitUpdater::repairableOnRange(
 		bool allowSelf,
 		bool militaryOnly,
 		bool damagedOnly) {
-
-	///@todo convert to fixed point
-	return false;
-
-	/*
 	Targets repairables;
 
-	Vec2f floatCenter(center.x + centerSize / 2.f, center.y + centerSize / 2.f);
-	Vec2<fixed> floatCentre...
-	int targetRange = 0x10000;
+	fixedVec2 fixedCentre(centre.x + centreSize / fixed(2), centre.y + centreSize / fixed(2));
+	fixed targetRange = fixed::max_int();
 	Unit *target = *rangedPtr;
-	range += centerSize / 2;
+	range += centreSize / 2;
 
 	if (target && target->isAlive() && target->isDamaged() && rct->isRepairableUnitType(target->getType())) {
-		fixed rangeToTarget = floatCenter.dist(target->getFloatCenteredPos()) - (float)(centerSize + target->getSize()) / 2.0f;
+		fixed rangeToTarget = fixedCentre.dist(target->getFixedCenteredPos()) - (centreSize + target->getSize()) / fixed(2);
 		if (rangeToTarget <= range) {
 			// current target is good
 			return true;
@@ -1564,7 +1576,7 @@ bool UnitUpdater::repairableOnRange(
 	//nearby cells
 	Vec2i pos;
 	fixed distance;
-	PosCircularIteratorSimple pci(*map, center, range);
+	PosCircularIteratorSimple pci(map->getBounds(), centre, range);
 	while (pci.getNext(pos, distance)) {
 		//all zones
 		for (int z = 0; z < Zone::COUNT; z++) {
@@ -1578,13 +1590,11 @@ bool UnitUpdater::repairableOnRange(
 			&& (!damagedOnly || candidate->isDamaged())
 			&& (!militaryOnly || candidate->getType()->hasCommandClass(CommandClass::ATTACK))
 			&& rct->isRepairableUnitType(candidate->getType())) {
-	
 				//record the nearest distance to target (target may be on multiple cells)
 				repairables.record(candidate, distance.intp());
 			}
 		}
 	}
-
 	// if no repairables or just one then it's a simple choice.
 	if (repairables.empty()) {
 		return false;
@@ -1592,17 +1602,15 @@ bool UnitUpdater::repairableOnRange(
 		*rangedPtr = repairables.begin()->first;
 		return true;
 	}
-
 	//heal cloesest ally that can attack (and are probably fighting) first.
 	//if none, go for units that are less than 20%
 	//otherwise, take the nearest repairable unit
-	if(!(*rangedPtr = repairables.getNearest(SkillClass::ATTACK))
-	&& !(*rangedPtr = repairables.getNearest(SkillClass::COUNT, fixed(2) / 10))
+	if(!(*rangedPtr = repairables.getNearestSkillClass(SkillClass::ATTACK))
+	&& !(*rangedPtr = repairables.getNearestHpRatio(fixed(2) / 10))
 	&& !(*rangedPtr = repairables.getNearest())) {
 		return false;
 	}
 	return true;
-	*/
 }
 
 // =====================================================

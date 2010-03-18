@@ -36,16 +36,16 @@ ostream& operator<<(ostream &lhs, const Vec2f &rhs) {
 
 /// fixed point square root, adapted from code at c.snippets.org
 /// @todo make faster? [test perfomance vs sqrtf(), if horrible, make faster.]
-/// avennues of optimization : unroll loop (compiler might be doing this for us), use set masks
-/// for each iteration, rather than generating them in the macro (uses 'n', can't be replaced by compiler).
 fixed fixed::sqRt() const {
 	fixed root = 0;		/* accumulator      */
 	uint32 r = 0;		/* remainder        */
 	uint32 e = 0;		/* trial product    */
+	uint32 x = datum;
 
-#	define GET2BITS(x, n) ((x & (3L << (DATUM_BITS - 2 * (n + 1)))) >> (DATUM_BITS - 2 * (n + 1)))
+#	define TOP2BITS(v) ((v & (3L << (DATUM_BITS - 2))) >> (DATUM_BITS - 2))
 	for (int i = 0; i < DATUM_BITS / 2; ++i) {
-		r = (r << 2) + GET2BITS(datum, i);
+		r = (r << 2) + TOP2BITS(x);
+		x <<= 2;
 		root.datum <<= 1;
 		e = (root.datum << 1) + 1;
 		if (r >= e) {
@@ -56,6 +56,97 @@ fixed fixed::sqRt() const {
 	root.datum <<= HALF_SHIFT;
 	return root;
 }
+
+#define LOOP_BODY()					\
+		r = (r << 2) + TOP2BITS(x);	\
+		x <<= 2;					\
+		root.datum <<= 1;			\
+		e = (root.datum << 1) + 1;	\
+		if (r >= e) {				\
+			r -= e;					\
+			++root.datum;			\
+		}
+
+fixed fixed::sqRt_unrolled_once() const {
+	fixed root = 0;		/* accumulator      */
+	uint32 r = 0;		/* remainder        */
+	uint32 e = 0;		/* trial product    */
+	uint32 x = datum;
+
+	// unrolled once, more seems to kill performance, code cache thrashing? more testing needed.
+	for (int i = 0; i < DATUM_BITS / 4; ++i) {
+		LOOP_BODY();
+		LOOP_BODY();
+	}
+	root.datum <<= HALF_SHIFT;
+	return root;
+}
+
+fixed fixed::sqRt_unrolled_twice() const {
+	fixed root = 0;		/* accumulator      */
+	uint32 r = 0;		/* remainder        */
+	uint32 e = 0;		/* trial product    */
+	uint32 x = datum;
+
+	for (int i = 0; i < DATUM_BITS / 8; ++i) {
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+	}
+	root.datum <<= HALF_SHIFT;
+	return root;
+}
+
+fixed fixed::sqRt_unrolled_thrice() const {
+	fixed root = 0;		/* accumulator      */
+	uint32 r = 0;		/* remainder        */
+	uint32 e = 0;		/* trial product    */
+	uint32 x = datum;
+
+	for (int i = 0; i < DATUM_BITS / 16; ++i) {
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+		LOOP_BODY();
+	}
+	root.datum <<= HALF_SHIFT;
+	return root;
+}
+
+
+fixed fixed::sqRt_unrolled_completely() const {
+	fixed root = 0;		/* accumulator      */
+	uint32 r = 0;		/* remainder        */
+	uint32 e = 0;		/* trial product    */
+	uint32 x = datum;
+
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+	LOOP_BODY();
+
+	root.datum <<= HALF_SHIFT;
+	return root;
+}
+
 
 }}
 

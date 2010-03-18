@@ -213,6 +213,8 @@ void World::update() {
 	PROFILE_START( "World Update" );
 	++frameCount;
 
+	theNetworkManager.getGameInterface()->frameStart(frameCount);
+
 	// check ScriptTimers
 	scriptManager->onTimer();
 
@@ -275,7 +277,11 @@ void World::update() {
 		tick();
 	}
 	assertConsistiency();
-	PROFILE_STOP( "World Update" );}
+
+	theNetworkManager.getGameInterface()->frameEnd(frameCount);
+
+	PROFILE_STOP( "World Update" );
+}
 
 void World::doKill(Unit *killer, Unit *killed) {
 	scriptManager->onUnitDied(killed);

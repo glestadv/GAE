@@ -35,7 +35,7 @@ namespace Glest { namespace Game {
 //	class NetworkInterface
 // =====================================================
 
-const int NetworkInterface::readyWaitTimeout= 60000;	//1 minute
+const int NetworkInterface::readyWaitTimeout = 60000;	// 1 minute
 
 void NetworkInterface::send(const NetworkMessage* networkMessage) {
 	Socket* socket= getSocket();
@@ -43,15 +43,13 @@ void NetworkInterface::send(const NetworkMessage* networkMessage) {
 }
 
 //NETWORK: this is (re)moved
-NetworkMessageType NetworkInterface::getNextMessageType(){
+NetworkMessageType NetworkInterface::getNextMessageType() {
 	Socket* socket = getSocket();
 	int8 messageType = NetworkMessageType::NO_MSG;
 
 	//peek message type
-	if (socket->getDataToRead() >= sizeof(messageType)) {
-		socket->peek(&messageType, sizeof(messageType));
-	}
-
+	socket->peek(&messageType, sizeof(messageType));
+	
 	//sanity check new message type
 	if (messageType < 0 || messageType >= NetworkMessageType::COUNT){
 		throw runtime_error("Invalid message type: " + intToStr(messageType));
@@ -63,7 +61,7 @@ int NetworkInterface::dataAvailable() {
 	return getSocket()->getDataToRead();
 }
 
-bool NetworkInterface::receiveMessage(NetworkMessage* networkMessage){
+bool NetworkInterface::receiveMessage(NetworkMessage* networkMessage) {
 	Socket* socket= getSocket();
 	return networkMessage->receive(socket);
 }
@@ -152,48 +150,61 @@ void GameInterface::doUpdateUnitCommand(UnitUpdater *uu, Unit *unit) {
 		}
 		unit->setCurrSkill(SkillClass::STOP);
 	}
-	// update cycle
-	if (unit->getCurrSkill()->getClass() == SkillClass::MOVE) {
-		unit->updateMoveSkillCycle();
-	} else {
-		unit->updateSkillCycle(skillCycleTable.lookUp(unit).getSkillFrames());
-	}
-	if (unit->getCurrSkill() != old_st) {	// if starting new skill
-		unit->resetAnim(theWorld.getFrameCount() + 1); // reset animation cycle for next frame
-	}
 
-	Checksum cs;
-	cs.add(unit->getId());
-	cs.add(unit->getFactionIndex());
-	cs.add(unit->getCurrSkill()->getClass());
-	cs.add(unit->getCurrSkill()->getName());
-	if (unit->getCurrSkill()->getClass() == SkillClass::MOVE) {
-		cs.add(unit->getNextPos());
-	}
-	if (unit->getCurrSkill()->getClass() == SkillClass::ATTACK
-	|| unit->getCurrSkill()->getClass() == SkillClass::REPAIR) {
-		if (unit->getTarget()) {
-			cs.add(unit->getTarget()->getId());
-		}
-	}
-#	if defined(MAD_NETWORK_LOGGING)
-		stringstream ss;
-		ss << "unit ID: " << unit->getId();
-		ss << "faction index: " << unit->getFactionIndex();	
-		ss << "Slill class: " << SkillClassNames[unit->getCurrSkill()->getClass()];
-		ss << "skill type: " << unit->getCurrSkill()->getName();
+	try {
+		// update cycle
 		if (unit->getCurrSkill()->getClass() == SkillClass::MOVE) {
-			ss << " Moving to: " << unit->getNextPos();
+			updateMove(unit);
+		} else {
+			unit->updateSkillCycle(skillCycleTable.lookUp(unit).getSkillFrames());
+		}
+		if (unit->getCurrSkill() != old_st) {	// if starting new skill
+			unit->resetAnim(theWorld.getFrameCount() + 1); // reset animation cycle for next frame
+		}
+
+		Checksum cs;
+		cs.add(unit->getId());
+		cs.add(unit->getFactionIndex());
+		cs.add(unit->getCurrSkill()->getClass());
+		cs.add(unit->getCurrSkill()->getName());
+		if (unit->getCurrSkill()->getClass() == SkillClass::MOVE) {
+			cs.add(unit->getNextPos());
 		}
 		if (unit->getCurrSkill()->getClass() == SkillClass::ATTACK
 		|| unit->getCurrSkill()->getClass() == SkillClass::REPAIR) {
 			if (unit->getTarget()) {
-				ss << " Target id: " << unit->getTarget()->getId();
+				cs.add(unit->getTarget()->getId());
 			}
 		}
-		LOG_NETWORK( ss.str() );
+		updateUnitCommand(unit, cs.getSum());
+	} catch (runtime_error &e) {
+#		if _RECORD_GAME_STATE_
+			assert(theWorld.getFrameCount());
+
+			UnitStateRecord usr(unit);
+			stateLog.addUnitRecord(usr);
+			stateLog.logFrame();
+
+			SyncError se(theWorld.getFrameCount());
+			send(&se);
+#		endif
+		throw e;
+	}
+
+#	if _RECORD_GAME_STATE_
+		UnitStateRecord usr(unit);
+		stateLog.addUnitRecord(usr);
 #	endif
-	updateUnitCommand(unit, cs.getSum());
+}
+
+void GameInterface::frameStart(int frame) {
+#	if _RECORD_GAME_STATE_
+		assert(frame);
+		stateLog.newFrame(frame);
+#	endif
+}
+
+void GameInterface::frameEnd(int frame) {
 }
 
 void GameInterface::doUpdateAnim(Unit *unit) {
@@ -206,12 +217,6 @@ void GameInterface::doUpdateAnim(Unit *unit) {
 			Checksum cs;
 			cs.add(unit->getId());
 			cs.add(inf.getAttackOffset());
-#			if defined(MAD_NETWORK_LOGGING)
-				stringstream ss;
-				ss << "Unit id: " << unit->getId();
-				ss << "Attack offset: " << inf.getAttackOffset();
-				LOG_NETWORK( ss.str() );
-#			endif
 			updateAnim(unit, cs.getSum());
 		}
 	}
@@ -220,7 +225,6 @@ void GameInterface::doUpdateAnim(Unit *unit) {
 void GameInterface::doUnitBorn(Unit *unit) {
 	const CycleInfo inf = skillCycleTable.lookUp(unit);
 	unit->updateSkillCycle(inf.getSkillFrames());
-//	keyFrame.addSkillUpdate(unit);
 	unit->updateAnimCycle(inf.getAnimFrames());
 
 	Checksum cs;
@@ -232,21 +236,20 @@ void GameInterface::doUnitBorn(Unit *unit) {
 }
 
 void GameInterface::doUpdateProjectile(Unit *u, Projectile pps, const Vec3f &start, const Vec3f &end) {
-	pps->setPath(start, end);
+	updateProjectilePath(u, pps, start, end);
 
 	Checksum cs;
 	cs.add(u->getId());
 	cs.add(u->getCurrSkill()->getName());
-	if (u->getCurrCommand()->getUnit()) {
-		cs.add(u->getCurrCommand()->getUnit()->getId());
-	} else {
-		cs.add(u->getCurrCommand()->getPos());
+	if (u->anyCommand()) {
+		if (u->getCurrCommand()->getUnit()) {
+			cs.add(u->getCurrCommand()->getUnit()->getId());
+		} else {
+			cs.add(u->getCurrCommand()->getPos());
+		}
 	}
 	cs.add(pps->getEndFrame());
 	updateProjectile(u, pps->getEndFrame(), cs.getSum());
 }
 
-
-
-
-}}//end namespace
+}} // end namespace

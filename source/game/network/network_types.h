@@ -136,53 +136,79 @@ enum NetworkCommandType{
 	};
 #pragma pack(pop)
 
-WRAPPED_ENUM( NetUpdateType,
-	BASIC_SKILL,
-	MOVE_SKILL,
-	TARGET_SKILL,
-	PROJECTILE
-)
-
 #pragma pack(push, 1)
-	struct BasicSkillUpdate {
-		static inline NetUpdateType type_id() { return NetUpdateType::BASIC_SKILL; }
-		uint8 type		: 2; // == 0
-		uint8 skillId	: 6;
-		BasicSkillUpdate(const Unit *unit);
-		BasicSkillUpdate(const char *ptr) { *this = *((BasicSkillUpdate*)ptr); }
-	}; // 1 byte
-
 	struct MoveSkillUpdate {
-		static inline NetUpdateType type_id() { return NetUpdateType::MOVE_SKILL; }
-		uint8 type			: 2; // == 1
-		uint8 skillId		: 6;
-		uint8 end_offset	: 8;
-		int8  offsetX		: 2;
-		int8  offsetY		: 2;
-		int8  padding		: 4;
+		int8	offsetX		:  2;
+		int8	offsetY		:  2;
+		int16	end_offset	: 12;
+
 		MoveSkillUpdate(const Unit *unit);
 		MoveSkillUpdate(const char *ptr) { *this = *((MoveSkillUpdate*)ptr); }
 		Vec2i posOffset() const { return Vec2i(offsetX, offsetY); }
-	}; // 3 bytes
-
-	struct TargetSkillUpdate {
-		static inline NetUpdateType type_id() { return NetUpdateType::TARGET_SKILL; }
-		uint8  type			:  2; // == 2
-		uint8  skillId		:  6;
-		uint32 targetId		: 24;
-		TargetSkillUpdate(const Unit *unit);
-		TargetSkillUpdate(const char *ptr) { *this = *((TargetSkillUpdate*)ptr); }
-	}; // 4 bytes
+	};
 
 	struct ProjectileUpdate {
-		static inline NetUpdateType type_id() { return NetUpdateType::PROJECTILE; }
-		uint8  type			:  2; // == 3
-		uint8  skillId		:  6;
 		uint8 end_offset	:  8;
 		ProjectileUpdate(const Unit *unit, ProjectileParticleSystem *pps);
 		ProjectileUpdate(const char *ptr) { *this = *((ProjectileUpdate*)ptr); }
 	}; // 2 bytes
 #pragma pack(pop)
+
+
+#define _RECORD_GAME_STATE_ 1
+
+#if _RECORD_GAME_STATE_
+struct UnitStateRecord {
+	uint32	unit_id		: 24;
+	int32	cmd_class	:  8;
+	uint32	skill_cl	:  8;
+	int32	curr_pos_x	: 12;
+	int32	curr_pos_y	: 12;
+	int32	next_pos_x	: 12;
+	int32	next_pos_y	: 12;
+	int32	targ_pos_x	: 12;
+	int32	targ_pos_y	: 12;
+	int32	target_id	: 24;
+
+	UnitStateRecord(Unit *unit);
+	UnitStateRecord() {}
+};					//	: 20 bytes
+
+ostream& operator<<(ostream &lhs, const UnitStateRecord&);
+
+struct FrameRecord : public vector<UnitStateRecord> {
+	int32	frame;
+};
+
+ostream& operator<<(ostream &lhs, const FrameRecord&);
+
+class GameStateLog {
+	FrameRecord currFrame;
+
+	void writeFrame();
+
+public:
+	GameStateLog();
+
+	int getCurrFrame() const { return currFrame.frame; }
+
+	void addUnitRecord(UnitStateRecord &usr) {
+		currFrame.push_back(usr);
+	}
+
+	void newFrame(int frame) {
+		if (currFrame.frame) {
+			writeFrame();
+		}
+		currFrame.clear();
+		assert(frame == currFrame.frame + 1);
+		currFrame.frame = frame;
+	}
+
+	void logFrame(int frame = -1);
+};
+
+#endif
 
 }}//end namespace
 

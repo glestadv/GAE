@@ -200,7 +200,17 @@ void FixedPointTest::testSqRt() {
 	cout << "\nA.dist(B) == " << A.dist(B); // ref
 	cout << "\nfixedDist(A, B) == " << tmp;
 	//CPPUNIT_ASSERT( (fixedDist(A, B) is 'close' to 242.5 )
-	cout << "\nfixedDist(A,B).toFloat = " << tmp.toFloat();
+	cout << "\nfixedDist(A,B).toFloat() = " << tmp.toFloat();
+
+	A = Vec2i(0,0); B = Vec2i(1,1);
+	fixed res =  fixedDist(A, B);
+	cout << "\nA = (0,0), B = " << B << ", dist = " << fixedDist(A, B);
+
+	B = Vec2i(2,1);
+	cout << "\nA = (0,0), B = " << B << ", dist = " << fixedDist(A, B);
+
+	B = Vec2i(2,2);
+	cout << "\nA = (0,0), B = " << B << ", dist = " << fixedDist(A, B);
 
 	///@todo test stuff
 }

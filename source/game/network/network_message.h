@@ -342,34 +342,30 @@ public:
 
 class KeyFrame : public NetworkMessage {
 private:
-	//static const int buffer_size = 1024 * 8;
+	static const int buffer_size = 1024 * 4;
 	static const int max_cmds = 512;
 	static const int max_checksums = 2048;
-	typedef char* char_ptr;
+	typedef char* byte_ptr;
 
-	int32 frame;
+	int32	frame;
 
-	int32	checksumCount;
 	int32	checksums[max_checksums];
+	int32	checksumCount;
 	uint32	checksumCounter;
+	
+	char	 updateBuffer[buffer_size];
+	size_t	 updateSize;
+	uint32	 projUpdateCount;
+	uint32	 moveUpdateCount;
+	byte_ptr writePtr;
+	byte_ptr readPtr;
 
-/*
-	char updateBuffer[buffer_size];
-	char_ptr writePtr, readPtr;
-	size_t updateCount, updateSize;
-*/
 	NetworkCommand commands[max_cmds];
 	size_t cmdCount;
 
-	//void checkType(NetUpdateType type, size_t size);
-
-	//template <typename UpdateType>
-	//void addUpdate(UpdateType update);
 
 public:
-	KeyFrame() {
-		reset();
-	}
+	KeyFrame()		{ reset(); }
 
 	virtual bool receive(Socket* socket);
 	virtual void send(Socket* socket) const;
@@ -380,48 +376,39 @@ public:
 	const size_t& getCmdCount() const	{ return cmdCount; }
 	const NetworkCommand* getCmd(size_t ndx) const { return &commands[ndx]; }
 
-	int32 getNextChecksum() { 
-		assert(checksumCounter < checksumCount);
-		if (checksumCounter >= checksumCount) {
-			throw runtime_error("sync error: insufficient checksums in keyframe.");
-		}
-		return checksums[checksumCounter++];
-	}
-
-	void addChecksum(int32 cs) {
-		assert(checksumCount < max_checksums);
-		if (checksumCount >= max_checksums) {
-			throw runtime_error("Error: insufficient room for checksums in keyframe, increase KeyFrame::max_checksums.");
-		}
-		checksums[checksumCount++] = cs;
-	}
-	
-/*
-	NetUpdateType getNextType() const;
-
-	template <typename UpdateType>
-	UpdateType getNextUpdate() {
-		checkType(UpdateType::type_id(), sizeof(UpdateType));
-		UpdateType update(readPtr);
-		readPtr += sizeof(UpdateType);
-		return update;
-	}
-*/
-	void add(NetworkCommand &nc) {
-		assert(cmdCount < max_cmds);
-		memcpy(&commands[cmdCount++], &nc, sizeof(NetworkCommand));		
-	}
-
-	void reset() {
-		checksumCounter = checksumCount = 0;
-		/*updateCount = updateSize =*/ cmdCount = 0;
-		//writePtr = updateBuffer;
-		//readPtr = updateBuffer;
-	}
-
-	//void addSkillUpdate(Unit *unit);
-	//void addProjectilUpdate(ProjectileUpdate updt);
+	int32 getNextChecksum();
+	void addChecksum(int32 cs);
+	void add(NetworkCommand &nc);
+	void reset();
+	void addUpdate(MoveSkillUpdate updt);
+	void addUpdate(ProjectileUpdate updt);
+	MoveSkillUpdate getMoveUpdate();
+	ProjectileUpdate getProjUpdate();
 };
+
+#if _RECORD_GAME_STATE_
+
+class SyncError : public NetworkMessage {
+	struct Data{
+		int32	messageType	:  8;
+		uint32	frameCount	: 24;
+	} data;
+
+public:
+	SyncError(int frame) {
+		data.messageType = NetworkMessageType::SYNC_ERROR;
+		data.frameCount = frame;
+	}
+	SyncError() {}
+
+	int getFrame() const { return data.frameCount; }
+
+	virtual bool receive(Socket* socket);
+	virtual void send(Socket* socket) const;
+};
+
+#endif
+
 
 }}//end namespace
 

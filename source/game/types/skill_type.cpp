@@ -256,7 +256,8 @@ CycleInfo SkillType::calculateCycleTime() const {
 	int soundOffset = -1;
 	if (!sounds.getSounds().empty()) {
 		soundOffset = int(soundStartTime / animProgressSpeed);
-		assert(soundOffset >= 0);
+		if (soundOffset < 1) ++soundOffset;
+		assert(soundOffset > 0);
 	}
 	assert(skillFrames > 0 && animFrames > 0);
 	return CycleInfo(skillFrames, animFrames, soundOffset, attackOffset);

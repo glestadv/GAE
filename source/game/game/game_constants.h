@@ -141,6 +141,7 @@ REGULAR_ENUM( NetworkMessageType,
 				TEXT,
 				KEY_FRAME,
 				SKILL_CYCLE_TABLE,
+				SYNC_ERROR,
 				QUIT
 			)
 

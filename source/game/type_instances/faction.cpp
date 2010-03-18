@@ -397,20 +397,17 @@ void Faction::setResourceBalance(const ResourceType *rt, int balance) {
 }
 
 void Faction::add(Unit *unit) {
+	LOG_NETWORK( "Faction: " + intToStr(id) + " unit added Id: " + intToStr(unit->getId()) );
 	units.push_back(unit);
-	unitMap.insert(std::make_pair(unit->getId(), unit));
+	unitMap[unit->getId()] = unit;
 }
 
 void Faction::remove(Unit *unit) {
-	for (int i = 0; i < units.size(); ++i) {
-		if (units[i] == unit) {
-			units.erase(units.begin() + i);
-			unitMap.erase(unit->getId());
-			assert(units.size() == unitMap.size());
-			return;
-		}
-	}
-	assert(false);
+	Units::iterator it = std::find(units.begin(), units.end(), unit);
+	assert(it != units.end());
+	units.erase(it);
+	unitMap.erase(unit->getId());
+	assert(units.size() == unitMap.size());
 }
 
 void Faction::addStore(const UnitType *unitType) {

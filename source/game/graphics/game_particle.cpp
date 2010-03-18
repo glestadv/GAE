@@ -17,7 +17,7 @@
 #include "world.h"
 #include "unit_updater.h"
 
-#define PARTICLE_LOG(x) { theLogger.add(intToStr(theWorld.getFrameCount()) + " :: " + x); }
+#define PARTICLE_LOG(x) {}//{ theLogger.add(intToStr(theWorld.getFrameCount()) + " :: " + x); }
 
 namespace Glest { namespace Game {
 

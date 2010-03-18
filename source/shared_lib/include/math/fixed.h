@@ -252,6 +252,10 @@ public:
 	bool operator>=(const fixed &that) const	{ return datum >= that.datum;	}
 
 	fixed sqRt() const; // defined in math_util.cpp
+	fixed sqRt_unrolled_once() const;
+	fixed sqRt_unrolled_twice() const;
+	fixed sqRt_unrolled_thrice() const;
+	fixed sqRt_unrolled_completely() const;
 
 }; // class fixed
 

@@ -119,6 +119,18 @@ void ServerInterface::updateAnim(Unit*, int32 cs) {
 	keyFrame.addChecksum(cs);
 }
 
+void ServerInterface::updateMove(Unit *unit) {
+	unit->updateMoveSkillCycle();
+	MoveSkillUpdate updt(unit);
+	keyFrame.addUpdate(updt);
+}
+
+void ServerInterface::updateProjectilePath(Unit *u, Projectile pps, const Vec3f &start, const Vec3f &end) {
+	pps->setPath(start, end);
+	ProjectileUpdate updt(u, pps);
+	keyFrame.addUpdate(updt);
+}
+
 void ServerInterface::process(NetworkMessageText &msg, int requestor) {
 	broadcastMessage(&msg, requestor);
 	GameInterface::processTextMessage(msg);
@@ -227,10 +239,8 @@ void ServerInterface::launchGame(const GameSettings* gameSettings){
 	broadcastMessage(&networkMessageLaunch);	
 }
 
-
 // NETWORK: I'm thinking the file stuff should go somewhere else.
 // I agree, /dev/null will do for now ;-) We can resuurect it later.
-
 
 void ServerInterface::broadcastMessage(const NetworkMessage* networkMessage, int excludeSlot) {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
@@ -259,5 +269,11 @@ void ServerInterface::updateListen() {
 	}
 	serverSocket.listen(openSlotCount);
 }
+
+#if _RECORD_GAME_STATE_
+	void ServerInterface::dumpFrame(int frame) {
+		stateLog.logFrame(frame);
+	}
+#endif
 
 }}//end namespace

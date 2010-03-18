@@ -392,6 +392,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\util\heap.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\platform\input.h"
 				>
 			</File>
@@ -524,11 +528,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\socket.h"
+				RelativePath=".\include\platform\socket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\socket.h"
+				RelativePath=".\include\platform\win32\socket.h"
 				>
 			</File>
 			<File
@@ -596,11 +600,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\types.h"
+				RelativePath=".\include\platform\types.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\types.h"
+				RelativePath=".\include\platform\win32\types.h"
 				>
 			</File>
 			<File
@@ -612,11 +616,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\vec.h"
+				RelativePath=".\include\math\vec.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\math\vec.h"
+				RelativePath=".\include\graphics\vec.h"
 				>
 			</File>
 			<File
@@ -624,11 +628,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File

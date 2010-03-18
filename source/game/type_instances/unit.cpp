@@ -747,7 +747,7 @@ void Unit::updateSkillCycle(int frameOffset) {
 
 /** called by the server only, updates a skill cycle for the move skill */
 void Unit::updateMoveSkillCycle() {
-	//assert(!isNetworkClient());
+	assert(!isNetworkClient());
 	assert(currSkill->getClass() == SkillClass::MOVE);
 	static const float speedModifier = 1.f / GameConstants::speedDivider / float(WORLD_FPS);
 
@@ -760,16 +760,9 @@ void Unit::updateMoveSkillCycle() {
 	float heightFactor = clamp(1.f + heightDiff / 5.f, 0.2f, 5.f);
 	progressSpeed *= heightFactor;
 
-	// calculate skill cycle length
-	int frames = int(1.0000001f / progressSpeed) + 1;
-	int end = theWorld.getFrameCount() + frames;
+	// reset lastCommandUpdate and calculate next skill cycle length	
 	lastCommandUpdate = theWorld.getFrameCount();
-	nextCommandUpdate = end;
-
-	// sanity check [network size checks, move to ServerInterface]
-	assert(frames > 0 && frames < 256);
-	assert(currSkill->getClass() < 256);
-	assert(currSkill->getId() < 256);
+	nextCommandUpdate = theWorld.getFrameCount() + int(1.0000001f / progressSpeed) + 1;
 }
 
 /** @return true when the current skill has completed a cycle */

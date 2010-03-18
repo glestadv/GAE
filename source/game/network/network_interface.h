@@ -84,15 +84,19 @@ public:
 class GameInterface: public NetworkInterface {
 private:
 	typedef vector<NetworkCommand> Commands;
-	typedef ProjectileParticleSystem* Projectile;
 
 protected:
+	typedef ProjectileParticleSystem* Projectile;
+
 	Commands requestedCommands;	//commands requested by the user
 	Commands pendingCommands;	//commands ready to be given
 	bool quit;
 
 	KeyFrame keyFrame;
 	SkillCycleTable skillCycleTable;
+#	if _RECORD_GAME_STATE_
+		GameStateLog stateLog;
+#	endif
 
 	struct ChatMsg {
 		string text;
@@ -120,6 +124,9 @@ protected:
 	virtual void updateAnim(Unit *unit, int32 checksum) = 0;
 	virtual void unitBorn(Unit *unit, int32 checksum) = 0;
 
+	virtual void updateMove(Unit *unit) = 0;
+	virtual void updateProjectilePath(Unit *u, Projectile pps, const Vec3f &start, const Vec3f &end) = 0;
+
 	//message sending
 	virtual void sendTextMessage(const string &text, int teamIndex) = 0;
 	virtual void quitGame() = 0;
@@ -131,6 +138,9 @@ public:
 	GameInterface();
 
 	KeyFrame& getKeyFrame() { return keyFrame; }
+
+	void frameStart(int frame);
+	void frameEnd(int frame);
 
 #	define TRY_CATCH_LOG_THROW(methodCall)	\
 		try { methodCall; }					\

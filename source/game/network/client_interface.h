@@ -66,6 +66,9 @@ protected:
 	virtual void updateProjectile(Unit *unit, int endFrame, int32);
 	virtual void updateAnim(Unit *unit, int32);
 
+	virtual void updateMove(Unit *unit);
+	virtual void updateProjectilePath(Unit *u, Projectile pps, const Vec3f &start, const Vec3f &end);
+
 	//misc
 	virtual string getStatus() const;
 

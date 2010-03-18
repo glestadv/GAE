@@ -24,6 +24,7 @@
 
 #include "tech_tree.h"
 #include "unit.h"
+#include "world.h"
 
 using namespace Shared::Platform;
 using namespace Shared::Util;
@@ -392,8 +393,9 @@ struct KeyFrameMsgHeader {
 	int8	type;
 	uint8	cmdCount;
 	uint16	checksumCount;
-	//uint16 updateCount;
-	//uint16 updateSize;
+	uint16 moveUpdateCount;
+	uint16 projUpdateCount;
+	uint16 updateSize;
 	int32 frame;
 
 };
@@ -404,20 +406,24 @@ bool KeyFrame::receive(Socket* socket) {
 		assert(header.type == NetworkMessageType::KEY_FRAME);
 		this->frame = header.frame;
 		this->checksumCount = header.checksumCount;
-		//this->updateCount = header.updateCount;
-		//this->updateSize = header.updateSize;
+		
+		this->moveUpdateCount = header.moveUpdateCount;
+		this->projUpdateCount = header.projUpdateCount;
+		this->updateSize = header.updateSize;
+		
 		this->cmdCount = header.cmdCount;
 		size_t headerSize = sizeof(KeyFrameMsgHeader );
 		size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
-		size_t totalSize = headerSize + checksumCount * sizeof(int32) + commandsSize;
+		size_t totalSize = headerSize + checksumCount * sizeof(int32) + commandsSize + updateSize;
+
 		if (socket->getDataToRead() >= totalSize) {
 			socket->receive(&header, headerSize);
 			if (checksumCount) {
 				socket->receive(checksums, checksumCount * sizeof(int32));
 			}
-//			if (updateSize) {
-//				socket->receive(updateBuffer, updateSize);
-//			}
+			if (updateSize) {
+				socket->receive(updateBuffer, updateSize);
+			}
 			if (commandsSize) {
 				socket->receive(commands, commandsSize);
 			}
@@ -435,10 +441,11 @@ void KeyFrame::send(Socket* socket) const {
 	header.frame = this->frame;
 	header.cmdCount = this->cmdCount;
 	header.checksumCount = this->checksumCount;
-/*
-	header.updateCount = this->updateCount;
+
+	header.moveUpdateCount = this->moveUpdateCount;
+	header.projUpdateCount = this->projUpdateCount;
 	header.updateSize = this->updateSize;
-*/
+
 	size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
 	size_t headerSize = sizeof(KeyFrameMsgHeader);
 
@@ -446,62 +453,92 @@ void KeyFrame::send(Socket* socket) const {
 	if (checksumCount) {
 		socket->send(checksums, checksumCount * sizeof(int32));
 	}
-//	if (updateSize) {
-//		socket->send(updateBuffer, updateSize);
-//	}
+	if (updateSize) {
+		socket->send(updateBuffer, updateSize);
+	}
 	if (commandsSize) {
 		socket->send(commands, commandsSize);
 	}
 }
-/*
-NetUpdateType KeyFrame::getNextType() const {
-	if (readPtr - updateBuffer >= updateSize) {
-		throw runtime_error("sync error, insufficient updates in keyframe");
+
+int32 KeyFrame::getNextChecksum() { 
+	assert(checksumCounter < checksumCount);
+	if (checksumCounter >= checksumCount) {
+		throw runtime_error("sync error: insufficient checksums in keyframe.");
 	}
-	return NetUpdateType(((BasicSkillUpdate*)readPtr)->type);
+	return checksums[checksumCounter++];
 }
 
-void KeyFrame::checkType(NetUpdateType type, size_t size) {
-	if (readPtr - updateBuffer + size > updateSize) {
-		throw runtime_error("sync error, insufficient updates in keyframe");
+void KeyFrame::addChecksum(int32 cs) {
+	assert(checksumCount < max_checksums);
+	if (checksumCount >= max_checksums) {
+		throw runtime_error("Error: insufficient room for checksums in keyframe, increase KeyFrame::max_checksums.");
 	}
-	if (((BasicSkillUpdate*)readPtr)->type != type) {
-		throw runtime_error("sync error, unexpected update type in keyframe");
+	checksums[checksumCount++] = cs;
+}
+
+void KeyFrame::add(NetworkCommand &nc) {
+	assert(cmdCount < max_cmds);
+	memcpy(&commands[cmdCount++], &nc, sizeof(NetworkCommand));		
+}
+
+void KeyFrame::reset() {
+	checksumCounter = checksumCount = 0;
+	projUpdateCount = moveUpdateCount = cmdCount = 0;
+	updateSize = 0;
+	writePtr = updateBuffer;
+	readPtr = updateBuffer;
+}
+
+void KeyFrame::addUpdate(MoveSkillUpdate updt) {
+	assert(writePtr < &updateBuffer[buffer_size - 2]);
+	memcpy(writePtr, &updt, sizeof(MoveSkillUpdate));
+	writePtr += sizeof(MoveSkillUpdate);
+	updateSize += sizeof(MoveSkillUpdate);
+	++moveUpdateCount;
+}
+
+void KeyFrame::addUpdate(ProjectileUpdate updt) {
+	assert(writePtr < &updateBuffer[buffer_size - 1]);
+	memcpy(writePtr, &updt, sizeof(ProjectileUpdate));
+	writePtr += sizeof(ProjectileUpdate);
+	updateSize += sizeof(ProjectileUpdate);
+	++projUpdateCount;
+}
+
+MoveSkillUpdate KeyFrame::getMoveUpdate() {
+	assert(readPtr < updateBuffer + updateSize - 1);
+	if (!moveUpdateCount) {
+		throw runtime_error("Sync error: Insufficient move skill updates in keyframe");
 	}
+	MoveSkillUpdate res = *((MoveSkillUpdate*)readPtr);
+	readPtr += sizeof(MoveSkillUpdate);
+	--moveUpdateCount;
+	return res;
 }
 
-template <typename UpdateType>
-void KeyFrame::addUpdate(UpdateType update) {
-	assert(writePtr - updateBuffer + sizeof(UpdateType) < buffer_size);
-	memcpy(writePtr, &update, sizeof(UpdateType));
-	writePtr += sizeof(UpdateType);
-	++updateCount;
-	updateSize += sizeof(UpdateType);
-}
-
-
-void KeyFrame::addSkillUpdate(Unit *unit) {
-	switch (unit->getCurrSkill()->getClass()) {
-		case SkillClass::MOVE:
-			{	MoveSkillUpdate update(unit);
-				addUpdate(update);
-			}
-			break;
-		case SkillClass::ATTACK:
-		case SkillClass::REPAIR:
-			{	TargetSkillUpdate update(unit);
-				addUpdate(update);
-			}
-			break;
-		default:
-			{	BasicSkillUpdate update(unit);
-				addUpdate(update);
-			}
+ProjectileUpdate KeyFrame::getProjUpdate() {
+	assert(readPtr < updateBuffer + updateSize);
+	if (!projUpdateCount) {
+		throw runtime_error("Sync error: Insufficient projectile updates in keyframe");
 	}
+	ProjectileUpdate res = *((ProjectileUpdate*)readPtr);
+	readPtr += sizeof(ProjectileUpdate);
+	--projUpdateCount;
+	return res;
 }
 
-void KeyFrame::addProjectilUpdate(ProjectileUpdate updt) {
-	addUpdate(updt);
+#if _RECORD_GAME_STATE_
+
+bool SyncError::receive(Socket* socket){
+	return NetworkMessage::receive(socket, &data, sizeof(data));
 }
-*/
+
+void SyncError::send(Socket* socket) const{
+	assert(data.messageType == NetworkMessageType::SYNC_ERROR);
+	NetworkMessage::send(socket, &data, sizeof(data));
+}
+
+#endif
+
 }}//end namespace

@@ -10,26 +10,20 @@
 // ==============================================================
 
 #ifndef _SHARED_PCH_H_
-#define _SHARED_PCH_H_
-#ifdef USE_PCH
+#	define _SHARED_PCH_H_
+//#ifdef USE_PCH // this will cause failed compilation if not defined, even if not using pre-compiled hdrs
 
 #if defined(WIN32) || defined(WIN64)
-
-	// sanity checks
-	#if defined (USE_POSIX_SOCKETS)
-		#error USE_POSIX_SOCKETS is not compatible with WIN32 or WIN64
-	#endif
-
-	#if defined (USE_SDL)
-		#error USE_SDL is not compatible with WIN32 or WIN64
-	#endif
-
-	#include <windows.h>
-	//#include <io.h>
-
+#	if defined (USE_POSIX_SOCKETS)
+#		error USE_POSIX_SOCKETS is not compatible with WIN32 or WIN64
+#	endif
+#	if defined (USE_SDL)
+#		error USE_SDL is not compatible with WIN32 or WIN64
+#	endif
+#	include <windows.h>
 #else
-	#include <unistd.h>
-	#include <signal.h>
+#	include <unistd.h>
+#	include <signal.h>
 #endif
 
 // some local headers of importance
@@ -132,5 +126,5 @@ using std::vector;
 using std::list;
 using std::pair;
 
-#endif // USE_PCH
+//#endif // USE_PCH
 #endif // _SHARED_PCH_H_

@@ -21,7 +21,6 @@ namespace Glest{ namespace Game{
 
 class EffectState;
 class Unit;
-class UnitState;
 class UnitReference;
 
 // ===============================

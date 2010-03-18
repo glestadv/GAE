@@ -153,6 +153,25 @@ void ClientInterface::updateAnim(Unit *unit, int32 cs) {
 	}
 }
 
+void ClientInterface::updateMove(Unit *unit) {
+	MoveSkillUpdate updt = keyFrame.getMoveUpdate();
+	if (updt.offsetX < -1 || updt.offsetX > 1 || updt.offsetY < - 1 || updt.offsetY > 1
+	|| (!updt.offsetX && !updt.offsetY)) {
+		LOG_NETWORK(
+			"Bad server update, pos offset out of range, x=" 
+			+ intToStr(updt.offsetX) + ", y=" + intToStr(updt.offsetY)
+		);
+		// no throw, we want to let it go so it throws on the checksum mismatch and game state is dumped
+	}
+	unit->setNextPos(unit->getPos() + Vec2i(updt.offsetX, updt.offsetY));
+	unit->updateSkillCycle(updt.end_offset);
+}
+
+void ClientInterface::updateProjectilePath(Unit *u, Projectile pps, const Vec3f &start, const Vec3f &end) {
+	ProjectileUpdate updt = keyFrame.getProjUpdate();
+	pps->setPath(start, end, updt.end_offset);
+}
+
 void ClientInterface::updateLobby() {
 	// NETWORK: this method is very different
 	NetworkMessageType msgType = getNextMessageType();

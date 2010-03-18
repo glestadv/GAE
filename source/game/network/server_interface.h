@@ -40,6 +40,10 @@ public:
 	virtual Socket* getSocket()				{return &serverSocket;}
 	virtual const Socket* getSocket() const	{return &serverSocket;}
 
+#	if _RECORD_GAME_STATE_
+		void dumpFrame(int frame);
+#	endif
+
 protected:
 	//message processing
 	virtual void update();
@@ -58,6 +62,9 @@ protected:
 	virtual void unitBorn(Unit *unit, int32);
 	virtual void updateProjectile(Unit *unit, int, int32);
 	virtual void updateAnim(Unit *unit, int32);
+
+	virtual void updateMove(Unit *unit);
+	virtual void updateProjectilePath(Unit *u, Projectile pps, const Vec3f &start, const Vec3f &end);
 
 	//misc
 	virtual string getStatus() const;

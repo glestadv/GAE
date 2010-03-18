@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="test"
-	ProjectGUID="{0FEAE213-8B69-4844-98D5-3B7E4E834C51}"
+	Name="test2"
+	ProjectGUID="{71EC6156-E860-4535-BF20-27052A86E5B0}"
 	RootNamespace="test"
 	TargetFrameworkVersion="196613"
 	>
@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cppunitd.lib libglest.lib wsock32.lib zlib.lib"
+				AdditionalDependencies="libglest.lib zlib.lib"
 				AdditionalLibraryDirectories="../../../deps/lib;&quot;../../build/$(ConfigurationName)/libglest&quot;"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="cppunit.lib libglest.lib wsock32.lib zlib.lib"
+				AdditionalDependencies="libglest.lib zlib.lib"
 				AdditionalLibraryDirectories="../../../deps/lib;&quot;../../build/$(ConfigurationName)/libglest&quot;"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
@@ -171,84 +171,6 @@
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="search"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-			>
-			<File
-				RelativePath=".\search\annotated_map_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\search\annotated_map_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\search\influence_map_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\search\influence_map_test.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="facilities"
-			>
-			<File
-				RelativePath=".\facilities\reverse_rect_iter_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\facilities\reverse_rect_iter_test.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="datastructs"
-			>
-			<File
-				RelativePath=".\datastructs\circular_buffer_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\datastructs\circular_buffer_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\datastructs\fixed_point_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\datastructs\fixed_point_test.h"
-				>
-			</File>
-			<File
-				RelativePath=".\heap_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\heap_test.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="shared"
-			>
-			<File
-				RelativePath=".\checksum_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\checksum_test.h"
-				>
-			</File>
-		</Filter>
-		<File
-			RelativePath=".\main.cpp"
-			>
-		</File>
 		<File
 			RelativePath=".\pch.cpp"
 			>
@@ -268,6 +190,10 @@
 					UsePrecompiledHeader="1"
 				/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\test2_main.cpp"
+			>
 		</File>
 	</Files>
 	<Globals>

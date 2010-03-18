@@ -136,8 +136,8 @@ public:
 	E match(const char *value) const {return enum_cast<E>(_match(value));} // this will inline a function call to the fairly large _match() function
 };
 
-#define foreach(CollectionClass, it, collection) for(CollectionClass::iterator it = collection.begin(); it != collection.end(); ++it)
-#define foreach_const(CollectionClass, it, collection) for(CollectionClass::const_iterator it = collection.begin(); it != collection.end(); ++it)
+#define foreach(CollectionClass, it, collection) for(CollectionClass::iterator it = (collection).begin(); it != (collection).end(); ++it)
+#define foreach_const(CollectionClass, it, collection) for(CollectionClass::const_iterator it = (collection).begin(); it != (collection).end(); ++it)
 #define foreach_enum(Enum, val) for(Enum val(0); val < Enum::COUNT; ++val)
 
 void findAll(const string &path, vector<string> &results, bool cutExtension = false);
@@ -308,7 +308,6 @@ public:
 protected:
 	void compact();
 };
-
 
 }}//end namespace
 
