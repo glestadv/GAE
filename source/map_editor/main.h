@@ -131,6 +131,8 @@ private:
 	Program *program;
 	int lastX, lastY;
 
+	wxPanel *panel;
+	
 	wxTimer *timer;
 
 	wxMenuBar *menuBar;
@@ -232,7 +234,7 @@ private:
 	DECLARE_EVENT_TABLE()
 
 public:
-	GlCanvas(MainWindow *mainWindow, int *args);
+	GlCanvas(MainWindow *mainWindow, wxWindow *parent, int *args);
 
 	void onMouseDown(wxMouseEvent &event);
 	void onMouseMove(wxMouseEvent &event);

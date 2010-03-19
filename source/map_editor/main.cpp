@@ -45,7 +45,8 @@ wxString ToUnicode(const string& str) {
 // ===============================================
 
 MainWindow::MainWindow()
-		: lastX(0), lastY(0)
+		: wxFrame(NULL, -1,  ToUnicode(winHeader), wxDefaultPosition, wxSize(800, 600))
+		, lastX(0), lastY(0)
 		, currentBrush(btHeight)
 		, height(0)
 		, surface(1)
@@ -54,12 +55,13 @@ MainWindow::MainWindow()
 		, resource(0)
 		, startLocation(1)
 		, enabledGroup(ctHeight)
-		, fileModified(false)
-		, wxFrame(NULL, -1,  ToUnicode(winHeader), wxDefaultPosition, wxSize(800, 600)) {
+		, fileModified(false) {
+
+	this->panel = new wxPanel(this, wxID_ANY);
 
 	//gl canvas
 	int args[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER };
-	glCanvas = new GlCanvas(this, args);
+	glCanvas = new GlCanvas(this, this->panel, args);
 
 	//menus
 	menuBar = new wxMenuBar();
@@ -194,7 +196,7 @@ MainWindow::MainWindow()
 	SetStatusText(wxT("Value: 0"), StatusItems::BRUSH_VALUE);
 	SetStatusText(wxT("Radius: 1"), StatusItems::BRUSH_RADIUS);
 
-	wxToolBar *toolbar = new wxToolBar(this, wxID_ANY);
+	wxToolBar *toolbar = new wxToolBar(this->panel, wxID_ANY);
 	toolbar->AddTool(miRadius + 1, _("radius1"), wxBitmap(radius_1));
 	toolbar->AddTool(miRadius + 2, _("radius2"), wxBitmap(radius_2));
 	toolbar->AddTool(miRadius + 3, _("radius3"), wxBitmap(radius_3));
@@ -226,7 +228,7 @@ MainWindow::MainWindow()
 	toolbar->AddTool(toolPlayer, _("brush_player"), wxBitmap(brush_players_player));
 	toolbar->Realize();
 
-	wxToolBar *toolbar2 = new wxToolBar(this, wxID_ANY);
+	wxToolBar *toolbar2 = new wxToolBar(this->panel, wxID_ANY);
 	toolbar2->AddTool(miBrushGradient + 1, _("brush_gradient_n5"), wxBitmap(brush_gradient_n5));
 	toolbar2->AddTool(miBrushGradient + 2, _("brush_gradient_n4"), wxBitmap(brush_gradient_n4));
 	toolbar2->AddTool(miBrushGradient + 3, _("brush_gradient_n3"), wxBitmap(brush_gradient_n3));
@@ -257,7 +259,7 @@ MainWindow::MainWindow()
 	boxsizer->Add(toolbar2, 0, wxEXPAND);
 	boxsizer->Add(glCanvas, 1, wxEXPAND);
 	
-	this->SetSizer(boxsizer);
+	this->panel->SetSizer(boxsizer);
 	this->Layout();
 
 #ifndef WIN32
@@ -838,6 +840,8 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU_RANGE(miBrushStartLocation + 1, miBrushStartLocation + startLocationCount, MainWindow::onMenuBrushStartLocation)
 	EVT_MENU_RANGE(miRadius, miRadius + radiusCount, MainWindow::onMenuRadius)
 	
+	EVT_PAINT(MainWindow::onPaint)
+	
 	EVT_TOOL(toolPlayer, MainWindow::onToolPlayer)
 END_EVENT_TABLE()
 
@@ -845,8 +849,8 @@ END_EVENT_TABLE()
 // class GlCanvas
 // =====================================================
 
-GlCanvas::GlCanvas(MainWindow *	mainWindow, int* args)
-		: wxGLCanvas(mainWindow, -1, wxDefaultPosition, wxDefaultSize, 0, wxT("GLCanvas"), args) {
+GlCanvas::GlCanvas(MainWindow *mainWindow, wxWindow *parent, int *args)
+		: wxGLCanvas(parent, -1, wxDefaultPosition, wxDefaultSize, 0, wxT("GLCanvas"), args) {
 	this->mainWindow = mainWindow;
 }
 
