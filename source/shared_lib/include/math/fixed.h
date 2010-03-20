@@ -15,6 +15,8 @@
 #include "types.h"
 #include "vec.h"
 #include <iostream>
+#include <stdexcept>
+#include <cassert>
 
 using namespace Shared::Platform;
 using std::cout;
@@ -70,9 +72,9 @@ namespace Shared { namespace Math {
  *
  * No method of converting a float to a fixed is provided, doing so would make it too easy
  * to make an error that would defeat the purpose of this excercise.
- * The reverse is ok, (the renderer needs some information that is now stored in fixed point) 
+ * The reverse is ok, (the renderer needs some information that is now stored in fixed point)
  * and a toFloat() method is provided.
- * 
+ *
  * All arithmetic is done in 32 bits, for multiply & divide each operand is _first_ scaled with a half shift...
  * Translation: Dealing with very small fractions or very big numbers is dangerous. Just say no!
  *
@@ -122,14 +124,14 @@ public:
 	int		frac() const	{ return frac_part;		}
 	int32&	raw()			{ return datum;			}
 	int32	raw_val() const { return datum;			}
-	
+
 	int	round() const {
 		if (frac_part < SCALE_FACTOR / 2) return whole_part; // half rounds up, change to <= to round it down
 		return whole_part + (whole_part >= 0 ? 1 : -1);
 	}
 
 	fixed abs() const { return datum >= 0 ? *this : -*this; }
-	
+
 	float toFloat() const {
 		return whole_part + frac_part / float(SCALE_FACTOR);
 	}
@@ -137,8 +139,8 @@ public:
 	fixed& operator=(const fixed &that) { datum = that.datum; return *this;	}
 
 	fixed& operator=(const int &val)	{
-		IF_WARN_ON_OVERFLOW( 
-			if (val > MAX_INTEGER) 
+		IF_WARN_ON_OVERFLOW(
+			if (val > MAX_INTEGER)
 				cout << "\nWARNING: fixed point assignment of number too large, important digits lost!";
 		)
 		IF_THROW_ON_OVERFLOW(
@@ -147,7 +149,7 @@ public:
 		datum = val << FULL_SHIFT;
 		return *this;
 	}
-	
+
 #	define IF_ADDSUB_OVERFLOW(op)						\
 			int64 bigRes = int64(datum) op that.datum;	\
 			if (bigRes > MAX_RAW || bigRes < MIN_RAW)
@@ -178,10 +180,11 @@ public:
 		return *this;
 	}
 
-#	define IF_MULT_OVERFLOW()																	\
-		int64 bigRes = (int64(datum) >> HALF_SHIFT) * (int64(that.datum) >> HALF_SHIFT);		\
-		if ((bigRes >= 0 && bigRes & 0xFFFFFFFF00000000) /* positive and top bits set == bad */	\
-		|| (bigRes < 0 && (bigRes>>32) != -1)) /* negative and top bits not all set == bad */
+	/* positive and any top bits set == bad, negative and top bits not all set == bad */
+#	define IF_MULT_OVERFLOW()																\
+		int64 bigRes = (int64(datum) >> HALF_SHIFT) * (int64(that.datum) >> HALF_SHIFT);	\
+		if ((bigRes >= 0 && bigRes & 0xFFFFFFFF00000000)									\
+		|| (bigRes < 0 && (bigRes>>32) != -1))
 
 	fixed& operator*=(const fixed &that) {
 		IF_WARN_ON_PRECISION_LOSS(
@@ -190,7 +193,7 @@ public:
 		)
 		IF_WARN_ON_OVERFLOW(
 			IF_MULT_OVERFLOW()
-				cout << "\nWARNING: fixed point multiplication caused overflow, important digits lost!"; 
+				cout << "\nWARNING: fixed point multiplication caused overflow, important digits lost!";
 		)
 		IF_THROW_ON_OVERFLOW(
 			IF_MULT_OVERFLOW()
@@ -200,10 +203,11 @@ public:
 		return *this;
 	}
 
-#	define IF_DIV_OVERFLOW()																		\
-		int64 bigRes = (int64(datum) << HALF_SHIFT) / (int64(that.datum) >> HALF_SHIFT);			\
-		if ((bigRes >= 0 && bigRes & 0xFFFFFFFF00000000) /* positive and any top bits set == bad */	\
-		|| (bigRes < 0 && (bigRes >> 32) != -1)) /* negative and top bits not all set == bad */
+	/* positive and any top bits set == bad, negative and top bits not all set == bad */
+#	define IF_DIV_OVERFLOW()																\
+		int64 bigRes = (int64(datum) << HALF_SHIFT) / (int64(that.datum) >> HALF_SHIFT);	\
+		if ((bigRes >= 0 && bigRes & 0xFFFFFFFF00000000) 									\
+		|| (bigRes < 0 && (bigRes >> 32) != -1))
 
 	fixed& operator/=(const fixed &that) {
 		IF_THROW_ON_DIVIDE_BY_ZERO(

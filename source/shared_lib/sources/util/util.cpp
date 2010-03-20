@@ -40,7 +40,7 @@ using Shared::Xml::XmlNode;
 
 namespace Shared{ namespace Util{
 
-EnumNamesBase::EnumNamesBase(const char *valueList, size_t count, bool lazy, const char *enumName) 
+EnumNamesBase::EnumNamesBase(const char *valueList, size_t count, bool lazy, const char *enumName)
 		: valueList(valueList)
 		, names(NULL)
 		, qualifiedList(NULL)
@@ -114,7 +114,7 @@ int EnumNamesBase::_match(const char *value) const {
 			return i;
 		}
 	}
-	return -1;	
+	return -1;
 }
 
 void EnumNamesBase::init() {
@@ -498,7 +498,7 @@ string cleanPath(const string &s) {
 	}
 
 	isAbsolute = (s.at(0) == '/' || s.at(0) == '\\');
-	
+
 	for(char *p =  strtok_r(buf, "\\/", &data); p; p = strtok_r(NULL, "\\/", &data)) {
 		// skip duplicate path delimiters
 		if(strlen(p) == 0) {

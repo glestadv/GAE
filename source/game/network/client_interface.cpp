@@ -109,10 +109,10 @@ void ClientInterface::unitBorn(Unit *unit, int32 cs) {
 	int32 server_cs = keyFrame.getNextChecksum();
 	if (cs != server_cs) {
 		stringstream ss;
-		ss << "Sync Error: unitBorn() , unit type: " << unit->getType()->getName() 
+		ss << "Sync Error: unitBorn() , unit type: " << unit->getType()->getName()
 			<< " unit id: " << unit->getId() << " faction: " << unit->getFactionIndex();
 		LOG_NETWORK( ss.str() );
-		LOG_NETWORK( "\tserver checksum " + intToHex(server_cs) + " my checksum " + intToHex(cs) );
+		LOG_NETWORK( "\tserver checksum " + Conversion::toHex(server_cs) + " my checksum " + Conversion::toHex(cs) );
 		throw runtime_error("Sync error: ClientInterface::unitBorn() checksum mismatch.");
 	}
 }
@@ -130,7 +130,7 @@ void ClientInterface::updateUnitCommand(Unit *unit, int32 cs) {
 void ClientInterface::updateProjectile(Unit *unit, int endFrame, int32 cs) {
 	if (cs != keyFrame.getNextChecksum()) {
 		stringstream ss;
-		ss << "Sync Error: updateProjectile(), unit id: " << unit->getId() << " skill: " 
+		ss << "Sync Error: updateProjectile(), unit id: " << unit->getId() << " skill: "
 			<< unit->getCurrSkill()->getName();
 		if (unit->getCurrCommand()->getUnit()) {
 			ss << " target id: " << unit->getCurrCommand()->getUnit()->getId();
@@ -158,7 +158,7 @@ void ClientInterface::updateMove(Unit *unit) {
 	if (updt.offsetX < -1 || updt.offsetX > 1 || updt.offsetY < - 1 || updt.offsetY > 1
 	|| (!updt.offsetX && !updt.offsetY)) {
 		LOG_NETWORK(
-			"Bad server update, pos offset out of range, x=" 
+			"Bad server update, pos offset out of range, x="
 			+ intToStr(updt.offsetX) + ", y=" + intToStr(updt.offsetY)
 		);
 		// no throw, we want to let it go so it throws on the checksum mismatch and game state is dumped
@@ -175,29 +175,29 @@ void ClientInterface::updateProjectilePath(Unit *u, Projectile pps, const Vec3f 
 void ClientInterface::updateLobby() {
 	// NETWORK: this method is very different
 	NetworkMessageType msgType = getNextMessageType();
-	
+
 	if (msgType == NetworkMessageType::INTRO) {
 		NetworkMessageIntro introMsg;
 		if (receiveMessage(&introMsg)) {
 			//check consistency
 			if(theConfig.getNetConsistencyChecks() && introMsg.getVersionString() != getNetworkVersionString()) {
-				throw runtime_error("Server and client versions do not match (" 
+				throw runtime_error("Server and client versions do not match ("
 							+ introMsg.getVersionString() + "). You have to use the same binaries.");
 			}
 			LOG_NETWORK( "Received intro message, sending intro message reply." );
 			playerIndex = introMsg.getPlayerIndex();
 			serverName = introMsg.getHostName();
-			
+
 			setRemoteNames(introMsg.getHostName(), introMsg.getPlayerName());
 
 			if (playerIndex < 0 || playerIndex >= GameConstants::maxPlayers) {
 				throw runtime_error("Intro message from server contains bad data, are you using the same version?");
 			}
-			
+
 			//send reply
 			NetworkMessageIntro replyMsg(
 				getNetworkVersionString(), theConfig.getNetPlayerName(), getHostName(), -1);
-			
+
 			send(&replyMsg);
 			introDone= true;
 		}
@@ -239,7 +239,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 		waitForMessage();
 		NetworkMessageType msgType = getNextMessageType();
 		if (msgType == NetworkMessageType::KEY_FRAME) {
-			// make sure we read the message 
+			// make sure we read the message
 			{	Chrono chrono;
 				chrono.start();
 				while (!receiveMessage(&keyFrame)) {

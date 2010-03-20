@@ -11,24 +11,26 @@
 
 #ifndef _SHARED_PCH_H_
 #define _SHARED_PCH_H_
-#ifdef USE_PCH
+//#ifdef USE_PCH
+
 
 #if defined(WIN32) || defined(WIN64)
-
-	// sanity checks
-	#if defined (USE_POSIX_SOCKETS)
-		#error USE_POSIX_SOCKETS is not compatible with WIN32 or WIN64
-	#endif
-
-	#if defined (USE_SDL)
-		#error USE_SDL is not compatible with WIN32 or WIN64
-	#endif
-
-	#include <windows.h>
-	#include <io.h>
-
+#	if defined (USE_POSIX_SOCKETS)
+#		error USE_POSIX_SOCKETS is not compatible with WIN32 or WIN64
+#	endif
+#	if defined (USE_SDL)
+#		error USE_SDL is not compatible with WIN32 or WIN64
+#	endif
+#	include <windows.h>
 #else
-	#include <unistd.h>
+#	include <unistd.h>
+#	include <signal.h>
+#	if !defined(USE_SDL)
+#		error not WIN32 || WIN64 and USE_SDL not defined
+#	endif
+#	if !defined(USE_POSIX_SOCKETS)
+#		error not WIN32 || WIN64 and USE_POSIX_SOCKETS not defined
+#	endif
 #endif
 
 // some local headers of importance
@@ -153,6 +155,6 @@ using std::pair;
 
 using std::numeric_limits;
 
-#endif // USE_PCH
+//#endif // USE_PCH
 #endif // _SHARED_PCH_H_
 

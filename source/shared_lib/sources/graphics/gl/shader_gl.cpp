@@ -20,6 +20,7 @@
 
 namespace Shared{ namespace Graphics{ namespace Gl{
 
+#if 0
 // =====================================================
 //	class ShaderProgramGl
 // =====================================================
@@ -242,5 +243,7 @@ void FragmentShaderGl::init(){
 		inited= true;
 	}
 }
+
+#endif
 
 }}}//end namespace

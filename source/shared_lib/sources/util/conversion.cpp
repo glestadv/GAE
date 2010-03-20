@@ -60,6 +60,13 @@ void strto_(const char *nptr, char **endptr, int base, long double &dest) {
 	dest = strtold(nptr, endptr);
 }
 
+// this function is outlined because we don't need this extra code inlined everywhere
+void throwException(const string &typeName, const string &s, int base) {
+	std::stringstream str;
+	str << "Error converting from string to " << typeName << " (base = " << base << "), found: " << s;
+	throw runtime_error(str.str());
+}
+
 template<typename T>
 T strToX(const string &s, int base, const string &typeName) {
 	char *endChar;
@@ -73,14 +80,6 @@ T strToX(const string &s, int base, const string &typeName) {
 	}
 
 	return ret;
-}
-
-
-// this function is outlined because we don't need this extra code inlined everywhere
-void throwException(const string &typeName, const string &s, int base) {
-	std::stringstream str;
-	str << "Error converting from string to " << typeName << " (base = " << base << "), found: " << s;
-	throw runtime_error(str.str());
 }
 
 int hexChar2Int(char c) {
