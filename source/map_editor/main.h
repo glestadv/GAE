@@ -112,6 +112,7 @@ private:
 		miMiscResetZoomAndPos,
 		miMiscAbout,
 		miMiscHelp,
+		miShowMap,
 
 		miBrushHeight,
 		miBrushGradient = miBrushHeight + heightCount + 1,
@@ -191,6 +192,7 @@ public:
 	void onMenuMiscResetZoomAndPos(wxCommandEvent &event);
 	void onMenuMiscAbout(wxCommandEvent &event);
 	void onMenuMiscHelp(wxCommandEvent &event);
+	void onShowMap(wxCommandEvent &event);
 
 	void onMenuBrushHeight(wxCommandEvent &event);
 	void onMenuBrushGradient(wxCommandEvent &event);

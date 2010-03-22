@@ -22,6 +22,8 @@ private:
 	string configDir;
 	/// not empty if -datadir, contains following argument as path
 	string dataDir;
+	///
+	string mappath;
 
 public:
 	CmdArgs();
@@ -37,6 +39,7 @@ public:
 	string getClientIP()  { return clientIP; }
 	string getConfigDir() { return configDir; }
 	string getDataDir()   { return dataDir; }
+	string getLoadmap()   { return mappath; }
 
 };
 

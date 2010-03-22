@@ -161,6 +161,34 @@ Program::Program(Config &config, CmdArgs &args) :
 		MainMenu* mainMenu = new MainMenu(*this);
 		setState(mainMenu);
 		mainMenu->setState(new MenuStateJoinGame(*this, mainMenu, true, Ip(args.getClientIP())));
+	} else if(!args.getLoadmap().empty()) {
+		GameSettings gs;
+		gs.setDefaultResources(false);
+		gs.setDefaultUnits(false);
+		gs.setDefaultVictoryConditions(false);
+		gs.setMapPath(string("maps/") + args.getLoadmap() + ".gbm");
+		gs.setTilesetPath(string("tilesets/forest"));
+		gs.setTechPath(string("techs/magitech"));
+		gs.setFogOfWar(false);
+		
+		gs.setThisFactionIndex(0);
+		gs.setFactionControl(0, ControlType::HUMAN);
+		gs.setTeam(0, 0);
+		gs.setStartLocationIndex(0, 0);
+		gs.setFactionTypeName(0, "tech");
+		
+		gs.setFactionControl(1, ControlType::CPU);
+		gs.setTeam(1, 1);
+		gs.setStartLocationIndex(1, 1);
+		gs.setFactionTypeName(1, "tech");
+		
+		gs.setFactionCount(2);
+		
+		NetworkManager &networkManager= NetworkManager::getInstance();
+		networkManager.init(nrServer);
+		
+		ShowMap *game = new ShowMap(*this, gs);
+		setState(game);
 	// normal startup
 	} else {
 		setState(new Intro(*this));

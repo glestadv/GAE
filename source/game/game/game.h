@@ -103,7 +103,7 @@ private:
 
 public:
 	Game(Program &program, const GameSettings &gs, XmlNode *savedGame = NULL);
-	~Game();
+	virtual ~Game();
 	static Game *getInstance()				{return singleton;}
 
 	//get
@@ -150,7 +150,7 @@ public:
 	void setCameraCell(int x, int y) {
 		gameCamera.setPos(Vec2f(static_cast<float>(x), static_cast<float>(y)));
 	}
-	void quitGame();
+	virtual void quitGame();
 	void pause()							{paused = true;}
 	void resume()							{paused = false;}
 
@@ -181,6 +181,15 @@ private:
 	char getStringFromFile(ifstream *fileStream, string *str);
 	void saveGame(string name) const;
 	void displayError(runtime_error &e);
+};
+
+
+//TODO: would be nice to get rid of tech loading (only resources needed), network init, cartographer init
+class ShowMap : public Game {
+public:
+	ShowMap(Program &program, const GameSettings &gs) : Game(program, gs){}
+	~ShowMap(){}
+	void quitGame() { cout << "blubb\n"; program.exit(); }
 };
 
 }}//end namespace

@@ -93,6 +93,7 @@ MainWindow::MainWindow()
 	menuMisc->Append(miMiscResetZoomAndPos, wxT("&Reset zoom and pos"));
 	menuMisc->Append(miMiscAbout, wxT("&About"));
 	menuMisc->Append(miMiscHelp, wxT("&Help"));
+	menuMisc->Append(miShowMap, wxT("&Show Map\tCTRL+M"));
 	menuBar->Append(menuMisc, wxT("&Misc"));
 
 	//brush
@@ -503,6 +504,12 @@ void MainWindow::onMenuMiscHelp(wxCommandEvent &event) {
 		wxT("Help")).ShowModal();
 }
 
+void MainWindow::onShowMap(wxCommandEvent& event){
+	cout << "showmap: maps/" << cutLastExt(basename(currentFile)) << ".gbm\n";
+	wxExecute(wxT("./glestadv -loadmap ")+ToUnicode(cutLastExt(basename(currentFile))), wxEXEC_SYNC);
+	cout << "end\n";
+}
+
 void MainWindow::onMenuBrushHeight(wxCommandEvent &e) {
 	uncheckBrush();
 	menuBrushHeight->Check(e.GetId(), true);
@@ -741,6 +748,7 @@ BEGIN_EVENT_TABLE(MainWindow, wxFrame)
 	EVT_MENU(miMiscResetZoomAndPos, MainWindow::onMenuMiscResetZoomAndPos)
 	EVT_MENU(miMiscAbout, MainWindow::onMenuMiscAbout)
 	EVT_MENU(miMiscHelp, MainWindow::onMenuMiscHelp)
+	EVT_MENU(miShowMap, MainWindow::onShowMap)
 
 	EVT_MENU_RANGE(miBrushHeight + 1, miBrushHeight + heightCount, MainWindow::onMenuBrushHeight)
 	EVT_MENU_RANGE(miBrushGradient + 1, miBrushGradient + heightCount, MainWindow::onMenuBrushGradient)
