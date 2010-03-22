@@ -224,14 +224,6 @@
 				RelativePath=".\datastructs\fixed_point_test.h"
 				>
 			</File>
-			<File
-				RelativePath=".\heap_test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\heap_test.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="shared"

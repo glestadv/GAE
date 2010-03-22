@@ -724,6 +724,7 @@ void Renderer::renderResourceStatus(){
 			string str= intToStr(r->getAmount());
 
 			glEnable(GL_TEXTURE_2D);
+			glColor3f(1.f, 1.f, 1.f);
 			renderQuad(j*100+200, metrics.getVirtualH()-30, 16, 16, rt->getImage());
 
 			if(rt->getClass()!=ResourceClass::STATIC){
@@ -1881,8 +1882,8 @@ void Renderer::renderDisplay(){
 	//up images
 	glEnable(GL_TEXTURE_2D);
 	glColor3f(1.f, 1.f, 1.f);
-	for(int i=0; i<Display::upCellCount; ++i){
-		if(display->getUpImage(i)!=NULL){
+	for (int i=0; i < Display::upCellCount; ++i) {
+		if (display->getUpImage(i) != NULL) {
 			renderQuad(
 				metrics.getDisplayX()+display->computeUpX(i),
 				metrics.getDisplayY()+display->computeUpY(i),
@@ -1890,15 +1891,17 @@ void Renderer::renderDisplay(){
 		}
 	}
  	//down images
-	for(int i=0; i<Display::downCellCount; ++i){
-		if(display->getDownImage(i)!=NULL){
-			if ( display->getDownLighted(i) ) {
+	for (int i=0; i < Display::downCellCount; ++i) {
+		if(display->getDownImage(i) != NULL){
+			if (display->getDownLighted(i)) {
 				glColor3f(1.f, 1.f, 1.f);
-			} else {				glColor3f(0.3f, 0.3f, 0.3f);			}
+			} else {
+				glColor3f(0.3f, 0.3f, 0.3f);
+			}
 			int x= metrics.getDisplayX()+display->computeDownX(i);
 			int y= metrics.getDisplayY()+display->computeDownY(i);
 			int size= Display::imageSize;
-			if(display->getDownSelectedPos()==i){
+			if (display->getDownSelectedPos() == i) {
 				x-= 3;
 				y-= 3;
 				size+= 6;

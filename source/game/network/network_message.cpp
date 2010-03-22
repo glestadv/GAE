@@ -334,7 +334,7 @@ void SkillCycleTable::send(Socket *socket) const {
 	assert(ptr == buffer + totalSize);
 	try {
 		cout << "sending SkillCycleTable " << totalSize << " bytes.\n";
-		socket->send(buffer, totalSize);
+		NetworkMessage::send(socket, buffer, totalSize);
 	} catch (...) {
 		delete [] buffer;
 		throw;
@@ -449,16 +449,24 @@ void KeyFrame::send(Socket* socket) const {
 	size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
 	size_t headerSize = sizeof(KeyFrameMsgHeader);
 
-	socket->send(&header, sizeof(KeyFrameMsgHeader));
+	size_t totalSize = sizeof(KeyFrameMsgHeader) + checksumCount * sizeof(int32) + updateSize + commandsSize;
+	char *buf = new char[totalSize];
+	char *ptr = buf;
+	memcpy(ptr, &header, sizeof(KeyFrameMsgHeader));
+	ptr += sizeof(KeyFrameMsgHeader);
 	if (checksumCount) {
-		socket->send(checksums, checksumCount * sizeof(int32));
+		memcpy(ptr, checksums, checksumCount * sizeof(int32));
+		ptr += checksumCount * sizeof(int32);
 	}
 	if (updateSize) {
-		socket->send(updateBuffer, updateSize);
+		memcpy(ptr, updateBuffer, updateSize);
+		ptr += updateSize;
 	}
 	if (commandsSize) {
-		socket->send(commands, commandsSize);
+		memcpy(ptr, commands, commandsSize);
 	}
+	NetworkMessage::send(socket, buf, totalSize);
+	delete [] buf;
 }
 
 int32 KeyFrame::getNextChecksum() { 

@@ -73,7 +73,7 @@ Command *NetworkCommand::toCommand() const {
 		throw runtime_error("Can not find unit with id: " + intToStr(unitId) + ". Game out of synch.");
 	}
 
-	if (networkCommandType == nctCancelCommand) {
+	if (networkCommandType == NetworkCommandType::CANCEL_COMMAND) {
 		return new Command(CommandArchetype::CANCEL_COMMAND, 0, Vec2i(-1), unit);
 	}
 

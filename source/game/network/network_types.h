@@ -103,11 +103,11 @@ public:
 //	class NetworkCommand
 // =====================================================
 
-enum NetworkCommandType{
-	nctGiveCommand,
-	nctCancelCommand,
-	nctSetMeetingPoint
-};
+WRAPPED_ENUM( NetworkCommandType,
+	GIVE_COMMAND,
+	CANCEL_COMMAND,
+	SET_MEETING_POINT
+)
 
 #pragma pack(push, 2)
 	class NetworkCommand {

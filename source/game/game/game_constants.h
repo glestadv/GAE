@@ -65,22 +65,22 @@ namespace Glest { namespace Game {
 
 namespace GameConstants {
 	/** skill speed divider @see somewhere else */
-	const float speedDivider= 100.f;
+	const float speedDivider = 100.f;
 	/** number of frames until a corpse is removed */
-	const int maxDeadCount= 1000;	//time in until the corpse disapears
+	const int maxDeadCount = 1000;	//time in until the corpse disapears
 	/** time of selection circle effect 'flashes' */
-	const float highlightTime= 0.5f;
+	const float highlightTime = 0.5f;
 	/** the invalid unit ID */
-	const int invalidId= -1;
+	const int invalidId = -1;
 
-	const int maxPlayers= 4;
-	const int serverPort= 61357;
+	const int maxPlayers = 4;
+	const int serverPort = 61357;
 	IF_NOT_DEBUG_EDITION(
-		const int updateFps= 40;
+		const int updateFps = 40;
 	)
-	const int cameraFps= 100;
-	const int networkFramePeriod= 10;
-	const int networkExtraLatency= 200;
+	const int cameraFps = 100;
+	const int networkFramePeriod = 5;
+	const int networkExtraLatency = 100;
 
 	const int cellScale = 2;
 	const int mapScale = 2;

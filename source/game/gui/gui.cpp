@@ -927,11 +927,9 @@ void Gui::computeDisplay() {
 			//cancel button
 			const Unit *u = selection.getFrontUnit();
 			const UnitType *ut = u->getType();
-			if (selection.isCancelable()) {
-				display.setDownImage(cancelPos, ut->getCancelImage());
-				display.setDownLighted(cancelPos, true);
-			}
-
+			display.setDownImage(cancelPos, ut->getCancelImage());
+			display.setDownLighted(cancelPos, selection.isCancelable() ? true : false);
+			
 			//meeting point
 			if (selection.isMeetable()) {
 				display.setDownImage(meetingPointPos, ut->getMeetingPointImage());
@@ -968,8 +966,7 @@ void Gui::computeDisplay() {
 
 				//non uniform selection
 				int lastCommand = 0;
-				for (int i = 0; i < CommandClass::COUNT; ++i) {
-					CommandClass cc = enum_cast<CommandClass>(i);
+				foreach_enum (CommandClass, cc) {
 					if (isSharedCommandClass(cc) && cc != CommandClass::BUILD) {
 						display.setDownLighted(lastCommand, true);
 						display.setDownImage(lastCommand, ut->getFirstCtOfClass(cc)->getImage());

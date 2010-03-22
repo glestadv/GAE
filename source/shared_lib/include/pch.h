@@ -34,9 +34,6 @@
 
 // some local headers of importance
 #include "types.h"
-#define FIXED_THROW_ON_OVERFLOW 1
-#define FIXED_THROW_ON_DIVIDE_BY_ZERO 1
-#include "fixed.h"
 
 // POSIX base
 #include <stdlib.h>

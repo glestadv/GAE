@@ -460,7 +460,9 @@ CommandResult Unit::giveCommand(Command *command) {
 	} else {
 		delete command;
 	}
-
+	if (commands.empty() || commands.front()->getType()->getClass() == CommandClass::STOP) {
+		notifyObservers(UnitObserver::eStateChange);
+	}	
 	return result;
 }
 
@@ -487,6 +489,9 @@ Command *Unit::popCommand() {
 	//	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " " 
 	//		+ CommandClassNames[commands.front()->getType()->getClass()] + " command now front of queue." );
 	//}
+	if (commands.empty() || commands.front()->getType()->getClass() == CommandClass::STOP) {
+		notifyObservers(UnitObserver::eStateChange);
+	}
 	return command;
 }
 /** pop current command (used when order is done) 
@@ -505,6 +510,9 @@ CommandResult Unit::finishCommand() {
 	//for patrol command, remember where we started from
 	if(command && command->getType()->getClass() == CommandClass::PATROL) {
 		command->setPos2(pos);
+	}
+	if (commands.empty() || commands.front()->getType()->getClass() == CommandClass::STOP) {
+		notifyObservers(UnitObserver::eStateChange);
 	}
 	return CommandResult::SUCCESS;
 }
@@ -528,7 +536,9 @@ CommandResult Unit::cancelCommand() {
 
 	//clear routes
 	unitPath.clear();
-
+	if (commands.empty() || commands.front()->getType()->getClass() == CommandClass::STOP) {
+		notifyObservers(UnitObserver::eStateChange);
+	}
 	return CommandResult::SUCCESS;
 }
 
@@ -545,7 +555,9 @@ CommandResult Unit::cancelCurrCommand() {
 	undoCommand(*commands.front());
 
 	Command *command = popCommand();
-
+	if (commands.empty() || commands.front()->getType()->getClass() == CommandClass::STOP) {
+		notifyObservers(UnitObserver::eStateChange);
+	}
 	return CommandResult::SUCCESS;
 }
 

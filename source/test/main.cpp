@@ -20,7 +20,6 @@
 #include "circular_buffer_test.h"
 #include "fixed_point_test.h"
 //#include "checksum_test.h"
-//#include "heap_test.h"
 
 #include "leak_dumper.h"
 
@@ -38,7 +37,6 @@ int main(int argc, char **argv) {
 	tester.addTest(CircularBufferTest::suite());
 	tester.addTest(FixedPointTest::suite());
 //	tester.addTest(ChecksumTest::suite());
-//	tester.addTest(MinHeapTest::suite());
 
 	tester.run();
 

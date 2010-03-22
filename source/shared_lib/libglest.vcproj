@@ -384,15 +384,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\gl\graphics_factory_gl2.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\graphics\graphics_interface.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\util\heap.h"
 				>
 			</File>
 			<File
@@ -401,6 +393,10 @@
 			</File>
 			<File
 				RelativePath=".\include\graphics\interpolation.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\lang_features.h"
 				>
 			</File>
 			<File
@@ -504,18 +500,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\shader.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\gl\shader_gl.h"
-				>
-			</File>
-			<File
-				RelativePath=".\include\graphics\shader_manager.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\util\sigslot.h"
 				>
 			</File>
@@ -612,11 +596,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\graphics\vec.h"
+				RelativePath=".\include\math\vec.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\math\vec.h"
+				RelativePath=".\include\graphics\vec.h"
 				>
 			</File>
 			<File
@@ -1093,66 +1077,6 @@
 			</File>
 			<File
 				RelativePath=".\sources\math\quaternion.cpp"
-				>
-				<FileConfiguration
-					Name="Speedy Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\sources\graphics\shader.cpp"
-				>
-				<FileConfiguration
-					Name="Speedy Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\sources\graphics\gl\shader_gl.cpp"
-				>
-				<FileConfiguration
-					Name="Speedy Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						InlineFunctionExpansion="2"
-						EnableIntrinsicFunctions="true"
-						FavorSizeOrSpeed="1"
-						BasicRuntimeChecks="0"
-						SmallerTypeCheck="false"
-						EnableEnhancedInstructionSet="2"
-						UsePrecompiledHeader="0"
-						DebugInformationFormat="3"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\sources\graphics\shader_manager.cpp"
 				>
 				<FileConfiguration
 					Name="Speedy Debug|Win32"

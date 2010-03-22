@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstring>
 #include <vector>
+#include <algorithm>
 
 #include "math_util.h"
 
@@ -165,16 +166,10 @@ inline string intToHex ( int addr ) {
 }
 #endif
 
-inline string toLower(const string &s){
-	size_t size = s.size();
-	string rs;
-	rs.resize(size);
-
-	for(size_t i = 0; i < size; ++i) {
-		rs[i] = tolower(s[i]);
-	}
-
-	return rs;
+inline string toLower(const string &str){
+	string s = str;
+	std::transform(s.begin(), s.end(), s.begin(), tolower);
+	return s;
 }
 
 inline void copyStringToBuffer(char *buffer, int bufferSize, const string& s) {
@@ -188,38 +183,18 @@ void uudecode(void *dest, size_t *destSize, const char *src);
 
 // ==================== numeric fcs ====================
 
-inline float saturate(float value){
-	if (value<0.f){
-        return 0.f;
-	}
-	if (value>1.f){
-        return 1.f;
-	}
-    return value;
+template<typename T> inline T clamp(T val, T min, T max) {
+	if (val < min) return min;
+	if (val > max) return max;
+	return val;
 }
 
-inline int clamp(int value, int min, int max){
-	if (value<min){
-        return min;
-	}
-	if (value>max){
-        return max;
-	}
-    return value;
-}
-
-inline float clamp(float value, float min, float max){
-	if (value<min){
-        return min;
-	}
-	if (value>max){
-        return max;
-	}
-    return value;
+inline float saturate(float value) {
+	return clamp(value, 0.f, 1.f);
 }
 
 inline int round(float f){
-     return (int) roundf(f);
+     return int(roundf(f));
 }
 
 //misc

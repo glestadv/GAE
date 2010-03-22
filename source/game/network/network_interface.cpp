@@ -97,7 +97,7 @@ void GameInterface::requestCommand(Command *command) {
 	if (command->getArchetype() == CommandArchetype::GIVE_COMMAND) {
 		requestedCommands.push_back(NetworkCommand(command));
 	} else if (command->getArchetype() == CommandArchetype::CANCEL_COMMAND) {
-		requestedCommands.push_back(NetworkCommand(nctCancelCommand, unit, Vec2i(-1)));
+		requestedCommands.push_back(NetworkCommand(NetworkCommandType::CANCEL_COMMAND, unit, Vec2i(-1)));
 	}
 }
 
