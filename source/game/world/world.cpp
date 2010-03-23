@@ -844,6 +844,8 @@ void World::initSplattedTextures() {
 //creates each faction looking at each faction name contained in GameSettings
 void World::initFactionTypes() {
 	Logger::getInstance().add("Faction types", true);
+	
+	if(!gs.getFactionCount()) return;
 
 	if (gs.getFactionCount() > map.getMaxPlayers()) {
 		throw runtime_error("This map only supports " + intToStr(map.getMaxPlayers()) + " players");

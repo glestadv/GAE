@@ -505,8 +505,10 @@ void MainWindow::onMenuMiscHelp(wxCommandEvent &event) {
 }
 
 void MainWindow::onShowMap(wxCommandEvent& event){
-	cout << "showmap: maps/" << cutLastExt(basename(currentFile)) << ".gbm\n";
-	wxExecute(wxT("./glestadv -loadmap ")+ToUnicode(cutLastExt(basename(currentFile))), wxEXEC_SYNC);
+	string str = "./glestadv -loadmap "+cutLastExt(basename(currentFile))+" forest";
+	cout << "showmap: maps/" << cutLastExt(basename(currentFile)) << ".gbm\n"
+		<< str << "\n";
+	wxExecute(ToUnicode(str), wxEXEC_SYNC);
 	cout << "end\n";
 }
 

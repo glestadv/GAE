@@ -167,23 +167,12 @@ Program::Program(Config &config, CmdArgs &args) :
 		gs.setDefaultUnits(false);
 		gs.setDefaultVictoryConditions(false);
 		gs.setMapPath(string("maps/") + args.getLoadmap() + ".gbm");
-		gs.setTilesetPath(string("tilesets/forest"));
+		gs.setTilesetPath(string("tilesets/") + args.getLoadTileset());
 		gs.setTechPath(string("techs/magitech"));
 		gs.setFogOfWar(false);
-		
-		gs.setThisFactionIndex(0);
-		gs.setFactionControl(0, ControlType::HUMAN);
-		gs.setTeam(0, 0);
-		gs.setStartLocationIndex(0, 0);
-		gs.setFactionTypeName(0, "tech");
-		
-		gs.setFactionControl(1, ControlType::CPU);
-		gs.setTeam(1, 1);
-		gs.setStartLocationIndex(1, 1);
-		gs.setFactionTypeName(1, "tech");
-		
-		gs.setFactionCount(2);
-		
+		gs.setFactionCount(0);
+
+		//needed because Game::update -> updateLoops -> isNetworkGame
 		NetworkManager &networkManager= NetworkManager::getInstance();
 		networkManager.init(nrServer);
 		

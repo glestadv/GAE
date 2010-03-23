@@ -1081,4 +1081,190 @@ void Game::saveGame(string name) const {
 	XmlIo::getInstance().save("savegames/" + name + ".sav", &root);*/
 }
 
+
+
+void ShowMap::init() {
+	Lang &lang= Lang::getInstance();
+	Logger &logger= Logger::getInstance();
+	CoreData &coreData= CoreData::getInstance();
+	Renderer &renderer= Renderer::getInstance();
+	Map *map= world.getMap();
+
+	logger.setState(lang.get("Initializing"));
+
+	//mesage box
+	mainMessageBox.init("", lang.get("Yes"), lang.get("No"));
+	mainMessageBox.setEnabled(false);
+
+	// init world, and place camera
+	commander.init(&world);
+
+	// setup progress bar (used for ClusterMap init)
+	GraphicProgressBar progressBar;
+	progressBar.init(345, 550, 300, 20);
+	logger.setProgressBar(&progressBar);
+
+	world.init();
+	logger.setProgressBar(NULL);
+
+	gui.init();
+	const Vec2i &v= map->getStartLocation(0);
+	gameCamera.init(map->getW(), map->getH());
+	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
+
+	//wheather particle systems
+	if(world.getTileset()->getWeather() == Weather::RAINY){
+		logger.add("Creating rain particle system", true);
+		weatherParticleSystem= new RainParticleSystem();
+		weatherParticleSystem->setSpeed(12.f / config.getGsWorldUpdateFps());
+		weatherParticleSystem->setPos(gameCamera.getPos());
+		renderer.manageParticleSystem(weatherParticleSystem, rsGame);
+	} else if(world.getTileset()->getWeather() == Weather::SNOWY){
+		logger.add("Creating snow particle system", true);
+		weatherParticleSystem= new SnowParticleSystem(1200);
+		weatherParticleSystem->setSpeed(1.5f / config.getGsWorldUpdateFps());
+		weatherParticleSystem->setPos(gameCamera.getPos());
+		weatherParticleSystem->setTexture(coreData.getSnowTexture());
+		renderer.manageParticleSystem(weatherParticleSystem, rsGame);
+	}
+
+	//init renderer state
+	logger.add("Initializing renderer", true);
+	renderer.initGame(this);
+
+	//sounds
+	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
+
+	Tileset *tileset= world.getTileset();
+	const TechTree *techTree = world.getTechTree();
+	AmbientSounds *ambientSounds= tileset->getAmbientSounds();
+
+	//rain
+	if(tileset->getWeather()==Weather::RAINY && ambientSounds->isEnabledRain()){
+		logger.add("Starting ambient stream", true);
+		soundRenderer.playAmbient(ambientSounds->getRain());
+	}
+	//snow
+	if(tileset->getWeather()==Weather::SNOWY && ambientSounds->isEnabledSnow()){
+		logger.add("Starting ambient stream", true);
+		soundRenderer.playAmbient(ambientSounds->getSnow());
+	}
+	// set maximum update timer back log
+	program.setMaxUpdateBacklog(2); // non-network game, may drop frames
+
+	logger.add("Launching game");
+	logger.setLoading(false);
+	program.resetTimers();
+}
+
+void ShowMap::render2d(){
+	Renderer &renderer= Renderer::getInstance();
+	Config &config= Config::getInstance();
+	CoreData &coreData= CoreData::getInstance();
+
+	//init
+	renderer.reset2d();
+
+	//display
+	renderer.renderDisplay();
+
+	//minimap
+	if(!config.getUiPhotoMode()){
+		renderer.renderMinimap();
+	}
+
+	//exit message box
+	if(mainMessageBox.getEnabled()){
+		renderer.renderMessageBox(&mainMessageBox);
+	}
+
+	//2d mouse
+	renderer.renderMouse2d(mouseX, mouseY, mouse2d, gui.isSelectingPos()? 1.f: 0.f);
+}
+
+void ShowMap::keyDown(const Key &key) {
+	UserCommand cmd = keymap.getCommand(key);
+	Lang &lang = Lang::getInstance();
+
+	if (cmd == ucSaveScreenshot) {
+		Shared::Platform::mkdir("screens", true);
+		int i;
+		const int MAX_SCREENSHOTS = 100;
+
+		// Find a filename from 'screen(0 to MAX_SCREENHOTS).tga' and save the screenshot in one that doesn't
+		//  already exist.
+		for (i = 0; i < MAX_SCREENSHOTS; ++i) {
+			string path = "screens/screen" + intToStr(i) + ".tga";
+
+			if(fileExists(path)){
+				Renderer::getInstance().saveScreen(path);
+				break;
+			}
+		}
+
+		if (i > MAX_SCREENSHOTS) {
+			console.addLine(lang.get("ScreenshotDirectoryFull"));
+		}
+
+	//move camera left
+	} else if (cmd == ucCameraPosLeft) {
+		gameCamera.setMoveX(-scrollSpeed, false);
+
+	//move camera right
+	} else if (cmd == ucCameraPosRight) {
+		gameCamera.setMoveX(scrollSpeed, false);
+
+	//move camera up
+	} else if (cmd == ucCameraPosUp) {
+		gameCamera.setMoveZ(scrollSpeed, false);
+
+	//move camera down
+	} else if (cmd == ucCameraPosDown) {
+		gameCamera.setMoveZ(-scrollSpeed, false);
+
+	//switch display color
+	} else if (cmd == ucCycleDisplayColor) {
+		gui.switchToNextDisplayColor();
+
+	//change camera mode
+	} else if (cmd == ucCameraCycleMode) {
+		gameCamera.switchState();
+		string stateString = gameCamera.getState() == GameCamera::sGame ? lang.get("GameCamera") : lang.get("FreeCamera");
+		console.addLine(lang.get("CameraModeSet") + " " + stateString);
+
+	//exit
+	} else if (cmd == ucMenuQuit) {
+		if (!gui.cancelPending()) {
+			showMessageBox(lang.get("ExitGame?"), "Quit...", true);
+		}
+
+	} else {
+		switch (cmd) {
+			//rotate camera left
+			case ucCameraRotateLeft:
+				gameCamera.setRotate(-1);
+				break;
+
+			//rotate camera right
+			case ucCameraRotateRight:
+				gameCamera.setRotate(1);
+				break;
+
+			//camera up
+			case ucCameraPitchUp:
+				gameCamera.setMoveY(1);
+				break;
+
+			//camera down
+			case ucCameraPitchDown:
+				gameCamera.setMoveY(-1);
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+
 }}//end namespace

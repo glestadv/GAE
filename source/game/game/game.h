@@ -61,7 +61,7 @@ private:
 	typedef vector<Ai*> Ais;
 	typedef vector<AiInterface*> AiInterfaces;
 
-private:
+protected:
 	static Game *singleton;
 
 	//main data
@@ -154,10 +154,10 @@ public:
 	void pause()							{paused = true;}
 	void resume()							{paused = false;}
 
-private:
+protected:
 	//render
 	void render3d();
-	void render2d();
+	virtual void render2d();
 
 	//misc
 	void _init();
@@ -184,12 +184,15 @@ private:
 };
 
 
-//TODO: would be nice to get rid of tech loading (only resources needed), network init, cartographer init
+//TODO: better integrate with Game, much duplicated code
 class ShowMap : public Game {
 public:
 	ShowMap(Program &program, const GameSettings &gs) : Game(program, gs){}
 	~ShowMap(){}
-	void quitGame() { cout << "blubb\n"; program.exit(); }
+	void quitGame() { program.exit(); }
+	void init();
+	void render2d();
+	void keyDown(const Key &key);
 };
 
 }}//end namespace
