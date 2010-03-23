@@ -505,11 +505,20 @@ void MainWindow::onMenuMiscHelp(wxCommandEvent &event) {
 }
 
 void MainWindow::onShowMap(wxCommandEvent& event){
-	string str = "./glestadv -loadmap "+cutLastExt(basename(currentFile))+" forest";
-	cout << "showmap: maps/" << cutLastExt(basename(currentFile)) << ".gbm\n"
-		<< str << "\n";
-	wxExecute(ToUnicode(str), wxEXEC_SYNC);
-	cout << "end\n";
+	wxArrayString arrstr;
+	vector<string> results;
+	findAll("tilesets/*", results);
+	for(vector<string>::iterator it=results.begin(); it!=results.end(); ++it){
+		arrstr.Add(ToUnicode(*it));
+	}
+	wxSingleChoiceDialog dlg(this, _("select tileset"), _("tileset"), arrstr);
+	if(dlg.ShowModal()==wxID_OK){
+		wxString s = arrstr[dlg.GetSelection()];
+		
+		cout << "showmap: maps/" << cutLastExt(basename(currentFile)) << ".gbm\n";
+		wxExecute(ToUnicode("./glestadv -loadmap "+cutLastExt(basename(currentFile))+" ") + s, wxEXEC_SYNC);
+		cout << "end\n";
+	}
 }
 
 void MainWindow::onMenuBrushHeight(wxCommandEvent &e) {
