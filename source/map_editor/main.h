@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2008 Martiño Figueroa
+//	Copyright (C) 2001-2008 Martiï¿½o Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -43,6 +43,7 @@ WRAPPED_ENUM( StatusItems,
 	NULL_ENTRY,
 	FILE_NAME,
 	FILE_TYPE,
+	CURR_OBJECT,
 	BRUSH_TYPE,
 	BRUSH_VALUE,
 	BRUSH_RADIUS
@@ -68,7 +69,7 @@ const char *resource_descs[] = {
 
 
 const char *surface_descs[] = {
-	"Grass", "Alt. Grass", "Road", "Stone", "Custom"
+	"Grass", "Alt. Grass", "Road", "Stone", "Ground"
 };
 
 // =====================================================
@@ -114,6 +115,8 @@ private:
 		miMiscHelp,
 		miShowMap,
 
+		toolPlayer,
+
 		miBrushHeight,
 		miBrushGradient = miBrushHeight + heightCount + 1,
 		miBrushSurface = miBrushGradient + heightCount + 1,
@@ -129,6 +132,8 @@ private:
 	Program *program;
 	int lastX, lastY;
 
+	wxPanel *panel;
+	
 	wxTimer *timer;
 
 	wxMenuBar *menuBar;
@@ -154,6 +159,9 @@ private:
 	int object;
 	int resource;
 	int startLocation;
+	int resourceUnderMouse;
+	int objectUnderMouse;
+	
 	ChangeType enabledGroup;
 
 	string fileName;
@@ -166,8 +174,10 @@ public:
 	void init(string fname);
 
 	void onClose(wxCloseEvent &event);
-	void onMouseDown(wxMouseEvent &event);
-	void onMouseMove(wxMouseEvent &event);
+
+	void onMouseDown(wxMouseEvent &event, int x, int y);
+	void onMouseMove(wxMouseEvent &event, int x, int y);
+
 	void onPaint(wxPaintEvent &event);
 	void onKeyDown(wxKeyEvent &e);
 
@@ -201,6 +211,8 @@ public:
 	void onMenuBrushResource(wxCommandEvent &event);
 	void onMenuBrushStartLocation(wxCommandEvent &event);
 	void onMenuRadius(wxCommandEvent &event);
+	
+	void onToolPlayer(wxCommandEvent &event);
 
 	void onTimer(wxTimerEvent &event);
 
@@ -224,7 +236,7 @@ private:
 	DECLARE_EVENT_TABLE()
 
 public:
-	GlCanvas(MainWindow *mainWindow, int *args);
+	GlCanvas(MainWindow *mainWindow, wxWindow *parent, int *args);
 
 	void onMouseDown(wxMouseEvent &event);
 	void onMouseMove(wxMouseEvent &event);
