@@ -93,6 +93,7 @@ void World::end(){
 // ========================== init ===============================================
 
 void World::init() {
+	_PROFILE_FUNCTION
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
 	initMap();
@@ -206,7 +207,7 @@ void World::updateEarthquakes(float seconds) {
 }
 
 void World::update() {
-	PROFILE_START( "World Update" );
+	_PROFILE_FUNCTION
 	++frameCount;
 
 	// check ScriptTimers
@@ -271,7 +272,7 @@ void World::update() {
 		tick();
 	}
 	assertConsistiency();
-	PROFILE_STOP( "World Update" );}
+}
 
 void World::doKill(Unit *killer, Unit *killed) {
 	scriptManager->onUnitDied(killed);

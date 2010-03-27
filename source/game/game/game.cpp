@@ -179,21 +179,12 @@ void Game::init() {
 
 	// init world, and place camera
 	commander.init(&world);
-
-	// setup progress bar (used for ClusterMap init)
-	GraphicProgressBar progressBar;
-	progressBar.init(345, 550, 300, 20);
-	logger.setProgressBar(&progressBar);
-
 	world.init();
-	logger.setProgressBar(NULL);
-
 	gui.init();
 	chatManager.init(&console, world.getThisTeamIndex());
-	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
+	const Vec2i &v = map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
 	gameCamera.init(map->getW(), map->getH());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
-
 	ScriptManager::init(this);
 
 	// create (or receive) random number seeds for AIs
@@ -391,15 +382,9 @@ void Game::updateCamera() {
 //render
 void Game::render(){
 	renderFps++;
-	profileBegin("game-render3d");
 	render3d();
-	profileEnd("game-render3d");
-	profileBegin("game-render2d");
 	render2d();
-	profileEnd("game-render2d");
-	profileBegin("game-swapBuffers");
 	Renderer::getInstance().swapBuffers();
-	profileEnd("game-swapBuffers");
 }
 
 // ==================== tick ====================
@@ -785,7 +770,7 @@ void Game::quitGame(){
 // ==================== render ====================
 
 void Game::render3d(){
-
+	_PROFILE_FUNCTION
 	Renderer &renderer= Renderer::getInstance();
 
 	//init
@@ -825,6 +810,7 @@ void Game::render3d(){
 }
 
 void Game::render2d(){
+	_PROFILE_FUNCTION
 	Renderer &renderer= Renderer::getInstance();
 	Config &config= Config::getInstance();
 	CoreData &coreData= CoreData::getInstance();

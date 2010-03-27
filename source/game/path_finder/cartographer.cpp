@@ -25,6 +25,7 @@
 #include "unit_type.h"
 #include "world.h"
 
+#include "profiler.h"
 #include "leak_dumper.h"
 
 using namespace std;
@@ -38,6 +39,7 @@ namespace Glest { namespace Game { namespace Search {
 Cartographer::Cartographer(World *world)
 		: world(world), cellMap(0), routePlanner(0) {
 	theLogger.add("Cartographer", true);
+	_PROFILE_FUNCTION
 
 	cellMap = world->getMap();
 	int w = cellMap->getW(), h = cellMap->getH();
@@ -123,7 +125,6 @@ Cartographer::~Cartographer() {
 		delete smIt->second;
 	}
 	storeMaps.clear();
-	
 }
 
 void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {

@@ -458,10 +458,14 @@ void AttackSkillType::getDesc(string &str, const Unit *unit) const {
 // 	class HarvestSkillType
 // ===============================
 
-
-// =====================================================
+// ===============================
 // 	class DieSkillType
-// =====================================================
+// ===============================
+
+void DieSkillType::doChecksum(Checksum &checksum) const {
+	SkillType::doChecksum(checksum);
+	checksum.add<bool>(fade);
+}
 
 void DieSkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const FactionType *ft) {
 	SkillType::load(sn, dir, tt, ft);
@@ -574,16 +578,6 @@ void ProduceSkillType::doChecksum(Checksum &checksum) const {
 	checksum.add<bool>(pet);
 	checksum.add<int>(maxPets);
 }
-
-// ===============================
-// 	class DieSkillType
-// ===============================
-
-void DieSkillType::doChecksum(Checksum &checksum) const {
-	SkillType::doChecksum(checksum);
-	checksum.add<bool>(fade);
-}
-
 
 // ===============================
 // 	class FallDownSkillType

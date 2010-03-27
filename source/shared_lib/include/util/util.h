@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "math_util.h"
+#include "lang_features.h"
 
 #if defined(WIN32) || defined(WIN64)
 	#include <list>
@@ -160,7 +161,7 @@ string replaceBy(const string &s, char c1, char c2);
 #if defined(WIN32) || defined(WIN64)
 inline string intToHex ( int addr ) {
 	static char hexBuffer[32];
-	sprintf ( hexBuffer, "%.8X", addr );
+	sprintf(hexBuffer, "%.8X", addr );
 	return string( hexBuffer );
 }
 #endif

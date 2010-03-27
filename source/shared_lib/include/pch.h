@@ -34,6 +34,7 @@
 
 // some local headers of importance
 #include "types.h"
+#include "lang_features.h"
 
 // POSIX base
 #include <stdlib.h>
@@ -43,8 +44,7 @@
 #include <math.h>
 #include <time.h>
 
-
-// lib c++ & stl
+// lib c
 #include <cstdlib>
 #include <cassert>
 #include <cctype>
@@ -52,19 +52,26 @@
 #include <cstring>
 #include <cstddef>
 #include <cstdio>
-#include <deque>
+#include <ctime>
+#include <cassert>
+
+// lib c++
 #include <fstream>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <limits>
+
+// stl
 #include <algorithm>
+#include <functional>
+#include <deque>
 #include <vector>
 #include <list>
 #include <map>
 #include <deque>
-#include <string>
-#include <cassert>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <ctime>
+#include <set>
 
 // will this fly on windoze?
 #include <sys/types.h>

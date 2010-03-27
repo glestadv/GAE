@@ -922,18 +922,14 @@ void Gui::computeDisplay() {
 
 	if (selection.isComandable()
 	&& selection.getFrontUnit()->getFaction()->getTeam() == thisTeam ) {
-		if (!selectingBuilding) {
-
-			//cancel button
+		if (!selectingBuilding) { 
 			const Unit *u = selection.getFrontUnit();
 			const UnitType *ut = u->getType();
-			if (selection.isCancelable()) {
+			if (selection.isCancelable()) { //cancel button
 				display.setDownImage(cancelPos, ut->getCancelImage());
 				display.setDownLighted(cancelPos, true);
 			}
-
-			//meeting point
-			if (selection.isMeetable()) {
+			if (selection.isMeetable()) { //meeting point
 				display.setDownImage(meetingPointPos, ut->getMeetingPointImage());
 				display.setDownLighted(meetingPointPos, true);
 			}
@@ -949,8 +945,7 @@ void Gui::computeDisplay() {
 				display.setDownLighted(autoRepairPos, true);
 			}
 
-			if (selection.isUniform()) {
-				//uniform selection
+			if (selection.isUniform()) { //uniform selection
 				if (u->isBuilt()) {
 					int morphPos = 8;
 					for (int i = 0, j = 0; i < ut->getCommandTypeCount(); ++i) {
@@ -964,9 +959,7 @@ void Gui::computeDisplay() {
 						}
 					}
 				}
-			} else {
-
-				//non uniform selection
+			} else { //non uniform selection
 				int lastCommand = 0;
 				for (int i = 0; i < CommandClass::COUNT; ++i) {
 					CommandClass cc = enum_cast<CommandClass>(i);
@@ -978,9 +971,7 @@ void Gui::computeDisplay() {
 					}
 				}
 			}
-		} else {
-
-			//selecting building
+		} else { //selecting building
 			const Unit *unit = selection.getFrontUnit();
 			if (activeCommandType != NULL && activeCommandType->getClass() == CommandClass::BUILD) {
 				const BuildCommandType* bct = static_cast<const BuildCommandType*>(activeCommandType);

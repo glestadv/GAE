@@ -66,11 +66,13 @@
 
 // stl
 #include <algorithm>
+#include <functional>
 #include <deque>
 #include <vector>
 #include <list>
 #include <map>
 #include <deque>
+#include <set>
 
 
 #include <sys/types.h>

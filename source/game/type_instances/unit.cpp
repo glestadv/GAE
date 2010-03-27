@@ -711,8 +711,8 @@ void Unit::preProcessSkill() {
 
 /** @return true when the current skill has completed a cycle */
 bool Unit::update() {
+	_PROFILE_FUNCTION
 	assert(progress <= 1.f);
-	PROFILE_START( "Unit Update" );
 
 	//highlight
 	if(highlight > 0.f) {
@@ -751,14 +751,13 @@ bool Unit::update() {
 		animProgress = currSkill->getClass() == SkillClass::DIE ? 1.f : 0.f;
 	}
 
-	bool ret = false;
 	//checks
 	if(progress >= 1.f) {
 		lastRotation = targetRotation;
 
 		if(currSkill->getClass() != SkillClass::DIE) {
 			progress = 0.f;
-			ret = true;
+			return true;
 		} else { 
 			progress = 1.f;
 			deadCount++;
@@ -767,8 +766,7 @@ bool Unit::update() {
 			}
 		}
 	}
-	PROFILE_STOP( "Unit Update" );
-	return ret;
+	return false;
 }
 
 /**
