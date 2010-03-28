@@ -114,19 +114,20 @@ enum NetworkCommandType{
 
 class NetworkCommand{
 private:
-	int16 networkCommandType;
-	int16 unitId;
-	int16 commandTypeId;
-	int16 positionX;
-	int16 positionY;
-	int16 unitTypeId;
-	int16 targetId;
+	uint32 networkCommandType	:  8;
+	int32 unitId				: 24; // 32
+	int32 commandTypeId			:  8;
+	int32 targetId				: 24; // 32
+	int32 positionX				: 16; 
+	int32 positionY				: 16; // 32
+	int32 unitTypeId			: 15;
+	uint32 queue				:  1; // 16
 
 public:
 	NetworkCommand(){};
 	NetworkCommand(Command *command);
 	NetworkCommand(NetworkCommandType type, const Unit *unit, const Vec2i &pos);
-	NetworkCommand(int networkCommandType, int unitId, int commandTypeId= -1, const Vec2i &pos= Vec2i(0), int unitTypeId= -1, int targetId= -1);
+//	NetworkCommand(int networkCommandType, int unitId, int commandTypeId= -1, const Vec2i &pos= Vec2i(0), int unitTypeId= -1, int targetId= -1);
 
 	Command *toCommand() const;
 	NetworkCommandType getNetworkCommandType() const	{return static_cast<NetworkCommandType>(networkCommandType);}

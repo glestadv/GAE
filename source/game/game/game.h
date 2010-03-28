@@ -44,7 +44,6 @@ class GraphicTextEntryBox;
 
 class Game: public ProgramState {
 public:
-
 	WRAPPED_ENUM( GameSpeed,
 		SLOWEST,
 		VERY_SLOW,
@@ -54,7 +53,6 @@ public:
 		VERY_FAST,
 		FASTEST
 	)
-
 	static const char*SpeedDesc[GameSpeed::COUNT];
 
 private:

@@ -17,6 +17,7 @@
 #include "simd.h"
 
 using std::ostream;
+using std::istream;
 
 namespace Shared { namespace Math {
 
@@ -503,11 +504,14 @@ typedef Vec3<double> Vec3d;
 typedef Vec4<double> Vec4d;
 
 
-
 inline ostream& operator<<(ostream &stream, const Vec2i &vec) {
 	return stream << "(" << vec.x << ", " << vec.y << ")";
 }
 
+inline istream& operator>>(istream &stream, Vec2i &vec) {
+	char junk;
+	return stream >> junk >> vec.x >> junk >> vec.y >> junk;
+}
 
 #ifndef USE_SSE2_INTRINSICS
 typedef Vec3<float> Vec3f;

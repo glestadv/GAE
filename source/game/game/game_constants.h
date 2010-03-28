@@ -98,7 +98,7 @@ namespace Search {
 
 } // end namespace Search
 
-
+//[could be WRAPPED_ENUM in NetworkMessage ?]
 REGULAR_ENUM( NetworkMessageType,
 				NO_MSG,
 				INTRO,
@@ -252,7 +252,7 @@ STRINGY_ENUM( AttackSkillPreference,
 					WHEN_DAMAGED
 			);
 
-/** unit classes
+/** unit classes [could be WRAPPED_ENUM in Unit ?]
   */
 REGULAR_ENUM( UnitClass,
 					WARRIOR,
@@ -260,7 +260,7 @@ REGULAR_ENUM( UnitClass,
 					BUILDING
 			);
 
-/** command result set
+/** command result set [could be WRAPPED_ENUM in Command ?? or will we want this in debug ed?]
   * <ul><li><b>SUCCESS</b> command succeeded.</li>
   *		<li><b>FAIL_RESOURCES</b> failed, resource requirements not met.</li>
   *		<li><b>FAIL_REQUIREMENTS</b> failed, unit/upgrade requirements not met.</li>
@@ -277,7 +277,7 @@ REGULAR_ENUM( CommandResult,
 					SOME_FAILED
 			);
 
-/** interesting unit types
+/** interesting unit types [not WRAPPED, will want stringy version in debug edition]
   */
 REGULAR_ENUM( InterestingUnitType,
 					IDLE_BUILDER,
@@ -292,7 +292,7 @@ REGULAR_ENUM( InterestingUnitType,
 					STORE
 			);
 
-/** upgrade states
+/** upgrade states [could be WRAPPED_ENUM in Upgrade ?]
   */
 REGULAR_ENUM( UpgradeState,
 					UPGRADING,
@@ -319,7 +319,7 @@ STRINGY_ENUM( CommandClass,
 					NULL_COMMAND
 			);
 
-/** click count
+/** click count [could be WRAPPED_ENUM in Gui ?]
   */
 REGULAR_ENUM( Clicks,
 					ONE,
@@ -383,8 +383,8 @@ REGULAR_ENUM( CommandProperties,
   */
 REGULAR_ENUM( CommandArchetype,
 					GIVE_COMMAND,
-					CANCEL_COMMAND,
-					SET_MEETING_POINT
+					CANCEL_COMMAND
+				//	SET_MEETING_POINT
 				//	SET_AUTO_REPAIR
 			);
 

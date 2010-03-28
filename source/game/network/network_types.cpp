@@ -29,18 +29,11 @@ NetworkCommand::NetworkCommand(Command *command) {
 	this->commandTypeId= command->getType()->getId();
 	this->positionX= command->getPos().x;
 	this->positionY= command->getPos().y;
-
-	if (command->getUnitType()) {
-		this->unitTypeId= command->getUnitType()->getId();
-	} else {
-		this->unitTypeId= command->getCommandedUnit()->getType()->getId();
-	}
-	
-	if (command->getUnit()) {
-		this->targetId= command->getUnit()->getId();
-	} else {
-		this->targetId= -1;
-	}
+	this->unitTypeId = command->getUnitType()
+							? command->getUnitType()->getId()
+							: command->getCommandedUnit()->getType()->getId();
+	this->targetId = command->getUnit() ? command->getUnit()->getId() : -1;
+	this->queue = command->isQueue() ? 1 : 0;
 }
 
 /** Construct archetype CANCEL_COMMAND */
@@ -52,8 +45,9 @@ NetworkCommand::NetworkCommand(NetworkCommandType type, const Unit *unit, const 
 	this->positionY= pos.y;
 	this->unitTypeId = -1;
 	this->targetId = -1;
+	this->queue = 0;
 }
-
+/*
 NetworkCommand::NetworkCommand(int networkCommandType, int unitId, int commandTypeId, const Vec2i &pos, int unitTypeId, int targetId){
 	this->networkCommandType= networkCommandType;
 	this->unitId= unitId;
@@ -62,8 +56,9 @@ NetworkCommand::NetworkCommand(int networkCommandType, int unitId, int commandTy
 	this->positionY= pos.y;
 	this->unitTypeId= unitTypeId;
 	this->targetId= targetId;
+	this->queue = 0;
 }
-
+*/
 Command *NetworkCommand::toCommand() const {
 	//validate unit
 	World &world = World::getInstance();
@@ -92,9 +87,10 @@ Command *NetworkCommand::toCommand() const {
 	//create command
 	Command *command= NULL;
 	if (target) {
-		command= new Command(ct, CommandFlags(), target, unit);
+		command= new Command(ct, CommandFlags(CommandProperties::QUEUE, queue), target, unit);
 	} else if(unitType){
-		command= new Command(ct, CommandFlags(), Vec2i(positionX, positionY), unitType, unit);
+		command= new Command(ct, CommandFlags(CommandProperties::QUEUE, queue), 
+								Vec2i(positionX, positionY), unitType, unit);
 	} /*else if(!target){
 		command= new Command(ct, CommandFlags(), Vec2i(positionX, positionY));
 	} else{

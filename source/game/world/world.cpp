@@ -90,9 +90,21 @@ void World::end(){
 	//stats will be deleted by BattleEnd
 }
 
+void World::save(XmlNode *node) const {
+	node->addChild("frameCount", frameCount);
+	node->addChild("nextUnitId", nextUnitId);
+	stats.save(node->addChild("stats"));
+	timeFlow.save(node->addChild("timeFlow"));
+	XmlNode *factionsNode = node->addChild("factions");
+	for (Factions::const_iterator i = factions.begin(); i != factions.end(); ++i) {
+		i->save(factionsNode->addChild("faction"));
+	}
+	map.saveExplorationState(node->addChild("explorationState"));
+}
+
 // ========================== init ===============================================
 
-void World::init() {
+void World::init(const XmlNode *worldNode) {
 	_PROFILE_FUNCTION
 	initFactionTypes();
 	initCells(); //must be done after knowing faction number and dimensions
@@ -105,15 +117,47 @@ void World::init() {
 	cartographer = new Cartographer(this);
 	unitUpdater.init(game);
 	
-	//minimap must be init after sum computation
-	initMinimap();
-
-	if (game.getGameSettings().getDefaultUnits()) {
+	if (worldNode) {
+		initExplorationState();
+		loadSaved(worldNode);
+		initMinimap(true);
+	} else if (game.getGameSettings().getDefaultUnits()) {
+		initMinimap();
 		initUnits();
+		initExplorationState();
+	} else {
+		initMinimap();
 	}
-	initExplorationState();	
 	computeFow();
+
 	alive = true;
+}
+
+
+//load saved game
+void World::loadSaved(const XmlNode *worldNode) {
+	Logger::getInstance().add("Loading saved game", true);
+	this->thisFactionIndex = gs.getThisFactionIndex();
+	this->thisTeamIndex = gs.getTeam(thisFactionIndex);
+
+	frameCount = worldNode->getChildIntValue("frameCount");
+	nextUnitId = worldNode->getChildIntValue("nextUnitId");
+
+	stats.load(worldNode->getChild("stats"));
+	timeFlow.load(worldNode->getChild("timeFlow"));
+
+	const XmlNode *factionsNode = worldNode->getChild("factions");
+	factions.resize(factionsNode->getChildCount());
+	for (int i = 0; i < factionsNode->getChildCount(); ++i) {
+		const XmlNode *n = factionsNode->getChild("faction", i);
+		const FactionType *ft = techTree.getFactionType(gs.getFactionTypeName(i));
+		factions[i].load(n, this, ft, gs.getFactionControl(i), &techTree);
+	}
+
+	thisTeamIndex = getFaction(thisFactionIndex)->getTeam();
+	map.computeNormals();
+	map.computeInterpolatedHeights();
+	map.loadExplorationState(worldNode->getChild("explorationState"));
 }
 
 // preload tileset and techtree for progressbar
@@ -873,9 +917,9 @@ void World::initFactionTypes() {
 	thisTeamIndex = getFaction(thisFactionIndex)->getTeam();
 }
 
-void World::initMinimap() {
+void World::initMinimap(bool resuming) {
 	Logger::getInstance().add("Compute minimap surface", true);
-	minimap.init(map.getW(), map.getH(), this);
+	minimap.init(map.getW(), map.getH(), this, resuming);
 }
 
 //place units randomly aroud start location
@@ -929,7 +973,7 @@ void World::initExplorationState() {
 				map.getTile(i, j)->setExplored(thisTeamIndex, true);
 			}
 		}
-	} else if ( !shroudOfDarkness ) {
+	} else if (!shroudOfDarkness) {
 		for (int i = 0; i < map.getTileW(); ++i) {
 			for (int j = 0; j < map.getTileH(); ++j) {
 				map.getTile(i, j)->setExplored(thisTeamIndex, true);
