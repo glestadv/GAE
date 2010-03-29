@@ -139,6 +139,8 @@ void Game::load(){
 		logger.setSubtitle(formatString(scenarioName));
 	}
 	
+	CommandType::resetIdCounter();
+
 	//preload
 	world.preload();
 	//tileset
@@ -272,12 +274,11 @@ void Game::init() {
 		techTree->doChecksum(checksum);
 		map->doChecksum(checksum);
 		networkManager.getGameNetworkInterface()->doWaitUntilReady(checksum);
-	}
-	// set maximum update timer back log
-	if (!isNetworkGame()) {
-		program.setMaxUpdateBacklog(2); // non-network game, may drop frames
-	} else {
+
+		// set maximum update timer back log
 		program.setMaxUpdateBacklog(-1); // network games must always catch up
+	} else {
+		program.setMaxUpdateBacklog(2); // non-network game, may drop frames
 	}
 
 	logger.add("Starting music stream", true);

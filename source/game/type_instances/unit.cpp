@@ -224,9 +224,10 @@ Unit::Unit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, 
 	recalculateStats();
 	hp = node->getChildIntValue("hp"); // HP will be at max due to recalculateStats
 
-	map->putUnitCells(this, node->getChildVec2iValue("pos"));
-	meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
-
+	if (hp) {
+		map->putUnitCells(this, node->getChildVec2iValue("pos"));
+		meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
+	}
 	if(type->hasSkillClass(SkillClass::BE_BUILT) && !type->hasSkillClass(SkillClass::MOVE)) {
 		map->flatternTerrain(this);
 	}
