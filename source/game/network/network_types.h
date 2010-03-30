@@ -15,6 +15,7 @@
 #include <string>
 #include <stdexcept>
 
+#include "game_constants.h"
 #include "types.h"
 #include "vec.h"
 
@@ -107,7 +108,7 @@ WRAPPED_ENUM( NetworkCommandType,
 	GIVE_COMMAND,
 	CANCEL_COMMAND,
 	SET_MEETING_POINT
-)
+);
 
 #pragma pack(push, 2)
 	class NetworkCommand {
