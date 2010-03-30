@@ -31,8 +31,6 @@ using namespace Shared::Util;
 
 namespace Glest { namespace Game {
 
-	// NETWORK: nearly whole file is different
-
 // =====================================================
 //	class NetworkMessage
 // =====================================================

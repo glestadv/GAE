@@ -30,11 +30,6 @@ class SplashParticleSystem;
 
 class AttackParticleSystem: public ParticleSystem {
 protected:
-//	Model *model;
-//	Primitive primitive;
-//	Vec3f offset;
-//	float sizeNoEnergy;
-//	float gravity;
 	Vec3f direction;
 
 
@@ -44,17 +39,7 @@ public:
 	virtual ~AttackParticleSystem() {}
 
 	virtual void render(ParticleRenderer *pr, ModelRenderer *mr);
-
-//	Model *getModel() const			{return model;}
 	virtual Vec3f getDirection() const {return direction;}
-
-//	void setModel(Model *model)					{this->model= model;}
-//	void setOffset(Vec3f offset)				{this->offset= offset;}
-//	void setSizeNoEnergy(float sizeNoEnergy)	{this->sizeNoEnergy= sizeNoEnergy;}
-//	void setGravity(float gravity)				{this->gravity= gravity;}
-//	void setPrimitive(Primitive primitive)		{this->primitive= primitive;}
-
-//	static Primitive strToPrimitive(const string &str);
 };
 
 // =====================================================

@@ -619,23 +619,23 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	World::getCurrWorld()->hackyCleanUp(this);
 	theWorld.getCartographer()->removeUnitVisibility(this);
 
-	if(fire != NULL) {
+	if (fire != NULL) {
 		fire->fade();
 		fire = NULL;
 	}
 
-	//do the cleaning
-	if(removeFromCells) {
+	// do the cleaning
+	if (removeFromCells) {
 		map->clearUnitCells(this, lastPos);
 	}
 
-	if(!isBeingBuilt()) {
+	if (!isBeingBuilt()) {
 		faction->removeStore(type);
 	}
 	setCurrSkill(SkillClass::DIE);
 
-	//no longer needs static resources
-	if(isBeingBuilt()) {
+	// no longer needs static resources
+	if (isBeingBuilt()) {
 		faction->deApplyStaticConsumption(type);
 	} else {
 		faction->deApplyStaticCosts(type);
@@ -648,7 +648,7 @@ void Unit::kill(const Vec2i &lastPos, bool removeFromCells) {
 	//kill or free pets
 	killPets();
 	//kiss mom of the cheek
-	if(master.getUnit()) {
+	if (master.getUnit()) {
 		master.getUnit()->petDied(this);
 	}
 	// hack... 'tracking' particle systems might reference this, 'this' will soon be deleted...

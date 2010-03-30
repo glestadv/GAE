@@ -224,13 +224,6 @@ void World::update() {
 	//water effects
 	waterEffects.update();
 
-	/* NETWORK:
-	//update network clients
-	if (isNetworkClient()) {
-		updateClient();
-	}
-	*/
-
 	//update units
 	for (Factions::const_iterator f = factions.begin(); f != factions.end(); ++f) {
 		const Units &units = f->getUnits();
@@ -951,7 +944,7 @@ void World::initExplorationState() {
 				map.getTile(i, j)->setExplored(thisTeamIndex, true);
 			}
 		}
-	} else if ( !shroudOfDarkness ) {
+	} else /*if (!shroudOfDarkness)*/ {
 		for (int i = 0; i < map.getTileW(); ++i) {
 			for (int j = 0; j < map.getTileH(); ++j) {
 				map.getTile(i, j)->setExplored(thisTeamIndex, true);

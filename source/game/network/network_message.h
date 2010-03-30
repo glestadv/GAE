@@ -32,12 +32,6 @@ class SkillType;
 class Unit;
 class NetworkInterface;
 
-// NETWORK: nearly whole file changed
-// - need more description about what role a NetworkMessage plays.
-// - Should NetworkMessageXmlDoc really be a NetworkMessage or is it a network type?
-// - Perhaps NetworkMessage and NetworkMessageXmlDoc should go into network_types and this renamed to 
-// network_messages?
-
 // ==============================================================
 //	class NetworkMessage
 // ==============================================================
