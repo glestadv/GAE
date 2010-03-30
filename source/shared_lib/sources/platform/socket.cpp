@@ -293,6 +293,15 @@ int Socket::peek(void *data, int dataSize) {
 	return 0;
 }
 
+void Socket::setNoDelay() {
+	int val = 1;
+	int result = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&val, sizeof(int));
+	if (result == SOCKET_ERROR) {
+		handleError(__FUNCTION__);
+	}
+}
+
+
 void Socket::setBlock(bool block) {
 #	ifdef USE_POSIX_SOCKETS
 		int err = fcntl(sock, F_SETFL, block ? 0 : O_NONBLOCK);
@@ -432,6 +441,8 @@ void ClientSocket::connect(const Ip &ip, int port) {
 			//cout << "::connect() error, WOULD_BLOCK.\n";
 
 		}
+	} else {
+		setNoDelay();
 	}
 }
 

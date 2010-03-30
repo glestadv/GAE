@@ -96,7 +96,7 @@ void World::save(XmlNode *node) const {
 	stats.save(node->addChild("stats"));
 	timeFlow.save(node->addChild("timeFlow"));
 	XmlNode *factionsNode = node->addChild("factions");
-	for (Factions::const_iterator i = factions.begin(); i != factions.end(); ++i) {
+	foreach_const (Factions, i, factions) {
 		i->save(factionsNode->addChild("faction"));
 	}
 	map.saveExplorationState(node->addChild("explorationState"));

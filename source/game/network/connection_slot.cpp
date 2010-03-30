@@ -52,6 +52,7 @@ void ConnectionSlot::update() {
 		//send intro message when connected
 		if (socket) {
 			socket->setBlock(false);
+			socket->setNoDelay(); 
 			NetworkMessageIntro networkMessageIntro(
 				getNetworkVersionString(), theConfig.getNetPlayerName(), socket->getHostName(), playerIndex);
 			send(&networkMessageIntro);
