@@ -192,7 +192,6 @@ Command *UnitUpdater::doAutoAttack(Unit *unit) {
 			if (!unit->getFaction()->isAvailable(ct)) {
 				continue;
 			}
-
 			//look for an attack skill
 			const AttackSkillType *ast = NULL;
 			const AttackSkillTypes *asts = NULL;
@@ -210,7 +209,6 @@ Command *UnitUpdater::doAutoAttack(Unit *unit) {
 				default:
 					break;
 			}
-
 			//use it to attack
 			if (asts) {
 				if (attackableOnSight(unit, &sighted, asts, NULL)) {
@@ -227,17 +225,14 @@ Command *UnitUpdater::doAutoAttack(Unit *unit) {
 
 
 Command *UnitUpdater::doAutoRepair(Unit *unit) {
-	/*
 	if (unit->getType()->hasCommandClass(CommandClass::REPAIR) && unit->isAutoRepairEnabled()) {
-
 		for (int i = 0; i < unit->getType()->getCommandTypeCount(); ++i) {
 			const CommandType *ct = unit->getType()->getCommandType(i);
 
 			if (!unit->getFaction()->isAvailable(ct) || ct->getClass() != CommandClass::REPAIR) {
 				continue;
 			}
-
-			//look a repair skill
+			// look for a repair skill
 			const RepairCommandType *rct = (const RepairCommandType*)ct;
 			const RepairSkillType *rst = rct->getRepairSkillType();
 			Unit *sighted = NULL;
@@ -251,12 +246,10 @@ Command *UnitUpdater::doAutoRepair(Unit *unit) {
 			}
 		}
 	}
-	*/
 	return NULL;
 }
 
 Command *UnitUpdater::doAutoFlee(Unit *unit) {
-
 	Unit *sighted = NULL;
 	if (unit->getType()->hasCommandClass(CommandClass::MOVE) && attackerOnSight(unit, &sighted)) {
 		//if there is a friendly military unit that we can heal/repair and is
