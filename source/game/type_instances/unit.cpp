@@ -38,6 +38,37 @@ using namespace Shared::Util;
 
 namespace Glest{ namespace Game{
 
+void Vec2iList::read(const XmlNode *node) {
+	clear();
+	stringstream ss(node->getStringValue());
+	Vec2i pos;
+	ss >> pos;
+	while (pos != Vec2i(-1)) {
+		push_back(pos);
+		ss >> pos;
+	}
+}
+
+void Vec2iList::write(XmlNode *node) const {
+	stringstream ss;
+	foreach_const(Vec2iList, it, (*this)) {
+		ss << *it;
+	}
+	ss << Vec2i(-1);
+	node->addAttribute("value", ss.str());
+}
+
+void UnitPath::read(const XmlNode *node) {
+	Vec2iList::read(node);
+	blockCount = node->getIntAttribute("blockCount");
+}
+
+void UnitPath::write(XmlNode *node) const {
+	Vec2iList::write(node);
+	node->addAttribute("blockCount", blockCount);
+}
+
+
 // =====================================================
 // 	class Unit
 // =====================================================
@@ -113,6 +144,98 @@ Unit::Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map
 	fire = NULL;
 }
 
+
+Unit::Unit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld)
+		: targetRef(node->getChild("targetRef"))
+		, effects(node->getChild("effects"))
+		, effectsCreated(node->getChild("effectsCreated")) {
+	this->faction = faction;
+	this->map = map;
+
+	id = node->getChildIntValue("id");
+
+	string s;
+	//hp loaded after recalculateStats()
+	ep = node->getChildIntValue("ep");
+	loadCount = node->getChildIntValue("loadCount");
+	deadCount = node->getChildIntValue("deadCount");
+	// these fields updated later
+	//progress 
+	//lastAnimProgress
+	//animProgress
+	//highlight
+	kills = node->getChildIntValue("kills");
+	type = faction->getType()->getUnitType(node->getChildStringValue("type"));
+
+	s = node->getChildStringValue("loadType");
+	loadType = s == "null_value" ? NULL : tt->getResourceType(s);
+
+	lastRotation = node->getChildFloatValue("lastRotation");
+	targetRotation = node->getChildFloatValue("targetRotation");
+	rotation = node->getChildFloatValue("rotation");
+
+	progress2 = node->getChildIntValue("progress2");
+	currField = (Field)node->getChildIntValue("currField");
+	targetField = (Field)node->getChildIntValue("targetField");
+
+	pos = node->getChildVec2iValue("pos"); //map->putUnitCells() will set this, so we reload it later
+	lastPos = node->getChildVec2iValue("lastPos");
+	nextPos = node->getChildVec2iValue("nextPos");
+	targetPos = node->getChildVec2iValue("targetPos");
+	targetVec = node->getChildVec3fValue("targetVec");
+	// meetingPos loaded after map->putUnitCells()
+	faceTarget = node->getChildBoolValue("faceTarget");
+	useNearestOccupiedCell = node->getChildBoolValue("useNearestOccupiedCell");
+	s = node->getChildStringValue("currSkill");
+	currSkill = s == "null_value" ? NULL : type->getSkillType(s);
+
+	nextCommandUpdate = node->getChildIntValue("nextCommandUpdate");
+	lastCommandUpdate = node->getChildIntValue("lastCommandUpdate");
+	nextAnimReset = node->getChildIntValue("nextAnimReset");
+	lastAnimReset = node->getChildIntValue("lastAnimReset");
+
+	highlight = node->getChildFloatValue("highlight");
+	toBeUndertaken = node->getChildBoolValue("toBeUndertaken");
+	autoRepairEnabled = node->getChildBoolValue("autoRepairEnabled");
+
+	XmlNode *n = node->getChild("commands");
+	for(int i = 0; i < n->getChildCount(); ++i) {
+		commands.push_back(new Command(n->getChild("command", i), type, faction->getType()));
+	}
+
+	unitPath.read(node->getChild("unitPath"));
+	waypointPath.read(node->getChild("waypointPath"));
+
+	totalUpgrade.reset();
+	computeTotalUpgrade();
+
+	fire = NULL;
+	faction->add(this);
+
+	recalculateStats();
+	hp = node->getChildIntValue("hp"); // HP will be at max due to recalculateStats
+
+	if (hp) {
+		map->putUnitCells(this, node->getChildVec2iValue("pos"));
+		meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
+	}
+	if(type->hasSkillClass(SkillClass::BE_BUILT) && !type->hasSkillClass(SkillClass::MOVE)) {
+		map->flatternTerrain(this);
+	}
+	if(node->getChildBoolValue("fire")) {
+		decHp(0); // trigger logic to start fire system
+	}
+	//care should be taken to ensure that no attempt to access either master or
+	//pets fields are made before all of the factions are initialized because
+	//these are UnitReferences and the units they refer to may not be loaded yet.
+	master = UnitReference(node->getChild("master"));
+	n = node->getChild("pets");
+	pets.clear();
+	for(int i = 0; i < n->getChildCount(); ++i) {
+		pets.push_back(UnitReference(n->getChild("pet", i)));
+	}
+}
+
 /** delete stuff */
 Unit::~Unit() {
 	//remove commands
@@ -125,6 +248,63 @@ Unit::~Unit() {
 	Gui::getCurrentGui()->makeSureImNotSelected(this);
 //	World::getCurrWorld()->getMap()->makeSureImRemoved(this);
 }
+
+
+void Unit::save(XmlNode *node) const {
+	XmlNode *n;
+	node->addChild("id", id);
+	node->addChild("hp", hp);
+	node->addChild("ep", ep);
+	node->addChild("loadCount", loadCount);
+	node->addChild("deadCount", deadCount);
+	node->addChild("nextCommandUpdate", nextCommandUpdate);
+	node->addChild("lastCommandUpdate", lastCommandUpdate);
+	node->addChild("nextAnimReset", nextAnimReset);
+	node->addChild("lastAnimReset", lastAnimReset);
+	node->addChild("highlight", highlight);
+	node->addChild("progress2", progress2);
+	node->addChild("kills", kills);
+	targetRef.save(node->addChild("targetRef"));
+	node->addChild("currField", currField);
+	node->addChild("targetField", targetField);
+	node->addChild("pos", pos);
+	node->addChild("lastPos", lastPos);
+	node->addChild("nextPos", nextPos);
+	node->addChild("targetPos", targetPos);
+	node->addChild("targetVec", targetVec);
+	node->addChild("meetingPos", meetingPos);
+	node->addChild("faceTarget", faceTarget);
+	node->addChild("useNearestOccupiedCell", useNearestOccupiedCell);	
+	node->addChild("lastRotation", lastRotation);
+	node->addChild("targetRotation", targetRotation);
+	node->addChild("rotation", rotation);
+	node->addChild("type", type->getName());
+	node->addChild("loadType", loadType ? loadType->getName() : "null_value");
+	node->addChild("currSkill", currSkill ? currSkill->getName() : "null_value");
+
+	node->addChild("toBeUndertaken", toBeUndertaken);
+//	node->addChild("alive", alive);
+	node->addChild("autoRepairEnabled", autoRepairEnabled);
+
+	effects.save(node->addChild("effects"));
+	effectsCreated.save(node->addChild("effectsCreated"));
+
+	node->addChild("fire", fire ? true : false);
+
+	unitPath.write(node->addChild("unitPath"));
+	waypointPath.write(node->addChild("waypointPath"));
+
+	n = node->addChild("commands");
+	for(Commands::const_iterator i = commands.begin(); i != commands.end(); ++i) {
+		(*i)->save(n->addChild("command"));
+	}
+	n = node->addChild("pets");
+	for(Pets::const_iterator i = pets.begin(); i != pets.end(); ++i) {
+		i->save(n->addChild("pet"));
+	}
+	master.save(node->addChild("master"));
+}
+
 
 // ====================================== get ======================================
 
@@ -779,8 +959,8 @@ void Unit::updateMoveSkillCycle() {
 
 /** @return true when the current skill has completed a cycle */
 bool Unit::update() {
-	//assert(progress <= 1.f);
-	PROFILE_START( "Unit Update" );
+	_PROFILE_FUNCTION
+	assert(progress <= 1.f);
 
 	//highlight
 	if(highlight > 0.f) {
@@ -806,13 +986,12 @@ bool Unit::update() {
 		}
 	}
 	// check for cycle completion
-	bool ret = false;
 	
 	// '>=' because nextCommandUpdate can be < frameCount if unit is dead
 	if (theWorld.getFrameCount() >= this->getNextCommandUpdate()) {
 		lastRotation = targetRotation;
 		if(currSkill->getClass() != SkillClass::DIE) {
-			ret = true;
+			return true;
 		} else {
 			deadCount++;
 			if (deadCount >= GameConstants::maxDeadCount) {
@@ -820,8 +999,7 @@ bool Unit::update() {
 			}
 		}
 	}
-	PROFILE_STOP( "Unit Update" );
-	return ret;
+	return false;
 }
 
 /**

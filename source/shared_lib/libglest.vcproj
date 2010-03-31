@@ -57,7 +57,7 @@
 				WarningLevel="2"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
-				DisableSpecificWarnings="4250; 4355"
+				DisableSpecificWarnings="4250;4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -131,7 +131,7 @@
 				WarningLevel="1"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4250; 4355"
+				DisableSpecificWarnings="4250;4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -203,7 +203,7 @@
 				WarningLevel="2"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4250; 4355"
+				DisableSpecificWarnings="4250;4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -275,7 +275,7 @@
 				WarningLevel="2"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
-				DisableSpecificWarnings="4250; 4355"
+				DisableSpecificWarnings="4250;4355;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -388,6 +388,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\util\heap.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\platform\input.h"
 				>
 			</File>
@@ -401,6 +405,10 @@
 			</File>
 			<File
 				RelativePath=".\include\util\leak_dumper.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\util\line.h"
 				>
 			</File>
 			<File
@@ -512,11 +520,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\socket.h"
+				RelativePath=".\include\platform\win32\socket.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\socket.h"
+				RelativePath=".\include\platform\socket.h"
 				>
 			</File>
 			<File
@@ -584,11 +592,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\types.h"
+				RelativePath=".\include\platform\win32\types.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\types.h"
+				RelativePath=".\include\platform\types.h"
 				>
 			</File>
 			<File
@@ -612,11 +620,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\window_gl.h"
+				RelativePath=".\include\platform\win32\window_gl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\platform\win32\window_gl.h"
+				RelativePath=".\include\platform\window_gl.h"
 				>
 			</File>
 			<File

@@ -124,6 +124,10 @@ public:
 		getDesc(str, unit);
 		return str;
 	}
+
+	// must be called before a new game loads anything, savegames need command types to get 
+	// the same id everytime a game is started, not just the first game in one 'program session'
+	static void resetIdCounter() { nextId = 0; }
 };
 
 // ===============================

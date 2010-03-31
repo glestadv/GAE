@@ -110,17 +110,18 @@ WRAPPED_ENUM( NetworkCommandType,
 	SET_MEETING_POINT
 );
 
-#pragma pack(push, 2)
-	class NetworkCommand {
-	private:
-		int16 networkCommandType;
-		int16 unitId;
-		int16 commandTypeId;
-		int16 positionX;
-		int16 positionY;
-		int16 unitTypeId;
-		int16 targetId;
+#pragma pack(push, 1)
 
+	class NetworkCommand{
+	private:
+		uint32 networkCommandType	:  8;
+		int32 unitId				: 24; // 32
+		int32 commandTypeId			:  8;
+		int32 targetId				: 24; // 32
+		int32 positionX				: 16; 
+		int32 positionY				: 16; // 32
+		int32 unitTypeId			: 15;
+		uint32 queue				:  1; // 16
 	public:
 		NetworkCommand(){};
 		NetworkCommand(Command *command);

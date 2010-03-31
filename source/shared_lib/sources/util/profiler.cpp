@@ -2,6 +2,7 @@
 //	This file is part of Glest Shared Library (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//				  2009-2010 James McCulloch
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -14,9 +15,47 @@
 
 #ifdef SL_PROFILE
 
-#include <stdexcept>
+#include "platform_util.h"
+#include "timer.h"
 
-namespace Shared{ namespace Util{
+using Shared::Platform::Chrono;
+
+namespace Shared { namespace Util { namespace Profile {
+
+// =====================================================
+//	class Section
+// =====================================================
+
+class Section {
+public:
+	typedef map<string, Section*> SectionContainer;
+private:
+	string name;
+	Chrono chrono;
+	int64 microsElapsed;
+	int64 lastStart;
+	unsigned int calls;
+	Section *parent;
+	SectionContainer children;
+
+public:
+	Section(const string &name);
+
+	Section *getParent()				{return parent;}
+	const string &getName() const		{return name;}
+
+	void setParent(Section *parent)	{this->parent= parent;}
+
+	void start()	{ lastStart = Chrono::getCurMicros();}
+	void stop()		{ microsElapsed += Chrono::getCurMicros() - lastStart; } 
+
+	void incCalls () { calls++; }
+
+	void addChild(Section *child)	{children[child->name] = child;}
+	Section *getChild(const string &name);
+
+	void print(FILE *outSream, int tabLevel=0);
+};
 
 // =====================================================
 //	class Section
@@ -30,14 +69,11 @@ Section::Section(const string &name){
 }
 
 Section *Section::getChild(const string &name){
-	SectionContainer::iterator it;
-	for(it= children.begin(); it!=children.end(); ++it){
-		if((*it)->getName()==name){
-			return *it;
-		}
+	SectionContainer::iterator it = children.find(name);
+	if (it == children.end()) {
+		return NULL;
 	}
-
-	return NULL;
+	return it->second;
 }
 
 void Section::print(FILE *outStream, int tabLevel){
@@ -73,9 +109,26 @@ void Section::print(FILE *outStream, int tabLevel){
 
 	SectionContainer::iterator it;
 	for(it= children.begin(); it!=children.end(); ++it){
-		(*it)->print(outStream, tabLevel+1);
+		it->second->print(outStream, tabLevel+1);
 	}
 }
+
+
+// =====================================================
+//	class Profiler
+// =====================================================
+
+class Profiler {
+	Section *rootSection;
+	Section *currSection;
+
+public:
+	Profiler();
+	~Profiler();
+
+	void sectionBegin(const string &name);
+	void sectionEnd(const string &name);
+};
 
 // =====================================================
 //	class Profiler
@@ -96,21 +149,6 @@ Profiler::~Profiler(){
 		rootSection->print(f);
 		fclose(f);
 	}
-}
-
-Profiler &Profiler::getInstance(){
-	static Profiler profiler;
-	return profiler;
-}
-
-void Profiler::addChildCall( const string &name ) {
-	Section *childSection= currSection->getChild(name);
-	if(childSection==NULL){
-		childSection= new Section(name);
-		currSection->addChild(childSection);
-		childSection->setParent(currSection);
-	}
-	childSection->incCalls();
 }
 
 void Profiler::sectionBegin(const string &name ){
@@ -134,6 +172,16 @@ void Profiler::sectionEnd(const string &name){
 	}
 }
 
-}};//end namespace
+Profiler profiler;
+
+void sectionBegin(const string &name) {
+	profiler.sectionBegin(name);
+}
+
+void sectionEnd(const string &name) {
+	profiler.sectionEnd(name);
+}
+
+}}} //end namespace Shared::Util::Profile
 
 #endif

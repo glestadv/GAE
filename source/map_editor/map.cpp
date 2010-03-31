@@ -121,7 +121,9 @@ void Map::pirateChangeHeight(int x, int y, int height, int radius) {
 
 	// If the radius is 1 don't bother doing any calculations
 	if (radius == 1) {
-		cells[x][y].height = goalAlt;
+		if(inside(x, y)){
+			cells[x][y].height = goalAlt;
+		}
 		return;
 	}
 

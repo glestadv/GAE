@@ -69,13 +69,19 @@ public:
 	virtual void unitEvent(Event event, const Unit *unit)=0;
 };
 
+class Vec2iList : public list<Vec2i> {
+public:
+	void read(const XmlNode *node);
+	void write(XmlNode *node) const;
+};
+
 // =====================================================
 // 	class UnitPath
 // =====================================================
 /** Holds the next cells of a Unit movement 
   * @extends std::list<Shared::Math::Vec2i>
   */
-class UnitPath : public list<Vec2i> {
+class UnitPath : public Vec2iList {
 private:
 	static const int maxBlockCount = 10; /**< number of frames to wait on a blocked path */
 
@@ -93,9 +99,13 @@ public:
 	Vec2i peek()		{return front();}	 /**< peek at the next position			 */	
 	void pop()			{erase(begin());}	/**< pop the next position off the path */
 
-	int getBlockCount() const { return blockCount; }};
+	int getBlockCount() const { return blockCount; }
 
-class WaypointPath : public list<Vec2i> {
+	void read(const XmlNode *node);
+	void write(XmlNode *node) const;
+};
+
+class WaypointPath : public Vec2iList {
 public:
 	WaypointPath() {}
 	void push(const Vec2i &pos/*, float dist*/)	{ push_front(pos); }
@@ -230,7 +240,10 @@ public:
 
 public:
 	Unit(int id, const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, Unit* master = NULL);
+	Unit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld = true);
 	~Unit();
+
+	void save(XmlNode *node) const;
 
 	//queries
 	int getId() const							{return id;}

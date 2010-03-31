@@ -139,6 +139,8 @@ void Game::load(){
 		logger.setSubtitle(formatString(scenarioName));
 	}
 	
+	CommandType::resetIdCounter();
+
 	//preload
 	world.preload();
 	//tileset
@@ -179,21 +181,16 @@ void Game::init() {
 
 	// init world, and place camera
 	commander.init(&world);
-
-	// setup progress bar (used for ClusterMap init)
-	GraphicProgressBar progressBar;
-	progressBar.init(345, 550, 300, 20);
-	logger.setProgressBar(&progressBar);
-
-	world.init();
-	logger.setProgressBar(NULL);
-
+	world.init(savedGame ? savedGame->getChild("world") : NULL);
 	gui.init();
 	chatManager.init(&console, world.getThisTeamIndex());
-	const Vec2i &v= map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
+	
 	gameCamera.init(map->getW(), map->getH());
+	const Vec2i &v = map->getStartLocation(world.getThisFaction()->getStartLocationIndex());
 	gameCamera.setPos(Vec2f((float)v.x, (float)v.y));
-
+	if (savedGame) {
+		gui.load(savedGame->getChild("gui"));
+	}
 	ScriptManager::init(this);
 
 	GameInterface *gni = networkManager.getGameInterface();
@@ -280,13 +277,11 @@ void Game::init() {
 		iClient->doUpdateKeyframe(0);
 		cout << "got first key frame.\n";
 		LOG_NETWORK( "Got first key frame, starting game.\n" );
-	}
 
-	// set maximum update timer back log
-	if (!isNetworkGame()) {
-		program.setMaxUpdateBacklog(2); // non-network game, may drop frames
-	} else {
+		// set maximum update timer back log
 		program.setMaxUpdateBacklog(-1); // network games must always catch up
+	} else {
+		program.setMaxUpdateBacklog(2); // non-network game, may drop frames
 	}
 
 	cout << "Activating units...\n";
@@ -399,15 +394,9 @@ void Game::updateCamera() {
 //render
 void Game::render(){
 	renderFps++;
-	profileBegin("game-render3d");
 	render3d();
-	profileEnd("game-render3d");
-	profileBegin("game-render2d");
 	render2d();
-	profileEnd("game-render2d");
-	profileBegin("game-swapBuffers");
 	Renderer::getInstance().swapBuffers();
-	profileEnd("game-swapBuffers");
 }
 
 // ==================== tick ====================
@@ -564,7 +553,6 @@ void Game::keyDown(const Key &key) {
 		}
 		console.addLine(str.str());
 	}
-
 	if (saveBox && saveBox->getEntry()->isActivated()) {
 		switch (key.getCode()) {
 			case keyReturn:
@@ -585,7 +573,6 @@ void Game::keyDown(const Key &key) {
 		return; // key consumed, we're done here
 	}
 	// if ChatManger does not use this key, we keep processing
-
 	if (cmd == ucSaveScreenshot) {
 		Shared::Platform::mkdir("screens", true);
 		int i;
@@ -608,33 +595,26 @@ void Game::keyDown(const Key &key) {
 		if (i > MAX_SCREENSHOTS) {
 			console.addLine(lang.get("ScreenshotDirectoryFull"));
 		}
-
 	//move camera left
 	} else if (cmd == ucCameraPosLeft) {
 		gameCamera.setMoveX(-scrollSpeed, false);
-
 	//move camera right
 	} else if (cmd == ucCameraPosRight) {
 		gameCamera.setMoveX(scrollSpeed, false);
-
 	//move camera up
 	} else if (cmd == ucCameraPosUp) {
 		gameCamera.setMoveZ(scrollSpeed, false);
-
 	//move camera down
 	} else if (cmd == ucCameraPosDown) {
 		gameCamera.setMoveZ(-scrollSpeed, false);
-
 	//switch display color
 	} else if (cmd == ucCycleDisplayColor) {
 		gui.switchToNextDisplayColor();
-
 	//change camera mode
 	} else if (cmd == ucCameraCycleMode) {
 		gameCamera.switchState();
 		string stateString = gameCamera.getState() == GameCamera::sGame ? lang.get("GameCamera") : lang.get("FreeCamera");
 		console.addLine(lang.get("CameraModeSet") + " " + stateString);
-
 	//pause
 	} else if (speedChangesAllowed) {
 		bool prevPausedValue = paused;
@@ -656,12 +636,10 @@ void Game::keyDown(const Key &key) {
 			}
 			return;
 		}
-
 		//increment speed
 		if (cmd == ucSpeedInc) {
 			incSpeed();
 			return;
-
 		//decrement speed
 		} else if (cmd == ucSpeedDec) {
 			decSpeed();
@@ -673,26 +651,21 @@ void Game::keyDown(const Key &key) {
 			return;
 		}
 	}
-
 	//exit
 	if (cmd == ucMenuQuit) {
 		if (!gui.cancelPending()) {
 			showMessageBox(lang.get("ExitGame?"), "Quit...", true);
 		}
-
 	//save
 	} else if (cmd == ucMenuSave) {
-		/*if (!saveBox) {
+		if (!saveBox) {
 			Shared::Platform::mkdir("savegames", true);
 			saveBox = new GraphicTextEntryBox();
 			saveBox->init(lang.get("Save"), lang.get("Cancel"), lang.get("SaveGame"), lang.get("Name"));
-		}*/
-		console.addLine("Save feature disabled: to be enabled in 0.3");
-
+		}
 	//group
 	} else if (key.getCode() >= key0 && key.getCode() < key0 + Selection::maxGroups) {
 		gui.groupKey(key.getCode() - key0);
-
 	//hotkeys
 	} else if (gameCamera.getState() == GameCamera::sGame) {
 		gui.hotKey(cmd);
@@ -702,22 +675,18 @@ void Game::keyDown(const Key &key) {
 			case ucCameraRotateLeft:
 				gameCamera.setRotate(-1);
 				break;
-
 			//rotate camera right
 			case ucCameraRotateRight:
 				gameCamera.setRotate(1);
 				break;
-
 			//camera up
 			case ucCameraPitchUp:
 				gameCamera.setMoveY(1);
 				break;
-
 			//camera down
 			case ucCameraPitchDown:
 				gameCamera.setMoveY(-1);
 				break;
-
 			default:
 				break;
 		}
@@ -793,7 +762,7 @@ void Game::quitGame(){
 // ==================== render ====================
 
 void Game::render3d(){
-
+	_PROFILE_FUNCTION
 	Renderer &renderer= Renderer::getInstance();
 
 	//init
@@ -833,6 +802,7 @@ void Game::render3d(){
 }
 
 void Game::render2d(){
+	_PROFILE_FUNCTION
 	Renderer &renderer= Renderer::getInstance();
 	Config &config= Config::getInstance();
 	CoreData &coreData= CoreData::getInstance();
@@ -1084,12 +1054,12 @@ void Game::showMessageBox(const string &text, const string &header, bool toggle)
 }
 
 void Game::saveGame(string name) const {
-	/*XmlNode root("saved-game");
-	root.addAttribute("version", "1");
+	XmlNode root("saved-game");
+	root.addAttribute("version", "0.2.13");
 	gui.save(root.addChild("gui"));
 	gameSettings.save(root.addChild("settings"));
 	world.save(root.addChild("world"));
-	XmlIo::getInstance().save("savegames/" + name + ".sav", &root);*/
+	XmlIo::getInstance().save("savegames/" + name + ".sav", &root);
 }
 
 }}//end namespace

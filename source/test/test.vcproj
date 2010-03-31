@@ -51,6 +51,7 @@
 				PrecompiledHeaderThrough="pch.h"
 				WarningLevel="2"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -126,6 +127,7 @@
 				PrecompiledHeaderThrough="pch.h"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -192,6 +194,14 @@
 				RelativePath=".\search\influence_map_test.h"
 				>
 			</File>
+			<File
+				RelativePath=".\search\line_test.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\search\line_test.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="facilities"
@@ -214,6 +224,14 @@
 			</File>
 			<File
 				RelativePath=".\datastructs\circular_buffer_test.h"
+				>
+			</File>
+			<File
+				RelativePath=".\datastructs\heap_test.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\datastructs\heap_test.h"
 				>
 			</File>
 			<File

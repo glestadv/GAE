@@ -41,21 +41,6 @@ namespace Glest{ namespace Game{
 
 using Search::Cartographer;
 
-Cell *Map::getCell(int x, int y) const {
-	assert ( this->isInside ( x,y ) );
-	return &cells[y * w + x];
-}
-Cell *Map::getCell(const Vec2i &pos) const {
-	return getCell(pos.x, pos.y);
-}
-Tile *Map::getTile(int sx, int sy) const { 
-	assert ( this->isInsideTile ( sx,sy ) );
-	return &tiles[sy*tileW+sx];
-}
-Tile *Map::getTile(const Vec2i &sPos) const {
-	return getTile(sPos.x, sPos.y);
-}
-
 // =====================================================
 // 	class Map
 // =====================================================
@@ -92,6 +77,50 @@ Map::~Map() {
 	if(tiles)			{delete[] tiles;}
 	if(startLocations)	{delete[] startLocations;}
 //	if (surfaceHeights)	{delete[] surfaceHeights;}
+}
+
+char encodeExplorationState(Tile *tile) {
+	char result = 0;
+	for (int i=0; i < GameConstants::maxPlayers; ++i) {
+		if (tile->isExplored(i)) {
+			result |= (1 << i);
+		}
+	}
+	result += 48;
+	return result;
+}
+
+void decodeExplorationState(Tile *tile, char state) {
+	state -= 48;
+	for (int i=0; i < GameConstants::maxPlayers; ++i) {
+		tile->setExplored(i, state & (1 << i));
+	}
+}
+
+void Map::saveExplorationState(XmlNode *node) const {
+	XmlNode *metrics = node->addChild("metrics");
+	metrics->addAttribute("width", tileW);
+	metrics->addAttribute("height", tileH);
+	for (int y=0; y < tileH; ++y) {
+		stringstream ss;
+		for (int x=0; x < tileW; ++x) {
+			ss << encodeExplorationState(getTile(x, y));
+		}
+		node->addChild(string("row") + intToStr(y))->addAttribute("value", ss.str());
+	}
+}
+
+void Map::loadExplorationState(XmlNode *node) {
+	assert(node->getChild("metrics")->getIntAttribute("width") == tileW);
+	assert(node->getChild("metrics")->getIntAttribute("height") == tileH);
+	for (int y=0; y < tileH; ++y) {
+		stringstream ss(node->getChild(string("row") + intToStr(y))->getStringAttribute("value"));
+		for (int x=0; x < tileW; ++x) {
+			char state;
+			ss >> state;
+			decodeExplorationState(getTile(x, y), state);
+		}
+	}
 }
 
 void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {

@@ -47,6 +47,7 @@
 				RuntimeLibrary="1"
 				WarningLevel="2"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -94,7 +95,7 @@
 			IntermediateDirectory="../../build/$(ConfigurationName)/$(ProjectName)"
 			ConfigurationType="1"
 			CharacterSet="2"
-			WholeProgramOptimization="1"
+			WholeProgramOptimization="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -115,12 +116,14 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="..;../../../deps/include/lua;../../../deps/include;../shared_lib/include/math;../shared_lib/include/graphics;../shared_lib/include/graphics/gl;../shared_lib/include/platform;../shared_lib/include/platform/win32;../shared_lib/include/sound;../shared_lib/include/sound/ds8;../shared_lib/include/util;../shared_lib/include/lua;../shared_lib/include/xml;../shared_lib/include/physfs;../shared_lib/include/tinyxml;../shared_lib/include;ai;facilities;game;global;graphics;gui;main;menu;network;sound;type_instances;types;world;path_finder"
 				PreprocessorDefinitions="WIN32;USE_PCH=1"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

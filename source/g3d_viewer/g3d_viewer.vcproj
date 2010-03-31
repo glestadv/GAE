@@ -49,6 +49,7 @@
 				PrecompiledHeaderThrough="pch.h"
 				WarningLevel="2"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -122,7 +123,7 @@
 				EnableFunctionLevelLinking="true"
 				WarningLevel="2"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4996;"
+				DisableSpecificWarnings="4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -201,12 +201,20 @@ public:
 	void load(const string &path, TechTree *techTree, Tileset *tileset);
 	void doChecksum(Checksum &checksum);
 
+	void saveExplorationState(XmlNode *node) const;
+	void loadExplorationState(XmlNode *node);
+
 	//get
-	///@todo move these back in here (inline)
-	Cell *getCell(int x, int y) const;
-	Cell *getCell(const Vec2i &pos) const;
-	Tile *getTile(int sx, int sy) const;
-	Tile *getTile(const Vec2i &sPos) const;
+	Cell *getCell(int x, int y) const {
+		assert ( this->isInside ( x,y ) );
+		return &cells[y * w + x];
+	}
+	Cell *getCell(const Vec2i &pos) const { return getCell(pos.x, pos.y); }
+	Tile *getTile(int sx, int sy) const {
+		assert(this->isInsideTile(sx, sy));
+		return &tiles[sy*tileW+sx];
+	}
+	Tile *getTile(const Vec2i &sPos) const { return getTile(sPos.x, sPos.y); }
 
 	int getW() const							{ return w;				}
 	int getH() const							{ return h;				 }

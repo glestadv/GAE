@@ -17,23 +17,6 @@
 
 namespace Shared { namespace Math {
 
-
-ostream& operator<<(ostream &lhs, const Vec3f &pt) {
-	return lhs << "(" << pt.x << ", " << pt.y << ", " << pt.z << ")";
-}
-
-ostream& operator<<(ostream &lhs, const Vec2i &pt) {
-	return lhs << "(" << pt.x << ", " << pt.y << ")";
-}
-
-ostream& operator<<(ostream &lhs, const Vec4i &rhs) {
-	return lhs << "(" << rhs.x << ", " << rhs.y << ", " << rhs.z << ", " << rhs.w << ")";
-}
-
-ostream& operator<<(ostream &lhs, const Vec2f &rhs) {
-	return lhs << "(" << rhs.x << ", " << rhs.y << ")";
-}
-
 /// fixed point square root, adapted from code at c.snippets.org
 /// @todo make faster? [test perfomance vs sqrtf(), if horrible, make faster.]
 fixed fixed::sqRt() const {
