@@ -77,16 +77,15 @@
 #include <sys/types.h>
 
 #ifdef USE_POSIX_SOCKETS
-
 	#include <sys/socket.h>
 	#include <sys/types.h>
 	#include <netinet/in.h>
+	#include <netinet/tcp.h>
 	#include <arpa/inet.h>
 	#include <netdb.h>
 	#include <fcntl.h>
 //	#include <sys/filio.h>
 	#include <sys/ioctl.h>
-
 #endif
 
 #ifdef USE_SDL

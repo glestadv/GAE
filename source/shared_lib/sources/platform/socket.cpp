@@ -17,6 +17,10 @@
 #include "conversion.h"
 #include "leak_dumper.h"
 
+#ifdef USE_POSIX_SOCKETS
+#	include <netinet/tcp.h>
+#endif
+
 using namespace std;
 using namespace Shared::Util;
 

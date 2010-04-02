@@ -18,6 +18,8 @@
 #include "platform_util.h"
 #include "timer.h"
 
+#include <map>
+
 using Shared::Platform::Chrono;
 
 using namespace std;
@@ -89,7 +91,7 @@ void Section::print(FILE *outStream, int tabLevel){
 	fprintf(outStream, "%s: ", name.c_str());
 
 	if ( microsElapsed ) {
-		fprintf(outStream, "%d us", microsElapsed );
+		fprintf(outStream, "%d us", int(microsElapsed));
 		unsigned int milliseconds = microsElapsed / 1000;
 		unsigned int seconds = milliseconds / 1000;
 		unsigned int minutes = seconds / 60;

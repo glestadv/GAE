@@ -14,6 +14,8 @@
 
 #include "line_test.h"
 
+#include <algorithm>
+
 using Shared::Util::line;
 
 using std::cout;
