@@ -2543,7 +2543,7 @@ void Renderer::renderObjectsFast(){
 			const Model *objModel= sc->getObject()->getModel();
 			Vec3f v= o->getPos();
 			v.x += Map::cellScale / 2;
-			v.y += Map::cellScale / 2;
+			v.z += Map::cellScale / 2;
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 				glTranslatef(v.x, v.y, v.z);
