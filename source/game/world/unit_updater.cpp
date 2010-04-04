@@ -734,7 +734,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 
 	Tile *tile = map->getTile(Map::toTileCoords(unit->getCurrCommand()->getPos()));
 	Resource *res = tile->getResource();
-	if (!res) { // reset command pos
+	if (!res) { // reset command pos, but not Unit::targetPos
 		res = searchForResource(unit, hct);
 	}
 
@@ -806,14 +806,19 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			}
 		}
 	} else { // if working
-		if (res != NULL) { // if there is a resource, continue working, until loaded
+		res = map->getTile(Map::toTileCoords(unit->getTargetPos()))->getResource();
+		if (res) { // if there is a resource, continue working, until loaded
+			if (!hct->canHarvest(res->getType())) { // wrong resource type, command changed
+				unit->setCurrSkill(getStopLoadedSkill(unit));
+				unit->getPath()->clear();
+				return;
+			}
 			unit->update2();
 			if (unit->getProgress2() >= hct->getHitsPerUnit()) {
 				unit->setProgress2(0);
 				if (unit->getLoadCount() < hct->getMaxLoad()) {
 					unit->setLoadCount(unit->getLoadCount() + 1);
 				}
-
 				// if resource exausted, then delete it and stop (and let the cartographer know)
 				if (res->decAmount(1)) {
 					Vec2i rPos = res->getPos();

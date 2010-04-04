@@ -177,7 +177,7 @@ CommandResult Commander::pushCommand(Command *command) const {
 	assert(command->getCommandedUnit());
 	GameNetworkInterface *gameNetworkInterface = NetworkManager::getInstance().getGameNetworkInterface();
 	CommandResult result = command->getCommandedUnit()->checkCommand(*command);
-	if (command->getArchetype() == CommandArchetype::CANCEL_COMMAND) {
+	if (command->getArchetype() != CommandArchetype::CANCEL_COMMAND) {
 		STREAM_LOG(
 			__FUNCTION__ << " Unit id: " << command->getCommandedUnit()->getId() << ", command = "
 			<< command->getType()->getName() << " result = " << CommandResultNames[result];
