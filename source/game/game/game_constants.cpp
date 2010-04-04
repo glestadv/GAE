@@ -15,6 +15,11 @@
 #define GAME_CONSTANTS_DEF
 #include "game_constants.h"
 
-namespace Game {
+namespace Glest { namespace Game {
 
-} // end namespace Game
+#ifndef NDEBUG
+	void no_op() {
+	}
+#endif
+
+}} // end namespace Game

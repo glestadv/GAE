@@ -35,14 +35,21 @@
 #	define IF_DEBUG_EDITION(x)
 #endif
 
-#ifndef NDEBUG
-#	define LOG(x) Logger::getInstance().add(x)
-#else
-#	define LOG(x) {}
-#endif
-
 #include "util.h"
 using Shared::Util::EnumNames;
+
+namespace Glest { namespace Game {
+
+#ifndef NDEBUG
+#	define LOG(x) theLogger.add(x)
+#	define STREAM_LOG(x) {stringstream ss; ss << x; theLogger.add(ss.str()); }
+	void no_op();
+#	define DEBUG_HOOK() no_op()
+#else
+#	define LOG(x)
+#	define STREAM_LOG(x)
+#	define DEBUG_HOOK()
+#endif
 
 // =====================================================
 //	Enumerations
@@ -52,9 +59,6 @@ using Shared::Util::EnumNames;
 	  *		<li><b>VALUE</b> description</li>
 	  *		<li><b>VALUE</b> description</li></ul>
 	  */
-
-namespace Glest { namespace Game {
-
 namespace Search {
 	/** result set for path finding 
 	  * <ul><li><b>ARRIVED</b> Arrived at destination (or as close as unit can get to target)</li>
@@ -268,7 +272,7 @@ REGULAR_ENUM( UnitClass,
   *		<li><b>FAIL_UNDEFINED</b> failed.</li>
   *		<li><b>SOME_FAILED</b> partially failed.</li></ul>
   */
-REGULAR_ENUM( CommandResult,
+STRINGY_ENUM( CommandResult,
 					SUCCESS,
 					FAIL_RESOURCES,
 					FAIL_REQUIREMENTS,

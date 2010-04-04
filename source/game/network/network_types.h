@@ -120,8 +120,10 @@ private:
 	int32 targetId				: 24; // 32
 	int32 positionX				: 16; 
 	int32 positionY				: 16; // 32
-	int32 unitTypeId			: 15;
-	uint32 queue				:  1; // 16
+	int32 unitTypeId			: 12;
+	uint32 flags_padding		:  2; // 16
+	uint32 no_reserve_res		:  1;
+	uint32 queue				:  1;
 
 public:
 	NetworkCommand(){};

@@ -27,7 +27,7 @@
 #include "timer.h"
 #include "logger.h"
 
-#define UNIT_LOG(x) {}
+#define UNIT_LOG(x) {LOG(x);}
 
 namespace Glest { namespace Game {
 
@@ -55,9 +55,6 @@ class RepairCommandType;
 class Game;
 class World;
 class UnitState;
-
-//#define UNIT_LOG(x) theLogger.add(x)
-#define UNIT_LOG(x) {}
 
 // =====================================================
 // 	class UnitObserver

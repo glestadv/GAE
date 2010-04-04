@@ -589,7 +589,10 @@ unsigned int Unit::getCommandSize() const{
   */
 CommandResult Unit::giveCommand(Command *command) {
 	const CommandType *ct = command->getType();
-	UNIT_LOG( intToStr(theWorld.getFrameCount()) + "::Unit:" + intToStr(id) + " command given: " + CommandClassNames[command->getType()->getClass()] );
+	STREAM_LOG(
+		theWorld.getFrameCount() << "::Unit:" << id << " command given: " 
+		<< CommandClassNames[command->getType()->getClass()]
+	);
 	if(ct->getClass() == CommandClass::SET_MEETING_POINT) {
 		if(command->isQueue() && !commands.empty()) {
 			commands.push_back(command);
@@ -635,6 +638,8 @@ CommandResult Unit::giveCommand(Command *command) {
 
 	//check command
 	CommandResult result = checkCommand(*command);
+	//STREAM_LOG( "NO_RESERVE_RESOURCES flag is " << (command->isReserveResources() ? "not " : "" ) << "set,"
+	//	<< " command result = " << CommandResultNames[result] );
 	if(result == CommandResult::SUCCESS){
 		applyCommand(*command);
 		commands.push_back(command);

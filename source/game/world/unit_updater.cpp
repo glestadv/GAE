@@ -482,6 +482,8 @@ void UnitUpdater::updateAttackStopped(Unit *unit) {
 
 // ==================== updateBuild ====================
 
+const string cmdCancelMsg = "command cancelled.";
+
 void UnitUpdater::updateBuild(Unit *unit) {
 	Command *command = unit->getCurrCommand();
 	const BuildCommandType *bct = static_cast<const BuildCommandType*>(command->getType());
@@ -490,6 +492,11 @@ void UnitUpdater::updateBuild(Unit *unit) {
 	Unit *target = unit->getTarget();
 
 	assert(command->getUnitType());
+
+	STREAM_LOG( 
+		__FUNCTION__ << " : Updating unit " << unit->getId() << ", building type = " << builtUnitType->getName()
+		<< ", command target = " << command->getPos();
+	);
 
 	if (unit->getCurrSkill()->getClass() != SkillClass::BUILD) {
 		//if not building
@@ -502,10 +509,14 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			if (waypoint != unit->getTargetPos()) {
 				unit->setTargetPos(waypoint);
 				unit->getPath()->clear();
-			}
+				STREAM_LOG( "waypoint = " << waypoint << ", clearing path." );
+			} else {
+				STREAM_LOG( "waypoint = " << waypoint << "." );
+			}			
 		} else {
 			console->addStdMessage("Blocked");
 			unit->cancelCurrCommand();
+			STREAM_LOG( "could not find waypoint, " << cmdCancelMsg );
 			return;
 		}
 
@@ -513,6 +524,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			case TravelState::MOVING:
 				unit->setCurrSkill(bct->getMoveSkillType());
 				unit->face(unit->getNextPos());
+				STREAM_LOG( "Moving." );
 				return;
 
 			case TravelState::BLOCKED:
@@ -520,6 +532,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				if(unit->getPath()->isBlocked()) {
 					console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
+					STREAM_LOG( "Blocked. " << cmdCancelMsg );
 				}
 				return;
 
@@ -527,10 +540,18 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				if(unit->getPos() != waypoint) {
 					console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
+					STREAM_LOG( "Could not reach waypoint, " << cmdCancelMsg );
 					return;
 				}
-			default:
-				; // otherwise, we fall through
+				break;
+
+			case TravelState::IMPOSSIBLE:
+				console->addStdMessage("Unreachable");
+				unit->cancelCurrCommand();
+				STREAM_LOG( "Route impossible, " << cmdCancelMsg );
+				return;
+
+			default: throw runtime_error("Error: RoutePlanner::findPath() returned invalid result.");
 		}
 
 		//if arrived destination
@@ -631,7 +652,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			unit->finishCommand();
 			unit->setCurrSkill(SkillClass::STOP);
 			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), true);
-			scriptManager->onUnitCreated(builtUnit);
+			ScriptManager::onUnitCreated(builtUnit);
 			if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 				SoundRenderer::getInstance().playFx(
 					bct->getBuiltSound(),
@@ -645,26 +666,91 @@ void UnitUpdater::updateBuild(Unit *unit) {
 
 // ==================== updateHarvest ====================
 
+//REFACTOR: These helper functions can probably be completely removed once UnitType::commandTypesByClass
+// and the interface to it is implemented, these checks can be done in UnitUpdater::updateHarvest() 
+// [which by then might be HarvestCommandType::update() instead ;)]
+
+// hacky helper for !HarvestCommandType::canHarvest(u->getLoadType()) animanition issue
+const MoveSkillType* getMoveLoadedSkill(Unit *u) {
+	const MoveSkillType *mst = 0;
+
+	//REFACTOR: this, and _lots_of_existing_similar_code_ is to be replaced
+	// once UnitType::commandTypesByclass is implemented, to look and be less shit.
+	for (int i=0; i < u->getType()->getCommandTypeCount(); ++i) {
+		if (u->getType()->getCommandType(i)->getClass() == CommandClass::HARVEST) {
+			const HarvestCommandType *t = 
+				static_cast<const HarvestCommandType*>(u->getType()->getCommandType(i));
+			if (t->canHarvest(u->getLoadType())) {
+				mst = t->getMoveLoadedSkillType();
+				break;
+			}
+		}
+	}
+	return mst;
+}
+
+// hacky helper for !HarvestCommandType::canHarvest(u->getLoadType()) animanition issue
+const StopSkillType* getStopLoadedSkill(Unit *u) {
+	const StopSkillType *sst = 0;
+
+	//REFACTOR: this, and lots of existing similar code is to be replaced
+	// once UnitType::commandTypesByclass is implemented, to look and be less shit.
+	for (int i=0; i < u->getType()->getCommandTypeCount(); ++i) {
+		if (u->getType()->getCommandType(i)->getClass() == CommandClass::HARVEST) {
+			const HarvestCommandType *t = 
+				static_cast<const HarvestCommandType*>(u->getType()->getCommandType(i));
+			if (t->canHarvest(u->getLoadType())) {
+				sst = t->getStopLoadedSkillType();
+				break;
+			}
+		}
+	}
+	return sst;
+}
+
+/// looks for a resource of a type that hct can harvest, searching from command target pos
+/// @return pointer to Resource if found (unit's command pos will have been re-set).
+/// NULL if no resource was found within UnitUpdater::maxResSearchRadius.
+Resource* UnitUpdater::searchForResource(Unit *unit, const HarvestCommandType *hct) {
+	Vec2i pos;
+
+	PosCircularIteratorOrdered pci(*map, unit->getCurrCommand()->getPos(),
+			world->getPosIteratorFactory().getInsideOutIterator(1, maxResSearchRadius));
+
+	while (pci.getNext(pos)) {
+		Resource *r = map->getTile(Map::toTileCoords(pos))->getResource();
+		if (r && hct->canHarvest(r->getType())) {
+			unit->getCurrCommand()->setPos(pos);
+			return r;
+		}
+	}
+	return 0;
+}
+
 void UnitUpdater::updateHarvest(Unit *unit) {
 	Command *command = unit->getCurrCommand();
 	const HarvestCommandType *hct = static_cast<const HarvestCommandType*>(command->getType());
 	Vec2i targetPos;
 
-	if (unit->getCurrSkill()->getClass() != SkillClass::HARVEST) {
-		//if not working
-		if (!unit->getLoadCount()) {
-			//if not loaded go for resources
-			Resource *r = map->getTile(Map::toTileCoords(command->getPos()))->getResource();
-			if (r && hct->canHarvest(r->getType())) {
-				switch (routePlanner->findPathToResource(unit, command->getPos(), r->getType())) {
+	Tile *tile = map->getTile(Map::toTileCoords(unit->getCurrCommand()->getPos()));
+	Resource *res = tile->getResource();
+	if (!res) { // reset command pos
+		res = searchForResource(unit, hct);
+	}
+
+	if (unit->getCurrSkill()->getClass() != SkillClass::HARVEST) { // if not working
+		if  (!unit->getLoadCount() || (unit->getLoadType() == res->getType()
+		&& unit->getLoadCount() < hct->getMaxLoad() / 2)) {
+			// if current load is correct resource type and not more than half loaded, go for resources
+			if (res && hct->canHarvest(res->getType())) {
+				switch (routePlanner->findPathToResource(unit, command->getPos(), res->getType())) {
 					case TravelState::ARRIVED:
-						if (map->isResourceNear(unit->getPos(), r->getType(), targetPos)) {
-							//if it finds resources it starts harvesting
+						if (map->isResourceNear(unit->getPos(), res->getType(), targetPos)) {
+							// if it finds resources it starts harvesting
 							unit->setCurrSkill(hct->getHarvestSkillType());
 							unit->setTargetPos(targetPos);
 							command->setPos(targetPos);
 							unit->face(targetPos);
-							unit->setLoadCount(0);
 							unit->setLoadType(map->getTile(Map::toTileCoords(targetPos))->getResource()->getType());
 						}
 						break;
@@ -676,8 +762,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 						unit->setCurrSkill(SkillClass::STOP);
 						break;
 				}
-			} else {
-				//if can't harvest, search for another resource
+			} else { // if can't harvest, search for another resource
 				unit->setCurrSkill(SkillClass::STOP);
 				if (!searchForResource(unit, hct)) {
 					unit->finishCommand();
@@ -685,34 +770,33 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					//insert move command here.
 				}
 			}
-		} else {
-			//if loaded, return to store
+		} else { // if load is wrong type, or more than half loaded, return to store
 			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
 			if (store) {
 				switch (routePlanner->findPathToStore(unit, store)) {
 					case TravelState::MOVING:
-						unit->setCurrSkill(hct->getMoveLoadedSkillType());
+						unit->setCurrSkill(getMoveLoadedSkill(unit));
 						unit->face(unit->getNextPos());
 						break;
 					case TravelState::BLOCKED:
-						unit->setCurrSkill(hct->getStopLoadedSkillType());
+						unit->setCurrSkill(getStopLoadedSkill(unit));
 						break;
 					default:
 						; // otherwise, we fall through
 				}
 				if (map->isNextTo(unit->getPos(), store)) {
-					//update resources
+					// update resources
 					int resourceAmount = unit->getLoadCount();
 					// Just do this for all players ???
 					if (unit->getFaction()->getCpuUltraControl()) {
 						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
-						//resourceAmount *= ultraResourceFactor; // Pull from GameSettings
+						//resourceAmount *= ultraRes/*/*/*/*/ourceFactor; // Pull from GameSettings
 					}
 					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
 					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
-					scriptManager->onResourceHarvested();
+					ScriptManager::onResourceHarvested();
 
-					//if next to a store unload resources
+					// if next to a store unload resources
 					unit->getPath()->clear();
 					unit->setCurrSkill(SkillClass::STOP);
 					unit->setLoadCount(0);
@@ -721,34 +805,30 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 				unit->finishCommand();
 			}
 		}
-	} else {
-		//if working
-		Tile *sc = map->getTile(Map::toTileCoords(unit->getTargetPos()));
-		Resource *r = sc->getResource();
-		if (r != NULL) {
-			//if there is a resource, continue working, until loaded
+	} else { // if working
+		if (res != NULL) { // if there is a resource, continue working, until loaded
 			unit->update2();
 			if (unit->getProgress2() >= hct->getHitsPerUnit()) {
 				unit->setProgress2(0);
-				unit->setLoadCount(unit->getLoadCount() + 1);
+				if (unit->getLoadCount() < hct->getMaxLoad()) {
+					unit->setLoadCount(unit->getLoadCount() + 1);
+				}
 
-				//if resource exausted, then delete it and stop
-				if (r->decAmount(1)) {
-					// let the cartographer know
-					Vec2i rPos = r->getPos();
-					sc->deleteResource();
-					world->getCartographer()->updateMapMetrics(rPos, 2);
-					unit->setCurrSkill(hct->getStopLoadedSkillType());
+				// if resource exausted, then delete it and stop (and let the cartographer know)
+				if (res->decAmount(1)) {
+					Vec2i rPos = res->getPos();
+					tile->deleteResource();
+					world->getCartographer()->updateMapMetrics(rPos, Map::cellScale);
+					unit->setCurrSkill(getStopLoadedSkill(unit));
 				}
 				if (unit->getLoadCount() == hct->getMaxLoad()) {
-					unit->setCurrSkill(hct->getStopLoadedSkillType());
+					unit->setCurrSkill(getStopLoadedSkill(unit));
 					unit->getPath()->clear();
 				}
 			}
-		} else {
-			//if there is no resource
+		} else { // if there is no resource
 			if (unit->getLoadCount()) {
-				unit->setCurrSkill(hct->getStopLoadedSkillType());
+				unit->setCurrSkill(getStopLoadedSkill(unit));
 			} else {
 				unit->finishCommand();
 				unit->setCurrSkill(SkillClass::STOP);
@@ -885,7 +965,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				unit->setCurrSkill(SkillClass::STOP);
 				if (!wasBuilt) {
 					//building finished
-					scriptManager->onUnitCreated(repaired);
+					ScriptManager::onUnitCreated(repaired);
 					if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 						// try to find finish build sound
 						BuildCommandType *bct = (BuildCommandType *)unit->getType()->getFirstCtOfClass(CommandClass::BUILD);
@@ -938,7 +1018,7 @@ void UnitUpdater::updateProduce(Unit *unit) {
 			} else {
 				produced->create();
 				produced->born();
-				scriptManager->onUnitCreated( produced );
+				ScriptManager::onUnitCreated( produced );
 				world->getStats().produce(unit->getFactionIndex());
 				const CommandType *ct = produced->computeCommandType(unit->getMeetingPos());
 
@@ -1035,7 +1115,7 @@ void UnitUpdater::updateMorph(Unit *unit) {
 				if (gui->isSelected(unit)) {
 					gui->onSelectionChanged();
 				}
-				scriptManager->onUnitCreated(unit);
+				ScriptManager::onUnitCreated(unit);
 				unit->getFaction()->checkAdvanceSubfaction(mct->getMorphUnit(), true);
 				if (mapUpdate) {
 					// obstacle added or removed, update annotated maps
@@ -1439,24 +1519,6 @@ Vec2i UnitUpdater::getNear(const Vec2i &orig, const Vec2i destNW, int destSize, 
 	return getNear(orig, dest, minRange, maxRange);
 }
 */
-
-//looks for a resource of type rt, if rt==NULL looks for any
-//resource the unit can harvest
-bool UnitUpdater::searchForResource(Unit *unit, const HarvestCommandType *hct) {
-	Vec2i pos;
-
-	PosCircularIteratorOrdered pci(*map, unit->getCurrCommand()->getPos(),
-			world->getPosIteratorFactory().getInsideOutIterator(1, maxResSearchRadius));
-
-	while (pci.getNext(pos)) {
-		Resource *r = map->getTile(Map::toTileCoords(pos))->getResource();
-		if (r && hct->canHarvest(r->getType())) {
-			unit->getCurrCommand()->setPos(pos);
-			return true;
-		}
-	}
-	return false;
-}
 
 inline bool UnitUpdater::attackerOnSight(const Unit *unit, Unit **rangedPtr) {
 	int range = unit->getSight();

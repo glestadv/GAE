@@ -105,10 +105,22 @@ private:
 	bool meetingPoint;
 	Texture2D *meetingPointImage;
 
+	//REFACTOR: types are limited in the number, and more than just the first command/Skill-TypeOfClass() 
+	// is often of interest, let's have vectors per Command/Skill-class for all Command/Skill-Types
+
+	// then, instead of iterating over a vector of all command types and checking their class,
+	// we can just get _all_ command types of a class
+
+	//REFACTOR: in trunk, uncomment these.
+	//CommandTypes commandTypesByClass[CommandClass::COUNT];
+	//SkillTypes skillTypesByClass[SkillClass::COUNT];
+
+	//REFACTOR: use above, remove these
 	//OPTIMIZATIONS:
 	//store first command type and skill type of each class
 	const CommandType *firstCommandTypeOfClass[CommandClass::COUNT];
 	const SkillType *firstSkillTypeOfClass[SkillClass::COUNT];
+
 	float halfSize;
 	float halfHeight;
 

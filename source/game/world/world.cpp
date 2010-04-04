@@ -67,7 +67,6 @@ World::World(Game *game)
 
 	frameCount = 0;
 	nextUnitId = 0;
-	scriptManager = NULL;
 	assert(!singleton);
 	singleton = this;
 	alive = false;
@@ -255,7 +254,7 @@ void World::update() {
 	++frameCount;
 
 	// check ScriptTimers
-	scriptManager->onTimer();
+	ScriptManager::onTimer();
 
 	//time
 	timeFlow.update();
@@ -319,7 +318,7 @@ void World::update() {
 }
 
 void World::doKill(Unit *killer, Unit *killed) {
-	scriptManager->onUnitDied(killed);
+	ScriptManager::onUnitDied(killed);
 	int kills = 1 + killed->getPets().size();
 	for (int i = 0; i < kills; i++) {
 		stats.kill(killer->getFactionIndex(), killed->getFactionIndex());
@@ -510,7 +509,7 @@ int World::createUnit(const string &unitName, int factionIndex, const Vec2i &pos
 		if ( !unit->isMobile() ) {
 			cartographer->updateMapMetrics(unit->getPos(), unit->getSize());
 		}
-		scriptManager->onUnitCreated(unit);
+		ScriptManager::onUnitCreated(unit);
 		return unit->getId();
 	} else {
 		delete unit;
