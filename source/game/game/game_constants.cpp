@@ -17,7 +17,7 @@
 
 namespace Glest { namespace Game {
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || (defined(LOG_STUFF) && LOG_STUFF)
 	void no_op() {
 	}
 #endif

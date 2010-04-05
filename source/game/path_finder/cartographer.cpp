@@ -101,30 +101,20 @@ Cartographer::~Cartographer() {
 	delete nmSearchEngine;
 
 	// Team Annotated Maps
-	/*map<int,AnnotatedMap*>::iterator aMapIt = teamMaps.begin();
-	for ( ; aMapIt != teamMaps.end(); ++aMapIt ) {
-		delete aMapIt->second;
-	}
-	teamMaps.clear();*/
+	//deleteMapValues(teamMaps.begin(), teamMaps.end());
+	//teamMaps.clear();
 
 	// Exploration Maps
-	map<int,ExplorationMap*>::iterator eMapIt = explorationMaps.begin();
-	for ( ; eMapIt != explorationMaps.end(); ++eMapIt ) {
-		delete eMapIt->second;
-	}
+	deleteMapValues(explorationMaps.begin(), explorationMaps.end());
 	explorationMaps.clear();
 	
-	// Resource Maps
-	for (ResourceMaps::iterator rmIt = resourceMaps.begin(); rmIt != resourceMaps.end(); ++rmIt) {
-		delete rmIt->second;
-	}
+	// Goal Maps
+	deleteMapValues(resourceMaps.begin(), resourceMaps.end());
 	resourceMaps.clear();
-
-	// Store Maps
-	for (StoreMaps::iterator smIt = storeMaps.begin(); smIt != storeMaps.end(); ++smIt) {
-		delete smIt->second;
-	}
+	deleteMapValues(storeMaps.begin(), storeMaps.end());
 	storeMaps.clear();
+	deleteMapValues(siteMaps.begin(), siteMaps.end());
+	siteMaps.clear();
 }
 
 void Cartographer::initResourceMap(const ResourceType *rt, PatchMap<1> *pMap) {
@@ -213,22 +203,21 @@ void Cartographer::onStoreDestroyed(Unit *unit) {
 	storeMaps.erase(unit);
 }
 
-PatchMap<1>* Cartographer::buildStoreMap(Unit *unit) {
-	const UnitType* const &ut = unit->getType();
-
-	unit->Died.connect(this, &Cartographer::onStoreDestroyed);
-	Vec2i pos = unit->getPos();
+PatchMap<1>* Cartographer::buildAdjacencyMap(const UnitType *uType, Vec2i pos) {
 	const int sx = pos.x;
 	const int sy = pos.y;
 	pos += OrdinalOffsets[OrdinalDir::NORTH_WEST];
-	Rectangle rect(pos.x, pos.y, unit->getSize() + 2, unit->getSize() + 2);
+	Rectangle rect(pos.x, pos.y, uType->getSize() + 2, uType->getSize() + 2);
 	PatchMap<1> *pMap = new PatchMap<1>(rect, 0);
 	pMap->zeroMap();
 	
-	for (int y = sy; y < sy + unit->getSize(); ++y) {
-		for (int x = sx; x < sx + unit->getSize(); ++x) {
-			if (!ut->hasCellMap() || ut->getCellMapCell(x-sx, y-sy)) {
+	for (int y = sy; y < sy + uType->getSize(); ++y) {
+		for (int x = sx; x < sx + uType->getSize(); ++x) {
+			// for each cell within type size,
+			if (!uType->hasCellMap() || uType->getCellMapCell(x-sx, y-sy)) {
+				// if UnitType would occupy this cell
 				for (OrdinalDir d(0); d < OrdinalDir::COUNT; ++d) {
+					// set goal cells
 					Vec2i goalPos = Vec2i(x,y) + OrdinalOffsets[d];
 					if (masterMap->canOccupy(goalPos, 1, Field::LAND) 
 					&& !pMap->getInfluence(goalPos)) {
@@ -239,7 +228,6 @@ PatchMap<1>* Cartographer::buildStoreMap(Unit *unit) {
 			}
 		}
 	}
-	storeMaps[unit] = pMap;
 	return pMap;
 }
 

@@ -35,6 +35,8 @@ using namespace Glest::Game::Search;
 
 namespace Glest { namespace Game {
 
+#define REPAIR_LOG(x) STREAM_LOG(x)
+
 //FIXME: We check the subfaction in born too.  Should it be removed from there?
 //local func to keep players from getting stuff they aren't supposed to.
 static bool verifySubfaction(Unit *unit, const ProducibleType *pt) {
@@ -499,28 +501,11 @@ void UnitUpdater::updateBuild(Unit *unit) {
 	);
 
 	if (unit->getCurrSkill()->getClass() != SkillClass::BUILD) {
-		//if not building
-
-		int buildingSize = builtUnitType->getSize();
-		Vec2i waypoint;
-
-		// find the nearest place for the builder
-		if (map->getNearestAdjacentFreePos(waypoint, unit, command->getPos(), Field::LAND, buildingSize)) {
-			if (waypoint != unit->getTargetPos()) {
-				unit->setTargetPos(waypoint);
-				unit->getPath()->clear();
-				STREAM_LOG( "waypoint = " << waypoint << ", clearing path." );
-			} else {
-				STREAM_LOG( "waypoint = " << waypoint << "." );
-			}			
-		} else {
-			console->addStdMessage("Blocked");
-			unit->cancelCurrCommand();
-			STREAM_LOG( "could not find waypoint, " << cmdCancelMsg );
-			return;
-		}
-
-		switch (routePlanner->findPath(unit, waypoint)) {
+		// if not building
+		// this is just a 'search target', the SiteMap will tell the search when/where it has found a goal cell
+		Vec2i targetPos = command->getPos() + Vec2i(builtUnitType->getSize() / 2);
+		unit->setTargetPos(targetPos);
+		switch (routePlanner->findPathToBuildSite(unit, builtUnitType, command->getPos())) {
 			case TravelState::MOVING:
 				unit->setCurrSkill(bct->getMoveSkillType());
 				unit->face(unit->getNextPos());
@@ -537,12 +522,6 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				return;
 
 			case TravelState::ARRIVED:
-				if(unit->getPos() != waypoint) {
-					console->addStdMessage("Blocked");
-					unit->cancelCurrCommand();
-					STREAM_LOG( "Could not reach waypoint, " << cmdCancelMsg );
-					return;
-				}
 				break;
 
 			case TravelState::IMPOSSIBLE:
@@ -554,8 +533,9 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			default: throw runtime_error("Error: RoutePlanner::findPath() returned invalid result.");
 		}
 
-		//if arrived destination
+		// if arrived destination
 		assert(command->getUnitType() != NULL);
+		const int &buildingSize = builtUnitType->getSize();
 		if (map->areFreeCells(command->getPos(), buildingSize, Field::LAND)) {
 			if (!verifySubfaction(unit, builtUnitType)) {
 				return;
@@ -735,7 +715,11 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 	Tile *tile = map->getTile(Map::toTileCoords(unit->getCurrCommand()->getPos()));
 	Resource *res = tile->getResource();
 	if (!res) { // reset command pos, but not Unit::targetPos
-		res = searchForResource(unit, hct);
+		if (!(res = searchForResource(unit, hct))) {
+			unit->finishCommand();
+			unit->setCurrSkill(SkillClass::STOP);
+			return;
+		}
 	}
 
 	if (unit->getCurrSkill()->getClass() != SkillClass::HARVEST) { // if not working
@@ -880,20 +864,21 @@ void UnitUpdater::updateRepair(Unit *unit) {
 	} else {
 		Vec2i targetPos;
 		if (repairableOnSight(unit, &repaired, rct, rst->isSelfAllowed())) {
-			if (!map->getNearestFreePos(targetPos, unit, repaired, 1, rst->getMaxRange())) {
-				unit->setCurrSkill(SkillClass::STOP);
-				unit->finishCommand();
-				return;
+			if (repaired->isMobile()) {
+				if (!map->getNearestFreePos(targetPos, unit, repaired, 1, rst->getMaxRange())) {
+					unit->setCurrSkill(SkillClass::STOP);
+					unit->finishCommand();
+					return;
+				}
+			} else {
+				targetPos = repaired->getPos() + Vec2i(repaired->getSize() / 2);
 			}
-
 			if (targetPos != unit->getTargetPos()) {
 				unit->setTargetPos(targetPos);
 				unit->getPath()->clear();
 			}
 		} else {
 			// if no more damaged units and on auto command, turn around
-			//finishAutoCommand(unit);
-
 			if (command->isAuto() && command->hasPos2()) {
 				if (Config::getInstance().getGsAutoReturnEnabled()) {
 					command->popPos();
@@ -905,14 +890,15 @@ void UnitUpdater::updateRepair(Unit *unit) {
 			targetPos = command->getPos();
 		}
 
-		switch (routePlanner->findPath(unit, targetPos)) {
+		TravelState result;
+		if (repaired && !repaired->isMobile()) {
+			unit->setTargetPos(targetPos);
+			result = routePlanner->findPathToBuildSite(unit, repaired->getType(), repaired->getPos());
+		} else {
+			result = routePlanner->findPath(unit, targetPos);
+		}
+		switch (result) {
 			case TravelState::ARRIVED:
-				if (repaired && unit->getPos() != targetPos) {
-					// presume blocked
-					unit->setCurrSkill(SkillClass::STOP);
-					unit->finishCommand();
-					break;
-				}
 				if (repaired) {
 					unit->setCurrSkill(rst);
 				} else {
@@ -920,6 +906,7 @@ void UnitUpdater::updateRepair(Unit *unit) {
 					unit->finishCommand();
 				}
 				break;
+
 			case TravelState::MOVING:
 				unit->setCurrSkill(rct->getMoveSkillType());
 				unit->face(unit->getNextPos());
@@ -930,10 +917,17 @@ void UnitUpdater::updateRepair(Unit *unit) {
 				if(unit->getPath()->isBlocked()){
 					unit->setCurrSkill(SkillClass::STOP);
 					unit->finishCommand();
+					REPAIR_LOG( "Unit: " << unit->getId() << " path blocked, cancelling." );
 				}
 				break;
-			default:
-				; // otherwise, we fall through
+
+			case TravelState::IMPOSSIBLE:
+				unit->setCurrSkill(SkillClass::STOP);
+				unit->finishCommand();
+				REPAIR_LOG( "Unit: " << unit->getId() << " path impossible, cancelling." );
+				break;
+
+			default: throw runtime_error("Error: RoutePlanner::findPath() returned invalid result.");
 		}
 	}
 
@@ -1717,7 +1711,8 @@ void ParticleDamager::update(ParticleSystem *particleSystem) {
 		//play sound
 		StaticSound *projSound = ast->getProjSound();
 		if (particleSystem->getVisible() && projSound) {
-			SoundRenderer::getInstance().playFx(projSound, Vec3f(targetPos.x, 0.f, targetPos.y), gameCamera->getPos());
+			SoundRenderer::getInstance().playFx(
+				projSound, Vec3f(float(targetPos.x), 0.f, float(targetPos.y)), gameCamera->getPos());
 		}
 	}
 	particleSystem->setObserver(NULL);

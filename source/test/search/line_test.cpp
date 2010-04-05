@@ -80,7 +80,7 @@ struct TestSequence {
 
 /** perform a single line test */
 void doTest(int x0, int y0, int x1, int y1) {
-	int min_visits = std::min(std::abs(x0 - x1), std::abs(y0 - y1));
+	size_t min_visits = std::min(std::abs(x0 - x1), std::abs(y0 - y1));
 	cout << "\nTesting line from " << x0 << ", " << y0 << " to " << x1 << ", " << y1 << "...\n";
 
 	vector<CoOrd> results;

@@ -115,6 +115,7 @@ public:
 	Vec2i peek() const					{return front();}
 	//float waypointToGoal() const		{ return front().second; }
 	void pop()							{erase(begin());}
+	void condense();
 };
 
 // ===============================

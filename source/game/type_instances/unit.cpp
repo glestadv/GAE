@@ -34,6 +34,10 @@ using namespace Shared::Util;
 
 namespace Glest{ namespace Game{
 
+// =====================================================
+//  class Vec2iList, UnitPath & WaypointPath
+// =====================================================
+
 void Vec2iList::read(const XmlNode *node) {
 	clear();
 	stringstream ss(node->getStringValue());
@@ -64,6 +68,20 @@ void UnitPath::write(XmlNode *node) const {
 	node->addAttribute("blockCount", blockCount);
 }
 
+void WaypointPath::condense() {
+	if (size() < 2) {
+		return;
+	}
+	iterator prev, curr;
+	prev = curr = begin();
+	while (++curr != end()) {
+		if (prev->dist(*curr) < 3.f) {
+			prev = erase(prev);
+		} else {
+			++prev;
+		}
+	}
+}
 
 // =====================================================
 // 	class Unit

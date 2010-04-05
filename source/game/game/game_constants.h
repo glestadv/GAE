@@ -40,7 +40,7 @@ using Shared::Util::EnumNames;
 
 namespace Glest { namespace Game {
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || (defined(LOG_STUFF) && LOG_STUFF)
 #	define LOG(x) theLogger.add(x)
 #	define STREAM_LOG(x) {stringstream ss; ss << x; theLogger.add(ss.str()); }
 	void no_op();
@@ -69,8 +69,8 @@ namespace Search {
 						ARRIVED, MOVING, BLOCKED, IMPOSSIBLE
 				);
 
-	/** result set for aStar() 
-	  * <ul><li><b>FAILED</b> No path exists
+	/** result set for A*
+	  * <ul><li><b>FAILURE</b> No path exists</li>
 	  *		<li><b>COMPLETE</b> complete path found</li>
 	  *		<li><b>NODE_LIMIT</b> node limit reached, partial path available</li>
 	  *		<li><b>TIME_LIMIT</b> search ongoing (time limit reached)</li></ul>
@@ -79,6 +79,12 @@ namespace Search {
 					FAILURE, COMPLETE, NODE_LIMIT, TIME_LIMIT
 				);
 
+	/** result set for HAA*
+	  * <ul><li><b>FAILURE</b> No path exists</li>
+	  *		<li><b>COMPLETE</b> path found</li>
+	  *		<li><b>START_TRAP</b> path found, but transitions in start cluster are blocked</li>
+	  *		<li><b>GOAL_TRAP</b> path found, but transitions in destination cluster are blocked</li></ul>
+	  */
 	REGULAR_ENUM( HAAStarResult,
 					FAILURE, COMPLETE, START_TRAP, GOAL_TRAP
 				);
@@ -88,7 +94,7 @@ namespace Search {
 	  *		<li><b>TILEMAP</b> search on tile map</li></ul>
 	  */
 	REGULAR_ENUM( SearchSpace,
-						CELLMAP, TILEMAP, CLUSTERMAP
+						CELLMAP, TILEMAP
 				);
 
 	/** The cardinal and ordinal directions enumerated for convenience */

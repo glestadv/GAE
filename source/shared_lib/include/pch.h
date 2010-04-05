@@ -24,6 +24,7 @@
 		#error USE_SDL is not compatible with WIN32 or WIN64
 	#endif
 
+#	define NOMINMAX
 	#include <windows.h>
 	//#include <io.h>
 
