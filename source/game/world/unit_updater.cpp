@@ -35,7 +35,17 @@ using namespace Glest::Game::Search;
 
 namespace Glest { namespace Game {
 
-#define REPAIR_LOG(x) STREAM_LOG(x)
+#if LOG_REPAIR_COMMAND
+#	define REPAIR_LOG(x) STREAM_LOG(x)
+#else
+#	define REPAIR_LOG(x)
+#endif
+
+#if LOG_BUILD_COMMAND
+#	define BUILD_LOG(x) STREAM_LOG(x)
+#else
+#	define BUILD_LOG(x)
+#endif
 
 //FIXME: We check the subfaction in born too.  Should it be removed from there?
 //local func to keep players from getting stuff they aren't supposed to.
@@ -484,7 +494,7 @@ void UnitUpdater::updateAttackStopped(Unit *unit) {
 
 // ==================== updateBuild ====================
 
-const string cmdCancelMsg = "command cancelled.";
+const string cmdCancelMsg = " Command cancelled.";
 
 void UnitUpdater::updateBuild(Unit *unit) {
 	Command *command = unit->getCurrCommand();
@@ -495,7 +505,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 
 	assert(command->getUnitType());
 
-	STREAM_LOG( 
+	BUILD_LOG( 
 		__FUNCTION__ << " : Updating unit " << unit->getId() << ", building type = " << builtUnitType->getName()
 		<< ", command target = " << command->getPos();
 	);
@@ -509,7 +519,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			case TravelState::MOVING:
 				unit->setCurrSkill(bct->getMoveSkillType());
 				unit->face(unit->getNextPos());
-				STREAM_LOG( "Moving." );
+				BUILD_LOG( "Moving." );
 				return;
 
 			case TravelState::BLOCKED:
@@ -517,7 +527,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				if(unit->getPath()->isBlocked()) {
 					console->addStdMessage("Blocked");
 					unit->cancelCurrCommand();
-					STREAM_LOG( "Blocked. " << cmdCancelMsg );
+					BUILD_LOG( "Blocked." << cmdCancelMsg );
 				}
 				return;
 
@@ -527,7 +537,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			case TravelState::IMPOSSIBLE:
 				console->addStdMessage("Unreachable");
 				unit->cancelCurrCommand();
-				STREAM_LOG( "Route impossible, " << cmdCancelMsg );
+				BUILD_LOG( "Route impossible," << cmdCancelMsg );
 				return;
 
 			default: throw runtime_error("Error: RoutePlanner::findPath() returned invalid result.");
@@ -536,7 +546,8 @@ void UnitUpdater::updateBuild(Unit *unit) {
 		// if arrived destination
 		assert(command->getUnitType() != NULL);
 		const int &buildingSize = builtUnitType->getSize();
-		if (map->areFreeCells(command->getPos(), buildingSize, Field::LAND)) {
+
+		if (map->canOccupy(command->getPos(), Field::LAND, builtUnitType)) {
 			if (!verifySubfaction(unit, builtUnitType)) {
 				return;
 			}
@@ -548,12 +559,14 @@ void UnitUpdater::updateBuild(Unit *unit) {
 					if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 						console->addStdMessage("BuildingNoRes");
 					}
+					BUILD_LOG( "in positioin, late resource allocation failed." << cmdCancelMsg );
 					unit->finishCommand();
 					return;
 				}
 				unit->getFaction()->applyCosts(command->getUnitType());
 			}
 
+			BUILD_LOG( "in position, starting construction." );
 			builtUnit = new Unit(world->getNextUnitId(), command->getPos(), builtUnitType, unit->getFaction(), world->getMap());
 			builtUnit->create();
 
@@ -584,8 +597,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			// is construction already under way?
 			Unit *builtUnit = occupants.size() == 1 ? occupants[0] : NULL;
 			if (builtUnit && builtUnit->getType() == builtUnitType && !builtUnit->isBuilt()) {
-				// if we pre-reserved the resources, we have to deallocate them now, although
-				// this usually shouldn't happen.
+				// if we pre-reserved the resources, we have to deallocate them now
 				if (command->isReserveResources()) {
 					unit->getFaction()->deApplyCosts(command->getUnitType());
 					command->setReserveResources(false);
@@ -593,6 +605,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				unit->setTarget(builtUnit, true, true);
 				unit->setCurrSkill(bct->getBuildSkillType());
 				command->setUnit(builtUnit);
+				BUILD_LOG( "in position, building already under construction." );
 
 			} else {
 				// is it not free because there are units in the way?
@@ -602,6 +615,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 					for (i = occupants.begin();
 							i != occupants.end() && (*i)->getType()->hasSkillClass(SkillClass::MOVE); ++i) ;
 					if (i == occupants.end()) {
+						BUILD_LOG( "in position, site blocked, waiting for people to get out of the way." );
 						// they all have a move command, so we'll wait
 						return;
 					}
@@ -616,10 +630,12 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				if (unit->getFactionIndex() == world->getThisFactionIndex()) {
 					console->addStdMessage("BuildingNoPlace");
 				}
+				BUILD_LOG( "in position, site blocked." << cmdCancelMsg );
 			}
 		}
 	} else {
 		//if building
+		BUILD_LOG( "building." );
 		Unit *builtUnit = command->getUnit();
 
 		if (builtUnit && builtUnit->getType() != builtUnitType) {

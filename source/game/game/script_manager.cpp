@@ -1276,13 +1276,13 @@ int ScriptManager::unitCountOfType(LuaHandle* luaHandle){
 int ScriptManager::hilightRegion(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	string region;
-	if ( extractArgs(args, "hilightRegion", "str", &region) ) {
+	if (extractArgs(args, "hilightRegion", "str", &region)) {
 		const Region *r = triggerManager.getRegion(region);
-		if ( r ) {
+		if (r) {
 			const Rect *rect = static_cast<const Rect*>(r);
-			for ( int y = rect->y; y < rect->y + rect->h; ++y ) {
-				for ( int x = rect->x; x < rect->x + rect->w; ++x ) {
-					RegionHilightCallback::blueCells.insert(Vec2i(x,y));
+			for (int y = rect->y; y < rect->y + rect->h; ++y) {
+				for (int x = rect->x; x < rect->x + rect->w; ++x) {
+					theDebugRenderer.addCellHighlight(Vec2i(x,y));
 				}
 			}
 		} else {
@@ -1296,15 +1296,14 @@ int ScriptManager::hilightCell(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	Vec2i cell;
 	if ( extractArgs(args, "hilightCell", "v2i", &cell) ) {
-		RegionHilightCallback::blueCells.insert(cell);
+		theDebugRenderer.addCellHighlight(cell);
 	}
 	return args.getReturnCount();
 }
 
 int ScriptManager::clearHilights(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
-	RegionHilightCallback::blueCells.clear();
-	RegionHilightCallback::greenCells.clear();
+	theDebugRenderer.clearCellHilights();
 	return args.getReturnCount();
 }
 
@@ -1312,7 +1311,7 @@ int ScriptManager::debugSet(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	string line;
 	if ( extractArgs(args, "debugSet", "str", &line) ) {
-		Renderer::getInstance().debugRenderer.commandLine(line);
+		theDebugRenderer.commandLine(line);
 	}
 	return args.getReturnCount();
 }
@@ -1321,7 +1320,7 @@ int ScriptManager::setFarClip(LuaHandle *luaHandle) {
 	LuaArguments args(luaHandle);
 	int clip;
 	if (extractArgs(args, "setFarClip", "int", &clip)) {
-		Renderer::getInstance().setFarClip(clip);
+		Renderer::getInstance().setFarClip(float(clip));
 	}
 	return args.getReturnCount();
 }

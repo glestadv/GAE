@@ -20,6 +20,16 @@
 using Shared::Graphics::ParticleObserver;
 using Shared::Util::Random;
 
+#ifndef LOG_COMMAND_UPDATE
+#	define LOG_COMMAND_UPDATE 0
+#endif
+
+#if LOG_COMMAND_UPDATE
+#	define COMMAND_UPDATE_LOG(x) STREAM_LOG(x)
+#else
+#	define COMMAND_UPDATE_LOG(x)
+#endif
+
 namespace Glest{ namespace Game{
 
 class Unit;

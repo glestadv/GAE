@@ -444,6 +444,23 @@ bool Map::isFreeCellOrHaveUnits(const Vec2i &pos, Field field, const Selection::
 	return false;
 }
 
+bool Map::canOccupy(const Vec2i &pos, Field field, const UnitType *ut) {
+	if (ut->hasCellMap()) {
+		for (int y=0; y < ut->getSize(); ++y) {
+			for (int x=0; x < ut->getSize(); ++x) {
+				if (ut->getCellMapCell(x, y)) {
+					if (!isFreeCell(pos + Vec2i(x, y), field)) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	} else {
+		return areFreeCells(pos, ut->getSize(), field);
+	}
+}
+
 // if the Cell is visible, true if free, false if occupied
 // if the Cell is explored, true if Tile is free (no object), false otherwise
 // if the Cell is unexplored, true
@@ -755,7 +772,6 @@ bool Map::getNearestAdjacentFreePos(Vec2i &result, const Unit *unit, const Vec2i
 
 //put a units into the cells
 void Map::putUnitCells(Unit *unit, const Vec2i &pos){
-
 	assert(unit);
 	const UnitType *ut = unit->getType();
 	int size = ut->getSize();

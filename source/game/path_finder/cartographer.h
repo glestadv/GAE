@@ -22,6 +22,7 @@
 #include "sigslot.h"
 
 namespace Glest { namespace Game { namespace Search {
+//namespace Game { namespace Search {
 
 class ClusterMap;
 class RoutePlanner;
@@ -106,15 +107,19 @@ class Cartographer : public sigslot::has_slots<> {
 	void initResourceMap(const ResourceType *rt, PatchMap<1> *pMap);
 	void fixupResourceMap(const ResourceType *rt, const Vec2i &tl, const Vec2i &br);
 
-	PatchMap<1>* buildAdjacencyMap(const UnitType *uType, Vec2i pos);
+	PatchMap<1>* buildAdjacencyMap(const UnitType *uType, const Vec2i &pos);
 
 	PatchMap<1>* buildStoreMap(Unit *unit) {
 		unit->Died.connect(this, &Cartographer::onStoreDestroyed);
 		return (storeMaps[unit] = buildAdjacencyMap(unit->getType(), unit->getPos()));
 	}
 
+	IF_DEBUG_EDITION( void debugAddBuildSiteMap(PatchMap<1>*); )
+
 	PatchMap<1>* buildSiteMap(const UnitType *uType, const Vec2i &pos) {
-		return (siteMaps[make_pair(uType, pos)] = buildAdjacencyMap(uType, pos));
+		PatchMap<1> *smap = siteMaps[make_pair(uType, pos)] = buildAdjacencyMap(uType, pos);
+		IF_DEBUG_EDITION( debugAddBuildSiteMap(smap); )
+		return smap;
 	}
 
 	// slots

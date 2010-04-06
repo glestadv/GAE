@@ -30,6 +30,7 @@
 #define theLang				(Lang::getInstance())
 
 #if _GAE_DEBUG_EDITION_
+#	define theDebugRenderer	(Renderer::getInstance().debugRenderer)
 #	define IF_DEBUG_EDITION(x) x
 #else
 #	define IF_DEBUG_EDITION(x)

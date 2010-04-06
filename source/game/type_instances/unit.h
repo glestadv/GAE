@@ -27,7 +27,24 @@
 #include "timer.h"
 #include "logger.h"
 
-#define UNIT_LOG(x) {LOG(x);}
+#ifndef LOG_UNIT_LIFECYCLE
+#	define LOG_UNIT_LIFECYCLE 0
+#endif
+#ifndef LOG_COMMAND_ISSUE
+#	define LOG_COMMAND_ISSUE 0
+#endif
+
+#if LOG_UNIT_LIFECYCLE
+#	define UNIT_LOG(x) STREAM_LOG(x)
+#else
+#	define UNIT_LOG(x)
+#endif
+
+#if LOG_COMMAND_ISSUE
+#	define COMMAND_LOG(x) STREAM_LOG(x)
+#else
+#	define COMMAND_LOG(x)
+#endif
 
 namespace Glest { namespace Game {
 

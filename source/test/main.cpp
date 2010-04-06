@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include "reverse_rect_iter_test.h"
+#include "rect_iter_test.h"
 //#include "node_pool_test.h"
 #include "influence_map_test.h"
 #include "circular_buffer_test.h"
@@ -30,10 +31,11 @@ int main(int argc, char **argv) {
 
 	tester.addTest(ReverseRectIteratorTest::suite());
 	//tester.addTest(NodePoolTest::suite());
-	tester.addTest(InfluenceMapTest::suite());
+	//tester.addTest(InfluenceMapTest::suite());
 	tester.addTest(CircularBufferTest::suite());
 	tester.addTest(MinHeapTest::suite());
 	tester.addTest(LineAlgorithmTest::suite());
+	tester.addTest(RectIteratorTest::suite());
 
 	tester.run();
 
