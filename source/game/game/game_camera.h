@@ -26,6 +26,10 @@ using Shared::Math::Vec3f;
 using Shared::Math::Vec2f;
 using Shared::Xml::XmlNode;
 
+#define FLOATINFINITY numeric_limits<float>::infinity()
+
+namespace Glest{ namespace Game{
+
 class Config;
 
 // =====================================================
@@ -95,6 +99,8 @@ public:
     //set
 	void setRotate(float rotate){this->rotate= rotate;}
 	void setPos(Vec2f pos);
+	void setAngles(float hAng, float vAng);
+	void setDest(const Vec2i &pos, int height = -1, float hAngle = FLOATINFINITY, float vAngle = FLOATINFINITY);
 
 	void setMoveX(float f, bool mouse){
 		if(mouse){
