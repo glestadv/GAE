@@ -19,8 +19,6 @@ namespace Shared { namespace Xml {
 	class XmlNode;
 }}
 
-namespace Glest{ namespace Game{
-
 using Shared::Math::Quad2i;
 using Shared::Math::Vec3f;
 using Shared::Math::Vec2f;
