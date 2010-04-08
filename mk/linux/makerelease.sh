@@ -12,15 +12,17 @@ mkdir -p $RELEASEDIR
 pushd "`pwd`/../../source"
 find game/ \( -name "*.cpp" -o -name "*.h" -o -name "*.inl" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
 find shared_lib/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
-find map_editor/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
+find map_editor/ \( -name "*.cpp" -o -name "*.h" -o -name "*.xpm" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
 find g3d_viewer/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
 find test/ \( -name "*.cpp" -o -name "*.h" \) -exec cp -p --parents "{}" $RELEASEDIR ';'
 popd
-AUTOCONFSTUFF="configure.ac autogen_pkg.sh Jamrules Jamfile `find mk/jam -name "*.jam"` `find mk/autoconf -name "*.m4" -o -name "config.*" -o -name "*sh"`"
+AUTOCONFSTUFF="configure.ac autogen_pkg.sh Jamrules Jamfile `find mk/jam -name "*.jam"` `find mk/autoconf -maxdepth 1 -name "*.m4" -o -name "config.*" -o -name "*sh"`"
 
 cp -p --parents $AUTOCONFSTUFF $RELEASEDIR
 cp -p ../../docs/README* ../../docs/license.txt $RELEASEDIR
-cp -p glest.ini $RELEASEDIR
+cp -p glestadv.ini $RELEASEDIR
+#remove backup files
+find $RELEASEDIR -name "*~" | xargs rm
 
 pushd $RELEASEDIR
 ./autogen_pkg.sh
