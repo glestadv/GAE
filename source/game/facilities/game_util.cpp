@@ -30,9 +30,9 @@ const string gaeMailString= "daniel.santos@pobox.com";
 const string glestVersionString= "v3.2.2";
 
 #if _GAE_DEBUG_EDITION_
-	const string gaeVersionString= "v0.2.13_DE-beta1";
+	const string gaeVersionString= "v0.2.13_DE-rc3";
 #else
-	const string gaeVersionString= "v0.2.13-rc1";
+	const string gaeVersionString= "v0.2.13-rc3";
 #endif
 
 string getCrashDumpFileName(){

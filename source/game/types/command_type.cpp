@@ -27,6 +27,8 @@
 #include "unit_updater.h"
 #include "renderer.h"
 
+#include "world.h"
+
 #include "leak_dumper.h"
 #include "logger.h"
 
