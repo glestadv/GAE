@@ -1365,6 +1365,10 @@
 			RelativePath=".\pch.h"
 			>
 		</File>
+		<File
+			RelativePath="..\resources.rc"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
