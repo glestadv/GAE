@@ -98,7 +98,7 @@ void World::save(XmlNode *node) const {
 	foreach_const (Factions, i, factions) {
 		i->save(factionsNode->addChild("faction"));
 	}
-	map.saveExplorationState(node->addChild("explorationState"));
+	theCartographer.saveMapState(node->addChild("mapState"));
 }
 
 // ========================== init ===============================================
@@ -120,6 +120,7 @@ void World::init(const XmlNode *worldNode) {
 		initExplorationState();
 		loadSaved(worldNode);
 		initMinimap(true);
+		theCartographer.loadMapState(worldNode->getChild("mapState"));
 	} else if (game.getGameSettings().getDefaultUnits()) {
 		initMinimap();
 		initUnits();
@@ -131,7 +132,6 @@ void World::init(const XmlNode *worldNode) {
 
 	alive = true;
 }
-
 
 //load saved game
 void World::loadSaved(const XmlNode *worldNode) {
@@ -156,7 +156,7 @@ void World::loadSaved(const XmlNode *worldNode) {
 	thisTeamIndex = getFaction(thisFactionIndex)->getTeam();
 	map.computeNormals();
 	map.computeInterpolatedHeights();
-	map.loadExplorationState(worldNode->getChild("explorationState"));
+	//map.loadExplorationState(worldNode->getChild("explorationState"));
 }
 
 // preload tileset and techtree for progressbar
