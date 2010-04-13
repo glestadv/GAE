@@ -45,7 +45,7 @@ const float GameCamera::centerOffsetZ= 8.0f;
 GameCamera::GameCamera() : pos(0.f, defaultHeight, 0.f),
 		destPos(0.f, defaultHeight, 0.f), destAng(startingVAng, startingHAng) {
 	Config &config = Config::getInstance();
-    state= sGame;
+    state= sFree;
 
 	//config
 	speed= 15.f / GameConstants::cameraFps;
@@ -101,7 +101,7 @@ void GameCamera::update(){
 	}
 
 	//free state
-	if(state==sFree){
+	//if(state==sFree){
 		if(fabs(rotate) == 1){
 			rotateHV(speed*5*rotate, 0);
 		}
@@ -117,7 +117,7 @@ void GameCamera::update(){
 				rotateHV(0.f, -speed * 1.7f * move.y);
 			}
 		}
-	}
+	//}
 
 	//game state
 	if(abs(destAng.x - vAng) > 0.01f) {
@@ -151,16 +151,11 @@ void GameCamera::update(){
 	}
 }
 
+// is just a reset pos & angle now... should rename it, & ucCameraCycleMode & the keymap string, etc
 void GameCamera::switchState(){
-	if(state==sGame){
-		state= sFree;
-	}
-	else{
-		state= sGame;
-		destAng.x = startingVAng;
-		destAng.y = startingHAng;
-		destPos.y = defaultHeight;
-	}
+	destAng.x = startingVAng;
+	destAng.y = startingHAng;
+	destPos.y = defaultHeight;
 }
 
 void GameCamera::centerXZ(float x, float z){

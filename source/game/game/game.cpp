@@ -588,37 +588,33 @@ void Game::keyDown(const Key &key) {
 		if (i > MAX_SCREENSHOTS) {
 			console.addLine(lang.get("ScreenshotDirectoryFull"));
 		}
-	//move camera left
-	} else if (cmd == ucCameraPosLeft) {
+	} else if (cmd == ucCameraPosLeft) { // move camera left
 		gameCamera.setMoveX(-scrollSpeed, false);
-	//move camera right
-	} else if (cmd == ucCameraPosRight) {
+	} else if (cmd == ucCameraPosRight) { // move camera right
 		gameCamera.setMoveX(scrollSpeed, false);
-	//move camera up
-	} else if (cmd == ucCameraPosUp) {
+	} else if (cmd == ucCameraPosUp) { // move camera up
 		gameCamera.setMoveZ(scrollSpeed, false);
-	//move camera down
-	} else if (cmd == ucCameraPosDown) {
+	} else if (cmd == ucCameraPosDown) { // move camera down
 		gameCamera.setMoveZ(-scrollSpeed, false);
-	//switch display color
-	} else if (cmd == ucCycleDisplayColor) {
+	} else if (cmd == ucCameraRotateLeft) { // rotate camera left
+		gameCamera.setRotate(-1);
+	} else if (cmd == ucCameraRotateRight ) { // rotate camera right
+		gameCamera.setRotate(1);
+	} else if (cmd == ucCameraPitchUp) { // camera pitch up	
+		gameCamera.setMoveY(1);
+	} else if ( cmd == ucCameraPitchDown) { // camera pitch down
+		gameCamera.setMoveY(-1);
+	} else if (cmd == ucCycleDisplayColor) { // switch display color
 		gui.switchToNextDisplayColor();
-	//change camera mode
-	} else if (cmd == ucCameraCycleMode) {
+	} else if (cmd == ucCameraCycleMode) { // reset camera pos & angle
 		gameCamera.switchState();
-		string stateString = gameCamera.getState() == GameCamera::sGame ? lang.get("GameCamera") : lang.get("FreeCamera");
-		console.addLine(lang.get("CameraModeSet") + " " + stateString);
-	//pause
-	} else if (speedChangesAllowed) {
+	} else if (speedChangesAllowed) { // pause
 		bool prevPausedValue = paused;
-		// on
-		if (cmd == ucPauseOn) {
+		if (cmd == ucPauseOn) { // on
 			paused = true;
-		// off
-		} else if (cmd == ucPauseOff) {
+		} else if (cmd == ucPauseOff) { // off
 			paused = false;
-		// toggle
-		} else if (cmd == ucPauseToggle) {
+		} else if (cmd == ucPauseToggle) { // toggle
 			paused = !paused;
 		}
 		if (prevPausedValue != paused) {
@@ -629,68 +625,32 @@ void Game::keyDown(const Key &key) {
 			}
 			return;
 		}
-		//increment speed
-		if (cmd == ucSpeedInc) {
+		if (cmd == ucSpeedInc) { // increment speed
 			incSpeed();
 			return;
-		//decrement speed
-		} else if (cmd == ucSpeedDec) {
+		} else if (cmd == ucSpeedDec) { // decrement speed
 			decSpeed();
 			return;
-
-		// reset speed
-		} else if (cmd == ucSpeedReset) {
+		} else if (cmd == ucSpeedReset) { // reset speed
 			resetSpeed();
 			return;
 		}
 	}
-	//exit
-	if (cmd == ucMenuQuit) {
+	if (cmd == ucMenuQuit) { // exit
 		if (!gui.cancelPending()) {
 			showMessageBox(lang.get("ExitGame?"), "Quit...", true);
 		}
-	//save
-	} else if (cmd == ucMenuSave) {
+	} else if (cmd == ucMenuSave) { // save
 		if (!saveBox) {
 			Shared::Platform::mkdir("savegames", true);
 			saveBox = new GraphicTextEntryBox();
 			saveBox->init(lang.get("Save"), lang.get("Cancel"), lang.get("SaveGame"), lang.get("Name"));
 		}
-	//group
-	} else if (key.getCode() >= key0 && key.getCode() < key0 + Selection::maxGroups) {
+	} else if (key.getCode() >= key0 && key.getCode() < key0 + Selection::maxGroups) { // group
 		gui.groupKey(key.getCode() - key0);
-	//hotkeys
-	} else if (gameCamera.getState() == GameCamera::sGame) {
+	} else { // hotkeys
 		gui.hotKey(cmd);
-	} else {
-		switch (cmd) {
-			//rotate camera left
-			case ucCameraRotateLeft:
-				gameCamera.setRotate(-1);
-				break;
-			//rotate camera right
-			case ucCameraRotateRight:
-				gameCamera.setRotate(1);
-				break;
-			//camera up
-			case ucCameraPitchUp:
-				gameCamera.setMoveY(1);
-				break;
-			//camera down
-			case ucCameraPitchDown:
-				gameCamera.setMoveY(-1);
-				break;
-			default:
-				break;
-		}
 	}
-	/*
-	ucCameraZoomIn,
-	ucCameraZoomOut,
-	ucCameraZoomReset,
-	ucCameraAngleReset,
-	ucCameraZoomAndAngleReset,
-	*/
 }
 
 void Game::keyUp(const Key &key) {

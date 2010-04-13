@@ -25,6 +25,9 @@ using std::ofstream;
 using std::endl;
 using std::ios_base;
 
+using Shared::Util::fileExists;
+using Shared::Util::toLower;
+
 namespace Glest { namespace Game {
 
 static const char *modNames[4] = {"Shift", "Ctrl", "Alt", "Meta"};
@@ -155,7 +158,7 @@ const Keymap::UserCommandInfo Keymap::commandInfo[ucCount] = {
 	{"NetworkStatusToggle",		keyN,		0,			0,			0},
 	{"SaveScreenshot",			keyE,		0,			0,			0},
 	{"CycleDisplayColor",		keyC,		0,			0,			0},
-	{"CameraCycleMode",			0,			0,			0,			0},
+	{"CameraCycleMode",			keyF,		0,			0,			0},
 	{"CameraZoomIn",			keyPageUp,	0,			0,			0},
 	{"CameraZoomOut",			keyPageDown,0,			0,			0},
 	{"CameraZoomReset",			0,			0,			0,			0},
@@ -197,11 +200,8 @@ Keymap::Keymap(const Input &input, const char* fileName) :
 		entries.push_back(EntryPair(commandInfo[i]));
 		//entries[i] = EntryPair(commandInfo[i]);
 	}
-	
-	if(fileName) {
-		std::ifstream in(fileName, ios_base::in);
-		if(!in.fail()) {
-			in.close();
+	if (fileName) {
+		if (fileExists(fileName)) {
 			load(fileName);
 		}
 	}
@@ -234,17 +234,11 @@ void Keymap::load(const char *path) {
 			} catch (runtime_error &e) {
 				stringstream str;
 				str << "Failed to parse key map file " << path << ". Failed entry:" << endl
-						<< cmdName << " = " << it->second << endl << e.what();
+					<< cmdName << " = " << it->second << endl << e.what();
 				throw runtime_error(str.str());
 			}
-		} /*else {
-			stringstream str;
-			str << "Failed to parse key map file " << path << ". Invalid command name: "
-					<< cmdName << ".";
-			throw runtime_error(str.str());
-		}*/
+		}
 	}
-
 	reinit();
 }
 
@@ -272,6 +266,37 @@ void Keymap::save(const char *path) {
 		str << "Failed to save key map file: " << path << endl << e.what();
 		throw runtime_error(str.str());
 	}
+}
+
+bool Keymap::isMapped(Key key, UserCommand cmd) const {
+	assert(cmd >= 0 && cmd < ucCount);
+	KeyCode keyCode = key.getCode();
+	if(keyCode <= keyUnknown) {
+		return false;
+	}
+	return entries[cmd].matches(keyCode, getCurrentMods());
+}
+
+UserCommand Keymap::getCommand(Key key) const {
+	KeyCode keyCode = key.getCode();
+	if(keyCode > keyUnknown) {
+		map<Entry, UserCommand>::const_iterator i = entryCmdMap.find(
+				Entry(keyCode, getCurrentMods()));
+		return i == entryCmdMap.end() ? ucNone : i->second;
+	}
+	return ucNone;
+}
+
+int Keymap::getCurrentMods() const {
+	return	  (input.isShiftDown()	? bkmShift	: 0)
+			| (input.isCtrlDown()	? bkmCtrl	: 0)
+			| (input.isAltDown()	? bkmAlt	: 0)
+			| (input.isMetaDown()	? bkmMeta	: 0);
+}
+
+const char* Keymap::getCommandName(UserCommand cmd) {
+	assert(cmd >= 0 && cmd < ucCount);
+	return commandInfo[cmd].name;
 }
 
 }}//end namespace

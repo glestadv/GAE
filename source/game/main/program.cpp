@@ -148,7 +148,9 @@ Program::Program(Config &config, int argc, char** argv) :
 	SoundRenderer &soundRenderer= SoundRenderer::getInstance();
 	soundRenderer.init(this);
 
-	keymap.save("keymap.ini");
+	if (!fileExists("keymap.ini")) {
+		keymap.save("keymap.ini");
+	}
 	keymap.load("keymap.ini");
 
 	// startup and immediately host a game
