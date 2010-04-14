@@ -84,7 +84,7 @@ private:
 	int worldFps, lastWorldFps;
 	int updateFps, lastUpdateFps;
 	int renderFps, lastRenderFps;
-	bool paused;
+	bool paused; ///@todo put PAUSED in GameSpeed
 	bool noInput;
 	bool gameOver;
 	float scrollSpeed;

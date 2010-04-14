@@ -20,8 +20,13 @@ namespace Glest{ namespace Game{
 // 	class MenuStateScenario
 // ===============================
 
-class MenuStateScenario: public MenuState{
+class MenuStateScenario: public MenuState {
 private:
+	WRAPPED_ENUM( FailAction,
+		MAIN_MENU,
+		SCENARIO_MENU
+	);
+
     enum Difficulty{
         dVeryEasy,
         dEasy,
@@ -40,11 +45,13 @@ private:
 
 	GraphicLabel labelCategory;
 	GraphicListBox listBoxCategory;
+	GraphicMessageBox *msgBox;
+
     vector<string> categories;
-
 	vector<string> scenarioFiles;
-
     ScenarioInfo scenarioInfo;
+
+	FailAction failAction;
 
 public:
 	MenuStateScenario(Program &program, MainMenu *mainMenu);
@@ -60,8 +67,8 @@ public:
 
 private:
 	void updateScenarioList(const string &category, bool selectDefault = false);
-    void loadScenarioInfo(string file, ScenarioInfo *scenarioInfo);
-    void loadGameSettings(const ScenarioInfo *scenarioInfo, GameSettings *gameSettings);
+    bool loadScenarioInfo(string file, ScenarioInfo *scenarioInfo);
+    bool loadGameSettings(const ScenarioInfo *scenarioInfo, GameSettings *gameSettings);
 	Difficulty computeDifficulty(const ScenarioInfo *scenarioInfo);
     ControlType strToControllerType(const string &str);
 
