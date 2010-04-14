@@ -221,6 +221,7 @@ void MenuStateScenario::updateScenarioList(const string &category, bool selectDe
 	// update scenario info
 	if (!scenarioFiles.empty()) {
 		if (loadScenarioInfo(scenarioFiles[listBoxScenario.getSelectedItemIndex()], &scenarioInfo)) {
+			labelInfo.setText(scenarioInfo.desc);
 			buttonPlayNow.setEnabled(true);
 			return;
 		}// else problem with scenario... fall through
