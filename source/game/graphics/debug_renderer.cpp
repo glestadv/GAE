@@ -102,11 +102,11 @@ DebugRenderer::DebugRenderer() {
 	storeMapOverlay =
 	showFrustum = 
 	captureFrustum = 
-					false;
-
 	gridTextures = 
 	buildSiteMaps =
-					true;
+					false;
+
+//					true;
 }
 
 const ResourceType* findResourceMapRes(const string &res) {

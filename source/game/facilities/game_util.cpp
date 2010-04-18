@@ -25,14 +25,14 @@ using namespace Shared::Util;
 namespace Glest{ namespace Game{
 
 const string mailString= "contact_game@glest.org";
-const string gaeMailString= "daniel.santos@pobox.com";
+const string gaeMailString= "glestae-devel@lists.sourceforge.net";
 
 const string glestVersionString= "v3.2.2";
 
 #if _GAE_DEBUG_EDITION_
-	const string gaeVersionString= "v0.2.13_DE-rc4";
+	const string gaeVersionString= "v0.2.13_DE";
 #else
-	const string gaeVersionString= "v0.2.13-rc4";
+	const string gaeVersionString= "v0.2.13";
 #endif
 
 string getCrashDumpFileName(){
@@ -55,7 +55,7 @@ string getAboutString1(int i){
 
 string getAboutString2(int i){
 	switch(i){
-	case 0: return "Web: http://glest.codemonger.org, http://glest.org";
+	case 0: return "Web: http://sf.net/apps/trac/glestae, http://glest.org";
 	case 1: return "Mail: " + gaeMailString + ", " + mailString;
 	case 2: return "Irc: irc://irc.freenode.net/glest";
 	}
