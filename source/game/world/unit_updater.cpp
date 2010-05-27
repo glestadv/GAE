@@ -745,7 +745,7 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 			if (res && hct->canHarvest(res->getType())) {
 				switch (routePlanner->findPathToResource(unit, command->getPos(), res->getType())) {
 					case TravelState::ARRIVED:
-						if (map->isResourceNear(unit->getPos(), res->getType(), targetPos)) {
+						if (map->isResourceNear(unit->getPos(), unit->getSize(), res->getType(), targetPos)) {
 							// if it finds resources it starts harvesting
 							unit->setCurrSkill(hct->getHarvestSkillType());
 							unit->setTargetPos(targetPos);

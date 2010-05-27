@@ -56,10 +56,51 @@ public:
 
 };
 
+struct ResourceMapKey {
+	const ResourceType *resourceType;
+	Field workerField;
+	int workerSize;
+
+	ResourceMapKey(const ResourceType *type, Field f, int s)
+			: resourceType(type), workerField(f), workerSize(s) {}
+
+	bool operator<(const ResourceMapKey &that) const {
+		return (memcmp(this, &that, sizeof(ResourceMapKey)) < 0);
+	}
+};
+
+struct StoreMapKey {
+	const Unit *storeUnit;
+	Field workerField;
+	int workerSize;
+
+	StoreMapKey(const Unit *store, Field f, int s)
+			: storeUnit(store), workerField(f), workerSize(s) {}
+
+	bool operator<(const StoreMapKey &that) const {
+		return (memcmp(this, &that, sizeof(StoreMapKey)) < 0);
+	}
+};
+
+struct BuildSiteMapKey {
+	const UnitType *buildingType;
+	Vec2i buildingPosition;
+	Field workerField;
+	int workerSize;
+
+	BuildSiteMapKey(const UnitType *type, const Vec2i &pos, Field f, int s)
+			: buildingType(type), buildingPosition(pos), workerField(f), workerSize(s) {}
+
+	bool operator<(const BuildSiteMapKey &that) const {
+		return (memcmp(this, &that, sizeof(BuildSiteMapKey)) < 0);
+	}
+};
+
 //
 // Cartographer: 'Map' Manager
 //
 class Cartographer : public sigslot::has_slots<> {
+private:
 	/** Master annotated map, always correct */
 	AnnotatedMap *masterMap;
 
@@ -70,24 +111,27 @@ class Cartographer : public sigslot::has_slots<> {
 	ClusterMap *clusterMap;
 
 	typedef const ResourceType* rt_ptr;
-	typedef pair<Vec2i, Vec2i> PosPair;
-	typedef vector<PosPair> AreaList;
+	//typedef pair<Vec2i, Vec2i> PosPair;
+	//typedef vector<PosPair> AreaList;
+	typedef vector<Vec2i> V2iList;
 
-	typedef map<rt_ptr, PatchMap<1>*> ResourceMaps;		// goal maps for harvester path searches to resourecs
-	typedef map<const Unit*, PatchMap<1>*> StoreMaps;	// goal maps for harvester path searches to store
+	typedef map<ResourceMapKey, PatchMap<1>*> ResourceMaps;	// goal maps for harvester path searches to resourecs
+	typedef map</*const Unit**/StoreMapKey, PatchMap<1>*> StoreMaps;	// goal maps for harvester path searches to store
 
 	typedef pair<const UnitType*, Vec2i> SiteDesc;	// describes a building site.
 	typedef map<SiteDesc, PatchMap<1>*> SiteMaps;	// goal maps for building sites.
 
 	typedef list<pair<rt_ptr, Vec2i> >	ResourcePosList;
-	typedef map<rt_ptr, vector<Vec2i> > ResourcePosMap;
+	typedef map<rt_ptr, V2iList> ResourcePosMap;
 
 	// Resources
 	/** The locations of each and every resource on the map */
 	ResourcePosMap resourceLocations;
+
+	set<ResourceMapKey> resourceMapKeys;
 	
 	/** areas where resources have been depleted and updates are required */
-	map<rt_ptr, AreaList> resDirtyAreas;
+	ResourcePosMap resDirtyAreas;
 
 	/** Goal Maps for each tech & tileset resource */
 	ResourceMaps resourceMaps;
@@ -107,14 +151,17 @@ class Cartographer : public sigslot::has_slots<> {
 	Map *cellMap;
 	RoutePlanner *routePlanner;
 
-	void initResourceMap(const ResourceType *rt, PatchMap<1> *pMap);
-	void fixupResourceMap(const ResourceType *rt, const Vec2i &tl, const Vec2i &br);
+	void initResourceMap(ResourceMapKey key, PatchMap<1> *pMap);
+	void fixupResourceMaps(const ResourceType *rt, const Vec2i &pos);
 
-	PatchMap<1>* buildAdjacencyMap(const UnitType *uType, const Vec2i &pos);
+	PatchMap<1>* buildAdjacencyMap(const UnitType *uType, const Vec2i &pos, Field f, int sz);
+	PatchMap<1>* buildAdjacencyMap(const UnitType *uType, const Vec2i &pos) {
+		return buildAdjacencyMap(uType, pos, Field::LAND, 1);
+	}
 
-	PatchMap<1>* buildStoreMap(Unit *unit) {
-		unit->Died.connect(this, &Cartographer::onStoreDestroyed);
-		return (storeMaps[unit] = buildAdjacencyMap(unit->getType(), unit->getPos()));
+	PatchMap<1>* buildStoreMap(StoreMapKey key) {
+		const_cast<Unit*>(key.storeUnit)->Died.connect(this, &Cartographer::onStoreDestroyed);
+		return (storeMaps[key] = buildAdjacencyMap(key.storeUnit->getType(), key.storeUnit->getPos()));
 	}
 
 	IF_DEBUG_EDITION( void debugAddBuildSiteMap(PatchMap<1>*); )
@@ -180,16 +227,17 @@ public:
 		saveResourceState(node->addChild("resourceState"));
 	}
 
-	PatchMap<1>* getResourceMap(const ResourceType* rt) {
-		return resourceMaps[rt];
+	PatchMap<1>* getResourceMap(ResourceMapKey key) { //const ResourceType* rt) {
+		return resourceMaps[key];
 	}
 
-	PatchMap<1>* getStoreMap(const Unit *unit) {
-		StoreMaps::iterator it = storeMaps.find(unit);
+	PatchMap<1>* getStoreMap(const Unit *store, const Unit *worker) {
+		StoreMapKey key(store, worker->getCurrField(), worker->getSize());
+		StoreMaps::iterator it = storeMaps.find(key);
 		if (it != storeMaps.end()) {
 			return it->second;
 		}
-		return buildStoreMap(const_cast<Unit*>(unit)); // connects signal, needs non-const...
+		return buildStoreMap(key); // connects signal, needs non-const...
 	}
 
 	PatchMap<1>* getSiteMap(const UnitType *ut, const Vec2i &pos) {

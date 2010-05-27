@@ -202,50 +202,6 @@ void AiRuleAddTasks::execute() {
 
 	//standard tasks
 
-//	//emergency workers
-//	if (workerCount < 4) {
-//		ai->addPriorityTask(new ProduceTask(UnitClass::WORKER));
-//	} else {
-//		if (workerCount < 5) ai->addTask(new ProduceTask(UnitClass::WORKER));
-//		if (warriorCount < 10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-//		if (warriorRatio < 0.20) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-//
-//		//TODO: Check production queue and build buildings that have significant
-//		//production backlogs
-//		if (workerCount > 7 && (ai->isStableBase() || rand->randRange(0, 100) <= (aii->isUltra() ? 20 : 5))) {
-//			if(ai->getNeededUpgrades() && rand->randRange(0, 100) <= (aii->isUltra() ? 90 : 60)) {
-//				ai->addTask(new UpgradeTask());
-//			}
-//			if(ai->getNeededBuildings() && rand->randRange(0, 100) <= (aii->isUltra() ? 50 : 25)) {
-//				ai->addTask(new BuildTask());
-//			}
-//		}
-//
-//		//workers
-//		if (workerCount < 10) ai->addTask(new ProduceTask(UnitClass::WORKER));
-//		if (workerRatio < 0.20) ai->addTask(new ProduceTask(UnitClass::WORKER));
-//		if (workerRatio < 0.30) ai->addTask(new ProduceTask(UnitClass::WORKER));
-//
-//		//warriors
-//		if (warriorRatio < 0.30) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-//		if (workerCount >= 10) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-//		if (workerCount >= 15) ai->addTask(new ProduceTask(UnitClass::WARRIOR));
-//
-//		ai->updateStatistics();
-//		//buildings
-//		if (ai->getNeededBuildings() || !ai->getNeededUpgrades()) {
-//			//if(buildingCount<6 || buildingRatio<0.20) ai->addTask(new BuildTask());
-//			if (buildingCount < 10 && workerCount > 12) ai->addTask(new BuildTask());
-//		}
-//
-//		//upgrades
-//		if (upgradeCount == 0 && workerCount > 5) ai->addTask(new UpgradeTask());
-//		if (upgradeCount == 1 && workerCount > 10) ai->addTask(new UpgradeTask());
-//		if (upgradeCount == 2 && workerCount > 15) ai->addTask(new UpgradeTask());
-//		//		if (ai->isStableBase()) ai->addTask(new UpgradeTask());
-//
-//
-//
 	//emergency workers
 	if (workerCount < 4) {
 		ai->addPriorityTask(new ProduceTask(UnitClass::WORKER));

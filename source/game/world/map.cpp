@@ -354,26 +354,26 @@ void Map::calcAvgAltitude() {
 
 // ==================== is ====================
 
-/**
- * @returns if there is a resource next to a unit, in "resourcePos" is stored the relative position
- * of the resource
- */
-bool Map::isResourceNear(const Vec2i &pos, const ResourceType *rt, Vec2i &resourcePos) const {
-	for (int x = -1; x <= 1; ++x) {
-		for (int y = -1; y <= 1; ++y) {
-			Vec2i cur = Vec2i(x, y) + pos;
-			if (isInside(cur)) {
-				Resource *r = getTile(toTileCoords(cur))->getResource();
-				if (r && r->getType() == rt) {
-					resourcePos = cur;
-					return true;
-				}
+/** @returns if there is a resource next to a unit
+  * @param pos unit position @param size unit size
+  * @param rt Resource type of interest
+  * @param resourcePos stores position of the resource if found */
+bool Map::isResourceNear(const Vec2i &pos, int size, const ResourceType *rt, Vec2i &resourcePos) const {
+	Vec2i p1 = pos + Vec2i(-size - 1);
+	Vec2i p2 = pos + Vec2i(size + 2);
+	Util::PerimeterIterator iter(p1, p2);
+	while (iter.more()) {
+		Vec2i cur = iter.next();
+		if (isInside(cur)) {
+			Resource *r = getTile(toTileCoords(cur))->getResource();
+			if (r && r->getType() == rt) {
+				resourcePos = cur;
+				return true;
 			}
 		}
 	}
 	return false;
 }
-
 
 // ==================== free cells ====================
 bool Map::fieldsCompatible(Cell *cell, Field mf) const {
@@ -863,18 +863,19 @@ void Map::evict(Unit *unit, const Vec2i &pos, vector<Unit *> &evicted) {
 
 //returnis if unit is next to pos
 bool Map::isNextTo(const Vec2i &pos, const Unit *unit) const{
-
-	for(int i=-1; i<=1; ++i){
-		for(int j=-1; j<=1; ++j){
-			if(isInside(pos.x+i, pos.y+j)) {
-				if(getCell(pos.x+i, pos.y+j)->getUnit(Zone::LAND)==unit){
-					return true;
-				}
+	Zone z = unit->getCurrZone();
+	Util::RectIterator iter(pos - Vec2i(1), pos + Vec2i(1));
+	while (iter.more()) {
+		Vec2i cpos = iter.next();
+		if (isInside(cpos)) {
+			if (getCell(cpos)->getUnit(z) == unit) {
+				return true;
 			}
 		}
 	}
-    return false;
+	return false;
 }
+
 void Map::clampPos(Vec2i &pos) const{
 	if(pos.x<0) pos.x=0;
 	if(pos.y<0) pos.y=0;

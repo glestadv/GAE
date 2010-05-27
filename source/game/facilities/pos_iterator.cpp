@@ -87,5 +87,44 @@ PosCircularIterator *PosCircularIteratorFactory::getIterator(bool reversed, int 
 			: new PosCircularIterator(first - 1, first, last, 7);
 }
 
+
+Vec2i PerimeterIterator::next() { 
+	Vec2i n(cx, cy);
+	switch (state) {
+		case 0: // top edge, left->right
+			if (cx == ex) {
+				state = 1;
+				++cy;
+			} else {
+				++cx;
+			}
+			break;
+		case 1: // right edge, top->bottom
+			if (cy == sy) {
+				state = 2;
+				--cx;
+			} else {
+				++cy;
+			}
+			break;
+		case 2:
+			if (cx == wx) {
+				state = 3;
+				--cy;
+			} else {
+				--cx;
+			}
+			break;
+		case 3:
+			if (cy == ny) {
+				state = 4;
+			} else {
+				--cy;
+			}
+			break;
+	}
+	return n;
+}
+
 }}}//end namespace
 

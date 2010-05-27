@@ -188,7 +188,8 @@ public:
 	void reset() { rt = 0; }
 
 	bool operator()(const Vec2i &cell, Vec4f &colour) {
-		PatchMap<1> *pMap = theWorld.getCartographer()->getResourceMap(rt);
+		ResourceMapKey mapKey(rt, Field::LAND, 1);
+		PatchMap<1> *pMap = theWorld.getCartographer()->getResourceMap(mapKey);
 		if (pMap && pMap->getInfluence(cell)) {
 			colour = Vec4f(1.f, 1.f, 0.f, 0.7f);
 			return true;
@@ -205,6 +206,7 @@ public:
 	void reset() { stores.clear(); }
 
 	bool operator()(const Vec2i &cell, Vec4f &colour) {
+/*
 		for (UnitList::iterator it = stores.begin(); it != stores.end(); ++it) {
 			PatchMap<1> *pMap = theWorld.getCartographer()->getStoreMap(*it);
 			if (pMap && pMap->getInfluence(cell)) {
@@ -212,6 +214,7 @@ public:
 				return true;
 			}
 		}
+*/
 		return false;
 	}
 };

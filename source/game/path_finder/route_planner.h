@@ -75,13 +75,14 @@ public:
 
 	TravelState findPathToResource(Unit *unit, const Vec2i &targetPos, const ResourceType *rt) {
 		assert(rt->getClass() == ResourceClass::TECHTREE || rt->getClass() == ResourceClass::TILESET);
-		PMap1Goal goal(world->getCartographer()->getResourceMap(rt));
+		ResourceMapKey mapKey(rt, unit->getCurrField(), unit->getSize());
+		PMap1Goal goal(world->getCartographer()->getResourceMap(mapKey));
 		return findPathToGoal(unit, goal, targetPos);
 	}
 
 	TravelState findPathToStore(Unit *unit, const Unit *store) {
 		Vec2i target = store->getNearestOccupiedCell(unit->getPos());
-		PMap1Goal goal(world->getCartographer()->getStoreMap(store));
+		PMap1Goal goal(world->getCartographer()->getStoreMap(store, unit));
 		return findPathToGoal(unit, goal, target);
 	}
 
