@@ -544,7 +544,9 @@ void Renderer::renderMouse3d(){
 			const Selection::UnitContainer &units = gui->getSelection()->getUnits();
 
 			//selection building emplacement
-			float offset= building->getSize()/2.f-0.5f;
+			float offset = building->getSize() / 2.f - 0.5f;
+
+			Field buildField = dominantField(building->getFields());
 
 			for(Gui::BuildPositions::const_iterator i = bp.begin(); i != bp.end(); i++) {
 				glMatrixMode(GL_MODELVIEW);
@@ -561,7 +563,7 @@ void Renderer::renderMouse3d(){
 				glTranslatef(pos3f.x+offset, pos3f.y, pos3f.z+offset);
 
 				//choose color
-				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), Field::LAND, units)) {
+				if(map->areFreeCellsOrHaveUnits(*i, building->getSize(), buildField, units)) {
 					color= Vec4f(1.f, 1.f, 1.f, 0.5f);
 				} else {
 					color= Vec4f(1.f, 0.f, 0.f, 0.5f);

@@ -87,7 +87,7 @@ public:
 	}
 
 	TravelState findPathToBuildSite(Unit *unit, const UnitType *buildingType, const Vec2i &buildingPos) {
-		PMap1Goal goal(world->getCartographer()->getSiteMap(buildingType, buildingPos));
+		PMap1Goal goal(world->getCartographer()->getSiteMap(buildingType, buildingPos, unit));
 		return findPathToGoal(unit, goal, unit->getTargetPos());
 	}
 

@@ -35,6 +35,7 @@ using namespace Shared::Util;
 using Glest::Game::Search::InfluenceMap;
 using Glest::Game::Search::ClusterMap;
 using Glest::Game::Search::Cartographer;
+using Glest::Game::Search::StoreMapKey;
 
 namespace Glest { namespace Game {
 //namespace Game { namespace Debug {
@@ -70,7 +71,7 @@ class GridTextureCallback {
 public:
 	Texture2D *tex;
 
-	void reset() { if (tex) tex->end(); tex = 0; }
+	void reset() { tex = 0; }
 	void loadTextures();
 
 	GridTextureCallback() : tex(0) {}
@@ -200,21 +201,19 @@ public:
 
 class StoreMapOverlay {
 public:
-	typedef vector<const Unit *> UnitList;
-	UnitList stores;
+	typedef vector<StoreMapKey> KeyList;
+	KeyList storeMaps;
 
-	void reset() { stores.clear(); }
+	void reset() { storeMaps.clear(); }
 
 	bool operator()(const Vec2i &cell, Vec4f &colour) {
-/*
-		for (UnitList::iterator it = stores.begin(); it != stores.end(); ++it) {
-			PatchMap<1> *pMap = theWorld.getCartographer()->getStoreMap(*it);
+		foreach (KeyList, it, storeMaps) {
+			PatchMap<1> *pMap = theWorld.getCartographer()->getStoreMap(*it, false);
 			if (pMap && pMap->getInfluence(cell)) {
 				colour = Vec4f(0.f, 1.f, 0.3f, 0.7f);
 				return true;
 			}
 		}
-*/
 		return false;
 	}
 };

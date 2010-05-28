@@ -45,6 +45,17 @@ public:
 	//static const char* getName ( Field f ) { return names[f]; }
 };
 
+// hacky crap, remove on merge with trunk
+inline Field dominantField(const Fields &fields) {
+	Field f = Field::INVALID;
+	if (fields.get(Field::LAND)) f = Field::LAND;
+	else if (fields.get(Field::AIR)) f = Field::AIR;
+	if (fields.get(Field::AMPHIBIOUS)) f = Field::AMPHIBIOUS;
+	else if (fields.get(Field::ANY_WATER)) f = Field::ANY_WATER;
+	else if (fields.get(Field::DEEP_WATER)) f = Field::DEEP_WATER;
+	return f;
+}
+
 /** Zones of attack (air, surface, etc.) */
 class Zones : public XmlBasedFlags<Zone, Zone::COUNT> {
 private:

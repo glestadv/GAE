@@ -241,32 +241,49 @@ void DebugRenderer::commandLine(string &line) {
 			const ResourceType *rt = 0;
 			if ( val == "on" || val == "On" ) {
 				resourceMapOverlay = true;
-				storeMapOverlay = true;
 			} else if (val == "off" || val == "Off") {
 				resourceMapOverlay = false;
-				storeMapOverlay = false;
 			} else {
 				// else find resource
 				if (!( rt = findResourceMapRes(val))) {
-					theConsole.addLine("Error: value=" + val + " not valid.");
+					theConsole.addLine("Error: value='" + val + "' not valid.");
 					resourceMapOverlay = false;
-					storeMapOverlay = false;
 				}
 				resourceMapOverlay = true;
-				storeMapOverlay = true;
 			}
-			if (storeMapOverlay && rt) {
-				const Faction *f = theWorld.getThisFaction();
-				smOverlay.stores.clear();
-				for (int i=0; i < f->getUnitCount(); ++i) {
-					const Unit *u = f->getUnit(i);
-					for (int i=0; i < u->getType()->getStoredResourceCount(); ++i) {
-						if (u->getType()->getStoredResource(i)->getType() == rt) {
-							smOverlay.stores.push_back(u);
-						}
-					}
-				}
-			}
+		}
+	} else if (key == "StoreMap") {
+		n = val.find(',');
+		if (n == string::npos) {
+			theConsole.addLine("Error: value='" + val + "' not valid");
+			return;
+		}
+		storeMapOverlay = false;
+		string idString = val.substr(0, n);
+		++n;
+		while (val[n] == ' ') ++n;
+		string szString = val.substr(n);
+		int id, sz;
+		try {
+			id = Conversion::strToInt(idString);
+			sz = Conversion::strToInt(szString);
+		} catch (runtime_error &e) {
+			theConsole.addLine("Error: value='" + val + "' not valid: expected id, size (two integers)");
+			return;
+		}
+		Unit *store = theWorld.findUnitById(id);
+		if (!store) {
+			theConsole.addLine("Error: unit id " + idString + " not found");
+			return;
+		}
+		StoreMapKey smkey(store, Field::LAND, sz);
+		PatchMap<1> *pMap = theWorld.getCartographer()->getStoreMap(smkey, false);
+		if (pMap) {
+			smOverlay.storeMaps.push_back(smkey);
+			storeMapOverlay = true;
+		} else {
+			theConsole.addLine("Error: no StoreMap found for unit " + idString 
+				+ " in Field::LAND with size " + szString);
 		}
 	} else if (key == "AssertClusterMap") {
 		theWorld.getCartographer()->getClusterMap()->assertValid();
@@ -529,7 +546,7 @@ void DebugRenderer::renderEffects(SceneCuller &culler) {
 	if (resourceMapOverlay && rmOverlay.rt) {
 		renderCellOverlay(culler, rmOverlay);
 	}
-	if (storeMapOverlay && !smOverlay.stores.empty()) {
+	if (storeMapOverlay && !smOverlay.storeMaps.empty()) {
 		renderCellOverlay(culler, smOverlay);
 	}
 	if (buildSiteMaps && !bsOverlay.cells.empty()) {

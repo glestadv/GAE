@@ -547,7 +547,9 @@ void UnitUpdater::updateBuild(Unit *unit) {
 		assert(command->getUnitType() != NULL);
 		const int &buildingSize = builtUnitType->getSize();
 
-		if (map->canOccupy(command->getPos(), Field::LAND, builtUnitType)) {
+		Field f = dominantField(builtUnitType->getFields());
+
+		if (map->canOccupy(command->getPos(), f, builtUnitType)) {
 			if (!verifySubfaction(unit, builtUnitType)) {
 				return;
 			}
@@ -777,30 +779,32 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 					case TravelState::MOVING:
 						unit->setCurrSkill(getMoveLoadedSkill(unit));
 						unit->face(unit->getNextPos());
-						break;
+						return;
 					case TravelState::BLOCKED:
 						unit->setCurrSkill(getStopLoadedSkill(unit));
+						return;
+					case TravelState::IMPOSSIBLE:
+						unit->setCurrSkill(SkillClass::STOP);
+						unit->cancelCurrCommand();
+						return;
+					case TravelState::ARRIVED: 
 						break;
-					default:
-						; // otherwise, we fall through
 				}
-				if (map->isNextTo(unit->getPos(), store)) {
-					// update resources
-					int resourceAmount = unit->getLoadCount();
-					// Just do this for all players ???
-					if (unit->getFaction()->getCpuUltraControl()) {
-						resourceAmount = (int)(resourceAmount * gameSettings.getResourceMultilpier(unit->getFactionIndex()));
-						//resourceAmount *= ultraRes/*/*/*/*/ourceFactor; // Pull from GameSettings
-					}
-					unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
-					world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
-					ScriptManager::onResourceHarvested();
+				// update resources
+				int resourceAmount = unit->getLoadCount();
+				// Just do this for all players ???
+				if (unit->getFaction()->getCpuControl()) {
+					const float &mult = gameSettings.getResourceMultilpier(unit->getFactionIndex());
+					resourceAmount = int(resourceAmount * mult);
+				}
+				unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
+				world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
+				ScriptManager::onResourceHarvested();
 
-					// if next to a store unload resources
-					unit->getPath()->clear();
-					unit->setCurrSkill(SkillClass::STOP);
-					unit->setLoadCount(0);
-				}
+				// if next to a store unload resources
+				unit->getPath()->clear();
+				unit->setCurrSkill(SkillClass::STOP);
+				unit->setLoadCount(0);
 			} else { // no store found, give up
 				unit->finishCommand();
 			}

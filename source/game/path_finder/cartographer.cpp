@@ -40,17 +40,6 @@ using namespace Shared::Util;
 namespace Glest { namespace Game { namespace Search {
 //namespace Game { namespace Search {
 
-// hacky crap, remove on merge with trunk
-Field dominantField(const Fields &fields) {
-	Field f = Field::INVALID;
-	if (fields.get(Field::LAND)) f = Field::LAND;
-	else if (fields.get(Field::AIR)) f = Field::AIR;
-	if (fields.get(Field::AMPHIBIOUS)) f = Field::AMPHIBIOUS;
-	else if (fields.get(Field::ANY_WATER)) f = Field::ANY_WATER;
-	else if (fields.get(Field::DEEP_WATER)) f = Field::DEEP_WATER;
-	return f;
-}
-
 /** Construct Cartographer object. Requires game settings, factions & cell map to have been loaded.
   */
 Cartographer::Cartographer(World *world)
@@ -180,6 +169,47 @@ void Cartographer::initResourceMap(ResourceMapKey key, PatchMap<1> *pMap) {
 	}
 }
 
+
+void Cartographer::onResourceDepleted(Vec2i pos) {
+	const ResourceType *rt = cellMap->getTile(pos/Map::cellScale)->getResource()->getType();
+	resDirtyAreas[rt].push_back(pos);
+//	Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST];
+//	Vec2i br = pos + OrdinalOffsets[OrdinalDir::SOUTH_EAST] * 2;
+//	resDirtyAreas[rt].push_back(pair<Vec2i,Vec2i>(tl,br));
+}
+
+void Cartographer::fixupResourceMaps(const ResourceType *rt, const Vec2i &pos) {
+	const Map &map = *world->getMap();
+	Vec2i junk;
+	foreach (set<ResourceMapKey>, it, resourceMapKeys) {
+		if (it->resourceType == rt) {
+			PatchMap<1> *pMap = resourceMaps[*it];
+			const int &size = it->workerSize;
+			const Field &field = it->workerField;
+
+			Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST] * size;
+			Vec2i br(tl.x + size + 2, tl.y + size + 2);
+
+			Util::PerimeterIterator iter(tl, br);
+			while (iter.more()) {
+				Vec2i cur = iter.next();
+				if (map.isInside(cur) && masterMap->canOccupy(cur, size, field)
+				&& map.isResourceNear(cur, size, rt, junk)) {
+					pMap->setInfluence(cur, 1);
+				} else {
+					pMap->setInfluence(cur, 0);
+				}
+			}
+		}
+	}
+}
+
+void Cartographer::onStoreDestroyed(Unit *unit) {
+	///@todo fixme
+//	delete storeMaps[unit];
+//	storeMaps.erase(unit);
+}
+
 void Cartographer::saveResourceState(XmlNode *mapNode) {
 	XmlNode *resourcesNode = mapNode->addChild("resources");
 	foreach_const (ResourcePosMap, typeLocations, resourceLocations) {
@@ -230,52 +260,12 @@ void Cartographer::loadResourceState(XmlNode *node) {
 	}
 }
 
-void Cartographer::onResourceDepleted(Vec2i pos) {
-	const ResourceType *rt = cellMap->getTile(pos/Map::cellScale)->getResource()->getType();
-	resDirtyAreas[rt].push_back(pos);
-//	Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST];
-//	Vec2i br = pos + OrdinalOffsets[OrdinalDir::SOUTH_EAST] * 2;
-//	resDirtyAreas[rt].push_back(pair<Vec2i,Vec2i>(tl,br));
-}
-
-void Cartographer::fixupResourceMaps(const ResourceType *rt, const Vec2i &pos) {
-	const Map &map = *world->getMap();
-	Vec2i junk;
-	foreach (set<ResourceMapKey>, it, resourceMapKeys) {
-		if (it->resourceType == rt) {
-			PatchMap<1> *pMap = resourceMaps[*it];
-			const int &size = it->workerSize;
-			const Field &field = it->workerField;
-
-			Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST] * size;
-			Vec2i br(tl.x + size + 2, tl.y + size + 2);
-
-			Util::PerimeterIterator iter(tl, br);
-			while (iter.more()) {
-				Vec2i cur = iter.next();
-				if (map.isInside(cur) && masterMap->canOccupy(cur, size, field)
-				&& map.isResourceNear(cur, size, rt, junk)) {
-					pMap->setInfluence(cur, 1);
-				} else {
-					pMap->setInfluence(cur, 0);
-				}
-			}
-		}
-	}
-}
-
-void Cartographer::onStoreDestroyed(Unit *unit) {
-	///@todo fixme
-//	delete storeMaps[unit];
-//	storeMaps.erase(unit);
-}
-
-PatchMap<1>* Cartographer::buildAdjacencyMap(const UnitType *uType, const Vec2i &pos, Field f, int sz) {
-	const Vec2i mapPos = pos + (OrdinalOffsets[OrdinalDir::NORTH_WEST] * sz);
+PatchMap<1>* Cartographer::buildAdjacencyMap(const UnitType *uType, const Vec2i &pos, Field f, int size) {
+	const Vec2i mapPos = pos + (OrdinalOffsets[OrdinalDir::NORTH_WEST] * size);
 	const int sx = pos.x;
 	const int sy = pos.y;
 
-	Rectangle rect(mapPos.x, mapPos.y, uType->getSize() + 2 + sz, uType->getSize() + 2 + sz);
+	Rectangle rect(mapPos.x, mapPos.y, uType->getSize() + 2 + size, uType->getSize() + 2 + size);
 	PatchMap<1> *pMap = new PatchMap<1>(rect, 0);
 	pMap->zeroMap();
 
@@ -283,24 +273,24 @@ PatchMap<1>* Cartographer::buildAdjacencyMap(const UnitType *uType, const Vec2i 
 	tmpMap.zeroMap();
 
 	// mark cells occupied by unitType at pos (on tmpMap)
-	Util::RectIterator iter(pos, pos + Vec2i(uType->getSize() - 1));
-	while (iter.more()) {
-		Vec2i gpos = iter.next();
+	Util::RectIterator rIter(pos, pos + Vec2i(uType->getSize() - 1));
+	while (rIter.more()) {
+		Vec2i gpos = rIter.next();
 		if (!uType->hasCellMap() || uType->getCellMapCell(gpos.x - sx, gpos.y - sy)) {
 			tmpMap.setInfluence(gpos, 1);
 		}
 	}
 
 	// mark goal cells on result map
-	iter = Util::RectIterator(mapPos, mapPos + Vec2i(uType->getSize() + 1));
-	while (iter.more()) {
-		Vec2i gpos = iter.next();
-		if (tmpMap.getInfluence(gpos) || !masterMap->canOccupy(gpos, sz, f)) {
-			continue; // building occupied cell or obstacle
+	rIter = Util::RectIterator(mapPos, pos + Vec2i(uType->getSize()));
+	while (rIter.more()) {
+		Vec2i gpos = rIter.next();
+		if (tmpMap.getInfluence(gpos) || !masterMap->canOccupy(gpos, size, f)) {
+			continue; // building or obstacle
 		}
-		foreach_enum (OrdinalDir, d) {
-			if (tmpMap.getInfluence(gpos + OrdinalOffsets[d])) {
-				// if next to a cell marked from first sweep, then this is a valid goal pos
+		Util::PerimeterIterator pIter(gpos - Vec2i(1), gpos + Vec2i(size));
+		while (pIter.more()) {
+			if (tmpMap.getInfluence(pIter.next())) {
 				pMap->setInfluence(gpos, 1);
 				break;
 			}

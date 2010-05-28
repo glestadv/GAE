@@ -116,10 +116,8 @@ private:
 	typedef vector<Vec2i> V2iList;
 
 	typedef map<ResourceMapKey, PatchMap<1>*> ResourceMaps;	// goal maps for harvester path searches to resourecs
-	typedef map</*const Unit**/StoreMapKey, PatchMap<1>*> StoreMaps;	// goal maps for harvester path searches to store
-
-	typedef pair<const UnitType*, Vec2i> SiteDesc;	// describes a building site.
-	typedef map<SiteDesc, PatchMap<1>*> SiteMaps;	// goal maps for building sites.
+	typedef map<StoreMapKey,	PatchMap<1>*> StoreMaps;	// goal maps for harvester path searches to store
+	typedef map<BuildSiteMapKey,PatchMap<1>*> SiteMaps;		// goal maps for building sites.
 
 	typedef list<pair<rt_ptr, Vec2i> >	ResourcePosList;
 	typedef map<rt_ptr, V2iList> ResourcePosMap;
@@ -161,15 +159,17 @@ private:
 
 	PatchMap<1>* buildStoreMap(StoreMapKey key) {
 		const_cast<Unit*>(key.storeUnit)->Died.connect(this, &Cartographer::onStoreDestroyed);
-		return (storeMaps[key] = buildAdjacencyMap(key.storeUnit->getType(), key.storeUnit->getPos()));
+		return (storeMaps[key] = buildAdjacencyMap(key.storeUnit->getType(), 
+			key.storeUnit->getPos(), key.workerField, key.workerSize));
 	}
 
 	IF_DEBUG_EDITION( void debugAddBuildSiteMap(PatchMap<1>*); )
 
-	PatchMap<1>* buildSiteMap(const UnitType *uType, const Vec2i &pos) {
-		PatchMap<1> *smap = siteMaps[make_pair(uType, pos)] = buildAdjacencyMap(uType, pos);
-		IF_DEBUG_EDITION( debugAddBuildSiteMap(smap); )
-		return smap;
+	PatchMap<1>* buildSiteMap(BuildSiteMapKey key) {
+		PatchMap<1> *sMap = siteMaps[key] = buildAdjacencyMap(key.buildingType, key.buildingPosition,
+			key.workerField, key.workerSize);
+		IF_DEBUG_EDITION( debugAddBuildSiteMap(sMap); )
+		return sMap;
 	}
 
 	// slots
@@ -227,25 +227,39 @@ public:
 		saveResourceState(node->addChild("resourceState"));
 	}
 
-	PatchMap<1>* getResourceMap(ResourceMapKey key) { //const ResourceType* rt) {
+	PatchMap<1>* getResourceMap(ResourceMapKey key) {
 		return resourceMaps[key];
 	}
 
-	PatchMap<1>* getStoreMap(const Unit *store, const Unit *worker) {
-		StoreMapKey key(store, worker->getCurrField(), worker->getSize());
+	PatchMap<1>* getStoreMap(StoreMapKey key, bool build=true) {
 		StoreMaps::iterator it = storeMaps.find(key);
 		if (it != storeMaps.end()) {
 			return it->second;
 		}
-		return buildStoreMap(key); // connects signal, needs non-const...
+		if (build) {
+			return buildStoreMap(key);
+		} else {
+			return 0;
+		}
 	}
 
-	PatchMap<1>* getSiteMap(const UnitType *ut, const Vec2i &pos) {
-		SiteMaps::iterator it = siteMaps.find(make_pair(ut, pos));
+	PatchMap<1>* getStoreMap(const Unit *store, const Unit *worker) {
+		StoreMapKey key(store, worker->getCurrField(), worker->getSize());
+		return getStoreMap(key);
+	}
+
+	PatchMap<1>* getSiteMap(BuildSiteMapKey key) {
+		SiteMaps::iterator it = siteMaps.find(key);
 		if (it != siteMaps.end()) {
 			return it->second;
 		}
-		return buildSiteMap(ut, pos);
+		return buildSiteMap(key);
+
+	}
+
+	PatchMap<1>* getSiteMap(const UnitType *ut, const Vec2i &pos, Unit *worker) {
+		BuildSiteMapKey key(ut, pos, worker->getCurrField(), worker->getSize());
+		return getSiteMap(key);
 	}
 
 	ClusterMap* getClusterMap() const { return clusterMap; }
