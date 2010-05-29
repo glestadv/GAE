@@ -832,31 +832,7 @@ void Map::clearUnitCells(Unit *unit, const Vec2i &pos){
 	}
 }
 
-/**
- * Evicts current inhabitants of cells and adds them to the supplied vector<Unit *>
- */
-void Map::evict(Unit *unit, const Vec2i &pos, vector<Unit *> &evicted) {
 
-	assert(unit);
-	const UnitType *ut = unit->getType();
-	int size = ut->getSize();
-	Zone field = unit->getCurrField()==Field::AIR?Zone::AIR:Zone::LAND;
-
-	for(int x = 0; x < size; ++x) {
-		for(int y = 0; y < size; ++y) {
-			Vec2i currPos(pos.x + x, pos.y + y);
-			assert(isInside(currPos));
-
-			if(!ut->hasCellMap() || ut->getCellMapCell(x, y)) {
-				Unit *evictedUnit = getCell(currPos)->getUnit(field);
-				if(evictedUnit) {
-					clearUnitCells(evictedUnit, evictedUnit->getPos());
-					evicted.push_back(evictedUnit);
-				}
-			}
-		}
-	}
-}
 
 
 // ==================== misc ====================
@@ -877,10 +853,8 @@ bool Map::isNextTo(const Vec2i &pos, const Unit *unit) const{
 }
 
 void Map::clampPos(Vec2i &pos) const{
-	if(pos.x<0) pos.x=0;
-	if(pos.y<0) pos.y=0;
-	if(pos.x>=w) pos.x=w-1;
-	if(pos.y>=h) pos.y=h-1;
+	pos.x = clamp(pos.x, 0, w-1);
+	pos.y = clamp(pos.y, 0, h-1);
 }
 
 void Map::prepareTerrain(const Unit *unit) {
@@ -910,45 +884,19 @@ void Map::update(float slice) {
 // ==================== compute ====================
 
 void Map::flatternTerrain(const Unit *unit){
-	float refHeight= getTile(toTileCoords(unit->getCenteredPos()))->getHeight();
-	for(int i=-1; i<=unit->getType()->getSize(); ++i){
-		for(int j=-1; j<=unit->getType()->getSize(); ++j){
-			Vec2i pos= unit->getPos()+Vec2i(i, j);
-			Cell *c= getCell(pos);
-			Tile *sc= getTile(toTileCoords(pos));
-			//we change height if pos is inside world, if its free or ocupied by the currenty building
-			if(isInside(pos) && sc->getObject()==NULL && (c->getUnit(Zone::LAND)==NULL || c->getUnit(Zone::LAND)==unit)){
-				sc->setHeight(refHeight);
-			}
+	float refHeight = getTile(toTileCoords(unit->getCenteredPos()))->getHeight();
+	Vec2i tile_tl = toTileCoords(unit->getPos());
+	Vec2i tile_br = toTileCoords(unit->getPos() + Vec2i(unit->getSize()));
+	Util::RectIterator iter(tile_tl, tile_br);
+	while (iter.more()) {
+		Vec2i tile_pos = iter.next();
+		Tile *tile = getTile(tile_pos);
+		if (isInsideTile(tile_pos) && !tile->getObject()) {
+			tile->setHeight(refHeight);
 		}
 	}
 }
-/*
-void Map::flattenTerrain(const Unit *unit) {
-	// need to make sure unit->getCenteredPos() is on a 'l' fieldMapCell
-	float refHeight= getTile(toTileCoords(unit->getFlattenPos()))->getHeight();
 
-	for ( int i = -1; i <= unit->getType()->getSize(); ++i ) {
-		for ( int j = -1; j <= unit->getType()->getSize(); ++j ) {
-			Vec2i relPos = Vec2i(i, j);
-			Vec2i pos= unit->getPos() + relPos;
-			// Only flatten for parts of the building on 'land'
-			if ( unit->getType ()->hasFieldMap ()
-			&&   unit->getType ()->getFieldMapCell ( relPos ) != 'l'
-			&&   unit->getType ()->getFieldMapCell ( relPos ) != 'f' ) {
-				continue;
-			}
-			Cell *c = getCell(pos);
-			Tile *sc = getTile(toTileCoords(pos));
-			//we change height if pos is inside world, if its free or ocupied by the currenty building
-			if (isInside(pos) && sc->getObject() == NULL
-			&& (c->getUnit(Zone::LAND) == NULL || c->getUnit(Zone::LAND) == unit)) {
-				sc->setHeight(refHeight);
-			}
-		}
-	}
-}
-*/
 //compute normals
 void Map::computeNormals(){  
 	//compute center normals

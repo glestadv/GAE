@@ -546,10 +546,9 @@ void UnitUpdater::updateBuild(Unit *unit) {
 		// if arrived destination
 		assert(command->getUnitType() != NULL);
 		const int &buildingSize = builtUnitType->getSize();
+		Field field = dominantField(builtUnitType->getFields());
 
-		Field f = dominantField(builtUnitType->getFields());
-
-		if (map->canOccupy(command->getPos(), f, builtUnitType)) {
+		if (map->canOccupy(command->getPos(), field, builtUnitType)) {
 			if (!verifySubfaction(unit, builtUnitType)) {
 				return;
 			}
@@ -579,7 +578,11 @@ void UnitUpdater::updateBuild(Unit *unit) {
 			builtUnit->setCurrSkill(SkillClass::BE_BUILT);
 			unit->setCurrSkill(bct->getBuildSkillType());
 			unit->setTarget(builtUnit, true, true);
-			map->prepareTerrain(builtUnit);
+
+			const Tile *const &refTile = map->getTile(Map::toTileCoords(builtUnit->getCenteredPos()));
+			if (field == Field::LAND || (field == Field::AMPHIBIOUS && !map->getSubmerged(refTile))) {
+				map->prepareTerrain(builtUnit);
+			}
 			command->setUnit(builtUnit);
 			unit->getFaction()->checkAdvanceSubfaction(builtUnit->getType(), false);
 
@@ -592,7 +595,7 @@ void UnitUpdater::updateBuild(Unit *unit) {
 				SoundRenderer::getInstance().playFx(bct->getStartSound(), unit->getCurrVector(), gameCamera->getPos());
 			}
 		} else {
-			// there are no free cells
+			// something in the way
 			vector<Unit *>occupants;
 			map->getOccupants(occupants, command->getPos(), buildingSize, Zone::LAND);
 

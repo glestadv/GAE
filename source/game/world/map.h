@@ -288,12 +288,9 @@ public:
 	}
 
 	//unit placement
-//	bool aproxCanMove(const Unit *unit, const Vec2i &pos1, const Vec2i &pos2) const;
-	//bool canMove(const Unit *unit, const Vec2i &pos1, const Vec2i &pos2) const;
     void putUnitCells(Unit *unit, const Vec2i &pos);
 	void clearUnitCells(Unit *unit, const Vec2i &pos);
-	void evict(Unit *unit, const Vec2i &pos, vector<Unit*> &evicted);
-
+	
 	//misc
 	bool isNextTo(const Vec2i &pos, const Unit *unit) const;
 	void clampPos(Vec2i &pos) const;
@@ -301,7 +298,6 @@ public:
 	void prepareTerrain(const Unit *unit);
 	void flatternTerrain(const Unit *unit);
 
-	//void flattenTerrain(const Unit *unit);
 	void computeNormals();
 	void computeInterpolatedHeights();
 

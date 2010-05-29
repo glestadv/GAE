@@ -1497,20 +1497,6 @@ void Renderer::renderUnits(){
 
 			//translate
 			Vec3f currVec= unit->getCurrVectorFlat();
-			
-			//TODO: floating units should maintain their 'y' coord properly...
-			// Quick fix: float boats
-			const Field f = unit->getCurrField ();
-			const Map *map = world->getMap ();
-			if ( f == Field::AMPHIBIOUS ) {
-				SurfaceType st = map->getCell(unit->getPos())->getType();
-				if ( st == SurfaceType::DEEP_WATER || st == SurfaceType::FORDABLE ) {
-					currVec.y = map->getWaterLevel ();
-				}
-			}
-			if ( f == Field::DEEP_WATER || f == Field::ANY_WATER ) {
-				currVec.y = map->getWaterLevel ();
-			}
 
 			// let dead units start sinking before they go away
 			if(framesUntilDead <= 200 && !ut->isOfClass(UnitClass::BUILDING)) {
@@ -1592,15 +1578,14 @@ void Renderer::renderSelectionEffects(){
 		const Unit *unit= selection->getUnit(i);
 
 		//translate
-		Vec3f currVec= unit->getCurrVectorFlat();
-		currVec.y+= 0.3f;
+		Vec3f currVec = unit->getCurrVectorFlat();
+		currVec.y += 0.3f;
 
-		//selection circle
-		if(world->getThisFactionIndex()==unit->getFactionIndex()){
-			glColor4f(0, unit->getHpRatio(), 0, 0.3f);
-		}
-		else{
-			glColor4f(unit->getHpRatio(), 0, 0, 0.3f);
+		// selection circle colour
+		if (world->getThisFactionIndex()==unit->getFactionIndex()) {
+			glColor4f(0.f, unit->getHpRatio(), 0.f, 0.3f);
+		} else {
+			glColor4f(unit->getHpRatio(), 0.f, 0.f, 0.3f);
 		}
 		renderSelectionCircle(currVec, unit->getType()->getSize(), selectionCircleRadius);
 

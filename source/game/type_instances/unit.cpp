@@ -1435,13 +1435,23 @@ void Unit::effectExpired(Effect *e){
   * @return the height this unit 'stands' at
   */
 inline float Unit::computeHeight(const Vec2i &pos) const {
-	float height = map->getCell(pos)->getHeight();
-
-	if (currField == Field::AIR) {
-		height += World::airHeight;
+	const Cell *const &cell = map->getCell(pos);
+	switch (currField) {
+		case Field::LAND:
+			return cell->getHeight();
+		case Field::AIR:
+			return cell->getHeight() + World::airHeight;
+		case Field::AMPHIBIOUS:
+			if (!cell->isSubmerged()) {
+				return cell->getHeight();
+			}
+			// else on water, fall through
+		case Field::ANY_WATER:
+		case Field::DEEP_WATER:
+			return map->getWaterLevel();
+		default:
+			throw runtime_error("Unhandled Field in Unit::computeHeight()");
 	}
-
-	return height;
 }
 
 /** updates target information, (targetPos, targetField & tagetVec) and resets targetRotation 
