@@ -1420,6 +1420,7 @@ void UnitUpdater::startAttackSystems(Unit *unit, const AttackSkillType *ast) {
 // Apply effects to a specific location, with or without splash
 void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes,
 				const Vec2i &targetPos, Field targetField, int splashRadius) {
+	EFFECT_LOG( __FUNCTION__ << ", in " << __FILE__ << ":" << __LINE__ );
 
 	Unit *target;
 
@@ -1457,6 +1458,7 @@ void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes,
 
 //apply effects to a specific target
 void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes, Unit *target, float distance) {
+	EFFECT_LOG( __FUNCTION__ << ", in " << __FILE__ << ":" << __LINE__ );
 	//apply effects
 	for (EffectTypes::const_iterator i = effectTypes.begin();
 			i != effectTypes.end(); i++) {
@@ -1484,11 +1486,19 @@ void UnitUpdater::applyEffects(Unit *source, const EffectTypes &effectTypes, Uni
 			float strength = (*i)->isScaleSplashStrength() ? 1.0f / (float)(distance + 1) : 1.0f;
 			Effect *primaryEffect = new Effect((*i), source, NULL, strength, target, world->getTechTree());
 
+			EFFECT_LOG( "Adding primary effect " << primaryEffect->getType()->getName() 
+				<< " with multiplier " << strength << " to unit "
+				<< target->getId() << ":" << target->getType()->getName()
+			);
 			target->add(primaryEffect);
 
-			for (EffectTypes::const_iterator j = (*i)->getRecourse().begin();
-					j != (*i)->getRecourse().end(); j++) {
-				source->add(new Effect((*j), NULL, primaryEffect, strength, source, world->getTechTree()));
+			foreach_const (EffectTypes, j, (*i)->getRecourse()) {
+				Effect *recourseEffect = new Effect((*j), NULL, primaryEffect, strength, source, world->getTechTree());
+				EFFECT_LOG( "Adding recourse effect " << primaryEffect->getType()->getName() 
+					<< " with multiplier " << strength << " to unit "
+					<< source->getId() << ":" << source->getType()->getName()
+				);
+				source->add(recourseEffect);
 			}
 		}
 	}

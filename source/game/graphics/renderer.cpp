@@ -544,7 +544,7 @@ void Renderer::renderMouse3d(){
 			const Selection::UnitContainer &units = gui->getSelection()->getUnits();
 
 			//selection building emplacement
-			float offset = building->getSize() / 2.f - 0.5f;
+			float offset = building->getSize() / 2.f;
 
 			Field buildField = dominantField(building->getFields());
 

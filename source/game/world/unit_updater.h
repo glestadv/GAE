@@ -30,6 +30,8 @@ using Shared::Util::Random;
 #	define COMMAND_UPDATE_LOG(x)
 #endif
 
+#define EFFECT_LOG(x) GAME_LOG(x)
+
 namespace Glest{ namespace Game{
 
 class Unit;

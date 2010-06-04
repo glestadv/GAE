@@ -136,8 +136,10 @@ Effects::~Effects() {
 // ============================ misc =============================
 
 void Effects::add(Effect *e){
+	EFFECT_LOG( __FUNCTION__ );
 	EffectStacking es = e->getType()->getStacking();
 	if (es == EffectStacking::STACK) {
+		EFFECT_LOG( "Stacking Effect." );
 		push_back(e);
 		dirty = true;
 		return;
@@ -151,11 +153,13 @@ void Effects::add(Effect *e){
 					if((*i)->getStrength() < e->getStrength()) {
 						(*i)->setStrength(e->getStrength());
 					}
+					EFFECT_LOG( "Extending existing Effect of same type. Effect deleted." );
 					delete e;
 					dirty = true;
 					return;
 
 				case EffectStacking::OVERWRITE:
+					EFFECT_LOG( "Overwriting existing Effect of same type. Old effect deleted." );
 					delete *i;
 					erase(i);
 					push_back(e);
@@ -163,6 +167,7 @@ void Effects::add(Effect *e){
 					return;
 
 				case EffectStacking::REJECT:
+					EFFECT_LOG( "Rejecting new effect due to existing Effect of same type. Effect deleted." );
 					delete e;
 					return;
 
@@ -172,6 +177,7 @@ void Effects::add(Effect *e){
 		}
 	}
 	// previous effect wasn't found, add it as new
+	EFFECT_LOG( "New effect added." );
 	push_back(e);
 	dirty = true;
 }

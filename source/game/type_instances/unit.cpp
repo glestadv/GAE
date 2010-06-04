@@ -1375,23 +1375,28 @@ bool Unit::morph(const MorphCommandType *mct) {
  * @returns true if this effect had an immediate regen/degen that killed the unit.
  */
 bool Unit::add(Effect *e) {
+	EFFECT_LOG( __FUNCTION__ );
 	if(!isAlive() && !e->getType()->isEffectsNonLiving()){
 		delete e;
+		EFFECT_LOG( "Unit dead and effect is not effectNonLiving, deleting effect." );
 		return false;
 	}
 
 	if(e->getType()->isTickImmediately()) {
+		EFFECT_LOG( "Effect is tick immediate." );
 		if(doRegen(e->getType()->getHpRegeneration(), e->getType()->getEpRegeneration())) {
+			EFFECT_LOG( "Effect degen killed unit, deleting effect." );
 			delete e;
 			return true;
 		}
 		if(e->tick()) {
 			// single tick, immediate effect
+			EFFECT_LOG( "Effect applied, single tick, deleting effect." );
 			delete e;
 			return false;
 		}
 	}
-
+	EFFECT_LOG( "adding Effect to unit." );
 	effects.add(e);
 
 	if(effects.isDirty()) {
