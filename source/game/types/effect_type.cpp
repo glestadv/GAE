@@ -271,7 +271,9 @@ void EffectType::doChecksum(Checksum &checksum) const {
 	foreach_enum (EffectTypeFlag, f) {
 		checksum.add<bool>(flags.get(f));
 	}
-	checksum.addString(damageType->getName());
+	if (damageType) {
+		checksum.addString(damageType->getName());
+	}
 	checksum.add<bool>(display);
 }
 
