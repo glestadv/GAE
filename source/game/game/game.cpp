@@ -931,7 +931,9 @@ void Game::checkWinnerScripted(){
 bool Game::hasBuilding(const Faction *faction){
 	for(int i=0; i<faction->getUnitCount(); ++i){
 		Unit *unit = faction->getUnit(i);
-		if(unit->getType()->hasSkillClass(SkillClass::BE_BUILT) && unit->isAlive()){
+		const UnitType* const &type = unit->getType();
+		if (type->hasSkillClass(SkillClass::BE_BUILT) && unit->isAlive()
+		&& !type->getProperty(Property::WALL)) {
 			return true;
 		}
 	}

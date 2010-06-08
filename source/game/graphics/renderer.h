@@ -185,6 +185,7 @@ public:
 	int getTriangleCount() const	{return triangleCount;}
 	int getPointCount() const		{return pointCount;}
 
+	const SceneCuller& getCuller() const { return culler; }
 	void setFarClip(float clip) { perspFarPlane = clip; }
 
 	//misc
