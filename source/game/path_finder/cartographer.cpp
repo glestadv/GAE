@@ -190,7 +190,7 @@ void Cartographer::fixupResourceMaps(const ResourceType *rt, const Vec2i &pos) {
 			Vec2i tl = pos + OrdinalOffsets[OrdinalDir::NORTH_WEST] * size;
 			Vec2i br(tl.x + size + 2, tl.y + size + 2);
 
-			Util::PerimeterIterator iter(tl, br);
+			Util::RectIterator iter(tl, br);
 			while (iter.more()) {
 				Vec2i cur = iter.next();
 				if (map.isInside(cur) && masterMap->canOccupy(cur, size, field)

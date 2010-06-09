@@ -116,7 +116,7 @@ Vec2i PerimeterIterator::next() {
 			}
 			break;
 		case 3:
-			if (cy == ny) {
+			if (cy == ny + 1) {
 				state = 4;
 			} else {
 				--cy;

@@ -359,8 +359,8 @@ void Map::calcAvgAltitude() {
   * @param rt Resource type of interest
   * @param resourcePos stores position of the resource if found */
 bool Map::isResourceNear(const Vec2i &pos, int size, const ResourceType *rt, Vec2i &resourcePos) const {
-	Vec2i p1 = pos + Vec2i(-size - 1);
-	Vec2i p2 = pos + Vec2i(size + 2);
+	Vec2i p1 = pos + Vec2i(-1);
+	Vec2i p2 = pos + Vec2i(size);
 	Util::PerimeterIterator iter(p1, p2);
 	while (iter.more()) {
 		Vec2i cur = iter.next();

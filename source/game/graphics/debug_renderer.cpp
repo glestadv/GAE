@@ -250,6 +250,7 @@ void DebugRenderer::commandLine(string &line) {
 					resourceMapOverlay = false;
 				}
 				resourceMapOverlay = true;
+				rmOverlay.rt = rt;
 			}
 		}
 	} else if (key == "StoreMap") {
