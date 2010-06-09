@@ -141,14 +141,8 @@ RoutePlanner::~RoutePlanner() {
   */
 bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 	assert(world->getMap()->isInside(pos2));
-	//assert(unit->getPos().dist(pos2) < 1.5);
-	if (unit->getPos().dist(pos2) > 1.5) {
-		//TODO: figure out why we need this!  because blocked paths are popping...
-		cout << "Unit is at " << unit->getPos() << " next step is " << pos2  
-			 << " dist is " << unit->getPos().dist(pos2) << endl;
-		cout.flush();
-		return false;
-	}
+	assert(unit->getPos().dist(pos2) < 1.5);
+
 	const Vec2i &pos1 = unit->getPos();
 	const int &size = unit->getSize();
 	const Field &field = unit->getCurrField();
@@ -800,14 +794,12 @@ TravelState RoutePlanner::doFullLowLevelAStar(Unit *unit, const Vec2i &dest) {
 	return TravelState::BLOCKED;
 }
 
-#endif
+#endif // _GAE_DEBUG_EDITION_
 
 // ==================== PRIVATE ====================
 
 // return finalPos if free, else a nearest free pos within maxFreeSearchRadius
 // cells, or unit's current position if none found
-//
-// Move me to Cartographer, as findFreePos(), rewrite using a Dijkstra Search
 //
 /** find nearest free position a unit can occupy 
   * @param unit the unit in question
@@ -824,38 +816,28 @@ Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPo
 	int teamIndex= unit->getTeam();
 
 	//if finalPos is free return it
-	if ( world->getMap()->areAproxFreeCells(finalPos, size, field, teamIndex) ) {
+	if (world->getMap()->areAproxFreeCells(finalPos, size, field, teamIndex)) {
 		return finalPos;
 	}
 
 	//find nearest pos
-
-	// Local annotate target if visible
-	// set 
-
-	// REPLACE ME!
-	//
-	// Use the new super-dooper SearchEngine, do a Dijkstra search from target, 
-	// with a GoalFunc that returns true if the cell is unoccupid (and clearnce > unit.size).
-	// Now that's efficient... ;-)
-
 	Vec2i nearestPos = unitPos;
 	float nearestDist = unitPos.dist(finalPos);
-	for ( int i = -maxFreeSearchRadius; i <= maxFreeSearchRadius; ++i ) {
-		for ( int j = -maxFreeSearchRadius; j <= maxFreeSearchRadius; ++j ) {
+	for (int i = -maxFreeSearchRadius; i <= maxFreeSearchRadius; ++i) {
+		for (int j = -maxFreeSearchRadius; j <= maxFreeSearchRadius; ++j) {
 			Vec2i currPos = finalPos + Vec2i(i, j);
-			if ( world->getMap()->areAproxFreeCells(currPos, size, field, teamIndex) ){
+			if (world->getMap()->areAproxFreeCells(currPos, size, field, teamIndex)) {
 				float dist = currPos.dist(finalPos);
 
 				//if nearer from finalPos
-				if ( dist < nearestDist ) {
+				if (dist < nearestDist) {
 					nearestPos = currPos;
 					nearestDist = dist;
-				}
 				//if the distance is the same compare distance to unit
-				else if ( dist == nearestDist ) {
-					if ( currPos.dist(unitPos) < nearestPos.dist(unitPos) )
+				} else if (dist == nearestDist) {
+					if (currPos.dist(unitPos) < nearestPos.dist(unitPos)) {
 						nearestPos = currPos;
+					}
 				}
 			}
 		}

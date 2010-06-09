@@ -115,7 +115,7 @@ Cartographer::Cartographer(World *world)
 		}
 	}
 
-	Rectangle rect(0, 0, cellMap->getW() - 2, cellMap->getH() - 2);
+	Rectangle rect(0, 0, cellMap->getW() - 3, cellMap->getH() - 3);
 	foreach (set<ResourceMapKey>, it, resourceMapKeys) {
 		PatchMap<1> *pMap = new PatchMap<1>(rect, 0);
 		initResourceMap(*it, pMap);

@@ -737,14 +737,16 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 	Resource *res = tile->getResource();
 	if (!res) { // reset command pos, but not Unit::targetPos
 		if (!(res = searchForResource(unit, hct))) {
-			unit->finishCommand();
-			unit->setCurrSkill(SkillClass::STOP);
-			return;
+			if (!unit->getLoadCount()) {
+				unit->finishCommand();
+				unit->setCurrSkill(SkillClass::STOP);
+				return;
+			}
 		}
 	}
 
 	if (unit->getCurrSkill()->getClass() != SkillClass::HARVEST) { // if not working
-		if  (!unit->getLoadCount() || (unit->getLoadType() == res->getType()
+		if  (!unit->getLoadCount() || (res && unit->getLoadType() == res->getType()
 		&& unit->getLoadCount() < hct->getMaxLoad() / 2)) {
 			// if current load is correct resource type and not more than half loaded, go for resources
 			if (res && hct->canHarvest(res->getType())) {
@@ -767,50 +769,52 @@ void UnitUpdater::updateHarvest(Unit *unit) {
 						unit->setCurrSkill(SkillClass::STOP);
 						break;
 				}
+				return;
 			} else { // if can't harvest, search for another resource
 				unit->setCurrSkill(SkillClass::STOP);
 				if (!searchForResource(unit, hct)) {
-					unit->finishCommand();
-					//FIXME don't just stand around at the store!!
-					//insert move command here.
+					if (!unit->getLoadCount()) {
+						unit->finishCommand();
+						return;
+					}
 				}
 			}
-		} else { // if load is wrong type, or more than half loaded, return to store
-			Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
-			if (store) {
-				switch (routePlanner->findPathToStore(unit, store)) {
-					case TravelState::MOVING:
-						unit->setCurrSkill(getMoveLoadedSkill(unit));
-						unit->face(unit->getNextPos());
-						return;
-					case TravelState::BLOCKED:
-						unit->setCurrSkill(getStopLoadedSkill(unit));
-						return;
-					case TravelState::IMPOSSIBLE:
-						unit->setCurrSkill(SkillClass::STOP);
-						unit->cancelCurrCommand();
-						return;
-					case TravelState::ARRIVED: 
-						break;
-				}
-				// update resources
-				int resourceAmount = unit->getLoadCount();
-				// Just do this for all players ???
-				if (unit->getFaction()->getCpuControl()) {
-					const float &mult = gameSettings.getResourceMultilpier(unit->getFactionIndex());
-					resourceAmount = int(resourceAmount * mult);
-				}
-				unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
-				world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
-				ScriptManager::onResourceHarvested();
+		} 
+		// if load is wrong type, or more than half loaded, or no more resource to harvest, return to store
+		Unit *store = world->nearestStore(unit->getPos(), unit->getFaction()->getIndex(), unit->getLoadType());
+		if (store) {
+			switch (routePlanner->findPathToStore(unit, store)) {
+				case TravelState::MOVING:
+					unit->setCurrSkill(getMoveLoadedSkill(unit));
+					unit->face(unit->getNextPos());
+					return;
+				case TravelState::BLOCKED:
+					unit->setCurrSkill(getStopLoadedSkill(unit));
+					return;
+				case TravelState::IMPOSSIBLE:
+					unit->setCurrSkill(SkillClass::STOP);
+					unit->cancelCurrCommand();
+					return;
+				case TravelState::ARRIVED: 
+					break;
+			}
+			// update resources
+			int resourceAmount = unit->getLoadCount();
+			// Just do this for all players ???
+			if (unit->getFaction()->getCpuControl()) {
+				const float &mult = gameSettings.getResourceMultilpier(unit->getFactionIndex());
+				resourceAmount = int(resourceAmount * mult);
+			}
+			unit->getFaction()->incResourceAmount(unit->getLoadType(), resourceAmount);
+			world->getStats().harvest(unit->getFactionIndex(), resourceAmount);
+			ScriptManager::onResourceHarvested();
 
-				// if next to a store unload resources
-				unit->getPath()->clear();
-				unit->setCurrSkill(SkillClass::STOP);
-				unit->setLoadCount(0);
-			} else { // no store found, give up
-				unit->finishCommand();
-			}
+			// if next to a store unload resources
+			unit->getPath()->clear();
+			unit->setCurrSkill(SkillClass::STOP);
+			unit->setLoadCount(0);
+		} else { // no store found, give up
+			unit->finishCommand();
 		}
 	} else { // if working
 		res = map->getTile(Map::toTileCoords(unit->getTargetPos()))->getResource();

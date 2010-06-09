@@ -29,7 +29,8 @@
 #include "selection.h"
 #include "program.h"
 #include "script_manager.h"
-
+#include "cartographer.h"
+#include "annotated_map.h"
 #include "leak_dumper.h"
 
 //#ifndef M_PI
@@ -254,13 +255,12 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 		}
 
 		//read objects and resources
-		for (int y = 0; y < h; y += cellScale) {
-			for (int x = 0; x < w; x += cellScale) {
-
+		for (int y = 0; y < tileH; ++y) {
+			for (int x = 0; x < tileW; ++x) {
 				int8 objNumber;
 				fread(&objNumber, sizeof(int8), 1, f);
-				Tile *sc = getTile(toTileCoords(Vec2i(x, y)));
-				if (objNumber == 0) {
+				Tile *sc = getTile(Vec2i(x, y));
+				if (objNumber == 0 || x == tileW - 1 || y == tileH - 1) {
 					sc->setObject(NULL);
 				} else if (objNumber <= Tileset::objCount) {
 					Object *o = new Object(tileset->getObjectType(objNumber - 1), sc->getVertex());
@@ -268,13 +268,13 @@ void Map::load(const string &path, TechTree *techTree, Tileset *tileset) {
 					for (int i = 0; i < techTree->getResourceTypeCount(); ++i) {
 						const ResourceType *rt = techTree->getResourceType(i);
 						if (rt->getClass() == ResourceClass::TILESET && rt->getTilesetObject() == objNumber) {
-							o->setResource(rt, Vec2i(x, y));
+							o->setResource(rt, Vec2i(x, y) * cellScale);
 						}
 					}
 				} else {
 					const ResourceType *rt = techTree->getTechResourceType(objNumber - Tileset::objCount) ;
 					Object *o = new Object(NULL, sc->getVertex());
-					o->setResource(rt, Vec2i(x, y));
+					o->setResource(rt, Vec2i(x, y) * cellScale);
 					sc->setObject(o);
 				}
 			}
@@ -391,19 +391,7 @@ bool Map::isFreeCell(const Vec2i &pos, Field field) const {
 		return false;
 	if ( field != Field::AIR && !getTile(toTileCoords(pos))->isFree() )
 		return false;
-	// leave ^^^ that
-	// replace all the rest with lookups into the map metrics...
-	//return masterMap->canOccupy ( pos, 1, field );
-	// placeUnit() needs to use this... and the metrics aren't constructed at that point...
-	if ( field == Field::LAND && getCell(pos)->isDeepSubmerged() )
-		return false;
-	if ( field == Field::LAND && (pos.x > getW() - 4 || pos.y > getH() - 4) )
-		return false;
-	if ( field == Field::ANY_WATER && !getCell(pos)->isSubmerged() )
-		return false;
-	if ( field == Field::DEEP_WATER && !getCell(pos)->isDeepSubmerged() )
-		return false;
-	return true;
+	return theCartographer.getMasterMap()->canOccupy(pos, 1, field);
 }
 /*
 bool Map::isFreeCell(const Vec2i &pos, Zone field) const {
