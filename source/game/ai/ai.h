@@ -132,7 +132,6 @@ private:
 	typedef map<const UnitType *, int> UnitTypeCount;
 	typedef vector<const UnitType*> UnitTypes;
 	typedef vector<const UpgradeType*> UpgradeTypes;
-	typedef vector<Unit *> repairers;
 
 private:
 	AiInterface *aiInterface;

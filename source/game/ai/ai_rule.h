@@ -21,7 +21,7 @@ using std::string;
 
 using Shared::Math::Vec2i;
 
-namespace Glest{ namespace Game{
+namespace Glest{ namespace Game {
 
 class Ai;
 class Unit;
@@ -30,6 +30,7 @@ class ProduceTask;
 class BuildTask;
 class UpgradeTask;
 class ResourceType;
+class CommandType;
 
 // =====================================================
 //	class AiRule
@@ -225,6 +226,10 @@ public:
 
 class AiRuleProduce: public AiRule{
 private:
+	typedef map<const UnitType*, const CommandType*> CmdByUtMap;
+	typedef vector<const Unit *> UnitList;
+
+private:
 	const ProduceTask *produceTask;
 
 public:
@@ -239,6 +244,10 @@ public:
 private:
 	void produceGeneric(const ProduceTask *pt);
 	void produceSpecific(const ProduceTask *pt);
+
+	void findProducerTypes(const UnitType *produce, CmdByUtMap &cmdMap);
+	void findProducerTypes(CmdByUtMap &cmdMap);
+	void findLowestCommandQueue(UnitList &list, const Unit **best);
 };
 // =====================================================
 //	class AiRuleBuild

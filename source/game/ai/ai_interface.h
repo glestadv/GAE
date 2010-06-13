@@ -62,6 +62,8 @@ public:
 	CommandResult giveCommand(int unitIndex, const CommandType *commandType, const Vec2i &pos);
 	CommandResult giveCommand(int unitIndex, const CommandType *commandType, Unit *u= NULL);
 
+	CommandResult giveCommand(const Unit *unit, const CommandType *commandType);
+
 	//get data
 	const ControlType getControlType();
 	int getMapMaxPlayers();
@@ -84,6 +86,8 @@ public:
 	bool checkCosts(const ProducibleType *pt);
 	bool areFreeCells(const Vec2i &pos, int size, Field field);
 	bool isUltra() const {return world->getFaction(factionIndex)->getCpuUltraControl();}
+
+	Faction* ignoreInterface();
 
 private:
 	string getLogFilename() const	{return "ai"+intToStr(factionIndex)+".log";}

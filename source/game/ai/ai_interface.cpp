@@ -107,6 +107,10 @@ CommandResult AiInterface::giveCommand(int unitIndex, const CommandType *command
 	return world->getFaction(factionIndex)->getUnit(unitIndex)->giveCommand(new Command(commandType, CommandFlags(), u));
 }
 
+CommandResult AiInterface::giveCommand(const Unit *unit, const CommandType *commandType) {
+	return const_cast<Unit*>(unit)->giveCommand(new Command(commandType, CommandFlags()));
+}
+
 // ==================== get data ====================
 
 int AiInterface::getMapMaxPlayers(){
@@ -123,6 +127,10 @@ Vec2i AiInterface::getStartLocation(int loactionIndex){
 
 int AiInterface::getFactionCount(){
 	return world->getFactionCount();
+}
+
+Faction* AiInterface::ignoreInterface() {
+	return world->getFaction(factionIndex);
 }
 
 int AiInterface::getMyUnitCount() const{
