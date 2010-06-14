@@ -145,18 +145,22 @@ int AiInterface::getMyUpgradeCount() const{
 	return world->getFaction(factionIndex)->getUpgradeManager()->getUpgradeCount();
 }
 
-int AiInterface::onSightUnitCount(){
-	int count=0;
+void AiInterface::getUnitsSeen(UnitList &list) {
+	assert(list.empty());
 	Map *map= world->getMap();
-	for(int i=0; i<world->getFactionCount(); ++i){
-		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			Tile *sc= map->getTile(Map::toTileCoords(world->getFaction(i)->getUnit(j)->getPos()));
-			if(sc->isVisible(teamIndex)){
-				count++;
+	for (int i=0; i < world->getFactionCount(); ++i) {
+		Faction *faction = world->getFaction(i);
+		if (factionIndex == i || faction->getTeam() == teamIndex) { 
+			// don't care about our own or allies units
+			continue;
+		}
+		foreach_const (Units, it, faction->getUnits()) {
+			Tile *tile= map->getTile(Map::toTileCoords((*it)->getPos()));
+			if ((*it)->isAlive() && tile->isVisible(teamIndex)) {
+				list.push_back(*it);
 			}
 		}
 	}
-	return count;
 }
 
 const Resource *AiInterface::getResource(const ResourceType *rt){
@@ -165,27 +169,6 @@ const Resource *AiInterface::getResource(const ResourceType *rt){
 
 const Unit *AiInterface::getMyUnit(int unitIndex){
 	return world->getFaction(factionIndex)->getUnit(unitIndex);
-}
-
-const Unit *AiInterface::getOnSightUnit(int unitIndex){
-
-	int count=0;
-	Map *map= world->getMap();
-
-	for(int i=0; i<world->getFactionCount(); ++i){
-		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			Unit *u= world->getFaction(i)->getUnit(j);
-			if(map->getTile(Map::toTileCoords(u->getPos()))->isVisible(teamIndex)){
-				if(count==unitIndex){
-					return u;
-				}
-				else{
-					count ++;
-				}
-			}
-		}
-	}
-	return NULL;
 }
 
 const FactionType * AiInterface::getMyFactionType(){

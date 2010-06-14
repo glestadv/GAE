@@ -28,7 +28,7 @@ namespace Glest{ namespace Game{
 ///	The AI will interact with the game through this interface
 // =====================================================
 
-class AiInterface{
+class AiInterface {
 private:
 	World *world;
 	Commander *commander;
@@ -72,10 +72,9 @@ public:
 	int getFactionCount();
 	int getMyUnitCount() const;
 	int getMyUpgradeCount() const;
-	int onSightUnitCount();
 	const Resource *getResource(const ResourceType *rt);
 	const Unit *getMyUnit(int unitIndex);
-	const Unit *getOnSightUnit(int unitIndex);
+	void getUnitsSeen(UnitList &list);
 	const FactionType *getMyFactionType();
 	const TechTree *getTechTree();
 	bool getNearestSightedResource(const ResourceType *rt, const Vec2i &pos, Vec2i &resultPos);
