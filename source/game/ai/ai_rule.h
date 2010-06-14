@@ -255,6 +255,10 @@ private:
 
 class AiRuleBuild: public AiRule{
 private:
+	typedef map<const UnitType *, const CommandType*> CmdByUtMap;
+	typedef vector<const UnitType *> UnitTypeList;
+	typedef vector<const Unit*> UnitList;
+private:
 	const BuildTask *buildTask;
 
 public:
@@ -274,6 +278,9 @@ private:
 	bool isDefensive(const UnitType *building);
 	bool isResourceProducer(const UnitType *building);
 	bool isWarriorProducer(const UnitType *building);
+
+	void findBuildingTypes(UnitTypeList &list, const ResourceType *avoidRes);
+	void findBuilderTypes(const UnitType *buildingType, CmdByUtMap &cmdMap);
 };
 
 // =====================================================

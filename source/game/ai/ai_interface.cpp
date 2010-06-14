@@ -111,6 +111,10 @@ CommandResult AiInterface::giveCommand(const Unit *unit, const CommandType *comm
 	return const_cast<Unit*>(unit)->giveCommand(new Command(commandType, CommandFlags()));
 }
 
+CommandResult AiInterface::giveCommand(const Unit *unit, const CommandType *commandType, const Vec2i &pos, const UnitType* unitType) {
+	return const_cast<Unit*>(unit)->giveCommand(new Command(commandType, CommandFlags(), pos, unitType));
+}
+
 // ==================== get data ====================
 
 int AiInterface::getMapMaxPlayers(){

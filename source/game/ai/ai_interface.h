@@ -63,7 +63,7 @@ public:
 	CommandResult giveCommand(int unitIndex, const CommandType *commandType, Unit *u= NULL);
 
 	CommandResult giveCommand(const Unit *unit, const CommandType *commandType);
-
+	CommandResult giveCommand(const Unit *unit, const CommandType *commandType, const Vec2i &pos, const UnitType* unitType);
 	//get data
 	const ControlType getControlType();
 	int getMapMaxPlayers();
