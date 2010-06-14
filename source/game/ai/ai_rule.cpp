@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <limits>
 
 #include "ai_rule.h"
 #include "ai.h"
@@ -21,7 +22,7 @@
 
 #include "leak_dumper.h"
 
-
+using std::numeric_limits;
 using Shared::Math::Vec2i;
 
 namespace Glest { namespace Game {

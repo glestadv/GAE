@@ -30,9 +30,9 @@ const string gaeMailString= "glestae-devel@lists.sourceforge.net";
 const string glestVersionString= "v3.2.2";
 
 #if _GAE_DEBUG_EDITION_
-	const string gaeVersionString= "v0.2.13_DE";
+	const string gaeVersionString= "v0.2.13a_DE";
 #else
-	const string gaeVersionString= "v0.2.13";
+	const string gaeVersionString= "v0.2.13a";
 #endif
 
 string getCrashDumpFileName(){
