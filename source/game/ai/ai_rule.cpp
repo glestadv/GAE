@@ -672,7 +672,7 @@ void AiRuleBuild::findBuildingTypes(UnitTypeList &utList, const ResourceType *rt
 					if (aiInterface->reqsOk(bct) && aiInterface->reqsOk(buildingType)) {
 						//if any building, or produces resource
 						const Resource *cost= buildingType->getCost(rt);
-						if (rt || (cost && cost->getAmount() < 0)) {
+						if (!rt || (cost && cost->getAmount() < 0)) {
 							utList.push_back(buildingType);
 						}
 					}
