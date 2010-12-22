@@ -63,6 +63,9 @@ World::World(SimulationInterface *m_simInterface)
 	Config &config = Config::getInstance();
 
 	GameSettings &gs = m_simInterface->getGameSettings();
+	string techName = formatString(basename(gs.getTechPath()));
+	g_program.setTechTitle(techName);
+	
 	fogOfWar = gs.getFogOfWar();
 	fogOfWarSmoothing = config.getRenderFogOfWarSmoothing();
 	fogOfWarSmoothingFrameSkip = config.getRenderFogOfWarSmoothingFrameSkip();

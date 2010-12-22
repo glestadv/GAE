@@ -448,6 +448,14 @@ void Program::setUpdateFps(int updateFps) {
 	updateTimer.setFps(updateFps);
 }
 
+void Program::setTechTitle(const string &title) {
+	if (title.empty()) {
+		Window::setText("Glest Advanced Engine");
+	} else {
+		Window::setText(title + " - Glest Advanced Engine");
+	}
+}
+
 // ==================== PRIVATE ====================
 
 void Program::setDisplaySettings() {

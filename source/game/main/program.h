@@ -172,6 +172,7 @@ public:
 	void setMaxUpdateBacklog(int maxBacklog)	{updateTimer.setMaxBacklog(maxBacklog);}
 	void resetTimers(int updateFps);
 	void setUpdateFps(int updateFps);
+	void setTechTitle(const string &title);
 
 private:
 	void setDisplaySettings();

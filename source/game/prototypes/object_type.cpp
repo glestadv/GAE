@@ -13,6 +13,7 @@
 #include "object_type.h"
 
 #include "renderer.h"
+#include "world.h" // to get ModelFactory
 
 #include "leak_dumper.h"
 
@@ -31,8 +32,7 @@ void ObjectType::init(int modelCount, int objectClass, bool walkable){
 }
 
 void ObjectType::loadModel(const string &path){
-	Model *model= Renderer::getInstance().newModel(ResourceScope::GAME);
-	model->load(path, GameConstants::cellScale, 2);
+	Model *model = g_world.getModelFactory().getModel(path, GameConstants::cellScale, 2);
 	color= Vec3f(0.f);
 	if(model->getMeshCount()>0 && model->getMesh(0)->getTexture(0)!=NULL){
 		const Pixmap2D *p= model->getMesh(0)->getTexture(0)->getPixmap();
