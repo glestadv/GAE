@@ -814,7 +814,8 @@ void UserInterface::mouseDownDisplayUnitSkills(int posDisplay) {
 		const Unit *unit= selection.getFrontUnit();
 
 		if (selection.isUniform()) { // uniform selection
-			if (unit->getFaction()->reqsOk(m_display->getCommandType(posDisplay))) {
+			if (m_display->getCommandType(posDisplay)
+			&& unit->getFaction()->reqsOk(m_display->getCommandType(posDisplay))) {
 				activeCommandType = m_display->getCommandType(posDisplay);
 				activeCommandClass = activeCommandType->getClass();
 			} else {
