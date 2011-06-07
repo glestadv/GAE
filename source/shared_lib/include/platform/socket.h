@@ -156,9 +156,9 @@ public:
 
 	void setNoDelay();
 	void setBlock(bool block);
-	bool isReadable();
-	bool isWritable();
-	bool isConnected();
+	bool isReadable() const;
+	bool isWritable() const;
+	bool isConnected() const;
 
 	string getHostName() const;
 	string getIp() const;

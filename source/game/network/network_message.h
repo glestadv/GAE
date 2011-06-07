@@ -12,7 +12,6 @@
 #ifndef _GLEST_GAME_NETWORKMESSAGE_H_
 #define _GLEST_GAME_NETWORKMESSAGE_H_
 
-#include "socket.h"
 #include "game_constants.h"
 #include "network_types.h"
 #include "checksum.h"
@@ -20,7 +19,6 @@
 #include <map>
 
 using std::map;
-using Shared::Platform::Socket;
 using Shared::Platform::int8;
 using Shared::Platform::int16;
 using Shared::Util::Checksum;
@@ -46,19 +44,19 @@ struct MsgHeader {
 //	class Message
 // ==============================================================
 /** Abstract base class for network messages, requires concrete subclasses 
-  * to implement receive(Socket*)/send(Socket*), and provides send/receive methods
-  * for them to use to accomplish this. */
+  * to implement receive(NetworkConnection*)/send(NetworkConnection*)
+  */
 class Message {
 public:
 	virtual ~Message(){}
+
+	virtual MessageType getType() const = 0;
+	virtual unsigned int getSize() const = 0;
+
 	virtual bool receive(NetworkConnection* connection) = 0;
 	virtual void send(NetworkConnection* connection) const = 0;
 
-protected:
-	bool receive(NetworkConnection* connection, void* data, int dataSize);
-	bool peek(NetworkConnection* connection, void *data, int dataSize);
-	void send(NetworkConnection* connection, const void* data, int dataSize) const;
-	void send(Socket* socket, const void* data, int dataSize) const;
+	virtual void log() const;
 };
 
 // ==============================================================
@@ -88,6 +86,9 @@ public:
 	IntroMessage(const string &versionString, const string &pName, const string &hName, int playerIndex);
 	IntroMessage(RawMessage raw);
 
+	virtual MessageType getType() const		{return MessageType::INTRO;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
+
 	string getVersionString() const		{return data.versionString.getString();}
 	string getPlayerName() const		{return data.playerName.getString();}
 	string getHostName() const			{return data.hostName.getString();}
@@ -95,6 +96,7 @@ public:
 
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
+	virtual void log() const override;
 };
 
 // ==============================================================
@@ -118,6 +120,9 @@ public:
 	AiSeedSyncMessage(int count, int32 *seeds);
 	AiSeedSyncMessage(RawMessage raw);
 
+	virtual MessageType getType() const		{return MessageType::AI_SYNC;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
+
 	int getSeedCount() const { return data.seedCount; }
 	int32 getSeed(int i) const { return data.seeds[i]; }
 
@@ -136,6 +141,9 @@ private:
 public:
 	ReadyMessage();
 	ReadyMessage(RawMessage raw);
+
+	virtual MessageType getType() const		{return MessageType::READY;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
 
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
@@ -179,6 +187,9 @@ public:
 	LaunchMessage(const GameSettings *gameSettings);
 	LaunchMessage(RawMessage raw);
 
+	virtual MessageType getType() const		{return MessageType::LAUNCH;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
+
 	void buildGameSettings(GameSettings *gameSettings) const;
 
 	virtual bool receive(NetworkConnection* connection);
@@ -200,6 +211,9 @@ public:
 	DataSyncMessage(World &world);
 	~DataSyncMessage();
 
+	virtual MessageType getType() const		{return MessageType::DATA_SYNC;}
+	virtual unsigned int getSize() const	{return 0;}
+
 	int32 getChecksum(int i) { return m_data[i]; }
 
 	int32 getCmdTypeCount()	  const { return m_cmdTypeCount;   }
@@ -213,7 +227,12 @@ public:
 
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
+	virtual void log() const override {}
 };
+
+// ==============================================================
+//	class GameSpeedMessage
+// ==============================================================
 
 class GameSpeedMessage : public Message {
 private:
@@ -227,6 +246,9 @@ private:
 public:
 	GameSpeedMessage(int frame, GameSpeed setting);
 	GameSpeedMessage(RawMessage raw);
+
+	virtual MessageType getType() const		{return MessageType::GAME_SPEED;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
 
 	int getFrame() const { return data.frame; }
 	GameSpeed getSetting() const { return enum_cast<GameSpeed>(data.setting); }
@@ -259,6 +281,9 @@ private:
 public:
 	CommandListMessage(int32 frameCount= -1);
 	CommandListMessage(RawMessage raw);
+
+	virtual MessageType getType() const		{return MessageType::COMMAND_LIST;}
+	virtual unsigned int getSize() const;
 	
 	bool addCommand(const NetworkCommand* networkCommand);
 	void clear()									{data.commandCount = 0;}
@@ -268,6 +293,7 @@ public:
 
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
+	virtual void log() const override;
 };
 
 // ==============================================================
@@ -295,6 +321,9 @@ public:
 	TextMessage(const string &text, const string &sender, int teamIndex, int colourIndex);
 	TextMessage(RawMessage raw);
 
+	virtual MessageType getType() const		{return MessageType::TEXT;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
+
 	string getText() const		{return data.text.getString();}
 	string getSender() const	{return data.sender.getString();}
 	int getTeamIndex() const	{return data.teamIndex;}
@@ -302,6 +331,7 @@ public:
 
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
+	virtual void log() const;
 };
 
 // =====================================================
@@ -318,6 +348,9 @@ private:
 public:
 	QuitMessage();
 	QuitMessage(RawMessage raw);
+
+	virtual MessageType getType() const		{return MessageType::QUIT;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
 
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
@@ -355,8 +388,12 @@ public:
 	KeyFrame()		{ reset(); }
 	KeyFrame(RawMessage raw);
 
+	virtual MessageType getType() const { return MessageType::KEY_FRAME;}
+	virtual unsigned int getSize() const	{return 0;}
+
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
+	virtual void log() const override {}
 
 	void setFrameCount(int fc) { frame = fc; }
 	int getFrameCount() const { return frame; }
@@ -394,10 +431,14 @@ public:
 	SyncErrorMsg() {}
 	SyncErrorMsg(RawMessage raw);
 
+	virtual MessageType getType() const		{return MessageType::SYNC_ERROR;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
+
 	int getFrame() const { return data.frameCount; }
 
 	virtual bool receive(NetworkConnection* connection);
 	virtual void send(NetworkConnection* connection) const;
+	virtual void log() const override;
 };
 
 #endif

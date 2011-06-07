@@ -154,6 +154,9 @@ public:
 	SkillCycleTable(RawMessage raw);
     virtual ~SkillCycleTable();
 
+	virtual MessageType getType() const		{return MessageType::SKILL_CYCLE_TABLE;}
+	virtual unsigned int getSize() const	{return 0;}
+
 	void create(const TechTree *techTree);
 
 	const CycleInfo& lookUp(int skillId) const { return cycleTable[skillId]; }

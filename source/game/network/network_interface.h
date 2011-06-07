@@ -32,49 +32,6 @@ namespace Glest { namespace Net {
 WRAPPED_ENUM( NetworkState, LOBBY, GAME )
 
 // =====================================================
-//	class NetworkConnection
-// =====================================================
-
-class NetworkConnection {
-protected:
-	typedef deque<RawMessage> MessageQueue;
-	static const int readyWaitTimeout = 60000; // 60 sec
-
-private:
-	string remoteHostName;
-	string remotePlayerName;
-	string description;
-
-	// received but not processed messages
-	MessageQueue messageQueue;
-
-public:
-	virtual ~NetworkConnection() {}
-
-	virtual Socket* getSocket() = 0;
-	virtual const Socket* getSocket() const = 0;
-
-	string getIp() const				{return getSocket()->getIp();}
-	string getHostName() const			{return getSocket()->getHostName();}
-	string getRemoteHostName() const	{return remoteHostName;}
-	string getRemotePlayerName() const	{return remotePlayerName;}
-	string getDescription() const		{return description;}
-
-	void setRemoteNames(const string &hostName, const string &playerName);
-	int dataAvailable();
-	void send(const Message* networkMessage);
-
-	// message retrieval
-	void receiveMessages();
-	bool hasMessage()					{ return !messageQueue.empty(); }
-	RawMessage getNextMessage();
-	MessageType peekNextMsg() const;
-	void pushMessage(RawMessage raw)	{ messageQueue.push_back(raw); }
-
-	bool isConnected()					{ return getSocket() && getSocket()->isConnected(); }
-};
-
-// =====================================================
 //	class NetworkInterface
 //
 // Adds functions common to servers and clients
@@ -82,7 +39,7 @@ public:
 // =====================================================
 
 /** An abstract SimulationInterface for network games */
-class NetworkInterface: public NetworkConnection, public SimulationInterface {
+class NetworkInterface: public SimulationInterface {
 public:
 	typedef vector<NetworkCommand> Commands;
 
@@ -107,6 +64,7 @@ protected:
 
 	// misc
 	virtual string getStatus() const = 0;
+	virtual bool isConnected() const = 0;
 
 #if MAD_SYNC_CHECKING
 	/** 'Interesting event' handlers, for insane checksum comparisons */

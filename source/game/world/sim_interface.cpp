@@ -59,8 +59,8 @@ void SkillCycleTable::create(const TechTree *techTree) {
 }
 
 void SkillCycleTable::send(NetworkConnection* connection) const {
-	Message::send(connection, &header, sizeof(MsgHeader));
-	Message::send(connection, cycleTable, header.messageSize);
+	connection->send(&header, sizeof(MsgHeader));
+	connection->send(cycleTable, header.messageSize);
 	NETWORK_LOG( "SkillCycleTable sent to " << connection->getRemotePlayerName() );
 }
 

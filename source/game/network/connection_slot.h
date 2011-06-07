@@ -12,11 +12,8 @@
 #ifndef _GLEST_GAME_CONNECTIONSLOT_H_
 #define _GLEST_GAME_CONNECTIONSLOT_H_
 
-#include "socket.h"
 #include "network_interface.h"
-
-using Shared::Platform::ServerSocket;
-using Shared::Platform::Socket;
+#include "network_connection.h"
 
 namespace Glest { namespace Net {
 
@@ -26,12 +23,14 @@ class ServerInterface;
 //	class ConnectionSlot
 // =====================================================
 
-class ConnectionSlot: public NetworkConnection {
+class ConnectionSlot {
 private:
-	ServerInterface* serverInterface;
-	Socket* socket;
-	int playerIndex;
-	bool ready;
+	ServerInterface*	m_serverInterface;
+	int					m_playerIndex;
+	bool				m_ready;
+
+protected:
+	NetworkConnection*	m_connection;
 
 public:
 	ConnectionSlot(ServerInterface* serverInterface, int playerIndex);
@@ -39,17 +38,22 @@ public:
 
 	virtual void update();
 
-	void setReady()					{ready = true;}
-	int getPlayerIndex() const		{return playerIndex;}
-	bool isReady() const			{return ready;}
-	string getName() const			{return getRemotePlayerName();}
+	void setReady()					{m_ready = true;}
+	int getPlayerIndex() const		{return m_playerIndex;}
+	bool isReady() const			{return m_ready;}
+	bool hasReadyMessage();
+	void logLastMessage();
+	
+	bool isConnected() const		{return m_connection && m_connection->isConnected();}
+	string getName() const			{return m_connection ? m_connection->getRemotePlayerName() : "";}
+	void send(const Message* networkMessage);
 
-//protected:
-	virtual Socket* getSocket()					{return socket;}
-	virtual const Socket* getSocket() const		{return socket;}
+protected:
+	virtual void processMessages();
+	virtual	bool isConnectionReady();
 
 private:
-	void close();
+	void sendIntroMessage();
 };
 
 }}//end namespace

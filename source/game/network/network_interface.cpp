@@ -33,69 +33,6 @@ using namespace Shared::Util;
 namespace Glest { namespace Net {
 
 // =====================================================
-//	class NetworkConnection
-// =====================================================
-
-void NetworkConnection::send(const Message* networkMessage) {
-	networkMessage->send(this);
-}
-
-int NetworkConnection::dataAvailable() {
-	return getSocket()->getDataToRead();
-}
-
-void NetworkConnection::receiveMessages() {
-	Socket *socket = getSocket();
-	if (!socket->isConnected()) {
-		return;
-	}
-	size_t n = socket->getDataToRead();
-	while (n >= MsgHeader::headerSize) {
-		MsgHeader header;
-		socket->peek(&header, MsgHeader::headerSize);
-		if (n >= MsgHeader::headerSize + header.messageSize) {
-			RawMessage rawMsg;
-			rawMsg.type = header.messageType;
-			rawMsg.size = header.messageSize;
-			rawMsg.data = new uint8[header.messageSize];
-			socket->skip(MsgHeader::headerSize);
-			if (header.messageSize) {
-				socket->receive(rawMsg.data, header.messageSize);
-			} else {
-				rawMsg.data = 0;
-			}
-			messageQueue.push_back(rawMsg);
-			n = socket->getDataToRead();
-		} else {
-			return;
-		}
-	}
-}
-
-RawMessage NetworkConnection::getNextMessage() {
-	assert(hasMessage());
-	RawMessage res = messageQueue.front();
-	messageQueue.pop_front();
-	return res;
-}
-
-MessageType NetworkConnection::peekNextMsg() const {
-	return enum_cast<MessageType>(messageQueue.front().type);
-}
-
-void NetworkConnection::setRemoteNames(const string &hostName, const string &playerName) {
-	remoteHostName = hostName;
-	remotePlayerName = playerName;
-
-	stringstream str;
-	str << remotePlayerName;
-	if (!remoteHostName.empty()) {
-		str << " (" << remoteHostName << ")";
-	}
-	description = str.str();
-}
-
-// =====================================================
 //	class NetworkInterface
 // =====================================================
 

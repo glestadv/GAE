@@ -59,13 +59,34 @@ ServerInterface::~ServerInterface() {
 
 void ServerInterface::bindPort() {
 	try {
-		serverSocket.setBlock(false);
-		serverSocket.bind(g_config.getNetServerPort());
+		m_connection.setBlock(false);
+		m_connection.bind(g_config.getNetServerPort());
 	} catch (runtime_error &e) {
 		LOG_NETWORK(e.what());
 		throw e;
 	}
 	m_portBound = true;
+}
+
+void ServerInterface::updateSlot(int playerIndex) {
+	ConnectionSlot* slot = slots[playerIndex];
+	
+	try {
+		slot->update();
+	} catch (DataSyncError &e) {
+		LOG_NETWORK( e.what() );
+		throw runtime_error("DataSync Fail : " + slot->getName()
+			+ "\n" + e.what());
+	} catch (GameSyncError &e) {
+		LOG_NETWORK( e.what() );
+		removeSlot(playerIndex);
+		throw runtime_error(e.what());
+	} catch (NetworkError &e) {
+		LOG_NETWORK( e.what() );
+		string playerName = slot->getName();
+		removeSlot(playerIndex);
+		sendTextMessage("Player " + intToStr(playerIndex) + " [" + playerName + "] diconnected.", -1);
+	}
 }
 
 void ServerInterface::addSlot(int playerIndex) {
@@ -103,6 +124,17 @@ int ServerInterface::getConnectedSlotCount() {
 	return connectedSlotCount;
 }
 
+int ServerInterface::getOpenSlotCount() {
+	int openSlotCount = 0;
+
+	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
+		if(slots[i] && !slots[i]->isConnected()) {
+			++openSlotCount;
+		}
+	}
+	return openSlotCount;
+}
+
 void ServerInterface::update() {
 	if (!m_portBound) {
 		return;
@@ -118,22 +150,7 @@ void ServerInterface::update() {
 	// update all slots
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (slots[i]) {
-			try {
-				slots[i]->update();
-			} catch (DataSyncError &e) {
-				LOG_NETWORK( e.what() );
-				throw runtime_error("DataSync Fail : " + slots[i]->getName()
-					+ "\n" + e.what());
-			} catch (GameSyncError &e) {
-				LOG_NETWORK( e.what() );
-				removeSlot(i);
-				throw runtime_error(e.what());
-			} catch (NetworkError &e) {
-				LOG_NETWORK( e.what() );
-				string playerName = slots[i]->getName();
-				removeSlot(i);
-				sendTextMessage("Player " + intToStr(i) + " [" + playerName + "] diconnected.", -1);
-			}
+			updateSlot(i);
 		}
 	}
 }
@@ -147,16 +164,8 @@ void ServerInterface::doDataSync() {
 		// update all slots
 		for (int i=0; i < GameConstants::maxPlayers; ++i) {
 			if (slots[i]) {
-				try {
-					slots[i]->update();
-				} catch (NetworkError &e) {
-					LOG_NETWORK( e.what() );
-					string playerName = slots[i]->getName();
-					removeSlot(i);
-					sendTextMessage("Player " + intToStr(i) + " [" + playerName + "] diconnected.", -1);
-				}
+				updateSlot(i);
 			}
-
 		}
 		sleep(10);
 	}
@@ -343,34 +352,19 @@ void ServerInterface::waitUntilReady() {
 		allReady = true;
 		for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 			ConnectionSlot* slot = slots[i];
-			if (slot && !slot->isReady()) {
-				slot->receiveMessages();
-				if (!slot->hasMessage()) {
-					allReady = false;
-					continue;
-				}
-				RawMessage raw = slot->getNextMessage();
-				if (raw.type != MessageType::READY) {
-					throw InvalidMessage(MessageType::READY, raw.type);
-				}
-				NETWORK_LOG( __FUNCTION__ << " Received ready message, slot " << i );
-				slot->setReady();
+			if (slot && !slot->hasReadyMessage()) {
+				allReady = false;
+				// better to check them all since they will appear
+				// not ready if it times out - hailstone 07June2011
+				//break;
 			}
 		}
 		// check for timeout
-		if (chrono.getMillis() > readyWaitTimeout) {
+		if (!allReady && chrono.getMillis() > m_connection.getReadyWaitTimeout()) {
 			NETWORK_LOG( __FUNCTION__ << "Timed out." );
 			for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 				if (slots[i] && !slots[i]->isReady()) {
-					Socket *sock = slots[i]->getSocket();
-					int n = sock->getDataToRead();
-					NETWORK_LOG( "\tSlot[" << i << "] : data to read: " << n );
-					if (n >= 4) {
-						MsgHeader hdr;
-						sock->receive(&hdr, 4);
-						NETWORK_LOG( "\tMessage type: " << MessageTypeNames[MessageType(hdr.messageType)]
-							<< ", message size: " << hdr.messageSize );
-					}
+					slots[i]->logLastMessage();
 				}
 			}
 			throw TimeOut(NetSource::CLIENT);
@@ -379,11 +373,7 @@ void ServerInterface::waitUntilReady() {
 	}
 	NETWORK_LOG( __FUNCTION__ << " Received all ready messages, sending ready message(s)." );
 	ReadyMessage readyMsg;
-	for (int i= 0; i < GameConstants::maxPlayers; ++i) {
-		if (slots[i]) {
-			slots[i]->send(&readyMsg);
-		}
-	}
+	broadcastMessage(&readyMsg);
 }
 
 void ServerInterface::sendTextMessage(const string &text, int teamIndex){
@@ -433,32 +423,21 @@ void ServerInterface::doLaunchBroadcast() {
 
 void ServerInterface::broadcastMessage(const Message* networkMessage, int excludeSlot) {
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
-		if (i != excludeSlot && slots[i]) {
-			if (slots[i]->isConnected()) {
+		try {
+			if (i != excludeSlot && slots[i]) {
 				slots[i]->send(networkMessage);
-			} else {
-				Lang &lang = Lang::getInstance();
-				string errmsg = slots[i]->getDescription() + " (" + lang.get("Player") + " "
-					+ intToStr(slots[i]->getPlayerIndex() + 1) + ") " + lang.get("Disconnected");
-				removeSlot(i);
-				LOG_NETWORK(errmsg);
-				if (World::isConstructed()) {
-					g_userInterface.getRegularConsole()->addLine(errmsg);
-				}
-				//throw SocketException(errmsg);
+			}
+		} catch (Disconnect &d) {
+			removeSlot(i);
+			if (World::isConstructed()) {
+				g_userInterface.getRegularConsole()->addLine(d.what());
 			}
 		}
 	}
 }
 
 void ServerInterface::updateListen() {
-	int openSlotCount = 0;
-	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
-		if(slots[i] && !slots[i]->isConnected()) {
-			++openSlotCount;
-		}
-	}
-	serverSocket.listen(openSlotCount);
+	m_connection.listen(getOpenSlotCount());
 }
 
 IF_MAD_SYNC_CHECKS(

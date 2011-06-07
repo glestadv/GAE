@@ -305,7 +305,7 @@ void Socket::setBlock(bool block) {
 	}
 }
 
-bool Socket::isReadable() {
+bool Socket::isReadable() const {
 	if (sock == INVALID_SOCKET) {
 		return false;
 	}
@@ -324,7 +324,7 @@ bool Socket::isReadable() {
 	return (i == 1);
 }
 
-bool Socket::isWritable() {
+bool Socket::isWritable() const {
 	if (sock == INVALID_SOCKET) {
 		return false;
 	}
@@ -343,7 +343,7 @@ bool Socket::isWritable() {
 	return (i == 1);
 }
 
-bool Socket::isConnected() {
+bool Socket::isConnected() const {
 	//if the socket is not writable then it is not conencted
 	if (!isWritable()) {
 		return false;

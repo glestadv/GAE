@@ -17,7 +17,6 @@
 #include "game_constants.h"
 #include "network_interface.h"
 #include "connection_slot.h"
-#include "socket.h"
 
 using std::vector;
 using Shared::Platform::ServerSocket;
@@ -39,7 +38,7 @@ private:
 
 private:
 	ConnectionSlot* slots[GameConstants::maxPlayers];
-	ServerSocket serverSocket;
+	ServerConnection m_connection;
 	vector<LostPlayerInfo> m_lostPlayers;
 	bool m_portBound;
 	bool m_waitingForPlayers;
@@ -54,13 +53,12 @@ public:
 	ServerInterface(Program &prog);
 	virtual ~ServerInterface();
 
-	virtual Socket* getSocket()				{return &serverSocket;}
-	virtual const Socket* getSocket() const	{return &serverSocket;}
-
 	virtual GameRole getNetworkRole() const { return GameRole::SERVER; }
 	bool syncReady() const { return m_dataSync; }
 	
 	virtual void updateSkillCycle(Unit *unit);
+
+	virtual bool isConnected() const { return m_connection.isConnected();}
 
 #	if MAD_SYNC_CHECKING
 		void dumpFrame(int frame);
@@ -94,13 +92,15 @@ protected:
 
 public:
 	// used to listen for new connections
-	ServerSocket* getServerSocket()		{return &serverSocket;}
+	NetworkConnection *accept() {return m_connection.accept();}
 
 	// ConnectionSlot management
 	void addSlot(int playerIndex);
 	void removeSlot(int playerIndex);
+	void updateSlot(int playerIndex);
 	ConnectionSlot* getSlot(int playerIndex);
 	int getConnectedSlotCount();
+	int getOpenSlotCount();
 	
 	void dataSync(int playerNdx, DataSyncMessage &msg);
 	void doLaunchBroadcast();

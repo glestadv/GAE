@@ -27,6 +27,7 @@
 #include "unit.h"
 #include "world.h"
 #include "network_interface.h"
+#include "network_connection.h"
 #include "profiler.h"
 
 using namespace Shared::Platform;
@@ -38,41 +39,10 @@ namespace Glest { namespace Net {
 //	class Message
 // =====================================================
 
-bool Message::receive(NetworkConnection* connection, void* data, int dataSize) {
-	Socket *socket = connection->getSocket();
-	if (socket->getDataToRead() >= dataSize) {
-		if (socket->receive(data, dataSize)) {
-			return true;
-		}
-		LOG_NETWORK( "connection severed, trying to read message." );
-		throw Disconnect();
-	}
-	return false;
-}
-
-bool Message::peek(NetworkConnection* connection, void *data, int dataSize) {
-	Socket *socket = connection->getSocket();
-	if (socket->getDataToRead() >= dataSize) {
-		if (socket->peek(data, dataSize)) {
-			return true;
-		}
-		LOG_NETWORK( "connection severed, trying to read message." );
-		throw Disconnect();
-	}
-	return false;
-}
-
-//REMOVE
-void Message::send(NetworkConnection* connection, const void* data, int dataSize) const {
-	Socket *socket = connection->getSocket();
-	send(socket, data, dataSize);
-}
-
-void Message::send(Socket* socket, const void* data, int dataSize) const {
-	if (socket->send(data, dataSize) != dataSize) {
-		LOG_NETWORK( "connection severed, trying to send message.." );
-		throw Disconnect();
-	}
+void Message::log() const {
+	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(getType())]
+		<< ", messageSize: " << getSize()
+	);
 }
 
 // =====================================================
@@ -85,7 +55,7 @@ IntroMessage::IntroMessage(){
 }
 
 IntroMessage::IntroMessage(const string &versionString, const string &pName, const string &hName, int playerIndex){
-	data.messageType = MessageType::INTRO;
+	data.messageType = getType();
 	data.messageSize = sizeof(Data) - 4;
 	data.versionString = versionString;
 	data.playerName = pName;
@@ -108,12 +78,15 @@ bool IntroMessage::receive(NetworkConnection* connection) {
 }
 
 void IntroMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == MessageType::INTRO);
+	assert(data.messageType == getType());
+	connection->send(&data, getSize());
+}
+
+void IntroMessage::log() const {
 	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
 		<< ", messageSize: " << data.messageSize << ", player name: " << data.playerName.getString()
 		<< ", host name: " << data.hostName.getString() << ", player index: " << data.playerIndex
 	);
-	Message::send(connection, &data, sizeof(Data));
 }
 
 // =====================================================
@@ -121,7 +94,7 @@ void IntroMessage::send(NetworkConnection* connection) const{
 // =====================================================
 
 ReadyMessage::ReadyMessage() {
-	data.messageType = MessageType::READY;
+	data.messageType = getType();
 	data.messageSize = 0;
 }
 
@@ -139,8 +112,8 @@ bool ReadyMessage::receive(NetworkConnection* connection){
 }
 
 void ReadyMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == MessageType::READY);
-	Message::send(connection, &data, sizeof(data));
+	assert(data.messageType == getType());
+	connection->send(&data, getSize());
 }
 
 // =====================================================
@@ -155,7 +128,7 @@ AiSeedSyncMessage::AiSeedSyncMessage(){
 
 AiSeedSyncMessage::AiSeedSyncMessage(int count, int32 *seeds) {
 	assert(count > 0 && count <= maxAiSeeds);
-	data.messageType = MessageType::AI_SYNC;
+	data.messageType = getType();
 	data.messageSize = sizeof(Data) - 4;
 	data.seedCount = count;
 	for (int i=0; i < count; ++i) {
@@ -176,11 +149,8 @@ bool AiSeedSyncMessage::receive(NetworkConnection* connection){
 }
 
 void AiSeedSyncMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == MessageType::AI_SYNC);
-	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
-		<< ", messageSize: " << data.messageSize
-	);
-	Message::send(connection, &data, sizeof(Data));
+	assert(data.messageType == getType());
+	connection->send(&data, getSize());
 }
 
 // =====================================================
@@ -194,7 +164,7 @@ LaunchMessage::LaunchMessage(){
 
 /** Construct from GameSettings (for the server to send out) */
 LaunchMessage::LaunchMessage(const GameSettings *gameSettings){
-	data.messageType = MessageType::LAUNCH;
+	data.messageType = getType();
 	data.messageSize = sizeof(Data) - 4;
 
 	data.description= gameSettings->getDescription();
@@ -256,11 +226,8 @@ bool LaunchMessage::receive(NetworkConnection* connection) {
 }
 
 void LaunchMessage::send(NetworkConnection* connection) const {
-	assert(data.messageType==MessageType::LAUNCH);
-	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
-		<< ", messageSize: " << data.messageSize
-	);
-	Message::send(connection, &data, sizeof(Data));
+	assert(data.messageType == getType());
+	connection->send(&data, getSize());
 }
 
 // =====================================================
@@ -270,7 +237,7 @@ void LaunchMessage::send(NetworkConnection* connection) const {
 DataSyncMessage::DataSyncMessage(RawMessage raw)
 		: m_data(0), fromRaw(true) {
 	if (raw.size < 4 * sizeof(int32) && raw.size % sizeof(int32) != 0) {
-		throw GarbledMessage(MessageType::DATA_SYNC, NetSource::SERVER);
+		throw GarbledMessage(getType(), NetSource::SERVER);
 	}
 	m_cmdTypeCount	  = reinterpret_cast<int32*>(raw.data)[0];
 	m_skillTypeCount  = reinterpret_cast<int32*>(raw.data)[1];
@@ -365,11 +332,11 @@ DataSyncMessage::~DataSyncMessage() {
 
 void DataSyncMessage::send(NetworkConnection* connection) const {
 	MsgHeader header;
-	header.messageType = MessageType::DATA_SYNC;
+	header.messageType = getType();
 	header.messageSize = sizeof(int32) * (getChecksumCount() + 4);
-	Message::send(connection, &header, sizeof(MsgHeader));
-	Message::send(connection, &m_cmdTypeCount, sizeof(int32) * 4);
-	Message::send(connection, m_data, header.messageSize - sizeof(int32) * 4);
+	connection->send(&header, sizeof(MsgHeader));
+	connection->send(&m_cmdTypeCount, sizeof(int32) * 4);
+	connection->send(m_data, header.messageSize - sizeof(int32) * 4);
 	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(header.messageType)]
 		<< ", messageSize: " << header.messageSize
 	);
@@ -385,7 +352,7 @@ bool DataSyncMessage::receive(NetworkConnection* connection) {
 // =====================================================
 
 GameSpeedMessage::GameSpeedMessage(int frame, GameSpeed setting) {
-	data.messageType = MessageType::GAME_SPEED;
+	data.messageType = getType();
 	data.messageSize = sizeof(Data) - sizeof(MsgHeader);
 	data.frame = frame;
 	data.setting = setting;
@@ -403,15 +370,15 @@ bool GameSpeedMessage::receive(NetworkConnection* connection) {
 }
 
 void GameSpeedMessage::send(NetworkConnection* connection) const {
+	// do nothing?
 }
-
 
 // =====================================================
 //	class NetworkCommandList
 // =====================================================
 
 CommandListMessage::CommandListMessage(int32 frameCount) {
-	data.messageType = MessageType::COMMAND_LIST;
+	data.messageType = getType();
 	data.messageSize = 4;
 	data.frameCount = frameCount;
 	data.commandCount = 0;
@@ -437,10 +404,10 @@ CommandListMessage::CommandListMessage(RawMessage raw) {
 
 bool CommandListMessage::receive(NetworkConnection* connection) {
 	MsgHeader header; // peek Message Header first
-	if (!Message::peek(connection, &header, sizeof(MsgHeader))) {
+	if (!connection->peek(&header, sizeof(MsgHeader))) {
 		return false;
 	}
-	bool ok = Message::receive(connection, &data, sizeof(MsgHeader) + header.messageSize);
+	bool ok = connection->receive(&data, sizeof(MsgHeader) + header.messageSize);
 	if (ok) {
 		NETWORK_LOG(
 			__FUNCTION__ << "(): message received, type: " << MessageTypeNames[MessageType(data.messageType)]
@@ -451,12 +418,19 @@ bool CommandListMessage::receive(NetworkConnection* connection) {
 }
 
 void CommandListMessage::send(NetworkConnection* connection) const {
-	assert(data.messageType == MessageType::COMMAND_LIST);
+	assert(data.messageType == getType());
+	connection->send(&data, getSize());
+}
+
+void CommandListMessage::log() const {
 	NETWORK_LOG(
 		__FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
 		<< ", messageSize: " << data.messageSize << ", number of commands: " << data.commandCount
 	);
-	Message::send(connection, &data, dataHeaderSize + sizeof(NetworkCommand) * data.commandCount);
+}
+
+unsigned int CommandListMessage::getSize() const {
+	return (dataHeaderSize + sizeof(NetworkCommand) * data.commandCount);
 }
 
 // =====================================================
@@ -464,7 +438,7 @@ void CommandListMessage::send(NetworkConnection* connection) const {
 // =====================================================
 
 TextMessage::TextMessage(const string &text, const string &sender, int teamIndex, int colourIndex){
-	data.messageType = MessageType::TEXT;
+	data.messageType = getType();
 	data.messageSize = sizeof(Data) - sizeof(MsgHeader);
 	data.text = text;
 	data.sender = sender;
@@ -480,13 +454,16 @@ TextMessage::TextMessage(RawMessage raw) {
 }
 
 bool TextMessage::receive(NetworkConnection* connection){
-	return Message::receive(connection, &data, sizeof(Data));
+	return connection->receive(&data, sizeof(Data));
 }
 
 void TextMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == MessageType::TEXT);
+	assert(data.messageType == getType());
+	connection->send(&data, getSize());
+}
+
+void TextMessage::log() const {
 	NETWORK_LOG( "Sending TextMessage, size: " << data.messageSize );
-	Message::send(connection, &data, sizeof(Data));
 }
 
 // =====================================================
@@ -494,7 +471,7 @@ void TextMessage::send(NetworkConnection* connection) const{
 // =====================================================
 
 QuitMessage::QuitMessage() {
-	data.messageType = MessageType::QUIT;
+	data.messageType = getType();
 	data.messageSize = 0;
 }
 
@@ -505,12 +482,12 @@ QuitMessage::QuitMessage(RawMessage raw) {
 }
 
 bool QuitMessage::receive(NetworkConnection* connection) {
-	return Message::receive(connection, &data, sizeof(Data));
+	return connection->receive(&data, sizeof(Data));
 }
 
 void QuitMessage::send(NetworkConnection* connection) const {
-	assert(data.messageType == MessageType::QUIT);
-	Message::send(connection, &data, sizeof(Data));
+	assert(data.messageType == getType());
+	connection->send(&data, sizeof(Data));
 }
 
 // =====================================================
@@ -574,7 +551,7 @@ bool KeyFrame::receive(NetworkConnection* connection) {
 void KeyFrame::send(NetworkConnection* connection) const {
 	MsgHeader msgHeader;
 	KeyFrameMsgHeader header;
-	msgHeader.messageType = MessageType::KEY_FRAME;
+	msgHeader.messageType = getType();
 	header.frame = this->frame;
 	header.cmdCount = this->cmdCount;
 	IF_MAD_SYNC_CHECKS(
@@ -616,7 +593,7 @@ void KeyFrame::send(NetworkConnection* connection) const {
 		memcpy(ptr, commands, commandsSize);
 	}
 	try {
-		Message::send(connection, buf, totalSize);
+		connection->send(buf, totalSize);
 	} catch (...) {
 		delete [] buf;
 		throw;
@@ -720,9 +697,12 @@ bool SyncErrorMsg::receive(NetworkConnection* connection) {
 }
 
 void SyncErrorMsg::send(NetworkConnection* connection) const {
-	NETWORK_LOG( string(__FUNCTION__) + "()" );
 	assert(data.messageType == MessageType::SYNC_ERROR);
-	Message::send(connection, &data, sizeof(data));
+	connection->send(&data, getSize());
+}
+
+void SyncErrorMsg::log() const {
+	NETWORK_LOG( string(__FUNCTION__) + "()" );
 }
 
 #endif

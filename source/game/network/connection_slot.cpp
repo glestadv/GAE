@@ -32,78 +32,86 @@ using namespace Shared::Util;
 namespace Glest { namespace Net {
 
 // =====================================================
-//	class ClientConnection
+//	class ConnectionSlot
 // =====================================================
 
-ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex) {
-	this->serverInterface = serverInterface;
-	this->playerIndex = playerIndex;
-	socket = NULL;
-	ready = false;
+ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex)
+		: m_serverInterface(serverInterface)
+		, m_playerIndex(playerIndex)
+		, m_connection(NULL)
+		, m_ready(false) {
 }
 
 ConnectionSlot::~ConnectionSlot() {
-	close();
+	delete m_connection;
 }
 
-void ConnectionSlot::update() {
-	if (!socket) {
-		socket = serverInterface->getServerSocket()->accept();
+void ConnectionSlot::sendIntroMessage() {
+	assert(m_connection);
+	NETWORK_LOG( "Connection established, slot " << m_playerIndex << " sending intro message." );
+	m_connection->setBlock(false);
+	m_connection->setNoDelay();
+	IntroMessage networkMessageIntro(getNetworkVersionString(), 
+		g_config.getNetPlayerName(), m_connection->getHostName(), m_playerIndex);
+	m_connection->send(&networkMessageIntro);
+}
+
+bool ConnectionSlot::isConnectionReady() {
+	if (!m_connection) {
+		m_connection = m_serverInterface->accept();
 
 		// send intro message when connected
-		if (socket) {
-			NETWORK_LOG( "Connection established, slot " << playerIndex << " sending intro message." );
-			socket->setBlock(false);
-			socket->setNoDelay();
-			IntroMessage networkMessageIntro(getNetworkVersionString(), 
-				g_config.getNetPlayerName(), socket->getHostName(), playerIndex);
-			send(&networkMessageIntro);
+		if (m_connection) {
+			sendIntroMessage();
 		}
-		return;
+		return false;
 	}
-	if (!socket->isConnected()) {
-		NETWORK_LOG( "Slot " << playerIndex << " disconnected, [" << getRemotePlayerName() << "]" );
+	if (!m_connection->isConnected()) {
+		NETWORK_LOG( "Slot " << m_playerIndex << " disconnected, [" << m_connection->getRemotePlayerName() << "]" );
 		throw Disconnect();
 	}
-	// process incoming commands
+	return true;
+}
+
+void ConnectionSlot::processMessages() {
 	try {
-		receiveMessages();
+		m_connection->receiveMessages();
 	} catch (SocketException &e) {
-		NETWORK_LOG( "Slot " << playerIndex << " [" << getRemotePlayerName() << "]" << " : " << e.what() );
-		string msg = getRemotePlayerName() + " [" + getRemoteHostName() + "] has disconnected.";
-		serverInterface->sendTextMessage(msg, -1);
+		NETWORK_LOG( "Slot " << m_playerIndex << " [" << m_connection->getRemotePlayerName() << "]" << " : " << e.what() );
+		string msg = m_connection->getRemotePlayerName() + " [" + m_connection->getRemoteHostName() + "] has disconnected.";
+		m_serverInterface->sendTextMessage(msg, -1);
 		throw Disconnect();
 	}
-	while (hasMessage()) {
-		MessageType type = peekNextMsg();
+	while (m_connection->hasMessage()) {
+		MessageType type = m_connection->peekNextMsg();
 		if (type == MessageType::DATA_SYNC) {
-			if (!serverInterface->syncReady()) {
+			if (!m_serverInterface->syncReady()) {
 				return;
 			}
-		} else if (type == MessageType::READY && !serverInterface->syncReady()) {
+		} else if (type == MessageType::READY && !m_serverInterface->syncReady()) {
 			return;
 		}
-		RawMessage raw = getNextMessage();
+		RawMessage raw = m_connection->getNextMessage();
 		if (raw.type == MessageType::TEXT) {
-			NETWORK_LOG( "Received text message on slot " << playerIndex );
+			NETWORK_LOG( "Received text message on slot " << m_playerIndex );
 			TextMessage textMsg(raw);
-			serverInterface->process(textMsg, playerIndex);
+			m_serverInterface->process(textMsg, m_playerIndex);
 		} else if (raw.type == MessageType::INTRO) {
 			IntroMessage msg(raw);
-			NETWORK_LOG( "Received intro message on slot " << playerIndex << ", host name = "
+			NETWORK_LOG( "Received intro message on slot " << m_playerIndex << ", host name = "
 				<< msg.getHostName() << ", player name = " << msg.getPlayerName() );
-			setRemoteNames(msg.getHostName(), msg.getPlayerName());
+			m_connection->setRemoteNames(msg.getHostName(), msg.getPlayerName());
 		} else if (raw.type == MessageType::COMMAND_LIST) {
-			NETWORK_LOG( "Received command list message on slot " << playerIndex );
+			NETWORK_LOG( "Received command list message on slot " << m_playerIndex );
 			CommandListMessage cmdList(raw);
 			for (int i=0; i < cmdList.getCommandCount(); ++i) {
-				serverInterface->requestCommand(cmdList.getCommand(i));
+				m_serverInterface->requestCommand(cmdList.getCommand(i));
 			}
 		} else if (raw.type == MessageType::QUIT) {
 			QuitMessage quitMsg(raw);
-			NETWORK_LOG( "Received quit message on slot " << playerIndex );
-			string msg = getRemotePlayerName() + " [" + getRemoteHostName() + "] has quit the game!";
-			serverInterface->sendTextMessage(msg, -1);
+			NETWORK_LOG( "Received quit message on slot " << m_playerIndex );
+			string msg = m_connection->getRemotePlayerName() + " [" + m_connection->getRemoteHostName() + "] has quit the game!";
+			m_serverInterface->sendTextMessage(msg, -1);
 			throw Disconnect();
 #		if MAD_SYNC_CHECKING
 		} else if (raw.type == MessageType::SYNC_ERROR) {
@@ -114,24 +122,63 @@ void ConnectionSlot::update() {
 #		endif
 		} else if (raw.type == MessageType::DATA_SYNC) {
 			DataSyncMessage msg(raw);
-			serverInterface->dataSync(playerIndex, msg);
+			m_serverInterface->dataSync(m_playerIndex, msg);
 		} else {
-			NETWORK_LOG( "Unexpected message type: " << raw.type << " on slot: " << playerIndex );
+			NETWORK_LOG( "Unexpected message type: " << raw.type << " on slot: " << m_playerIndex );
 			stringstream ss;
-			ss << "Player " << playerIndex << " [" << getName()
+			ss << "Player " << m_playerIndex << " [" << getName()
 				<< "] was disconnected because they sent the server bad data.";
-			serverInterface->sendTextMessage(ss.str(), -1);
+			m_serverInterface->sendTextMessage(ss.str(), -1);
 			throw InvalidMessage((int8)raw.type);
 		}
 	}
 }
 
-void ConnectionSlot::close() {
-	if (socket) {
-		socket->close();
+void ConnectionSlot::update() {
+	if (isConnectionReady()) {
+		processMessages();
 	}
-	delete socket;
-	socket = NULL;
+}
+
+bool ConnectionSlot::hasReadyMessage() {
+	// only check for a ready message once
+	if (!isReady()) {
+		m_connection->receiveMessages();
+		if (!m_connection->hasMessage()) {
+			return false;
+		}
+		RawMessage raw = m_connection->getNextMessage();
+		if (raw.type != MessageType::READY) {
+			throw InvalidMessage(MessageType::READY, raw.type);
+		}
+		NETWORK_LOG( __FUNCTION__ << " Received ready message, slot " << m_playerIndex );
+		setReady();
+	}
+
+	return true;
+}
+
+void ConnectionSlot::logLastMessage() {
+	NETWORK_LOG( "\tSlot[" << m_playerIndex << "]");
+	MsgHeader hdr;
+	if (m_connection->receive(&hdr, hdr.headerSize)) {
+		NETWORK_LOG( "\tMessage type: " << MessageTypeNames[MessageType(hdr.messageType)]
+			<< ", message size: " << hdr.messageSize );
+	}
+}
+
+void ConnectionSlot::send(const Message* networkMessage) {
+	///@todo this might be too slow to check each time, so have another version that doesn't check.
+	if (m_connection->isConnected()) {
+		m_connection->send(networkMessage);
+	} else {
+		Lang &lang = Lang::getInstance();
+		string errmsg = m_connection->getDescription() + " (" + lang.get("Player") + " "
+			+ intToStr(m_playerIndex + 1) + ") " + lang.get("Disconnected");
+		LOG_NETWORK(errmsg);
+
+		throw Disconnect(errmsg);
+	}
 }
 
 }}//end namespace

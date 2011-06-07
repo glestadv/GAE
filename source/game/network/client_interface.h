@@ -16,9 +16,8 @@
 #include <fstream>
 
 #include "network_interface.h"
+#include "network_connection.h"
 #include "game_settings.h"
-
-#include "socket.h"
 
 using Shared::Platform::Ip;
 using Shared::Platform::ClientSocket;
@@ -29,13 +28,13 @@ namespace Glest { namespace Net {
 // =====================================================
 //	class ClientInterface
 // =====================================================
-/** A concrete SimulationInterface for network clients */
+/** A concrete SimulationInterface for interacting with a ClientConnection */
 class ClientInterface: public NetworkInterface {
 private:
 	static const int messageWaitTimeout = 10000; // 10 seconds
 	static const int waitSleepTime = 5; // 5 milli-seconds
 
-	ClientSocket *clientSocket;
+	ClientConnection *m_connection;
 	string serverName;
 	bool introDone;
 	bool launchGame;
@@ -44,9 +43,6 @@ private:
 public:
 	ClientInterface(Program &prog);
 	virtual ~ClientInterface();
-
-	virtual Socket* getSocket()					{return clientSocket;}
-	virtual const Socket* getSocket() const		{return clientSocket;}
 
 	virtual GameRole getNetworkRole() const { return GameRole::CLIENT; }
 
@@ -96,6 +92,9 @@ public:
 	bool getLaunchGame() const				{return launchGame;}
 	bool getIntroDone() const				{return introDone;}
 	int getPlayerIndex() const				{return playerIndex;}
+
+	virtual bool isConnected() const		{return m_connection && m_connection->isConnected();}
+	virtual string getDescription() const	{return m_connection ? m_connection->getDescription() : "";}
 
 	void connect(const Ip &ip, int port);
 	void reset();
