@@ -47,6 +47,7 @@ public:
 	bool isConnected() const		{return m_connection && m_connection->isConnected();}
 	string getName() const			{return m_connection ? m_connection->getRemotePlayerName() : "";}
 	void send(const Message* networkMessage);
+	NetworkConnection *getConnection() {return m_connection;}
 
 protected:
 	virtual void processMessages();
@@ -54,6 +55,24 @@ protected:
 
 private:
 	void sendIntroMessage();
+};
+
+// =====================================================
+//	class DedicatedConnectionSlot
+// =====================================================
+
+class DedicatedConnectionSlot: public ConnectionSlot {
+private:
+	ClientConnection *m_connectionToServer;
+	ServerConnection *m_dedicatedServer;
+	NetworkConnection *m_server;
+
+public:
+	DedicatedConnectionSlot(ServerConnection *dedicatedServer, NetworkConnection *server, int playerIndex);
+
+protected:
+	virtual void processMessages() override;
+	virtual	bool isConnectionReady() override;
 };
 
 }}//end namespace

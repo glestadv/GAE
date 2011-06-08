@@ -44,6 +44,7 @@ private:
 	string testType;
 
 	bool m_redirStreams; // redirect stdout and stderr
+	bool m_dedicated; /// is it intended to be dedicated server
 
 public:
 	CmdArgs();
@@ -67,6 +68,7 @@ public:
 	bool isTest(const string &type) const { return (test && testType == type); }
 	bool redirStreams() const { return m_redirStreams; }
 	bool isLoadLastGame() const { return m_lastGame; }
+	bool isDedicated() const { return m_dedicated; }
 };
 
 }} //namespaces

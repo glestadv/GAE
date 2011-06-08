@@ -28,6 +28,7 @@
 #include "CmdArgs.h"
 #include "core_data.h"
 #include "version.h"
+#include "dedicated_server.h"
 
 using namespace Shared::Platform;
 using namespace Shared::Util;
@@ -120,6 +121,23 @@ int glestMain(int argc, char** argv) {
 	CmdArgs args;
 	if (args.parse(argc, argv)) {
 		// quick exit
+		return 0;
+	}
+
+	///@todo proper error handling
+	if (args.isDedicated()) {
+		DedicatedServer program;
+		if(!program.init()){
+			//program.exit();
+			return 0;
+		}
+		try {
+			//main loop
+			program.loop();
+		} catch(const exception &e) {
+			cout << e.what() << endl;
+			return 1;
+		}
 		return 0;
 	}
 

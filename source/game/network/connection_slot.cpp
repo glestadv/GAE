@@ -181,4 +181,68 @@ void ConnectionSlot::send(const Message* networkMessage) {
 	}
 }
 
+// =====================================================
+//	class DedicatedConnectionSlot
+// =====================================================
+
+DedicatedConnectionSlot::DedicatedConnectionSlot(ServerConnection *dedicatedServer, NetworkConnection *server, int playerIndex)
+		: ConnectionSlot(NULL, playerIndex) // not using ServerInterface yet
+		, m_dedicatedServer(dedicatedServer)
+		, m_server(server) {
+}
+
+void DedicatedConnectionSlot::processMessages() {
+	// get messages from server and send to client
+	try {
+		m_connectionToServer->receiveMessages();
+	} catch (SocketException &e) {
+		//NETWORK_LOG( "Slot " << m_playerIndex << " [" << getRemotePlayerName() << "]" << " : " << e.what() );
+		//string msg = getRemotePlayerName() + " [" + getRemoteHostName() + "] has disconnected.";
+		//m_serverInterface->sendTextMessage(msg, -1);
+		throw Disconnect();
+	}
+	cout << "===== From Server to Client =====" << endl;
+	while (m_connectionToServer->hasMessage()) {
+		RawMessage raw = m_connectionToServer->getNextMessage();
+		cout << "Player: " << getPlayerIndex() << " Message Type: " << raw.type << " Size: " << raw.size << endl;
+		m_connection->send(raw.data, raw.size);
+	}
+
+	// get messages from client and send to server
+	try {
+		m_connection->receiveMessages();
+	} catch (SocketException &e) {
+		NETWORK_LOG( "Slot " << getPlayerIndex() << " [" << m_connection->getRemotePlayerName() << "]" << " : " << e.what() );
+		string msg = m_connection->getRemotePlayerName() + " [" + m_connection->getRemoteHostName() + "] has disconnected.";
+		//m_serverInterface->sendTextMessage(msg, -1);
+		throw Disconnect();
+	}
+	while (m_connection->hasMessage()) {
+		RawMessage raw = m_connection->getNextMessage();
+		m_connectionToServer->send(raw.data, raw.size);
+	}
+}
+
+bool DedicatedConnectionSlot::isConnectionReady() {
+	if (!m_connection) {
+		m_connection = m_dedicatedServer->accept();
+		if (!m_connection) {
+			return false;
+		}
+		cout << "Connection received" << endl;
+		if (m_server) {
+			///@todo work out how to get a port in there without config
+			m_connectionToServer->connect(m_server->getIp(), 61357);
+		} else {
+			//m_connectionToServer->connect(m_connection->getIp(), 61357);
+		}
+		// note: no need to send intro message since it will come from server
+	}
+	if (!m_connection->isConnected() /*|| !m_connectionToServer->isConnected()*/) {
+		NETWORK_LOG( "Slot " << getPlayerIndex() << " disconnected, [" << m_connection->getRemotePlayerName() << "]" );
+		throw Disconnect();
+	}
+	return true;
+}
+
 }}//end namespace

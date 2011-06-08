@@ -28,14 +28,15 @@ namespace Glest { namespace Main {
 
 using namespace Shared::Util;
 
-CmdArgs::CmdArgs(){
-	this->server = false;
-	this->clientIP = "";
-	this->configDir = DEFAULT_CONFIG_DIR;
-	this->dataDir = DEFAULT_DATA_DIR;
-	test = false;
-	m_redirStreams = true; // ignored on Linux
-	m_lastGame = false;
+CmdArgs::CmdArgs()
+	: server(false)
+	, clientIP("")
+	, configDir(DEFAULT_CONFIG_DIR)
+	, dataDir(DEFAULT_DATA_DIR)
+	, test(false)
+	, m_redirStreams(true) // ignored on Linux
+	, m_lastGame(false)
+	, m_dedicated(false) {
 }
 
 CmdArgs::~CmdArgs(){
@@ -106,6 +107,8 @@ bool CmdArgs::parse(int argc, char **argv){
 				return true;
 		} else if (arg == "-noredir") {
 			m_redirStreams = false;
+		} else if (arg == "-dedicated") {
+			m_dedicated = true;
 		} else {
 			cout << "unknown argument: '" << arg << "'\nUse '" << progName
 				<< " -h' for a list of accepted command line options." << endl;
