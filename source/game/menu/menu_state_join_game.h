@@ -86,6 +86,7 @@ private:
 	DropList         *m_historyList;
 	TextBox          *m_serverTextBox;
 	StaticText       *m_connectLabel;
+	CheckBox		 *m_dedicatedServerCheckbox;
 
 	ConnectThread    *m_connectThread;
 	FindServerThread *m_findServerThread;
@@ -121,6 +122,7 @@ public:
 
 	MenuStates getIndex() const { return MenuStates::JOIN_GAME; }
 
+	bool isToDedicatedServer() { return m_dedicatedServerCheckbox->isChecked(); }
 	void connectThreadDone(ConnectResult result);
 	void foundServer(Ip ip);
 };

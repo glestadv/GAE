@@ -45,7 +45,8 @@ namespace Glest { namespace Net {
 
 DedicatedServer::DedicatedServer(/*Program &prog*/)
 		: /*ServerInterface(prog)*/
-		m_portBound(false) {
+		m_portBound(false)
+		, m_toServer(0) {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		m_slots[i] = 0;
 	}
@@ -58,19 +59,20 @@ DedicatedServer::~DedicatedServer() {
 }
 
 void DedicatedServer::bindPort() {
+	int port = 61358;
 	try {
 		m_connection.setBlock(false);
-		m_connection.bind(61357); ///@todo port needs to be different from netServerPort
+		m_connection.bind(/*g_config.getNetServerPort() + 1*/port); ///@todo config doesn't exist for dedicated_server
 	} catch (runtime_error &e) {
 		LOG_NETWORK(e.what());
 		throw e;
 	}
 	m_portBound = true;
+	cout << "Port bound to " << port << endl;
 }
 
 bool DedicatedServer::init() {
 	bindPort();
-	addSlot(0);
 	m_connection.listen(GameConstants::maxPlayers);
 	return true;
 }
@@ -85,11 +87,33 @@ void DedicatedServer::loop() {
 }
 
 void DedicatedServer::update() {
+	if (!m_toServer) {
+		m_toServer = m_connection.accept();
+		if (m_toServer) {
+			cout << "The server connected, sending intro message" << endl;
+			sendIntroMessage();
+			// get how many slots should be created from server
+			addSlot(1);
+		}
+		return;
+	}
+
+	//updateServerConnection(); //get gamesettings message to add/remove slots
+
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (m_slots[i]) {
 			m_slots[i]->update();
 		}
 	}
+}
+
+void DedicatedServer::sendIntroMessage() {
+	assert(m_toServer);
+	m_toServer->setBlock(false);
+	m_toServer->setNoDelay();
+	IntroMessage networkMessageIntro(getNetworkVersionString(), 
+		"DedicatedServer", m_connection.getHostName(), 0);
+	m_toServer->send(&networkMessageIntro);
 }
 
 void DedicatedServer::addSlot(int playerIndex) {
@@ -100,11 +124,11 @@ void DedicatedServer::addSlot(int playerIndex) {
 	NETWORK_LOG( __FUNCTION__ << " Opening slot " << playerIndex );
 	delete m_slots[playerIndex];
 	// the first connection is treated as server
-	if (playerIndex == 0) {
-		m_slots[playerIndex] = new DedicatedConnectionSlot(&m_connection, NULL, playerIndex);
-	} else {
-		m_slots[playerIndex] = new DedicatedConnectionSlot(&m_connection, m_slots[0]->getConnection(), playerIndex);
-	}
+	//if (playerIndex == 0) {
+	//	m_slots[playerIndex] = new DedicatedConnectionSlot(&m_connection, NULL, playerIndex);
+	//} else {
+		m_slots[playerIndex] = new DedicatedConnectionSlot(&m_connection, m_toServer, playerIndex);
+	//}
 	//updateListen();
 }
 

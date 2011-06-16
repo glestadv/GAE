@@ -189,6 +189,40 @@ DedicatedConnectionSlot::DedicatedConnectionSlot(ServerConnection *dedicatedServ
 		: ConnectionSlot(NULL, playerIndex) // not using ServerInterface yet
 		, m_dedicatedServer(dedicatedServer)
 		, m_server(server) {
+	m_connectionToServer = new ClientConnection();
+}
+
+DedicatedConnectionSlot::~DedicatedConnectionSlot() {
+	delete m_connectionToServer;
+}
+
+Message *DedicatedConnectionSlot::convertToMessage(RawMessage &raw) {
+	Message *result = 0;
+	if (raw.type == MessageType::TEXT) {
+		result = new TextMessage(raw);
+	} else if (raw.type == MessageType::INTRO) {
+		result = new IntroMessage(raw);
+		//m_connection->setRemoteNames(msg.getHostName(), msg.getPlayerName());
+	} else if (raw.type == MessageType::COMMAND_LIST) {
+		result = new CommandListMessage(raw);
+	} else if (raw.type == MessageType::QUIT) {
+		result = new QuitMessage(raw);
+		//NETWORK_LOG( "Received quit message on slot " << m_playerIndex );
+		//throw Disconnect();
+	} else if (raw.type == MessageType::DATA_SYNC) {
+		result = new DataSyncMessage(raw);
+	} else if (raw.type == MessageType::LAUNCH) {
+		result = new LaunchMessage(raw);
+	} else if (raw.type == MessageType::AI_SYNC) {
+		result = new AiSeedSyncMessage(raw);
+	} else if (raw.type == MessageType::READY) {
+		result = new ReadyMessage(raw);
+	} else if (raw.type == MessageType::KEY_FRAME) {
+		result = new KeyFrame(raw);
+	} else if (raw.type == MessageType::SKILL_CYCLE_TABLE) {
+		result = new SkillCycleTable(raw);
+	}
+	return result;
 }
 
 void DedicatedConnectionSlot::processMessages() {
@@ -201,11 +235,21 @@ void DedicatedConnectionSlot::processMessages() {
 		//m_serverInterface->sendTextMessage(msg, -1);
 		throw Disconnect();
 	}
-	cout << "===== From Server to Client =====" << endl;
+
 	while (m_connectionToServer->hasMessage()) {
 		RawMessage raw = m_connectionToServer->getNextMessage();
-		cout << "Player: " << getPlayerIndex() << " Message Type: " << raw.type << " Size: " << raw.size << endl;
-		m_connection->send(raw.data, raw.size);
+		cout << "Server->Client | Player: " << getPlayerIndex() << " Message Type: " << MessageTypeNames[MessageType(raw.type)] << " Size: " << raw.size << endl;
+		//m_connection->setNoDelay();
+		if (raw.type == MessageType::SKILL_CYCLE_TABLE) {
+			// CycleTable requires CycleInfo which this doesn't have access to.
+			m_connection->send(raw.data, raw.size);
+		} else {
+			Message *msg = convertToMessage(raw); //Doesn't seem possible to just send the raw - hailstone 16June2011
+			if (msg) {
+				m_connection->send(msg);
+			}
+			delete msg;
+		}
 	}
 
 	// get messages from client and send to server
@@ -217,9 +261,19 @@ void DedicatedConnectionSlot::processMessages() {
 		//m_serverInterface->sendTextMessage(msg, -1);
 		throw Disconnect();
 	}
+
 	while (m_connection->hasMessage()) {
 		RawMessage raw = m_connection->getNextMessage();
-		m_connectionToServer->send(raw.data, raw.size);
+		cout << "Client->Server | Player: " << getPlayerIndex() << " Message Type: " << MessageTypeNames[MessageType(raw.type)] << " Size: " << raw.size << endl;
+		if (raw.type == MessageType::SKILL_CYCLE_TABLE) {
+			m_connectionToServer->send(raw.data, raw.size);
+		} else {
+			Message *msg = convertToMessage(raw);
+			if (msg) {
+				m_connectionToServer->send(msg);
+			}
+			delete msg;
+		}
 	}
 }
 
@@ -229,16 +283,17 @@ bool DedicatedConnectionSlot::isConnectionReady() {
 		if (!m_connection) {
 			return false;
 		}
-		cout << "Connection received" << endl;
+		cout << "Client connection received" << endl;
 		if (m_server) {
-			///@todo work out how to get a port in there without config
 			m_connectionToServer->connect(m_server->getIp(), 61357);
+			m_connectionToServer->setBlock(false);
+			cout << "Created connection to server on behalf of client" << endl;
 		} else {
 			//m_connectionToServer->connect(m_connection->getIp(), 61357);
 		}
 		// note: no need to send intro message since it will come from server
 	}
-	if (!m_connection->isConnected() /*|| !m_connectionToServer->isConnected()*/) {
+	if (!m_connection->isConnected() || !m_connectionToServer->isConnected()) {
 		NETWORK_LOG( "Slot " << getPlayerIndex() << " disconnected, [" << m_connection->getRemotePlayerName() << "]" );
 		throw Disconnect();
 	}

@@ -13,6 +13,7 @@
 #include "pch.h"
 #include "menu_state_join_game.h"
 
+#include "menu_state_new_game.h"
 #include "renderer.h"
 #include "sound_renderer.h"
 #include "core_data.h"
@@ -49,7 +50,11 @@ void ConnectThread::execute() {
 	ClientInterface* clientInterface = g_simInterface.asClientInterface();
 	
 	try {
-		clientInterface->connect(m_server, g_config.getNetServerPort());
+		if (m_menu.isToDedicatedServer()) {
+			clientInterface->connect(m_server, g_config.getNetServerPort() + 1);
+		} else {
+			clientInterface->connect(m_server, g_config.getNetServerPort());
+		}
 		{
 			MutexLock lock(m_mutex);
 			m_result = ConnectResult::SUCCESS;
@@ -167,7 +172,7 @@ void MenuStateJoinGame::buildConnectPanel() {
 	m_historyList->setAnchors(a2);
 
 	// Panel to contain server label/textbox
-	pnl = new CellStrip(m_connectPanel, Orientation::HORIZONTAL, Origin::CENTRE, 2);
+	pnl = new CellStrip(m_connectPanel, Orientation::HORIZONTAL, Origin::CENTRE, 3);
 	pnl->setCell(1);
 	pnl->setAnchors(a);
 
@@ -181,6 +186,12 @@ void MenuStateJoinGame::buildConnectPanel() {
 	m_serverTextBox->setText("");
 	m_serverTextBox->TextChanged.connect(this, &MenuStateJoinGame::onTextModified);
 	m_serverTextBox->setAnchors(a2);
+
+	pnl->setSizeHint(2, SizeHint(-1, 30));
+	m_dedicatedServerCheckbox = new CheckBox(pnl);
+	m_dedicatedServerCheckbox->setCell(2);
+	m_dedicatedServerCheckbox->setChecked(true);
+	m_dedicatedServerCheckbox->setAnchors(a2);
 
 	m_connectLabel = new StaticText(m_connectPanel);
 	m_connectLabel->setCell(2);
@@ -405,6 +416,15 @@ void MenuStateJoinGame::update() {
 	if (clientInterface->isConnected()) {
 		// update lobby
 		clientInterface->updateLobby();
+
+		if (clientInterface->getPlayerIndex() == 0) {
+			program.removeFloatingWidget(m_messageBox);
+			m_messageBox = 0;
+			MenuStateNewGame *menu = new MenuStateNewGame(program, mainMenu, false, clientInterface);
+			clientInterface = 0;// owned by new game menu now
+			mainMenu->setState(menu);
+			return;
+		}
 
 		// intro
 		if (clientInterface->getIntroDone()) {

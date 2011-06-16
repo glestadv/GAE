@@ -34,7 +34,7 @@ protected:
 
 public:
 	ConnectionSlot(ServerInterface* serverInterface, int playerIndex);
-	~ConnectionSlot();
+	virtual ~ConnectionSlot();
 
 	virtual void update();
 
@@ -67,8 +67,11 @@ private:
 	ServerConnection *m_dedicatedServer;
 	NetworkConnection *m_server;
 
+	Message *convertToMessage(RawMessage &raw);
+
 public:
 	DedicatedConnectionSlot(ServerConnection *dedicatedServer, NetworkConnection *server, int playerIndex);
+	virtual ~DedicatedConnectionSlot();
 
 protected:
 	virtual void processMessages() override;

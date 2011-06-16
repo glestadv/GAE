@@ -86,12 +86,14 @@ private:
 	AnnouncerThread		 m_announcer;
 	float				 m_origMusicVolume;
 	bool				 m_fadeMusicOut;
+	ClientInterface		*m_toDedicated;
 
 public:
-	MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots = false);
+	MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots = false, ClientInterface *toDedicated = 0);
 	~MenuStateNewGame() {
 		m_announcer.stop();
 		m_announcer.join();
+		delete m_toDedicated;
 	}
 
 	void update();

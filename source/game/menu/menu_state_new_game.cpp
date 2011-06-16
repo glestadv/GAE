@@ -66,12 +66,13 @@ void AnnouncerThread::execute() {
 //  class MenuStateNewGame
 // =====================================================
 
-MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots)
+MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool openNetworkSlots, ClientInterface *toDedicated)
 		: MenuState(program, mainMenu)
 		, m_targetTransition(Transition::INVALID)
 		, m_humanSlot(0)
 		, m_origMusicVolume(1.f)
-		, m_fadeMusicOut(false) {
+		, m_fadeMusicOut(false)
+		, m_toDedicated(toDedicated) {
 //	_PROFILE_FUNCTION();
 	const Metrics &metrics = g_metrics;
 	Lang &lang = g_lang;

@@ -37,11 +37,13 @@ class DedicatedServer /*: public ServerInterface*/ {
 private:
 	DedicatedConnectionSlot* m_slots[GameConstants::maxPlayers];
 	ServerConnection m_connection;
+	NetworkConnection *m_toServer;
 	bool m_portBound;
 
 private:
 	void bindPort();
 	void addSlot(int playerIndex);
+	void sendIntroMessage();
 
 public:
 	DedicatedServer(/*Program &prog*/);

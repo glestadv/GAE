@@ -136,6 +136,7 @@ int glestMain(int argc, char** argv) {
 			program.loop();
 		} catch(const exception &e) {
 			cout << e.what() << endl;
+			getchar();
 			return 1;
 		}
 		return 0;
