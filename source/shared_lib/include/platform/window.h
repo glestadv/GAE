@@ -20,6 +20,7 @@
 #include "types.h"
 #include "input.h"
 #include "timer.h"
+#include "platform_util.h"
 
 using std::map;
 using std::string;
@@ -69,14 +70,14 @@ protected:
 	int w;
 	int h;
 	WindowHandle handle;
+	VideoMode m_videoMode;
+	bool m_resizing;
 
 #	if defined(WIN32)
 		string text;
 		WindowStyle windowStyle;
 		string className;
 		DWORD style;
-		DWORD exStyle;
-		bool ownDc;
 
 		void setMouseCapture(bool c);
 #	else
@@ -100,6 +101,7 @@ public:
 	int getClientW();//			{return getW();}
 	int getClientH();//			{return getH();}
 	float getAspect();
+	VideoMode getVideoMode() const { return m_videoMode; }
 
 	//object state
 	void setText(string text);
@@ -108,6 +110,8 @@ public:
 	void setPos(int x, int y);
 	void setEnabled(bool enabled);
 	void setVisible(bool visible);
+	void setVideoMode(VideoMode viedoMode) { m_videoMode = viedoMode; }
+	void resize(PlatformContextGl *context, VideoMode mode);
 
 	//misc
 	void create();
@@ -115,8 +119,9 @@ public:
 	void maximize();
 	void restore();
 	//void showPopupMenu(Menu *menu, int x, int y);
+	void destroy(string &in_className, WindowHandle handle);
 	void destroy();
-	void toggleFullscreen();
+	bool toggleFullscreen();
 	bool handleEvent();
 
 protected:
@@ -146,8 +151,8 @@ private:
 #	elif defined(WIN32)
 		static LRESULT CALLBACK eventRouter(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		static int getNextClassName();
-		void registerWindow(WNDPROC wndProc = NULL);
-		void createWindow(LPVOID creationData = NULL);
+		void registerWindow(const string &className, WNDPROC wndProc = NULL);
+		WindowHandle createWindow(const string &className, LPVOID creationData = NULL);
 		void mouseEvent(int asdf, MouseButton mouseButton) {
 			const Vec2i &mousePos = input.getMousePos();
 			switch(asdf) {

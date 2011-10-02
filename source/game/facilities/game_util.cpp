@@ -31,18 +31,30 @@ const string gaeMailString= CONTACT_STRING;
 
 const string glestVersionString= "v3.2.2";
 
-#if _GAE_DEBUG_EDITION_ && MAD_SYNC_CHECKING
-#	error MAD_SYNC_CHECKING and _GAE_DEBUG_EDITION_ not a good idea
-#elif _GAE_DEBUG_EDITION_
-	const string gaeVersionString = string(VERSION_STRING) + "_dev_edition";
-#elif MAD_SYNC_CHECKING
-	const string gaeVersionString = string(VERSION_STRING) + "_sync_test";
+#if _GAE_DEBUG_EDITION_
+	const string gaeVersionString = string(VERSION_STRING) + "_de (" + getGitHash() + ")";
 #else
-	const string gaeVersionString = VERSION_STRING;
+	const string gaeVersionString = string(VERSION_STRING) + " (" + getGitHash() + ")";
 #endif
 
 string getCrashDumpFileName(){
 	return "gae" + gaeVersionString + ".dmp";
+}
+
+string getGitHash() {
+	const string desc(build_git_sha);
+	string hash;
+	if (desc.size() > 7) {
+		hash = desc.substr(desc.size() - 7);
+		foreach (string, c, hash) {
+			if (islower(*c)) {
+				*c = toupper(*c);
+			}
+		}
+	} else {
+		hash = "???";
+	}
+	return hash;
 }
 
 string getNetworkVersionString(){
@@ -83,20 +95,32 @@ string getGlestTeamMemberField(int i, TeamMemberField field) {
 }
 
 int getGAETeamMemberCount() {
-	return 7;
+	return 4;
 }
 
 string getGAETeamMemberField(int i, TeamMemberField field) {
 	Lang &l= Lang::getInstance();
 	switch (i) {
-		case 0: return field == TeamMemberField::NAME ? "Daniel Santos"    : l.get("Programming");
-		case 1: return field == TeamMemberField::NAME ? "Nathan Turner"    : l.get("Programming");
-		case 2: return field == TeamMemberField::NAME ? "James McCulloch"  : l.get("Programming");
-		case 3: return field == TeamMemberField::NAME ? "Frank Tetzel"     : l.get("Programming");
-		case 4: return field == TeamMemberField::NAME ? "Jaagup Repän"     : l.get("Programming");
-		case 5: return field == TeamMemberField::NAME ? "Titus Tscharntke" : l.get("Programming");
-		case 6: return field == TeamMemberField::NAME ? "Eric Wilson"      : l.get("Programming");
+		case 0: return field == TeamMemberField::NAME ? "Nathan Turner"    : l.get("Programming");
+		case 1: return field == TeamMemberField::NAME ? "James McCulloch"  : l.get("Programming");
+		case 2: return field == TeamMemberField::NAME ? "Frank Tetzel"     : l.get("Programming");
+		case 3: return field == TeamMemberField::NAME ? "John Harvey"      : l.get("Translator");
 		default: throw runtime_error("GAE Team Memeber " + intToStr(i) + " does not exist!");
+	}
+}
+
+int getContributorCount() {
+	return 4;
+}
+
+string getContributorField(int i, TeamMemberField field) {
+	Lang &l= Lang::getInstance();
+	switch (i) {
+		case 0: return field == TeamMemberField::NAME ? "Daniel Santos"    : l.get("Programming");
+		case 1: return field == TeamMemberField::NAME ? "Jaagup Repän"     : l.get("Programming");
+		case 2: return field == TeamMemberField::NAME ? "Titus Tscharntke" : l.get("Programming");
+		case 3: return field == TeamMemberField::NAME ? "Eric Wilson"      : l.get("Programming");
+		default: throw runtime_error("Contributor " + intToStr(i) + " does not exist!");
 	}
 }
 

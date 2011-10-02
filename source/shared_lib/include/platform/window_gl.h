@@ -32,6 +32,7 @@ public:
 	void initGl(int colorBits, int depthBits, int stencilBits);
 	void makeCurrentGl();
 	void swapBuffersGl();
+	virtual void resize(VideoMode mode);
 };
 
 }}//end namespace

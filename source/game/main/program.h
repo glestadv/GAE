@@ -13,7 +13,6 @@
 #define _GLEST_GAME_PROGRAM_H_
 
 #include "context.h"
-#include "timer.h"
 #include "platform_util.h"
 #include "socket.h"
 #include "metrics.h"
@@ -23,7 +22,7 @@
 #include "forward_decs.h"
 #include "game_constants.h"
 #include "widget_window.h"
-#include "compound_widgets.h"
+#include "framed_widgets.h"
 
 using namespace Shared::Platform;
 using namespace Glest::Graphics;
@@ -118,6 +117,9 @@ private:
 
 	SimulationInterface *simulationInterface;
 
+	int fps, lastFps;
+	StaticText *m_fpsLabel;
+
 	ProgramState *m_programState;
 	bool crashed;
 	bool terminating;
@@ -137,6 +139,8 @@ public:
 
 	SimulationInterface* getSimulationInterface() { return simulationInterface; }
 	void setSimInterface(SimulationInterface *si);
+
+	void setFpsCounterVisible(bool v);
 
 	// InputWidget virtuals
 	virtual bool mouseDown(MouseButton btn, Vec2i pos) override;

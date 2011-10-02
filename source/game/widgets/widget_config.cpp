@@ -19,6 +19,9 @@ using Script::ScriptManager;
 using Global::CoreData;
 using namespace Graphics;
 
+#undef WIDGET_LOG
+#define WIDGET_LOG(x) {stringstream _ss; _ss << x; g_logger.logProgramEvent(_ss.str()); }
+
 // =====================================================
 // 	scripting helpers & callbacks
 // =====================================================
@@ -201,9 +204,17 @@ void WidgetConfig::loadFont(const string &name, const string &path, int size) {
 	Font *font = g_renderer.newFreeTypeFont(ResourceScope::GLOBAL);
 	font->setType(path);
 	font->setSize(computeFontSize(size));
+	m_requestedFontSizes[font] = size;
 	m_fonts.push_back(font);
 	m_namedFonts[name] = m_fonts.size() - 1;
 	WIDGET_LOG( "adding font named '" << name << "' from path '" << path << "' @ size: " << size );
+}
+
+void WidgetConfig::reloadFonts() {
+	foreach (FontSizeMap, it, m_requestedFontSizes) {
+		it->first->setSize(computeFontSize(it->second));
+		it->first->reInit();
+	}
 }
 
 int WidgetConfig::loadTexture(const string &name, const string &path, bool mipmap) {
@@ -899,6 +910,7 @@ void WidgetConfig::load() {
 	loadStyles("Display", WidgetType::DISPLAY);
 	loadStyles("Console", WidgetType::CONSOLE);
 	loadStyles("GameStats", WidgetType::GAME_STATS);
+	loadStyles("OptionsPanel", WidgetType::OPTIONS_PANEL);
 
 	loadStyles("TestWidget", WidgetType::TEST_WIDGET);
 	if (luaScript.getGlobal("TestWidget")) {

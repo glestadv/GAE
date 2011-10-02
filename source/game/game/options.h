@@ -14,9 +14,10 @@
 #ifndef _GLEST_GAME_OPTIONS_H_
 #define _GLEST_GAME_OPTIONS_H_
 
-#include "compound_widgets.h"
+#include "framed_widgets.h"
 #include "slider.h"
 #include "sigslot.h"
+#include "platform_util.h"
 
 namespace Glest { namespace Menu {
 	class MenuStateOptions;
@@ -24,49 +25,7 @@ namespace Glest { namespace Menu {
 
 namespace Glest { namespace Gui {
 using namespace Widgets;
-
-// =====================================================
-// 	class SpinnerValueBox
-// =====================================================
-
-class SpinnerValueBox : public StaticText {
-public:
-	SpinnerValueBox(Container *parent) : StaticText(parent) {
-		setWidgetStyle(WidgetType::TEXT_BOX);
-	}
-	virtual void setStyle() override { setWidgetStyle(WidgetType::TEXT_BOX); }
-};
-
-// =====================================================
-// 	class Spinner
-// =====================================================
-
-class Spinner : public CellStrip,  public sigslot::has_slots {
-private:
-	SpinnerValueBox  *m_valueBox;
-	ScrollBarButton  *m_upButton;
-	ScrollBarButton  *m_downButton;
-	int               m_minValue;
-	int               m_maxValue;
-	int               m_increment;
-	int               m_value;
-
-	void onButtonFired(Widget *btn);
-
-public:
-	Spinner(Container *parent);
-
-	void setRanges(int min, int max) { m_minValue = min; m_maxValue = max; }
-	void setIncrement(int inc) { m_increment = inc; }
-	void setValue(int val) { 
-		m_value = clamp(val, m_minValue, m_maxValue);
-		m_valueBox->setText(intToStr(m_value));
-	}
-
-	int getValue() const { return m_value; }
-
-	sigslot::signal<Widget*> ValueChanged;
-};
+using Shared::Platform::VideoMode;
 
 // =====================================================
 // 	class Options
@@ -81,11 +40,20 @@ private:
 				*m_filterList,
 				*m_lightsList,
 				*m_terrainRendererList,
-				*m_modelShaderList;
-							
-	CheckBox	*m_3dTexCheckBox,
-		        *m_debugModeCheckBox,
-				*m_debugKeysCheckBox;
+				*m_waterRendererList,
+				*m_resolutionList,
+				*m_shadowTextureSizeList;
+
+	CheckBox	*m_useShadersCheckBox,
+				*m_fullscreenCheckBox,
+				*m_autoRepairCheckBox,
+				*m_autoReturnCheckBox,
+				*m_bumpMappingCheckBox,
+				*m_specularMappingCheckBox,
+				*m_cameraInvertXAxisCheckBox,
+				*m_cameraInvertYAxisCheckBox,
+				*m_cameraMoveAtEdgesCheckBox,
+				*m_focusArrowsCheckBox;
 	
 	Slider2		*m_volFxSlider,
 				*m_volAmbientSlider,
@@ -97,14 +65,22 @@ private:
 	Spinner     *m_minRenderDistSpinner,
 		        *m_maxRenderDistSpinner;
 
+	Spinner		*m_consoleMaxLinesSpinner,
+				*m_shadowFrameSkipSpinner,
+				*m_scrollSpeedSpinner;
+
+	MessageDialog *m_messageDialog;
+
 	map<string,string>  m_langMap;
 	vector<string>      m_modelShaders;
+	vector<VideoMode>	m_resolutions;
 
 	// can be null, some options are disabled if in game
 	Glest::Menu::MenuStateOptions *m_optionsMenu;
 
 public:
 	Options(CellStrip *parent, Glest::Menu::MenuStateOptions *optionsMenu);
+	virtual ~Options();
 
 	void save();
 	virtual string descType() const override { return "Options"; }
@@ -112,11 +88,7 @@ public:
 private:
 	void disableWidgets();
 	void setupListBoxLang();
-	void initLabels();
-	void initListBoxes();
-	void setTexts();
-	void buildOptionsPanel(CellStrip *container, int cell);
-	void loadShaderList();
+	void syncVideoModeList(VideoMode mode);
 
 	// Build tabs
 	void buildGameTab();
@@ -127,14 +99,14 @@ private:
 	void buildDebugTab();
 
 	// Event callbacks
-	void on3dTexturesToggle(Widget *source);
+	void onCheckBoxCahnged(Widget *source);
 	void onSliderValueChanged(Widget *source);
 	void onSpinnerValueChanged(Widget *source);
 	void onDropListSelectionChanged(Widget *source);
 	void onPlayerNameChanged(Widget *source);
-	void onToggleDebugMode(Widget*);
-	void onToggleDebugKeys(Widget*);
-	void onToggleShaders(Widget *source);
+
+private:
+	bool haveSpecShaders;
 };
 
 // =====================================================

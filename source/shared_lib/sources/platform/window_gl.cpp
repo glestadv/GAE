@@ -44,4 +44,8 @@ void WindowGl::swapBuffersGl(){
 	context.swapBuffers();
 }
 
+void WindowGl::resize(VideoMode mode) {
+	Window::resize(context.getPlatformContextGl(), mode);
+}
+
 }}//end namespace

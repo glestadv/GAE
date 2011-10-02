@@ -42,6 +42,8 @@ private:
 	int displayHeight;
 	int displayRefreshFrequency;
 	int displayWidth;
+	int displayWindowPosX;
+	int displayWindowPosY;
 	bool displayWindowed;
 	bool gsAutoRepairEnabled;
 	bool gsAutoReturnEnabled;
@@ -59,6 +61,7 @@ private:
 	int netServerPort;
 	bool renderCheckGlCaps;
 	int renderColorBits;
+	bool renderCompressTextures;
 	int renderDepthBits;
 	float renderDistanceMax;
 	float renderDistanceMin;
@@ -74,7 +77,6 @@ private:
 	string renderGraphicsFactory;
 	string renderInterpolationMethod;
 	int renderLightsMax;
-	string renderModelShader;
 	string renderModelTestShaders;
 	float renderShadowAlpha;
 	int renderShadowFrameSkip;
@@ -94,11 +96,15 @@ private:
 	int uiConsoleMaxLines;
 	int uiConsoleTimeout;
 	bool uiFocusArrows;
+	int uiLastOptionsPage;
 	string uiLastScenario;
 	string uiLastScenarioCatagory;
 	string uiLocale;
+	bool uiMoveCameraAtScreenEdge;
 	bool uiPhotoMode;
+	bool uiPinWidgets;
 	float uiScrollSpeed;
+	int uiTeamColourMode;
 
 	Config(const char* fileName);
 	
@@ -129,6 +135,8 @@ public:
 	int getDisplayHeight() const				{return displayHeight;}
 	int getDisplayRefreshFrequency() const		{return displayRefreshFrequency;}
 	int getDisplayWidth() const					{return displayWidth;}
+	int getDisplayWindowPosX() const			{return displayWindowPosX;}
+	int getDisplayWindowPosY() const			{return displayWindowPosY;}
 	bool getDisplayWindowed() const				{return displayWindowed;}
 	bool getGsAutoRepairEnabled() const			{return gsAutoRepairEnabled;}
 	bool getGsAutoReturnEnabled() const			{return gsAutoReturnEnabled;}
@@ -146,6 +154,7 @@ public:
 	int getNetServerPort() const				{return netServerPort;}
 	bool getRenderCheckGlCaps() const			{return renderCheckGlCaps;}
 	int getRenderColorBits() const				{return renderColorBits;}
+	bool getRenderCompressTextures() const		{return renderCompressTextures;}
 	int getRenderDepthBits() const				{return renderDepthBits;}
 	float getRenderDistanceMax() const			{return renderDistanceMax;}
 	float getRenderDistanceMin() const			{return renderDistanceMin;}
@@ -161,7 +170,6 @@ public:
 	string getRenderGraphicsFactory() const		{return renderGraphicsFactory;}
 	string getRenderInterpolationMethod() const	{return renderInterpolationMethod;}
 	int getRenderLightsMax() const				{return renderLightsMax;}
-	string getRenderModelShader() const			{return renderModelShader;}
 	string getRenderModelTestShaders() const	{return renderModelTestShaders;}
 	float getRenderShadowAlpha() const			{return renderShadowAlpha;}
 	int getRenderShadowFrameSkip() const		{return renderShadowFrameSkip;}
@@ -181,11 +189,15 @@ public:
 	int getUiConsoleMaxLines() const			{return uiConsoleMaxLines;}
 	int getUiConsoleTimeout() const				{return uiConsoleTimeout;}
 	bool getUiFocusArrows() const				{return uiFocusArrows;}
+	int getUiLastOptionsPage() const			{return uiLastOptionsPage;}
 	string getUiLastScenario() const			{return uiLastScenario;}
 	string getUiLastScenarioCatagory() const	{return uiLastScenarioCatagory;}
 	string getUiLocale() const					{return uiLocale;}
+	bool getUiMoveCameraAtScreenEdge() const	{return uiMoveCameraAtScreenEdge;}
 	bool getUiPhotoMode() const					{return uiPhotoMode;}
+	bool getUiPinWidgets() const				{return uiPinWidgets;}
 	float getUiScrollSpeed() const				{return uiScrollSpeed;}
+	int getUiTeamColourMode() const				{return uiTeamColourMode;}
 
 	void setAiLogLevel(int val)					{aiLogLevel = val;}
 	void setAiLoggingEnabled(bool val)			{aiLoggingEnabled = val;}
@@ -198,6 +210,8 @@ public:
 	void setDisplayHeight(int val)				{displayHeight = val;}
 	void setDisplayRefreshFrequency(int val)	{displayRefreshFrequency = val;}
 	void setDisplayWidth(int val)				{displayWidth = val;}
+	void setDisplayWindowPosX(int val)			{displayWindowPosX = val;}
+	void setDisplayWindowPosY(int val)			{displayWindowPosY = val;}
 	void setDisplayWindowed(bool val)			{displayWindowed = val;}
 	void setGsAutoRepairEnabled(bool val)		{gsAutoRepairEnabled = val;}
 	void setGsAutoReturnEnabled(bool val)		{gsAutoReturnEnabled = val;}
@@ -215,6 +229,7 @@ public:
 	void setNetServerPort(int val)				{netServerPort = val;}
 	void setRenderCheckGlCaps(bool val)			{renderCheckGlCaps = val;}
 	void setRenderColorBits(int val)			{renderColorBits = val;}
+	void setRenderCompressTextures(bool val)	{renderCompressTextures = val;}
 	void setRenderDepthBits(int val)			{renderDepthBits = val;}
 	void setRenderDistanceMax(float val)		{renderDistanceMax = val;}
 	void setRenderDistanceMin(float val)		{renderDistanceMin = val;}
@@ -230,7 +245,6 @@ public:
 	void setRenderGraphicsFactory(string val)	{renderGraphicsFactory = val;}
 	void setRenderInterpolationMethod(string val){renderInterpolationMethod = val;}
 	void setRenderLightsMax(int val)			{renderLightsMax = val;}
-	void setRenderModelShader(string val)		{renderModelShader = val;}
 	void setRenderModelTestShaders(string val)	{renderModelTestShaders = val;}
 	void setRenderShadowAlpha(float val)		{renderShadowAlpha = val;}
 	void setRenderShadowFrameSkip(int val)		{renderShadowFrameSkip = val;}
@@ -250,11 +264,15 @@ public:
 	void setUiConsoleMaxLines(int val)			{uiConsoleMaxLines = val;}
 	void setUiConsoleTimeout(int val)			{uiConsoleTimeout = val;}
 	void setUiFocusArrows(bool val)				{uiFocusArrows = val;}
+	void setUiLastOptionsPage(int val)			{uiLastOptionsPage = val;}
 	void setUiLastScenario(string val)			{uiLastScenario = val;}
 	void setUiLastScenarioCatagory(string val)	{uiLastScenarioCatagory = val;}
 	void setUiLocale(string val)				{uiLocale = val;}
+	void setUiMoveCameraAtScreenEdge(bool val)	{uiMoveCameraAtScreenEdge = val;}
 	void setUiPhotoMode(bool val)				{uiPhotoMode = val;}
+	void setUiPinWidgets(bool val)				{uiPinWidgets = val;}
 	void setUiScrollSpeed(float val)			{uiScrollSpeed = val;}
+	void setUiTeamColourMode(int val)			{uiTeamColourMode = val;}
 };
 
 }}//end namespace

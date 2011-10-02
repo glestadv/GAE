@@ -164,7 +164,7 @@ void Widget::init(const Vec2i &pos, const Vec2i &size) {
 	m_visible = true;
 	m_selected = false;
 	m_enabled = true;
-
+	m_permanent = false;
 	m_pos = pos;
 	m_size = size;
 	if (m_rootWindow != this) {
@@ -1000,7 +1000,12 @@ void TextWidget::alignText(int ndx) {
 	}
 	ASSERT_RANGE(ndx, m_texts.size());
 	Vec2i mySize = me->getSize();
-	const FontMetrics *fm = me->getFont()->getMetrics();
+	const FontMetrics *fm;
+	if (m_texts[ndx].m_font != -1) {
+		fm = g_widgetConfig.getFont(m_texts[ndx].m_font)->getMetrics();
+	} else {
+		fm = me->getFont()->getMetrics();
+	}
 	Vec2f txtDims = fm->getTextDiminsions(m_texts[ndx].m_text);
 
 	int y = (mySize.h - int(txtDims.h)) / 2;

@@ -191,6 +191,7 @@ void StrSoundBuffer::play(int64 fadeOn){
 	else{
 		this->fade= fadeOn;
 		state= sFadingOn;
+		chrono.reset();
 		chrono.start();
 		dsBuffer->SetVolume(dsVolume(0.f));
 	}
@@ -241,6 +242,7 @@ void StrSoundBuffer::stop(int64 fadeOff){
 	else{
 		this->fade= fadeOff;
 		state= sFadingOff;
+		chrono.reset();
 		chrono.start();
 	}
 

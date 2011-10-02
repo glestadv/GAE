@@ -124,19 +124,18 @@ size_t getFileSize(const string &path) {
 	return ret;
 }
 
+string videoModeToString(const VideoMode in_mode) {
+	return toStr(in_mode.w) + "x" + toStr(in_mode.h) + " " + toStr(in_mode.bpp) + "bpp @ " 
+		+ toStr(in_mode.freq) + "Hz.";
+}
 
-
-bool changeVideoMode(int resW, int resH, int colorBits, int refreshFrequency) {
+bool changeVideoMode(const VideoMode in_mode) {
 	DEVMODE devMode;
 
 	for (int i = 0; EnumDisplaySettings(NULL, i, &devMode) ;i++) {
-		if (devMode.dmPelsWidth == resW &&
-				devMode.dmPelsHeight == resH &&
-				devMode.dmBitsPerPel == colorBits) {
-
-			devMode.dmDisplayFrequency = refreshFrequency;
-
-			LONG result = ChangeDisplaySettings(&devMode, 0);
+		if (devMode.dmPelsWidth == in_mode.w && devMode.dmPelsHeight == in_mode.h
+		&& devMode.dmBitsPerPel == in_mode.bpp && devMode.dmDisplayFrequency == in_mode.freq) {
+			LONG result = ChangeDisplaySettings(&devMode, CDS_FULLSCREEN);
 			if (result == DISP_CHANGE_SUCCESSFUL) {
 				return true;
 			} else {
@@ -151,6 +150,17 @@ bool changeVideoMode(int resW, int resH, int colorBits, int refreshFrequency) {
 void restoreVideoMode() {
 	int dispChangeErr = ChangeDisplaySettings(NULL, 0);
 	assert(dispChangeErr == DISP_CHANGE_SUCCESSFUL);
+}
+
+void getPossibleScreenModes(vector<VideoMode> &out_modes) {
+	DEVMODE dm = {0};
+	dm.dmSize = sizeof(dm);
+	for (int iModeNum = 0; EnumDisplaySettings(NULL, iModeNum, &dm) != 0; ++iModeNum) {
+		if (dm.dmBitsPerPel == 32/* || dm.dmBitsPerPel == 16*/) {
+			VideoMode mode(dm.dmPelsWidth, dm.dmPelsHeight, dm.dmBitsPerPel, dm.dmDisplayFrequency);
+			out_modes.push_back(mode);
+		}
+	}
 }
 
 void getScreenMode(int &width, int &height) {

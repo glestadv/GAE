@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Marti�o Figueroa
+//	Copyright (C) 2001-2005 Martiño Figueroa
 //				  2010 James McCulloch <silnarm at gmail>
 //
 //	You can redistribute this code and/or modify it under
@@ -134,6 +134,8 @@ void MenuStateOptions::update() {
 
 void MenuStateOptions::reload() {
 	m_transitionTarget = Transition::RE_LOAD;
+	int foo = m_options->getActivePage();
+	g_config.setUiLastOptionsPage(foo);
 	doFadeOut();
 }
 
@@ -141,10 +143,8 @@ void MenuStateOptions::reload() {
 
 void MenuStateOptions::saveConfig(){
 	//m_options->save();
+	g_config.save();
 
-	Config &config= Config::getInstance();
-
-	config.save();
 	Renderer::getInstance().loadConfig();
 	SoundRenderer::getInstance().loadConfig();
 }

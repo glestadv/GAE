@@ -30,7 +30,7 @@
 #include "sim_interface.h"
 #include "debug_stats.h"
 #include "program.h"
-
+#include "util.h"
 #include "leak_dumper.h"
 
 #if _GAE_DEBUG_EDITION_
@@ -171,6 +171,9 @@ Renderer::Renderer() {
 	perspFov = config.getRenderFov();
 	perspNearPlane = config.getRenderDistanceMin();
 	perspFarPlane = config.getRenderDistanceMax();
+	game = 0;
+	m_mainMenu = 0;
+	m_teamColourMode = TeamColourMode::DISABLED;
 }
 
 Renderer::~Renderer(){
@@ -196,32 +199,37 @@ Renderer &Renderer::getInstance(){
 // ==================== init ====================
 
 bool Renderer::init() {
-	// config
-	g_logger.logProgramEvent("Initialising renderer.");
-	Config &config= Config::getInstance();
-	loadConfig();
-	if (config.getRenderCheckGlCaps()) {
-		checkGlCaps();
-	}
-	if (config.getMiscFirstTime()) {
-		config.setMiscFirstTime(false);
-		autoConfig();
-		config.save();
-	}
-	// init resource managers
-	g_logger.logProgramEvent("\tinit core data.");
-	try {
-		modelManager[ResourceScope::GLOBAL]->init();
-		textureManager[ResourceScope::GLOBAL]->init();
-		fontManager[ResourceScope::GLOBAL]->init();
-	} catch (runtime_error &e) {
-		g_logger.logProgramEvent(
-			string("\tError while initialising data in ResourceScope::GLOBAL.\n\t") + e.what());
-		return false;
-	}
 
+	{	ONE_TIME_TIMER(Renderer_Load_Config, cout);
+		// config
+		g_logger.logProgramEvent("Initialising renderer.");
+		Config &config= Config::getInstance();
+		loadConfig();
+		if (config.getRenderCheckGlCaps()) {
+			checkGlCaps();
+		}
+		if (config.getMiscFirstTime()) {
+			config.setMiscFirstTime(false);
+			autoConfig();
+			config.save();
+		}
+	}
+	{	ONE_TIME_TIMER(Renderer_Init_Resources, cout);
+		// init resource managers
+		g_logger.logProgramEvent("\tinit core data.");
+		try {
+			modelManager[ResourceScope::GLOBAL]->init();
+			textureManager[ResourceScope::GLOBAL]->init();
+			fontManager[ResourceScope::GLOBAL]->init();
+		} catch (runtime_error &e) {
+			g_logger.logProgramEvent(
+				string("\tError while initialising data in ResourceScope::GLOBAL.\n\t") + e.what());
+			return false;
+		}
+	}
 	// load shader code (todo ?: do this in initGame(), so a shader-set can be selected in menu)
 	if (g_config.getRenderTestingShaders()) {
+		ONE_TIME_TIMER(Renderer_Load_Test_Shaders, cout);
 		// some hacky stuff so we can test easier, get a list of shader 'sets' to load
 		string names = g_config.getRenderModelTestShaders();
 		g_logger.logProgramEvent("\t'renderTestShaders' is set, loading model shaders: " + names + ".");
@@ -236,34 +244,54 @@ bool Renderer::init() {
 			tok = strtok(0, ",");
 		}
 		delete [] tmp;
-		try {
-			static_cast<ModelRendererGl*>(modelRenderer)->loadShaders(programNames);
-		} catch (runtime_error &e) {
-			g_logger.logError("\tError: shader source load/compile failed:\n\t" + string(e.what()));
-		}
+		static_cast<ModelRendererGl*>(modelRenderer)->loadShaders(programNames);
 		while (mediaErrorLog.hasError()) {
 			MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
 			g_logger.logError(rec.path, rec.msg);
 		}
 	// load single model shader
 	} else if (g_config.getRenderUseShaders()) {
-		string name = g_config.getRenderModelShader();
-		g_logger.logProgramEvent("Loading model shader: " + name + ".");
-		try {
-			static_cast<ModelRendererGl*>(modelRenderer)->loadShader(name);
-		} catch (runtime_error &e) {
-			g_logger.logError("\tError: shader source load/compile failed:\n\t" + string(e.what()));
+		ONE_TIME_TIMER(Renderer_Load_Shader, cout);
+		bool bump = g_config.getRenderEnableBumpMapping();
+		bool spec = g_config.getRenderEnableSpecMapping();
+		if (spec) {
+			if (!fileExists("gae/shaders/spec.vs") || !fileExists("gae/shaders/bump_spec.vs")) {
+				g_config.setRenderEnableSpecMapping(false);
+				spec = false;
+			}
 		}
+		string name;
+		if (bump && spec) {
+			name = "bump_spec";
+		} else if (bump) {
+			name = "bump";
+		} else if (spec) {
+			name = "spec";
+		} else {
+			name = "basic";
+		}
+		g_logger.logProgramEvent("Loading model shader: " + name + ".");
+		static_cast<ModelRendererGl*>(modelRenderer)->setShader(name);
 		while (mediaErrorLog.hasError()) {
 			MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
 			g_logger.logError(rec.path, rec.msg);
 		}
 	}
-
 	g_logger.logProgramEvent("\tinit 2d display lists.");
 	init2dList();
-
 	return true;
+}
+
+void Renderer::resetGlLists() {
+	init2dList();
+
+	if (m_mainMenu) {
+		init3dListMenu(m_mainMenu);
+	}
+	if (game) {
+		init3dList();
+		init3dListGLSL();
+	}
 }
 
 void Renderer::changeShader(const string &name) {
@@ -272,11 +300,7 @@ void Renderer::changeShader(const string &name) {
 	} else {
 		g_logger.logProgramEvent("Loading model shader: " + name + ".");
 	}
-	try {
-		static_cast<ModelRendererGl*>(modelRenderer)->loadShader(name);
-	} catch (runtime_error &e) {
-		g_logger.logError("\tError: shader source load/compile failed:\n\t" + string(e.what()));
-	}
+	static_cast<ModelRendererGl*>(modelRenderer)->setShader(name);
 	while (mediaErrorLog.hasError()) {
 		MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
 		g_logger.logError(rec.path, rec.msg);
@@ -294,7 +318,9 @@ void Renderer::cycleShaders() {
 }
 
 void Renderer::initGame(GameState *game) {
+	ONE_TIME_TIMER(Renderer_Init_Game, cout);
 	this->game= game;
+	m_mainMenu = 0;
 
 	// check gl caps
 	checkGlOptionalCaps();
@@ -321,7 +347,7 @@ void Renderer::initGame(GameState *game) {
 	// shadows
 	if (m_shadowMode == ShadowMode::PROJECTED || m_shadowMode == ShadowMode::MAPPED) {
 		if (g_metrics.getScreenH() < shadowTextureSize || g_metrics.getScreenH() < shadowTextureSize) {
-			throw runtime_error("Texture size must be smaller than display resolution.");
+			throw runtime_error("Shadow texture size must be smaller than display resolution.");
 		}
 
 		static_cast<ModelRendererGl*>(modelRenderer)->setSecondaryTexCoordUnit(2);
@@ -366,12 +392,15 @@ void Renderer::initGame(GameState *game) {
 }
 
 void Renderer::initMenu(MainMenu *mm){
+	ONE_TIME_TIMER(Renderer_Init_Menu, cout);
+
 	modelManager[ResourceScope::MENU]->init();
 	textureManager[ResourceScope::MENU]->init();
 	fontManager[ResourceScope::MENU]->init();
 	//modelRenderer->setCustomTexture(CoreData::getInstance().getCustomTexture());
 	modelRenderer->setLightCount(1);
 
+	m_mainMenu = mm;
 	init3dListMenu(mm);
 }
 
@@ -1029,6 +1058,7 @@ void Renderer::renderUnits() {
 			Debug::reportRenderUnitsFlag = false;
 		}
 	)
+	const int frame = g_world.getFrameCount();
 	for (int i=0; i < GameConstants::maxPlayers + 1; ++i) {
 		if (toRender[i].empty()) continue;
 
@@ -1051,22 +1081,25 @@ void Renderer::renderUnits() {
 			}
 			RUNTIME_CHECK(unit->getPos().x >= 0 && unit->getPos().y >= 0);
 			RUNTIME_CHECK(unit->getPos().x < world->getMap()->getW() && unit->getPos().y < world->getMap()->getH());
-
-			// push model-view matrix
-			glPushMatrix();
-
-			// translate
-			Vec3f currVec = unit->getCurrVectorSink();
-			glTranslatef(currVec.x, currVec.y, currVec.z);
-
-			// rotate
-			glRotatef(unit->getRotation(), 0.f, 1.f, 0.f);
-			glRotatef(unit->getVerticalRotation(), 1.f, 0.f, 0.f);
+			float alphaThreshold = 0.5f;
+			ShaderProgram *shader = 0;
+			const int id = unit->getId();
 
 			// get model, lerp to animProgess
 			const Model *model = unit->getCurrentModel();
 			bool cycleAnim = unit->isAlive() && !unit->getCurrSkill()->isStretchyAnim();
 			model->updateInterpolationData(unit->getAnimProgress(), cycleAnim);
+
+			// push model-view matrix
+			glPushMatrix();
+			Vec3f currVec = unit->getCurrVectorSink();
+
+			// translate
+			glTranslatef(currVec.x, currVec.y, currVec.z);
+
+			// rotate
+			glRotatef(unit->getRotation(), 0.f, 1.f, 0.f);
+			//glRotatef(unit->getVerticalRotation(), 1.f, 0.f, 0.f);
 
 			// dead/cloak alpha
 			float alpha = unit->getRenderAlpha();
@@ -1074,31 +1107,30 @@ void Renderer::renderUnits() {
 
 			///@todo generalise so custom shaders can be attached to other things
 			/// all controlled with Lua snippets perhaps.
+			if (fade) {
+				alphaThreshold = 0.f;
+				if (unit->isCloaked()) {
+					if (unit->getFaction()->isAlly(thisFaction)) {
+						shader = unit->getType()->getCloakType()->getAllyShader();
+					} else {
+						shader = unit->getType()->getCloakType()->getEnemyShader();
+					}
+				}
+			}
+
+			// team colour tint shader?
+			if (m_teamColourMode >= TeamColourMode::TINT) {
+				shader = static_cast<ModelRendererGl*>(modelRenderer)->getTeamTintShader();
+			}
 
 			// render
-			if (fade) {
-				modelRenderer->setAlphaThreshold(0.f);
-				if (unit->isCloaked()) {
-					UnitShaderSet *uss = 0;
-					if (unit->getFaction()->isAlly(thisFaction)) {
-						uss = unit->getType()->getCloakType()->getAllyShaders();
-					} else {
-						uss = unit->getType()->getCloakType()->getEnemyShaders();
-					}
-					if (uss) {
-						const int frame = g_world.getFrameCount();
-						const int id = unit->getId();
-						modelRenderer->render(model, alpha, frame, id, uss);
-					} else {
-						modelRenderer->render(model, alpha);
-					}
-				} else {
-					modelRenderer->render(model, alpha);
-				}
+			if (m_teamColourMode == TeamColourMode::OUTLINE || m_teamColourMode == TeamColourMode::BOTH) {
+				modelRenderer->renderOutlined(model, 4, modelRenderer->getTeamColour(), alpha, frame, id, shader);
 			} else {
-				modelRenderer->setAlphaThreshold(0.5f);
-				modelRenderer->render(model);
+				modelRenderer->render(model, alpha, frame, id, shader);
 			}
+
+			// inc tri & point counters
 			triangleCount += model->getTriangleCount();
 			pointCount += model->getVertexCount();
 
@@ -1318,6 +1350,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 		modelRenderer->setAlphaThreshold(0.f);
 		float alpha = clamp((minDist-dist) / minDist, 0.f, 1.f);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, Vec4f(1.0f, 1.0f, 1.0f, alpha).ptr());
+		glColor4f(1.f, 1.f, 1.f, alpha);
 		modelRenderer->begin(RenderMode::OBJECTS, menuBackground->getFog());
 		for (int i=0; i < MenuBackground::characterCount; ++i) {
 			glMatrixMode(GL_MODELVIEW);
@@ -1339,6 +1372,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 		const float waterHeight = menuBackground->getWaterHeight();
 		glEnable(GL_BLEND);
 		glNormal3f(0.f, 1.f, 0.f);
+		glColor3f(1.f, 1.f, 1.f);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, Vec4f(1.f, 1.f, 1.f, 1.f).ptr());
 		GLuint waterHandle= static_cast<Texture2DGl*>(menuBackground->getWaterTexture())->getHandle();
 		glBindTexture(GL_TEXTURE_2D, waterHandle);
@@ -1352,11 +1386,10 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 			}
 			glEnd();
 		}
-		glDisable(GL_BLEND);
+		
 		// raindrops
 		if (menuBackground->getRain()) {
 			const float maxRaindropAlpha = 0.5f;
-			glEnable(GL_BLEND);
 			glDisable(GL_LIGHTING);
 			glDisable(GL_ALPHA_TEST);
 			glDepthMask(GL_FALSE);
@@ -1385,6 +1418,7 @@ void Renderer::renderMenuBackground(const MenuBackground *menuBackground){
 				glPopMatrix();
 			}
 		}
+		glDisable(GL_BLEND);
 	}
 	glPopAttrib();
 	assertGl();
@@ -1729,9 +1763,12 @@ void Renderer::autoConfig(){
 	// Model shaders...
 	if (isGlVersionSupported(2, 0, 0)) {
 		config.setRenderUseShaders(true);
-		config.setRenderModelShader("basic");
+		config.setRenderEnableBumpMapping(false);
+		config.setRenderEnableSpecMapping(false);
 	} else {
 		config.setRenderUseShaders(false);
+		config.setRenderEnableBumpMapping(false);
+		config.setRenderEnableSpecMapping(false);
 	}
 }
 
@@ -2220,8 +2257,9 @@ void Renderer::init3dListGLSL(){
 }
 
 void Renderer::init2dList() {
-	int width = g_config.getDisplayWidth();
-	int height = g_config.getDisplayHeight();
+	const Metrics &metrics = g_metrics;
+	int width = metrics.getScreenW();//g_config.getDisplayWidth();
+	int height = metrics.getScreenH();//g_config.getDisplayHeight();
 
 	//this list sets the state for the 2d rendering without 'virtual' co-ordinates
 	list2d = glGenLists(1);

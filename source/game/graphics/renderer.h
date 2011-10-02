@@ -46,8 +46,8 @@ namespace Glest {
 namespace Graphics {
 
 WRAPPED_ENUM( ResourceScope, GLOBAL, MENU, GAME );
-
 WRAPPED_ENUM( ShadowMode, DISABLED, PROJECTED, MAPPED );
+WRAPPED_ENUM( TeamColourMode, DISABLED, OUTLINE, TINT, BOTH );
 
 // ===========================================================
 // 	class Renderer
@@ -106,11 +106,13 @@ private:
 
 	// game
 	const GameState *game;
+	MainMenu *m_mainMenu;
 
 	// misc
 	int triangleCount;
 	int pointCount;
 	Vec4f nearestLightPos;
+	TeamColourMode m_teamColourMode;
 
 	// renderers
 	ModelRenderer *modelRenderer;
@@ -161,13 +163,14 @@ public:
 	void reset3d();
 	void reset2d();
 	void reset3dMenu();
+	void resetGlLists();
 
-	//end
+	// end
 	void end();
 	void endMenu();
 	void endGame();
 
-	//get
+	// get
 	int getTriangleCount() const	{return triangleCount;}
 	int getPointCount() const		{return pointCount;}
 	ShadowMode getShadowMode() const {return m_shadowMode;}
@@ -180,13 +183,16 @@ public:
 	const SceneCuller& getCuller() const { return culler; }
 	void setFarClip(float clip) { perspFarPlane = clip; }
 
-	//misc
+	// misc
 	void reloadResources();
 
 	void changeShader(const string &name);
 	void cycleShaders();
 
-	//engine interface
+	TeamColourMode getTeamColourMode() const { return m_teamColourMode; }
+	void setTeamColourMode(TeamColourMode v) { m_teamColourMode = v; }
+
+	// engine interface
 	Model *newModel(ResourceScope rs);
 	Texture2D *getTexture2D(ResourceScope rs, const string &path);
 	Texture2D *newTexture2D(ResourceScope rs);

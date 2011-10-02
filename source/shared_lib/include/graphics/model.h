@@ -109,6 +109,8 @@ struct MeshVertexBlock {
 				return sizeof(Vertex_PNT);
 			case POS_NORM_TAN_UV:
 				return sizeof(Vertex_PNTU);
+			default:
+				throw runtime_error("Invalid vertex type.");
 		}		
 	}
 
@@ -131,6 +133,8 @@ struct MeshVertexBlock {
 				m_posNormTan = reinterpret_cast<Vertex_PNT*>(p); break;
 			case POS_NORM_TAN_UV:
 				m_posNormTanTex = new Vertex_PNTU[count]; break;
+			case NONE:
+				/*NOP*/ break;
 		}
 	}
 
@@ -146,6 +150,8 @@ struct MeshVertexBlock {
 				free_aligned_vec3_array((Vec3f*)m_arrayPtr); break;
 			case POS_NORM_TAN:
 				free_aligned_vec3_array((Vec3f*)m_arrayPtr); break;
+			case NONE:
+				/*NOP*/ break;
 		}
 		m_arrayPtr = 0;
 	}
@@ -203,7 +209,6 @@ class Mesh {
 private:
 	// mesh data
 	Texture2D *textures[MeshTexture::COUNT];
-	//string texturePaths[meshTextureCount];
 
 	// vertex data counts
 	uint32 frameCount;
@@ -215,21 +220,6 @@ private:
 	MeshVertexBlock *m_vertices_anim;
 	MeshVertexBlock m_texCoordData;
 	MeshIndexBlock  m_indices;
-
-	//Vec3f **vertArrays; // if using SIMD interpolation
-	//Vec3f **normArrays;
-
-	//Vec3f *vertices;	// if using x87 interpolation
-	//Vec3f *normals;
-
-	//GLuint *m_vertBuffers;  // if using GLSL interpolation (VBO handles for each frame)
-
-	//GLuint	m_vertexBuffer; // vertex buffer handle if static mesh (single frame)
-	//GLuint  m_indexBuffer;  // index buffer handle
-
-	//Vec2f *texCoords;
-	//Vec3f *tangents;
-	//uint32 *indices;
 
 	// material data
 	Vec3f diffuseColor;
@@ -275,28 +265,6 @@ public:
 	const MeshVertexBlock& getAnimVertBlock(int i) const { return m_vertices_anim[i]; }
 	const MeshVertexBlock& getTecCoordBlock() const { return m_texCoordData; }
 	const MeshIndexBlock&  getIndices() const { return m_indices; }
-
-	//// simd interpolated mesh
-	//const Vec3f *getVertArray(int n) const	{return vertArrays[n]; }
-	//const Vec3f *getNormArray(int n) const	{return normArrays[n]; }
-
-	//// x87 interpolated mesh
-	//const Vec3f *getVertices() const 		{return vertices;}
-	//const Vec3f *getNormals() const 		{return normals;}
-
-	//// simd or x87 versions
-	//const Vec2f *getTexCoords() const		{return texCoords;}
-	//const Vec3f *getTangents() const		{return tangents;}
-	//const uint32 *getIndices() const 		{return indices;}
-	//
-	//// VBO handles, for static meshes only atm
-	//GLuint getVertexBuffer() const       { return m_vertexBuffer; }
-	//GLuint getIndexBuffer() const        { return m_indexBuffer; }
-
-	//GLuint getVertBuffer(unsigned i) const {
-	//	assert(m_vertBuffers && i < frameCount);
-	//	return m_vertBuffers[i];
-	//}
 
 	// material
 	const Vec3f &getDiffuseColor() const	{return diffuseColor;}
@@ -354,11 +322,6 @@ public:
 			meshes[i].updateInterpolationData(t, cycle);
 		}
 	}
-	//void updateInterpolationVertices(float t, bool cycle) const {
-	//	for (int i = 0; i < meshCount; ++i) {
-	//		meshes[i].updateInterpolationVertices(t, cycle);
-	//	}
-	//}
 
 	// get
 	uint8 getFileVersion() const  {return fileVersion;}

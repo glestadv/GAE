@@ -38,8 +38,12 @@ private:
 	bool          m_useFog;
 	MeshCallback *m_meshCallback;
 
-	UnitShaderSets   m_shaders;
-	int	             m_shaderIndex; // index in m_shaders of UnitShaderSet we a currently using, or -1
+	GlslPrograms   m_shaders;
+	GlslProgram   *m_teamTintShader;
+	
+	GlslShader    *m_perVertexLighting;
+
+	int	           m_shaderIndex; // index in m_shaders of UnitShaderSet we are currently using, or -1
 	
 	ShaderProgram	*m_lastShaderProgram;
 	ShaderProgram	*m_fixedFunctionProgram;
@@ -50,14 +54,22 @@ private:
 	static const int TBD_TextureUnit    = GL_TEXTURE5;
 	static const int customTextureUnit  = GL_TEXTURE6;
 
+	GlslProgram* loadShader(const string &dir, const string &programName);
+
 public:
 	ModelRendererGl();
 	~ModelRendererGl();
 
-	void loadShader(const string &programName);
+	//void loadShader(const string &programName);
 	void loadShaders(const vector<string> &programNames);
 
+	void setShader(const string &programName);
+
 	void deleteModelShader();
+
+	void initUniformHandles(ShaderProgram *shader);
+
+	ShaderProgram* getTeamTintShader();
 
 	void cycleShaderSet();
 	const string& getShaderName();
@@ -69,7 +81,8 @@ public:
 	void begin(RenderMode mode, bool fog, MeshCallback *meshCallback = 0) override;
 	void end() override;
 	
-	void render(const Model *model, float fade = 1.f, int frame = 0, int id = 0, UnitShaderSet *customShaders = 0) override;
+	void render(const Model *model, float fade = 1.f, int frame = 0, int id = 0, ShaderProgram *customShaders = 0) override;
+	void renderOutlined(const Model *model, int lineWidth, const Vec3f &colour, float fade = 1.f, int frame = 0, int id = 0, ShaderProgram *customShaders = 0) override;
 	void renderNormalsOnly(const Model *model) override;
 	void renderMeshNormalsOnly(const Mesh *mesh) override;
 
@@ -77,7 +90,8 @@ public:
 	void setSecondaryTexCoordUnit(int v)    { m_secondaryTexCoordUnit = v; }
 
 	void renderMeshNormals(const Mesh *mesh);
-	void renderMesh(const Mesh *mesh, float fade = 1.f, int frame = 0, int id = 0, UnitShaderSet *customShaders = 0) override;
+	void renderMesh(const Mesh *mesh, float fade = 1.f, int frame = 0, int id = 0, ShaderProgram *customShaders = 0) override;
+	void renderMeshOutline(const Mesh *mesh);
 };
 
 }}}//end namespace

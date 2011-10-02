@@ -135,6 +135,14 @@ void Window::setSize(int w, int h) {
 	Private::ScreenHeight = h;
 }
 
+void Window::resize(PlatformContextGl *context, VideoMode mode) {
+	int flags = SDL_OPENGL;
+	if(Private::shouldBeFullscreen){
+		flags |= SDL_FULLSCREEN;
+	}
+	SDL_SetVideoMode(mode.w, mode.h, mode.bpp, flags);
+}
+
 void Window::setPos(int x, int y)  {
 	if(x != 0 || y != 0) {
 		NOIMPL;
@@ -182,8 +190,8 @@ void Window::destroy() {
 	SDL_PushEvent(&event);
 }
 
-void Window::toggleFullscreen() {
-	SDL_WM_ToggleFullScreen(SDL_GetVideoSurface());
+bool Window::toggleFullscreen() {
+	return SDL_WM_ToggleFullScreen(SDL_GetVideoSurface());
 }
 
 void Window::handleMouseDown(SDL_Event event) {

@@ -112,7 +112,7 @@ const AttackSkillType * AttackCommandTypeBase::getAttackSkillType(Field field) c
   * @returns true when completed */
 bool AttackCommandType::updateGeneric(Unit *unit, Command *command, const AttackCommandType *act, 
 									  Unit* target, const Vec2i &targetPos) const {	
-	if (target && target->isDead()) {
+	if (target && target->getHp() <= 0) {
 		// the target is dead, finish command so the unit doesn't 
 		// wander to the target pos
 		unit->setCurrSkill(SkillClass::STOP);
@@ -380,7 +380,7 @@ Unit* Targets::getNearestSkillClass(SkillClass sc) {
 			return it->first;
 		}
 	}
-	return false;
+	return NULL;
 }
 
 Unit* Targets::getNearestHpRatio(fixed hpRatio) {
@@ -389,7 +389,7 @@ Unit* Targets::getNearestHpRatio(fixed hpRatio) {
 			return it->first;
 		}
 	}
-	return false;
+	return NULL;
 }
 
 }} // end namespace Glest::Game

@@ -7,7 +7,7 @@
 // ==============================================================
 
 #include "pch.h"
-#include "complex_widgets.h"
+#include "list_widgets.h"
 
 #include "widget_window.h"
 #include "leak_dumper.h"
@@ -44,7 +44,7 @@ ListBase::ListBase(WidgetWindow* window, Orientation orient, Origin orgn, int ce
 // =====================================================
 
 ListBox::ListBox(Container* parent)
-: ListBase(parent, Orientation::HORIZONTAL, Origin::FROM_LEFT, 2)
+		: ListBase(parent, Orientation::HORIZONTAL, Origin::FROM_LEFT, 2)
 		, MouseWidget(this)
 		, m_listStrip(0)
 		, m_scrollBar(0){
@@ -522,10 +522,11 @@ void DropList::onExpandList(Widget*) {
 void DropList::onSelectionMade(Widget *source) {
 	ListBase *lb = static_cast<ListBase*>(source);
 	assert(floatingList == lb);
-	setSelected(lb->getSelectedIndex());
+	int ndx = lb->getSelectedIndex();
 	floatingList->Destroyed.disconnect(this);
 	onListDisposed(lb);
 	getRootWindow()->removeFloatingWidget(lb);
+	setSelected(ndx);
 }
 
 void DropList::onSameSelected(Widget *source) {

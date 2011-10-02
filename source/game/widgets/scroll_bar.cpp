@@ -245,8 +245,10 @@ void ScrollBarShaft::recalc() {
 }
 
 void ScrollBarShaft::setSize(const Vec2i &sz) {
-	Container::setSize(sz);
-	recalc();
+	if (getSize() != sz) {
+		Container::setSize(sz);
+		recalc();
+	}
 }
 
 bool ScrollBarShaft::mouseDown(MouseButton btn, Vec2i pos) {
@@ -372,7 +374,7 @@ void ScrollBar::onScrollBtnFired(Widget *source) {
 }
 
 void ScrollBar::scrollLine(bool increase) {
-	m_shaft->onThumbMoved(increase ? m_lineSize : -m_lineSize);
+	m_shaft->onThumbMoved(increase ? m_shaft->getPageSize() : -m_shaft->getPageSize() );
 }
 
 // =====================================================
@@ -475,7 +477,7 @@ void ScrollPane::onHorizontalScroll(ScrollBar*) {
 }
 
 void ScrollPane::onScrollCellResized(Vec2i avail) {
-	WIDGET_LOG( descShort() << " ScrollPane::layoutCells() setting available scroll range to " << avail );
+	WIDGET_LOG( descShort() << " ScrollPane::onScrollCellResized() setting available scroll range to " << avail );
 	m_vertBar->setRanges(m_totalRange.h, avail.h);
 	m_horizBar->setRanges(m_totalRange.w, avail.w);
 	setOffset(m_offset);

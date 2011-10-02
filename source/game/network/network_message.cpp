@@ -235,7 +235,7 @@ void LaunchMessage::send(NetworkConnection* connection) const {
 // =====================================================
 
 DataSyncMessage::DataSyncMessage(RawMessage raw)
-		: m_data(0), fromRaw(true) {
+		: m_data(0), rawMsg(raw) {
 	if (raw.size < 4 * sizeof(int32) && raw.size % sizeof(int32) != 0) {
 		throw GarbledMessage(getType(), NetSource::SERVER);
 	}
@@ -249,17 +249,30 @@ DataSyncMessage::DataSyncMessage(RawMessage raw)
 	}
 }
 
-DataSyncMessage::DataSyncMessage(World &world) : m_data(0), fromRaw(false) {
+DataSyncMessage::DataSyncMessage(World &world) : m_data(0), rawMsg() {
+	CHECK_HEAP();
 	Checksum checksums[4];
 	world.getTileset()->doChecksum(checksums[0]);
-	NETWORK_LOG( "Tilset: " << world.getTileset()->getName() << ", checksum: " << intToHex(checksums[0].getSum()));
+	NETWORK_LOG(
+		"Tilset: " << world.getTileset()->getName() << ", checksum: "
+		<< intToHex(checksums[0].getSum())
+	);
 	world.getMap()->doChecksum(checksums[1]);
-	NETWORK_LOG( "Map: " << world.getMap()->getName() << ", checksum: " << intToHex(checksums[1].getSum()));
+	NETWORK_LOG(
+		"Map: " << world.getMap()->getName() << ", checksum: "
+		<< intToHex(checksums[1].getSum())
+	);
 	const TechTree *tt = world.getTechTree();
 	tt->doChecksumDamageMult(checksums[2]);
-	NETWORK_LOG( "TechTree: " << tt->getName() << ", Damge Multiplier checksum: " << intToHex(checksums[2].getSum()));
+	NETWORK_LOG(
+		"TechTree: " << tt->getName() << ", Damge Multiplier checksum: "
+		<< intToHex(checksums[2].getSum())
+	);
 	tt->doChecksumResources(checksums[3]);
-	NETWORK_LOG( "TechTree: " << tt->getName() << ", Resource Types checksum: " << intToHex(checksums[3].getSum()));
+	NETWORK_LOG(
+		"TechTree: " << tt->getName() << ", Resource Types checksum: "
+		<< intToHex(checksums[3].getSum())
+	);
 
 	m_cmdTypeCount	 = g_prototypeFactory.getCommandTypeCount();
 	m_skillTypeCount = g_prototypeFactory.getSkillTypeCount();
@@ -268,46 +281,63 @@ DataSyncMessage::DataSyncMessage(World &world) : m_data(0), fromRaw(false) {
 
 	NETWORK_LOG( "DataSync" );
 	NETWORK_LOG( "========" );
-	NETWORK_LOG( "CommandType count = " << m_cmdTypeCount
+	NETWORK_LOG( 
+		"CommandType count = " << m_cmdTypeCount
 		<< ", SkillType count = " << m_skillTypeCount 
 		<< ", ProdType count = " << m_prodTypeCount 
-		<< ", CloakType count = " << m_cloakTypeCount );
+		<< ", CloakType count = " << m_cloakTypeCount
+	);
 
 	m_data = new int32[getChecksumCount()];
-	int n = -1;
 	for (int i=0; i < 4; ++i) {
-		m_data[++n] = checksums[i].getSum();
+		m_data[i] = checksums[i].getSum();
 	}
 
+	int n = 3;
 	if (getChecksumCount() - 4 > 0) {
-		for (int i=0; i < m_cmdTypeCount	; ++i) {
+		for (int i=0; i < m_cmdTypeCount; ++i) {
 			const CommandType *ct = g_prototypeFactory.getCommandType(i);
 			m_data[++n] = g_prototypeFactory.getChecksum(ct);
-			NETWORK_LOG( "CommandType " << i << ": " << ct->getName() << " of UnitType: " 
-				<< ct->getUnitType()->getName() << ", checksum: " << m_data[n - 1]);
+			NETWORK_LOG(
+				"CommandType id:" << ct->getId() << " " << ct->getName() << " of UnitType: "
+				<< ct->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: " 
+				<< intToHex(m_data[n - 1])
+			);
 		}
 		for (int i=0; i < m_skillTypeCount; ++i) {
 			const SkillType *st = g_prototypeFactory.getSkillType(i);
 			m_data[++n] = g_prototypeFactory.getChecksum(st);
-			NETWORK_LOG( "SkillType " << i << ": " << st->getName() << " of UnitType: " 
-				<< st->getUnitType()->getName() << ", checksum: " << m_data[n - 1] );
+			NETWORK_LOG( 
+				"SkillType id: " << st->getId() << " " << st->getName() << " of UnitType: "
+				<< st->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: "
+				<< intToHex(m_data[n - 1])
+			);
 		}
 		for (int i=0; i < m_prodTypeCount; ++i) {
 			const ProducibleType *pt = g_prototypeFactory.getProdType(i);
 			m_data[++n] = g_prototypeFactory.getChecksum(pt);
 			if (g_prototypeFactory.isUnitType(pt)) {
 				const UnitType *ut = static_cast<const UnitType*>(pt);
-				NETWORK_LOG( "UnitType " << i << ": " << ut->getName() << " of FactionType: " 
-					<< ut->getFactionType()->getName() << ", checksum: " << m_data[n - 1] );
+				NETWORK_LOG(
+					"UnitType id: " << ut->getId() << " " << ut->getName() << " of FactionType: " 
+					<< ut->getFactionType()->getName() << ", checksum[" << (n - 1) << "]: "
+					<< intToHex(m_data[n - 1])
+				);
 			} else if (g_prototypeFactory.isUpgradeType(pt)) {
 				const UpgradeType *ut = static_cast<const UpgradeType*>(pt);
-				NETWORK_LOG( "UpgradeType " << i << ": " << ut->getName() << " of FactionType: " 
-					<< ut->getFactionType()->getName() << ", checksum: " << m_data[n - 1] );
+				NETWORK_LOG( 
+					"UpgradeType id: " << ut->getId() << " " << ut->getName() << " of FactionType: "
+					<< ut->getFactionType()->getName() << ", checksum[" << (n - 1) << "]: "
+					<< intToHex(m_data[n - 1])
+				);
 			} else if (g_prototypeFactory.isGeneratedType(pt)) {
 				const GeneratedType *gt = static_cast<const GeneratedType*>(pt);
-				NETWORK_LOG( "GeneratedType " << i << ": " << gt->getName() << " of CommandType: " 
+				NETWORK_LOG(
+					"GeneratedType id: " << gt->getId() << " " << gt->getName() << " of CommandType: "
 					<< gt->getCommandType()->getName() << " of UnitType: " 
-					<< gt->getCommandType()->getUnitType()->getName() << ", checksum: " << m_data[n - 1]);
+					<< gt->getCommandType()->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: "
+					<< intToHex(m_data[n - 1])
+				);
 			} else {
 				throw runtime_error(string("Unknown producible class for type: ") + pt->getName());
 			}
@@ -315,19 +345,27 @@ DataSyncMessage::DataSyncMessage(World &world) : m_data(0), fromRaw(false) {
 		for (int i=0; i < m_cloakTypeCount; ++i) {
 			const CloakType *ct = g_prototypeFactory.getCloakType(i);
 			m_data[n++] = g_prototypeFactory.getChecksum(ct);
-			NETWORK_LOG( "CloakType " << i << ": " << ct->getName() << " of UnitType: "
-				<< ct->getUnitType()->getName() << ", checksum: " << m_data[n - 1] );
+			NETWORK_LOG(
+				"CloakType id: " << ct->getId() << ": " << ct->getName() << " of UnitType: "
+				<< ct->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: "
+				<< intToHex(m_data[n - 1])
+			);
 		}
 	}
 	NETWORK_LOG( "========" );
+	CHECK_HEAP();
 }
 
 DataSyncMessage::~DataSyncMessage() {
-	if (fromRaw) {
-		delete [] (m_data - 4); // hacky...
+	CHECK_HEAP();
+
+	if (rawMsg.data) {
+		delete [] rawMsg.data;
 	} else {
 		delete [] m_data;
 	}
+
+	CHECK_HEAP();
 }
 
 void DataSyncMessage::send(NetworkConnection* connection) const {
@@ -653,7 +691,7 @@ void KeyFrame::addUpdate(ProjectileUpdate updt) {
 	writePtr += sizeof(ProjectileUpdate);
 	updateSize += sizeof(ProjectileUpdate);
 	++projUpdateCount;
-	NETWORK_LOG( __FUNCTION__ << "(ProjectileUpdate updt): Frame Offset: " << updt.end_offset );
+	NETWORK_LOG( __FUNCTION__ << "(ProjectileUpdate updt): Frame Offset: " << int(updt.end_offset) );
 }
 
 MoveSkillUpdate KeyFrame::getMoveUpdate() {
@@ -665,7 +703,7 @@ MoveSkillUpdate KeyFrame::getMoveUpdate() {
 	readPtr += sizeof(MoveSkillUpdate);
 	--moveUpdateCount;
 	NETWORK_LOG( __FUNCTION__ << "(): Pos Offset:" << res.posOffset()
-		<< " Frame Offset: " << res.end_offset );
+		<< " Frame Offset: " << int(res.end_offset) );
 	return res;
 }
 
@@ -677,7 +715,7 @@ ProjectileUpdate KeyFrame::getProjUpdate() {
 	ProjectileUpdate res(readPtr);
 	readPtr += sizeof(ProjectileUpdate);
 	--projUpdateCount;
-	NETWORK_LOG( __FUNCTION__ << "(): Frame Offset: " << res.end_offset );
+	NETWORK_LOG( __FUNCTION__ << "(): Frame Offset: " << int(res.end_offset) );
 	return res;
 }
 

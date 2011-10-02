@@ -51,13 +51,15 @@ void AnnouncerThread::execute() {
 		if (m_freeSlots) {
 			if (counter % 10 == 0) {
 				try {
+					//cout << "announcing game on LAN.\n";
 					m_socket.sendAnnounce(g_config.getNetAnnouncePort());
 				} catch (SocketException) {
 					// do nothing
-					printf("SocketException while announcing game on LAN.\n");
+					cout << "SocketException while announcing game on LAN.\n";
 				}
 			}
 		}
+		++counter;
 		sleep(100);
 	}
 }
@@ -205,7 +207,7 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 	m_mapList->setSize(Vec2i(8 * defWidgetHeight, defWidgetHeight));
 	m_mapList->setAnchors(a3);
 	m_mapList->addItems(results);
-	m_mapList->setDropBoxHeight(140);
+	m_mapList->setDropBoxHeight(180);
 	m_mapList->setSelected(0);
 	m_mapList->SelectionChanged.connect(this, &MenuStateNewGame::onChangeMap);
 

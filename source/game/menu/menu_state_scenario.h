@@ -14,7 +14,7 @@
 #define _GLEST_GAME_MENUSTATESCENARIO_H_
 
 #include "main_menu.h"
-#include "compound_widgets.h"
+#include "framed_widgets.h"
 
 namespace Glest { namespace Menu {
 using namespace Widgets;
@@ -60,7 +60,7 @@ private:
 public:
 	MenuStateScenario(Program &program, MainMenu *mainMenu);
 
-	void update();
+	virtual void update() override;
 
 	void launchGame();
 	void setScenario(int i);

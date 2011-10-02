@@ -20,15 +20,15 @@
 #include <errno.h>
 
 #include "types.h"
+#include "conversion.h"
+
+namespace Shared { namespace Platform {
 
 using std::string;
 using std::vector;
 using std::exception;
 using std::runtime_error;
-
-using Shared::Platform::int64;
-
-namespace Shared { namespace Platform {
+using namespace Util::Conversion;
 
 void fail(const char *msg, HRESULT hr);
 
@@ -89,8 +89,10 @@ inline void freeDirIterator(DirIterator &di) {
 void mkdir(const string &path, bool ignoreDirExists = false);
 size_t getFileSize(const string &path);
 
-bool changeVideoMode(int resH, int resW, int colorBits, int refreshFrequency);
+string videoModeToString(const VideoMode in_mode);
+bool changeVideoMode(const VideoMode in_mode);
 void restoreVideoMode();
+void getPossibleScreenModes(vector<VideoMode> &out_modes);
 void getScreenMode(int &width, int &height);
 
 void message(string message);
@@ -99,8 +101,6 @@ void exceptionMessage(const exception &excp);
 
 inline int getScreenW()			{return GetSystemMetrics(SM_CXSCREEN);}
 inline int getScreenH()			{return GetSystemMetrics(SM_CYSCREEN);}
-
-void getScreenMode(int &width, int &height);
 
 inline void sleep(int millis)	{Sleep(millis);}
 inline void showCursor(bool b)	{ShowCursor(b);}

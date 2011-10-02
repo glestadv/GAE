@@ -949,6 +949,25 @@ void TabWidget::onButtonClicked(Widget* widget) {
 		// hide the previous page and show the current one
 		m_pages[m_active]->setVisible(false);
 		m_pages[index]->setVisible(true);
+
+		// deselect the previous tab and select the current one
+		m_buttons[m_active]->setSelected(false);
+		m_buttons[index]->setSelected(true);
+
+		m_active = index;
+	}
+}
+
+void TabWidget::setActivePage(int index) {
+	if (m_active != index) {
+		// hide the previous page and show the current one
+		m_pages[m_active]->setVisible(false);
+		m_pages[index]->setVisible(true);
+
+		// deselect the previous button and select the current one
+		m_buttons[m_active]->setSelected(false);
+		m_buttons[index]->setSelected(true);
+
 		m_active = index;
 	}
 }
@@ -983,6 +1002,7 @@ void TabWidget::add(const string &text, CellStrip *cellStrip) {
 		// show the first page
 		if (index == 0) {
 			cellStrip->setVisible(true);
+			m_buttons[index]->setSelected(true);
 		} else {
 			cellStrip->setVisible(false);
 		}

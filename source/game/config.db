@@ -24,6 +24,8 @@ displayHeight				int		height			-		-		Height of the window, in pixels.
 displayRefreshFrequency		int		60				-		-		The number of times to refresh the display per second (hertz).
 displayWidth				int		width			-		-		Width of the window, in pixels.
 displayWindowed				bool	false			-		-		Whether or not to display the game in windowed mode. If false, the game is fullscreen. 
+displayWindowPosX			int		-1				-		-		Position of window, x coordinate (-1 == centre)
+displayWindowPosY			int		-1				-		-		Position of window, y coordinate (-1 == centre)
 gsAutoRepairEnabled			bool	true			-		-		Toggles whether or not auto-repair (idle workers automatically repair damaged structures) is by default on. This can also be turned off in-game on a per-game basis.
 gsAutoReturnEnabled			bool	false			-		-		Toggles whether or not units return after automatically moving to attack a foe.
 gsDayTime					float	1000.f			-		-		Sets the length of the day/night cycle in seconds.
@@ -40,6 +42,7 @@ netServerIp					string	"192.168.1.1"	-		-		The last server IP address which conn
 netServerPort				int		61357			1024	65535	Port to use when acting as a server (eg: hosting a game).
 renderCheckGlCaps			bool	true			-		-		Check for a compatible OpenGL version.
 renderColorBits				int		32				-		-		Number of bits used for the color buffer (also known as the pixel buffer). This determines the number of colors available. 
+renderCompressTextures		bool	true			-		-		Enabled texture compression (uses less memory, adds 'initialisation time')
 renderDepthBits				int		isWindows()?32:16	-	-		Number of bits used for the depth buffer (also known as the Z-buffer). This determines the distances from the camera objects are and influences shadows.
 renderDistanceMax			float	64.f			1.f		65536.f	Maximum distance from the camera objects can be before they are no longer rendered.
 renderDistanceMin			float	1.f				0.0f	65536.f	Minimum distance objects must be from the camera in order to be rendered.
@@ -64,7 +67,6 @@ renderUseShaders			bool	true			-		-		Enable or disable the use of shaders. Openg
 renderUseVBOs				bool	false			-		-		Enable or disable the use of VBOs.
 renderTestingShaders		bool	false			-		-		Use test shaders
 renderModelTestShaders		string	"basic,bump_map"	-	-		Shaders to use if RenderTestingShaders is true. Seprate each shader with a comma.
-renderModelShader			string	"basic"			-		-		Shader to use for rendering models if RenderUseShaders is true.
 renderEnableBumpMapping		bool	true			-		-		Enable or disable bump mapping if RenderUseShaders is true.
 renderEnableSpecMapping		bool	true			-		-		Enable or disable specular mapping if RenderUseShaders is true.
 soundFactory				string	isWindows()?"DirectSound8":"OpenAL"	-	-	The sound renderer to use. Either OpenAL (for Linux and Mac) or DirectSound8 (for Windows).
@@ -76,8 +78,12 @@ soundVolumeMusic			int		90				-		-		The volume of the background music from 0-10
 uiConsoleMaxLines			int		10				-		-		Maximum number of lines that are displayed at any one time in the in-game console. If more than this appear, the oldest ones disappear immediately.
 uiConsoleTimeout			int		20				-		-		Seconds before a console message disappears.
 uiFocusArrows				bool	true			-		-		Toggles the display of arrows on units showing their target.
+uiLastOptionsPage			int		0				0		5		Index of last options tab page selected
 uiLastScenario				string	"glest_classic\/anarchy"	-	-	The name of the last scenario played.
 uiLastScenarioCatagory		string	"glest_classic"	-		-		The category of the last scenario played.
 uiLocale					string	"en"			-		-		Language files that will be used for language strings. Will use the language file of the same name in the lang data folder with the *.lng extension.
 uiPhotoMode					bool	false			-		-		Toggles on or off photo mode, which hides the GUI for images. Note that this can be toggled from the in-game menu.
+uiPinWidgets				bool	false			-		-		Toggles in game widget move/size-ability.
+uiMoveCameraAtScreenEdge	bool	true			-		-		Whether to move the camera when the pointer approaches screen/window edges.
 uiScrollSpeed				float	1.5f			-		-		Speed of scrolling the mouse wheel.
+uiTeamColourMode			int		1				1		3		Team colour mode effect (1 == outline, 2 == tint, 3 = tine & outline)

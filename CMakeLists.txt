@@ -198,18 +198,21 @@ if(WIN32)
 		Delete \\\"$SMPROGRAMS\\\\$MUI_TEMP\\\\Addons Folder.lnk\\\"
 	")
 
+	message( "Bin dir is: ${CMAKE_BINARY_DIR}")
+
 	if(DEFINED GAE_WINDEPS)
 		# freetype, zlib & libpng are linked dynamically, install them next to the binary
 		install(FILES 
 			${GAE_WINDEPS}/bin/freetype6.dll
 			${GAE_WINDEPS}/bin/zlib1.dll
 			${GAE_WINDEPS}/bin/libpng12-0.dll
+			${GAE_WINDEPS}/bin/glew32.dll
 			DESTINATION bin
 		)
 		# dbghelp.dll to get nice crash reports, install program db for debugging symbols
 		install(FILES
-			${CMAKE_BUILD_DIR}/source/game/release/glestadv.pdb
-			${CMAKE_BUILD_DIR}/source/game/release/glestadv.map
+			${CMAKE_BINARY_DIR}/source/game/Release/glestadv.pdb
+			${CMAKE_BINARY_DIR}/source/game/Release/glestadv.map
 			${GAE_WINDEPS}/bin/dbghelp.dll
 			DESTINATION bin
 		)
@@ -237,9 +240,13 @@ if(WIN32)
 else()
 	# for linux, default: tarball, to get deb-package run 'cpack -G DEB'
 	# TODO: try to add some general dependencies for deb and rpm
+	
+	# RPM
 	#set(CPACK_RPM_PACKAGE_REQUIRES "zlib >= 1.2, libogg >= 1.1, libvorbis >= 1.2, lua >= 5.1, SDL >= 1.2")
+	
+	# Debian package
 	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpng12-0, libvorbis0a, libogg0, lua5.1, libsdl1.2debian, libphysfs1")
-	set(CPACK_DEBIAN_PACKAGE_MAINTAINER "James McCulloch <silnarm@gmail.com>")
+	set(CPACK_DEBIAN_PACKAGE_MAINTAINER "The GAE Team <glestae-devel@lists.sourceforge.net>")
 	set(CPACK_DEBIAN_PACKAGE_SECTION "games")
 
 	set(CPACK_GENERATOR "TBZ2")
@@ -247,7 +254,7 @@ endif()
 set(CPACK_STRIP_FILES "TRUE")
 
 set(CPACK_SOURCE_GENERATOR "TBZ2")
-set(CPACK_SOURCE_IGNORE_FILES "/.git/;/.svn/;.kdev;.supp;.patch;.db;/build;.*~;/docs/html/;/package")
+set(CPACK_SOURCE_IGNORE_FILES "/.git/;.gitignore;/.svn/;.kdev;.supp;.patch;.db;/build;.*~;/docs/html/;/package")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "glestae-src-${GAE_VERSION}")
 # get it written to CPackConfig.cmake
 include(CPack)
@@ -273,12 +280,19 @@ else(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 
+option(GAE_PKG_ONLY_DATA "" OFF)
+option(GAE_PKG_ONLY_BIN "" OFF)
+
 # add stuff
-add_subdirectory(source)
+if(NOT GAE_PKG_ONLY_DATA)
+	add_subdirectory(source)
+endif()
 
 # data directory
-install(DIRECTORY data/game/data data/game/maps data/game/techs data/game/tilesets data/game/gae
-		DESTINATION share/glestae OPTIONAL REGEX "/.svn" EXCLUDE)
+if(NOT GAE_PKG_ONLY_BIN)
+	install(DIRECTORY data/game/data data/game/maps data/game/techs data/game/tilesets data/game/gae
+			DESTINATION share/glestae OPTIONAL REGEX "/.svn" EXCLUDE)
+endif()
 
 if(NOT WIN32)
 	# add uninstall target; FIXME: does not delete created folders

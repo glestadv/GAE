@@ -47,6 +47,8 @@ Config::Config(const char* fileName) {
 	displayHeight = p->getInt("DisplayHeight", height);
 	displayRefreshFrequency = p->getInt("DisplayRefreshFrequency", 60);
 	displayWidth = p->getInt("DisplayWidth", width);
+	displayWindowPosX = p->getInt("DisplayWindowPosX", -1);
+	displayWindowPosY = p->getInt("DisplayWindowPosY", -1);
 	displayWindowed = p->getBool("DisplayWindowed", false);
 	gsAutoRepairEnabled = p->getBool("GsAutoRepairEnabled", true);
 	gsAutoReturnEnabled = p->getBool("GsAutoReturnEnabled", false);
@@ -64,6 +66,7 @@ Config::Config(const char* fileName) {
 	netServerPort = p->getInt("NetServerPort", 61357, 1024, 65535);
 	renderCheckGlCaps = p->getBool("RenderCheckGlCaps", true);
 	renderColorBits = p->getInt("RenderColorBits", 32);
+	renderCompressTextures = p->getBool("RenderCompressTextures", true);
 	renderDepthBits = p->getInt("RenderDepthBits", isWindows()?32:16);
 	renderDistanceMax = p->getFloat("RenderDistanceMax", 64.f, 1.f, 65536.f);
 	renderDistanceMin = p->getFloat("RenderDistanceMin", 1.f, 0.0f, 65536.f);
@@ -79,7 +82,6 @@ Config::Config(const char* fileName) {
 	renderGraphicsFactory = p->getString("RenderGraphicsFactory", "OpenGL");
 	renderInterpolationMethod = p->getString("RenderInterpolationMethod", "SIMD");
 	renderLightsMax = p->getInt("RenderLightsMax", 1, 0, 8);
-	renderModelShader = p->getString("RenderModelShader", "basic");
 	renderModelTestShaders = p->getString("RenderModelTestShaders", "basic,bump_map");
 	renderShadowAlpha = p->getFloat("RenderShadowAlpha", 0.2f, 0.f, 1.f);
 	renderShadowFrameSkip = p->getInt("RenderShadowFrameSkip", 2);
@@ -99,11 +101,15 @@ Config::Config(const char* fileName) {
 	uiConsoleMaxLines = p->getInt("UiConsoleMaxLines", 10);
 	uiConsoleTimeout = p->getInt("UiConsoleTimeout", 20);
 	uiFocusArrows = p->getBool("UiFocusArrows", true);
+	uiLastOptionsPage = p->getInt("UiLastOptionsPage", 0, 0, 5);
 	uiLastScenario = p->getString("UiLastScenario", "glest_classic/anarchy");
 	uiLastScenarioCatagory = p->getString("UiLastScenarioCatagory", "glest_classic");
 	uiLocale = p->getString("UiLocale", "en");
+	uiMoveCameraAtScreenEdge = p->getBool("UiMoveCameraAtScreenEdge", true);
 	uiPhotoMode = p->getBool("UiPhotoMode", false);
+	uiPinWidgets = p->getBool("UiPinWidgets", false);
 	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
+	uiTeamColourMode = p->getInt("UiTeamColourMode", 1, 1, 3);
 
 	delete p;
 
@@ -126,6 +132,8 @@ void Config::save(const char *path) {
 	p->setInt("DisplayHeight", displayHeight);
 	p->setInt("DisplayRefreshFrequency", displayRefreshFrequency);
 	p->setInt("DisplayWidth", displayWidth);
+	p->setInt("DisplayWindowPosX", displayWindowPosX);
+	p->setInt("DisplayWindowPosY", displayWindowPosY);
 	p->setBool("DisplayWindowed", displayWindowed);
 	p->setBool("GsAutoRepairEnabled", gsAutoRepairEnabled);
 	p->setBool("GsAutoReturnEnabled", gsAutoReturnEnabled);
@@ -143,6 +151,7 @@ void Config::save(const char *path) {
 	p->setInt("NetServerPort", netServerPort);
 	p->setBool("RenderCheckGlCaps", renderCheckGlCaps);
 	p->setInt("RenderColorBits", renderColorBits);
+	p->setBool("RenderCompressTextures", renderCompressTextures);
 	p->setInt("RenderDepthBits", renderDepthBits);
 	p->setFloat("RenderDistanceMax", renderDistanceMax);
 	p->setFloat("RenderDistanceMin", renderDistanceMin);
@@ -158,7 +167,6 @@ void Config::save(const char *path) {
 	p->setString("RenderGraphicsFactory", renderGraphicsFactory);
 	p->setString("RenderInterpolationMethod", renderInterpolationMethod);
 	p->setInt("RenderLightsMax", renderLightsMax);
-	p->setString("RenderModelShader", renderModelShader);
 	p->setString("RenderModelTestShaders", renderModelTestShaders);
 	p->setFloat("RenderShadowAlpha", renderShadowAlpha);
 	p->setInt("RenderShadowFrameSkip", renderShadowFrameSkip);
@@ -178,11 +186,15 @@ void Config::save(const char *path) {
 	p->setInt("UiConsoleMaxLines", uiConsoleMaxLines);
 	p->setInt("UiConsoleTimeout", uiConsoleTimeout);
 	p->setBool("UiFocusArrows", uiFocusArrows);
+	p->setInt("UiLastOptionsPage", uiLastOptionsPage);
 	p->setString("UiLastScenario", uiLastScenario);
 	p->setString("UiLastScenarioCatagory", uiLastScenarioCatagory);
 	p->setString("UiLocale", uiLocale);
+	p->setBool("UiMoveCameraAtScreenEdge", uiMoveCameraAtScreenEdge);
 	p->setBool("UiPhotoMode", uiPhotoMode);
+	p->setBool("UiPinWidgets", uiPinWidgets);
 	p->setFloat("UiScrollSpeed", uiScrollSpeed);
+	p->setInt("UiTeamColourMode", uiTeamColourMode);
 
 	p->save(path);
 	delete p;

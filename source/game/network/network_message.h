@@ -32,6 +32,9 @@ struct RawMessage {
 	uint32 type;
 	uint32 size;
 	uint8* data;
+
+	RawMessage() : type(0), size(0), data(0) { }
+	RawMessage(const RawMessage &m) : type(m.type), size(m.size), data(m.data) { }
 };
 
 struct MsgHeader {
@@ -204,7 +207,7 @@ private:
 	int32 m_prodTypeCount;
 	int32 m_cloakTypeCount;
 	int32 *m_data;
-	bool fromRaw;
+	RawMessage rawMsg;
 
 public:
 	DataSyncMessage(RawMessage raw);
@@ -260,7 +263,7 @@ public:
 // ==============================================================
 //	class CommandList
 // ==============================================================
-/**	Message to issue commands to several units */
+/**	Message to send (unit) commands to server */
 class CommandListMessage : public Message {
 	friend class NetworkConnection;
 private:

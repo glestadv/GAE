@@ -1,7 +1,7 @@
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
-//	Copyright (C) 2001-2005 Marti�o Figueroa
+//	Copyright (C) 2001-2005 Martiño Figueroa
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -220,7 +220,7 @@ TeamInfoWidget::TeamInfoWidget(Container *parent)
 	m_nameTicker->setTransitionInterval(120 * 2);
 	m_nameTicker->setDisplayInterval(120 * 2);
 
-	m_roleTicker = new TickerTape(this, SizeHint(50), Alignment::FLUSH_LEFT);
+	m_roleTicker = new TickerTape(this, SizeHint(75), Alignment::FLUSH_RIGHT);
 	m_roleTicker->setCell(2);
 	m_roleTicker->setAnchors(anchors);
 //	m_roleTicker->setOverlapTransitions(true);
@@ -256,7 +256,7 @@ MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu)
 	infoWidget->setCell(0);
 	infoWidget->setAnchors(Anchors(Anchor(AnchorType::RIGID, 0)));
 
-	CellStrip *strip = new CellStrip(rootStrip, Orientation::HORIZONTAL, 2);
+	CellStrip *strip = new CellStrip(rootStrip, Orientation::HORIZONTAL, 3);
 	strip->setCell(1);
 	Anchors a(Anchor(AnchorType::RIGID, 0));
 	strip->setAnchors(a);
@@ -267,17 +267,17 @@ MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu)
 	teamWidget->setTeam(g_lang.get("GlestTeam"));
 	teamWidget->setMembers(getGlestTeamMemberCount(), &getGlestTeamMemberField);
 
-	//teamWidget = new TeamInfoWidget(strip);
-	//teamWidget->setCell(1);
-	//teamWidget->setAnchors(sidePad);
-	//teamWidget->setTeam("Mod Team (place-holder)");
-	//teamWidget->setMembers(glestTeamCount, glestTeamNames, glestTeamRoles);
-
 	teamWidget = new TeamInfoWidget(strip);
-	teamWidget->setCell(1);//2);
+	teamWidget->setCell(1);
 	teamWidget->setAnchors(a);
 	teamWidget->setTeam(g_lang.get("GaeTeam"));
 	teamWidget->setMembers(getGAETeamMemberCount(), &getGAETeamMemberField);
+
+	teamWidget = new TeamInfoWidget(strip);
+	teamWidget->setCell(2);
+	teamWidget->setAnchors(a);
+	teamWidget->setTeam(g_lang.get("Contributors"));
+	teamWidget->setMembers(getContributorCount(), &getContributorField);
 
 	rootStrip->layoutCells();
 	infoWidget->start();

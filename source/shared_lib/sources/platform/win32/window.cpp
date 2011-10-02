@@ -18,6 +18,7 @@
 #include "control.h"
 #include "conversion.h"
 #include "platform_util.h"
+#include "gl_wrap.h"
 
 #include "leak_dumper.h"
 
@@ -43,21 +44,15 @@ Window::WindowMap Window::createdWindows;
 Window::Window() {
 	handle = 0;
 	style =  windowedFixedStyle;
-	exStyle = 0;
-	ownDc = false;
 	x = 0;
 	y = 0;
 	w = 100;
 	h = 100;
+	m_resizing = false;
 }
 
 Window::~Window() {
-	if (handle != 0) {
-		DestroyWindow(handle);
-		handle = 0;
-		BOOL b = UnregisterClass(className.c_str(), GetModuleHandle(NULL));
-		assert(b);
-	}
+	destroy(className, handle);
 }
 
 //static
@@ -66,7 +61,14 @@ bool Window::handleEvent() {
 
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 		if (msg.message == WM_QUIT) {
-			return false;
+			// when the window is destroyed for resizing it will
+			// send a WM_QUIT message that should be ignored
+			if (m_resizing) {
+				m_resizing = false; // recreated window
+				continue;
+			} else {
+				return false;
+			}
 		}
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -114,15 +116,23 @@ void Window::setSize(int w, int h) {
 
 	if (windowStyle != wsFullscreen) {
 		RECT rect;
+		rect.left = x;
+		rect.top = y;
+		rect.bottom = y + h;
+		rect.right = x + w;
+
+		AdjustWindowRectEx(&rect, style, FALSE, 0);
+
+		w = rect.right - rect.left;
+		h = rect.bottom - rect.top;
+	} else {
+		RECT rect;
 		rect.left = 0;
 		rect.top = 0;
 		rect.bottom = h;
 		rect.right = w;
 
-		AdjustWindowRect(&rect, style, FALSE);
-
-		w = rect.right - rect.left;
-		h = rect.bottom - rect.top;
+		AdjustWindowRectEx(&rect, style, FALSE, WS_EX_APPWINDOW);
 	}
 
 	this->w = w;
@@ -132,6 +142,43 @@ void Window::setSize(int w, int h) {
 		MoveWindow(handle, x, y, w, h, FALSE);
 		UpdateWindow(handle);
 	}
+}
+
+void Window::resize(PlatformContextGl *context, VideoMode mode) {
+	m_resizing = true;
+	setVisible(false);
+
+	// store the context in a temporary window
+	registerWindow("temp");
+	WindowHandle temp = createWindow("temp");
+	ShowWindow(temp, SW_HIDE);
+	UpdateWindow(temp);
+	context->changeWindow(temp);
+	
+	// remove the current window
+	destroy();
+
+	// change viedo mode if fullscreen
+	if (windowStyle == wsFullscreen) {
+		if (changeVideoMode(mode)) {
+			m_videoMode = mode;
+		} else {
+			cout << "Error setting viedo mode " << mode.w << "x" << mode.h << " " << mode.bpp
+				<< "bpp @ " << mode.freq << " Hz.\n";
+			// error...
+		}
+	} else {
+		m_videoMode = mode;
+	}
+
+	// create the new window with the changed size
+	setSize(m_videoMode.w, m_videoMode.h);
+	create();
+	context->changeWindow(handle);
+	setVisible(true);
+	
+	// remove the temp window now the context has been moved
+	destroy(string("temp"), temp);
 }
 
 void Window::setPos(int x, int y) {
@@ -162,18 +209,12 @@ void Window::setStyle(WindowStyle windowStyle) {
 	switch (windowStyle) {
 	case wsFullscreen:
 		style = fullscreenStyle;
-		exStyle = WS_EX_APPWINDOW;
-		ownDc = true;
 		break;
 	case wsWindowedFixed:
 		style = windowedFixedStyle;
-		exStyle = 0;
-		ownDc = false;
 		break;
 	case wsWindowedResizeable:
 		style = windowedResizeableStyle;
-		exStyle = 0;
-		ownDc = false;
 		break;
 	}
 
@@ -195,17 +236,35 @@ void Window::setMouseCapture(bool c) {
 	}
 }
 
-void Window::toggleFullscreen() {
+Vec2i centreWindowPos(Vec2i wndSize) {
+	RECT rect;
+	SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+	Vec2i desktopPos(rect.left, rect.top);
+	Vec2i desktopSize(rect.right - rect.left, rect.bottom - rect.top);
+	Vec2i pos = (desktopSize - wndSize) / 2 + desktopPos;
+	return Vec2i(max(pos.x, desktopPos.x), max(pos.y, desktopPos.y));
+}
+
+bool Window::toggleFullscreen() {
 	if (windowStyle == wsFullscreen) {
 		setStyle(wsWindowedFixed);
+		restoreVideoMode();
 	} else {
+		if (!changeVideoMode(m_videoMode)) {
+			return false;
+		}
 		setStyle(wsFullscreen);
 	}
+	Vec2i pos = (windowStyle != wsFullscreen) ? centreWindowPos(Vec2i(m_videoMode.w, m_videoMode.h)) :  Vec2i(0, 0);
+	setPos(pos.x, pos.y);
+	setSize(m_videoMode.w, m_videoMode.h);
+	return true;
 }
 
 void Window::create() {
-	registerWindow();
-	createWindow();
+	className = "Window" + intToStr(Window::getNextClassName());
+	registerWindow(className);
+	handle = createWindow(className);
 }
 
 void Window::minimize() {
@@ -229,10 +288,20 @@ void Window::showPopupMenu(Menu *menu, int x, int y) {
 	TrackPopupMenu(menu->getHandle(), TPM_LEFTALIGN | TPM_TOPALIGN, rect.left + x, rect.top + y, 0, handle, NULL);
 }*/
 
+void Window::destroy(string &in_className, WindowHandle handle) {
+	if (handle != 0) {
+		ShowWindow(handle, SW_HIDE);
+		DestroyWindow(handle);
+	}
+	if (in_className != "") {
+		BOOL b = UnregisterClass(in_className.c_str(), GetModuleHandle(NULL));
+		in_className = "";
+		assert(b);
+	}
+}
+
 void Window::destroy() {
-	DestroyWindow(handle);
-	BOOL b = UnregisterClass(className.c_str(), GetModuleHandle(NULL));
-	assert(b);
+	destroy(className, handle);
 	handle = 0;
 }
 
@@ -468,13 +537,11 @@ int Window::getNextClassName() {
 	return ++nextClassName;
 }
 
-void Window::registerWindow(WNDPROC wndProc) {
+void Window::registerWindow(const string &className, WNDPROC wndProc) {
 	WNDCLASSEX wc;
 
-	this->className = "Window" + intToStr(Window::getNextClassName());
-
 	wc.cbSize        = sizeof(WNDCLASSEX);
-	wc.style         = CS_DBLCLKS | (ownDc ? CS_OWNDC : 0);
+	wc.style         = CS_DBLCLKS | CS_OWNDC;
 	wc.lpfnWndProc   = wndProc == NULL ? eventRouter : wndProc;
 	wc.cbClsExtra    = 0;
 	wc.cbWndExtra    = 0;
@@ -483,7 +550,7 @@ void Window::registerWindow(WNDPROC wndProc) {
 	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW);
 	wc.lpszMenuName  = NULL;
-	wc.lpszClassName = this->className.c_str();
+	wc.lpszClassName = className.c_str();
 	wc.hIconSm       = NULL;
 
 	int registerClassErr = RegisterClassEx(&wc);
@@ -491,30 +558,22 @@ void Window::registerWindow(WNDPROC wndProc) {
 
 }
 
-void Window::createWindow(LPVOID creationData) {
+WindowHandle Window::createWindow(const string &className, LPVOID creationData) {
+	Vec2i pos = (windowStyle != wsFullscreen) ? centreWindowPos(Vec2i(w, h)) : Vec2i(0, 0);
+	setPos(pos.x, pos.y);
 
-	handle = CreateWindowEx(
-				 exStyle,
-				 className.c_str(),
-				 text.c_str(),
-				 style,
-				 x, y, w, h,
-				 NULL, NULL, GetModuleHandle(NULL), creationData);
+	WindowHandle handle = CreateWindowEx(WS_EX_APPWINDOW, className.c_str(), text.c_str(),
+				 style, x, y, w, h, NULL, NULL, GetModuleHandle(NULL), creationData);
 
 	createdWindows.insert(std::pair<WindowHandle, Window*>(handle, this));
 	eventRouter(handle, WM_CREATE, 0, 0);
 
 	assert(handle != NULL);
 
-	RECT rect;
-	SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
-	Vec2i size(w, h);
-	Vec2i desktopPos(rect.left, rect.top);
-	Vec2i desktopSize(rect.right - rect.left, rect.bottom - rect.top);
-	Vec2i pos = (desktopSize - size) / 2 + desktopPos;
-	setPos(max(pos.x, desktopPos.x), max(0, pos.y));
 	ShowWindow(handle, SW_SHOW);
 	UpdateWindow(handle);
+
+	return handle;
 }
 
 }}//end namespace

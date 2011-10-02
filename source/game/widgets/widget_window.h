@@ -14,6 +14,7 @@
 
 #include "window_gl.h"
 #include "sigslot.h"
+#include "timer.h"
 
 #include "widgets_base.h"
 
@@ -29,6 +30,7 @@ namespace Glest { namespace Widgets {
 class WidgetWindow : public Container, public MouseWidget, public KeyboardWidget, public WindowGl {
 private:
 	typedef std::stack<Widget*> WidgetStack;
+	typedef std::set<Widget*>   WidgetSet;
 	typedef std::set<string>    NameSet;
 	typedef std::stack<Rect2i>  ClipStack;
 
@@ -101,6 +103,8 @@ public:
 	void releaseKeyboardFocus(KeyboardWidget* widget);
 
 	MouseCursor& getMouseCursor() { return *m_mouseCursor; }
+
+	virtual void resize(VideoMode mode) override;
 
 protected: // Shared::Platform::Window virtual events
 	virtual void eventMouseDown(int x, int y, MouseButton mouseButton) override;

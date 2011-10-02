@@ -28,6 +28,7 @@ extern const string glestVersionString;
 extern const string gaeVersionString;
 
 string getNetworkVersionString();
+string getGitHash();
 
 int getAboutStringCount();
 string getAboutString(int i);
@@ -39,6 +40,9 @@ string getGlestTeamMemberField(int i, TeamMemberField field);
 
 int getGAETeamMemberCount();
 string getGAETeamMemberField(int i, TeamMemberField field);
+
+int getContributorCount();
+string getContributorField(int i, TeamMemberField field);
 
 string getCrashDumpFileName();
 

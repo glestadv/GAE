@@ -16,7 +16,7 @@
 
 #include "main_menu.h"
 #include "thread.h"
-#include "compound_widgets.h"
+#include "framed_widgets.h"
 
 namespace Glest { namespace Menu {
 
@@ -104,7 +104,7 @@ public:
 	MenuStateLoadGame(Program &program, MainMenu *mainMenu);
 	~MenuStateLoadGame();
 
-	void update();
+	virtual void update() override;
 
 	/** returns the name of the new file name if the user moved along since the load started. */
 	string *setGameInfo(const string &fileName, const XmlNode *root, const string &err);

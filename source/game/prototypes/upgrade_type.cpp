@@ -94,7 +94,7 @@ bool UpgradeType::loadNewStyle(const XmlNode *node, const string &dir, const Tec
 		} catch (runtime_error e) {
 			g_logger.logXmlError(dir, e.what());
 			loadOk = false;
-		} 
+		}
 		try { // Units affected by this upgrade
 			const XmlNode *affectsNode = enhanceNode->getChild("affects", 0);
 			for (int j=0; j < affectsNode->getChildCount(); ++j) {
@@ -117,6 +117,7 @@ bool UpgradeType::loadNewStyle(const XmlNode *node, const string &dir, const Tec
 					string msg = "Unknown affect node, expected 'unit' or 'tag', got '"
 						+ affectNode->getName() + "'";
 					g_logger.logXmlError(dir, msg.c_str());
+					loadOk = false;
 				}
 			}
 		} catch (runtime_error e) { 
@@ -151,7 +152,7 @@ bool UpgradeType::loadOldStyle(const XmlNode *node, const string &dir, const Tec
 	e.setMoveSpeed(node->getOptionalIntValue("move-speed"));
 	e.setProdSpeed(node->getOptionalIntValue("production-speed"));
 
-	//initialize values using new format if nodes are present
+	// initialize values using new format if nodes are present
 	if (node->getChild("static-modifiers", 0, false) || node->getChild("multipliers", 0, false)
 	|| node->getChild("point-boosts", 0, false)) {
 		if (!e.load(node, dir, techTree, factionType)) {
@@ -218,8 +219,17 @@ void UpgradeType::doChecksum(Checksum &checksum) const {
 		it->m_enhancement.doChecksum(checksum);
 	}
 	///@todo resource mods
+
+	// iterating over a std::map is not the same as std::set !!
+	vector<int> enhanceIds;
 	foreach_const (EnhancementMap, it, m_enhancementMap) {
-		checksum.add(it->first->getId());
+		enhanceIds.push_back(it->first->getId());
+		///@todo add EnhancementType index (it->second->getEnhancement()) ?
+	}
+	// sort first
+	std::sort(enhanceIds.begin(), enhanceIds.end());
+	foreach (vector<int>, it, enhanceIds) {
+		checksum.add(*it);
 	}
 }
 

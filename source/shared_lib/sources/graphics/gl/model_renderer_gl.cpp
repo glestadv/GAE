@@ -40,29 +40,61 @@ ModelRendererGl::ModelRendererGl()
 		, m_lastTexture()
 		, m_alphaThreshold(0.f)
 		, m_currentLightCount(1)
+		, m_teamTintShader(0)
 		, m_shaderIndex(-1)
 		, m_lastShaderProgram(0) {
 	m_fixedFunctionProgram = new FixedPipeline();
+	m_perVertexLighting = new GlslShader();
+	if (!m_perVertexLighting->load("gae/shaders/per_vert_lighting.vs", ShaderType::VERTEX)) {
+		cout << "Error loading gae/shaders/per_vert_lighting.vs\n";
+		while (mediaErrorLog.hasError()) {
+			MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
+			cout << "\t" << rec.msg << endl;
+		}
+	}
 }
 
 ModelRendererGl::~ModelRendererGl() {
-	foreach_const (UnitShaderSets, it, m_shaders) {
+	foreach_const (GlslPrograms, it, m_shaders) {
 		delete *it;
 	}
 	delete m_fixedFunctionProgram;
+	delete m_perVertexLighting;
+}
+
+GlslProgram* ModelRendererGl::loadShader(const string &dir, const string &name) {
+	if (isGlVersionSupported(2, 0, 0)) {
+		string vertPath = dir + "/" + name + ".vs";
+		string fragPath = dir + "/" + name + ".fs";
+		GlslProgram *shaderProgram = new GlslProgram(name);
+		shaderProgram->add(m_perVertexLighting);
+		if (!shaderProgram->load(vertPath, true)) {
+			mediaErrorLog.add(shaderProgram->getLog(), vertPath);
+			delete shaderProgram;
+			return 0;
+		}
+		if (!shaderProgram->load(fragPath, false)) {
+			mediaErrorLog.add(shaderProgram->getLog(), fragPath);
+			delete shaderProgram;
+			return 0;
+		}
+		if (!shaderProgram->link()) {
+			mediaErrorLog.add(shaderProgram->getLog(), dir + name + ".*");
+			delete shaderProgram;
+			return 0;
+		}
+		return shaderProgram;
+	}
+	return 0;
 }
 
 void ModelRendererGl::loadShaders(const vector<string> &setNames) {
 	if (isGlVersionSupported(2, 0, 0)) {
 		foreach_const (vector<string>, it, setNames) {
-			string path = "gae/shaders/" + *it + ".xml";
-			UnitShaderSet *shaderSet = 0;
-			try {
-				shaderSet = new UnitShaderSet(path);
-				m_shaders.push_back(shaderSet);
-			} catch (runtime_error &e) {
-				mediaErrorLog.add(e.what(), path);
-				delete shaderSet;
+			GlslProgram *program = loadShader("gae/shaders/", *it);
+			if (program) {
+				m_shaders.push_back(program);
+				initUniformHandles(program);
 			}
 		}
 	}
@@ -71,31 +103,39 @@ void ModelRendererGl::loadShaders(const vector<string> &setNames) {
 	}
 }
 
-void ModelRendererGl::loadShader(const string &name) {
-	if (!m_shaders.empty()) { // delete last (check if changed??)
-		foreach (UnitShaderSets, it, m_shaders) {
-			delete *it;
+void ModelRendererGl::setShader(const string &name) {
+	for (int i=0; i < m_shaders.size(); ++i) {
+		if (m_shaders[i]->getName() == name) {
+			m_shaderIndex = i;
+			return;
 		}
-		m_shaders.clear();
 	}
-	if (name.empty()) {
+	GlslProgram *program = loadShader("gae/shaders/", name);
+	if (program) {
+		m_shaders.push_back(program);
+		m_shaderIndex = m_shaders.size() - 1;
+		initUniformHandles(program);
+	} else {
 		m_shaderIndex = -1;
-		return;
 	}
-	if (isGlVersionSupported(2, 0, 0)) {
-		string path = "gae/shaders/" + name + ".xml";
-		UnitShaderSet *shaderSet = 0;
-		try {
-			shaderSet = new UnitShaderSet(path);
-			m_shaders.push_back(shaderSet);
-		} catch (runtime_error &e) {
-			mediaErrorLog.add(e.what(), path);
-			delete shaderSet;
-		}
+}
+
+void ModelRendererGl::initUniformHandles(ShaderProgram *shader) {
+	shader->addUniform("gae_HasNormalMap");
+	shader->addUniform("gae_EntityId");
+	shader->addUniform("gae_FrameNumber");
+	shader->addUniform("gae_LightCount");
+	shader->addUniform("gae_AlphaThreshold");
+	shader->addUniform("gae_UsesTeamColour");
+	shader->addUniform("gae_TeamColour");
+	shader->addUniform("gae_IsUsingFog");
+}
+
+ShaderProgram* ModelRendererGl::getTeamTintShader() {
+	if (!m_teamTintShader) {
+		m_teamTintShader = loadShader("gae/shaders/misc_model/", "team-tint");
 	}
-	if (!m_shaders.empty()) {
-		m_shaderIndex = 0; // use if loaded ok
-	}
+	return m_teamTintShader;
 }
 
 void ModelRendererGl::cycleShaderSet() {
@@ -127,30 +167,32 @@ void ModelRendererGl::begin(RenderMode mode, bool fog, MeshCallback *meshCallbac
 	m_lastTexture = 0;
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	//push attribs
+	// push attribs
 	glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_POLYGON_BIT | GL_CURRENT_BIT | GL_TEXTURE_BIT);
 	glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
 
-	//init opengl
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// init opengl
+	if (m_renderMode < RenderMode::OBJECTS) {
+		glDisable(GL_BLEND);
+	} else {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
 	glFrontFace(GL_CCW);
-//	glEnable(GL_NORMALIZE); // we don't scale or shear, don't need this
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 
-	if (mode == RenderMode::UNITS || mode == RenderMode::OBJECTS) {
+	if (m_renderMode >= RenderMode::OBJECTS && m_renderMode < RenderMode::SHADOWS) {
 		glEnableClientState(GL_NORMAL_ARRAY);
 	}
 
-	if (mode == RenderMode::UNITS || mode == RenderMode::OBJECTS || mode == RenderMode::SHADOWS) {
+	if (m_renderMode >= RenderMode::OBJECTS) {
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	}	
 
 	//assertions
 	assertGl();
 }
-
 
 void ModelRendererGl::end() {
 	// assertions
@@ -171,7 +213,7 @@ void ModelRendererGl::end() {
 	assertGl();
 }
 
-void ModelRendererGl::render(const Model *model, float fade, int frame, int id, UnitShaderSet *customShaders) {
+void ModelRendererGl::render(const Model *model, float fade, int frame, int id, ShaderProgram *customShaders) {
 	//assertions
 	assert(m_rendering);
 	assertGl();
@@ -180,6 +222,48 @@ void ModelRendererGl::render(const Model *model, float fade, int frame, int id, 
 	for (uint32 i = 0; i < model->getMeshCount(); ++i) {
 		renderMesh(model->getMesh(i), fade, frame, id, customShaders);
 	}
+
+	//assertions
+	assertGl();
+}
+
+void ModelRendererGl::renderOutlined(const Model *model, int lineWidth, const Vec3f &colour, float fade, int frame, int id, ShaderProgram *customShaders) {
+	//assertions
+	assert(m_rendering);
+	assertGl();
+
+	glEnable(GL_STENCIL_TEST);
+	glClearStencil(0);
+	glClear(GL_STENCIL_BUFFER_BIT);
+	glStencilFunc(GL_ALWAYS, 1, 1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	// render every mesh
+	for (uint32 i = 0; i < model->getMeshCount(); ++i) {
+		renderMesh(model->getMesh(i), fade, frame, id, customShaders);
+	}
+
+	glColor3fv(colour.ptr());
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glLineWidth(float(lineWidth));
+
+	// disable texture0 and lighting
+	glActiveTexture(diffuseTextureUnit);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+	glEnable (GL_LINE_SMOOTH);
+
+	glStencilFunc(GL_NOTEQUAL, 1, 1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+	// render outline
+	for (uint32 i = 0; i < model->getMeshCount(); ++i) {
+		renderMeshOutline(model->getMesh(i));
+	}
+
+	glDisable(GL_STENCIL_TEST);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_LIGHTING);
 
 	//assertions
 	assertGl();
@@ -205,7 +289,7 @@ void ModelRendererGl::renderMeshNormalsOnly(const Mesh *mesh) {
 
 // ===================== PRIVATE =======================
 
-void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id, UnitShaderSet *customShaders) {
+void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id, ShaderProgram *customShaders) {
 	//assertions
 	assertGl();
 
@@ -289,15 +373,9 @@ void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id
 		}
 	} else {
 		if (customShaders) {
-			if (mesh->usesTeamTexture()) {
-				shaderProgram = customShaders->getTeamProgram();
-			} else {
-				shaderProgram = customShaders->getRgbaProgram();
-			}
-		} else if (mesh->usesTeamTexture()) {
-			shaderProgram = m_shaders[m_shaderIndex]->getTeamProgram();
+			shaderProgram = customShaders;
 		} else {
-			shaderProgram = m_shaders[m_shaderIndex]->getRgbaProgram();
+			shaderProgram = m_shaders[m_shaderIndex];
 		}
 	}
 	if (shaderProgram != m_lastShaderProgram) {
@@ -310,6 +388,8 @@ void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id
 	}
 	///@todo would be better to do this once only per faction, set from the game somewhere/somehow
 	shaderProgram->setUniform("gae_TeamColour", getTeamColour());
+	int teamColourFlag = (mesh->usesTeamTexture() && mode == RenderMode::UNITS) ? 1 : 0;
+	shaderProgram->setUniform("gae_UsesTeamColour", teamColourFlag);
 	shaderProgram->setUniform("gae_AlphaThreshold", m_alphaThreshold);
 	shaderProgram->setUniform("gae_LightCount", m_currentLightCount);
 	if (customShaders) {
@@ -326,6 +406,7 @@ void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id
 		mainBlock = &mesh->getInterpolationData()->getVertexBlock();
 	}
 	const int stride = mainBlock->getStride();
+	int tanAttribLoc = -1;
 	if (mainBlock->vbo_handle) {
 #		define VBO_OFFSET(x) ((void*)(x * sizeof(float)))
 		glBindBuffer(GL_ARRAY_BUFFER, mainBlock->vbo_handle);
@@ -337,10 +418,10 @@ void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id
 		&& (mainBlock->type == MeshVertexBlock::POS_NORM_TAN 
 		|| mainBlock->type == MeshVertexBlock::POS_NORM_TAN_UV)) {
 			shaderProgram->setUniform("gae_HasNormalMap", 1u);
-			int loc = shaderProgram->getAttribLoc("gae_Tangent");
-			if (loc != -1) {
-				glEnableVertexAttribArray(loc);
-				glVertexAttribPointer(loc, 3, GL_FLOAT, GL_TRUE, stride, VBO_OFFSET(6));
+			tanAttribLoc = shaderProgram->getAttribLoc("gae_Tangent");
+			if (tanAttribLoc != -1) {
+				glEnableVertexAttribArray(tanAttribLoc);
+				glVertexAttribPointer(tanAttribLoc, 3, GL_FLOAT, GL_TRUE, stride, VBO_OFFSET(6));
 			}
 		} else {
 			shaderProgram->setUniform("gae_HasNormalMap", 0u);
@@ -385,6 +466,9 @@ void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		if (tanAttribLoc != -1) {
+			glDisableVertexAttribArray(tanAttribLoc);
+		}
 
 		assertGl();
 
@@ -397,10 +481,10 @@ void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id
 		&& (mainBlock->type == MeshVertexBlock::POS_NORM_TAN 
 		|| mainBlock->type == MeshVertexBlock::POS_NORM_TAN_UV)) {
 			shaderProgram->setUniform("gae_HasNormalMap", 1u);
-			int loc = shaderProgram->getAttribLoc("gae_Tangent");
-			if (loc != -1) {
-				glEnableVertexAttribArray(loc);
-				glVertexAttribPointer(loc, 3, GL_FLOAT, GL_TRUE, stride, &mainBlock->m_posNormTan[0].tan);
+			tanAttribLoc = shaderProgram->getAttribLoc("gae_Tangent");
+			if (tanAttribLoc != -1) {
+				glEnableVertexAttribArray(tanAttribLoc);
+				glVertexAttribPointer(tanAttribLoc, 3, GL_FLOAT, GL_TRUE, stride, &mainBlock->m_posNormTan[0].tan);
 			}
 		} else {
 			shaderProgram->setUniform("gae_HasNormalMap", 0u);
@@ -457,9 +541,86 @@ void ModelRendererGl::renderMesh(const Mesh *mesh, float fade, int frame, int id
 		} else {
 			glDrawRangeElements(GL_TRIANGLES, 0, vertexCount-1, indexCount, indexType, mesh->getIndices().m_indices);
 		}
+		if (tanAttribLoc != -1) {
+			glDisableVertexAttribArray(tanAttribLoc);
+		}
+	}
+	assertGl();
+}
+
+void ModelRendererGl::renderMeshOutline(const Mesh *mesh) {
+	// assertions
+	assert(m_renderMode == RenderMode::UNITS);
+	assertGl();
+
+	const uint32 vertexCount = mesh->getVertexCount();
+	const uint32 indexCount = mesh->getIndexCount();
+	if (!mesh->getVertexCount()) {
+		return;
+	}
+	if (m_lastShaderProgram) {
+		m_lastShaderProgram->end();
 	}
 
+	// set cull face
+	if (mesh->isTwoSided()) {
+		glDisable(GL_CULL_FACE);
+	} else {
+		glEnable(GL_CULL_FACE);
+	}
+
+	// push outline back a bit
+	glPolygonOffset(0.f, -1.f);
+
+	// disable tex-coord arrays
+	if (m_duplicateTexCoords) {
+		glActiveTexture(GL_TEXTURE0 + m_secondaryTexCoordUnit);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+	glActiveTexture(GL_TEXTURE0);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	//assertions
 	assertGl();
+
+	// vertices
+	const MeshVertexBlock *vertexBlock = 0;
+	if (mesh->getStaticVertData().count != 0) {
+		vertexBlock = &mesh->getStaticVertData();
+	} else {
+		vertexBlock = &mesh->getInterpolationData()->getVertexBlock();
+	}
+	
+	const int stride = vertexBlock->getStride();
+	int indexType = mesh->getIndices().type == MeshIndexBlock::UNSIGNED_16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+	if (vertexBlock->vbo_handle) { // all VBO
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBlock->vbo_handle);
+		glVertexPointer(3, GL_FLOAT, stride, 0);
+ 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->getIndices().vbo_handle);
+		glDrawRangeElements(GL_TRIANGLES, 0, vertexCount - 1, indexCount, indexType, VBO_OFFSET(0));
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		assertGl();
+
+	} else { // Non static mesh or VBOs disabled
+		glVertexPointer(3, GL_FLOAT, stride, vertexBlock->m_arrayPtr);
+		if (use_vbos) { // non-static mesh, indices are in VBO
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->getIndices().vbo_handle);
+			glDrawRangeElements(GL_TRIANGLES, 0, vertexCount - 1, indexCount, indexType, VBO_OFFSET(0));
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+			assertGl();
+		} else { // all old-school
+			glDrawRangeElements(GL_TRIANGLES, 0, vertexCount - 1, indexCount, indexType, mesh->getIndices().m_indices);
+			assertGl();
+		}
+	}
+
+	glPolygonOffset(0.f, 0.f);
+	assertGl();
+	if (m_lastShaderProgram) {
+		m_lastShaderProgram->begin();
+	}
 }
 
 void ModelRendererGl::setAlphaThreshold(float a) {

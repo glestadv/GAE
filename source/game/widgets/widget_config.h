@@ -43,14 +43,14 @@ STRINGY_ENUM( WidgetType,
 	SLIDER_VERT_THUMB, SLIDER_HORIZ_THUMB, SLIDER_VERT_SHAFT, SLIDER_HORIZ_SHAFT,
 	TITLE_BAR_CLOSE, TITLE_BAR_ROLL_UP, TITLE_BAR_ROLL_DOWN, TITLE_BAR_EXPAND, TITLE_BAR_SHRINK,
 	COLOUR_PICKER, COLOUR_BUTTON, TICKER_TAPE, INFO_WIDGET, LOGGER_WIDGET, LOG_HEADER, LOG_LINE,
-	CODE_VIEW, CODE_EDIT, RESOURCE_BAR, MINIMAP, DISPLAY, CONSOLE, GAME_STATS,
+	CODE_VIEW, CODE_EDIT, RESOURCE_BAR, MINIMAP, DISPLAY, CONSOLE, GAME_STATS, OPTIONS_PANEL,
 
 	TOOLTIP, TOOLTIP_HEADER, TOOLTIP_MAIN, TOOLTIP_ITEM, TOOLTIP_REQ_OK, TOOLTIP_REQ_NOK,
 
 	TEST_WIDGET, TEST_WIDGET_HEADER, TEST_WIDGET_MAINBIT, TEST_WIDGET_CODEBIT
 );
 
-STRINGY_ENUM( FontUsage, MENU, GAME, LUA, FANCY );
+STRINGY_ENUM( FontUsage, MENU, GAME, TITLE, VERSION );
 STRINGY_ENUM( OverlayUsage, TICK, CROSS, QUESTION );
 
 STRINGY_ENUM( FuzzySize, SMALL, MEDIUM, LARGE );
@@ -65,6 +65,7 @@ class WidgetConfig {
 	typedef const Texture2D*		TexPtr;
 	typedef const Font*				FontPtr;
 	typedef map<string, uint32>		IndexByNameMap;
+	typedef map<Font*, int>         FontSizeMap;
 	//typedef vector<BorderStyle>     BorderStyles;
 	//typedef vector<BackgroundStyle> BackgroundStyles;
 	//typedef vector<FontStyle>       FontStyles;
@@ -73,6 +74,8 @@ private:
 	vector<Colour>	 m_colours;
 	vector<FontPtr>  m_fonts;
 	vector<TexPtr>	 m_textures;
+
+	FontSizeMap      m_requestedFontSizes;
 
 	IndexByNameMap	 m_namedColours;
 	IndexByNameMap	 m_namedFonts;
@@ -120,6 +123,7 @@ public:
 	static WidgetConfig& getInstance();
 
 	void load();
+	void reloadFonts();
 
 public:
 	int loadTexture(const string &name, const string &path, bool mipmap = true);
@@ -144,10 +148,12 @@ public:
 
 	int getDefaultFontIndex(FontUsage fu) const { return m_defaultFonts[fu]; }
 
-	int getTitleFontNdx() const { return m_defaultFonts[FontUsage::FANCY]; }
+	int getTitleFontNdx() const { return m_defaultFonts[FontUsage::TITLE]; }
+	int getVersionFontNdx() const { return m_defaultFonts[FontUsage::VERSION]; }
 
 	FontPtr getMenuFont() const { return m_fonts[m_defaultFonts[FontUsage::MENU]]; }
-	FontPtr getTitleFont() const { return m_fonts[m_defaultFonts[FontUsage::FANCY]]; }
+	FontPtr getTitleFont() const { return m_fonts[m_defaultFonts[FontUsage::TITLE]]; }
+	FontPtr getVersionFont() const { return m_fonts[m_defaultFonts[FontUsage::VERSION]]; }
 	FontPtr getGameFont() const { return m_fonts[m_defaultFonts[FontUsage::GAME]]; }
 
 	TexPtr getTickTexture() { return m_textures[m_defaultOverlays[OverlayUsage::TICK]]; }

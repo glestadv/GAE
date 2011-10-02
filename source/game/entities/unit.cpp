@@ -167,10 +167,6 @@ Unit::Unit(CreateParams params)
 	computeTotalUpgrade();
 	hp = type->getMaxHp() / 20;
 
-	if (type->getCloakClass() == CloakClass::PERMANENT && faction->reqsOk(type->getCloakType())) {
-		cloak();
-	}
-
 	setModelFacing(m_facing);
 }
 
@@ -280,8 +276,6 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 
 	faction->add(this);
 	if (hp) {
-		recalculateStats();
-		hp = node->getChildIntValue("hp"); // HP will be at max due to recalculateStats
 		if (!carried) {
 			map->putUnitCells(this, pos);
 			meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
@@ -295,7 +289,7 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 		// was previously in World::initUnits but seems to work fine here
 		g_cartographer.updateMapMetrics(getPos(), getSize());
 	}
-	if(node->getChildBoolValue("fire")) {
+	if (node->getChildBoolValue("fire")) {
 		decHp(0); // trigger logic to start fire system
 	}
 }
@@ -429,7 +423,8 @@ int Unit::getProductionPercent() const {
 		///@todo CommandRefactoring - hailstone 12Dec2010
 		/*
 		ProducerBaseCommandType *ct = commands.front()->getType();
-		if (ct->isProducer()) {
+		if (ct->getProducedCount()) {
+			// prod count can be > 1, need command & progress2 (just pass 'this'?) -silnarm 12-Jun-2011
 			ct->getProductionPercent(progress2);
 		}
 		*/
@@ -439,26 +434,36 @@ int Unit::getProductionPercent() const {
 
 /** query next available level @return next level, or NULL */
 const Level *Unit::getNextLevel() const{
-	if(level==NULL && type->getLevelCount()>0){
+	if (!level && type->getLevelCount()) {
 		return type->getLevel(0);
-	}
-	else{
-		for(int i=1; i<type->getLevelCount(); ++i){
-			if(type->getLevel(i-1)==level){
+	} else {
+		for(int i=1; i < type->getLevelCount(); ++i) {
+			if (type->getLevel(i - 1) == level) {
 				return type->getLevel(i);
 			}
 		}
 	}
-	return NULL;
+	return 0;
 }
 
 /** retrieve name description, levelName + unitTypeName */
 string Unit::getFullName() const{
 	string str;
-	if(level!=NULL){
-		str+= level->getName() + " ";
+	if (level) {
+		string lvl;
+		if (g_lang.lookUp(level->getName(), getFaction()->getType()->getName(), lvl)) {
+			str += lvl;
+		} else {
+			str += formatString(level->getName());
+		}
+		str.push_back(' ');
 	}
-	str+= type->getName();
+	string name;
+	if (g_lang.lookUp(type->getName(), getFaction()->getType()->getName(), name)) {
+		str += name;
+	} else {
+		str += formatString(type->getName());
+	}
 	return str;
 }
 
@@ -487,28 +492,29 @@ float Unit::getRenderAlpha() const {
   * @return true if this unit is interesting in the way you're interested in
   */
 bool Unit::isInteresting(InterestingUnitType iut) const{
-	switch(iut){
-	case InterestingUnitType::IDLE_HARVESTER:
-		if(type->hasCommandClass(CmdClass::HARVEST)) {
-			if(!commands.empty()) {
-				const CommandType *ct = commands.front()->getType();
-				if(ct) {
-					return ct->getClass() == CmdClass::STOP;
+	switch (iut) {
+		case InterestingUnitType::IDLE_HARVESTER:
+			if (type->hasCommandClass(CmdClass::HARVEST)) {
+				if (!commands.empty()) {
+					const CommandType *ct = commands.front()->getType();
+					if (ct) {
+						return ct->getClass() == CmdClass::STOP;
+					}
 				}
 			}
-		}
-		return false;
+			return false;
 
-	case InterestingUnitType::BUILT_BUILDING:
-		return type->hasSkillClass(SkillClass::BE_BUILT) && isBuilt();
-	case InterestingUnitType::PRODUCER:
-		return type->hasSkillClass(SkillClass::PRODUCE);
-	case InterestingUnitType::DAMAGED:
-		return isDamaged();
-	case InterestingUnitType::STORE:
-		return type->getStoredResourceCount() > 0;
-	default:
-		return false;
+		case InterestingUnitType::BUILT_BUILDING:
+			return isBuilt() &&
+				(type->hasSkillClass(SkillClass::BE_BUILT) || type->hasSkillClass(SkillClass::BUILD_SELF));
+		case InterestingUnitType::PRODUCER:
+			return type->hasSkillClass(SkillClass::PRODUCE);
+		case InterestingUnitType::DAMAGED:
+			return isDamaged();
+		case InterestingUnitType::STORE:
+			return type->getStoredResourceCount() > 0;
+		default:
+			return false;
 	}
 }
 
@@ -522,7 +528,7 @@ bool Unit::isActive() const {
 }
 
 bool Unit::isBuilding() const {
-	return (getType()->hasSkillClass(SkillClass::BE_BUILT)
+	return ((getType()->hasSkillClass(SkillClass::BE_BUILT) || getType()->hasSkillClass(SkillClass::BUILD_SELF))
 		&& isAlive() && !getType()->getProperty(Property::WALL));
 }
 
@@ -531,10 +537,10 @@ bool Unit::isBuilding() const {
   * @return a RepairCommandType that can repair u, or NULL
   */
 const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
-	for(int i = 0; i < type->getCommandTypeCount<RepairCommandType>(); i++) {
+	for (int i = 0; i < type->getCommandTypeCount<RepairCommandType>(); i++) {
 		const RepairCommandType *rct = type->getCommandType<RepairCommandType>(i);
 		const RepairSkillType *rst = rct->getRepairSkillType();
-		if( (!rst->isSelfOnly() || this == u)
+		if ((!rst->isSelfOnly() || this == u)
 		&& (rst->isSelfAllowed() || this != u)
 		&& (rct->canRepair(u->type))) {
 			return rct;
@@ -550,7 +556,7 @@ float Unit::getProgress() const {
 
 float Unit::getAnimProgress() const {
 	if (isBeingBuilt() && currSkill->isStretchyAnim()) {
-		return float(hp) / float(getMaxHp());
+		return float(getProgress2()) / float(getMaxHp());
 	}
 	return float(g_world.getFrameCount() - lastAnimReset)
 			/	float(nextAnimReset - lastAnimReset);
@@ -565,7 +571,6 @@ void Unit::startSkillParticleSystems() {
 		UnitParticleSystem *ups = currSkill->getEyeCandySystem(i)->createUnitParticleSystem(visible);
 		ups->setPos(getCurrVector());
 		ups->setRotation(getRotation());
-		//ups->setFactionColor(getFaction()->getTexture()->getPixmap()->getPixel3f(0,0));
 		skillParticleSystems.push_back(ups);
 		Colour c = faction->getColour();
 		Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
@@ -1094,6 +1099,12 @@ void Unit::born(bool reborn) {
 	if (reborn && (!isAlive() || !isBuilt())) {
 		return;
 	}
+	if (type->getCloakClass() == CloakClass::PERMANENT && faction->reqsOk(type->getCloakType())) {
+		cloak();
+	}
+	if (type->isDetector()) {
+		g_world.getCartographer()->detectorActivated(this);
+	}
 	ULC_UNIT_LOG( this, "born." );
 	faction->applyStaticProduction(type);
 	computeTotalUpgrade();
@@ -1113,11 +1124,11 @@ void Unit::born(bool reborn) {
 			Command *cmd = g_world.newCommand(CmdDirective::SET_AUTO_REPAIR, cmdFlags, invalidPos, this);
 			g_simInterface.getCommander()->pushCommand(cmd);
 		}
+		if (!isCarried()) {
+			startSkillParticleSystems();
+		}
 	}
 	StateChanged(this);
-	if (type->isDetector()) {
-		g_world.getCartographer()->detectorActivated(this);
-	}
 	faction->onUnitActivated(type);
 }
 
@@ -1610,11 +1621,8 @@ void Unit::doKill(Unit *killed) {
 }
 
 /** @return true when the current skill has completed a cycle */
-bool Unit::update() { 
-	///@todo should this be renamed to hasFinishedCycle()?
-	// silnarm's vote: No. Too "query like", fails to indicate that it actually does stuff...
-
-	//_PROFILE_FUNCTION();
+bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
+//	_PROFILE_FUNCTION();
 	const int &frame = g_world.getFrameCount();
 
 	// start skill sound ?
@@ -1784,7 +1792,7 @@ Unit* Unit::tick() {
 	Unit *killer = NULL;
 	
 	// tick command types
-	for (Commands::iterator i = commands.begin(); i != commands.end(); i++) {
+	for (Commands::iterator i = commands.begin(); i != commands.end(); ++i) {
 		(*i)->getType()->tick(this, (**i));
 	}
 	if (isAlive()) {
@@ -1865,7 +1873,11 @@ bool Unit::repair(int amount, fixed multiplier) {
 		}
 		return true;
 	}
-
+	if (!isBuilt() && getCurrSkill()->isStretchyAnim()) {
+		if (hp > getProgress2()) {
+			setProgress2(hp);
+		}
+	}
 	//stop fire
 	if (hp > type->getMaxHp() / 2 && fire != NULL) {
 		fire->fade();
@@ -1982,27 +1994,37 @@ string Unit::getLongDesc() const {
 	if (sightBonus) {
 		ss << (sightBonus > 0 ? " +" : " ") << sightBonus;
 	}
-	// permanent cloak ?
-	if (type->getCloakClass() == CloakClass::PERMANENT) {
-		string res;
+	// cloaked ?
+	if (isCloaked()) {
+		string gRes, res;
 		string group = world.getCloakGroupName(type->getCloakType()->getCloakGroup());
-		g_lang.lookUp("Cloak", factionName, group, res);
+		if (!lang.lookUp(group, factionName, gRes)) {
+			gRes = formatString(group);
+		}
+		lang.lookUp("Cloak", factionName, gRes, res);
 		ss << endl << res;
 	}
 	// detector ?
 	if (type->isDetector()) {
-		string res;
+		string gRes, res;
 		const DetectorType *dt = type->getDetectorType();
 		if (dt->getGroupCount() == 1) {
 			int id = dt->getGroup(0);
 			string group = world.getCloakGroupName(id);
-			g_lang.lookUp("SingleDetector", factionName, group, res);
+			if (!lang.lookUp(group, factionName, gRes)) {
+				gRes = formatString(group);
+			}
+			lang.lookUp("SingleDetector", factionName, gRes, res);
 		} else {
 			vector<string> list;
 			for (int i=0; i < dt->getGroupCount(); ++i) {
-				list.push_back(world.getCloakGroupName(dt->getGroup(i)));
+				string gName = world.getCloakGroupName(dt->getGroup(i));
+				if (!lang.lookUp(gName, factionName, gRes)) {
+					gRes = formatString(gName);
+				}
+				list.push_back(gRes);
 			}
-			g_lang.lookUp("MultiDetector", factionName, list, res);
+			lang.lookUp("MultiDetector", factionName, list, res);
 		}		
 		ss << endl << res;
 	}
@@ -2086,7 +2108,6 @@ void Unit::computeTotalUpgrade() {
 	recalculateStats();
 }
 
-
 /**
  * Recalculate the unit's stats (contained in base class
  * EnhancementType) to take into account changes in the effects and/or
@@ -2095,6 +2116,7 @@ void Unit::computeTotalUpgrade() {
 void Unit::recalculateStats() {
 	int oldMaxHp = getMaxHp();
 	int oldHp = hp;
+	int oldSight = getSight();
 
 	EnhancementType::reset();
 	UnitStats::setValues(*type);
@@ -2102,13 +2124,13 @@ void Unit::recalculateStats() {
 	// add up all multipliers first and then apply (multiply) once.
 	// See EnhancementType::addMultipliers() for the 'adding' strategy
 	EnhancementType::addMultipliers(totalUpgrade);
-	for (Effects::const_iterator i = effects.begin(); i != effects.end(); i++) {
+	for (Effects::const_iterator i = effects.begin(); i != effects.end(); ++i) {
 		EnhancementType::addMultipliers(*(*i)->getType(), (*i)->getStrength());
 	}
 	EnhancementType::clampMultipliers();
 	UnitStats::applyMultipliers(*this);
 	UnitStats::addStatic(totalUpgrade);
-	for (Effects::const_iterator i = effects.begin(); i != effects.end(); i++) {
+	for (Effects::const_iterator i = effects.begin(); i != effects.end(); ++i) {
 		UnitStats::addStatic(*(*i)->getType(), (*i)->getStrength());
 
 		// take care of effect damage type
@@ -2125,6 +2147,10 @@ void Unit::recalculateStats() {
 		hp += getMaxHp() - oldMaxHp;
 	} else if (hp > getMaxHp()) {
 		hp = getMaxHp();
+	}
+
+	if (oldSight != getSight() && type->getDetectorType()) {
+		g_cartographer.detectorSightModified(this, oldSight);
 	}
 	
 	// If this guy is dead, make sure they stay dead
@@ -2387,57 +2413,20 @@ float Unit::computeHeight(const Vec2i &pos) const {
 	}
 }
 
-
-bool Unit::unitInRange(const Unit *target, int range) {
-	Vec2i effectivePos;
-	fixedVec2 fixedCentre;
-	fixed halfSize;
-	if (this->isCarried()) {
-		Unit *carrier = g_world.getUnit(this->getCarrier());
-		effectivePos = carrier->getCenteredPos();
-		fixedCentre = carrier->getFixedCenteredPos();
-		halfSize = carrier->getType()->getHalfSize();
-	} else {
-		effectivePos = this->getCenteredPos();
-		fixedCentre = this->getFixedCenteredPos();
-		halfSize = this->getType()->getHalfSize();
-	}
-	
-	if (target->isDead() || range == 0) { // target dead or this unit blind
-		return false;
-	}
-	if (target->isCloaked()) { // target cloaked ?
-		Vec2i tpos = Map::toTileCoords(target->getCenteredPos());
-		int cloakGroup = target->getType()->getCloakType()->getCloakGroup();
-		if (!g_cartographer.canDetect(this->getTeam(), cloakGroup, tpos)) {
-			return false;
-		}
-	}
-
-	const fixed &targetHalfSize = target->getType()->getHalfSize();
-	fixed distance = fixedCentre.dist(target->getFixedCenteredPos()) - targetHalfSize - halfSize;
-	return distance <= range;
-}
-
 /** updates target information, (targetPos, targetField & tagetVec) and resets targetRotation
   * @param target the unit we are tracking */
 void Unit::updateTarget(const Unit *target) {
 	if (!target) {
 		target = g_world.getUnit(targetRef);
 	}
+
 	if (target) {
-		if (currSkill->getClass() == SkillClass::ATTACK) {
-			const AttackSkillType *ast = static_cast<const AttackSkillType *>(currSkill);
-			int range = std::min(getMaxRange(ast), getSight());
-			if (!unitInRange(target, range)) {
-				return;
-			}
-		}
 		if (target->isCarried()) {
 			target = g_world.getUnit(target->getCarrier());
 		}
-		Vec2i tPos = useNearestOccupiedCell ? target->getNearestOccupiedCell(pos) : target->getCenteredPos();
-		targetPos = tPos;
+		targetPos = useNearestOccupiedCell
+				? target->getNearestOccupiedCell(pos)
+				: targetPos = target->getCenteredPos();
 		targetField = target->getCurrField();
 		targetVec = target->getCurrVector();
 
@@ -2454,7 +2443,7 @@ void Unit::clearCommands() {
 		g_world.deleteCommand(commands.back());
 		commands.pop_back();
 	}
-}
+}												
 
 /** Check if a command can be executed
   * @param command the command to check

@@ -11,24 +11,29 @@
 
 #include <string>
 
-#include "compound_widgets.h"
+#include "framed_widgets.h"
 
 namespace Glest { namespace Gui {
 using namespace Widgets;
 
 class GameMenu : public Frame {
 private:
+	Button *m_pinWidgetsBtn;
+	CellStrip *m_btnStrip;
+
+private:
 	void onReturnToGame(Widget*);
 	void onOptions(Widget*);
 	void onExit(Widget*);
 	void onQuit(Widget*);
 	void onSaveGame(Widget*);
-	void onDebugToggle(Widget*);
+	//void onDebugToggle(Widget*);
 	void onTogglePhotoMode(Widget*);
 	void onPinWidgets(Widget*);
 
 public:
 	GameMenu();
+	void init();
 	/*static GameMenu* showDialog(Vec2i pos, Vec2i size);*/
 
 	virtual Vec2i getPrefSize() const override { return Vec2i(-1); }
