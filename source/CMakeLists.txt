@@ -1,5 +1,6 @@
 # source directory
 
+add_subdirectory(enet)
 add_subdirectory(shared_lib)
 add_subdirectory(game)
 add_subdirectory(blendnorm)

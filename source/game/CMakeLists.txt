@@ -57,11 +57,12 @@ list(APPEND game_srcs "version.cpp")
 # ugly, but otherwise not the updated stuff
 set(game_incs ${game_incs} PARENT_SCOPE)
 
-include_directories(${game_incs} ${glestshared_incs}) # order important because different pch.h in both
+include_directories(${game_incs} ${glestshared_incs} ${enet_incs}) # order important because different pch.h in both
 
 add_executable(glestadv ${game_srcs})
 
 target_link_libraries(glestadv shared_lib ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
+target_link_libraries(glestadv enet_lib)
 if(WIN32)
 	target_link_libraries(glestadv ${DXGUID_LIBRARY} ${DSOUND_LIBRARY} wsock32)
 else(WIN32)
