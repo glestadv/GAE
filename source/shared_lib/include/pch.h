@@ -144,7 +144,7 @@
 
 #if defined(WIN32) || defined(WIN64)
 //#	include <glprocs.h>
-#	include <winsock.h>
+//#	include <winsock.h>
 #	include <dsound.h>
 #endif
 

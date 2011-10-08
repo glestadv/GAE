@@ -29,7 +29,6 @@ class AnnouncerThread : public Thread {
 	Mutex	m_mutex;
 	bool	m_running;
 	bool	m_freeSlots;
-	ServerSocket m_socket;
 
 public:
 	AnnouncerThread() 

@@ -17,6 +17,7 @@
 #include "main_menu.h"
 #include "framed_widgets.h"
 #include "thread.h"
+#include "network_connection.h"
 
 using Shared::Util::Properties;
 
@@ -30,7 +31,7 @@ WRAPPED_ENUM( ConnectResult, CANCELLED, FAILED, SUCCESS );
 // ===============================
 // 	class ConnectThread
 // ===============================
-
+using Glest::Net::Ip;
 class ConnectThread : public Thread {
 private:
 	MenuStateJoinGame &m_menu;
@@ -56,7 +57,7 @@ public:
 class FindServerThread : public Thread {
 private:
 	MenuStateJoinGame&	m_menu;
-	ClientSocket		m_socket;
+	//ClientSocket		m_socket;
 
 public:
 	FindServerThread(MenuStateJoinGame &menu) : m_menu(menu) {
@@ -66,7 +67,7 @@ public:
 	virtual void execute();
 
 	void stop() {
-		m_socket.disconnectUdp();
+		//m_socket.disconnectUdp();
 	}
 };
 

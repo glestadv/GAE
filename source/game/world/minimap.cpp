@@ -21,7 +21,6 @@
 #include "config.h"
 #include "object.h"
 #include "types.h"
-#include "socket.h"
 #include "map.h"
 #include "program.h"
 #include "game.h"

@@ -19,7 +19,6 @@
 #include "connection_slot.h"
 
 using std::vector;
-using Shared::Platform::ServerSocket;
 
 namespace Glest { namespace Net {
 

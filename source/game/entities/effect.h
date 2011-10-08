@@ -14,7 +14,6 @@
 
 #include "effect_type.h"
 #include "vec.h"
-#include "socket.h"
 
 namespace Glest { namespace Entities {
 

@@ -19,8 +19,8 @@
 #include "network_connection.h"
 #include "game_settings.h"
 
-using Shared::Platform::Ip;
-using Shared::Platform::ClientSocket;
+//using Shared::Platform::Ip;
+//using Shared::Platform::ClientSocket;
 using std::vector; //using std::deque;
 
 namespace Glest { namespace Net {

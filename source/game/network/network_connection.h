@@ -20,15 +20,30 @@
 #include "network_message.h"
 #include "network_types.h"
 #include "logger.h"
-#include "socket.h"
 
 using std::string;
 using std::vector;
 using Shared::Util::Checksum;
 using Shared::Math::Vec3f;
-using Shared::Platform::Socket;
 
 namespace Glest { namespace Net {
+
+// =====================================================
+//	class IP
+// =====================================================
+
+class Ip {
+private:
+	unsigned char bytes[4];
+
+public:
+	Ip();
+	Ip(unsigned char byte0, unsigned char byte1, unsigned char byte2, unsigned char byte3);
+	Ip(const string& ipString);
+
+	unsigned char getByte(int byteIndex)	{return bytes[byteIndex];}
+	string getString() const;
+};
 
 // =====================================================
 //	class NetworkConnection
@@ -43,24 +58,26 @@ private:
 	string remoteHostName;
 	string remotePlayerName;
 	string description;
-	Socket *m_socket;
+	//Socket *m_socket;
+	//ENetHost *host;
+	//ENetPeer *m_peer;
 
 	// received but not processed messages
 	MessageQueue messageQueue;
 
 protected:
 	// only child classes should be able to instantiate without socket
-	NetworkConnection() : m_socket(0) {}
+	//NetworkConnection() : m_socket(0) {}
 
-	virtual Socket* getSocket() {return m_socket;}
-	virtual const Socket* getSocket() const {return m_socket;}
+	//virtual Socket* getSocket() {return m_socket;}
+	//virtual const Socket* getSocket() const {return m_socket;}
 
 public:
-	NetworkConnection(Socket *socket) : m_socket(socket) {}
+	//NetworkConnection(ENetPeer *peer) : m_peer(peer) {}
 	virtual ~NetworkConnection() {close();}
 
-	string getIp() const				{return getSocket()->getIp();}
-	string getHostName() const			{return getSocket()->getHostName();}
+	string getIp() const				{return /*getSocket()->getIp();*/ "";}
+	string getHostName() const			{return /*getSocket()->getHostName();*/ "";}
 	string getRemoteHostName() const	{return remoteHostName;}
 	string getRemotePlayerName() const	{return remotePlayerName;}
 	string getDescription() const		{return description;}
@@ -79,9 +96,9 @@ public:
 	MessageType peekNextMsg() const;
 	void pushMessage(RawMessage raw)	{ messageQueue.push_back(raw); }
 
-	bool isConnected() const			{ return getSocket() && getSocket()->isConnected(); }
-	void setBlock(bool b)				{ getSocket()->setBlock(b);}
-	void setNoDelay()					{ getSocket()->setNoDelay();}
+	bool isConnected() const			{ return true;/*getSocket() && getSocket()->isConnected();*/ }
+	void setBlock(bool b)				{ /*getSocket()->setBlock(b);*/}
+	void setNoDelay()					{ /*getSocket()->setNoDelay();*/}
 
 private:
 	void close();
@@ -92,32 +109,35 @@ private:
 // =====================================================
 class ServerConnection : public NetworkConnection {
 private:
-	ServerSocket serverSocket;
+	//ServerSocket serverSocket;
+	//ENetHost *m_serverHost;
 
 protected:
-	virtual Socket* getSocket()				{return &serverSocket;}
-	virtual const Socket* getSocket() const	{return &serverSocket;}
+	//virtual Socket* getSocket()				{return &serverSocket;}
+	//virtual const Socket* getSocket() const	{return &serverSocket;}
 
 public:
 	int sendAnnounce(int port) {
-		serverSocket.sendAnnounce(port);
+		//serverSocket.sendAnnounce(port);
+		return -1;
 	}
 
 	void bind(int port) {
-		serverSocket.bind(port);
+		//serverSocket.bind(port);
 	}
 
 	void listen(int connectionQueueSize= SOMAXCONN) {
-		serverSocket.listen(connectionQueueSize);
+		//serverSocket.listen(connectionQueueSize);
 	}
 
 	NetworkConnection *accept() {
-		Socket *socket = serverSocket.accept();
+		/*Socket *socket = serverSocket.accept();
 		if (socket) {
 			return new NetworkConnection(socket);
 		} else {
 			return 0;
-		}
+		}*/
+		return 0;
 	}
 };
 
@@ -127,25 +147,26 @@ public:
 
 class ClientConnection : public NetworkConnection {
 private:
-	ClientSocket clientSocket;
+	//ClientSocket clientSocket;
+	//ENetHost *m_clientHost;
 
 protected:
-	virtual Socket* getSocket()					{return &clientSocket;}
-	virtual const Socket* getSocket() const		{return &clientSocket;}
+	//virtual Socket* getSocket()					{return &clientSocket;}
+	//virtual const Socket* getSocket() const		{return &clientSocket;}
 
 public:
 	void connect(const Ip &ip, int port) {
-		clientSocket.connect(ip, port);
+		//clientSocket.connect(ip, port);
 	}
 
 	/** @return ip of the sender
 	  * @throws SocketException when socket is no longer receiving */
 	Ip receiveAnnounce(int port, char *hostname, int dataSize) {
-		clientSocket.receiveAnnounce(port, hostname, dataSize);
+		//clientSocket.receiveAnnounce(port, hostname, dataSize);
 	}
 
 	void disconnectUdp() {
-		clientSocket.disconnectUdp();
+		//clientSocket.disconnectUdp();
 	}
 };
 

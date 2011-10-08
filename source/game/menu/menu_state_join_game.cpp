@@ -24,7 +24,6 @@
 #include "client_interface.h"
 #include "conversion.h"
 #include "game.h"
-#include "socket.h"
 
 #include "leak_dumper.h"
 #include "logger.h"
@@ -97,7 +96,7 @@ string ConnectThread::getErrorMsg() {
 // ===============================
 
 void FindServerThread::execute() {
-	const int MSG_SIZE = 100;
+	/*const int MSG_SIZE = 100;
 	char msg[MSG_SIZE];
 
 	try {
@@ -105,7 +104,7 @@ void FindServerThread::execute() {
 		m_menu.foundServer(serverIp);
 	} catch(SocketException &e) {
 		// do nothing
-	}
+	}*/
 }
 
 // ===============================

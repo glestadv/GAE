@@ -22,7 +22,6 @@
 #include "network_message.h"
 #include "server_interface.h"
 #include "conversion.h"
-#include "socket.h"
 #include "game.h"
 #include "random.h"
 #include "auto_test.h"
@@ -46,7 +45,7 @@ using namespace Shared::Util;
 // =====================================================
 
 void AnnouncerThread::execute() {
-	static int counter = 1;
+	/*static int counter = 1;
 	while (m_running) {
 		if (m_freeSlots) {
 			if (counter % 10 == 0) {
@@ -61,7 +60,7 @@ void AnnouncerThread::execute() {
 		}
 		++counter;
 		sleep(100);
-	}
+	}*/
 }
 
 // =====================================================

@@ -18,7 +18,6 @@
 #include "vec.h"
 #include "types.h"
 #include "flags.h"
-#include "socket.h"
 #include "prototypes_enums.h"
 
 using Shared::Math::Vec2i;

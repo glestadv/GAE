@@ -24,7 +24,6 @@
 #include "faction.h"
 #include "metrics.h"
 #include "network_message.h"
-#include "socket.h"
 #include "menu_state_root.h"
 #include "FSFactory.hpp"
 

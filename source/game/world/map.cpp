@@ -25,7 +25,6 @@
 #include "logger.h"
 #include "tech_tree.h"
 #include "config.h"
-#include "socket.h"
 #include "selection.h"
 #include "program.h"
 #include "script_manager.h"

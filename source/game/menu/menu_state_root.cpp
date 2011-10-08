@@ -26,7 +26,6 @@
 #include "menu_state_about.h"
 #include "metrics.h"
 #include "network_message.h"
-#include "socket.h"
 #include "auto_test.h"
 
 #include "widgets.h"

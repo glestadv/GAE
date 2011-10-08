@@ -14,10 +14,6 @@
 
 #include "projectConfig.h"
 
-// some local headers of importance
-#include "types.h"
-#include "game_constants.h"
-
 #ifndef USE_PCH
 #	define USE_PCH 0
 #endif
@@ -42,6 +38,7 @@
 #		include <xaudio2.h>
 #	endif
 #	define NOMINMAX
+#	include <winsock2.h> // needs to be before windows.h
 #	include <windows.h>
 #	include <crtdbg.h>
 #	include <io.h>
@@ -55,6 +52,10 @@
 #		error not WIN32 || WIN64 and USE_POSIX_SOCKETS not defined
 #	endif
 #endif
+
+// some local headers of importance
+#include "types.h"
+#include "game_constants.h"
 
 // POSIX base
 #include <stdlib.h>
@@ -97,6 +98,7 @@
 
 #include <sys/types.h>
 
+/*
 #ifdef USE_POSIX_SOCKETS
 
 	#include <sys/socket.h>
@@ -109,6 +111,7 @@
 	#include <sys/ioctl.h>
 
 #endif
+*/
 
 #ifdef USE_SDL
 	#include <SDL.h>
@@ -139,7 +142,7 @@
 
 #if defined(WIN32)
 //	#include <glprocs.h>
-	#include <winsock.h>
+
 	#include <dsound.h>
 #endif
 

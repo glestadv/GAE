@@ -74,7 +74,7 @@ bool ConnectionSlot::isConnectionReady() {
 }
 
 void ConnectionSlot::processMessages() {
-	try {
+	/*try {
 		m_connection->receiveMessages();
 	} catch (SocketException &e) {
 		NETWORK_LOG( "Slot " << m_playerIndex << " [" << m_connection->getRemotePlayerName() << "]" << " : " << e.what() );
@@ -131,7 +131,7 @@ void ConnectionSlot::processMessages() {
 			m_serverInterface->sendTextMessage(ss.str(), -1);
 			throw InvalidMessage((int8)raw.type);
 		}
-	}
+	}*/
 }
 
 void ConnectionSlot::update() {
@@ -227,7 +227,7 @@ Message *DedicatedConnectionSlot::convertToMessage(RawMessage &raw) {
 
 void DedicatedConnectionSlot::processMessages() {
 	// get messages from server and send to client
-	try {
+	/*try {
 		m_connectionToServer->receiveMessages();
 	} catch (SocketException &e) {
 		//NETWORK_LOG( "Slot " << m_playerIndex << " [" << getRemotePlayerName() << "]" << " : " << e.what() );
@@ -274,7 +274,7 @@ void DedicatedConnectionSlot::processMessages() {
 			}
 			delete msg;
 		}
-	}
+	}*/
 }
 
 bool DedicatedConnectionSlot::isConnectionReady() {
