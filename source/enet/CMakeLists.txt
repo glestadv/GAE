@@ -10,10 +10,11 @@ include_directories(${enet_incs})
 
 add_library(enet_lib STATIC ${enet_srcs})
 
-#if(WIN32)
-#	target_link_libraries(enet_lib 
-#		)
-#endif(WIN32)
+if(WIN32)
+	target_link_libraries(enet_lib 
+		ws2_32.lib
+		winmm.lib)
+endif(WIN32)
 
 if (MSVC)
 	# set linker flags for Release to use link time code gen.

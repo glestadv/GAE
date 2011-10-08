@@ -66,6 +66,20 @@ string Ip::getString() const {
 }
 
 // =====================================================
+//	class Network
+// =====================================================
+void Network::init() {
+	LOG_NETWORK("Initialize network");
+	int result = enet_initialize();
+	assert(result == 0);
+}
+
+void Network::deinit() {
+	LOG_NETWORK("Deinitialize network");
+	enet_deinitialize();
+}
+
+// =====================================================
 //	class NetworkConnection
 // =====================================================
 

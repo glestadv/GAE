@@ -82,6 +82,7 @@ protected:
 
 public:
 	NetworkInterface(Program &prog);
+	virtual ~NetworkInterface();
 
 	KeyFrame& getKeyFrame() { return keyFrame; }
 

@@ -26,6 +26,7 @@
 #include "network_message.h"
 #include "script_manager.h"
 #include "command.h"
+#include "network_connection.h"
 
 using namespace Shared::Platform;
 using namespace Shared::Util;
@@ -39,6 +40,11 @@ namespace Glest { namespace Net {
 NetworkInterface::NetworkInterface(Program &prog) 
 		: SimulationInterface(prog) {
 	keyFrame.reset();
+	Network::init();
+}
+
+NetworkInterface::~NetworkInterface() {
+	Network::deinit();
 }
 
 void NetworkInterface::processTextMessage(TextMessage &msg) {
