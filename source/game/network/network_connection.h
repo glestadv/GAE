@@ -15,11 +15,13 @@
 
 #include <string>
 #include <vector>
+#include <stack>
 
 #include "checksum.h"
 #include "network_message.h"
 #include "network_types.h"
 #include "logger.h"
+#include "enet/enet.h"
 
 using std::string;
 using std::vector;
@@ -67,22 +69,27 @@ private:
 	string remoteHostName;
 	string remotePlayerName;
 	string description;
-	//Socket *m_socket;
-	//ENetHost *host;
-	//ENetPeer *m_peer;
+
+	ENetHost *m_host;
+	ENetPeer *m_peer;
 
 	// received but not processed messages
 	MessageQueue messageQueue;
 
 protected:
 	// only child classes should be able to instantiate without socket
-	//NetworkConnection() : m_socket(0) {}
+	NetworkConnection() : m_host(0), m_peer(0) {}
 
-	//virtual Socket* getSocket() {return m_socket;}
-	//virtual const Socket* getSocket() const {return m_socket;}
+	ENetHost* getHost() {return m_host;}
+	const ENetHost* getSocket() const {return m_host;}
+
+	void setHost(ENetHost *v) {m_host = v;}
+	void destroyHost() { enet_host_destroy(m_host); }
+
+	virtual void poll() {};
 
 public:
-	//NetworkConnection(ENetPeer *peer) : m_peer(peer) {}
+	NetworkConnection(ENetHost *host, ENetPeer *peer) : m_host(host), m_peer(peer) {}
 	virtual ~NetworkConnection() {close();}
 
 	string getIp() const				{return /*getSocket()->getIp();*/ "";}
@@ -118,35 +125,38 @@ private:
 // =====================================================
 class ServerConnection : public NetworkConnection {
 private:
-	//ServerSocket serverSocket;
-	//ENetHost *m_serverHost;
+	typedef std::map<int, NetworkConnection*> Connections;
+	Connections m_connections;
+	ENetAddress m_address;
+
+	std::stack<NetworkConnection*> m_looseConnections;
 
 protected:
 	//virtual Socket* getSocket()				{return &serverSocket;}
 	//virtual const Socket* getSocket() const	{return &serverSocket;}
+	virtual void poll() override;
 
 public:
+	virtual ~ServerConnection() {
+		NetworkConnection::destroyHost();
+	}
 	int sendAnnounce(int port) {
 		//serverSocket.sendAnnounce(port);
 		return -1;
 	}
 
-	void bind(int port) {
-		//serverSocket.bind(port);
-	}
+	void bind(int port);
 
-	void listen(int connectionQueueSize= SOMAXCONN) {
-		//serverSocket.listen(connectionQueueSize);
-	}
+	void listen(int connectionQueueSize = SOMAXCONN);
 
 	NetworkConnection *accept() {
-		/*Socket *socket = serverSocket.accept();
-		if (socket) {
-			return new NetworkConnection(socket);
+		if (!m_looseConnections.empty()) {
+			NetworkConnection *connection = m_looseConnections.top();
+			m_looseConnections.pop();
+			return connection;
 		} else {
 			return 0;
-		}*/
-		return 0;
+		}
 	}
 };
 
@@ -156,17 +166,18 @@ public:
 
 class ClientConnection : public NetworkConnection {
 private:
-	//ClientSocket clientSocket;
-	//ENetHost *m_clientHost;
-
+	NetworkConnection *m_server;
 protected:
 	//virtual Socket* getSocket()					{return &clientSocket;}
 	//virtual const Socket* getSocket() const		{return &clientSocket;}
 
+	virtual void poll() override;
+
 public:
-	void connect(const Ip &ip, int port) {
-		//clientSocket.connect(ip, port);
+	virtual ~ClientConnection() {
+		NetworkConnection::destroyHost();
 	}
+	void connect(const string &address, int port);
 
 	/** @return ip of the sender
 	  * @throws SocketException when socket is no longer receiving */

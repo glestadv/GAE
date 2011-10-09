@@ -63,7 +63,7 @@ void ClientInterface::connect(const Ip &ip, int port) {
 	NETWORK_LOG( __FUNCTION__ << " connecting to " << ip.getString() << ":" << port );
 	delete m_connection;
 	m_connection = new ClientConnection();
-	m_connection->connect(ip, port);
+	m_connection->connect(ip.getString(), port);
 	m_connection->setBlock(false);
 }
 
