@@ -201,7 +201,7 @@ void MenuStateJoinGame::buildConnectPanel() {
 	pnl->setSizeHint(2, SizeHint(-1, 30));
 	m_dedicatedServerCheckbox = new CheckBox(pnl);
 	m_dedicatedServerCheckbox->setCell(2);
-	m_dedicatedServerCheckbox->setChecked(true);
+	m_dedicatedServerCheckbox->setChecked(false);
 	m_dedicatedServerCheckbox->setAnchors(a2);
 
 	m_connectLabel = new StaticText(m_connectPanel);

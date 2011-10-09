@@ -64,6 +64,7 @@ void ClientInterface::connect(const Ip &ip, int port) {
 	delete m_connection;
 	m_connection = new ClientConnection();
 	m_connection->connect(ip.getString(), port);
+	m_connection->receiveMessages();
 	m_connection->setBlock(false);
 }
 

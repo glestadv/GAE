@@ -248,9 +248,9 @@ void ServerConnection::poll() {
 	ENetEvent event;
 	ENetHost *host = NetworkConnection::getHost();
     
-    // Wait up to 1000 milliseconds for an event.
+    // Wait up to x milliseconds for an event.
 
-	while (enet_host_service(host, &event, 1000) > 0)
+	while (enet_host_service(host, &event, 5) > 0)
     {
         switch (event.type)
         {
@@ -323,12 +323,14 @@ void ClientConnection::poll() {
 	ENetEvent event;
 	ENetHost *host = NetworkConnection::getHost();
 
-	while (enet_host_service(host, &event, 0) > 0) {
+	while (enet_host_service(host, &event, 50) > 0) {
 		switch (event.type) {
 		case ENET_EVENT_TYPE_CONNECT:
 		{
 			char hostname[256] = "(error)";
 			enet_address_get_host_ip(&event.peer->address, hostname, strlen(hostname));
+
+			m_server = new NetworkConnection(host, event.peer);
 
 			break;
 		}
@@ -356,7 +358,7 @@ void ClientConnection::poll() {
 					rawMsg.data = 0;
 				}
 	
-				m_server->pushMessage(rawMsg);
+				pushMessage(rawMsg);
 			} else {
 				return; //does this make sense here??
 			}
@@ -404,8 +406,9 @@ void ClientConnection::connect(const string &address, int port) {
        exit(EXIT_FAILURE);
     }
     
+#ifdef false
     /* Wait up to 5 seconds for the connection attempt to succeed. */
-    if (enet_host_service (client, &event, 5000) > 0 &&
+    if (enet_host_service (client, &event, 10000) > 0 &&
         event.type == ENET_EVENT_TYPE_CONNECT)
     {
 		LOG_NETWORK("Connection to localhost succeeded.");
@@ -420,6 +423,7 @@ void ClientConnection::connect(const string &address, int port) {
 
         LOG_NETWORK("Connection to localhost failed.");
     }
+#endif
 }
 
 }} // end namespace

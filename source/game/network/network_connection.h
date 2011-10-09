@@ -84,7 +84,7 @@ protected:
 	const ENetHost* getSocket() const {return m_host;}
 
 	void setHost(ENetHost *v) {m_host = v;}
-	void destroyHost() { enet_host_destroy(m_host); }
+	void destroyHost() { if (m_host) enet_host_destroy(m_host); }
 
 	virtual void poll() {};
 
@@ -112,7 +112,7 @@ public:
 	MessageType peekNextMsg() const;
 	void pushMessage(RawMessage raw)	{ messageQueue.push_back(raw); }
 
-	bool isConnected() const			{ return true;/*getSocket() && getSocket()->isConnected();*/ }
+	virtual bool isConnected() const	{ return m_peer != NULL;/*getSocket() && getSocket()->isConnected();*/ }
 	void setBlock(bool b)				{ /*getSocket()->setBlock(b);*/}
 	void setNoDelay()					{ /*getSocket()->setNoDelay();*/}
 
@@ -178,6 +178,7 @@ public:
 		NetworkConnection::destroyHost();
 	}
 	void connect(const string &address, int port);
+	virtual bool isConnected() const	{ return m_server != NULL; }
 
 	/** @return ip of the sender
 	  * @throws SocketException when socket is no longer receiving */

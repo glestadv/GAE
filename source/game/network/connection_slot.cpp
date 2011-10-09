@@ -74,14 +74,15 @@ bool ConnectionSlot::isConnectionReady() {
 }
 
 void ConnectionSlot::processMessages() {
-	/*try {
+	//try {
+	assert(m_connection);
 		m_connection->receiveMessages();
-	} catch (SocketException &e) {
+	/*} catch (SocketException &e) {
 		NETWORK_LOG( "Slot " << m_playerIndex << " [" << m_connection->getRemotePlayerName() << "]" << " : " << e.what() );
 		string msg = m_connection->getRemotePlayerName() + " [" + m_connection->getRemoteHostName() + "] has disconnected.";
 		m_serverInterface->sendTextMessage(msg, -1);
 		throw Disconnect();
-	}
+	}*/
 	while (m_connection->hasMessage()) {
 		MessageType type = m_connection->peekNextMsg();
 		if (type == MessageType::DATA_SYNC) {
@@ -131,7 +132,7 @@ void ConnectionSlot::processMessages() {
 			m_serverInterface->sendTextMessage(ss.str(), -1);
 			throw InvalidMessage((int8)raw.type);
 		}
-	}*/
+	}
 }
 
 void ConnectionSlot::update() {
@@ -169,6 +170,11 @@ void ConnectionSlot::logLastMessage() {
 
 void ConnectionSlot::send(const Message* networkMessage) {
 	///@todo this might be too slow to check each time, so have another version that doesn't check.
+	if (!m_connection)
+	{
+		return;
+	}
+
 	if (m_connection->isConnected()) {
 		m_connection->send(networkMessage);
 	} else {

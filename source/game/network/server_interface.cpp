@@ -147,6 +147,8 @@ void ServerInterface::update() {
 		popChatMsg();
 	}
 
+	m_connection.receiveMessages();
+
 	// update all slots
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (slots[i]) {
