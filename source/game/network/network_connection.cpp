@@ -288,6 +288,8 @@ void ServerConnection::poll() {
 				rawMsg.data = new uint8[header.messageSize];
 				//socket->skip(MsgHeader::headerSize); //???
 				if (header.messageSize) {
+					char *buffer = (char*)event.packet->data;
+					memcpy((char *)rawMsg.data, buffer + MsgHeader::headerSize, event.packet->dataLength);
 					//socket->receive(rawMsg.data, header.messageSize);
 				} else {
 					rawMsg.data = 0;
@@ -331,6 +333,7 @@ void ClientConnection::poll() {
 			enet_address_get_host_ip(&event.peer->address, hostname, strlen(hostname));
 
 			m_server = new NetworkConnection(host, event.peer);
+			setPeer(event.peer);
 
 			break;
 		}
@@ -353,6 +356,8 @@ void ClientConnection::poll() {
 				rawMsg.data = new uint8[header.messageSize];
 				//socket->skip(MsgHeader::headerSize); //???
 				if (header.messageSize) {
+					char *buffer = (char*)event.packet->data;
+					memcpy((char *)rawMsg.data, buffer + MsgHeader::headerSize, event.packet->dataLength);
 					//socket->receive(rawMsg.data, header.messageSize);
 				} else {
 					rawMsg.data = 0;

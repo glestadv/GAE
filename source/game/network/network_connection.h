@@ -83,6 +83,7 @@ protected:
 	ENetHost* getHost() {return m_host;}
 	const ENetHost* getSocket() const {return m_host;}
 
+	void setPeer(ENetPeer *v) {m_peer = v;}
 	void setHost(ENetHost *v) {m_host = v;}
 	void destroyHost() { if (m_host) enet_host_destroy(m_host); }
 
