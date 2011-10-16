@@ -21,6 +21,7 @@
 #include "metrics.h"
 #include "network_message.h"
 #include "server_interface.h"
+#include "client_interface.h"
 #include "conversion.h"
 #include "game.h"
 #include "random.h"
@@ -330,6 +331,12 @@ MenuStateNewGame::MenuStateNewGame(Program &program, MainMenu *mainMenu, bool op
 		m_playerSlots[i]->ColourChanged.connect(this, &MenuStateNewGame::onChangeColour);
 	}
 	program.setFade(0.f);
+}
+
+MenuStateNewGame::~MenuStateNewGame() {
+	m_announcer.stop();
+	m_announcer.join();
+	delete m_toDedicated;
 }
 
 //  === util ===

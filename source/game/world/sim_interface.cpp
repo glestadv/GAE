@@ -33,40 +33,28 @@ const int speedValues[GameSpeed::COUNT] = {
 //	class SkillCycleTable
 // =====================================================
 
-SkillCycleTable::SkillCycleTable(RawMessage raw) {
-	numEntries = raw.size / sizeof(CycleInfo);
-	cycleTable = reinterpret_cast<CycleInfo*>(raw.data);
-}
-
 SkillCycleTable::~SkillCycleTable(){
 	delete[] cycleTable;
 }
 
+SkillCycleTable::SkillCycleTable(Glest::Net::SkillCycleTableMessage &message) {
+
+}
+
 void SkillCycleTable::create(const TechTree *techTree) {
 	numEntries = g_prototypeFactory.getSkillTypeCount();
-	header.messageSize = numEntries * sizeof(CycleInfo);
+	//header.messageSize = numEntries * sizeof(CycleInfo);
 	if (!numEntries) {
 		cycleTable = 0; // -loadmap
 		return;
 	}
-	NETWORK_LOG( "SkillCycleTable built, numEntries = " << numEntries 
-		<< ", messageSize = " << header.messageSize << " (@" << sizeof(CycleInfo) << ")" );
+	//NETWORK_LOG( "SkillCycleTable built, numEntries = " << numEntries 
+	//	<< ", messageSize = " << header.messageSize << " (@" << sizeof(CycleInfo) << ")" );
 
 	cycleTable = new CycleInfo[numEntries];
 	for (int i=0; i < numEntries; ++i) {
 		cycleTable[i] = g_prototypeFactory.getSkillType(i)->calculateCycleTime();
 	}
-}
-
-void SkillCycleTable::send(NetworkConnection* connection) const {
-	connection->send(&header, sizeof(MsgHeader));
-	connection->send(cycleTable, header.messageSize);
-	NETWORK_LOG( "SkillCycleTable sent to " << connection->getRemotePlayerName() );
-}
-
-bool SkillCycleTable::receive(NetworkConnection* connection) {
-	throw runtime_error(string(__FUNCTION__) + "() was called.");
-	return false;
 }
 
 // =====================================================

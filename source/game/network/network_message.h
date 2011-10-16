@@ -24,6 +24,13 @@ using Shared::Platform::int16;
 using Shared::Util::Checksum;
 using Glest::Sim::GameSpeed;
 
+namespace Glest {
+	namespace Sim {
+		class SkillCycleTable;
+		class CycleInfo;
+	}
+}
+
 namespace Glest { namespace Net {
 
 class NetworkConnection;
@@ -55,11 +62,11 @@ public:
 
 	virtual MessageType getType() const = 0;
 	virtual unsigned int getSize() const = 0;
-
-	virtual bool receive(NetworkConnection* connection) = 0;
-	virtual void send(NetworkConnection* connection) const = 0;
-
+	virtual const void* getData() const = 0;
 	virtual void log() const;
+
+	//virtual bool receive(NetworkConnection* connection) = 0;
+	//virtual void send(NetworkConnection* connection) const = 0;
 };
 
 // ==============================================================
@@ -89,17 +96,16 @@ public:
 	IntroMessage(const string &versionString, const string &pName, const string &hName, int playerIndex);
 	IntroMessage(RawMessage raw);
 
+	// Implementing Message
 	virtual MessageType getType() const		{return MessageType::INTRO;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
+	virtual void log() const override;
 
 	string getVersionString() const		{return data.versionString.getString();}
 	string getPlayerName() const		{return data.playerName.getString();}
 	string getHostName() const			{return data.hostName.getString();}
 	int getPlayerIndex() const			{return data.playerIndex;}
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
-	virtual void log() const override;
 };
 
 // ==============================================================
@@ -123,14 +129,13 @@ public:
 	AiSeedSyncMessage(int count, int32 *seeds);
 	AiSeedSyncMessage(RawMessage raw);
 
+	// Implementing Message
 	virtual MessageType getType() const		{return MessageType::AI_SYNC;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
 
 	int getSeedCount() const { return data.seedCount; }
 	int32 getSeed(int i) const { return data.seeds[i]; }
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
 };
 
 // ==============================================================
@@ -147,9 +152,7 @@ public:
 
 	virtual MessageType getType() const		{return MessageType::READY;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
+	virtual const void* getData() const		{return &data;}
 };
 
 // ==============================================================
@@ -192,45 +195,45 @@ public:
 
 	virtual MessageType getType() const		{return MessageType::LAUNCH;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
 
 	void buildGameSettings(GameSettings *gameSettings) const;
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
 };
+
+// ==============================================================
+//	class DataSyncMessage
+// ==============================================================
 
 class DataSyncMessage : public Message {
 private:
-	///@todo struct Data { ... } m_data;
-	int32 m_cmdTypeCount;
-	int32 m_skillTypeCount;
-	int32 m_prodTypeCount;
-	int32 m_cloakTypeCount;
-	int32 *m_data;
-	RawMessage rawMsg;
+	struct Data {
+		uint32 messageType :  8;
+		uint32 messageSize : 24;
+		int32 m_cmdTypeCount;
+		int32 m_skillTypeCount;
+		int32 m_prodTypeCount;
+		int32 m_cloakTypeCount;
+	} data;
 
 public:
 	DataSyncMessage(RawMessage raw);
 	DataSyncMessage(World &world);
-	~DataSyncMessage();
 
 	virtual MessageType getType() const		{return MessageType::DATA_SYNC;}
-	virtual unsigned int getSize() const	{return 0;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
+	virtual void log() const override {}
 
-	int32 getChecksum(int i) { return m_data[i]; }
+	int32 getChecksum(int i) { return 0;/*m_data[i];*/ }///////////////////////////TODO
 
-	int32 getCmdTypeCount()	  const { return m_cmdTypeCount;   }
-	int32 getSkillTypeCount() const { return m_skillTypeCount; }
-	int32 getProdTypeCount() const { return m_prodTypeCount; }
-	int32 getCloakTypeCount() const { return m_cloakTypeCount; }
+	int32 getCmdTypeCount()	  const { return data.m_cmdTypeCount;   }
+	int32 getSkillTypeCount() const { return data.m_skillTypeCount; }
+	int32 getProdTypeCount() const { return data.m_prodTypeCount; }
+	int32 getCloakTypeCount() const { return data.m_cloakTypeCount; }
 
 	int32 getChecksumCount()  const {
-		return m_cmdTypeCount + m_skillTypeCount + m_prodTypeCount + m_cloakTypeCount + 4;
+		return data.m_cmdTypeCount + data.m_skillTypeCount + data.m_prodTypeCount + data.m_cloakTypeCount + 4;
 	}
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
-	virtual void log() const override {}
 };
 
 // ==============================================================
@@ -252,12 +255,10 @@ public:
 
 	virtual MessageType getType() const		{return MessageType::GAME_SPEED;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
 
 	int getFrame() const { return data.frame; }
 	GameSpeed getSetting() const { return enum_cast<GameSpeed>(data.setting); }
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
 };
 
 // ==============================================================
@@ -287,16 +288,14 @@ public:
 
 	virtual MessageType getType() const		{return MessageType::COMMAND_LIST;}
 	virtual unsigned int getSize() const;
+	virtual const void* getData() const		{return &data;}
+	virtual void log() const override;
 	
 	bool addCommand(const NetworkCommand* networkCommand);
 	void clear()									{data.commandCount = 0;}
 	int getCommandCount() const						{return data.commandCount;}
 	int getFrameCount() const						{return data.frameCount;}
 	const NetworkCommand* getCommand(int i) const	{return &data.commands[i];}
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
-	virtual void log() const override;
 };
 
 // ==============================================================
@@ -326,15 +325,13 @@ public:
 
 	virtual MessageType getType() const		{return MessageType::TEXT;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
+	virtual void log() const;
 
 	string getText() const		{return data.text.getString();}
 	string getSender() const	{return data.sender.getString();}
 	int getTeamIndex() const	{return data.teamIndex;}
 	int getColourIndex() const	{return data.colourIndex;}
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
-	virtual void log() const;
 };
 
 // =====================================================
@@ -354,9 +351,7 @@ public:
 
 	virtual MessageType getType() const		{return MessageType::QUIT;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
+	virtual const void* getData() const		{return &data;}
 };
 
 // =====================================================
@@ -391,11 +386,9 @@ public:
 	KeyFrame()		{ reset(); }
 	KeyFrame(RawMessage raw);
 
-	virtual MessageType getType() const { return MessageType::KEY_FRAME;}
+	virtual MessageType getType() const		{return MessageType::KEY_FRAME;}
 	virtual unsigned int getSize() const	{return 0;}
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
+	virtual const void* getData() const		{return 0;/*&data;*/} ///////////////////////////TODO
 	virtual void log() const override {}
 
 	void setFrameCount(int fc) { frame = fc; }
@@ -414,6 +407,30 @@ public:
 	void addUpdate(ProjectileUpdate updt);
 	MoveSkillUpdate getMoveUpdate();
 	ProjectileUpdate getProjUpdate();
+};
+
+// =====================================================
+//  class SkillCycleTableMessage
+//  indexed by SkillType::m_id
+// =====================================================
+
+class SkillCycleTableMessage : public Message {
+private:
+	struct Data {
+		uint32 messageType :  8;
+		uint32 messageSize : 24;
+		uint32 numEntries; //could this be determined by removing header size?
+		CycleInfo *cycleTable;
+	} data;
+
+public:
+	SkillCycleTableMessage(Glest::Sim::SkillCycleTable *skillCycleTable);
+	SkillCycleTableMessage(RawMessage raw);
+
+	virtual MessageType getType() const		{return MessageType::SKILL_CYCLE_TABLE;}
+	virtual unsigned int getSize() const	{return sizeof(data) + data.numEntries;} ////???
+	virtual const void* getData() const		{return &data;}
+	virtual void log() const override {}
 };
 
 #if MAD_SYNC_CHECKING
@@ -436,12 +453,13 @@ public:
 
 	virtual MessageType getType() const		{return MessageType::SYNC_ERROR;}
 	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
+	virtual void log() const override;
 
 	int getFrame() const { return data.frameCount; }
 
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
-	virtual void log() const override;
+	//virtual bool receive(NetworkConnection* connection);
+	//virtual void send(NetworkConnection* connection) const;
 };
 
 #endif

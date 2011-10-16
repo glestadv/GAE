@@ -85,17 +85,16 @@ void Network::deinit() {
 
 void NetworkConnection::send(const Message* networkMessage) {
 	networkMessage->log();
-	networkMessage->send(this);
-	// could do, to avoid round trip
-	/*
+	//networkMessage->send(this);
+	
 	ENetPacket *packet = enet_packet_create(networkMessage->getData(), networkMessage->getSize(), ENET_PACKET_FLAG_RELIABLE);
     
-    if (enet_peer_send(peer, 0, packet) != 0) {
+    if (enet_peer_send(m_peer, 0, packet) != 0) {
 		LOG_NETWORK("connection severed, trying to send message..");
 		throw Disconnect();
-	}*/
+	}
 }
-
+#ifdef false
 void NetworkConnection::send(const void* data, int dataSize) {
 	ENetPacket *packet = enet_packet_create(data, dataSize, ENET_PACKET_FLAG_RELIABLE);
     
@@ -109,6 +108,7 @@ void NetworkConnection::send(const void* data, int dataSize) {
 
 	enet_host_flush(m_host);
 }
+#endif
 
 bool NetworkConnection::receive(void* data, int dataSize) {
 	/*Socket *socket = getSocket();

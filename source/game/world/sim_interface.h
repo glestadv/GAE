@@ -141,21 +141,15 @@ public:
 //  indexed by SkillType::m_id
 // =====================================================
 
-class SkillCycleTable : public Net::Message {
+class SkillCycleTable {
 private:
-	MsgHeader header;
 	CycleInfo *cycleTable;
 	int numEntries;
 
 public:
-	SkillCycleTable() : cycleTable(0), numEntries(0) {
-		header.messageType = MessageType::SKILL_CYCLE_TABLE;
-	}
-	SkillCycleTable(RawMessage raw);
+	SkillCycleTable() : cycleTable(0), numEntries(0) {}
+	SkillCycleTable(Glest::Net::SkillCycleTableMessage &message); 
     virtual ~SkillCycleTable();
-
-	virtual MessageType getType() const		{return MessageType::SKILL_CYCLE_TABLE;}
-	virtual unsigned int getSize() const	{return 0;}
 
 	void create(const TechTree *techTree);
 
@@ -163,10 +157,6 @@ public:
 	const CycleInfo& lookUp(const Unit *unit) const { return cycleTable[unit->getCurrSkill()->getId()]; }
 
 	int size() const { return numEntries; }
-
-	virtual bool receive(NetworkConnection* connection);
-	virtual void send(NetworkConnection* connection) const;
-	//virtual void send(Socket* socket) const { throw runtime_error(string("you should implement ") + __FUNCTION__); }
 };
 
 // =====================================================

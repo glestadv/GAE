@@ -72,16 +72,6 @@ IntroMessage::IntroMessage(RawMessage raw) {
 	cout << "IntroMessage received, Version string: " << data.versionString.getString() << endl;
 }
 
-bool IntroMessage::receive(NetworkConnection* connection) {
-	throw runtime_error(string(__FUNCTION__) + "() was called.");
-	return false;
-}
-
-void IntroMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == getType());
-	connection->send(&data, getSize());
-}
-
 void IntroMessage::log() const {
 	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
 		<< ", messageSize: " << data.messageSize << ", player name: " << data.playerName.getString()
@@ -104,16 +94,6 @@ ReadyMessage::ReadyMessage(RawMessage raw) {
 	if (raw.size || raw.data) {
 		throw GarbledMessage(MessageType::READY);
 	}
-}
-
-bool ReadyMessage::receive(NetworkConnection* connection){
-	throw runtime_error(string(__FUNCTION__) + "() called");
-	return false;
-}
-
-void ReadyMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == getType());
-	connection->send(&data, getSize());
 }
 
 // =====================================================
@@ -141,16 +121,6 @@ AiSeedSyncMessage::AiSeedSyncMessage(RawMessage raw) {
 	data.messageSize = raw.size;
 	memcpy(&data.seedCount, raw.data, raw.size);
 	delete raw.data;
-}
-
-bool AiSeedSyncMessage::receive(NetworkConnection* connection){
-	throw runtime_error(string(__FUNCTION__) + "() called");
-	return false;
-}
-
-void AiSeedSyncMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == getType());
-	connection->send(&data, getSize());
 }
 
 // =====================================================
@@ -220,37 +190,27 @@ void LaunchMessage::buildGameSettings(GameSettings *gameSettings) const{
 	}
 }
 
-bool LaunchMessage::receive(NetworkConnection* connection) {
-	throw runtime_error(string(__FUNCTION__) + "() called");
-	return false;
-}
-
-void LaunchMessage::send(NetworkConnection* connection) const {
-	assert(data.messageType == getType());
-	connection->send(&data, getSize());
-}
-
 // =====================================================
 //	class DataSyncMessage
 // =====================================================
 
 DataSyncMessage::DataSyncMessage(RawMessage raw)
-		: m_data(0), rawMsg(raw) {
+		/*: m_data(0), rawMsg(raw)*/ {
 	if (raw.size < 4 * sizeof(int32) && raw.size % sizeof(int32) != 0) {
 		throw GarbledMessage(getType(), NetSource::SERVER);
 	}
-	m_cmdTypeCount	  = reinterpret_cast<int32*>(raw.data)[0];
-	m_skillTypeCount  = reinterpret_cast<int32*>(raw.data)[1];
-	m_prodTypeCount   = reinterpret_cast<int32*>(raw.data)[2];
-	m_cloakTypeCount = reinterpret_cast<int32*>(raw.data)[3];
+	data.m_cmdTypeCount	  = reinterpret_cast<int32*>(raw.data)[0];
+	data.m_skillTypeCount  = reinterpret_cast<int32*>(raw.data)[1];
+	data.m_prodTypeCount   = reinterpret_cast<int32*>(raw.data)[2];
+	data.m_cloakTypeCount = reinterpret_cast<int32*>(raw.data)[3];
 
-	if (getChecksumCount()) {
+	/*if (getChecksumCount()) {
 		m_data = reinterpret_cast<int32*>(raw.data) + 4;
-	}
+	}*/
 }
 
-DataSyncMessage::DataSyncMessage(World &world) : m_data(0), rawMsg() {
-	CHECK_HEAP();
+DataSyncMessage::DataSyncMessage(World &world) /*: m_data(0), rawMsg()*/ {
+	/*CHECK_HEAP();
 	Checksum checksums[4];
 	world.getTileset()->doChecksum(checksums[0]);
 	NETWORK_LOG(
@@ -353,21 +313,10 @@ DataSyncMessage::DataSyncMessage(World &world) : m_data(0), rawMsg() {
 		}
 	}
 	NETWORK_LOG( "========" );
-	CHECK_HEAP();
+	CHECK_HEAP();*/
 }
 
-DataSyncMessage::~DataSyncMessage() {
-	CHECK_HEAP();
-
-	if (rawMsg.data) {
-		delete [] rawMsg.data;
-	} else {
-		delete [] m_data;
-	}
-
-	CHECK_HEAP();
-}
-
+/* Put as a specialized send in NetworkConnection?
 void DataSyncMessage::send(NetworkConnection* connection) const {
 	MsgHeader header;
 	header.messageType = getType();
@@ -379,11 +328,7 @@ void DataSyncMessage::send(NetworkConnection* connection) const {
 		<< ", messageSize: " << header.messageSize
 	);
 }
-
-bool DataSyncMessage::receive(NetworkConnection* connection) {
-	throw runtime_error(string(__FUNCTION__) + "() was called");
-	return false;
-}
+*/
 
 // =====================================================
 //	class GameSpeedMessage
@@ -401,14 +346,6 @@ GameSpeedMessage::GameSpeedMessage(RawMessage raw) {
 	data.messageSize = raw.size;
 	memcpy(&data + sizeof(MsgHeader), raw.data, raw.size);
 	delete raw.data;
-}
-
-bool GameSpeedMessage::receive(NetworkConnection* connection) {
-	return false;
-}
-
-void GameSpeedMessage::send(NetworkConnection* connection) const {
-	// do nothing?
 }
 
 // =====================================================
@@ -440,6 +377,7 @@ CommandListMessage::CommandListMessage(RawMessage raw) {
 	delete raw.data;
 }
 
+/* Put as specialized receive somewhere?
 bool CommandListMessage::receive(NetworkConnection* connection) {
 	MsgHeader header; // peek Message Header first
 	if (!connection->peek(&header, sizeof(MsgHeader))) {
@@ -454,11 +392,7 @@ bool CommandListMessage::receive(NetworkConnection* connection) {
 	}
 	return ok;
 }
-
-void CommandListMessage::send(NetworkConnection* connection) const {
-	assert(data.messageType == getType());
-	connection->send(&data, getSize());
-}
+*/
 
 void CommandListMessage::log() const {
 	NETWORK_LOG(
@@ -491,14 +425,11 @@ TextMessage::TextMessage(RawMessage raw) {
 	delete raw.data;
 }
 
+/*
 bool TextMessage::receive(NetworkConnection* connection){
 	return connection->receive(&data, sizeof(Data));
 }
-
-void TextMessage::send(NetworkConnection* connection) const{
-	assert(data.messageType == getType());
-	connection->send(&data, getSize());
-}
+*/
 
 void TextMessage::log() const {
 	NETWORK_LOG( "Sending TextMessage, size: " << data.messageSize );
@@ -519,14 +450,11 @@ QuitMessage::QuitMessage(RawMessage raw) {
 	assert(raw.size == 0);
 }
 
+/*
 bool QuitMessage::receive(NetworkConnection* connection) {
 	return connection->receive(&data, sizeof(Data));
 }
-
-void QuitMessage::send(NetworkConnection* connection) const {
-	assert(data.messageType == getType());
-	connection->send(&data, sizeof(Data));
-}
+*/
 
 // =====================================================
 //	class KeyFrame
@@ -581,11 +509,7 @@ KeyFrame::KeyFrame(RawMessage raw) {
 	delete raw.data;
 }
 
-bool KeyFrame::receive(NetworkConnection* connection) {
-	throw runtime_error(string(__FUNCTION__) + "() called.");
-	return true;
-}
-
+/*
 void KeyFrame::send(NetworkConnection* connection) const {
 	MsgHeader msgHeader;
 	KeyFrameMsgHeader header;
@@ -638,6 +562,7 @@ void KeyFrame::send(NetworkConnection* connection) const {
 	}
 	delete [] buf;
 }
+*/
 
 #if MAD_SYNC_CHECKING
 
@@ -719,6 +644,21 @@ ProjectileUpdate KeyFrame::getProjUpdate() {
 	return res;
 }
 
+// =====================================================
+//	class SkillCycleTableMessage
+// =====================================================
+
+SkillCycleTableMessage::SkillCycleTableMessage(Glest::Sim::SkillCycleTable *skillCycleTable) {
+	data.messageType = getType();
+	data.numEntries = 0;
+	data.cycleTable = 0;
+}
+
+SkillCycleTableMessage::SkillCycleTableMessage(RawMessage raw) {
+	data.numEntries = raw.size / sizeof(CycleInfo);
+	data.cycleTable = reinterpret_cast<CycleInfo*>(raw.data);
+}
+
 #if MAD_SYNC_CHECKING
 
 SyncErrorMsg::SyncErrorMsg(RawMessage raw) {
@@ -727,16 +667,6 @@ SyncErrorMsg::SyncErrorMsg(RawMessage raw) {
 	data.messageSize = raw.size;
 	memcpy(&data.frameCount, raw.data, raw.size);
 	delete raw.data;
-}
-
-bool SyncErrorMsg::receive(NetworkConnection* connection) {
-	throw runtime_error(string(__FUNCTION__) + "() called." );
-	return false;
-}
-
-void SyncErrorMsg::send(NetworkConnection* connection) const {
-	assert(data.messageType == MessageType::SYNC_ERROR);
-	connection->send(&data, getSize());
 }
 
 void SyncErrorMsg::log() const {

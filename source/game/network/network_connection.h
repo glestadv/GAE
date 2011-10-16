@@ -102,7 +102,7 @@ public:
 
 	void setRemoteNames(const string &hostName, const string &playerName);
 	void send(const Message* networkMessage);
-	void send(const void* data, int dataSize);
+	//void send(const void* data, int dataSize);
 
 	// message retrieval
 	bool receive(void* data, int dataSize);

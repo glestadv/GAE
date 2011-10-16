@@ -211,7 +211,7 @@ void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 	if (!ok) {
 		throw DataSyncError(NetSource::SERVER);
 	}
-
+/*
 	int cmdOffset = 4;
 	int skllOffset = cmdOffset + m_prototypeFactory->getCommandTypeCount();
 	int prodOffset = skllOffset + m_prototypeFactory->getSkillTypeCount();
@@ -279,13 +279,14 @@ void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 	}
 	if (!ok) {
 		throw DataSyncError(NetSource::SERVER);
-	}
+	}*/
 }
 
 void ServerInterface::createSkillCycleTable(const TechTree *techTree) {
 	NETWORK_LOG( __FUNCTION__ << " Creating and sending SkillCycleTable." );
 	SimulationInterface::createSkillCycleTable(techTree);
-	broadcastMessage(m_skillCycleTable);
+	SkillCycleTableMessage skillCycleTableMessage(m_skillCycleTable);
+	broadcastMessage(&skillCycleTableMessage);
 }
 
 #if MAD_SYNC_CHECKING
