@@ -210,7 +210,7 @@ DataSyncMessage::DataSyncMessage(RawMessage raw)
 }
 
 DataSyncMessage::DataSyncMessage(World &world) /*: m_data(0), rawMsg()*/ {
-	/*CHECK_HEAP();
+	CHECK_HEAP();
 	Checksum checksums[4];
 	world.getTileset()->doChecksum(checksums[0]);
 	NETWORK_LOG(
@@ -234,20 +234,20 @@ DataSyncMessage::DataSyncMessage(World &world) /*: m_data(0), rawMsg()*/ {
 		<< intToHex(checksums[3].getSum())
 	);
 
-	m_cmdTypeCount	 = g_prototypeFactory.getCommandTypeCount();
-	m_skillTypeCount = g_prototypeFactory.getSkillTypeCount();
-	m_prodTypeCount = g_prototypeFactory.getProdTypeCount();
-	m_cloakTypeCount = g_prototypeFactory.getCloakTypeCount();
+	data.m_cmdTypeCount	 = g_prototypeFactory.getCommandTypeCount();
+	data.m_skillTypeCount = g_prototypeFactory.getSkillTypeCount();
+	data.m_prodTypeCount = g_prototypeFactory.getProdTypeCount();
+	data.m_cloakTypeCount = g_prototypeFactory.getCloakTypeCount();
 
 	NETWORK_LOG( "DataSync" );
 	NETWORK_LOG( "========" );
 	NETWORK_LOG( 
-		"CommandType count = " << m_cmdTypeCount
-		<< ", SkillType count = " << m_skillTypeCount 
-		<< ", ProdType count = " << m_prodTypeCount 
-		<< ", CloakType count = " << m_cloakTypeCount
+		"CommandType count = " << data.m_cmdTypeCount
+		<< ", SkillType count = " << data.m_skillTypeCount 
+		<< ", ProdType count = " << data.m_prodTypeCount 
+		<< ", CloakType count = " << data.m_cloakTypeCount
 	);
-
+/*
 	m_data = new int32[getChecksumCount()];
 	for (int i=0; i < 4; ++i) {
 		m_data[i] = checksums[i].getSum();
@@ -311,9 +311,9 @@ DataSyncMessage::DataSyncMessage(World &world) /*: m_data(0), rawMsg()*/ {
 				<< intToHex(m_data[n - 1])
 			);
 		}
-	}
+	}*/
 	NETWORK_LOG( "========" );
-	CHECK_HEAP();*/
+	CHECK_HEAP();
 }
 
 /* Put as a specialized send in NetworkConnection?
@@ -647,7 +647,7 @@ ProjectileUpdate KeyFrame::getProjUpdate() {
 // =====================================================
 //	class SkillCycleTableMessage
 // =====================================================
-
+/*
 SkillCycleTableMessage::SkillCycleTableMessage(Glest::Sim::SkillCycleTable *skillCycleTable) {
 	data.messageType = getType();
 	data.numEntries = 0;
@@ -658,6 +658,10 @@ SkillCycleTableMessage::SkillCycleTableMessage(RawMessage raw) {
 	data.numEntries = raw.size / sizeof(CycleInfo);
 	data.cycleTable = reinterpret_cast<CycleInfo*>(raw.data);
 }
+
+unsigned int SkillCycleTableMessage::getSize() const {
+	return sizeof(data) + (sizeof(CycleInfo) * data.numEntries);
+}*/
 
 #if MAD_SYNC_CHECKING
 

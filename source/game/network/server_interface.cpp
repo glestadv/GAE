@@ -285,8 +285,8 @@ void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 void ServerInterface::createSkillCycleTable(const TechTree *techTree) {
 	NETWORK_LOG( __FUNCTION__ << " Creating and sending SkillCycleTable." );
 	SimulationInterface::createSkillCycleTable(techTree);
-	SkillCycleTableMessage skillCycleTableMessage(m_skillCycleTable);
-	broadcastMessage(&skillCycleTableMessage);
+	//SkillCycleTableMessage skillCycleTableMessage(m_skillCycleTable);
+	broadcastMessage(m_skillCycleTable/*&skillCycleTableMessage*/);
 }
 
 #if MAD_SYNC_CHECKING

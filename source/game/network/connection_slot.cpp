@@ -226,7 +226,7 @@ Message *DedicatedConnectionSlot::convertToMessage(RawMessage &raw) {
 	} else if (raw.type == MessageType::KEY_FRAME) {
 		result = new KeyFrame(raw);
 	} else if (raw.type == MessageType::SKILL_CYCLE_TABLE) {
-		result = new SkillCycleTableMessage(raw);
+		result = new SkillCycleTable/*Message*/(raw);
 	}
 	return result;
 }

@@ -413,7 +413,7 @@ public:
 //  class SkillCycleTableMessage
 //  indexed by SkillType::m_id
 // =====================================================
-
+/*
 class SkillCycleTableMessage : public Message {
 private:
 	struct Data {
@@ -428,11 +428,11 @@ public:
 	SkillCycleTableMessage(RawMessage raw);
 
 	virtual MessageType getType() const		{return MessageType::SKILL_CYCLE_TABLE;}
-	virtual unsigned int getSize() const	{return sizeof(data) + data.numEntries;} ////???
+	virtual unsigned int getSize() const;
 	virtual const void* getData() const		{return &data;}
-	virtual void log() const override {}
+	//virtual void log() const override {}
 };
-
+*/
 #if MAD_SYNC_CHECKING
 
 class SyncErrorMsg : public Message {

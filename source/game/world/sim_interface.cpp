@@ -32,7 +32,7 @@ const int speedValues[GameSpeed::COUNT] = {
 // =====================================================
 //	class SkillCycleTable
 // =====================================================
-
+/*
 SkillCycleTable::~SkillCycleTable(){
 	delete[] cycleTable;
 }
@@ -55,6 +55,40 @@ void SkillCycleTable::create(const TechTree *techTree) {
 	for (int i=0; i < numEntries; ++i) {
 		cycleTable[i] = g_prototypeFactory.getSkillType(i)->calculateCycleTime();
 	}
+}*/
+
+SkillCycleTable::SkillCycleTable() : numEntries(0) {
+	m_data.cycleTable = 0;
+	m_data.messageType = getType();
+}
+
+SkillCycleTable::SkillCycleTable(RawMessage raw) {
+	numEntries = raw.size / sizeof(CycleInfo);
+	m_data.cycleTable = reinterpret_cast<CycleInfo*>(raw.data);
+}
+
+SkillCycleTable::~SkillCycleTable(){
+	delete[] m_data.cycleTable;
+}
+
+void SkillCycleTable::create(const TechTree *techTree) {
+	numEntries = g_prototypeFactory.getSkillTypeCount();
+	m_data.messageSize = numEntries * sizeof(CycleInfo);
+	if (!numEntries) {
+		m_data.cycleTable = 0; // -loadmap
+		return;
+	}
+	NETWORK_LOG( "SkillCycleTable built, numEntries = " << numEntries 
+		<< ", messageSize = " << m_data.messageSize << " (@" << sizeof(CycleInfo) << ")" );
+
+	m_data.cycleTable = new CycleInfo[numEntries];
+	for (int i=0; i < numEntries; ++i) {
+		m_data.cycleTable[i] = g_prototypeFactory.getSkillType(i)->calculateCycleTime();
+	}
+}
+
+unsigned int SkillCycleTable::getSize() const {
+	return MsgHeader::headerSize + (sizeof(CycleInfo) * numEntries);
 }
 
 // =====================================================
@@ -198,7 +232,7 @@ void SimulationInterface::initWorld() {
 	//m_gaia = new Plan::Gaia(world->getGlestimals());
 	//m_gaia->init();
 
-	doDataSync();
+	//doDataSync();
 
 	createSkillCycleTable(world->getTechTree());
 }

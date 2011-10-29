@@ -93,6 +93,8 @@ void NetworkConnection::send(const Message* networkMessage) {
 		LOG_NETWORK("connection severed, trying to send message..");
 		throw Disconnect();
 	}
+
+	enet_host_flush(m_host);
 }
 #ifdef false
 void NetworkConnection::send(const void* data, int dataSize) {

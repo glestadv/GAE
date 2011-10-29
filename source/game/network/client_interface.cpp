@@ -140,8 +140,8 @@ void ClientInterface::createSkillCycleTable(const TechTree *) {
 	if (raw.size != expectedSize) {
 		throw GarbledMessage(MessageType::SKILL_CYCLE_TABLE, NetSource::SERVER);
 	}
-	SkillCycleTableMessage skillCycleTableMessage(raw);
-	m_skillCycleTable = new SkillCycleTable(skillCycleTableMessage);
+	//SkillCycleTableMessage skillCycleTableMessage(raw);
+	m_skillCycleTable = new SkillCycleTable(/*skillCycleTableMessage*/raw);
 }
 
 void ClientInterface::updateLobby() {

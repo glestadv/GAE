@@ -140,7 +140,7 @@ public:
 //  class SkillCycleTable - table of cycle infos
 //  indexed by SkillType::m_id
 // =====================================================
-
+/*
 class SkillCycleTable {
 private:
 	CycleInfo *cycleTable;
@@ -155,6 +155,33 @@ public:
 
 	const CycleInfo& lookUp(int skillId) const { return cycleTable[skillId]; }
 	const CycleInfo& lookUp(const Unit *unit) const { return cycleTable[unit->getCurrSkill()->getId()]; }
+
+	int size() const { return numEntries; }
+};*/
+
+class SkillCycleTable : public Net::Message {
+private:
+	struct Data {
+		uint32 messageType :  8;
+		uint32 messageSize : 24;
+		CycleInfo *cycleTable;
+	} m_data;
+
+	int numEntries;
+
+public:
+	SkillCycleTable();
+	SkillCycleTable(RawMessage raw);
+    virtual ~SkillCycleTable();
+
+	virtual MessageType getType() const		{return MessageType::SKILL_CYCLE_TABLE;}
+	virtual unsigned int getSize() const;
+	virtual const void* getData() const		{return &m_data;}
+
+	void create(const TechTree *techTree);
+
+	const CycleInfo& lookUp(int skillId) const { return m_data.cycleTable[skillId]; }
+	const CycleInfo& lookUp(const Unit *unit) const { return m_data.cycleTable[unit->getCurrSkill()->getId()]; }
 
 	int size() const { return numEntries; }
 };
