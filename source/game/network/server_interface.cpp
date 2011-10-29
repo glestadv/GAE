@@ -170,8 +170,7 @@ void ServerInterface::doDataSync() {
 		}
 		sleep(10);
 	}
-	//broadcastMessage(m_dataSync);
-}
+	broadcastMessage(m_dataSync);}
 
 void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 	NETWORK_LOG( __FUNCTION__ );

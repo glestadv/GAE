@@ -203,33 +203,38 @@ public:
 
 class DataSyncMessage : public Message {
 private:
-	struct Data {
+	struct DataHeader {
 		uint32 messageType :  8;
 		uint32 messageSize : 24;
 		int32 m_cmdTypeCount;
 		int32 m_skillTypeCount;
 		int32 m_prodTypeCount;
 		int32 m_cloakTypeCount;
-	} data;
+	} header;
+
+	size_t m_packetSize;
+	char *m_packetData;
+
+	int32 *m_checkSumData;
 
 public:
 	DataSyncMessage(RawMessage raw);
 	DataSyncMessage(World &world);
 
 	virtual MessageType getType() const		{return MessageType::DATA_SYNC;}
-	virtual unsigned int getSize() const	{return sizeof(data);}
-	virtual const void* getData() const		{return &data;}
+	virtual unsigned int getSize() const	{return m_packetSize;}
+	virtual const void* getData() const		{return m_packetData;}
 	virtual void log() const override {}
 
-	int32 getChecksum(int i) { return 0;/*m_data[i];*/ }///////////////////////////TODO
+	int32 getChecksum(int i) { m_checkSumData[i]; }
 
-	int32 getCmdTypeCount()	  const { return data.m_cmdTypeCount;   }
-	int32 getSkillTypeCount() const { return data.m_skillTypeCount; }
-	int32 getProdTypeCount() const { return data.m_prodTypeCount; }
-	int32 getCloakTypeCount() const { return data.m_cloakTypeCount; }
+	int32 getCmdTypeCount()	  const { return header.m_cmdTypeCount;   }
+	int32 getSkillTypeCount() const { return header.m_skillTypeCount; }
+	int32 getProdTypeCount() const { return header.m_prodTypeCount; }
+	int32 getCloakTypeCount() const { return header.m_cloakTypeCount; }
 
 	int32 getChecksumCount()  const {
-		return data.m_cmdTypeCount + data.m_skillTypeCount + data.m_prodTypeCount + data.m_cloakTypeCount + 4;
+		return header.m_cmdTypeCount + header.m_skillTypeCount + header.m_prodTypeCount + header.m_cloakTypeCount + 4;
 	}
 };
 

@@ -232,7 +232,7 @@ void SimulationInterface::initWorld() {
 	//m_gaia = new Plan::Gaia(world->getGlestimals());
 	//m_gaia->init();
 
-	//doDataSync();
+	doDataSync();
 
 	createSkillCycleTable(world->getTechTree());
 }
