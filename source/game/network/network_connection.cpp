@@ -106,6 +106,8 @@ void NetworkConnection::send(const void* data, int dataSize) {
 		LOG_NETWORK("connection severed, trying to send message..");
 		throw Disconnect();
 	}
+
+	enet_host_flush(m_host);
 }
 
 bool NetworkConnection::receive(void* data, int dataSize) {
@@ -273,11 +275,7 @@ void ServerConnection::poll() {
 
         case ENET_EVENT_TYPE_RECEIVE:
 		{
-            printf("A packet of length %u containing %s was received from %s on channel %u.\n",
-                    event.packet->dataLength,
-                    event.packet->data,
-                    event.peer->data,
-                    event.channelID);
+            LOG_NETWORK("Message Received.");
 			
 			MsgHeader header;
 			memcpy(&header, event.packet->data, MsgHeader::headerSize);
@@ -285,19 +283,18 @@ void ServerConnection::poll() {
 				RawMessage rawMsg;
 				rawMsg.type = header.messageType;
 				rawMsg.size = header.messageSize;
-				rawMsg.data = new uint8[header.messageSize];
-				//socket->skip(MsgHeader::headerSize); //???
+
 				if (header.messageSize) {
+					rawMsg.data = new uint8[header.messageSize];
 					char *buffer = (char*)event.packet->data;
 					memcpy((char *)rawMsg.data, buffer + MsgHeader::headerSize, event.packet->dataLength);
-					//socket->receive(rawMsg.data, header.messageSize);
 				} else {
 					rawMsg.data = 0;
 				}
 	
 				m_connections[(int)event.peer->data]->pushMessage(rawMsg);
 			} else {
-				return; //does this make sense here??
+				LOG_NETWORK("Wrong packet length");
 			}
 
             enet_packet_destroy(event.packet);
@@ -347,25 +344,26 @@ void ClientConnection::poll() {
 
 		case ENET_EVENT_TYPE_RECEIVE:
 		{
+			LOG_NETWORK("Message Received.");
+
 			MsgHeader header;
 			memcpy(&header, event.packet->data, MsgHeader::headerSize);
 			if (event.packet->dataLength >= MsgHeader::headerSize + header.messageSize) {
 				RawMessage rawMsg;
 				rawMsg.type = header.messageType;
 				rawMsg.size = header.messageSize;
-				rawMsg.data = new uint8[header.messageSize];
-				//socket->skip(MsgHeader::headerSize); //???
+
 				if (header.messageSize) {
+					rawMsg.data = new uint8[header.messageSize];
 					char *buffer = (char*)event.packet->data;
 					memcpy((char *)rawMsg.data, buffer + MsgHeader::headerSize, event.packet->dataLength);
-					//socket->receive(rawMsg.data, header.messageSize);
 				} else {
 					rawMsg.data = 0;
 				}
 	
 				pushMessage(rawMsg);
 			} else {
-				return; //does this make sense here??
+				LOG_NETWORK("Wrong packet length");
 			}
 
             enet_packet_destroy(event.packet);
