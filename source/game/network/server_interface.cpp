@@ -59,7 +59,6 @@ ServerInterface::~ServerInterface() {
 
 void ServerInterface::bindPort() {
 	try {
-		m_connection.setBlock(false);
 		m_connection.bind(g_config.getNetServerPort());
 	} catch (runtime_error &e) {
 		LOG_NETWORK(e.what());

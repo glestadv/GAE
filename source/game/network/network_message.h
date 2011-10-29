@@ -64,9 +64,6 @@ public:
 	virtual unsigned int getSize() const = 0;
 	virtual const void* getData() const = 0;
 	virtual void log() const;
-
-	//virtual bool receive(NetworkConnection* connection) = 0;
-	//virtual void send(NetworkConnection* connection) const = 0;
 };
 
 // ==============================================================

@@ -61,7 +61,6 @@ DedicatedServer::~DedicatedServer() {
 void DedicatedServer::bindPort() {
 	int port = 61358;
 	try {
-		m_connection.setBlock(false);
 		m_connection.bind(/*g_config.getNetServerPort() + 1*/port); ///@todo config doesn't exist for dedicated_server
 	} catch (runtime_error &e) {
 		LOG_NETWORK(e.what());
@@ -109,8 +108,6 @@ void DedicatedServer::update() {
 
 void DedicatedServer::sendIntroMessage() {
 	assert(m_toServer);
-	m_toServer->setBlock(false);
-	m_toServer->setNoDelay();
 	IntroMessage networkMessageIntro(getNetworkVersionString(), 
 		"DedicatedServer", m_connection.getHostName(), 0);
 	m_toServer->send(&networkMessageIntro);

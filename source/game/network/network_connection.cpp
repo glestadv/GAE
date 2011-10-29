@@ -37,11 +37,12 @@ namespace Glest { namespace Net {
 //	class Ip
 // =====================================================
 
-Ip::Ip(){
-	bytes[0] = 0;
-	bytes[1] = 0;
-	bytes[2] = 0;
-	bytes[3] = 0;
+Ip::Ip() {
+	asUInt = 0;
+}
+
+Ip::Ip(uint32 val) {
+	asUInt = val;
 }
 
 Ip::Ip(unsigned char byte0, unsigned char byte1, unsigned char byte2, unsigned char byte3) {
@@ -50,7 +51,6 @@ Ip::Ip(unsigned char byte0, unsigned char byte1, unsigned char byte2, unsigned c
 	bytes[2] = byte2;
 	bytes[3] = byte3;
 }
-
 
 Ip::Ip(const string& ipString) {
 	int offset = 0;
@@ -84,17 +84,18 @@ void Network::deinit() {
 // =====================================================
 
 void NetworkConnection::send(const Message* networkMessage) {
-	networkMessage->log();
-	//networkMessage->send(this);
-	
-	ENetPacket *packet = enet_packet_create(networkMessage->getData(), networkMessage->getSize(), ENET_PACKET_FLAG_RELIABLE);
-    
-    if (enet_peer_send(m_peer, 0, packet) != 0) {
-		LOG_NETWORK("connection severed, trying to send message..");
-		throw Disconnect();
-	}
+	if (m_peer) {
+		networkMessage->log();
 
-	enet_host_flush(m_host);
+		ENetPacket *packet = enet_packet_create(networkMessage->getData(), networkMessage->getSize(), ENET_PACKET_FLAG_RELIABLE);
+
+		if (enet_peer_send(m_peer, 0, packet) != 0) {
+			LOG_NETWORK("connection severed, trying to send message..");
+			throw Disconnect();
+		}
+
+		enet_host_flush(m_host);
+	}
 }
 #ifdef false
 void NetworkConnection::send(const void* data, int dataSize) {
@@ -112,58 +113,7 @@ void NetworkConnection::send(const void* data, int dataSize) {
 }
 #endif
 
-bool NetworkConnection::receive(void* data, int dataSize) {
-	/*Socket *socket = getSocket();
-	int n = socket->getDataToRead();
-	NETWORK_LOG( "\tReceiving, data to read: " << n );
-	if (n >= dataSize) {
-		if (socket->receive(data, dataSize)) {
-			return true;
-		}
-		LOG_NETWORK( "connection severed, trying to read message." );
-		throw Disconnect();
-	}*/
-	return false;
-}
-
-bool NetworkConnection::peek(void *data, int dataSize) {
-	/*Socket *socket = getSocket();
-	if (socket->getDataToRead() >= dataSize) {
-		if (socket->peek(data, dataSize)) {
-			return true;
-		}
-		LOG_NETWORK( "connection severed, trying to read message." );
-		throw Disconnect();
-	}*/
-	return false;
-}
-
 void NetworkConnection::receiveMessages() {
-	/*Socket *socket = getSocket();
-	if (!socket->isConnected()) {
-		return;
-	}
-	size_t n = socket->getDataToRead();
-	while (n >= MsgHeader::headerSize) {
-		MsgHeader header;
-		socket->peek(&header, MsgHeader::headerSize);
-		if (n >= MsgHeader::headerSize + header.messageSize) {
-			RawMessage rawMsg;
-			rawMsg.type = header.messageType;
-			rawMsg.size = header.messageSize;
-			rawMsg.data = new uint8[header.messageSize];
-			socket->skip(MsgHeader::headerSize);
-			if (header.messageSize) {
-				socket->receive(rawMsg.data, header.messageSize);
-			} else {
-				rawMsg.data = 0;
-			}
-			messageQueue.push_back(rawMsg);
-			n = socket->getDataToRead();
-		} else {
-			return;
-		}
-	}*/
 	poll();
 }
 
@@ -172,10 +122,6 @@ RawMessage NetworkConnection::getNextMessage() {
 	RawMessage res = messageQueue.front();
 	messageQueue.pop_front();
 	return res;
-}
-
-MessageType NetworkConnection::peekNextMsg() const {
-	return enum_cast<MessageType>(messageQueue.front().type);
 }
 
 void NetworkConnection::setRemoteNames(const string &hostName, const string &playerName) {
@@ -211,6 +157,7 @@ void NetworkConnection::close() {
 
 			case ENET_EVENT_TYPE_DISCONNECT:
 				puts("Disconnection succeeded.");
+				m_peer = 0;
 				return;
 			}
 		}
@@ -219,7 +166,7 @@ void NetworkConnection::close() {
 		/* succeed yet.  Force the connection down.             */
 		enet_peer_reset(m_peer);
 		
-		m_peer = NULL;
+		m_peer = 0;
 	}
 }
 
@@ -260,9 +207,8 @@ void ServerConnection::poll() {
         {
         case ENET_EVENT_TYPE_CONNECT:
 		{
-            printf("A new client connected from %x:%u.\n", 
-                    event.peer->address.host,
-                    event.peer->address.port);
+			Ip ip(event.peer->address.host);
+			NETWORK_LOG( "A new client connected from " << ip.getString() << " on port " << event.peer->address.port );
 
             // Store any relevant client information here.
 			int id = m_connections.size();
@@ -277,36 +223,36 @@ void ServerConnection::poll() {
 
         case ENET_EVENT_TYPE_RECEIVE:
 		{
-            LOG_NETWORK("Message Received.");
+			NETWORK_LOG( "A packet of length " << event.packet->dataLength << " was received from client " << int(event.peer->data)
+				<< " on channel " << int(event.channelID) );
 			
 			MsgHeader header;
 			memcpy(&header, event.packet->data, MsgHeader::headerSize);
-			if (event.packet->dataLength >= MsgHeader::headerSize + header.messageSize) {
+			if (event.packet->dataLength >= MsgHeader::headerSize + header.messageSize) {		
 				RawMessage rawMsg;
 				rawMsg.type = header.messageType;
-				rawMsg.size = header.messageSize;
-
+				rawMsg.size = header.messageSize;				
 				if (header.messageSize) {
 					rawMsg.data = new uint8[header.messageSize];
-					char *buffer = (char*)event.packet->data;
-					memcpy((char *)rawMsg.data, buffer + MsgHeader::headerSize, event.packet->dataLength);
+					char *buffer = ((char*)event.packet->data) + MsgHeader::headerSize;
+					memcpy((char*)rawMsg.data, buffer, header.messageSize);
 				} else {
 					rawMsg.data = 0;
 				}
-	
+				NETWORK_LOG( "ServerConnection::poll(): received message [type=" << MessageTypeNames[rawMsg.type] << 
+					", size=" << rawMsg.size );
 				m_connections[(int)event.peer->data]->pushMessage(rawMsg);
 			} else {
-				LOG_NETWORK("Wrong packet length");
+				NETWORK_LOG( "ServerConnection::poll(): Invalid message in queue. packet->dataLength < MsgHeader::headerSize + header.messageSize" );
+				enet_packet_destroy(event.packet);
+				throw GarbledMessage(MessageType(header.messageType), NetSource::CLIENT);
 			}
-
             enet_packet_destroy(event.packet);
-			
-            
             break;
 		}
            
         case ENET_EVENT_TYPE_DISCONNECT:
-            printf("%s disconected.\n", event.peer->data);
+            NETWORK_LOG( "client " << int(event.peer->data) << "disconected." );
 
             // Reset the peer's client information.
             event.peer->data = NULL;
@@ -324,6 +270,10 @@ void ClientConnection::poll() {
 	ENetEvent event;
 	ENetHost *host = NetworkConnection::getHost();
 
+	if (!host) {
+		return;
+	}
+
 	while (enet_host_service(host, &event, 50) > 0) {
 		switch (event.type) {
 		case ENET_EVENT_TYPE_CONNECT:
@@ -331,7 +281,10 @@ void ClientConnection::poll() {
 			char hostname[256] = "(error)";
 			enet_address_get_host_ip(&event.peer->address, hostname, strlen(hostname));
 
-			m_server = new NetworkConnection(host, event.peer);
+			// ???
+			//m_server = new NetworkConnection(host, event.peer);
+			setHost(host); // ?
+			
 			setPeer(event.peer);
 
 			break;
@@ -339,37 +292,40 @@ void ClientConnection::poll() {
 
 		case ENET_EVENT_TYPE_DISCONNECT:
 		{
-			delete m_server;
-			m_server = NULL;
+			setHost(0);
+			setPeer(0);	
+			throw Disconnect();
+			//delete m_server;
+			//m_server = NULL;
 			break;
 		}
 
 		case ENET_EVENT_TYPE_RECEIVE:
 		{
-			LOG_NETWORK("Message Received.");
-
+			NETWORK_LOG( "A packet of length " << event.packet->dataLength << " was received from the server"
+				<< " on channel " << int(event.channelID) );
 			MsgHeader header;
 			memcpy(&header, event.packet->data, MsgHeader::headerSize);
+
 			if (event.packet->dataLength >= MsgHeader::headerSize + header.messageSize) {
 				RawMessage rawMsg;
 				rawMsg.type = header.messageType;
 				rawMsg.size = header.messageSize;
-
 				if (header.messageSize) {
 					rawMsg.data = new uint8[header.messageSize];
-					char *buffer = (char*)event.packet->data;
-					memcpy((char *)rawMsg.data, buffer + MsgHeader::headerSize, event.packet->dataLength);
+					char *buffer = ((char*)event.packet->data) + MsgHeader::headerSize;
+					memcpy((char*)rawMsg.data, buffer, header.messageSize);//event.packet->dataLength - MsgHeader::headerSize);
 				} else {
 					rawMsg.data = 0;
 				}
-	
 				pushMessage(rawMsg);
+				NETWORK_LOG( "ClientConnection::poll(): received message [type=" << MessageTypeNames[rawMsg.type] << 
+					", size=" << rawMsg.size );
 			} else {
-				LOG_NETWORK("Wrong packet length");
+				NETWORK_LOG( "ClientConnection::poll(): Invalid message in queue. packet->dataLength < MsgHeader::headerSize + header.messageSize" );
+				throw GarbledMessage(MessageType(header.messageType), NetSource::SERVER);
 			}
-
             enet_packet_destroy(event.packet);
-
 			break;
 		}
 

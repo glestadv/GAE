@@ -49,8 +49,6 @@ ConnectionSlot::~ConnectionSlot() {
 void ConnectionSlot::sendIntroMessage() {
 	assert(m_connection);
 	NETWORK_LOG( "Connection established, slot " << m_playerIndex << " sending intro message." );
-	m_connection->setBlock(false);
-	m_connection->setNoDelay();
 	IntroMessage networkMessageIntro(getNetworkVersionString(), 
 		g_config.getNetPlayerName(), m_connection->getHostName(), m_playerIndex);
 	m_connection->send(&networkMessageIntro);
@@ -160,11 +158,12 @@ bool ConnectionSlot::hasReadyMessage() {
 }
 
 void ConnectionSlot::logLastMessage() {
-	NETWORK_LOG( "\tSlot[" << m_playerIndex << "]");
-	MsgHeader hdr;
-	if (m_connection->receive(&hdr, hdr.headerSize)) {
-		NETWORK_LOG( "\tMessage type: " << MessageTypeNames[MessageType(hdr.messageType)]
-			<< ", message size: " << hdr.messageSize );
+	if (m_connection->hasMessage()) {
+		RawMessage msg = m_connection->peekMessage();
+		NETWORK_LOG( "\tSlot[" << m_playerIndex << "] Message type: " << MessageTypeNames[MessageType(msg.type)]
+			<< ", message size: " << msg.size );
+	} else {
+		NETWORK_LOG( "\tSlot[" << m_playerIndex << "] No messages on queue.");
 	}
 }
 
@@ -292,7 +291,6 @@ bool DedicatedConnectionSlot::isConnectionReady() {
 		cout << "Client connection received" << endl;
 		if (m_server) {
 			m_connectionToServer->connect(m_server->getIp(), 61357);
-			m_connectionToServer->setBlock(false);
 			cout << "Created connection to server on behalf of client" << endl;
 		} else {
 			//m_connectionToServer->connect(m_connection->getIp(), 61357);

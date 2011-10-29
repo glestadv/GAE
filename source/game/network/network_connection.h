@@ -36,10 +36,14 @@ namespace Glest { namespace Net {
 
 class Ip {
 private:
-	unsigned char bytes[4];
+	union {
+		uint8  bytes[4];
+		uint32 asUInt;
+	};
 
 public:
 	Ip();
+	Ip(uint32 val);
 	Ip(unsigned char byte0, unsigned char byte1, unsigned char byte2, unsigned char byte3);
 	Ip(const string& ipString);
 
@@ -102,20 +106,16 @@ public:
 
 	void setRemoteNames(const string &hostName, const string &playerName);
 	void send(const Message* networkMessage);
-	//void send(const void* data, int dataSize);
 
 	// message retrieval
-	bool receive(void* data, int dataSize);
-	bool peek(void *data, int dataSize);
 	void receiveMessages();
 	bool hasMessage()					{ return !messageQueue.empty(); }
 	RawMessage getNextMessage();
-	MessageType peekNextMsg() const;
+	MessageType peekNextMsg() const		{ return MessageType(messageQueue.front().type); }
+	RawMessage peekMessage() const		{ return messageQueue.front(); }
 	void pushMessage(RawMessage raw)	{ messageQueue.push_back(raw); }
 
 	virtual bool isConnected() const	{ return m_peer != NULL;/*getSocket() && getSocket()->isConnected();*/ }
-	void setBlock(bool b)				{ /*getSocket()->setBlock(b);*/}
-	void setNoDelay()					{ /*getSocket()->setNoDelay();*/}
 
 private:
 	void close();
@@ -133,8 +133,6 @@ private:
 	std::stack<NetworkConnection*> m_looseConnections;
 
 protected:
-	//virtual Socket* getSocket()				{return &serverSocket;}
-	//virtual const Socket* getSocket() const	{return &serverSocket;}
 	virtual void poll() override;
 
 public:
@@ -168,10 +166,8 @@ public:
 class ClientConnection : public NetworkConnection {
 private:
 	NetworkConnection *m_server;
-protected:
-	//virtual Socket* getSocket()					{return &clientSocket;}
-	//virtual const Socket* getSocket() const		{return &clientSocket;}
 
+protected:
 	virtual void poll() override;
 
 public:
