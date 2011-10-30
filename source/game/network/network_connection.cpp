@@ -212,9 +212,18 @@ void ServerConnection::poll() {
 	ENetHost *host = NetworkConnection::getHost();
     
     // Wait up to x milliseconds for an event.
+	while (true)
+    {	
+		int status = enet_host_service(host, &event, 5);
+		if (status < 0) {
+			NETWORK_LOG( "Enet Server errored." );
+			break;
+		}
 
-	while (enet_host_service(host, &event, 5) > 0)
-    {
+		if (status == 0) {
+			break; // no events to process
+		}
+
         switch (event.type)
         {
         case ENET_EVENT_TYPE_CONNECT:
@@ -286,7 +295,17 @@ void ClientConnection::poll() {
 		return;
 	}
 
-	while (enet_host_service(host, &event, 50) > 0) {
+	while (/*enet_host_service(host, &event, 5) > 0*/ true) {
+		int status = enet_host_service(host, &event, 5);
+		if (status < 0) {
+			NETWORK_LOG( "Enet client errored." );
+			break;
+		}
+
+		if (status == 0) {
+			break; // no events to process
+		}
+
 		switch (event.type) {
 		case ENET_EVENT_TYPE_CONNECT:
 		{
