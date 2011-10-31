@@ -42,6 +42,8 @@
 #	define IF_NOT_DEBUG_EDITION(x) x
 #endif
 
+#define MAD_SYNC_CHECKING 1
+
 #if MAD_SYNC_CHECKING
 #	define IF_MAD_SYNC_CHECKS(x) x
 #else

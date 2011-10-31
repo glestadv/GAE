@@ -464,9 +464,6 @@ public:
 	virtual void log() const override;
 
 	int getFrame() const { return data.frameCount; }
-
-	//virtual bool receive(NetworkConnection* connection);
-	//virtual void send(NetworkConnection* connection) const;
 };
 
 #endif

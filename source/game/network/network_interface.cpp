@@ -98,10 +98,10 @@ void NetworkInterface::postProjectileUpdate(Unit *u, int endFrame) {
 }
 
 void NetworkInterface::postAnimUpdate(Unit *unit) {
-	if (unit->getNextAttackFrame() != -1) {
+	if (unit->getSystemStartFrame() != -1) {
 		Checksum cs;
 		cs.add(unit->getId());
-		cs.add(unit->getNextAttackFrame());
+		cs.add(unit->getSystemStartFrame());
 		checkAnimUpdate(unit, cs.getSum());
 	}
 }

@@ -306,7 +306,7 @@ void ClientInterface::updateMove(Unit *unit) {
 		NETWORK_LOG( __FUNCTION__ << " Bad server update, pos offset out of range: " << updt.posOffset() );
 #		if MAD_SYNC_CHECKING
 			SyncErrorMsg msg(g_world.getFrameCount());
-			send(&msg);
+			m_connection->send(&msg);
 			int frame = g_world.getFrameCount();
 			stringstream ss;
 			if (frame > 5) {

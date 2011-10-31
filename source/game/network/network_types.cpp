@@ -184,8 +184,9 @@ MoveSkillUpdate::MoveSkillUpdate(const Unit *unit) {
 }
 
 ProjectileUpdate::ProjectileUpdate(const Unit *unit, Projectile *pps) {
-	assert(pps->getEndFrame() - g_world.getFrameCount() < 256);
-	this->end_offset = pps->getEndFrame() - g_world.getFrameCount();
+	int offset = pps->getEndFrame() - g_world.getFrameCount();
+	assert(offset < 256 && offset > 0);
+	this->end_offset = offset;
 }
 
 }}//end namespace

@@ -118,7 +118,7 @@ void ConnectionSlot::processMessages() {
 		} else if (raw.type == MessageType::SYNC_ERROR) {
 			SyncErrorMsg e(raw);
 			int frame = e.getFrame();
-			serverInterface->dumpFrame(frame);
+			m_serverInterface->dumpFrame(frame);
 			throw GameSyncError("Client detected sync error");
 #		endif
 		} else if (raw.type == MessageType::READY) {
