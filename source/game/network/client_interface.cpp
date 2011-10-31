@@ -305,7 +305,7 @@ void ClientInterface::updateMove(Unit *unit) {
 
 		if (updt.offsetX < -1 || updt.offsetX > 1 || updt.offsetY < - 1 || updt.offsetY > 1
 		|| (!updt.offsetX && !updt.offsetY)) {
-			NETWORK_LOG( __FUNCTION__ << " Bad server update, pos offset out of range: " << updt.posOffset() );
+			NETWORK_LOG( "ClientInterface::updateMove(): Bad server update, pos offset out of range: " << updt.posOffset() );
 			throw GameSyncError("Bad move update"); // msgBox and then graceful exit to Menu please...
 		}
 		unit->setNextPos(unit->getPos() + Vec2i(updt.offsetX, updt.offsetY));

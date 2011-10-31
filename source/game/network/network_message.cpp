@@ -643,6 +643,7 @@ void KeyFrame::addUpdate(ProjectileUpdate updt) {
 MoveSkillUpdate KeyFrame::getMoveUpdate() {
 	assert(readPtr < updateBuffer + updateSize - 1);
 	if (!moveUpdateCount) {
+		NETWORK_LOG( "KeyFrame::getMoveUpdate(): ERROR: Insufficient move skill updates in keyframe." );
 		throw GameSyncError("Insufficient move skill updates in keyframe");
 	}
 	MoveSkillUpdate res(readPtr);
@@ -656,6 +657,7 @@ MoveSkillUpdate KeyFrame::getMoveUpdate() {
 ProjectileUpdate KeyFrame::getProjUpdate() {
 	assert(readPtr < updateBuffer + updateSize);
 	if (!projUpdateCount) {
+		NETWORK_LOG( "KeyFrame::getProjUpdate(): ERROR: Insufficient projectile updates in keyframe." );
 		throw GameSyncError("Insufficient projectile updates in keyframe");
 	}
 	ProjectileUpdate res(readPtr);
