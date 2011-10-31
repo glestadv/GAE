@@ -161,27 +161,30 @@ public:
 
 class SkillCycleTable : public Net::Message {
 private:
-	struct Data {
-		uint32 messageType :  8;
-		uint32 messageSize : 24;
+//	struct Data {
+//		uint32 messageType :  8;
+//		uint32 messageSize : 24;
 		CycleInfo *cycleTable;
-	} m_data;
+//	} m_data;
 
 	int numEntries;
+
+	void *m_packetData;
+	int   m_packetSize;
 
 public:
 	SkillCycleTable();
 	SkillCycleTable(RawMessage raw);
     virtual ~SkillCycleTable();
 
-	virtual MessageType getType() const		{return MessageType::SKILL_CYCLE_TABLE;}
-	virtual unsigned int getSize() const;
-	virtual const void* getData() const		{return &m_data;}
+	virtual MessageType getType() const		{ return MessageType::SKILL_CYCLE_TABLE; }
+	virtual unsigned int getSize() const    { return m_packetSize; }
+	virtual const void* getData() const		{ return m_packetData; }
 
 	void create(const TechTree *techTree);
 
-	const CycleInfo& lookUp(int skillId) const { return m_data.cycleTable[skillId]; }
-	const CycleInfo& lookUp(const Unit *unit) const { return m_data.cycleTable[unit->getCurrSkill()->getId()]; }
+	const CycleInfo& lookUp(int skillId) const { return cycleTable[skillId]; }
+	const CycleInfo& lookUp(const Unit *unit) const { return cycleTable[unit->getCurrSkill()->getId()]; }
 
 	int size() const { return numEntries; }
 };
