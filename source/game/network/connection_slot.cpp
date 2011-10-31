@@ -74,7 +74,7 @@ bool ConnectionSlot::isConnectionReady() {
 void ConnectionSlot::processMessages() {
 	//try {
 	assert(m_connection);
-		m_connection->receiveMessages();
+		
 	/*} catch (SocketException &e) {
 		NETWORK_LOG( "Slot " << m_playerIndex << " [" << m_connection->getRemotePlayerName() << "]" << " : " << e.what() );
 		string msg = m_connection->getRemotePlayerName() + " [" + m_connection->getRemoteHostName() + "] has disconnected.";
@@ -83,6 +83,8 @@ void ConnectionSlot::processMessages() {
 	}*/
 	while (m_connection->hasMessage()) {
 		MessageType type = m_connection->peekNextMsg();
+		NETWORK_LOG( "ConnectionSlot::processMessages(): " << m_connection->getMessageCount() 
+			<< "messages on queue, type of first is " << MessageTypeNames[type] );
 		if (type == MessageType::DATA_SYNC) {
 			if (!m_serverInterface->syncReady()) {
 				return;
@@ -120,6 +122,7 @@ void ConnectionSlot::processMessages() {
 			throw GameSyncError("Client detected sync error");
 #		endif
 		} else if (raw.type == MessageType::DATA_SYNC) {
+			NETWORK_LOG( "Received data_sync message on slot " << m_playerIndex );
 			DataSyncMessage msg(raw);
 			m_serverInterface->dataSync(m_playerIndex, msg);
 		} else {
@@ -135,6 +138,7 @@ void ConnectionSlot::processMessages() {
 
 void ConnectionSlot::update() {
 	if (isConnectionReady()) {
+		m_connection->update();
 		processMessages();
 	}
 }
@@ -142,7 +146,7 @@ void ConnectionSlot::update() {
 bool ConnectionSlot::hasReadyMessage() {
 	// only check for a ready message once
 	if (!isReady()) {
-		m_connection->receiveMessages();
+		m_connection->update();
 		if (!m_connection->hasMessage()) {
 			return false;
 		}
@@ -157,13 +161,13 @@ bool ConnectionSlot::hasReadyMessage() {
 	return true;
 }
 
-void ConnectionSlot::logLastMessage() {
+void ConnectionSlot::logNextMessage() {
 	if (m_connection->hasMessage()) {
 		RawMessage msg = m_connection->peekMessage();
 		NETWORK_LOG( "\tSlot[" << m_playerIndex << "] Message type: " << MessageTypeNames[MessageType(msg.type)]
 			<< ", message size: " << msg.size );
 	} else {
-		NETWORK_LOG( "\tSlot[" << m_playerIndex << "] No messages on queue.");
+		//NETWORK_LOG( "\tSlot[" << m_playerIndex << "] No messages on queue.");
 	}
 }
 

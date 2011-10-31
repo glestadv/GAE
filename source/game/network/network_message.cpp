@@ -239,6 +239,10 @@ DataSyncMessage::DataSyncMessage(World &world) : m_packetSize(0), m_packetData(0
 	header.m_prodTypeCount = g_prototypeFactory.getProdTypeCount();
 	header.m_cloakTypeCount = g_prototypeFactory.getCloakTypeCount();
 
+	header.messageType = MessageType::DATA_SYNC;
+	int msgSize = (sizeof(DataHeader) - 4) + (4 * getChecksumCount());
+	header.messageSize = msgSize;
+
 	NETWORK_LOG( "DataSync" );
 	NETWORK_LOG( "========" );
 	NETWORK_LOG( 
@@ -318,6 +322,22 @@ DataSyncMessage::DataSyncMessage(World &world) : m_packetSize(0), m_packetData(0
 	m_packetData = new char[m_packetSize];
 	memcpy(m_packetData, &header, sizeof(DataHeader));
 	memcpy(m_packetData + sizeof(DataHeader), m_checkSumData, 4 * getChecksumCount());
+}
+
+void DataSyncMessage::log() const {
+	NETWORK_LOG( "DataSyncMessage::log(): message sent, type: " << MessageTypeNames[MessageType(getType())]
+		<< ", messageSize: " << getSize() );
+
+	uint8 *ptr = (uint8*)m_packetData;
+	string res = "0x";
+	for (int i=0; i < 16; ++i) {
+		string hex = toHex(int(*(ptr + i)));
+		if (hex.size() == 1) {
+			hex = "0" + hex;
+		}
+		res += hex;
+	}
+	NETWORK_LOG( "DataSyncMessage::log(): first 16 bytes of packet: " << res );
 }
 
 /* Put as a specialized send in NetworkConnection?

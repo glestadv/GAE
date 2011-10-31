@@ -42,7 +42,8 @@ public:
 	int getPlayerIndex() const		{return m_playerIndex;}
 	bool isReady() const			{return m_ready;}
 	bool hasReadyMessage();
-	void logLastMessage();
+	
+	void logNextMessage();
 	
 	bool isConnected() const		{return m_connection && m_connection->isConnected();}
 	string getName() const			{return m_connection ? m_connection->getRemotePlayerName() : "";}

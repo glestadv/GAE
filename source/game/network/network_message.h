@@ -224,7 +224,7 @@ public:
 	virtual MessageType getType() const		{return MessageType::DATA_SYNC;}
 	virtual unsigned int getSize() const	{return m_packetSize;}
 	virtual const void* getData() const		{return m_packetData;}
-	virtual void log() const override {}
+	virtual void log() const override;
 
 	int32 getChecksum(int i) { m_checkSumData[i]; }
 

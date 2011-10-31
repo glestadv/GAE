@@ -80,9 +80,12 @@ private:
 	// received but not processed messages
 	MessageQueue messageQueue;
 
+	//
+	bool m_needFlush;
+
 protected:
 	// only child classes should be able to instantiate without socket
-	NetworkConnection() : m_host(0), m_peer(0) {}
+	NetworkConnection() : m_host(0), m_peer(0), m_needFlush(false) {}
 
 	ENetHost* getHost() {return m_host;}
 	const ENetHost* getSocket() const {return m_host;}
@@ -107,9 +110,12 @@ public:
 	void setRemoteNames(const string &hostName, const string &playerName);
 	void send(const Message* networkMessage);
 
+	void update();
+
 	// message retrieval
-	void receiveMessages();
+	//void receiveMessages();
 	bool hasMessage()					{ return !messageQueue.empty(); }
+	int getMessageCount()               { return messageQueue.size(); }
 	RawMessage getNextMessage();
 	MessageType peekNextMsg() const		{ return MessageType(messageQueue.front().type); }
 	RawMessage peekMessage() const		{ return messageQueue.front(); }

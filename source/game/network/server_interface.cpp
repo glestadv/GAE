@@ -146,12 +146,15 @@ void ServerInterface::update() {
 		popChatMsg();
 	}
 
-	m_connection.receiveMessages();
+	m_connection.update();
 
 	// update all slots
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (slots[i]) {
 			updateSlot(i);
+			if (slots[i]->isConnected()) {
+				slots[i]->logNextMessage();
+			}
 		}
 	}
 }
@@ -159,18 +162,21 @@ void ServerInterface::update() {
 void ServerInterface::doDataSync() {
 	NETWORK_LOG( __FUNCTION__ );
 	m_dataSync = new DataSyncMessage(g_world);
-	m_syncCounter = getConnectedSlotCount();
+	//broadcastMessage(m_dataSync);
 
+	m_syncCounter = getConnectedSlotCount();
+	NETWORK_LOG( "ServerInterface::doDataSync(): DataSyncMessage constructed, waiting for " << m_syncCounter << " message(s) from client(s)." );
+
+	int64 start_time = Chrono::getCurMillis();
 	while (!m_dataSyncDone) {
 		// update all slots
-		for (int i=0; i < GameConstants::maxPlayers; ++i) {
-			if (slots[i]) {
-				updateSlot(i);
-			}
+		update();
+		if (Chrono::getCurMillis() - start_time > 25 * 1000) {
+			throw TimeOut(NetSource::CLIENT);
 		}
 		sleep(10);
 	}
-	broadcastMessage(m_dataSync);}
+}
 
 void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 	NETWORK_LOG( __FUNCTION__ );
@@ -178,6 +184,9 @@ void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 	--m_syncCounter;
 	if (!m_syncCounter) {
 		m_dataSyncDone = true;
+		NETWORK_LOG( "received DataSyncMessage from client " << playerNdx << ", all dataSync messages received." );
+	} else {
+		NETWORK_LOG( "received DataSyncMessage from client " << playerNdx << ", awaiting " << m_syncCounter << " more." );
 	}
 	bool ok = true;
 	if (m_dataSync->getChecksumCount() != msg.getChecksumCount()) {
@@ -209,7 +218,7 @@ void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 	if (!ok) {
 		throw DataSyncError(NetSource::SERVER);
 	}
-/*
+
 	int cmdOffset = 4;
 	int skllOffset = cmdOffset + m_prototypeFactory->getCommandTypeCount();
 	int prodOffset = skllOffset + m_prototypeFactory->getSkillTypeCount();
@@ -277,7 +286,7 @@ void ServerInterface::dataSync(int playerNdx, DataSyncMessage &msg) {
 	}
 	if (!ok) {
 		throw DataSyncError(NetSource::SERVER);
-	}*/
+	}
 }
 
 void ServerInterface::createSkillCycleTable(const TechTree *techTree) {
@@ -370,7 +379,7 @@ void ServerInterface::waitUntilReady() {
 			NETWORK_LOG( __FUNCTION__ << "Timed out." );
 			for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 				if (slots[i] && !slots[i]->isReady()) {
-					slots[i]->logLastMessage();
+					slots[i]->logNextMessage();
 				}
 			}
 			throw TimeOut(NetSource::CLIENT);

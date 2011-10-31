@@ -64,7 +64,7 @@ void ClientInterface::connect(const Ip &ip, int port) {
 	delete m_connection;
 	m_connection = new ClientConnection();
 	m_connection->connect(ip.getString(), port);
-	m_connection->receiveMessages();
+	m_connection->update();
 }
 
 void ClientInterface::reset() {
@@ -144,7 +144,7 @@ void ClientInterface::createSkillCycleTable(const TechTree *) {
 }
 
 void ClientInterface::updateLobby() {
-	m_connection->receiveMessages();
+	m_connection->update();
 	if (!m_connection->hasMessage()) {
 		return;
 	}
@@ -199,7 +199,7 @@ string ClientInterface::getStatus() const {
 void ClientInterface::waitForMessage(int timeout) {
 	Chrono chrono;
 	chrono.start();
-	m_connection->receiveMessages();
+	m_connection->update();
 	while (true) {
 		if (m_connection->hasMessage()) {
 			return;
@@ -208,7 +208,7 @@ void ClientInterface::waitForMessage(int timeout) {
 			throw TimeOut(NetSource::SERVER);
 		} else {
 			sleep(2);
-			m_connection->receiveMessages();
+			m_connection->update();
 		}
 	}
 }
@@ -254,6 +254,7 @@ void ClientInterface::update() {
 	if (cmdList.getCommandCount()) {
 		m_connection->send(&cmdList);
 	}
+	m_connection->update();
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {

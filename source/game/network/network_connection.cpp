@@ -83,18 +83,30 @@ void Network::deinit() {
 //	class NetworkConnection
 // =====================================================
 
-void NetworkConnection::send(const Message* networkMessage) {
-	if (m_peer) {
-		networkMessage->log();
+void NetworkConnection::update() {
+	if (m_needFlush) {
+		enet_host_flush(m_host);
+		m_needFlush = false;
+	}
+	poll();
+}
 
-		ENetPacket *packet = enet_packet_create(networkMessage->getData(), networkMessage->getSize(), ENET_PACKET_FLAG_RELIABLE);
+void NetworkConnection::send(const Message* msg) {
+	if (m_peer) {
+		msg->log();
+
+		ENetPacket *packet = enet_packet_create(msg->getData(), msg->getSize(), ENET_PACKET_FLAG_RELIABLE);
 
 		if (enet_peer_send(m_peer, 0, packet) != 0) {
-			LOG_NETWORK("connection severed, trying to send message..");
+			NETWORK_LOG( "NetworkConnection::send(): Error trying to send " << MessageTypeNames[msg->getType()] << " message, connection severed." );
 			throw Disconnect();
 		}
+		NETWORK_LOG( "NetworkConnection::send(): Sent " << MessageTypeNames[msg->getType()] << " message, size = " << msg->getSize() << "." );
+		m_needFlush = true;
+		//enet_host_flush(m_host);
 
-		enet_host_flush(m_host);
+	} else {
+		NETWORK_LOG( "NetworkConnection::send(): Error trying to send " << MessageTypeNames[msg->getType()] << " message, m_peer is null." );
 	}
 }
 #ifdef false
@@ -113,9 +125,9 @@ void NetworkConnection::send(const void* data, int dataSize) {
 }
 #endif
 
-void NetworkConnection::receiveMessages() {
-	poll();
-}
+//void NetworkConnection::receiveMessages() {
+//	poll();
+//}
 
 RawMessage NetworkConnection::getNextMessage() {
 	assert(hasMessage());
