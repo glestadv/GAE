@@ -364,10 +364,11 @@ void ServerInterface::waitUntilReady() {
 
 	// wait until we get a ready message from all clients
 	while (!allReady) {
+		update();
 		allReady = true;
 		for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 			ConnectionSlot* slot = slots[i];
-			if (slot && !slot->hasReadyMessage()) {
+			if (slot && !slot->isReady()) {
 				allReady = false;
 				// better to check them all since they will appear
 				// not ready if it times out - hailstone 07June2011

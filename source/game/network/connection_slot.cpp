@@ -121,6 +121,8 @@ void ConnectionSlot::processMessages() {
 			serverInterface->dumpFrame(frame);
 			throw GameSyncError("Client detected sync error");
 #		endif
+		} else if (raw.type == MessageType::READY) {
+			setReady();
 		} else if (raw.type == MessageType::DATA_SYNC) {
 			NETWORK_LOG( "Received data_sync message on slot " << m_playerIndex );
 			DataSyncMessage msg(raw);
@@ -141,24 +143,6 @@ void ConnectionSlot::update() {
 		m_connection->update();
 		processMessages();
 	}
-}
-
-bool ConnectionSlot::hasReadyMessage() {
-	// only check for a ready message once
-	if (!isReady()) {
-		m_connection->update();
-		if (!m_connection->hasMessage()) {
-			return false;
-		}
-		RawMessage raw = m_connection->getNextMessage();
-		if (raw.type != MessageType::READY) {
-			throw InvalidMessage(MessageType::READY, raw.type);
-		}
-		NETWORK_LOG( __FUNCTION__ << " Received ready message, slot " << m_playerIndex );
-		setReady();
-	}
-
-	return true;
 }
 
 void ConnectionSlot::logNextMessage() {

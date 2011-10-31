@@ -41,7 +41,6 @@ public:
 	void setReady()					{m_ready = true;}
 	int getPlayerIndex() const		{return m_playerIndex;}
 	bool isReady() const			{return m_ready;}
-	bool hasReadyMessage();
 	
 	void logNextMessage();
 	
