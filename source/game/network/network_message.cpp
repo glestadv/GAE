@@ -690,7 +690,7 @@ SyncErrorMsg::SyncErrorMsg(RawMessage raw) {
 	NETWORK_LOG( string(__FUNCTION__) + "(RawMessage raw)" );
 	data.messageType = raw.type;
 	data.messageSize = raw.size;
-	memcpy(&data.frameCount, raw.data, raw.size);
+	data.frameCount = *reinterpret_cast<uint32*>(raw.data);
 	delete raw.data;
 }
 

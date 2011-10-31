@@ -342,6 +342,9 @@ void ServerInterface::process(TextMessage &msg, int requestor) {
 }
 
 void ServerInterface::updateKeyframe(int frameCount) {
+
+	update();
+
 	NETWORK_LOG( __FUNCTION__ << " building & sending keyframe " 
 		<< (frameCount / GameConstants::networkFramePeriod) << " @ frame " << frameCount);
 	// build command list, remove commands from requested and add to pending
