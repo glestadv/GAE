@@ -510,8 +510,8 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 	updateSize = header.updateSize;
 	cmdCount = header.cmdCount;
 
-	NETWORK_LOG( "KeyFrame message size: " << raw.size << ", Move updates: " << moveUpdateCount
-		<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount );
+	NETWORK_LOG( "KeyFrame message size: " << raw.size << ", Frame: " << frame << "Move updates: " << moveUpdateCount
+		<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount << ", Checksums: " << checksumCount );
 
 	IF_MAD_SYNC_CHECKS(
 		if (checksumCount) {
@@ -554,14 +554,14 @@ void KeyFrame::buildPacket() {
 	size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
 	//size_t headerSize = sizeof(KeyFrameMsgHeader);
 	msgHeader.messageSize = sizeof(KeyFrameMsgHeader) + updateSize + commandsSize;
+
 	IF_MAD_SYNC_CHECKS(
 		msgHeader.messageSize += checksumCount * sizeof(int32);
 	)
 	size_t totalSize = msgHeader.messageSize + sizeof(MsgHeader);
 
-	NETWORK_LOG( "KeyFrame message size: " << msgHeader.messageSize << ", Move updates: " 
-		<< moveUpdateCount << ", Projectile updates: " << projUpdateCount
-		<< ", Commands: " << cmdCount );
+	NETWORK_LOG( "KeyFrame message size: " << msgHeader.messageSize << ", Frame: " << frame << ", Move updates: " << moveUpdateCount 
+		<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount << ", Checksums: " << checksumCount );
 
 	m_packetSize = totalSize;
 	m_packetData = new uint8[totalSize];

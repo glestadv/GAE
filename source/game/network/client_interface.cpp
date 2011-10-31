@@ -337,6 +337,7 @@ void ClientInterface::handleSyncError() {
 
 	SyncErrorMsg se(g_world.getFrameCount());
 	m_connection->send(&se); // ask server to also dump a frame log.
+	m_connection->update(); // force flush
 	throw GameSyncError("Sync error, see glestadv_client.log");
 }
 
