@@ -329,10 +329,14 @@ void ClientInterface::updateProjectilePath(Unit *u, Projectile *pps, const Vec3f
 
 void ClientInterface::handleSyncError() {
 	assert(g_world.getFrameCount());
-	
+	int fc = g_world.getFrameCount();
 	stringstream ss;
-	
-	worldLog->logFrame(ss); // dump frame log
+	worldLog->newFrame(fc + 1); // force write of this incomplete frame
+	if (fc > 5) { // log last 4 complete frames and this incomplete one
+		for (int i = 5; i >= 0; --i) {
+			worldLog->logFrame(ss, fc - i);
+		}
+	}
 	NETWORK_LOG( ss.str() );
 
 	SyncErrorMsg se(g_world.getFrameCount());
