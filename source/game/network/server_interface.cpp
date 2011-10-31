@@ -351,6 +351,7 @@ void ServerInterface::updateKeyframe(int frameCount) {
 		requestedCommands.pop_back();
 	}
 	keyFrame.setFrameCount(frameCount);
+	keyFrame.buildPacket();
 	broadcastMessage(&keyFrame);
 	
 	keyFrame.reset();

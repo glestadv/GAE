@@ -425,10 +425,6 @@ void CommandListMessage::log() const {
 	);
 }
 
-unsigned int CommandListMessage::getSize() const {
-	return (dataHeaderSize + sizeof(NetworkCommand) * data.commandCount);
-}
-
 // =====================================================
 //	class TextMessage
 // =====================================================
@@ -498,7 +494,7 @@ struct KeyFrameMsgHeader {
 };
 #pragma pack(pop)
 
-KeyFrame::KeyFrame(RawMessage raw) {
+KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 	reset();
 	uint8 *ptr = raw.data;
 	KeyFrameMsgHeader header;
@@ -533,11 +529,19 @@ KeyFrame::KeyFrame(RawMessage raw) {
 	delete raw.data;
 }
 
-/*
-void KeyFrame::send(NetworkConnection* connection) const {
+void KeyFrame::buildPacket() {
+	NETWORK_LOG( "KeyFrame::buildPacket()" );
+
+	if (m_packetData) {
+		delete m_packetData;
+		m_packetData = 0;
+		m_packetSize = 0;
+	}
 	MsgHeader msgHeader;
 	KeyFrameMsgHeader header;
+
 	msgHeader.messageType = getType();
+
 	header.frame = this->frame;
 	header.cmdCount = this->cmdCount;
 	IF_MAD_SYNC_CHECKS(
@@ -559,8 +563,9 @@ void KeyFrame::send(NetworkConnection* connection) const {
 		<< moveUpdateCount << ", Projectile updates: " << projUpdateCount
 		<< ", Commands: " << cmdCount );
 
-	uint8 *buf = new uint8[totalSize];
-	uint8 *ptr = buf;
+	m_packetSize = totalSize;
+	m_packetData = new uint8[totalSize];
+	uint8 *ptr = (uint8*)m_packetData;
 	memcpy(ptr, &msgHeader, sizeof(MsgHeader));
 	ptr += sizeof(MsgHeader);
 	memcpy(ptr, &header, sizeof(KeyFrameMsgHeader));
@@ -578,15 +583,7 @@ void KeyFrame::send(NetworkConnection* connection) const {
 	if (commandsSize) {
 		memcpy(ptr, commands, commandsSize);
 	}
-	try {
-		connection->send(buf, totalSize);
-	} catch (...) {
-		delete [] buf;
-		throw;
-	}
-	delete [] buf;
 }
-*/
 
 #if MAD_SYNC_CHECKING
 

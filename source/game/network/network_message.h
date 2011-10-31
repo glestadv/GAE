@@ -288,9 +288,9 @@ public:
 	CommandListMessage(int32 frameCount= -1);
 	CommandListMessage(RawMessage raw);
 
-	virtual MessageType getType() const		{return MessageType::COMMAND_LIST;}
-	virtual unsigned int getSize() const;
-	virtual const void* getData() const		{return &data;}
+	virtual MessageType getType() const     { return MessageType::COMMAND_LIST; }
+	virtual unsigned int getSize() const    { return (dataHeaderSize + sizeof(NetworkCommand) * data.commandCount); }
+	virtual const void* getData() const     { return &data; }
 	virtual void log() const override;
 	
 	bool addCommand(const NetworkCommand* networkCommand);
@@ -384,13 +384,16 @@ private:
 	NetworkCommand commands[max_cmds];
 	size_t cmdCount;
 
+	int   m_packetSize;
+	void *m_packetData;
+
 public:
-	KeyFrame()		{ reset(); }
+	KeyFrame() : m_packetSize(0), m_packetData(0) { reset(); }
 	KeyFrame(RawMessage raw);
 
 	virtual MessageType getType() const		{return MessageType::KEY_FRAME;}
-	virtual unsigned int getSize() const	{return 0;}
-	virtual const void* getData() const		{return 0;/*&data;*/} ///////////////////////////TODO
+	virtual unsigned int getSize() const	{return m_packetSize;}
+	virtual const void* getData() const		{return m_packetData;}
 	virtual void log() const override {}
 
 	void setFrameCount(int fc) { frame = fc; }
@@ -398,6 +401,8 @@ public:
 
 	const size_t& getCmdCount() const	{ return cmdCount; }
 	const NetworkCommand* getCmd(size_t ndx) const { return &commands[ndx]; }
+
+	void buildPacket();
 
 	IF_MAD_SYNC_CHECKS(
 		int32 getNextChecksum();
