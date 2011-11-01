@@ -74,6 +74,33 @@ NetworkCommand::NetworkCommand(NetworkCommandType type, const Unit *unit, const 
 	this->targetId = -1;
 	this->flags = 0;
 }
+
+void NetworkCommand::log() const {
+	stringstream ss;
+	ss << "\tUnit: " << int(unitId) << " Directive: ";
+	if (networkCommandType == NetworkCommandType::CANCEL_COMMAND) {
+		ss << "'Cancel command'";
+	} else if (networkCommandType == NetworkCommandType::GIVE_COMMAND) {
+		const CommandType *ct = g_prototypeFactory.getCommandType(int(commandTypeId));
+		ss  << "'Give command' Command id: " << int(commandTypeId) << "(" << ct->getName() << ")"
+			<< " posX: " << int(positionX) << " posY: " << int(positionY) << " ProdType id: " 
+			<< int(prodTypeId) << " Target/Facing: " << int(targetId);
+	} else {
+		if (networkCommandType == NetworkCommandType::SET_AUTO_ATTACK) {
+			ss << "'Set auto-attack' Value: ";
+		} else if (networkCommandType == NetworkCommandType::SET_AUTO_FLEE) {
+			ss << "'Set auto-flee' Value: ";
+		} else if (networkCommandType == NetworkCommandType::SET_AUTO_REPAIR) {
+			ss << "'Set auto-repair' Value: ";
+		} else if (networkCommandType == NetworkCommandType::SET_CLOAK) {
+			ss << "'Set cloak' Value: ";
+		} else {
+			assert(false);
+		}
+		ss << ((flags & Flags::MISC_ENABLE) ? "true" : "false");
+	}
+	LOG_NETWORK( ss.str() );
+}
 /*
 NetworkCommand::NetworkCommand(int networkCommandType, int unitId, int commandTypeId, const Vec2i &pos, int unitTypeId, int targetId){
 	this->networkCommandType= networkCommandType;
@@ -98,22 +125,20 @@ Command *NetworkCommand::toCommand() const {
 	if (networkCommandType == NetworkCommandType::CANCEL_COMMAND) {
 		return g_world.newCommand(CmdDirective::CANCEL_COMMAND, CmdFlags(), Vec2i(-1), unit);
 	}
+	CmdFlags flags;
+	bool auto_cmd_enable = flags & Flags::MISC_ENABLE;
+	flags.set(CmdProps::AUTO, auto_cmd_enable);
+
 	if (networkCommandType == NetworkCommandType::SET_AUTO_REPAIR) {
-		bool auto_cmd_enable = flags & Flags::MISC_ENABLE;
-		return g_world.newCommand(CmdDirective::SET_AUTO_REPAIR,
-			CmdFlags(CmdProps::MISC_ENABLE, auto_cmd_enable), Command::invalidPos, unit);
+		return g_world.newCommand(CmdDirective::SET_AUTO_REPAIR, flags, Command::invalidPos, unit);
 	} else if (networkCommandType == NetworkCommandType::SET_AUTO_ATTACK) {
-		bool auto_cmd_enable = flags & Flags::MISC_ENABLE;
-		return g_world.newCommand(CmdDirective::SET_AUTO_ATTACK,
-			CmdFlags(CmdProps::MISC_ENABLE, auto_cmd_enable), Command::invalidPos, unit);
+		return g_world.newCommand(CmdDirective::SET_AUTO_ATTACK, flags, Command::invalidPos, unit);
 	} else if (networkCommandType == NetworkCommandType::SET_AUTO_FLEE) {
 		bool auto_cmd_enable = flags & Flags::MISC_ENABLE;
-		return g_world.newCommand(CmdDirective::SET_AUTO_FLEE,
-			CmdFlags(CmdProps::MISC_ENABLE, auto_cmd_enable), Command::invalidPos, unit);
+		return g_world.newCommand(CmdDirective::SET_AUTO_FLEE, flags, Command::invalidPos, unit);
 	} else if (networkCommandType == NetworkCommandType::SET_CLOAK) {
 		bool enable = flags & Flags::MISC_ENABLE;
-		return g_world.newCommand(CmdDirective::SET_CLOAK,
-			CmdFlags(CmdProps::MISC_ENABLE, enable), Command::invalidPos, unit);
+		return g_world.newCommand(CmdDirective::SET_CLOAK, flags, Command::invalidPos, unit);
 	}
 
 	// else CmdDirective == GIVE_COMMAND

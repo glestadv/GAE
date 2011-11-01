@@ -860,14 +860,18 @@ void Unit::setAutoCmdEnable(AutoCmdFlag f, bool v) {
   */
 CmdResult Unit::giveCommand(Command *command) {
 	assert(command);
+	
 	const CommandType *ct = command->getType();
 	CMD_UNIT_LOG( this, "giveCommand() " << *command );
+
 	if (ct->getClass() == CmdClass::SET_MEETING_POINT) {
-		if(command->isQueue() && !commands.empty()) {
+		if (command->isQueue() && !commands.empty()) {
 			commands.push_back(command);
+			NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Set-meeting-point OK, command queued." );
 		} else {
 			meetingPos = command->getPos();
 			g_world.deleteCommand(command);
+			NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Set-meeting-point OK, command executed." );
 		}
 		CMD_LOG( "Result = SUCCESS" );
 		return CmdResult::SUCCESS;
@@ -895,7 +899,7 @@ CmdResult Unit::giveCommand(Command *command) {
 		clearCommands();
 
 		// for patrol commands, remember where we started from
-		if(ct->getClass() == CmdClass::PATROL) {
+		if (ct->getClass() == CmdClass::PATROL) {
 			command->setPos2(pos);
 		}
 	}
@@ -903,19 +907,34 @@ CmdResult Unit::giveCommand(Command *command) {
 	// check command
 	CmdResult result = checkCommand(*command);
 	bool energyRes = checkEnergy(command->getType());
+
+	bool autoCommand = command->isAuto();
+
 	if (result == CmdResult::SUCCESS && energyRes) {
 		applyCommand(*command);
 		
 		// start the command type
 		ct->start(this, command);
+		
+		commands.push_back(command);
 
-		if (command) {
-			commands.push_back(command);
-		}
+		NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Cmd: " << ct->getId() 
+			<< " (" << ct->getName() << ")" << (autoCommand ? "[Auto] " : " ") <<  "Ok." );
+
 	} else {
 		if (!energyRes && getFaction()->isThisFaction()) {
 			g_console.addLine(g_lang.get("InsufficientEnergy"));
 		}
+		if (result != CmdResult::SUCCESS) {
+			NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Cmd: " << ct->getId()
+				<< " (" << ct->getName() << ")" << (autoCommand ? "[Auto] " : " ") <<  "Result = "
+				<< formatEnumName(CmdResultNames[result]) );
+		} else {
+			assert(!energyRes);
+			NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Cmd: " << ct->getId()
+				<< " (" << ct->getName() << ")" << (autoCommand ? "[Auto] " : " ") <<  "Result = Fail Energy" );
+		}
+
 		g_world.deleteCommand(command);
 		command = 0;
 	}
@@ -924,6 +943,7 @@ CmdResult Unit::giveCommand(Command *command) {
 
 	if (command) {
 		CMD_UNIT_LOG( this, "giveCommand() Result = " << CmdResultNames[result] );
+		
 	}
 	return result;
 }
@@ -1120,7 +1140,8 @@ void Unit::born(bool reborn) {
 		faction->applyUpgradeBoosts(this);
 		if (faction->isThisFaction() && !g_config.getGsAutoRepairEnabled()
 		&& type->getFirstCtOfClass(CmdClass::REPAIR)) {
-			CmdFlags cmdFlags = CmdFlags(CmdProps::MISC_ENABLE, false);
+			CmdFlags cmdFlags;
+			cmdFlags.set(CmdProps::MISC_ENABLE, false);
 			Command *cmd = g_world.newCommand(CmdDirective::SET_AUTO_REPAIR, cmdFlags, invalidPos, this);
 			g_simInterface.getCommander()->pushCommand(cmd);
 		}

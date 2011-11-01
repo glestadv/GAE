@@ -406,6 +406,11 @@ Command *RepairCommandType::doAutoRepair(Unit *unit) const {
 		Vec2i pos = Map::getNearestPos(unit->getPos(), sighted, repairSkillType->getMinRange(), repairSkillType->getMaxRange());
 		REPAIR_LOG( unit, "\tMap::getNearestPos(): " << pos );
 
+		CmdFlags testFlags1(CmdProps::QUEUE, CmdProps::AUTO);
+		CmdFlags testFlags2;
+		testFlags2.set(CmdProps::QUEUE, true);
+		testFlags2.set(CmdProps::AUTO, true);
+
 		newCommand = g_world.newCommand(this, CmdFlags(CmdProps::QUEUE, CmdProps::AUTO), pos);
 		newCommand->setPos2(unit->getPos());
 		return newCommand;

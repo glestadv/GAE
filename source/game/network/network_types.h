@@ -228,12 +228,14 @@ WRAPPED_ENUM( NetworkCommandType,
 		MEMORY_CHECK_DECLARATIONS(NetworkCommand);
 
 		Command *toCommand() const;
-		NetworkCommandType getNetworkCommandType() const	{return static_cast<NetworkCommandType>(networkCommandType);}
+		NetworkCommandType getNetworkCommandType() const	{return NetworkCommandType(networkCommandType);}
 		int getUnitId() const								{return unitId;}
 		int getCommandTypeId() const						{return commandTypeId;}
 		Vec2i getPosition() const							{return Vec2i(positionX, positionY);}
 		int getProdTypeId() const							{return prodTypeId;}
 		int getTargetId() const								{return targetId;}
+
+		void log() const;
 	};
 #pragma pack(pop)
 

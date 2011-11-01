@@ -618,7 +618,8 @@ void UserInterface::save(XmlNode *node) const {
 
 void UserInterface::giveOneClickOrders() {
 	CmdResult result;
-	CmdFlags flags(CmdProps::QUEUE, input.isShiftDown());
+	CmdFlags flags;
+	flags.set(CmdProps::QUEUE, input.isShiftDown());
 	if (selection->isUniform()) {
 		if (activeCommandType->getProducedCount()) {
 			result = commander->tryGiveCommand(selection, flags, activeCommandType,
@@ -636,8 +637,9 @@ void UserInterface::giveOneClickOrders() {
 
 void UserInterface::giveDefaultOrders(const Vec2i &targetPos, Unit *targetUnit) {
 	// give order
-	CmdResult result = commander->tryGiveCommand(selection, CmdFlags(CmdProps::QUEUE, input.isShiftDown()),
-			0, CmdClass::NULL_COMMAND, targetPos, targetUnit);
+	CmdFlags flags;
+	flags.set(CmdProps::QUEUE, input.isShiftDown());
+	CmdResult result = commander->tryGiveCommand(selection, flags, 0, CmdClass::NULL_COMMAND, targetPos, targetUnit);
 
 	// graphical result
 	addOrdersResultToConsole(activeCommandClass, result);
@@ -657,7 +659,8 @@ void UserInterface::giveDefaultOrders(const Vec2i &targetPos, Unit *targetUnit) 
 
 void UserInterface::giveTwoClickOrders(const Vec2i &targetPos, Unit *targetUnit) {
 	CmdResult result;
-	CmdFlags flags(CmdProps::QUEUE, input.isShiftDown());
+	CmdFlags flags;
+	flags.set(CmdProps::QUEUE, input.isShiftDown());
 
 	// give orders to the units of this faction
 	if (!m_selectingSecond) {

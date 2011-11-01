@@ -401,28 +401,17 @@ CommandListMessage::CommandListMessage(RawMessage raw) {
 	delete raw.data;
 }
 
-/* Put as specialized receive somewhere?
-bool CommandListMessage::receive(NetworkConnection* connection) {
-	MsgHeader header; // peek Message Header first
-	if (!connection->peek(&header, sizeof(MsgHeader))) {
-		return false;
-	}
-	bool ok = connection->receive(&data, sizeof(MsgHeader) + header.messageSize);
-	if (ok) {
-		NETWORK_LOG(
-			__FUNCTION__ << "(): message received, type: " << MessageTypeNames[MessageType(data.messageType)]
-			<< ", messageSize: " << data.messageSize << ", number of commands: " << data.commandCount
-		);
-	}
-	return ok;
-}
-*/
-
 void CommandListMessage::log() const {
 	NETWORK_LOG(
 		__FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
 		<< ", messageSize: " << data.messageSize << ", number of commands: " << data.commandCount
 	);
+	if (data.commandCount) {
+		NETWORK_LOG( "CommandList Message sent on frame " << g_world.getFrameCount() << ", Command list:" );
+		for (int i=0; i < data.commandCount; ++i) {
+			data.commands[i].log();
+		}
+	}
 }
 
 // =====================================================
@@ -510,8 +499,8 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 	updateSize = header.updateSize;
 	cmdCount = header.cmdCount;
 
-	NETWORK_LOG( "KeyFrame message size: " << raw.size << ", Frame: " << frame << "Move updates: " << moveUpdateCount
-		<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount << ", Checksums: " << checksumCount );
+	//NETWORK_LOG( "KeyFrame::KeyFrame(RawMessage): Message size: " << raw.size << ", Frame: " << frame << ", Move updates: " << moveUpdateCount
+	//	<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount << ", Checksums: " << checksumCount );
 
 	IF_MAD_SYNC_CHECKS(
 		if (checksumCount) {
@@ -527,11 +516,10 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 		memcpy(commands, ptr, cmdCount * sizeof(NetworkCommand));
 	}
 	delete raw.data;
+	log();
 }
 
 void KeyFrame::buildPacket() {
-	NETWORK_LOG( "KeyFrame::buildPacket()" );
-
 	if (m_packetData) {
 		delete m_packetData;
 		m_packetData = 0;
@@ -560,8 +548,8 @@ void KeyFrame::buildPacket() {
 	)
 	size_t totalSize = msgHeader.messageSize + sizeof(MsgHeader);
 
-	NETWORK_LOG( "KeyFrame message size: " << msgHeader.messageSize << ", Frame: " << frame << ", Move updates: " << moveUpdateCount 
-		<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount << ", Checksums: " << checksumCount );
+//	NETWORK_LOG( "KeyFrame::buildPacket(): Message size: " << msgHeader.messageSize << ", Frame: " << frame << ", Move updates: " << moveUpdateCount 
+//		<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount << ", Checksums: " << checksumCount );
 
 	m_packetSize = totalSize;
 	m_packetData = new uint8[totalSize];
@@ -582,6 +570,15 @@ void KeyFrame::buildPacket() {
 	}
 	if (commandsSize) {
 		memcpy(ptr, commands, commandsSize);
+	}
+}
+
+void KeyFrame::log() const {
+	if (cmdCount) {
+		NETWORK_LOG( "Keyframe " << (frame / GameConstants::networkFramePeriod) << " (frame: " << frame << ") Command list:" );
+		for (int i=0; i < cmdCount; ++i) {
+			commands[i].log();
+		}
 	}
 }
 
@@ -627,8 +624,8 @@ void KeyFrame::addUpdate(MoveSkillUpdate updt) {
 	writePtr += sizeof(MoveSkillUpdate);
 	updateSize += sizeof(MoveSkillUpdate);
 	++moveUpdateCount;
-	NETWORK_LOG( __FUNCTION__ << "(MoveSkillUpdate updt): Pos Offset:" << updt.posOffset()
-		<< " Frame Offset: " << updt.end_offset );
+	//NETWORK_LOG( "KeyFrame::addUpdate(MoveSkillUpdate): Pos Offset:" << updt.posOffset()
+	//	<< " Frame Offset: " << int(updt.end_offset) );
 }
 
 void KeyFrame::addUpdate(ProjectileUpdate updt) {
@@ -637,7 +634,7 @@ void KeyFrame::addUpdate(ProjectileUpdate updt) {
 	writePtr += sizeof(ProjectileUpdate);
 	updateSize += sizeof(ProjectileUpdate);
 	++projUpdateCount;
-	NETWORK_LOG( __FUNCTION__ << "(ProjectileUpdate updt): Frame Offset: " << int(updt.end_offset) );
+	//NETWORK_LOG( "KeyFrame::addUpdate(ProjectileUpdate): Frame Offset: " << int(updt.end_offset) );
 }
 
 MoveSkillUpdate KeyFrame::getMoveUpdate() {
@@ -649,8 +646,8 @@ MoveSkillUpdate KeyFrame::getMoveUpdate() {
 	MoveSkillUpdate res(readPtr);
 	readPtr += sizeof(MoveSkillUpdate);
 	--moveUpdateCount;
-	NETWORK_LOG( __FUNCTION__ << "(): Pos Offset:" << res.posOffset()
-		<< " Frame Offset: " << int(res.end_offset) );
+	//NETWORK_LOG( "KeyFrame::getMoveUpdate(): Pos Offset:" << res.posOffset()
+	//	<< " Frame Offset: " << int(res.end_offset) );
 	return res;
 }
 
@@ -663,7 +660,7 @@ ProjectileUpdate KeyFrame::getProjUpdate() {
 	ProjectileUpdate res(readPtr);
 	readPtr += sizeof(ProjectileUpdate);
 	--projUpdateCount;
-	NETWORK_LOG( __FUNCTION__ << "(): Frame Offset: " << int(res.end_offset) );
+	//NETWORK_LOG( "KeyFrame::getProjUpdate(): Frame Offset: " << int(res.end_offset) );
 	return res;
 }
 
@@ -689,7 +686,6 @@ unsigned int SkillCycleTableMessage::getSize() const {
 #if MAD_SYNC_CHECKING
 
 SyncErrorMsg::SyncErrorMsg(RawMessage raw) {
-	NETWORK_LOG( string(__FUNCTION__) + "(RawMessage raw)" );
 	data.messageType = raw.type;
 	data.messageSize = raw.size;
 	data.frameCount = *reinterpret_cast<uint32*>(raw.data);
@@ -697,7 +693,7 @@ SyncErrorMsg::SyncErrorMsg(RawMessage raw) {
 }
 
 void SyncErrorMsg::log() const {
-	NETWORK_LOG( string(__FUNCTION__) + "()" );
+	NETWORK_LOG( "SyncErrorMsg::log(): Sync error while processing frame " << data.frameCount );
 }
 
 #endif

@@ -433,6 +433,26 @@ string formatString(const string &str) {
 	return outStr;
 }
 
+string formatEnumName(const string &enumName) {
+	string result;
+	bool cap = true;
+	foreach_const(string, it, enumName) {
+		const char &c = *it;
+		if (cap) {
+			result.push_back(c);
+			cap = false;
+		} else if (c == '_') {
+			result.push_back(' ');
+			cap = true;
+		} else if (isalpha(c) && isupper(c)) {
+			result.push_back(tolower(c));
+		} else {
+			result.push_back(c);
+		}
+	}
+	return result;
+}
+
 bool fileExists(const string &path) {
 	if (FSFactory::getInstance()->usePhysFS) {
 		return FSFactory::fileExists(path);

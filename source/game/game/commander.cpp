@@ -144,7 +144,8 @@ CmdResult Commander::tryCancelCommand(const Selection *selection) const{
 
 void Commander::trySetAutoCommandEnabled(const Selection *selection, AutoCmdFlag flag, bool enabled) const {
 	CmdDirective archetype;
-	CmdFlags cmdFlags = CmdFlags(CmdProps::MISC_ENABLE, enabled);
+	CmdFlags cmdFlags;
+	cmdFlags.set(CmdProps::MISC_ENABLE, enabled);
 	switch (flag) {
 		case AutoCmdFlag::REPAIR:
 			archetype = CmdDirective::SET_AUTO_REPAIR;
@@ -168,10 +169,11 @@ void Commander::trySetAutoCommandEnabled(const Selection *selection, AutoCmdFlag
 }
 
 void Commander::trySetCloak(const Selection *selection, bool enabled) const {
-	CmdFlags flags(CmdProps::MISC_ENABLE, enabled);
+	CmdFlags cmdFlags;
+	cmdFlags.set(CmdProps::MISC_ENABLE, enabled);
 	foreach_const (UnitVector, it, selection->getUnits()) {
 		if ((*it)->getType()->getCloakClass() == CloakClass::ENERGY) {
-			Command *c = g_world.newCommand(CmdDirective::SET_CLOAK, flags, Command::invalidPos, *it);
+			Command *c = g_world.newCommand(CmdDirective::SET_CLOAK, cmdFlags, Command::invalidPos, *it);
 			pushCommand(c);
 		}
 	}

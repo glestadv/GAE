@@ -101,7 +101,7 @@ void NetworkConnection::send(const Message* msg) {
 			NETWORK_LOG( "NetworkConnection::send(): Error trying to send " << MessageTypeNames[msg->getType()] << " message, connection severed." );
 			throw Disconnect();
 		}
-		NETWORK_LOG( "NetworkConnection::send(): Sent " << MessageTypeNames[msg->getType()] << " message, size = " << msg->getSize() << "." );
+		//NETWORK_LOG( "NetworkConnection::send(): Sent " << MessageTypeNames[msg->getType()] << " message, size = " << msg->getSize() << "." );
 		m_needFlush = true;
 		//enet_host_flush(m_host);
 
@@ -235,8 +235,8 @@ void ServerConnection::poll() {
 
         case ENET_EVENT_TYPE_RECEIVE:
 		{
-			NETWORK_LOG( "A packet of length " << event.packet->dataLength << " was received from client " << int(event.peer->data)
-				<< " on channel " << int(event.channelID) );
+			//NETWORK_LOG( "A packet of length " << event.packet->dataLength << " was received from client " << int(event.peer->data)
+			//	<< " on channel " << int(event.channelID) );
 			
 			MsgHeader header;
 			memcpy(&header, event.packet->data, MsgHeader::headerSize);
@@ -251,8 +251,8 @@ void ServerConnection::poll() {
 				} else {
 					rawMsg.data = 0;
 				}
-				NETWORK_LOG( "ServerConnection::poll(): received message [type=" << MessageTypeNames[rawMsg.type] << 
-					", size=" << rawMsg.size );
+				//NETWORK_LOG( "ServerConnection::poll(): received message [type=" << MessageTypeNames[rawMsg.type] << 
+				//	", size=" << rawMsg.size );
 				m_connections[(int)event.peer->data]->pushMessage(rawMsg);
 			} else {
 				NETWORK_LOG( "ServerConnection::poll(): Invalid message in queue. packet->dataLength < MsgHeader::headerSize + header.messageSize" );
@@ -314,8 +314,8 @@ void ClientConnection::poll() {
 
 		case ENET_EVENT_TYPE_RECEIVE:
 		{
-			NETWORK_LOG( "A packet of length " << event.packet->dataLength << " was received from the server"
-				<< " on channel " << int(event.channelID) );
+			//NETWORK_LOG( "A packet of length " << event.packet->dataLength << " was received from the server"
+			//	<< " on channel " << int(event.channelID) );
 			MsgHeader header;
 			memcpy(&header, event.packet->data, MsgHeader::headerSize);
 
@@ -331,8 +331,8 @@ void ClientConnection::poll() {
 					rawMsg.data = 0;
 				}
 				pushMessage(rawMsg);
-				NETWORK_LOG( "ClientConnection::poll(): received message [type=" << MessageTypeNames[rawMsg.type] << 
-					", size=" << rawMsg.size );
+				//NETWORK_LOG( "ClientConnection::poll(): received message [type=" << MessageTypeNames[rawMsg.type] << 
+				//	", size=" << rawMsg.size );
 			} else {
 				NETWORK_LOG( "ClientConnection::poll(): Invalid message in queue. packet->dataLength < MsgHeader::headerSize + header.messageSize" );
 				throw GarbledMessage(MessageType(header.messageType), NetSource::SERVER);

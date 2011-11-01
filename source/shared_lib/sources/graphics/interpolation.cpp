@@ -143,6 +143,7 @@ void InterpolationData::update(float t, bool cycle) {
 	uint32 prevFrame = (uint32)floorf(mt);
 	if (prevFrame == mesh->getFrameCount()) {
 		prevFrame = 0;
+		mt = 0.f;
 	}
 	uint32 nextFrame = prevFrame + 1;
 	if (nextFrame == mesh->getFrameCount()) {

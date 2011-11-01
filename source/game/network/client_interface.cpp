@@ -60,7 +60,7 @@ ClientInterface::~ClientInterface() {
 }
 
 void ClientInterface::connect(const Ip &ip, int port) {
-	NETWORK_LOG( __FUNCTION__ << " connecting to " << ip.getString() << ":" << port );
+	NETWORK_LOG( "ClientInterface::connect(): connecting to " << ip.getString() << ":" << port );
 	delete m_connection;
 	m_connection = new ClientConnection();
 	m_connection->connect(ip.getString(), port);
@@ -68,13 +68,13 @@ void ClientInterface::connect(const Ip &ip, int port) {
 }
 
 void ClientInterface::reset() {
-	NETWORK_LOG( __FUNCTION__ );
+	NETWORK_LOG( "ClientInterface::reset()" );
 	delete m_connection;
 	m_connection = NULL;
 }
 
 void ClientInterface::doIntroMessage() {
-	NETWORK_LOG( __FUNCTION__ );
+	NETWORK_LOG( "ClientInterface::doIntroMessage()" );
 	RawMessage msg = m_connection->getNextMessage();
 	if (msg.type != MessageType::INTRO) {
 		throw InvalidMessage(MessageType::INTRO, msg.type);
@@ -97,7 +97,7 @@ void ClientInterface::doIntroMessage() {
 }
 
 void ClientInterface::doLaunchMessage() {
-	NETWORK_LOG( __FUNCTION__ );
+	NETWORK_LOG( "ClientInterface::doLaunchMessage()" );
 	RawMessage msg = m_connection->getNextMessage();
 	if (msg.type != MessageType::LAUNCH) {
 		throw InvalidMessage(MessageType::LAUNCH, msg.type);
@@ -122,13 +122,13 @@ void ClientInterface::doLaunchMessage() {
 }
 
 void ClientInterface::doDataSync() {
-	NETWORK_LOG( __FUNCTION__ );
+	NETWORK_LOG( "ClientInterface::doDataSync()" );
 	DataSyncMessage msg(g_world);
 	m_connection->send(&msg);
 }
 
 void ClientInterface::createSkillCycleTable(const TechTree *) {
-	NETWORK_LOG( __FUNCTION__ << " waiting for server to send Skill Cycle Table." );
+	NETWORK_LOG( "ClientInterface::createSkillCycleTable(): waiting for server to send Skill Cycle Table." );
 	int skillCount = m_prototypeFactory->getSkillTypeCount();
 	int expectedSize = skillCount * sizeof(CycleInfo);
 	waitForMessage(m_connection->getReadyWaitTimeout());
@@ -156,7 +156,7 @@ void ClientInterface::updateLobby() {
 }
 
 void ClientInterface::syncAiSeeds(int aiCount, int *seeds) {
-	NETWORK_LOG( __FUNCTION__ );
+	NETWORK_LOG( "ClientInterface::syncAiSeeds()" );
 	waitForMessage(m_connection->getReadyWaitTimeout());
 	RawMessage raw = m_connection->getNextMessage();
 	if (raw.type != MessageType::AI_SYNC) {
@@ -171,7 +171,7 @@ void ClientInterface::syncAiSeeds(int aiCount, int *seeds) {
 }
 
 void ClientInterface::waitUntilReady() {
-	NETWORK_LOG( __FUNCTION__ );
+	NETWORK_LOG( "ClientInterface::waitUntilReady()" );
 	ReadyMessage readyMsg;
 	m_connection->send(&readyMsg);
 
@@ -214,11 +214,11 @@ void ClientInterface::waitForMessage(int timeout) {
 }
 
 void ClientInterface::quitGame(QuitSource source) {
-	NETWORK_LOG( __FUNCTION__ << " QuitSource == " << (source == QuitSource::SERVER ? "SERVER" : "LOCAL") );
+	NETWORK_LOG( "ClientInterface::quitGame(): QuitSource == " << (source == QuitSource::SERVER ? "SERVER" : "LOCAL") );
 	if (m_connection && m_connection->isConnected() && source != QuitSource::SERVER) {
 		QuitMessage networkMessageQuit;
 		m_connection->send(&networkMessageQuit);
-		NETWORK_LOG( "Sent quit message." );
+		NETWORK_LOG( "ClientInterface::quitGame(): Sent quit message." );
 	}
 
 	if (game) {
@@ -230,7 +230,7 @@ void ClientInterface::quitGame(QuitSource source) {
 }
 
 void ClientInterface::startGame() {
-	NETWORK_LOG( __FUNCTION__ );
+	NETWORK_LOG( "ClientInterface::startGame()" );
 	updateKeyframe(0);
 }
 
@@ -267,19 +267,19 @@ void ClientInterface::updateKeyframe(int frameCount) {
 		RawMessage raw = m_connection->getNextMessage();
 		if (raw.type == MessageType::KEY_FRAME) {
 			keyFrame = KeyFrame(raw);
-			NETWORK_LOG( __FUNCTION__ << " received keyframe " << (keyFrame.getFrameCount() / GameConstants::networkFramePeriod)
-				<< " @ frame " << frameCount );
+			//NETWORK_LOG( "ClientInterface::updateKeyframe(): received keyframe " << (keyFrame.getFrameCount() / GameConstants::networkFramePeriod)
+			//	<< " @ frame " << frameCount );
 			if (keyFrame.getFrameCount() != frameCount + GameConstants::networkFramePeriod) {
 				throw GameSyncError("frame count mismatch. Probable garbled message or memory corruption");
 			}
 			return;
 		} else if (raw.type == MessageType::TEXT) {
 			TextMessage textMsg(raw);
-			NETWORK_LOG( "Received text message from server. Size: " << raw.size << " from: "
+			NETWORK_LOG( "ClientInterface::updateKeyframe(): Received text message from server. Size: " << raw.size << " from: "
 				<< textMsg.getSender() << " msg: " << textMsg.getText() );
 			NetworkInterface::processTextMessage(textMsg);
 		} else if (raw.type == MessageType::QUIT) {
-			NETWORK_LOG( "Received quit message from server." );
+			NETWORK_LOG( "ClientInterface::updateKeyframe(): Received quit message from server." );
 			QuitMessage quitMsg(raw);
 			quitGame(QuitSource::SERVER);
 			return;
@@ -290,7 +290,6 @@ void ClientInterface::updateKeyframe(int frameCount) {
 }
 
 void ClientInterface::updateSkillCycle(Unit *unit) {
-//	NETWORK_LOG( __FUNCTION__ );
 	if (unit->isMoving()) {
 		updateMove(unit);
 	} else {
@@ -299,27 +298,35 @@ void ClientInterface::updateSkillCycle(Unit *unit) {
 }
 
 void ClientInterface::updateMove(Unit *unit) {
-//	NETWORK_LOG( __FUNCTION__ );
-	try{
+	try {
 		MoveSkillUpdate updt = keyFrame.getMoveUpdate();
-
-		if (updt.offsetX < -1 || updt.offsetX > 1 || updt.offsetY < - 1 || updt.offsetY > 1
-		|| (!updt.offsetX && !updt.offsetY)) {
-			NETWORK_LOG( "ClientInterface::updateMove(): Bad server update, pos offset out of range: " << updt.posOffset() );
+		if (updt.offsetX < -1 || updt.offsetX > 1 || updt.offsetY < - 1 || updt.offsetY > 1 || (!updt.offsetX && !updt.offsetY)) {
+			NETWORK_LOG( "ClientInterface::updateMove(): UnitId: " << unit->getId() 
+				<< " Bad server update, pos offset out of range: " << updt.posOffset() );
 			throw GameSyncError("Bad move update"); // msgBox and then graceful exit to Menu please...
 		}
 		unit->setNextPos(unit->getPos() + Vec2i(updt.offsetX, updt.offsetY));
 		unit->updateSkillCycle(updt.end_offset);
+		//NETWORK_LOG( "ClientInterface::updateMove(): UnitId: " << unit->getId() << " NextPos: " << unit->getNextPos() );
 	} catch (GameSyncError &e) {
 		handleSyncError();
 	}
 }
 
 void ClientInterface::updateProjectilePath(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end) {
-//	NETWORK_LOG( __FUNCTION__ );
 	try {
 		ProjectileUpdate updt = keyFrame.getProjUpdate();
+		if (updt.end_offset == 0) {
+			NETWORK_LOG( "ClientInterface::updateProjectilePath(): ProjectileId: " << pps->getId() 
+				<< " Bad server update, end frame offset is 0. " );
+			throw GameSyncError("Bad projectile update");
+		}
 		pps->setPath(start, end, updt.end_offset);
+		//string logStart = "ClientInterface::updateProjectilePath(): ProjectileId: " + intToStr(pps->getId());
+		//if (pps->getTarget()) {
+		//	logStart += ", TargetId: " + intToStr(pps->getTarget()->getId());
+		//}
+		//NETWORK_LOG( logStart << " startPos: " << start << ", endPos: " << end << ", arrivalOffset: " << updt.end_offset );
 	} catch (GameSyncError &e) {
 		handleSyncError();
 	}
@@ -342,14 +349,14 @@ void ClientInterface::handleSyncError() {
 	SyncErrorMsg se(g_world.getFrameCount());
 	m_connection->send(&se); // ask server to also dump a frame log.
 	m_connection->update(); // force flush
-	throw GameSyncError("Sync error, see glestadv_client.log");
+	throw GameSyncError("Sync error, see glestadv-network.log");
 }
 
 void ClientInterface::checkUnitBorn(Unit *unit, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
 	int32 server_cs = keyFrame.getNextChecksum();
 	if (cs != server_cs) {
-		NETWORK_LOG( __FUNCTION__ << " Sync Error: unit type: " << unit->getType()->getName()
+		NETWORK_LOG( "ClientInterface::checkUnitBorn(): Sync Error: unit type: " << unit->getType()->getName()
 			<< " unit id: " << unit->getId() << " faction: " << unit->getFactionIndex() );
 		NETWORK_LOG( "\tserver checksum " << intToHex(server_cs) << " my checksum " << intToHex(cs) );
 		handleSyncError();
@@ -359,7 +366,7 @@ void ClientInterface::checkUnitBorn(Unit *unit, int32 cs) {
 void ClientInterface::checkCommandUpdate(Unit *unit, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
 	if (cs != keyFrame.getNextChecksum()) {
-		NETWORK_LOG( __FUNCTION__ << " Sync Error: unit type: " << unit->getType()->getName()
+		NETWORK_LOG( "ClientInterface::checkCommandUpdate(): Sync Error: unit type: " << unit->getType()->getName()
 			<< ", skill class: " << SkillClassNames[unit->getCurrSkill()->getClass()] );
 		handleSyncError();
 	}
@@ -369,11 +376,11 @@ void ClientInterface::checkProjectileUpdate(Unit *unit, int endFrame, int32 cs) 
 //	NETWORK_LOG( __FUNCTION__ );
 	if (cs != keyFrame.getNextChecksum()) {
 		if (unit->getCurrCommand()->getUnit()) {
-			NETWORK_LOG( __FUNCTION__ << " Sync Error: unit id: " << unit->getId() << " skill: "
+			NETWORK_LOG( "ClientInterface::checkProjectileUpdate(): Sync Error: unit id: " << unit->getId() << " skill: "
 				<< unit->getCurrSkill()->getName() << " target id: "
 				<< unit->getCurrCommand()->getUnit()->getId() << " end frame: " << endFrame );
 		} else {
-			NETWORK_LOG( __FUNCTION__ << " Sync Error: unit id: " << unit->getId() << " skill: "
+			NETWORK_LOG( "ClientInterface::checkProjectileUpdate(): Sync Error: unit id: " << unit->getId() << " skill: "
 				<< unit->getCurrSkill()->getName() << " target pos: "
 				<< unit->getCurrCommand()->getPos() << " end frame: " << endFrame );
 		}
@@ -385,7 +392,7 @@ void ClientInterface::checkAnimUpdate(Unit *unit, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
 	if (cs != keyFrame.getNextChecksum()) {
 		const CycleInfo &inf = m_skillCycleTable->lookUp(unit);
-		NETWORK_LOG( __FUNCTION__ << " Sync Error: unit id: " << unit->getId()
+		NETWORK_LOG( "ClientInterface::checkAnimUpdate(): Sync Error: unit id: " << unit->getId()
 			<< " attack offset: " << inf.getAttackOffset() );
 		handleSyncError();
 	}

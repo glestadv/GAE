@@ -54,17 +54,23 @@ public:
 		this->flags = flags;
 	}*/
 
-	Flags(E flag1, bool val1 /*= true*/) {
-		assert(max <= sizeof(flags) * 8);
-		flags = 0;
-		set(flag1, val1);
-	}
+	//Flags(E flag1, bool val1 /*= true*/) {
+	//	assert(max <= sizeof(flags) * 8);
+	//	flags = 0;
+	//	set(flag1, val1);
+	//}
 
-	Flags(E flag1, bool val1, E flag2, bool val2) {
+	//Flags(E flag1, bool val1, E flag2, bool val2) {
+	//	assert(max <= sizeof(flags) * 8);
+	//	flags = 0;
+	//	set(flag1, val1);
+	//	set(flag2, val2);
+	//}
+
+	Flags(E flag1) {
 		assert(max <= sizeof(flags) * 8);
 		flags = 0;
-		set(flag1, val1);
-		set(flag2, val2);
+		set(flag1, true);
 	}
 
 	Flags(E flag1, E flag2) {

@@ -26,26 +26,6 @@ using namespace Shared::Debug;
 
 DebugStats *g_debugStats = 0;
 
-string formatEnumName(const string &enumName) {
-	string result;
-	bool cap = true;
-	foreach_const(string, it, enumName) {
-		const char &c = *it;
-		if (cap) {
-			result.push_back(c);
-			cap = false;
-		} else if (c == '_') {
-			result.push_back(' ');
-			cap = true;
-		} else if (isalpha(c) && isupper(c)) {
-			result.push_back(tolower(c));
-		} else {
-			result.push_back(c);
-		}
-	}
-	return result;
-}
-
 int64 DebugStats::avg(const TickRecords &records) {
 	if (records.empty()) {
 		return 0;

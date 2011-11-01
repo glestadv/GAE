@@ -311,6 +311,8 @@ string ext(const string &s);
 
 string formatString(const string &str);
 
+string formatEnumName(const string &enumName);
+
 string replaceBy(const string &s, char c1, char c2);
 
 inline string intToHex(int addr) {

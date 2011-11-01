@@ -127,8 +127,12 @@ Command* CommandType::doAutoCommand(Unit *unit) const {
 			REPAIR_LOG( unit, "Auto-Repair command generated, target unit: "
 				<< *autoCmd->getUnit() << ", command pos:" << autoCmd->getPos()
 			);
+			NETWORK_LOG( "\tAuto-repair command generated, unit: " << unit->getId() 
+				<< ", target unit: " << autoCmd->getUnit()->getId() << ", command pos:" << autoCmd->getPos() );
 		} else {
 			REPAIR_LOG( unit, "Auto-Repair command generated, no target unit, command pos:" << autoCmd->getPos() );
+			NETWORK_LOG( "\tAuto-repair command generated, unit: " << unit->getId() 
+				<< ", not target unit, command pos:" << autoCmd->getPos() );
 		}
 		return autoCmd;
 	}
@@ -326,7 +330,7 @@ Command *MoveBaseCommandType::doAutoFlee(Unit *unit) const {
 	Unit *sighted = NULL;
 	if (attackerInSight(unit, &sighted)) {
 		Vec2i escapePos = unit->getPos() * 2 - sighted->getPos();
-		return g_world.newCommand(this, CmdFlags(CmdProps::AUTO, true), escapePos);
+		return g_world.newCommand(this, CmdFlags(CmdProps::AUTO), escapePos);
 	}
 	return 0;
 }
@@ -359,6 +363,9 @@ void MoveCommandType::update(Unit *unit) const {
 	// if we're doing an auto command, let's make sure we still want to do it
 	Command *autoCmd;
 	if (command->isAuto() && (autoCmd = doAutoCommand(unit))) {
+		if (!autoCmd->isAuto()) {
+			DEBUG_HOOK();
+		}
 		unit->giveCommand(autoCmd);
 	}
 }

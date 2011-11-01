@@ -394,7 +394,7 @@ public:
 	virtual MessageType getType() const		{return MessageType::KEY_FRAME;}
 	virtual unsigned int getSize() const	{return m_packetSize;}
 	virtual const void* getData() const		{return m_packetData;}
-	virtual void log() const override {}
+	virtual void log() const override;
 
 	void setFrameCount(int fc) { frame = fc; }
 	int getFrameCount() const { return frame; }
