@@ -83,12 +83,23 @@ void Network::deinit() {
 //	class NetworkConnection
 // =====================================================
 
+void NetworkConnection::destroyHost() {
+	if (m_host) {
+		enet_host_destroy(m_host);
+		m_host = 0;
+	}
+}
+
 void NetworkConnection::update() {
 	if (m_needFlush) {
 		enet_host_flush(m_host);
 		m_needFlush = false;
 	}
-	poll();
+	try {
+		poll();
+	} catch (Disconnect &e) {
+		//maybe not the best place to catch this
+	}
 }
 
 void NetworkConnection::send(const Message* msg) {
@@ -109,25 +120,11 @@ void NetworkConnection::send(const Message* msg) {
 		NETWORK_LOG( "NetworkConnection::send(): Error trying to send " << MessageTypeNames[msg->getType()] << " message, m_peer is null." );
 	}
 }
-#ifdef false
-void NetworkConnection::send(const void* data, int dataSize) {
-	ENetPacket *packet = enet_packet_create(data, dataSize, ENET_PACKET_FLAG_RELIABLE);
-    
-    /* Send the packet to the peer over channel id 0. */
-    /* One could also broadcast the packet by         */
-    /* enet_host_broadcast (host, 0, packet);         */
-    if (enet_peer_send(m_peer, 0, packet) != 0) {
-		LOG_NETWORK("connection severed, trying to send message..");
-		throw Disconnect();
-	}
 
-	enet_host_flush(m_host);
+void NetworkConnection::reset() {
+	m_host = 0;
+	m_peer = 0;
 }
-#endif
-
-//void NetworkConnection::receiveMessages() {
-//	poll();
-//}
 
 RawMessage NetworkConnection::getNextMessage() {
 	assert(hasMessage());
@@ -182,6 +179,14 @@ void NetworkConnection::close() {
 	}
 }
 
+void ServerConnection::destroyClientConnections() {
+	/*
+	foreach (Connections, it, m_connections) {
+		delete it->second;
+	}
+	*/
+}
+
 // Protected
 void ServerConnection::bind(int port) {    
     /* Bind the server to the default localhost.     */
@@ -216,7 +221,7 @@ void ServerConnection::poll() {
     {	
 		int status = enet_host_service(host, &event, 5);
 		if (status < 0) {
-			NETWORK_LOG( "Enet Server errored." );
+			NETWORK_LOG( "Server enet_host_service error." );
 			break;
 		}
 
@@ -232,10 +237,10 @@ void ServerConnection::poll() {
 			NETWORK_LOG( "A new client connected from " << ip.getString() << " on port " << event.peer->address.port );
 
             // Store any relevant client information here.
-			int id = m_connections.size();
+			int id = m_connections.size(); //TODO: change this to something guarenteed to be unique
             event.peer->data = (char*)id;
 
-			NetworkConnection *connection = new NetworkConnection(NetworkConnection::getHost(), event.peer);
+			NetworkConnection *connection = new NetworkConnection(host, event.peer);
 			m_connections.insert(pair<int, NetworkConnection*>(id, connection));
 			m_looseConnections.push(connection);
 			
@@ -272,15 +277,25 @@ void ServerConnection::poll() {
             break;
 		}
            
-        case ENET_EVENT_TYPE_DISCONNECT:
-            NETWORK_LOG( "client " << int(event.peer->data) << "disconected." );
+		case ENET_EVENT_TYPE_DISCONNECT: 
+		{
+			int clientId = (int)event.peer->data;
+            NETWORK_LOG( "client " << clientId << "disconected." );
+			
+			/* can't delete connections because connection_slot can't handle it?
+			delete m_connections[clientId];
+			Connections::iterator iter = m_connections.find(clientId);
+			m_connections.erase(iter);
+			*/
+
+			Connections::iterator iter = m_connections.find(clientId);
+			iter->second->reset(); // this will result in isConnected == false
 
             // Reset the peer's client information.
             event.peer->data = NULL;
-
-			//delete networkConnection;
-
-			///@todo handle disconnects
+			
+			///@todo handle disconnects (fire Disconnect listeners)
+		}
 		case ENET_EVENT_TYPE_NONE:
 			break;
         }
@@ -295,10 +310,10 @@ void ClientConnection::poll() {
 		return;
 	}
 
-	while (/*enet_host_service(host, &event, 5) > 0*/ true) {
+	while (true) {
 		int status = enet_host_service(host, &event, 5);
 		if (status < 0) {
-			NETWORK_LOG( "Enet client errored." );
+			NETWORK_LOG( "Client enet_host_service error." );
 			break;
 		}
 
@@ -311,10 +326,6 @@ void ClientConnection::poll() {
 		{
 			char hostname[256] = "(error)";
 			enet_address_get_host_ip(&event.peer->address, hostname, strlen(hostname));
-
-			// ???
-			//m_server = new NetworkConnection(host, event.peer);
-			setHost(host); // ?
 			
 			setPeer(event.peer);
 
@@ -323,11 +334,9 @@ void ClientConnection::poll() {
 
 		case ENET_EVENT_TYPE_DISCONNECT:
 		{
-			setHost(0);
-			setPeer(0);	
+			NetworkConnection::destroyHost();
+			setPeer(0);
 			throw Disconnect();
-			//delete m_server;
-			//m_server = NULL;
 			break;
 		}
 
@@ -375,7 +384,7 @@ void ClientConnection::connect(const string &address, int port) {
                 14400 / 8 /* 56K modem with 14 Kbps upstream bandwidth */);
 
     if (client == NULL) {
-        fprintf(stderr, "An error occurred while trying to create an ENet client host.\n");
+		NETWORK_LOG( "An error occurred while trying to create an ENet client host." );
         exit(EXIT_FAILURE);
     }
 
@@ -394,28 +403,9 @@ void ClientConnection::connect(const string &address, int port) {
     
     if (peer == NULL)
     {
-       fprintf(stderr, "No available peers for initiating an ENet connection.\n");
+	   NETWORK_LOG( "No available peers for initiating an ENet connection." );
        exit(EXIT_FAILURE);
     }
-    
-#ifdef false
-    /* Wait up to 5 seconds for the connection attempt to succeed. */
-    if (enet_host_service (client, &event, 10000) > 0 &&
-        event.type == ENET_EVENT_TYPE_CONNECT)
-    {
-		LOG_NETWORK("Connection to localhost succeeded.");
-		m_server = new NetworkConnection(client, peer);
-    }
-    else
-    {
-        /* Either the 5 seconds are up or a disconnect event was */
-        /* received. Reset the peer in the event the 5 seconds   */
-        /* had run out without any significant event.            */
-        enet_peer_reset(peer);
-
-        LOG_NETWORK("Connection to localhost failed.");
-    }
-#endif
 }
 
 }} // end namespace

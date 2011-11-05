@@ -84,15 +84,15 @@ private:
 	bool m_needFlush;
 
 protected:
-	// only child classes should be able to instantiate without socket
+	// only child classes should be able to instantiate without host and peer
 	NetworkConnection() : m_host(0), m_peer(0), m_needFlush(false) {}
 
 	ENetHost* getHost() {return m_host;}
-	const ENetHost* getSocket() const {return m_host;}
+	const ENetHost* getHost() const {return m_host;}
 
 	void setPeer(ENetPeer *v) {m_peer = v;}
 	void setHost(ENetHost *v) {m_host = v;}
-	void destroyHost() { if (m_host) enet_host_destroy(m_host); }
+	void destroyHost();
 
 	virtual void poll() {};
 
@@ -111,9 +111,9 @@ public:
 	void send(const Message* networkMessage);
 
 	void update();
+	void reset();
 
 	// message retrieval
-	//void receiveMessages();
 	bool hasMessage()					{ return !messageQueue.empty(); }
 	int getMessageCount()               { return messageQueue.size(); }
 	RawMessage getNextMessage();
@@ -121,7 +121,7 @@ public:
 	RawMessage peekMessage() const		{ return messageQueue.front(); }
 	void pushMessage(RawMessage raw)	{ messageQueue.push_back(raw); }
 
-	virtual bool isConnected() const	{ return m_peer != NULL;/*getSocket() && getSocket()->isConnected();*/ }
+	bool isConnected() const	{ return m_peer && m_host; }
 
 private:
 	void close();
@@ -144,6 +144,7 @@ protected:
 public:
 	virtual ~ServerConnection() {
 		NetworkConnection::destroyHost();
+		destroyClientConnections();
 	}
 	int sendAnnounce(int port) {
 		//serverSocket.sendAnnounce(port);
@@ -163,6 +164,8 @@ public:
 			return 0;
 		}
 	}
+private:
+	void destroyClientConnections();
 };
 
 // =====================================================
@@ -170,9 +173,6 @@ public:
 // =====================================================
 
 class ClientConnection : public NetworkConnection {
-private:
-	NetworkConnection *m_server;
-
 protected:
 	virtual void poll() override;
 
@@ -181,7 +181,6 @@ public:
 		NetworkConnection::destroyHost();
 	}
 	void connect(const string &address, int port);
-	virtual bool isConnected() const	{ return m_server != NULL; }
 
 	/** @return ip of the sender
 	  * @throws SocketException when socket is no longer receiving */

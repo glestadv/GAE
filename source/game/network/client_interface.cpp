@@ -64,7 +64,9 @@ void ClientInterface::connect(const Ip &ip, int port) {
 	delete m_connection;
 	m_connection = new ClientConnection();
 	m_connection->connect(ip.getString(), port);
-	m_connection->update();
+	while (!m_connection->isConnected() /* || timed out*/) { ///@todo cancel on time out
+		m_connection->update();
+	}
 }
 
 void ClientInterface::reset() {
