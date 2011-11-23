@@ -19,6 +19,7 @@
 #include "checksum.h"
 #include "network_message.h"
 #include "network_types.h"
+#include "network_session.h"
 #include "sim_interface.h"
 #include "logger.h"
 
@@ -64,7 +65,7 @@ protected:
 
 	// misc
 	virtual string getStatus() const = 0;
-	virtual bool isConnected() const = 0;
+	//virtual bool isConnected() const = 0;
 
 #if MAD_SYNC_CHECKING
 	/** 'Interesting event' handlers, for insane checksum comparisons */
@@ -101,6 +102,10 @@ public:
 	const string& getChatText() const				{return chatMessages.back().text;}
 	const string& getChatSender() const				{return chatMessages.back().sender;}
 	int getChatColourIndex() const					{return chatMessages.back().colourIndex;}
+
+	// network events
+	virtual void onConnect(NetworkSession *session) = 0;
+	virtual void onDisconnect(NetworkSession *session, DisconnectReason reason) = 0;
 };
 
 }}//end namespace

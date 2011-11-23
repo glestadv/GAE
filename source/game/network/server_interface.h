@@ -17,6 +17,7 @@
 #include "game_constants.h"
 #include "network_interface.h"
 #include "connection_slot.h"
+#include "network_connection.h"
 
 using std::vector;
 
@@ -37,7 +38,7 @@ private:
 
 private:
 	ConnectionSlot* slots[GameConstants::maxPlayers];
-	ServerConnection m_connection;
+	ServerHost m_connection;
 	vector<LostPlayerInfo> m_lostPlayers;
 	bool m_portBound;
 	bool m_waitingForPlayers;
@@ -57,7 +58,7 @@ public:
 	
 	virtual void updateSkillCycle(Unit *unit);
 
-	virtual bool isConnected() const { return m_connection.isConnected();}
+	//virtual bool isConnected() const { return m_connection.isConnected();}
 
 #	if MAD_SYNC_CHECKING
 		void dumpFrame(int frame);
@@ -91,7 +92,7 @@ protected:
 
 public:
 	// used to listen for new connections
-	NetworkConnection *accept() {return m_connection.accept();}
+	//NetworkConnection *accept() {return m_connection.accept();}
 
 	// ConnectionSlot management
 	void addSlot(int playerIndex);
@@ -100,6 +101,8 @@ public:
 	ConnectionSlot* getSlot(int playerIndex);
 	int getConnectedSlotCount();
 	int getOpenSlotCount();
+	int getFreeSlotIndex();
+	int getSlotIndexBySession(NetworkSession *session);
 	
 	void dataSync(int playerNdx, DataSyncMessage &msg);
 	void doLaunchBroadcast();
@@ -108,6 +111,10 @@ public:
 	// message sending
 	virtual void sendTextMessage(const string &text, int teamIndex);
 	virtual void quitGame(QuitSource);
+
+	// network events
+	virtual void onConnect(NetworkSession *session);
+	virtual void onDisconnect(NetworkSession *session, DisconnectReason reason);
 
 private:
 	void broadcastMessage(const Message* networkMessage, int excludeSlot= -1);

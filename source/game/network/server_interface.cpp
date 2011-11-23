@@ -134,6 +134,24 @@ int ServerInterface::getOpenSlotCount() {
 	return openSlotCount;
 }
 
+int ServerInterface::getFreeSlotIndex() {
+	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
+		if(slots[i] && !slots[i]->isConnected()) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+int ServerInterface::getSlotIndexBySession(NetworkSession *session) {
+	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
+		if(slots[i] && slots[i]->getSession() == session) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 void ServerInterface::update() {
 	if (!m_portBound) {
 		return;
@@ -146,7 +164,7 @@ void ServerInterface::update() {
 		popChatMsg();
 	}
 
-	m_connection.update();
+	m_connection.update(this);
 
 	// update all slots
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
@@ -417,6 +435,26 @@ void ServerInterface::quitGame(QuitSource source) {
 	}
 }
 
+// network events
+void ServerInterface::onConnect(NetworkSession *session) {
+	int index = getFreeSlotIndex();
+	if (index != -1) {
+		slots[index]->setSession(session);
+
+		NETWORK_LOG( "Connection established, slot " << index << " sending intro message." );
+		IntroMessage networkMessageIntro(getNetworkVersionString(), 
+			g_config.getNetPlayerName(), m_connection.getHostName(), index);
+		slots[index]->send(&networkMessageIntro);
+	}
+}
+
+void ServerInterface::onDisconnect(NetworkSession *session, DisconnectReason reason) {
+	int index = getSlotIndexBySession(session);
+	if (index != -1) {
+		slots[index]->reset();
+	}
+}
+
 string ServerInterface::getStatus() const {
 	string str;
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
@@ -437,12 +475,14 @@ void ServerInterface::syncAiSeeds(int aiCount, int *seeds) {
 	SimulationInterface::syncAiSeeds(aiCount, seeds);
 	AiSeedSyncMessage seedSyncMsg(aiCount, seeds);
 	broadcastMessage(&seedSyncMsg);
+	m_connection.flush();
 }
 
 void ServerInterface::doLaunchBroadcast() {
 	NETWORK_LOG( "ServerInterface::doLaunchBroadcast(): Launching game." );
 	LaunchMessage networkMessageLaunch(&gameSettings);
-	broadcastMessage(&networkMessageLaunch);	
+	broadcastMessage(&networkMessageLaunch);
+	m_connection.flush();
 }
 
 void ServerInterface::broadcastMessage(const Message* networkMessage, int excludeSlot) {
@@ -461,7 +501,7 @@ void ServerInterface::broadcastMessage(const Message* networkMessage, int exclud
 }
 
 void ServerInterface::updateListen() {
-	m_connection.listen(getOpenSlotCount());
+	m_connection.listen(/*getOpenSlotCount()*/GameConstants::maxPlayers);
 }
 
 IF_MAD_SYNC_CHECKS(

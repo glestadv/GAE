@@ -42,7 +42,7 @@ namespace Glest { namespace Net {
 // =====================================================
 //	class DedicatedServer
 // =====================================================
-
+#ifdef false
 DedicatedServer::DedicatedServer(/*Program &prog*/)
 		: /*ServerInterface(prog)*/
 		m_portBound(false)
@@ -142,5 +142,5 @@ IF_MAD_SYNC_CHECKS(
 	}
 )
 */
-
+#endif
 }}//end namespace

@@ -13,7 +13,7 @@
 #define _GLEST_GAME_CONNECTIONSLOT_H_
 
 #include "network_interface.h"
-#include "network_connection.h"
+#include "network_session.h"
 
 namespace Glest { namespace Net {
 
@@ -30,24 +30,28 @@ private:
 	bool				m_ready;
 
 protected:
-	NetworkConnection*	m_connection;
+	NetworkSession*	m_connection;
 
 public:
 	ConnectionSlot(ServerInterface* serverInterface, int playerIndex);
 	virtual ~ConnectionSlot();
 
+	void reset();
+
 	virtual void update();
 
+	void setSession(NetworkSession *v) { m_connection = v; }
 	void setReady()					{m_ready = true;}
 	int getPlayerIndex() const		{return m_playerIndex;}
 	bool isReady() const			{return m_ready;}
+	const NetworkSession *getSession() const {return m_connection;}
 	
 	void logNextMessage();
 	
 	bool isConnected() const		{return m_connection && m_connection->isConnected();}
 	string getName() const			{return m_connection ? m_connection->getRemotePlayerName() : "";}
 	void send(const Message* networkMessage);
-	NetworkConnection *getConnection() {return m_connection;}
+	//NetworkConnection *getConnection() {return m_connection;}
 
 protected:
 	virtual void processMessages();
@@ -60,7 +64,7 @@ private:
 // =====================================================
 //	class DedicatedConnectionSlot
 // =====================================================
-
+/*
 class DedicatedConnectionSlot: public ConnectionSlot {
 private:
 	ClientConnection *m_connectionToServer;
@@ -77,7 +81,7 @@ protected:
 	virtual void processMessages() override;
 	virtual	bool isConnectionReady() override;
 };
-
+*/
 }}//end namespace
 
 #endif

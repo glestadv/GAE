@@ -21,6 +21,7 @@
 #include "network_message.h"
 #include "network_types.h"
 #include "logger.h"
+#include "network_session.h"
 #include "enet/enet.h"
 
 using std::string;
@@ -29,6 +30,8 @@ using Shared::Util::Checksum;
 using Shared::Math::Vec3f;
 
 namespace Glest { namespace Net {
+
+class NetworkInterface;
 
 // =====================================================
 //	class IP
@@ -61,136 +64,69 @@ public:
 };
 
 // =====================================================
-//	class NetworkConnection
+//	class NetworkHost
 // =====================================================
 
-class NetworkConnection {
-protected:
-	typedef deque<RawMessage> MessageQueue;
-	static const int readyWaitTimeout = 60000; // 60 sec
-
+class NetworkHost {
 private:
-	string remoteHostName;
-	string remotePlayerName;
+	typedef vector<NetworkSession*> Sessions;
+	Sessions m_sessions;
+	ENetHost *m_host;
 	string description;
 
-	ENetHost *m_host;
-	ENetPeer *m_peer;
-
-	// received but not processed messages
-	MessageQueue messageQueue;
-
-	//
-	bool m_needFlush;
-
-protected:
-	// only child classes should be able to instantiate without host and peer
-	NetworkConnection() : m_host(0), m_peer(0), m_needFlush(false) {}
-
-	ENetHost* getHost() {return m_host;}
-	const ENetHost* getHost() const {return m_host;}
-
-	void setPeer(ENetPeer *v) {m_peer = v;}
-	void setHost(ENetHost *v) {m_host = v;}
-	void destroyHost();
-
-	virtual void poll() {};
+	static const int readyWaitTimeout = 60000; // 60 sec
 
 public:
-	NetworkConnection(ENetHost *host, ENetPeer *peer) : m_host(host), m_peer(peer) {}
-	virtual ~NetworkConnection() {close();}
+	NetworkHost(/*int updateTimeout*/);
+	virtual ~NetworkHost();
 
-	string getIp() const				{return /*getSocket()->getIp();*/ "";}
-	string getHostName() const			{return /*getSocket()->getHostName();*/ "";}
-	string getRemoteHostName() const	{return remoteHostName;}
-	string getRemotePlayerName() const	{return remotePlayerName;}
-	string getDescription() const		{return description;}
-	int getReadyWaitTimeout()			{return readyWaitTimeout;}
+	void setHost(ENetHost *v) {assert(!m_host); m_host = v;}
+	
+	string getHostName();
+	string getIp();
+	int getSessionCount()					{return m_sessions.size();}
+	NetworkSession *getSession(int index)	{assert(m_sessions.size() > index); return m_sessions[index];}
+	int getReadyWaitTimeout()				{return readyWaitTimeout;}
+	string getDescription() const			{return description;}
 
-	void setRemoteNames(const string &hostName, const string &playerName);
-	void send(const Message* networkMessage);
-
-	void update();
-	void reset();
-
-	// message retrieval
-	bool hasMessage()					{ return !messageQueue.empty(); }
-	int getMessageCount()               { return messageQueue.size(); }
-	RawMessage getNextMessage();
-	MessageType peekNextMsg() const		{ return MessageType(messageQueue.front().type); }
-	RawMessage peekMessage() const		{ return messageQueue.front(); }
-	void pushMessage(RawMessage raw)	{ messageQueue.push_back(raw); }
-
-	bool isConnected() const	{ return m_peer && m_host; }
-
-private:
-	void close();
+	void flush();
+	void update(NetworkInterface *networkInterface);
+	void disconnect(DisconnectReason reason);
+	
+	void broadcastMessage(const Message* networkMessage);
+protected:
+	bool isHostSet() {return m_host;}
+	void setPeerCount(size_t count);
 };
 
 // =====================================================
-//	class ServerConnection
+//	class ClientHost
 // =====================================================
-class ServerConnection : public NetworkConnection {
+
+/// A NetworkHost that contains a single session for the server peer.
+class ClientHost : public NetworkHost {
+public:
+	void connect(const string &address, int port);
+	bool isConnected();
+	void send(const Message* networkMessage);
+	NetworkSession *getServerSession();
+
 private:
-	typedef std::map<int, NetworkConnection*> Connections;
-	Connections m_connections;
+	void connect(ENetHost *client, ENetAddress *eNetAddress);
+};
+
+// =====================================================
+//	class ServerHost
+// =====================================================
+
+/// A NetworkHost that allows clients to connect.
+class ServerHost : public NetworkHost {
+private:
 	ENetAddress m_address;
 
-	std::stack<NetworkConnection*> m_looseConnections;
-
-protected:
-	virtual void poll() override;
-
 public:
-	virtual ~ServerConnection() {
-		NetworkConnection::destroyHost();
-		destroyClientConnections();
-	}
-	int sendAnnounce(int port) {
-		//serverSocket.sendAnnounce(port);
-		return -1;
-	}
-
 	void bind(int port);
-
 	void listen(int connectionQueueSize = SOMAXCONN);
-
-	NetworkConnection *accept() {
-		if (!m_looseConnections.empty()) {
-			NetworkConnection *connection = m_looseConnections.top();
-			m_looseConnections.pop();
-			return connection;
-		} else {
-			return 0;
-		}
-	}
-private:
-	void destroyClientConnections();
-};
-
-// =====================================================
-//	class ClientConnection
-// =====================================================
-
-class ClientConnection : public NetworkConnection {
-protected:
-	virtual void poll() override;
-
-public:
-	virtual ~ClientConnection() {
-		NetworkConnection::destroyHost();
-	}
-	void connect(const string &address, int port);
-
-	/** @return ip of the sender
-	  * @throws SocketException when socket is no longer receiving */
-	Ip receiveAnnounce(int port, char *hostname, int dataSize) {
-		//clientSocket.receiveAnnounce(port, hostname, dataSize);
-	}
-
-	void disconnectUdp() {
-		//clientSocket.disconnectUdp();
-	}
 };
 
 }}//end namespace

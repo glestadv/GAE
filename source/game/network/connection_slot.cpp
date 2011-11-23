@@ -43,20 +43,26 @@ ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex
 }
 
 ConnectionSlot::~ConnectionSlot() {
-	delete m_connection;
+}
+
+void ConnectionSlot::reset() {
+	NETWORK_LOG( "Slot " << m_playerIndex << " disconnected, [" << m_connection->getRemotePlayerName() << "]" );
+	m_connection = NULL;
 }
 
 void ConnectionSlot::sendIntroMessage() {
+	/* moved to ServerInterface::onConnect
 	assert(m_connection);
 	NETWORK_LOG( "Connection established, slot " << m_playerIndex << " sending intro message." );
 	IntroMessage networkMessageIntro(getNetworkVersionString(), 
 		g_config.getNetPlayerName(), m_connection->getHostName(), m_playerIndex);
 	m_connection->send(&networkMessageIntro);
+	*/
 }
 
 bool ConnectionSlot::isConnectionReady() {
 	if (!m_connection) {
-		m_connection = m_serverInterface->accept();
+		//m_connection = m_serverInterface->accept();
 
 		// send intro message when connected
 		if (m_connection) {
@@ -140,7 +146,7 @@ void ConnectionSlot::processMessages() {
 
 void ConnectionSlot::update() {
 	if (isConnectionReady()) {
-		m_connection->update();
+		//m_connection->update(this); maybe call this in the outer loop instead
 		processMessages();
 	}
 }
@@ -177,7 +183,7 @@ void ConnectionSlot::send(const Message* networkMessage) {
 // =====================================================
 //	class DedicatedConnectionSlot
 // =====================================================
-
+#ifdef false
 DedicatedConnectionSlot::DedicatedConnectionSlot(ServerConnection *dedicatedServer, NetworkConnection *server, int playerIndex)
 		: ConnectionSlot(NULL, playerIndex) // not using ServerInterface yet
 		, m_dedicatedServer(dedicatedServer)
@@ -291,5 +297,5 @@ bool DedicatedConnectionSlot::isConnectionReady() {
 	}
 	return true;
 }
-
+#endif
 }}//end namespace

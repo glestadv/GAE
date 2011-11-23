@@ -34,7 +34,8 @@ private:
 	static const int messageWaitTimeout = 10000; // 10 seconds
 	static const int waitSleepTime = 5; // 5 milli-seconds
 
-	ClientConnection *m_connection;
+	NetworkSession *m_connection;
+	ClientHost *m_host;
 	string serverName;
 	bool introDone;
 	bool launchGame;
@@ -102,6 +103,10 @@ public:
 	// message sending
 	virtual void sendTextMessage(const string &text, int teamIndex);
 	virtual void quitGame(QuitSource);
+
+	// network events
+	virtual void onConnect(NetworkSession *session);
+	virtual void onDisconnect(NetworkSession *session, DisconnectReason reason);
 
 private:
 	void waitForMessage(int timeout = messageWaitTimeout);

@@ -25,7 +25,7 @@ namespace Glest { namespace Net {
 // =====================================================
 //	class ServerInterface
 // =====================================================
-
+#ifdef false
 /** Currently just a message router intended for network debugging.
   * The first connection to the dedicated server is treated as the server.
   * When a client connects to the dedicated server it creates
@@ -52,6 +52,7 @@ public:
 	void update();
 	void loop();
 };
+#endif
 
 }}//end namespace
 

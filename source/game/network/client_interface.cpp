@@ -45,7 +45,8 @@ namespace Glest { namespace Net {
 
 ClientInterface::ClientInterface(Program &prog)
 		: NetworkInterface(prog)
-		, m_connection(NULL) 
+		, m_connection(NULL)
+		, m_host(NULL)
 		, launchGame(false)
 		, introDone(false)
 		, playerIndex(-1) {
@@ -55,23 +56,25 @@ ClientInterface::~ClientInterface() {
 	if (game || program.isTerminating()) {
 		quitGame(QuitSource::LOCAL);
 	}
-	delete m_connection;
-	m_connection = NULL;
+	delete m_host;
+	m_host = NULL;
 }
 
 void ClientInterface::connect(const Ip &ip, int port) {
 	NETWORK_LOG( "ClientInterface::connect(): connecting to " << ip.getString() << ":" << port );
-	delete m_connection;
-	m_connection = new ClientConnection();
-	m_connection->connect(ip.getString(), port);
-	while (!m_connection->isConnected() /* || timed out*/) { ///@todo cancel on time out
-		m_connection->update();
+	delete m_host;
+	m_host = new ClientHost();
+	m_host->connect(ip.getString(), port);
+	while (!m_host->isConnected() /* || timed out*/) { ///@todo cancel on time out
+		m_host->update(this);
 	}
 }
 
 void ClientInterface::reset() {
 	NETWORK_LOG( "ClientInterface::reset()" );
-	delete m_connection;
+	m_host->disconnect(DisconnectReason::DEFAULT);
+	delete m_host;
+	m_host = NULL;
 	m_connection = NULL;
 }
 
@@ -93,7 +96,7 @@ void ClientInterface::doIntroMessage() {
 
 	m_connection->setRemoteNames(introMsg.getHostName(), introMsg.getPlayerName());
 	//send reply
-	IntroMessage replyMsg(getNetworkVersionString(), g_config.getNetPlayerName(), m_connection->getHostName(), -1);
+	IntroMessage replyMsg(getNetworkVersionString(), g_config.getNetPlayerName(), m_host->getHostName(), -1);
 	m_connection->send(&replyMsg);
 	introDone = true;
 }
@@ -133,7 +136,7 @@ void ClientInterface::createSkillCycleTable(const TechTree *) {
 	NETWORK_LOG( "ClientInterface::createSkillCycleTable(): waiting for server to send Skill Cycle Table." );
 	int skillCount = m_prototypeFactory->getSkillTypeCount();
 	int expectedSize = skillCount * sizeof(CycleInfo);
-	waitForMessage(m_connection->getReadyWaitTimeout());
+	waitForMessage(m_host->getReadyWaitTimeout());
 	RawMessage raw = m_connection->getNextMessage();
 	if (raw.type != MessageType::SKILL_CYCLE_TABLE) {
 		throw InvalidMessage(MessageType::SKILL_CYCLE_TABLE, raw.type);
@@ -146,8 +149,8 @@ void ClientInterface::createSkillCycleTable(const TechTree *) {
 }
 
 void ClientInterface::updateLobby() {
-	m_connection->update();
-	if (!m_connection->hasMessage()) {
+	m_host->update(this);
+	if (!m_host->isConnected() || !m_connection->hasMessage()) {
 		return;
 	}
 	if (!introDone) {
@@ -159,7 +162,7 @@ void ClientInterface::updateLobby() {
 
 void ClientInterface::syncAiSeeds(int aiCount, int *seeds) {
 	NETWORK_LOG( "ClientInterface::syncAiSeeds()" );
-	waitForMessage(m_connection->getReadyWaitTimeout());
+	waitForMessage(m_host->getReadyWaitTimeout());
 	RawMessage raw = m_connection->getNextMessage();
 	if (raw.type != MessageType::AI_SYNC) {
 		throw InvalidMessage(MessageType::AI_SYNC, raw.type);
@@ -177,7 +180,7 @@ void ClientInterface::waitUntilReady() {
 	ReadyMessage readyMsg;
 	m_connection->send(&readyMsg);
 
-	waitForMessage(m_connection->getReadyWaitTimeout());
+	waitForMessage(m_host->getReadyWaitTimeout());
 	RawMessage raw = m_connection->getNextMessage();
 	if (raw.type != MessageType::READY) {
 		throw InvalidMessage(MessageType::READY, raw.type);
@@ -201,7 +204,7 @@ string ClientInterface::getStatus() const {
 void ClientInterface::waitForMessage(int timeout) {
 	Chrono chrono;
 	chrono.start();
-	m_connection->update();
+	m_host->update(this);
 	while (true) {
 		if (m_connection->hasMessage()) {
 			return;
@@ -210,7 +213,7 @@ void ClientInterface::waitForMessage(int timeout) {
 			throw TimeOut(NetSource::SERVER);
 		} else {
 			sleep(2);
-			m_connection->update();
+			m_host->update(this);
 		}
 	}
 }
@@ -225,10 +228,20 @@ void ClientInterface::quitGame(QuitSource source) {
 
 	if (game) {
 		if (source == QuitSource::SERVER) {
-			throw Net::Disconnect("The server quit the game!");
+			throw Net::Disconnect("The server quit the game!"); //TODO catch throw somewhere
 		}
 		game->quitGame();
 	}
+}
+
+// network events
+void ClientInterface::onConnect(NetworkSession *session) {
+	m_connection = session;
+}
+
+void ClientInterface::onDisconnect(NetworkSession *session, DisconnectReason reason) {
+	quitGame(QuitSource::SERVER);
+	m_connection = NULL;
 }
 
 void ClientInterface::startGame() {
@@ -256,7 +269,7 @@ void ClientInterface::update() {
 	if (cmdList.getCommandCount()) {
 		m_connection->send(&cmdList);
 	}
-	m_connection->update();
+	m_host->update(this);
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {
@@ -350,7 +363,7 @@ void ClientInterface::handleSyncError() {
 
 	SyncErrorMsg se(g_world.getFrameCount());
 	m_connection->send(&se); // ask server to also dump a frame log.
-	m_connection->update(); // force flush
+	m_host->update(this); // force flush
 	throw GameSyncError("Sync error, see glestadv-network.log");
 }
 

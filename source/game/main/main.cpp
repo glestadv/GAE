@@ -125,6 +125,7 @@ int glestMain(int argc, char** argv) {
 	}
 
 	///@todo proper error handling
+	/*
 	if (args.isDedicated()) {
 		DedicatedServer program;
 		if(!program.init()){
@@ -141,6 +142,7 @@ int glestMain(int argc, char** argv) {
 		}
 		return 0;
 	}
+	*/
 
 	string configDir = args.getConfigDir();
 	string dataDir = args.getDataDir();
