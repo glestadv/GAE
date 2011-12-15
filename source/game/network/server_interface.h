@@ -42,10 +42,10 @@ private:
 	vector<LostPlayerInfo> m_lostPlayers;
 	bool m_portBound;
 	bool m_waitingForPlayers;
-	DataSyncMessage *m_dataSync;
-	int m_syncCounter;
 	bool m_dataSyncDone;
-
+	int m_syncCounter;
+	DataSyncMessage *m_dataSync;
+	
 private:
 	void bindPort();
 
@@ -54,11 +54,9 @@ public:
 	virtual ~ServerInterface();
 
 	virtual GameRole getNetworkRole() const { return GameRole::SERVER; }
-	bool syncReady() const { return m_dataSync; }
+	bool isSyncReady() const { return m_dataSync; }
 	
 	virtual void updateSkillCycle(Unit *unit);
-
-	//virtual bool isConnected() const { return m_connection.isConnected();}
 
 #	if MAD_SYNC_CHECKING
 		void dumpFrame(int frame);
@@ -91,9 +89,6 @@ protected:
 	virtual string getStatus() const;
 
 public:
-	// used to listen for new connections
-	//NetworkConnection *accept() {return m_connection.accept();}
-
 	// ConnectionSlot management
 	void addSlot(int playerIndex);
 	void removeSlot(int playerIndex);

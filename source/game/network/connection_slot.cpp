@@ -43,7 +43,7 @@ ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex
 }
 
 ConnectionSlot::~ConnectionSlot() {
-	if (m_connection && m_connection->isConnected()) {
+	if (this->isConnected()) {
 		m_connection->disconnect(DisconnectReason::DEFAULT);
 	}
 }
@@ -54,52 +54,18 @@ void ConnectionSlot::reset() {
 	m_connection = NULL;
 }
 
-void ConnectionSlot::sendIntroMessage() {
-	/* moved to ServerInterface::onConnect
-	assert(m_connection);
-	NETWORK_LOG( "Connection established, slot " << m_playerIndex << " sending intro message." );
-	IntroMessage networkMessageIntro(getNetworkVersionString(), 
-		g_config.getNetPlayerName(), m_connection->getHostName(), m_playerIndex);
-	m_connection->send(&networkMessageIntro);
-	*/
-}
-
-bool ConnectionSlot::isConnectionReady() {
-	if (!m_connection) {
-		//m_connection = m_serverInterface->accept();
-
-		// send intro message when connected
-		if (m_connection) {
-			sendIntroMessage();
-		}
-		return false;
-	}
-	if (!m_connection->isConnected()) {
-		NETWORK_LOG( "Slot " << m_playerIndex << " disconnected, [" << m_connection->getRemotePlayerName() << "]" );
-		throw Disconnect();
-	}
-	return true;
-}
-
 void ConnectionSlot::processMessages() {
-	//try {
 	assert(m_connection);
-		
-	/*} catch (SocketException &e) {
-		NETWORK_LOG( "Slot " << m_playerIndex << " [" << m_connection->getRemotePlayerName() << "]" << " : " << e.what() );
-		string msg = m_connection->getRemotePlayerName() + " [" + m_connection->getRemoteHostName() + "] has disconnected.";
-		m_serverInterface->sendTextMessage(msg, -1);
-		throw Disconnect();
-	}*/
+
 	while (m_connection->hasMessage()) {
 		MessageType type = m_connection->peekNextMsg();
 		NETWORK_LOG( "ConnectionSlot::processMessages(): " << m_connection->getMessageCount() 
 			<< "messages on queue, type of first is " << MessageTypeNames[type] );
 		if (type == MessageType::DATA_SYNC) {
-			if (!m_serverInterface->syncReady()) {
+			if (!m_serverInterface->isSyncReady()) {
 				return;
 			}
-		} else if (type == MessageType::READY && !m_serverInterface->syncReady()) {
+		} else if (type == MessageType::READY && !m_serverInterface->isSyncReady()) {
 			return;
 		}
 		RawMessage raw = m_connection->getNextMessage();
@@ -150,8 +116,7 @@ void ConnectionSlot::processMessages() {
 }
 
 void ConnectionSlot::update() {
-	if (isConnectionReady()) {
-		//m_connection->update(this); maybe call this in the outer loop instead
+	if (isConnected()) {
 		processMessages();
 	}
 }
@@ -167,22 +132,8 @@ void ConnectionSlot::logNextMessage() {
 }
 
 void ConnectionSlot::send(const Message* networkMessage) {
-	///@todo this might be too slow to check each time, so have another version that doesn't check.
-	if (!m_connection)
-	{
-		return;
-	}
-
-	if (m_connection->isConnected()) {
-		m_connection->send(networkMessage);
-	} else {
-		Lang &lang = Lang::getInstance();
-		string errmsg = m_connection->getDescription() + " (" + lang.get("Player") + " "
-			+ intToStr(m_playerIndex + 1) + ") " + lang.get("Disconnected");
-		LOG_NETWORK(errmsg);
-
-		throw Disconnect(errmsg);
-	}
+	assert(m_connection && m_connection->isConnected());
+	m_connection->send(networkMessage);
 }
 
 // =====================================================

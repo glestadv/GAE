@@ -70,11 +70,11 @@ public:
 class NetworkHost {
 private:
 	typedef vector<NetworkSession*> Sessions;
-	Sessions m_sessions;
-	ENetHost *m_host;
-	string description;
 
-	static const int readyWaitTimeout = 60000; // 60 sec
+	Sessions	m_sessions;
+	ENetHost*	m_host;
+
+	static const int m_readyWaitTimeout = 60000; // 60 sec
 
 public:
 	NetworkHost(/*int updateTimeout*/);
@@ -85,19 +85,19 @@ public:
 	string getHostName();
 	string getIp();
 	int getSessionCount()					{return m_sessions.size();}
+	int getReadyWaitTimeout()				{return m_readyWaitTimeout;}
 	NetworkSession *getSession(int index)	{assert(m_sessions.size() > index); return m_sessions[index];}
-	void removeSession(NetworkSession *session);
-	int getReadyWaitTimeout()				{return readyWaitTimeout;}
-	string getDescription() const			{return description;}
 
 	void flush();
 	void update(NetworkInterface *networkInterface);
 	void disconnect(DisconnectReason reason);
-	
+	void removeSession(NetworkSession *session);
 	void broadcastMessage(const Message* networkMessage);
+
 protected:
 	bool isHostSet() {return m_host;}
 	void setPeerCount(size_t count);
+	void destroy();
 };
 
 // =====================================================

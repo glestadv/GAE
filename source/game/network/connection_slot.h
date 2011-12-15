@@ -25,40 +25,34 @@ class ServerInterface;
 
 class ConnectionSlot {
 private:
-	ServerInterface*	m_serverInterface;
-	int					m_playerIndex;
 	bool				m_ready;
-
-protected:
-	NetworkSession*	m_connection;
+	int					m_playerIndex;
+	ServerInterface*	m_serverInterface;
+	NetworkSession*		m_connection;
 
 public:
 	ConnectionSlot(ServerInterface* serverInterface, int playerIndex);
 	virtual ~ConnectionSlot();
 
-	void reset();
-
 	virtual void update();
-
-	void setSession(NetworkSession *v) { m_connection = v; }
-	void setReady()					{m_ready = true;}
-	int getPlayerIndex() const		{return m_playerIndex;}
-	bool isReady() const			{return m_ready;}
-	const NetworkSession *getSession() const {return m_connection;}
 	
-	void logNextMessage();
-	
-	bool isConnected() const		{return m_connection && m_connection->isConnected();}
-	string getName() const			{return m_connection ? m_connection->getRemotePlayerName() : "";}
 	void send(const Message* networkMessage);
-	//NetworkConnection *getConnection() {return m_connection;}
+	void reset();
+	void logNextMessage();
+
+	bool isReady() const			{return m_ready;}
+	bool isConnected() const		{return m_connection && m_connection->isConnected();}
+
+	void setSession(NetworkSession *v)	{m_connection = v;}
+	void setReady()						{m_ready = true;}
+
+	int getPlayerIndex() const		{return m_playerIndex;}
+	string getName() const			{return m_connection ? m_connection->getRemotePlayerName() : "";}
+
+	const NetworkSession *getSession() const {return m_connection;}
 
 protected:
 	virtual void processMessages();
-	virtual	bool isConnectionReady();
-
-private:
-	void sendIntroMessage();
 };
 
 // =====================================================

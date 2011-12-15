@@ -92,10 +92,8 @@ NetworkHost::~NetworkHost() {
 	foreach (Sessions, it, m_sessions) {
 		delete (*it);
 	}
-	flush(); // for any final messages
-	if (m_host) {
-		enet_host_destroy(m_host);
-	}
+	
+	destroy();
 }
 
 string NetworkHost::getHostName() {
@@ -121,95 +119,102 @@ void NetworkHost::update(NetworkInterface *networkInterface) {
 
 	ENetEvent event;
     
-    // Wait up to x milliseconds for an event.
 	while (true)
     {	
+		// Wait up to x milliseconds for an event.
 		int status = enet_host_service(m_host, &event, /*m_updateTimeout*/5);
+		
+		// error
 		if (status < 0) {
 			NETWORK_LOG( "enet_host_service error" );
 			break;
 		}
 
+		// no events to process
 		if (status == 0) {
-			break; // no events to process
+			break;
 		}
 
-        switch (event.type)
-        {
-        case ENET_EVENT_TYPE_CONNECT:
-		{
-			NetworkSession *session = new NetworkSession(event.peer);
-			m_sessions.push_back(session);
+        switch (event.type) {
+			case ENET_EVENT_TYPE_CONNECT: {
+				NetworkSession *session = new NetworkSession(event.peer);
+				m_sessions.push_back(session);
 
-			assert(event.peer->data == NULL);
-			event.peer->data = session;
+				assert(event.peer->data == NULL);
+				event.peer->data = session;
 
-			networkInterface->onConnect(session);
-			
-            break;
-		}
+				networkInterface->onConnect(session);
+				
+				break;
+			}
 
-        case ENET_EVENT_TYPE_RECEIVE:
-		{
-			NetworkSession *session = static_cast<NetworkSession*>(event.peer->data);
-			if (session) {
-				MsgHeader header;
-				memcpy(&header, event.packet->data, MsgHeader::headerSize);
-				if (event.packet->dataLength >= MsgHeader::headerSize + header.messageSize) {		
-					RawMessage rawMsg;
-					rawMsg.type = header.messageType;
-					rawMsg.size = header.messageSize;				
-					if (header.messageSize) {
-						rawMsg.data = new uint8[header.messageSize];
-						char *buffer = ((char*)event.packet->data) + MsgHeader::headerSize;
-						memcpy((char*)rawMsg.data, buffer, header.messageSize);
+			case ENET_EVENT_TYPE_RECEIVE: {
+				NetworkSession *session = static_cast<NetworkSession*>(event.peer->data);
+				if (session) {
+					MsgHeader header;
+					memcpy(&header, event.packet->data, MsgHeader::headerSize);
+					if (event.packet->dataLength >= MsgHeader::headerSize + header.messageSize) {		
+						RawMessage rawMsg;
+						rawMsg.type = header.messageType;
+						rawMsg.size = header.messageSize;				
+						if (header.messageSize) {
+							rawMsg.data = new uint8[header.messageSize];
+							char *buffer = ((char*)event.packet->data) + MsgHeader::headerSize;
+							memcpy((char*)rawMsg.data, buffer, header.messageSize);
+						} else {
+							rawMsg.data = 0;
+						}
+
+						session->pushMessage(rawMsg);
 					} else {
-						rawMsg.data = 0;
+						NETWORK_LOG( "ServerConnection::poll(): Invalid message in queue. packet->dataLength < MsgHeader::headerSize + header.messageSize" );
+						/*
+						enet_packet_destroy(event.packet);
+						throw GarbledMessage(MessageType(header.messageType), NetSource::CLIENT);
+						*/
 					}
-
-					session->pushMessage(rawMsg);
-				} else {
-					NETWORK_LOG( "ServerConnection::poll(): Invalid message in queue. packet->dataLength < MsgHeader::headerSize + header.messageSize" );
-					/*
-					enet_packet_destroy(event.packet);
-					throw GarbledMessage(MessageType(header.messageType), NetSource::CLIENT);
-					*/
 				}
 				enet_packet_destroy(event.packet);
+				break;
 			}
-            break;
-		}
-           
-		case ENET_EVENT_TYPE_DISCONNECT: 
-		{
-			NetworkSession *session = static_cast<NetworkSession*>(event.peer->data);
-			if (session) {
-				NETWORK_LOG( "Peer: " << session->getRemotePlayerName() << " disconected." );
+	           
+			case ENET_EVENT_TYPE_DISCONNECT: {
+				NetworkSession *session = static_cast<NetworkSession*>(event.peer->data);
+				if (session) {
+					NETWORK_LOG( "Peer: " << session->getRemotePlayerName() << " disconected." );
 
-				m_sessions.erase(remove(m_sessions.begin(), m_sessions.end(), session), m_sessions.end());
-				session->reset();
+					m_sessions.erase(remove(m_sessions.begin(), m_sessions.end(), session), m_sessions.end());
+					session->reset();
 
-				networkInterface->onDisconnect(session, static_cast<DisconnectReason>(event.data)); //TODO figure the disconnect reason out properly
-				
-				delete session;
-				event.peer->data = NULL;
+					networkInterface->onDisconnect(session, static_cast<DisconnectReason>(event.data));
+					
+					delete session;
+					event.peer->data = NULL;
+				}
 			}
-		}
 
-		case ENET_EVENT_TYPE_NONE:
-			break;
+			case ENET_EVENT_TYPE_NONE:
+				break;
         }
     }
+}
+
+void NetworkHost::destroy() {
+	if (m_host) {
+		flush(); // push any final messages
+		enet_host_destroy(m_host);
+		m_host = NULL;
+	}
 }
 
 void NetworkHost::disconnect(DisconnectReason reason) {
 	foreach (Sessions, it, m_sessions) {
 		(*it)->disconnect(reason);
 	}
-	flush();
-	enet_host_destroy(m_host);
-	m_host = NULL;
-	// session is deleted at ENET_EVENT_TYPE_DISCONNECT or destructor if failed to respond
+
+	destroy();
+	
+	// session is deleted at ENET_EVENT_TYPE_DISCONNECT or destructor if disconnect not received
 }
 	
 void NetworkHost::broadcastMessage(const Message* msg) {
@@ -298,9 +303,7 @@ void ServerHost::bind(int port) {
     /* Bind the server to the default localhost.     */
     /* A specific host address can be specified by   */
     /* enet_address_set_host (& address, "x.x.x.x"); */
-
     m_address.host = ENET_HOST_ANY;
-    /* Bind the server to port 1234. */
     m_address.port = port;
 }
 
