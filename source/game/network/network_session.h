@@ -25,7 +25,7 @@ namespace Glest { namespace Net {
 //	class NetworkSession
 // =====================================================
 
-WRAPPED_ENUM( DisconnectReason, DEFAULT )
+WRAPPED_ENUM( DisconnectReason, DEFAULT, IN_GAME, NO_FREE_SLOTS )
 
 class NetworkSession {
 protected:
@@ -57,7 +57,7 @@ public:
 	RawMessage peekMessage() const		{ return messageQueue.front(); }
 	void pushMessage(RawMessage raw)	{ messageQueue.push_back(raw); }
 
-	bool isConnected() { return m_peer; } //???
+	bool isConnected() { return m_peer; }
 
 	void setRemoteNames(const string &hostName, const string &playerName);
 	void send(const Message* networkMessage);

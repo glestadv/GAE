@@ -440,7 +440,7 @@ void ServerInterface::quitGame(QuitSource source) {
 // network events
 void ServerInterface::onConnect(NetworkSession *session) {
 	if (game) {
-		session->disconnectNow(DisconnectReason::DEFAULT); ///@todo change to ingame
+		session->disconnect(DisconnectReason::IN_GAME);
 		return;
 	}
 	int index = getFreeSlotIndex();
@@ -452,7 +452,8 @@ void ServerInterface::onConnect(NetworkSession *session) {
 			g_config.getNetPlayerName(), m_connection.getHostName(), index);
 		slots[index]->send(&networkMessageIntro);
 	} else {
-		session->disconnectNow(DisconnectReason::DEFAULT); ///@todo change to no free slots
+		session->disconnect(DisconnectReason::NO_FREE_SLOTS);
+		///@todo add spectator handling code here
 	}
 }
 
