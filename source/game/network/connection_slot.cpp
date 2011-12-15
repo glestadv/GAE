@@ -43,10 +43,14 @@ ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex
 }
 
 ConnectionSlot::~ConnectionSlot() {
+	if (m_connection && m_connection->isConnected()) {
+		m_connection->disconnect(DisconnectReason::DEFAULT);
+	}
 }
 
 void ConnectionSlot::reset() {
 	NETWORK_LOG( "Slot " << m_playerIndex << " disconnected, [" << m_connection->getRemotePlayerName() << "]" );
+
 	m_connection = NULL;
 }
 
@@ -115,11 +119,12 @@ void ConnectionSlot::processMessages() {
 				m_serverInterface->requestCommand(cmdList.getCommand(i));
 			}
 		} else if (raw.type == MessageType::QUIT) {
+		/*
 			QuitMessage quitMsg(raw);
 			NETWORK_LOG( "Received quit message on slot " << m_playerIndex );
 			string msg = m_connection->getRemotePlayerName() + " [" + m_connection->getRemoteHostName() + "] has quit the game!";
 			m_serverInterface->sendTextMessage(msg, -1);
-			throw Disconnect();
+			throw Disconnect();*/
 #		if MAD_SYNC_CHECKING
 		} else if (raw.type == MessageType::SYNC_ERROR) {
 			SyncErrorMsg e(raw);

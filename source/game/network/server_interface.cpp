@@ -51,7 +51,7 @@ ServerInterface::ServerInterface(Program &prog)
 }
 
 ServerInterface::~ServerInterface() {
-	quitGame(QuitSource::LOCAL);
+	//quitGame(QuitSource::LOCAL);
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		delete slots[i];
 	}
@@ -423,6 +423,7 @@ void ServerInterface::sendTextMessage(const string &text, int teamIndex){
 	int ci = g_world.getThisFaction()->getColourIndex();
 	TextMessage txtMsg(text, Config::getInstance().getNetPlayerName(), teamIndex, ci);
 	broadcastMessage(&txtMsg);
+	m_connection.flush();
 	NetworkInterface::processTextMessage(txtMsg);
 }
 
@@ -430,6 +431,7 @@ void ServerInterface::quitGame(QuitSource source) {
 	NETWORK_LOG( "ServerInterface::quitGame(): Aborting game." );
 	QuitMessage networkMessageQuit;
 	broadcastMessage(&networkMessageQuit);
+	m_connection.flush();
 	if (game && !program.isTerminating()) {
 		game->quitGame();
 	}
@@ -437,6 +439,10 @@ void ServerInterface::quitGame(QuitSource source) {
 
 // network events
 void ServerInterface::onConnect(NetworkSession *session) {
+	if (game) {
+		session->disconnectNow(DisconnectReason::DEFAULT); ///@todo change to ingame
+		return;
+	}
 	int index = getFreeSlotIndex();
 	if (index != -1) {
 		slots[index]->setSession(session);
@@ -445,13 +451,21 @@ void ServerInterface::onConnect(NetworkSession *session) {
 		IntroMessage networkMessageIntro(getNetworkVersionString(), 
 			g_config.getNetPlayerName(), m_connection.getHostName(), index);
 		slots[index]->send(&networkMessageIntro);
+	} else {
+		session->disconnectNow(DisconnectReason::DEFAULT); ///@todo change to no free slots
 	}
 }
 
 void ServerInterface::onDisconnect(NetworkSession *session, DisconnectReason reason) {
 	int index = getSlotIndexBySession(session);
 	if (index != -1) {
-		slots[index]->reset();
+		if (this->getGameState()) {
+			string playerName = slots[index]->getName();
+			removeSlot(index);
+			sendTextMessage("Player " + intToStr(index) + " [" + playerName + "] diconnected.", -1);
+		} else {
+			slots[index]->reset();
+		}
 	}
 }
 
@@ -488,7 +502,7 @@ void ServerInterface::doLaunchBroadcast() {
 void ServerInterface::broadcastMessage(const Message* networkMessage, int excludeSlot) {
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 		try {
-			if (i != excludeSlot && slots[i]) {
+			if (i != excludeSlot && slots[i] && slots[i]->isConnected()) {
 				slots[i]->send(networkMessage);
 			}
 		} catch (Disconnect &d) {

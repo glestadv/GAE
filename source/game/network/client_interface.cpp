@@ -72,10 +72,11 @@ void ClientInterface::connect(const Ip &ip, int port) {
 
 void ClientInterface::reset() {
 	NETWORK_LOG( "ClientInterface::reset()" );
-	m_host->disconnect(DisconnectReason::DEFAULT);
+	//m_host->disconnect(DisconnectReason::DEFAULT);
 	delete m_host;
 	m_host = NULL;
 	m_connection = NULL;
+	introDone = false;
 }
 
 void ClientInterface::doIntroMessage() {
@@ -221,8 +222,14 @@ void ClientInterface::waitForMessage(int timeout) {
 void ClientInterface::quitGame(QuitSource source) {
 	NETWORK_LOG( "ClientInterface::quitGame(): QuitSource == " << (source == QuitSource::SERVER ? "SERVER" : "LOCAL") );
 	if (m_connection && m_connection->isConnected() && source != QuitSource::SERVER) {
+		/*
 		QuitMessage networkMessageQuit;
 		m_connection->send(&networkMessageQuit);
+		*/
+		m_connection->disconnectNow(DisconnectReason::DEFAULT);
+		m_host->flush();
+		m_connection = NULL;
+		introDone = false;
 		NETWORK_LOG( "ClientInterface::quitGame(): Sent quit message." );
 	}
 
@@ -236,12 +243,17 @@ void ClientInterface::quitGame(QuitSource source) {
 
 // network events
 void ClientInterface::onConnect(NetworkSession *session) {
-	m_connection = session;
+	if (m_connection) {
+		//already connected
+	} else {
+		m_connection = session;
+	}
 }
 
 void ClientInterface::onDisconnect(NetworkSession *session, DisconnectReason reason) {
 	quitGame(QuitSource::SERVER);
 	m_connection = NULL;
+	introDone = false;
 }
 
 void ClientInterface::startGame() {
@@ -273,6 +285,10 @@ void ClientInterface::update() {
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {
+	if (!m_connection) {
+		return;
+	}
+
 	// give all commands from last KeyFrame
 	for (size_t i=0; i < keyFrame.getCmdCount(); ++i) {
 		pendingCommands.push_back(*keyFrame.getCmd(i));

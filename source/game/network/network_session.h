@@ -62,6 +62,7 @@ public:
 	void setRemoteNames(const string &hostName, const string &playerName);
 	void send(const Message* networkMessage);
 	void disconnect(DisconnectReason reason);
+	void disconnectNow(DisconnectReason reason);
 	void reset();
 };
 

@@ -63,18 +63,28 @@ void NetworkSession::send(const Message* msg) {
 }
 
 void NetworkSession::disconnect(DisconnectReason reason) {
-	assert(m_peer);
+	if (m_peer) {
+		//enet_peer_disconnect_now(m_peer, reason);
+		//enet_peer_disconnect_later(m_peer, reason);
+		enet_peer_disconnect(m_peer, reason);
+		m_peer = NULL;
+	}
+}
 
-	//enet_peer_disconnect_now(m_peer, reason);
-	//enet_peer_disconnect_later(m_peer, reason);
-	enet_peer_disconnect(m_peer, reason);
-
-	m_peer = NULL;
+void NetworkSession::disconnectNow(DisconnectReason reason) {
+	if (m_peer) {
+		enet_peer_disconnect_now(m_peer, reason);
+		//enet_peer_disconnect_later(m_peer, reason);
+		//enet_peer_disconnect(m_peer, reason);
+		m_peer = NULL;
+	}
 }
 
 void NetworkSession::reset() {
-	enet_peer_reset(m_peer); //will this be called a second time after ENET_EVENT_TYPE_DISCONNECT is finished?
-	m_peer = NULL;
+	if (m_peer) {
+		enet_peer_reset(m_peer);
+		m_peer = NULL;
+	}
 }
 
 RawMessage NetworkSession::getNextMessage() {

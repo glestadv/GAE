@@ -187,10 +187,10 @@ void NetworkHost::update(NetworkInterface *networkInterface) {
 				NETWORK_LOG( "Peer: " << session->getRemotePlayerName() << " disconected." );
 
 				m_sessions.erase(remove(m_sessions.begin(), m_sessions.end(), session), m_sessions.end());
+				session->reset();
 
 				networkInterface->onDisconnect(session, static_cast<DisconnectReason>(event.data)); //TODO figure the disconnect reason out properly
 				
-				session->reset();
 				delete session;
 				event.peer->data = NULL;
 			}
@@ -222,6 +222,10 @@ void NetworkHost::broadcastMessage(const Message* msg) {
 void NetworkHost::setPeerCount(size_t count) {
 	assert(m_host);
 	m_host->peerCount = count;
+}
+
+void NetworkHost::removeSession(NetworkSession *session) {
+	m_sessions.erase(remove(m_sessions.begin(), m_sessions.end(), session), m_sessions.end());
 }
 
 // =====================================================

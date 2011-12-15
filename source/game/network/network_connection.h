@@ -86,6 +86,7 @@ public:
 	string getIp();
 	int getSessionCount()					{return m_sessions.size();}
 	NetworkSession *getSession(int index)	{assert(m_sessions.size() > index); return m_sessions[index];}
+	void removeSession(NetworkSession *session);
 	int getReadyWaitTimeout()				{return readyWaitTimeout;}
 	string getDescription() const			{return description;}
 
