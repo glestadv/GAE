@@ -1,24 +1,25 @@
 # German translations for gae_g package.
 # Copyright (C) 2011 THE gae_g'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the gae_g package.
-# Frank Tetzel <franky@localhost.localdomain>, 2011.
 #
+# Frank Tetzel <franky@localhost.localdomain>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: gae_g 3dviewer\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-12-17 14:11+0100\n"
-"PO-Revision-Date: 2011-12-17 14:07+0100\n"
-"Last-Translator: Frank Tetzel <franky@localhost.localdomain>\n"
+"PO-Revision-Date: 2011-12-17 14:42+0100\n"
+"Last-Translator: \n"
 "Language-Team: German\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ASCII\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Lokalize 1.2\n"
 
 msgid "&Custom Color"
-msgstr ""
+msgstr "Teamfarbe"
 
 msgid "&File"
 msgstr "Datei"
@@ -33,22 +34,22 @@ msgid "Anim speed: 100"
 msgstr ""
 
 msgid "Edit Colours"
-msgstr ""
+msgstr "Farbbearbeitung"
 
 msgid "Exception"
-msgstr ""
+msgstr "Ausnahme"
 
 msgid "Faction"
-msgstr ""
+msgstr "Fraktion"
 
 msgid "Faster"
-msgstr ""
+msgstr "Schneller"
 
 msgid "G3D files (*.g3d)|*.g3d"
-msgstr ""
+msgstr "G3D Dateien (*.g3d)|*.g3d"
 
 msgid "Grid"
-msgstr ""
+msgstr "Gitter"
 
 msgid "Load Model"
 msgstr "Lade Model"
@@ -57,7 +58,7 @@ msgid "Mesh"
 msgstr "Mesh"
 
 msgid "Normals"
-msgstr ""
+msgstr "Normalen"
 
 msgid "Show All"
 msgstr "Zeige alles"
@@ -66,4 +67,5 @@ msgid "Slower"
 msgstr "Langsamer"
 
 msgid "Wireframe"
-msgstr ""
+msgstr "Drahtgitter"
+

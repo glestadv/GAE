@@ -2,168 +2,113 @@
 # German messages for PACKAGE.
 # Copyright (C) 2011 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Frank Tetzel <franky@localhost.localdomain>, 2011.
 #
+# Frank Tetzel <franky@localhost.localdomain>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-12-15 23:19+0100\n"
-"PO-Revision-Date: 2011-12-13 20:51+0100\n"
-"Last-Translator: Frank Tetzel <franky@localhost.localdomain>\n"
-"Language-Team: German <translation-team-de@lists.sourceforge.net>\n"
+"PO-Revision-Date: 2011-12-17 15:05+0100\n"
+"Last-Translator: \n"
+"Language-Team: German <>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "&0 - None"
-msgstr ""
-
-msgid "&0 - None (erase)"
-msgstr ""
-
-msgid "&1 - Grass"
-msgstr ""
-
-msgid "&1 - Tree (unwalkable/harvestable)"
-msgstr ""
-
-msgid "&1 - gold  (unwalkable)"
-msgstr ""
-
-msgid "&2 - DeadTree/Cactuses/Thornbush (unwalkable)"
-msgstr ""
-
-msgid "&2 - Secondary Grass"
-msgstr ""
-
-msgid "&2 - stone (unwalkable)"
-msgstr ""
-
-msgid "&3 - Road"
-msgstr ""
-
-msgid "&3 - Stone (unwalkable)"
-msgstr ""
-
-msgid "&3 - custom"
-msgstr ""
-
-msgid "&4 - Bush/Grass/Fern (walkable)"
-msgstr ""
-
-msgid "&4 - Stone"
-msgstr ""
-
-msgid "&4 - custom"
-msgstr ""
-
-msgid "&5 - Ground"
-msgstr ""
-
-msgid "&5 - Water Object/Reed/Papyrus (walkable)"
-msgstr ""
-
-msgid "&5 - custom"
-msgstr ""
-
-msgid "&6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"
-msgstr ""
-
-msgid "&7 - C2 Hanged/Impaled (unwalkable)"
-msgstr ""
-
-msgid "&8 - C3 Statues (unwalkable)"
-msgstr ""
-
-msgid "&9 - C4 Big Rock (Mountain) (unwalkable)"
-msgstr ""
+"X-Generator: Lokalize 1.2\n"
 
 msgid "&About"
-msgstr ""
+msgstr "Über"
 
 msgid "&Advanced"
-msgstr ""
+msgstr "Erweitert"
 
 msgid "&Brush"
-msgstr ""
+msgstr "Pinsel"
 
 msgid "&Edit"
-msgstr ""
+msgstr "Bearbeiten"
 
 msgid "&File"
-msgstr ""
+msgstr "Datei"
 
 msgid "&Gradient"
-msgstr ""
+msgstr "Gradient"
 
 msgid "&Height"
-msgstr ""
+msgstr "Höhe"
 
 msgid "&Help"
-msgstr ""
+msgstr "Hilfe"
 
 msgid "&Info"
-msgstr ""
+msgstr "Info"
 
 msgid "&Misc"
-msgstr ""
+msgstr "Verschiedenes"
 
 msgid "&Object"
-msgstr ""
+msgstr "Objekt"
 
 msgid "&Radius"
-msgstr ""
+msgstr "Radius"
 
 msgid "&Redo\tCTRL+Y"
-msgstr ""
+msgstr "Wiederherstellen\tCTRL+Y"
 
 msgid "&Reset zoom and pos"
 msgstr ""
 
 msgid "&Resource"
-msgstr ""
+msgstr "Resource"
 
 msgid "&Show Map\tCTRL+M"
-msgstr ""
+msgstr "Zeige Karte\tCTRL+M"
 
 msgid "&Surface"
-msgstr ""
+msgstr "Oberfläche"
 
 msgid "&Undo\tCTRL+Z"
-msgstr ""
-
-msgid "10 &- C5 Invisible Blocking Object (unwalkable)"
-msgstr ""
+msgstr "Rückgängig\tCTRL+Z"
 
 msgid "Big Rock (Mountain) (unwalkable)"
-msgstr ""
+msgstr "Großer Felsen (Gebirge)(unbegehbar)"
 
 msgid "Bush/Grass/Fern (walkable)"
-msgstr ""
+msgstr "Busch/Gras/Farn (begehbar)"
 
 msgid "C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"
-msgstr ""
+msgstr "C1 Großer Baum/toter Baum/alte Palme (ubegehbar/nicht abbaubar)"
 
 msgid "C2 Hanged/Impaled (unwalkable)"
 msgstr ""
 
-msgid "C3, Statues (unwalkable))"
-msgstr ""
+msgid "C3 Statues (unwalkable)"
+msgstr "C3 Statuen (unbegehbar)"
+
+#, fuzzy
+msgid "C3 Statues (unwalkable))"
+msgstr "C3 Statuen (unbegehbar)"
+
+msgid "C4 Big Rock (Mountain) (unwalkable)"
+msgstr "C4 Großer Felsen (Gebirge)(unbegehbar)"
+
+msgid "C5 Invisible Blocking Object (unwalkable)"
+msgstr "C5 unsichtbares blockierendes Objekt (unbegehbar)"
 
 msgid "Couldn't find glestadv!"
-msgstr ""
+msgstr "Konnte glestadv nicht finden!"
 
 msgid "DeadTree/Cactuses/Thornbush (unwalkable)"
 msgstr ""
 
 msgid "Discard changes?"
-msgstr ""
+msgstr "Änderungen verwerfen?"
 
 msgid "Error"
-msgstr ""
+msgstr "Fehler"
 
 msgid "Flip &X"
 msgstr ""
@@ -178,13 +123,16 @@ msgid "Ground"
 msgstr "Boden"
 
 msgid "Invisible Blocking Object (unwalkable)"
-msgstr ""
+msgstr "unsichtbares blockierendes Objekt (unbegehbar)"
 
 msgid "No tilesets found."
 msgstr ""
 
+msgid "None"
+msgstr "Nichts"
+
 msgid "None (erase)"
-msgstr ""
+msgstr "Nichts (Löschen)"
 
 msgid "Player"
 msgstr "Spieler"
@@ -208,25 +156,25 @@ msgid "Re&size"
 msgstr ""
 
 msgid "Redo"
-msgstr ""
+msgstr "Wiederherstellen"
 
 msgid "Rese&t"
-msgstr ""
+msgstr "Zurücksetzen"
 
 msgid "Reset &Players"
 msgstr ""
 
 msgid "Road"
-msgstr ""
+msgstr "Straße"
 
 msgid "Secondary Grass"
 msgstr ""
 
 msgid "Stone"
-msgstr ""
+msgstr "Stein"
 
 msgid "Stone (unwalkable)"
-msgstr ""
+msgstr "Stein (begehbar)"
 
 msgid "Switch Su&rfaces"
 msgstr ""
@@ -241,7 +189,7 @@ msgid "Tree (unwalkable/harvestable)"
 msgstr ""
 
 msgid "Undo"
-msgstr ""
+msgstr "Rückgängig"
 
 msgid "Unsaved"
 msgstr ""
@@ -250,6 +198,9 @@ msgid "Water Object/Reed/Papyrus (walkable)"
 msgstr ""
 
 msgid "You need to save first!"
+msgstr "Sie müssen zuerst speichern!"
+
+msgid "custom"
 msgstr ""
 
 msgid "custom3"
@@ -262,13 +213,13 @@ msgid "custom5"
 msgstr ""
 
 msgid "gold  (unwalkable)"
-msgstr ""
+msgstr "Gold (unbegehbar)"
 
 msgid "select tileset"
 msgstr ""
 
 msgid "stone (unwalkable)"
-msgstr ""
+msgstr "Stein (unbegehbar)"
 
 msgid "tileset"
 msgstr ""

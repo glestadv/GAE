@@ -146,36 +146,36 @@ void MainWindow::buildMenuBar() {
 
 	//surface
 	menuBrushSurface = new wxMenu();
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 1, _("&1 - Grass"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 2, _("&2 - Secondary Grass"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 3, _("&3 - Road"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 4, _("&4 - Stone"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, _("&5 - Ground"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 1, wxString(wxT("&1 - ")) + _("Grass"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 2, wxString(wxT("&2 - ")) + _("Secondary Grass"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 3, wxString(wxT("&3 - ")) + _("Road"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 4, wxString(wxT("&4 - ")) + _("Stone"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, wxString(wxT("&5 - ")) + _("Ground"));
 	menuBrush->Append(miBrushSurface, _("&Surface"), menuBrushSurface);
 
 	//objects
 	menuBrushObject = new wxMenu();
-	menuBrushObject->AppendCheckItem(miBrushObject + 1, _("&0 - None (erase)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+2, _("&1 - Tree (unwalkable/harvestable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+3, _("&2 - DeadTree/Cactuses/Thornbush (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+4, _("&3 - Stone (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+5, _("&4 - Bush/Grass/Fern (walkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+6, _("&5 - Water Object/Reed/Papyrus (walkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+7, _("&6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+8, _("&7 - C2 Hanged/Impaled (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+9, _("&8 - C3 Statues (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+10, _("&9 - C4 Big Rock (Mountain) (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+11, _("10 &- C5 Invisible Blocking Object (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject + 1, wxString(wxT("&0 - ")) + _("None (erase)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+2, wxString(wxT("&1 - ")) + _("Tree (unwalkable/harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+3, wxString(wxT("&2 - ")) + _("DeadTree/Cactuses/Thornbush (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+4, wxString(wxT("&3 - ")) + _("Stone (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+5, wxString(wxT("&4 - ")) + _("Bush/Grass/Fern (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+6, wxString(wxT("&5 - ")) + _("Water Object/Reed/Papyrus (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+7, wxString(wxT("&6 - ")) + _("C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+8, wxString(wxT("&7 - ")) + _("C2 Hanged/Impaled (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+9, wxString(wxT("&8 - ")) + _("C3 Statues (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+10, wxString(wxT("&9 - ")) + _("C4 Big Rock (Mountain) (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+11, wxString(wxT("10 - ")) + _("C5 Invisible Blocking Object (unwalkable)"));
 	menuBrush->Append(miBrushObject, _("&Object"), menuBrushObject);
 
 	//resources
 	menuBrushResource = new wxMenu();
-	menuBrushResource->AppendCheckItem(miBrushResource + 1, _("&0 - None"));
-	menuBrushResource->AppendCheckItem(miBrushResource+2, _("&1 - gold  (unwalkable)"));
-	menuBrushResource->AppendCheckItem(miBrushResource+3, _("&2 - stone (unwalkable)"));
-	menuBrushResource->AppendCheckItem(miBrushResource+4, _("&3 - custom"));
-	menuBrushResource->AppendCheckItem(miBrushResource+5, _("&4 - custom"));
-	menuBrushResource->AppendCheckItem(miBrushResource+6, _("&5 - custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource + 1, wxString(wxT("&0 - ")) + _("None"));
+	menuBrushResource->AppendCheckItem(miBrushResource+2, wxString(wxT("&1 - ")) + _("gold  (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+3, wxString(wxT("&2 - ")) + _("stone (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+4, wxString(wxT("&3 - ")) + _("custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+5, wxString(wxT("&4 - ")) + _("custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+6, wxString(wxT("&5 - ")) + _("custom"));
 	menuBrush->Append(miBrushResource, _("&Resource"), menuBrushResource);
 
 	bmStartPos[0] = wxBitmap(brush_players_red);
@@ -254,7 +254,7 @@ void MainWindow::buildToolBars() {
 	toolbar->AddTool(miBrushObject + 6, wxT("brush_water"), wxBitmap(brush_object_water_object), _("Water Object/Reed/Papyrus (walkable)"));
 	toolbar->AddTool(miBrushObject + 7, wxT("brush_c1_bigtree"), wxBitmap(brush_object_c1_bigtree), _("C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
 	toolbar->AddTool(miBrushObject + 8, wxT("brush_c2_hanged"), wxBitmap(brush_object_c2_hanged), _("C2 Hanged/Impaled (unwalkable)"));
-	toolbar->AddTool(miBrushObject + 9, wxT("brush_c3_statue"), wxBitmap(brush_object_c3_statue), _("C3, Statues (unwalkable))"));
+	toolbar->AddTool(miBrushObject + 9, wxT("brush_c3_statue"), wxBitmap(brush_object_c3_statue), _("C3 Statues (unwalkable))"));
 	toolbar->AddTool(miBrushObject +10, wxT("brush_c4_bigrock"), wxBitmap(brush_object_c4_bigrock), _("Big Rock (Mountain) (unwalkable)"));
 	toolbar->AddTool(miBrushObject +11, wxT("brush_c5_blocking"), wxBitmap(brush_object_c5_blocking), _("Invisible Blocking Object (unwalkable)"));
 	toolbar->AddSeparator();
