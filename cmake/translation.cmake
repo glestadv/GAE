@@ -22,7 +22,7 @@ macro(TRANSLATION domain) #srcs
 	set(_potfile "${CMAKE_SOURCE_DIR}/po/${domain}/${domain}.pot")
 	add_custom_command(OUTPUT ${_potfile}
 		COMMAND ${GETTEXT_XGETTEXT_EXECUTABLE}
-			-d ${domain} -s --keyword=_ -o ${_potfile}
+			-d ${domain} -s --keyword=_ --no-location --omit-header -o ${_potfile}
 			${_srcs}
 		DEPENDS ${_srcs}
 	)
