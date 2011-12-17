@@ -98,31 +98,31 @@ void MainWindow::buildMenuBar() {
 	menuFile->Append(wxID_SAVEAS);
 	menuFile->AppendSeparator();
 	menuFile->Append(wxID_EXIT);
-	menuBar->Append(menuFile, wxT("&File"));
+	menuBar->Append(menuFile, _("&File"));
 
 	//edit
 	menuEdit = new wxMenu();
-	menuEdit->Append(miEditUndo, wxT("&Undo\tCTRL+Z"));
-	menuEdit->Append(miEditRedo, wxT("&Redo\tCTRL+Y"));
-	menuEdit->Append(miEditReset, wxT("Rese&t"));
-	menuEdit->Append(miEditResetPlayers, wxT("Reset &Players"));
-	menuEdit->Append(miEditResize, wxT("Re&size"));
-	menuEdit->Append(miEditFlipX, wxT("Flip &X"));
-	menuEdit->Append(miEditFlipY, wxT("Flip &Y"));
-	menuEdit->Append(miEditRandomizeHeights, wxT("Randomize &Heights"));
-	menuEdit->Append(miEditRandomize, wxT("Randomi&ze"));
-	menuEdit->Append(miEditSwitchSurfaces, wxT("Switch Su&rfaces"));
-	menuEdit->Append(miEditInfo, wxT("&Info"));
-	menuEdit->Append(miEditAdvanced, wxT("&Advanced"));
-	menuBar->Append(menuEdit, wxT("&Edit"));
+	menuEdit->Append(miEditUndo, _("&Undo\tCTRL+Z"));
+	menuEdit->Append(miEditRedo, _("&Redo\tCTRL+Y"));
+	menuEdit->Append(miEditReset, _("Rese&t"));
+	menuEdit->Append(miEditResetPlayers, _("Reset &Players"));
+	menuEdit->Append(miEditResize, _("Re&size"));
+	menuEdit->Append(miEditFlipX, _("Flip &X"));
+	menuEdit->Append(miEditFlipY, _("Flip &Y"));
+	menuEdit->Append(miEditRandomizeHeights, _("Randomize &Heights"));
+	menuEdit->Append(miEditRandomize, _("Randomi&ze"));
+	menuEdit->Append(miEditSwitchSurfaces, _("Switch Su&rfaces"));
+	menuEdit->Append(miEditInfo, _("&Info"));
+	menuEdit->Append(miEditAdvanced, _("&Advanced"));
+	menuBar->Append(menuEdit, _("&Edit"));
 
 	//misc
 	menuMisc = new wxMenu();
-	menuMisc->Append(miMiscResetZoomAndPos, wxT("&Reset zoom and pos"));
-	menuMisc->Append(miMiscAbout, wxT("&About"));
-	menuMisc->Append(miMiscHelp, wxT("&Help"));
-	menuMisc->Append(miMiscShowMap, wxT("&Show Map\tCTRL+M"));
-	menuBar->Append(menuMisc, wxT("&Misc"));
+	menuMisc->Append(miMiscResetZoomAndPos, _("&Reset zoom and pos"));
+	menuMisc->Append(miMiscAbout, _("&About"));
+	menuMisc->Append(miMiscHelp, _("&Help"));
+	menuMisc->Append(miMiscShowMap, _("&Show Map\tCTRL+M"));
+	menuBar->Append(menuMisc, _("&Misc"));
 
 	//brush
 	menuBrush = new wxMenu();
@@ -133,7 +133,7 @@ void MainWindow::buildMenuBar() {
 		menuBrushHeight->AppendCheckItem(miBrushHeight + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
 	}
 	menuBrushHeight->Check(miBrushHeight + (heightCount + 1) / 2, true);
-	menuBrush->Append(miBrushHeight, wxT("&Height"), menuBrushHeight);
+	menuBrush->Append(miBrushHeight, _("&Height"), menuBrushHeight);
 
 	enabledGroup = ctHeight;
 
@@ -142,41 +142,41 @@ void MainWindow::buildMenuBar() {
 	for (int i = 0; i < heightCount; ++i) {
 		menuBrushGradient->AppendCheckItem(miBrushGradient + i + 1, ToUnicode(intToStr(i - heightCount / 2)));
 	}
-	menuBrush->Append(miBrushGradient, wxT("&Gradient"), menuBrushGradient);
+	menuBrush->Append(miBrushGradient, _("&Gradient"), menuBrushGradient);
 
 	//surface
 	menuBrushSurface = new wxMenu();
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 1, wxT("&1 - Grass"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 2, wxT("&2 - Secondary Grass"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 3, wxT("&3 - Road"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 4, wxT("&4 - Stone"));
-	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, wxT("&5 - Ground"));
-	menuBrush->Append(miBrushSurface, wxT("&Surface"), menuBrushSurface);
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 1, _("&1 - Grass"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 2, _("&2 - Secondary Grass"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 3, _("&3 - Road"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 4, _("&4 - Stone"));
+	menuBrushSurface->AppendCheckItem(miBrushSurface + 5, _("&5 - Ground"));
+	menuBrush->Append(miBrushSurface, _("&Surface"), menuBrushSurface);
 
 	//objects
 	menuBrushObject = new wxMenu();
-	menuBrushObject->AppendCheckItem(miBrushObject + 1, wxT("&0 - None (erase)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+2, wxT("&1 - Tree (unwalkable/harvestable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+3, wxT("&2 - DeadTree/Cactuses/Thornbush (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+4, wxT("&3 - Stone (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+5, wxT("&4 - Bush/Grass/Fern (walkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+6, wxT("&5 - Water Object/Reed/Papyrus (walkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+7, wxT("&6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+8, wxT("&7 - C2 Hanged/Impaled (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+9, wxT("&8 - C3 Statues (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+10, wxT("&9 - C4 Big Rock (Mountain) (unwalkable)"));
-	menuBrushObject->AppendCheckItem(miBrushObject+11, wxT("10 &- C5 Invisible Blocking Object (unwalkable)"));
-	menuBrush->Append(miBrushObject, wxT("&Object"), menuBrushObject);
+	menuBrushObject->AppendCheckItem(miBrushObject + 1, _("&0 - None (erase)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+2, _("&1 - Tree (unwalkable/harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+3, _("&2 - DeadTree/Cactuses/Thornbush (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+4, _("&3 - Stone (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+5, _("&4 - Bush/Grass/Fern (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+6, _("&5 - Water Object/Reed/Papyrus (walkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+7, _("&6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+8, _("&7 - C2 Hanged/Impaled (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+9, _("&8 - C3 Statues (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+10, _("&9 - C4 Big Rock (Mountain) (unwalkable)"));
+	menuBrushObject->AppendCheckItem(miBrushObject+11, _("10 &- C5 Invisible Blocking Object (unwalkable)"));
+	menuBrush->Append(miBrushObject, _("&Object"), menuBrushObject);
 
 	//resources
 	menuBrushResource = new wxMenu();
-	menuBrushResource->AppendCheckItem(miBrushResource + 1, wxT("&0 - None"));
-	menuBrushResource->AppendCheckItem(miBrushResource+2, wxT("&1 - gold  (unwalkable)"));
-	menuBrushResource->AppendCheckItem(miBrushResource+3, wxT("&2 - stone (unwalkable)"));
-	menuBrushResource->AppendCheckItem(miBrushResource+4, wxT("&3 - custom"));
-	menuBrushResource->AppendCheckItem(miBrushResource+5, wxT("&4 - custom"));
-	menuBrushResource->AppendCheckItem(miBrushResource+6, wxT("&5 - custom"));
-	menuBrush->Append(miBrushResource, wxT("&Resource"), menuBrushResource);
+	menuBrushResource->AppendCheckItem(miBrushResource + 1, _("&0 - None"));
+	menuBrushResource->AppendCheckItem(miBrushResource+2, _("&1 - gold  (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+3, _("&2 - stone (unwalkable)"));
+	menuBrushResource->AppendCheckItem(miBrushResource+4, _("&3 - custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+5, _("&4 - custom"));
+	menuBrushResource->AppendCheckItem(miBrushResource+6, _("&5 - custom"));
+	menuBrush->Append(miBrushResource, _("&Resource"), menuBrushResource);
 
 	bmStartPos[0] = wxBitmap(brush_players_red);
 	bmStartPos[1] = wxBitmap(brush_players_blue);
@@ -189,32 +189,32 @@ void MainWindow::buildMenuBar() {
 
 	//players
 	menuBrushStartLocation = new wxMenu();
-	miStartPos[0] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 1, wxT("&1 - Player 1"));
+	miStartPos[0] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 1, wxString(wxT("&1 - ")) + _("Player") + wxT(" 1"));
 	miStartPos[0]->SetBitmap(bmStartPos[0]);
 	menuBrushStartLocation->Append(miStartPos[0]);
-	miStartPos[1] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 2, wxT("&2 - Player 2"));
+	miStartPos[1] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 2, wxString(wxT("&2 - ")) + _("Player") + wxT(" 2"));
 	miStartPos[1]->SetBitmap(bmStartPos[1]);
 	menuBrushStartLocation->Append(miStartPos[1]);
-	miStartPos[2] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 3, wxT("&3 - Player 3"));
+	miStartPos[2] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 3, wxString(wxT("&3 - ")) + _("Player") + wxT(" 3"));
 	miStartPos[2]->SetBitmap(bmStartPos[2]);
 	menuBrushStartLocation->Append(miStartPos[2]);
-	miStartPos[3] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 4, wxT("&4 - Player 4"));
+	miStartPos[3] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 4, wxString(wxT("&4 - ")) + _("Player") + wxT(" 4"));
 	miStartPos[3]->SetBitmap(bmStartPos[3]);
 	menuBrushStartLocation->Append(miStartPos[3]);
-	miStartPos[4] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 5, wxT("&5 - Player 5"));
+	miStartPos[4] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 5, wxString(wxT("&5 - ")) + _("Player") + wxT(" 5"));
 	miStartPos[4]->SetBitmap(bmStartPos[4]);
 	menuBrushStartLocation->Append(miStartPos[4]);
-	miStartPos[5] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 6, wxT("&6 - Player 6"));
+	miStartPos[5] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 6, wxString(wxT("&6 - ")) + _("Player") + wxT(" 6"));
 	miStartPos[5]->SetBitmap(bmStartPos[5]);
 	menuBrushStartLocation->Append(miStartPos[5]);
-	miStartPos[6] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 7, wxT("&7 - Player 7"));
+	miStartPos[6] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 7, wxString(wxT("&7 - ")) + _("Player") + wxT(" 7"));
 	miStartPos[6]->SetBitmap(bmStartPos[6]);
 	menuBrushStartLocation->Append(miStartPos[6]);
-	miStartPos[7] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 8, wxT("&8 - Player 8"));
+	miStartPos[7] = new wxMenuItem(menuBrushStartLocation, miBrushStartLocation + 8, wxString(wxT("&8 - ")) + _("Player") + wxT(" 8"));
 	miStartPos[7]->SetBitmap(bmStartPos[7]);
 	menuBrushStartLocation->Append(miStartPos[7]);
-	menuBrush->Append(miBrushStartLocation, wxT("&Player"), menuBrushStartLocation);
-	menuBar->Append(menuBrush, wxT("&Brush"));
+	menuBrush->Append(miBrushStartLocation, _("Player"), menuBrushStartLocation);
+	menuBar->Append(menuBrush, _("&Brush"));
 
 	//radius
 	menuRadius = new wxMenu();
@@ -222,79 +222,79 @@ void MainWindow::buildMenuBar() {
 		menuRadius->AppendCheckItem(miRadius + i, ToUnicode("&" + intToStr(i) + "\tALT+" + intToStr(i)));
 	}
 	menuRadius->Check(miRadius + 1, true);
-	menuBar->Append(menuRadius, wxT("&Radius"));
+	menuBar->Append(menuRadius, _("&Radius"));
 	SetMenuBar(menuBar);
 }
 
 void MainWindow::buildToolBars() {
 	toolbar = new wxToolBar(this->panel, wxID_ANY);
-	toolbar->AddTool(miEditUndo, _("undo"), wxBitmap(edit_undo), _("Undo"));
-	toolbar->AddTool(miEditRedo, _("redo"), wxBitmap(edit_redo), _("Redo"));
-	toolbar->AddTool(miEditRandomizeHeights, _("randomizeHeights"), wxBitmap(edit_randomize_heights), _("Randomize Heights"));
-	toolbar->AddTool(miEditRandomize, _("randomize"), wxBitmap(edit_randomize), _("Randomize"));
-	toolbar->AddTool(miEditSwitchSurfaces, _("switch"), wxBitmap(edit_switch_surfaces), _("Switch Surfaces"));
+	toolbar->AddTool(miEditUndo, wxT("undo"), wxBitmap(edit_undo), _("Undo"));
+	toolbar->AddTool(miEditRedo, wxT("redo"), wxBitmap(edit_redo), _("Redo"));
+	toolbar->AddTool(miEditRandomizeHeights, wxT("randomizeHeights"), wxBitmap(edit_randomize_heights), _("Randomize Heights"));
+	toolbar->AddTool(miEditRandomize, wxT("randomize"), wxBitmap(edit_randomize), _("Randomize"));
+	toolbar->AddTool(miEditSwitchSurfaces, wxT("switch"), wxBitmap(edit_switch_surfaces), _("Switch Surfaces"));
 	toolbar->AddSeparator();
-	toolbar->AddTool(miBrushSurface + 1, _("brush_grass1"), wxBitmap(brush_surface_grass1), _("Grass"));
-	toolbar->AddTool(miBrushSurface + 2, _("brush_grass2"), wxBitmap(brush_surface_grass2), _("Secondary Grass"));
-	toolbar->AddTool(miBrushSurface + 3, _("brush_road"), wxBitmap(brush_surface_road), _("Road"));
-	toolbar->AddTool(miBrushSurface + 4, _("brush_stone"), wxBitmap(brush_surface_stone), _("Stone"));
-	toolbar->AddTool(miBrushSurface + 5, _("brush_custom"), wxBitmap(brush_surface_custom), _("Ground"));
+	toolbar->AddTool(miBrushSurface + 1, wxT("brush_grass1"), wxBitmap(brush_surface_grass1), _("Grass"));
+	toolbar->AddTool(miBrushSurface + 2, wxT("brush_grass2"), wxBitmap(brush_surface_grass2), _("Secondary Grass"));
+	toolbar->AddTool(miBrushSurface + 3, wxT("brush_road"), wxBitmap(brush_surface_road), _("Road"));
+	toolbar->AddTool(miBrushSurface + 4, wxT("brush_stone"), wxBitmap(brush_surface_stone), _("Stone"));
+	toolbar->AddTool(miBrushSurface + 5, wxT("brush_custom"), wxBitmap(brush_surface_custom), _("Ground"));
 	toolbar->AddSeparator();
-	toolbar->AddTool(miBrushResource + 2, _("resource1"), wxBitmap(brush_resource_1_gold), _("gold  (unwalkable)"));
-	toolbar->AddTool(miBrushResource + 3, _("resource2"), wxBitmap(brush_resource_2_stone), _("stone (unwalkable)"));
-	toolbar->AddTool(miBrushResource + 4, _("resource3"), wxBitmap(brush_resource_3), _("custom3"));
-	toolbar->AddTool(miBrushResource + 5, _("resource4"), wxBitmap(brush_resource_4), _("custom4"));
-	toolbar->AddTool(miBrushResource + 6, _("resource5"), wxBitmap(brush_resource_5), _("custom5"));
+	toolbar->AddTool(miBrushResource + 2, wxT("resource1"), wxBitmap(brush_resource_1_gold), _("gold  (unwalkable)"));
+	toolbar->AddTool(miBrushResource + 3, wxT("resource2"), wxBitmap(brush_resource_2_stone), _("stone (unwalkable)"));
+	toolbar->AddTool(miBrushResource + 4, wxT("resource3"), wxBitmap(brush_resource_3), _("custom3"));
+	toolbar->AddTool(miBrushResource + 5, wxT("resource4"), wxBitmap(brush_resource_4), _("custom4"));
+	toolbar->AddTool(miBrushResource + 6, wxT("resource5"), wxBitmap(brush_resource_5), _("custom5"));
 	toolbar->AddSeparator();
-	toolbar->AddTool(miBrushObject + 1, _("brush_none"), wxBitmap(brush_none), _("None (erase)"));
-	toolbar->AddTool(miBrushObject + 2, _("brush_tree"), wxBitmap(brush_object_tree), _("Tree (unwalkable/harvestable)"));
-	toolbar->AddTool(miBrushObject + 3, _("brush_dead_tree"), wxBitmap(brush_object_dead_tree), _("DeadTree/Cactuses/Thornbush (unwalkable)"));
-	toolbar->AddTool(miBrushObject + 4, _("brush_stone"), wxBitmap(brush_object_stone), _("Stone (unwalkable)"));
-	toolbar->AddTool(miBrushObject + 5, _("brush_bush"), wxBitmap(brush_object_bush), _("Bush/Grass/Fern (walkable)"));
-	toolbar->AddTool(miBrushObject + 6, _("brush_water"), wxBitmap(brush_object_water_object), _("Water Object/Reed/Papyrus (walkable)"));
-	toolbar->AddTool(miBrushObject + 7, _("brush_c1_bigtree"), wxBitmap(brush_object_c1_bigtree), _("C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
-	toolbar->AddTool(miBrushObject + 8, _("brush_c2_hanged"), wxBitmap(brush_object_c2_hanged), _("C2 Hanged/Impaled (unwalkable)"));
-	toolbar->AddTool(miBrushObject + 9, _("brush_c3_statue"), wxBitmap(brush_object_c3_statue), _("C3, Statues (unwalkable))"));
-	toolbar->AddTool(miBrushObject +10, _("brush_c4_bigrock"), wxBitmap(brush_object_c4_bigrock), _("Big Rock (Mountain) (unwalkable)"));
-	toolbar->AddTool(miBrushObject +11, _("brush_c5_blocking"), wxBitmap(brush_object_c5_blocking), _("Invisible Blocking Object (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 1, wxT("brush_none"), wxBitmap(brush_none), _("None (erase)"));
+	toolbar->AddTool(miBrushObject + 2, wxT("brush_tree"), wxBitmap(brush_object_tree), _("Tree (unwalkable/harvestable)"));
+	toolbar->AddTool(miBrushObject + 3, wxT("brush_dead_tree"), wxBitmap(brush_object_dead_tree), _("DeadTree/Cactuses/Thornbush (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 4, wxT("brush_stone"), wxBitmap(brush_object_stone), _("Stone (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 5, wxT("brush_bush"), wxBitmap(brush_object_bush), _("Bush/Grass/Fern (walkable)"));
+	toolbar->AddTool(miBrushObject + 6, wxT("brush_water"), wxBitmap(brush_object_water_object), _("Water Object/Reed/Papyrus (walkable)"));
+	toolbar->AddTool(miBrushObject + 7, wxT("brush_c1_bigtree"), wxBitmap(brush_object_c1_bigtree), _("C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"));
+	toolbar->AddTool(miBrushObject + 8, wxT("brush_c2_hanged"), wxBitmap(brush_object_c2_hanged), _("C2 Hanged/Impaled (unwalkable)"));
+	toolbar->AddTool(miBrushObject + 9, wxT("brush_c3_statue"), wxBitmap(brush_object_c3_statue), _("C3, Statues (unwalkable))"));
+	toolbar->AddTool(miBrushObject +10, wxT("brush_c4_bigrock"), wxBitmap(brush_object_c4_bigrock), _("Big Rock (Mountain) (unwalkable)"));
+	toolbar->AddTool(miBrushObject +11, wxT("brush_c5_blocking"), wxBitmap(brush_object_c5_blocking), _("Invisible Blocking Object (unwalkable)"));
 	toolbar->AddSeparator();
-	toolbar->AddTool(toolPlayer, _("brush_player"), wxBitmap(brush_players_player),  _("Player start position"));
+	toolbar->AddTool(toolPlayer, wxT("brush_player"), wxBitmap(brush_players_player),  _("Player start position"));
 	toolbar->Realize();
 
 	toolbar2 = new wxToolBar(this->panel, wxID_ANY);
-	toolbar2->AddTool(miBrushGradient + 1, _("brush_gradient_n5"), wxBitmap(brush_gradient_n5));
-	toolbar2->AddTool(miBrushGradient + 2, _("brush_gradient_n4"), wxBitmap(brush_gradient_n4));
-	toolbar2->AddTool(miBrushGradient + 3, _("brush_gradient_n3"), wxBitmap(brush_gradient_n3));
-	toolbar2->AddTool(miBrushGradient + 4, _("brush_gradient_n2"), wxBitmap(brush_gradient_n2));
-	toolbar2->AddTool(miBrushGradient + 5, _("brush_gradient_n1"), wxBitmap(brush_gradient_n1));
-	toolbar2->AddTool(miBrushGradient + 6, _("brush_gradient_0"), wxBitmap(brush_gradient_0));
-	toolbar2->AddTool(miBrushGradient + 7, _("brush_gradient_p1"), wxBitmap(brush_gradient_p1));
-	toolbar2->AddTool(miBrushGradient + 8, _("brush_gradient_p2"), wxBitmap(brush_gradient_p2));
-	toolbar2->AddTool(miBrushGradient + 9, _("brush_gradient_p3"), wxBitmap(brush_gradient_p3));
-	toolbar2->AddTool(miBrushGradient +10, _("brush_gradient_p4"), wxBitmap(brush_gradient_p4));
-	toolbar2->AddTool(miBrushGradient +11, _("brush_gradient_p5"), wxBitmap(brush_gradient_p5));
+	toolbar2->AddTool(miBrushGradient + 1, wxT("brush_gradient_n5"), wxBitmap(brush_gradient_n5));
+	toolbar2->AddTool(miBrushGradient + 2, wxT("brush_gradient_n4"), wxBitmap(brush_gradient_n4));
+	toolbar2->AddTool(miBrushGradient + 3, wxT("brush_gradient_n3"), wxBitmap(brush_gradient_n3));
+	toolbar2->AddTool(miBrushGradient + 4, wxT("brush_gradient_n2"), wxBitmap(brush_gradient_n2));
+	toolbar2->AddTool(miBrushGradient + 5, wxT("brush_gradient_n1"), wxBitmap(brush_gradient_n1));
+	toolbar2->AddTool(miBrushGradient + 6, wxT("brush_gradient_0"), wxBitmap(brush_gradient_0));
+	toolbar2->AddTool(miBrushGradient + 7, wxT("brush_gradient_p1"), wxBitmap(brush_gradient_p1));
+	toolbar2->AddTool(miBrushGradient + 8, wxT("brush_gradient_p2"), wxBitmap(brush_gradient_p2));
+	toolbar2->AddTool(miBrushGradient + 9, wxT("brush_gradient_p3"), wxBitmap(brush_gradient_p3));
+	toolbar2->AddTool(miBrushGradient +10, wxT("brush_gradient_p4"), wxBitmap(brush_gradient_p4));
+	toolbar2->AddTool(miBrushGradient +11, wxT("brush_gradient_p5"), wxBitmap(brush_gradient_p5));
 	toolbar2->AddSeparator();
-	toolbar2->AddTool(miBrushHeight + 1, _("brush_height_n5"), wxBitmap(brush_height_n5));
-	toolbar2->AddTool(miBrushHeight + 2, _("brush_height_n4"), wxBitmap(brush_height_n4));
-	toolbar2->AddTool(miBrushHeight + 3, _("brush_height_n3"), wxBitmap(brush_height_n3));
-	toolbar2->AddTool(miBrushHeight + 4, _("brush_height_n2"), wxBitmap(brush_height_n2));
-	toolbar2->AddTool(miBrushHeight + 5, _("brush_height_n1"), wxBitmap(brush_height_n1));
-	toolbar2->AddTool(miBrushHeight + 6, _("brush_height_0"), wxBitmap(brush_height_0));
-	toolbar2->AddTool(miBrushHeight + 7, _("brush_height_p1"), wxBitmap(brush_height_p1));
-	toolbar2->AddTool(miBrushHeight + 8, _("brush_height_p2"), wxBitmap(brush_height_p2));
-	toolbar2->AddTool(miBrushHeight + 9, _("brush_height_p3"), wxBitmap(brush_height_p3));
-	toolbar2->AddTool(miBrushHeight +10, _("brush_height_p4"), wxBitmap(brush_height_p4));
-	toolbar2->AddTool(miBrushHeight +11, _("brush_height_p5"), wxBitmap(brush_height_p5));
+	toolbar2->AddTool(miBrushHeight + 1, wxT("brush_height_n5"), wxBitmap(brush_height_n5));
+	toolbar2->AddTool(miBrushHeight + 2, wxT("brush_height_n4"), wxBitmap(brush_height_n4));
+	toolbar2->AddTool(miBrushHeight + 3, wxT("brush_height_n3"), wxBitmap(brush_height_n3));
+	toolbar2->AddTool(miBrushHeight + 4, wxT("brush_height_n2"), wxBitmap(brush_height_n2));
+	toolbar2->AddTool(miBrushHeight + 5, wxT("brush_height_n1"), wxBitmap(brush_height_n1));
+	toolbar2->AddTool(miBrushHeight + 6, wxT("brush_height_0"), wxBitmap(brush_height_0));
+	toolbar2->AddTool(miBrushHeight + 7, wxT("brush_height_p1"), wxBitmap(brush_height_p1));
+	toolbar2->AddTool(miBrushHeight + 8, wxT("brush_height_p2"), wxBitmap(brush_height_p2));
+	toolbar2->AddTool(miBrushHeight + 9, wxT("brush_height_p3"), wxBitmap(brush_height_p3));
+	toolbar2->AddTool(miBrushHeight +10, wxT("brush_height_p4"), wxBitmap(brush_height_p4));
+	toolbar2->AddTool(miBrushHeight +11, wxT("brush_height_p5"), wxBitmap(brush_height_p5));
 	toolbar2->AddSeparator();
-	toolbar2->AddTool(miRadius + 1, _("radius1"), wxBitmap(radius_1), _("1 (1x1)"));
-	toolbar2->AddTool(miRadius + 2, _("radius2"), wxBitmap(radius_2), _("2 (3x3)"));
-	toolbar2->AddTool(miRadius + 3, _("radius3"), wxBitmap(radius_3), _("3 (5x5)"));
-	toolbar2->AddTool(miRadius + 4, _("radius4"), wxBitmap(radius_4), _("4 (7x7)"));
-	toolbar2->AddTool(miRadius + 5, _("radius5"), wxBitmap(radius_5), _("5 (9x9)"));
-	toolbar2->AddTool(miRadius + 6, _("radius6"), wxBitmap(radius_6), _("6 (11x11)"));
-	toolbar2->AddTool(miRadius + 7, _("radius7"), wxBitmap(radius_7), _("7 (13x13)"));
-	toolbar2->AddTool(miRadius + 8, _("radius8"), wxBitmap(radius_8), _("8 (15x15)"));
-	toolbar2->AddTool(miRadius + 9, _("radius9"), wxBitmap(radius_9), _("9 (17x17)"));
+	toolbar2->AddTool(miRadius + 1, wxT("radius1"), wxBitmap(radius_1), wxT("1 (1x1)"));
+	toolbar2->AddTool(miRadius + 2, wxT("radius2"), wxBitmap(radius_2), wxT("2 (3x3)"));
+	toolbar2->AddTool(miRadius + 3, wxT("radius3"), wxBitmap(radius_3), wxT("3 (5x5)"));
+	toolbar2->AddTool(miRadius + 4, wxT("radius4"), wxBitmap(radius_4), wxT("4 (7x7)"));
+	toolbar2->AddTool(miRadius + 5, wxT("radius5"), wxBitmap(radius_5), wxT("5 (9x9)"));
+	toolbar2->AddTool(miRadius + 6, wxT("radius6"), wxBitmap(radius_6), wxT("6 (11x11)"));
+	toolbar2->AddTool(miRadius + 7, wxT("radius7"), wxBitmap(radius_7), wxT("7 (13x13)"));
+	toolbar2->AddTool(miRadius + 8, wxT("radius8"), wxBitmap(radius_8), wxT("8 (15x15)"));
+	toolbar2->AddTool(miRadius + 9, wxT("radius9"), wxBitmap(radius_9), wxT("9 (17x17)"));
 	toolbar2->Realize();
 }
 
@@ -767,11 +767,11 @@ void MainWindow::onMenuMiscShowMap(wxCommandEvent& event){
 	// find glest
 	if(glest.empty()){
 		wxPathList pathlist;
-		pathlist.AddEnvList(_("PATH"));
-		glest = pathlist.FindAbsoluteValidPath(_("glestadv"));
+		pathlist.AddEnvList(wxT("PATH"));
+		glest = pathlist.FindAbsoluteValidPath(wxT("glestadv"));
 		if(glest.empty()){
 			// not found in PATH -> search recursively in current directory
-			glest = wxDir::FindFirst(_("."), _("glestadv*"));
+			glest = wxDir::FindFirst(wxT("."), wxT("glestadv*"));
 			if(glest.empty()){
 				wxMessageBox(_("Couldn't find glestadv!"), _("Error"), wxOK|wxICON_ERROR, this);
 				return;
@@ -780,7 +780,7 @@ void MainWindow::onMenuMiscShowMap(wxCommandEvent& event){
 	}
 
 	wxArrayString output, arrstr;
-	wxString command = glest + _(" -list-tilesets");
+	wxString command = glest + wxT(" -list-tilesets");
 	cout << command.char_str() << endl;
 	wxExecute(command, output);
 
@@ -1175,6 +1175,11 @@ bool App::OnInit() {
 			fileparam = arg;
 		}
 	}
+	
+	//language stuff
+	wxLocale::AddCatalogLookupPathPrefix(wxT("share/locale"));
+	m_locale.Init();
+	m_locale.AddCatalog(wxT("gae_mapeditor"));
 
 	mainWindow = new MainWindow();
 	mainWindow->Show();

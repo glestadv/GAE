@@ -17,6 +17,7 @@
 
 #include <wx/wx.h>
 #include <wx/glcanvas.h>
+#include <wx/intl.h>
 
 #include "program.h"
 
@@ -296,6 +297,7 @@ public:
 class App: public wxApp {
 private:
 	MainWindow *mainWindow;
+	wxLocale m_locale;
 
 public:
 	virtual bool OnInit();

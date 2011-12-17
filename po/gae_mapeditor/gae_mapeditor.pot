@@ -1,0 +1,367 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-12-17 14:14+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:173
+msgid "&0 - None"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:158
+msgid "&0 - None (erase)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:149
+msgid "&1 - Grass"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:159
+msgid "&1 - Tree (unwalkable/harvestable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:174
+msgid "&1 - gold  (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:160
+msgid "&2 - DeadTree/Cactuses/Thornbush (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:150
+msgid "&2 - Secondary Grass"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:175
+msgid "&2 - stone (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:151
+msgid "&3 - Road"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:161
+msgid "&3 - Stone (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:176
+msgid "&3 - custom"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:162
+msgid "&4 - Bush/Grass/Fern (walkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:152
+msgid "&4 - Stone"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:177
+msgid "&4 - custom"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:153
+msgid "&5 - Ground"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:163
+msgid "&5 - Water Object/Reed/Papyrus (walkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:178
+msgid "&5 - custom"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:164
+msgid "&6 - C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:165
+msgid "&7 - C2 Hanged/Impaled (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:166
+msgid "&8 - C3 Statues (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:167
+msgid "&9 - C4 Big Rock (Mountain) (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:122
+msgid "&About"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:116
+msgid "&Advanced"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:217
+msgid "&Brush"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:117
+msgid "&Edit"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:101
+msgid "&File"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:145
+msgid "&Gradient"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:136
+msgid "&Height"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:123
+msgid "&Help"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:115
+msgid "&Info"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:125
+msgid "&Misc"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:169
+msgid "&Object"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:225
+msgid "&Radius"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:106
+msgid "&Redo\tCTRL+Y"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:121
+msgid "&Reset zoom and pos"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:179
+msgid "&Resource"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:124
+msgid "&Show Map\tCTRL+M"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:154
+msgid "&Surface"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:105
+msgid "&Undo\tCTRL+Z"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:168
+msgid "10 &- C5 Invisible Blocking Object (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:258
+msgid "Big Rock (Mountain) (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:253
+msgid "Bush/Grass/Fern (walkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:255
+msgid "C1 BigTree/DeadTree/OldPalm (unwalkable/not harvestable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:256
+msgid "C2 Hanged/Impaled (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:257
+msgid "C3, Statues (unwalkable))"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:776
+msgid "Couldn't find glestadv!"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:251
+msgid "DeadTree/Cactuses/Thornbush (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:398
+msgid "Discard changes?"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:776
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:793
+msgid "Error"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:110
+msgid "Flip &X"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:111
+msgid "Flip &Y"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:237
+msgid "Grass"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:241
+msgid "Ground"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:259
+msgid "Invisible Blocking Object (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:793
+msgid "No tilesets found."
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:249
+msgid "None (erase)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:192
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:195
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:198
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:201
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:204
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:207
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:210
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:213
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:216
+msgid "Player"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:261
+msgid "Player start position"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:113
+msgid "Randomi&ze"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:234
+msgid "Randomize"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:112
+msgid "Randomize &Heights"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:233
+msgid "Randomize Heights"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:109
+msgid "Re&size"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:232
+msgid "Redo"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:107
+msgid "Rese&t"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:108
+msgid "Reset &Players"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:239
+msgid "Road"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:238
+msgid "Secondary Grass"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:240
+msgid "Stone"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:252
+msgid "Stone (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:114
+msgid "Switch Su&rfaces"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:235
+msgid "Switch Surfaces"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:398
+msgid "There are unsaved modifications. Continue anyway?"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:250
+msgid "Tree (unwalkable/harvestable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:231
+msgid "Undo"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:763
+msgid "Unsaved"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:254
+msgid "Water Object/Reed/Papyrus (walkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:763
+msgid "You need to save first!"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:245
+msgid "custom3"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:246
+msgid "custom4"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:247
+msgid "custom5"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:243
+msgid "gold  (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:797
+msgid "select tileset"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:244
+msgid "stone (unwalkable)"
+msgstr ""
+
+#: /home/franky/programming/glestae_git/source/map_editor/main.cpp:797
+msgid "tileset"
+msgstr ""

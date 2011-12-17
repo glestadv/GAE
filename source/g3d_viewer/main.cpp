@@ -65,41 +65,41 @@ MainWindow::MainWindow(const string &modelPath)
 
 	//menu
 	menuFile= new wxMenu();
-	menuFile->Append(miFileLoad, wxT("Load Model\tCTRL+O"));
+	menuFile->Append(miFileLoad, wxString(_("Load Model")) + wxT("\tCTRL+O"));
 	menuFile->Append(wxID_EXIT);
-	menu->Append(menuFile, wxT("&File"));
+	menu->Append(menuFile, _("&File"));
 
 	//mode
 	menuMode= new wxMenu();
-	menuMode->AppendCheckItem(miModeNormals, wxT("Normals"));
-	menuMode->AppendCheckItem(miModeWireframe, wxT("Wireframe"));
-	menuMode->AppendCheckItem(miModeGrid, wxT("Grid"));
-	menu->Append(menuMode, wxT("&Mode"));
+	menuMode->AppendCheckItem(miModeNormals, _("Normals"));
+	menuMode->AppendCheckItem(miModeWireframe, _("Wireframe"));
+	menuMode->AppendCheckItem(miModeGrid, _("Grid"));
+	menu->Append(menuMode, _("&Mode"));
 
 	//mode
 	menuSpeed= new wxMenu();
-	menuSpeed->Append(miSpeedSlower, wxT("Slower"));
-	menuSpeed->Append(miSpeedFaster, wxT("Faster"));
-	menu->Append(menuSpeed, wxT("&Speed"));
+	menuSpeed->Append(miSpeedSlower, _("Slower"));
+	menuSpeed->Append(miSpeedFaster, _("Faster"));
+	menu->Append(menuSpeed, _("&Speed"));
 
 	//custom color
 	menuCustomColor= new wxMenu();
-	menuCustomColor->AppendCheckItem(miColorOne, wxT("Faction 1"));
-	menuCustomColor->AppendCheckItem(miColorTwo, wxT("Faction 2"));
-	menuCustomColor->AppendCheckItem(miColorThree, wxT("Faction 3"));
-	menuCustomColor->AppendCheckItem(miColorFour, wxT("Faction 4"));
-	menuCustomColor->AppendCheckItem(miColorFive, wxT("Faction 5"));
-	menuCustomColor->AppendCheckItem(miColorSix, wxT("Faction 6"));
-	menuCustomColor->AppendCheckItem(miColorSeven, wxT("Faction 7"));
-	menuCustomColor->AppendCheckItem(miColorEight, wxT("Faction 8"));
-	menuCustomColor->AppendCheckItem(miColourAll, wxT("Show All"));
-	menuCustomColor->Append(miColourEdit, wxT("Edit Colours"));
-	menu->Append(menuCustomColor, wxT("&Custom Color"));
+	menuCustomColor->AppendCheckItem(miColorOne, wxString(_("Faction"))+ wxT(" 1"));
+	menuCustomColor->AppendCheckItem(miColorTwo, wxString(_("Faction"))+ wxT(" 2"));
+	menuCustomColor->AppendCheckItem(miColorThree, wxString(_("Faction"))+ wxT(" 3"));
+	menuCustomColor->AppendCheckItem(miColorFour, wxString(_("Faction"))+ wxT(" 4"));
+	menuCustomColor->AppendCheckItem(miColorFive, wxString(_("Faction"))+ wxT(" 5"));
+	menuCustomColor->AppendCheckItem(miColorSix, wxString(_("Faction"))+ wxT(" 6"));
+	menuCustomColor->AppendCheckItem(miColorSeven, wxString(_("Faction"))+ wxT(" 7"));
+	menuCustomColor->AppendCheckItem(miColorEight, wxString(_("Faction"))+ wxT(" 8"));
+	menuCustomColor->AppendCheckItem(miColourAll, _("Show All"));
+	menuCustomColor->Append(miColourEdit, _("Edit Colours"));
+	menu->Append(menuCustomColor, _("&Custom Color"));
 
 	// mesh
 	menuMesh = new wxMenu();
-	menuMesh->AppendCheckItem(miCount, wxT("Show All"));
-	menu->Append(menuMesh, wxT("Mesh"));
+	menuMesh->AppendCheckItem(miCount, _("Show All"));
+	menu->Append(menuMesh, _("Mesh"));
 	Connect(miCount, wxEVT_COMMAND_MENU_SELECTED,
 		wxCommandEventHandler(MainWindow::onMenuMeshSelect), NULL, this);
 
@@ -138,7 +138,7 @@ void MainWindow::buildStatusBar() {
 	GetStatusBar()->SetStatusWidths(StatusItems::COUNT, status_widths);
 
 	SetStatusText(wxT(""), StatusItems::MODEL_INFO);
-	SetStatusText(wxT("Anim speed: 100"), StatusItems::ANIM_SPEED);
+	SetStatusText(_("Anim speed: 100"), StatusItems::ANIM_SPEED);
 }
 
 MainWindow::~MainWindow(){
@@ -225,7 +225,7 @@ void MainWindow::onMouseMove(wxMouseEvent &event){
 void MainWindow::onMenuFileLoad(wxCommandEvent &event){
 	string fileName;
 	wxFileDialog fileDialog(this);
-	fileDialog.SetWildcard(wxT("G3D files (*.g3d)|*.g3d"));
+	fileDialog.SetWildcard(_("G3D files (*.g3d)|*.g3d"));
 	if(fileDialog.ShowModal()==wxID_OK){
 		if (model) {
 			// remove mesh menu items
@@ -402,6 +402,11 @@ bool App::OnInit(){
 		modelPath= wxFNCONV(argv[1]);
 	}
 
+	//language stuff
+	wxLocale::AddCatalogLookupPathPrefix(wxT("share/locale"));
+	m_locale.Init();
+	m_locale.AddCatalog(wxT("gae_g3dviewer"));
+
 	mainWindow= new MainWindow(modelPath);
 	mainWindow->Show();
 	mainWindow->init();
@@ -413,7 +418,7 @@ int App::MainLoop(){
 		return wxApp::MainLoop();
 	}
 	catch(const exception &e){
-		wxMessageDialog(NULL, ToUnicode(e.what()), wxT("Exception"), wxOK | wxICON_ERROR).ShowModal();
+		wxMessageDialog(NULL, ToUnicode(e.what()), _("Exception"), wxOK | wxICON_ERROR).ShowModal();
 	}
 	return 0;
 }

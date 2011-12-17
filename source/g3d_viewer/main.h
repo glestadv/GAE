@@ -10,6 +10,7 @@
 #include <wx/timer.h>
 #include <wx/glcanvas.h>
 #include <wx/colordlg.h>
+#include <wx/intl.h>
 
 #include "util.h"
 #include "window.h"
@@ -142,6 +143,7 @@ private:
 class App: public wxApp{
 private:
 	MainWindow *mainWindow;
+	wxLocale m_locale;
 
 public:
 	virtual bool OnInit();
