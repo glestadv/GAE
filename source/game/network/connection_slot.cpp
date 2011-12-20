@@ -59,15 +59,15 @@ void ConnectionSlot::processMessages() {
 
 	while (m_connection->hasMessage()) {
 		MessageType type = m_connection->peekNextMsg();
+		
 		NETWORK_LOG( "ConnectionSlot::processMessages(): " << m_connection->getMessageCount() 
 			<< "messages on queue, type of first is " << MessageTypeNames[type] );
-		if (type == MessageType::DATA_SYNC) {
-			if (!m_serverInterface->isSyncReady()) {
-				return;
-			}
-		} else if (type == MessageType::READY && !m_serverInterface->isSyncReady()) {
+		
+		if ((type == MessageType::DATA_SYNC || type == MessageType::READY) 
+				&& !m_serverInterface->isSyncReady()) {
 			return;
 		}
+
 		RawMessage raw = m_connection->getNextMessage();
 		if (raw.type == MessageType::TEXT) {
 			NETWORK_LOG( "Received text message on slot " << m_playerIndex );
@@ -116,9 +116,8 @@ void ConnectionSlot::processMessages() {
 }
 
 void ConnectionSlot::update() {
-	if (isConnected()) {
-		processMessages();
-	}
+	assert(isConnected());
+	processMessages();
 }
 
 void ConnectionSlot::logNextMessage() {

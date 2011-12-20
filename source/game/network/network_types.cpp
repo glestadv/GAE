@@ -206,6 +206,7 @@ MoveSkillUpdate::MoveSkillUpdate(const Unit *unit) {
 	this->offsetX = offset.x;
 	this->offsetY = offset.y;
 	this->end_offset = unit->getNextCommandUpdate() - g_world.getFrameCount();
+	this->unitId = unit->getId();
 }
 
 ProjectileUpdate::ProjectileUpdate(const Unit *unit, Projectile *pps) {

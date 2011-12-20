@@ -280,8 +280,8 @@ void ClientInterface::update() {
 	}
 	if (cmdList.getCommandCount()) {
 		m_connection->send(&cmdList);
+		m_host->flush();
 	}
-	m_host->update(this);
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {
@@ -331,6 +331,11 @@ void ClientInterface::updateSkillCycle(Unit *unit) {
 void ClientInterface::updateMove(Unit *unit) {
 	try {
 		MoveSkillUpdate updt = keyFrame.getMoveUpdate();
+		if (unit->getId() != updt.unitId) {
+			NETWORK_LOG( "ClientInterface::updateMove(): Ids don't match. UnitIdLocal: " << unit->getId() 
+				<< " UnitIdRemote: " << updt.unitId );
+			throw GameSyncError("Bad move update"); // msgBox and then graceful exit to Menu please...
+		}
 		if (updt.offsetX < -1 || updt.offsetX > 1 || updt.offsetY < - 1 || updt.offsetY > 1 || (!updt.offsetX && !updt.offsetY)) {
 			NETWORK_LOG( "ClientInterface::updateMove(): UnitId: " << unit->getId() 
 				<< " Bad server update, pos offset out of range: " << updt.posOffset() );
@@ -397,7 +402,7 @@ void ClientInterface::checkUnitBorn(Unit *unit, int32 cs) {
 void ClientInterface::checkCommandUpdate(Unit *unit, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
 	if (cs != keyFrame.getNextChecksum()) {
-		NETWORK_LOG( "ClientInterface::checkCommandUpdate(): Sync Error: unit type: " << unit->getType()->getName()
+		NETWORK_LOG( "ClientInterface::checkCommandUpdate(): Sync Error: unit id: " << unit->getId() << " unit type: " << unit->getType()->getName()
 			<< ", skill class: " << SkillClassNames[unit->getCurrSkill()->getClass()] );
 		handleSyncError();
 	}

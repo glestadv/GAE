@@ -71,6 +71,7 @@ void ServerInterface::updateSlot(int playerIndex) {
 	ConnectionSlot* slot = slots[playerIndex];
 	
 	try {
+		slot->logNextMessage();
 		slot->update();
 	} catch (DataSyncError &e) {
 		LOG_NETWORK( e.what() );
@@ -168,11 +169,8 @@ void ServerInterface::update() {
 
 	// update all slots
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
-		if (slots[i]) {
+		if (slots[i] && slots[i]->isConnected()) {
 			updateSlot(i);
-			if (slots[i]->isConnected()) {
-				slots[i]->logNextMessage();
-			}
 		}
 	}
 }
