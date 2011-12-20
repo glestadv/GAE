@@ -69,6 +69,7 @@ void NetworkInterface::postCommandUpdate(Unit *unit) {
 	cs.add(unit->getCurrSkill()->getId());
 	switch (unit->getCurrSkill()->getClass()) {
 		case SkillClass::MOVE:
+			//NETWORK_LOG( "NetworkInterface::postCommandUpdate(): unit->getNextPos(): " << unit->getNextPos());
 			cs.add(unit->getNextPos());
 			break;
 		case SkillClass::ATTACK:
@@ -76,9 +77,13 @@ void NetworkInterface::postCommandUpdate(Unit *unit) {
 		case SkillClass::BUILD:
 			if (unit->getTarget()) {
 				cs.add(unit->getTarget());
+				//NETWORK_LOG( "NetworkInterface::postCommandUpdate(): unit->getTarget(): " << unit->getTarget());
 			}
 			break;
 	}
+	//NETWORK_LOG( "NetworkInterface::postCommandUpdate(): UnitID: " << unit->getId()
+	//		<< ", FactionIndex: " << unit->getFactionIndex()
+	//		<< ", CurrSkillId: " << unit->getCurrSkill()->getId() );
 	checkCommandUpdate(unit, cs.getSum());
 }
 

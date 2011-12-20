@@ -625,7 +625,7 @@ void KeyFrame::addUpdate(MoveSkillUpdate updt) {
 	updateSize += sizeof(MoveSkillUpdate);
 	++moveUpdateCount;
 	//NETWORK_LOG( "KeyFrame::addUpdate(MoveSkillUpdate): Pos Offset:" << updt.posOffset()
-	//	<< " Frame Offset: " << int(updt.end_offset) );
+	//	<< " Frame Offset: " << int(updt.end_offset) << " UnitId: " << updt.unitId );
 }
 
 void KeyFrame::addUpdate(ProjectileUpdate updt) {
