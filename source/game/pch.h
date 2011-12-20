@@ -12,6 +12,7 @@
 #ifndef _GAME_PCH_H_
 #define _GAME_PCH_H_
 
+#include "lang_features.h"
 #include "projectConfig.h"
 
 #ifndef USE_PCH
@@ -37,7 +38,7 @@
 #	if _GAE_USE_XAUDIO2_
 #		include <xaudio2.h>
 #	endif
-#	define NOMINMAX
+#	define NOMINMAX // see http://support.microsoft.com/kb/143208
 #	include <winsock2.h> // needs to be before windows.h
 #	include <windows.h>
 #	include <crtdbg.h>

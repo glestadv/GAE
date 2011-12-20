@@ -118,10 +118,11 @@ if (MSVC)
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT /O2 -g /Zi /DNDEBUG") 
 	set(CMAKE_CXX_FLAGS_RELEASE "/MT /O2 /Ot /Oy /Oi /GL /DNDEBUG /Zi")
 else (MSVC)
-	# Use defaults ? 
-	#set(CMAKE_CXX_FLAGS "-Wall -fno-rtti")
 	if(NOT CMAKE_CXX_FLAGS MATCHES -msse2)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2" CACHE STRING "" FORCE)
+	endif()
+	if(NOT CMAKE_CXX_FLAGS MATCHES -fno-rtti)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti" CACHE STRING "" FORCE)
 	endif()
 endif (MSVC)
 
@@ -148,7 +149,7 @@ else(WIN32)
 endif(WIN32)
 
 if(NOT DEFINED GAE_VERSION)
-	set(GAE_VERSION "git-master" CACHE STRING "Version of Glest Advanced Engine")
+	set(GAE_VERSION "0.3.93" CACHE STRING "Version of Glest Advanced Engine")
 endif()
 if(NOT DEFINED GAE_CONTACT)
 	set(GAE_CONTACT "glestae-devel@lists.sourceforge.net" CACHE STRING "Contact Mail Address")
@@ -280,6 +281,15 @@ if(DOXYGEN_FOUND)
 else(DOXYGEN_FOUND)
 	message(STATUS "disabled doc")
 endif(DOXYGEN_FOUND)
+
+# cppcheck
+find_package(cppcheck)
+if(CPPCHECK_FOUND)
+	include(CppcheckTargets)
+# 	add_cppcheck(<taget-name>)
+else(CPPCHECK_FOUND)
+	message(STATUS "disabled tests with cppcheck")
+endif(CPPCHECK_FOUND)
 
 
 option(GAE_PKG_ONLY_DATA "" OFF)

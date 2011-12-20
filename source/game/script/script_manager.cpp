@@ -95,6 +95,8 @@ int getWaterLevel(LuaHandle *luaHandle);
 
 int setTime(LuaHandle *luaHandle);
 
+int returnTableTest(LuaHandle *luaHandle);
+
 void ScriptManager::initGame() {
 	const Scenario*	scenario = g_world.getScenario();
 
@@ -118,10 +120,20 @@ void ScriptManager::initGame() {
 	LUA_FUNC(getWaterLevel);
 	LUA_FUNC(setTime);
 
+	LUA_FUNC(returnTableTest);
+
+
+
 	// AI helpers
 	LUA_FUNC(initSurveyor);
 	LUA_FUNC(findLocationForBuilding);
 	LUA_FUNC(findResourceLocation);
+
+	LUA_FUNC(getPlayerCount);
+	LUA_FUNC(getHumanPlayerIndex);
+	LUA_FUNC(getPlayerName);
+	LUA_FUNC(getPlayerTeam);
+	LUA_FUNC(getPlayerColour);
 
 	// Game control
 	LUA_FUNC(setPlayerAsWinner);
@@ -253,6 +265,17 @@ void ScriptManager::initGame() {
 	} else {
 		addErrorMessage("Warning, no startup script defined", true);
 	}
+}
+
+int returnTableTest(LuaHandle *l) {
+	LuaArguments args(l);
+
+	args.startReturnTable();
+		args.returnString("What is the meaning of life?");
+		args.returnInt(42);
+	args.endReturnTable();
+
+	return args.getReturnCount();
 }
 
 int setTime(LuaHandle *l) {
@@ -673,7 +696,7 @@ string triggerResultToString(SetTriggerRes res) {
 	}
 }
 
-void ScriptManager::doUnitTrigger(int id, string &cond, string &evnt, int ud) {
+void ScriptManager::doUnitTrigger(int id, const string &cond, const string &evnt, int ud) {
 	SetTriggerRes res;
 	if (cond == "attacked") {
 		res = triggerManager.addAttackedTrigger(id, evnt, ud);
@@ -1044,6 +1067,60 @@ int ScriptManager::findResourceLocation(LuaHandle * luaHandle) {
 		}
 	}
 	args.returnVec2i(result);
+	return args.getReturnCount();
+}
+
+int ScriptManager::getPlayerCount(LuaHandle* luaHandle) {
+	LuaArguments args(luaHandle);
+	args.returnInt(g_gameSettings.getFactionCount());
+	return args.getReturnCount();
+}
+
+int ScriptManager::getHumanPlayerIndex(LuaHandle* luaHandle) {
+	LuaArguments args(luaHandle);
+	args.returnInt(g_world.getThisFactionIndex());
+	return args.getReturnCount();
+}
+
+int ScriptManager::getPlayerName(LuaHandle* luaHandle) {
+	LuaArguments args(luaHandle);
+	int ndx;
+	const GameSettings &gs = g_gameSettings;
+	if (extractArgs(args, "getPlayerName", "int", &ndx)) {
+		if (ndx < 0 || ndx >= gs.getFactionCount()) {
+			addErrorMessage("Error: getPlayerName() faction index out of range: " + intToStr(ndx));
+		} else {
+			args.returnString(gs.getPlayerName(ndx));
+		}
+	}
+	return args.getReturnCount();
+}
+
+int ScriptManager::getPlayerTeam(LuaHandle* luaHandle) {
+	LuaArguments args(luaHandle);
+	int ndx;
+	const GameSettings &gs = g_gameSettings;
+	if (extractArgs(args, "getPlayerTeam", "int", &ndx)) {
+		if (ndx < 0 || ndx >= gs.getFactionCount()) {
+			addErrorMessage("Error: getPlayerTeam() faction index out of range: " + intToStr(ndx));
+		} else {
+			args.returnInt(gs.getTeam(ndx));
+		}
+	}
+	return args.getReturnCount();
+}
+
+int ScriptManager::getPlayerColour(LuaHandle* luaHandle) {
+	LuaArguments args(luaHandle);
+	int ndx;
+	const GameSettings &gs = g_gameSettings;
+	if (extractArgs(args, "getPlayerColour", "int", &ndx)) {
+		if (ndx < 0 || ndx >= gs.getFactionCount()) {
+			addErrorMessage("Error: getPlayerColour() faction index out of range: " + intToStr(ndx));
+		} else {
+			args.returnString(factionColourStrings[gs.getColourIndex(ndx)]);
+		}
+	}
 	return args.getReturnCount();
 }
 

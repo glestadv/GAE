@@ -12,6 +12,10 @@
 #include "pch.h"
 #include "pixmap.h"
 
+#ifndef Z_DEFAULT_COMPRESSION
+#   include "zlib.h"
+#endif
+
 #include <stdexcept>
 #include <cstdio>
 #include <cassert>
@@ -518,9 +522,6 @@ void PixmapIoPng::openWrite(const string &path, int w, int h, int components) {
 	//file= fopen(path.c_str(),"wb");
 	file = FSFactory::getInstance()->getFileOps();
 	file->openWrite(path.c_str());
-	if (file == NULL) {
-		throw runtime_error("Can't open PNG file for writing: "+ path);
-	}
 }
 
 void PixmapIoPng::write(uint8 *pixels) {

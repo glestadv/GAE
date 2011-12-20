@@ -46,8 +46,6 @@ struct AttackNoticeCircle {
 	void render(Vec2i mmPos, int mmHeight, fixed ratio);
 };
 
-WRAPPED_ENUM( MinimapSize, SMALL, MEDIUM, LARGE );
-
 // =====================================================
 // 	class Minimap
 //
@@ -109,8 +107,8 @@ public:
 
 	void update(int frameCount);
 
-	void setMinimapSize(MinimapSize size);
-	MinimapSize getMinimapSize() const;
+	void setMinimapSize(FuzzySize size);
+	FuzzySize getMinimapSize() const;
 
 	void resetFowTex();          // swap FoW pixmaps, resetting values on the now 'old' one
 	void updateFowTex(float t);  // update FoW tex, interpolating between pixmaps (according to 't')
@@ -137,6 +135,9 @@ public:
 	void setLeftClickOrder(bool enable) { m_leftClickOrder = enable; }
 	void setRightClickOrder(bool enable) { m_rightClickOrder = enable; }
 
+	void persist();
+	void reset();
+
 private:
 	void computeTerrainTexture(const World *world);  // init terrain tex
 	void setExploredState(const World *world);       // init FoW pixmaps
@@ -150,12 +151,15 @@ class MinimapFrame : public Frame {
 private:
 	Minimap  *m_minimap;
 
+	void doEnableShrinkExpand(FuzzySize sz);
+
+public:
 	void onExpand(Widget*);
 	void onShrink(Widget*);
 
 public:
 	MinimapFrame(Container *parent, Vec2i pos, bool FoW, bool SoD);
-	void initMinimp(int w, int h, const World *world, bool resumingGame);
+	void initMinimp(FuzzySize sz, int w, int h, const World *world, bool resumingGame);
 
 	Minimap* getMinimap() {return m_minimap;}
 

@@ -49,7 +49,7 @@ DisplayFrame::DisplayFrame(UserInterface *ui, Vec2i pos)
 	m_display->setAnchors(a);
 	setPos(pos);
 
-	m_titleBar->enableShrinkExpand(false, false);
+	m_titleBar->enableShrinkExpand(false, true);
 	Expand.connect(this, &DisplayFrame::onExpand);
 	Shrink.connect(this, &DisplayFrame::onShrink);
 	setPinned(g_config.getUiPinWidgets());
@@ -73,41 +73,30 @@ void DisplayFrame::onExpand(Widget*) {
 	assert(m_display->getFuzzySize() != FuzzySize::LARGE);
 	FuzzySize sz = m_display->getFuzzySize();
 	++sz;
-
+	assert(sz > FuzzySize::INVALID && sz < FuzzySize::COUNT);
 	m_display->setFuzzySize(sz);
-	//switch (sz) {
-	//	case MinimapSize::LARGE:
-	//		enableShrinkExpand(true, false);
-	//		break;
-	//	case MinimapSize::MEDIUM:
-	//		enableShrinkExpand(true, true);
-	//		break;
-	//	case MinimapSize::SMALL:
-	//		enableShrinkExpand(false, true);
-	//		break;
-	//	default: assert(false);
-	//}
-	resetSize();
+	if (sz == FuzzySize::SMALL) {
+		enableShrinkExpand(false, true);
+	} else if (sz == FuzzySize::MEDIUM) {
+		enableShrinkExpand(true, true);
+	} else if (sz == FuzzySize::LARGE) {
+		enableShrinkExpand(true, false);
+	}
 }
 
 void DisplayFrame::onShrink(Widget*) {
 	assert(m_display->getFuzzySize() != FuzzySize::SMALL);
 	FuzzySize sz = m_display->getFuzzySize();
 	--sz;
+	assert(sz > FuzzySize::INVALID && sz < FuzzySize::COUNT);
 	m_display->setFuzzySize(sz);
-	//switch (sz) {
-	//	case MinimapSize::LARGE:
-	//		enableShrinkExpand(true, false);
-	//		break;
-	//	case MinimapSize::MEDIUM:
-	//		enableShrinkExpand(true, true);
-	//		break;
-	//	case MinimapSize::SMALL:
-	//		enableShrinkExpand(false, true);
-	//		break;
-	//	default: assert(false);
-	//}
-	resetSize();
+	if (sz == FuzzySize::SMALL) {
+		enableShrinkExpand(false, true);
+	} else if (sz == FuzzySize::MEDIUM) {
+		enableShrinkExpand(true, true);
+	} else if (sz == FuzzySize::LARGE) {
+		enableShrinkExpand(true, false);
+	}
 }
 
 void DisplayFrame::render() {
@@ -134,47 +123,111 @@ Display::Display(Container *parent, UserInterface *ui, Vec2i pos)
 		, m_ui(ui)
 		, m_logo(-1)
 		, m_imageSize(32)
-		, m_hoverBtn(DisplaySection::INVALID, invalidPos)
-		, m_pressedBtn(DisplaySection::INVALID, invalidPos)
+		, m_hoverBtn(DisplaySection::INVALID, invalidIndex)
+		, m_pressedBtn(DisplaySection::INVALID, invalidIndex)
+		, m_fuzzySize(FuzzySize::SMALL)
 		, m_toolTip(0) {
 	CHECK_HEAP();
 	setWidgetStyle(WidgetType::DISPLAY);
+
+	for (int i = 0; i < selectionCellCount; ++i) { // selection potraits
+		ImageWidget::addImageX(0, Vec2i(0), Vec2i(m_imageSize));
+	}
+	TextWidget::setAlignment(Alignment::NONE);
+	TextWidget::setText(""); // (0) unit title
+	TextWidget::addText(""); // (1) unit text
+	TextWidget::addText(""); // (2) queued orders text (to display below progress bar if present)
+	TextWidget::addText(""); // (3) progress bar
+	for (int i = 0; i < commandCellCount; ++i) { // command buttons
+		ImageWidget::addImageX(0, Vec2i(0), Vec2i(m_imageSize));
+	}
+	TextWidget::addText(""); // (4) 'Transported' label
+	for (int i = 0; i < transportCellCount; ++i) { // loaded unit portraits
+		ImageWidget::addImageX(0, Vec2i(0), Vec2i(m_imageSize));
+	}
+	const Texture2D* overlayImages[3] = {
+		g_widgetConfig.getTickTexture(),
+		g_widgetConfig.getCrossTexture(),
+		g_widgetConfig.getQuestionTexture()
+	};
+	m_autoRepairOn = addImageX(overlayImages[0], Vec2i(0), Vec2i(m_imageSize));
+	m_autoRepairOff = addImageX(overlayImages[1], Vec2i(0), Vec2i(m_imageSize));
+	m_autoRepairMixed = addImageX(overlayImages[2], Vec2i(0), Vec2i(m_imageSize));
+
+	m_autoAttackOn = addImageX(overlayImages[0], Vec2i(0), Vec2i(m_imageSize));
+	m_autoAttackOff = addImageX(overlayImages[1], Vec2i(0), Vec2i(m_imageSize));
+	m_autoAttackMixed = addImageX(overlayImages[2], Vec2i(0), Vec2i(m_imageSize));
+
+	m_autoFleeOn =  addImageX(overlayImages[0], Vec2i(0), Vec2i(m_imageSize));
+	m_autoFleeOff = addImageX(overlayImages[1], Vec2i(0), Vec2i(m_imageSize));
+	m_autoFleeMixed = addImageX(overlayImages[2], Vec2i(0), Vec2i(m_imageSize));
+
+	// -loadmap doesn't have any faction
+	const Texture2D *logoTex = (g_world.getThisFaction()) ? g_world.getThisFaction()->getLogoTex() : 0;
+	if (logoTex) {
+		m_logo = ImageWidget::addImageX(logoTex, Vec2i(0, 0), Vec2i(192,192));
+	}
+	layout();
+
+	m_selectedCommandIndex = invalidIndex;
+	setProgressBar(-1);
+	clear();
+	//setSize();
+
+	m_toolTip = new CommandTip(WidgetWindow::getInstance());
+	m_toolTip->setVisible(false);
+
+	CHECK_HEAP();
+}
+
+void Display::layout() {
 	int x = 0;
 	int y = 0;
-	m_sizes.logoSize = Vec2i(192, 192);
+
+	const Font *font = getSmallFont();
+	int fontIndex = m_textStyle.m_smallFontIndex != -1 ? m_textStyle.m_smallFontIndex : m_textStyle.m_fontIndex;
+
+	if (m_fuzzySize== FuzzySize::SMALL) {
+		m_imageSize = 32;
+		font = getSmallFont();
+		fontIndex = m_textStyle.m_smallFontIndex != -1 ? m_textStyle.m_smallFontIndex : m_textStyle.m_fontIndex;
+	} else if (m_fuzzySize == FuzzySize::MEDIUM) {
+		m_imageSize = 48;
+		font = getFont();
+		fontIndex = m_textStyle.m_fontIndex;
+	} else if (m_fuzzySize == FuzzySize::LARGE) {
+		m_imageSize = 64;
+		font = getBigFont();
+		fontIndex = m_textStyle.m_largeFontIndex != -1 ? m_textStyle.m_largeFontIndex : m_textStyle.m_fontIndex;
+	}
+	m_fontMetrics = font->getMetrics();
+
+	m_sizes.logoSize = Vec2i(m_imageSize * 6, m_imageSize * 6);
 	m_portraitOffset = Vec2i(x, y);
 	for (int i = 0; i < selectionCellCount; ++i) { // selection potraits
 		if (i && i % cellWidthCount == 0) {
 			y += m_imageSize;
 			x = 0;
 		}
-		ImageWidget::addImageX(0, Vec2i(x,y), Vec2i(m_imageSize));
+		ImageWidget::setImageX(0, i, Vec2i(x, y), Vec2i(m_imageSize));
 		x += m_imageSize;
 	}
 	y += m_imageSize;
 	m_sizes.portraitSize = Vec2i(x, y);
 
-	TextWidget::setAlignment(Alignment::NONE);
-	TextWidget::setText(""); // (0) unit title
-	TextWidget::addText(""); // (1) unit text
-	TextWidget::addText(""); // (2) queued orders text (to display below progress bar if present)
-	TextWidget::addText(""); // (3) progress bar
-
-	const FontMetrics *fm = getFont()->getMetrics();
-
-	///@todo fix: centre text with image
-	TextWidget::setTextPos(Vec2i(40, m_imageSize / 4), 0);
+	int titleYpos = std::max((m_imageSize - int(m_fontMetrics->getHeight() + 1.f)) / 2, 0);
+	TextWidget::setTextPos(Vec2i(m_imageSize * 5 / 4, titleYpos), 0); // (0) unit title
 
 	Vec2i arPos, aaPos, afPos;
 	x = 0;
-	y = m_imageSize + m_imageSize / 4 + int(fm->getHeight()) * 6;
+	y = m_imageSize + m_imageSize / 4 + int(m_fontMetrics->getHeight()) * 6;
 	m_commandOffset = Vec2i(x, y);
 	for (int i = 0; i < commandCellCount; ++i) { // command buttons
 		if (i && i % cellWidthCount == 0) {
 			y += m_imageSize;
 			x = 0;
 		}
-		ImageWidget::addImageX(0, Vec2i(x,y), Vec2i(m_imageSize));
+		ImageWidget::setImageX(0, selectionCellCount + i, Vec2i(x,y), Vec2i(m_imageSize));
 		if (i == UserInterface::autoRepairPos) {
 			arPos = Vec2i(x, y);
 		} else if (i == UserInterface::autoAttackPos) {
@@ -188,58 +241,72 @@ Display::Display(Container *parent, UserInterface *ui, Vec2i pos)
 	m_sizes.commandSize = Vec2i(x, y);
 
 	x = 0;
-	y += int(m_imageSize * 0.5f);
-	TextWidget::addText(""); // (4) 'Transported' label
-	TextWidget::setTextPos(Vec2i(x, y), 4);
-	y += int(fm->getHeight() + 1.f);
+	y += m_imageSize * 3 / 2;
+	TextWidget::setTextPos(Vec2i(x, y), 4); // (4) 'Transported' label
+	y += int(m_fontMetrics->getHeight() + 1.f);
 	m_carryImageOffset = Vec2i(x, y);
 	for (int i = 0; i < transportCellCount; ++i) { // loaded unit portraits
 		if (i && i % cellWidthCount == 0) {
 			y += m_imageSize;
 			x = 0;
 		}
-		ImageWidget::addImageX(0, Vec2i(x,y), Vec2i(m_imageSize));
+		ImageWidget::setImageX(0, selectionCellCount + commandCellCount + i, Vec2i(x,y), Vec2i(m_imageSize));
 		x += m_imageSize;
 	}
 	y += m_imageSize;
 	m_sizes.transportSize = Vec2i(x, y);
 
-	const Texture2D* overlayImages[3] = {
-		g_widgetConfig.getTickTexture(),
-		g_widgetConfig.getCrossTexture(),
-		g_widgetConfig.getQuestionTexture()
-	};
-	m_autoRepairOn = addImageX(overlayImages[0], arPos, Vec2i(m_imageSize));
-	m_autoRepairOff = addImageX(overlayImages[1], arPos, Vec2i(m_imageSize));
-	m_autoRepairMixed = addImageX(overlayImages[2], arPos, Vec2i(m_imageSize));
-
-	m_autoAttackOn = addImageX(overlayImages[0], aaPos, Vec2i(m_imageSize));
-	m_autoAttackOff = addImageX(overlayImages[1], aaPos, Vec2i(m_imageSize));
-	m_autoAttackMixed = addImageX(overlayImages[2], aaPos, Vec2i(m_imageSize));
-
-	m_autoFleeOn =  addImageX(overlayImages[0], afPos, Vec2i(m_imageSize));
-	m_autoFleeOff = addImageX(overlayImages[1], afPos, Vec2i(m_imageSize));
-	m_autoFleeMixed = addImageX(overlayImages[2], afPos, Vec2i(m_imageSize));
-
-	// -loadmap doesn't have any faction
-	const Texture2D *logoTex = (g_world.getThisFaction()) ? g_world.getThisFaction()->getLogoTex() : 0;
-	if (logoTex) {
-		m_logo = ImageWidget::addImageX(logoTex, Vec2i(0, 0), Vec2i(192,192));
+	for (int i=0; i < 5; ++i) {
+		setTextFont(fontIndex, i);
 	}
 
-	m_selectedCommandIndex = invalidPos;
-	setProgressBar(-1);
-	clear();
-	//setSize();
+	setImageX(0, m_autoRepairOn, arPos, Vec2i(m_imageSize));
+	setImageX(0, m_autoRepairOff, arPos, Vec2i(m_imageSize));
+	setImageX(0, m_autoRepairMixed, arPos, Vec2i(m_imageSize));
 
-	m_toolTip = new CommandTip(WidgetWindow::getInstance());
-	m_toolTip->setVisible(false);
+	setImageX(0, m_autoAttackOn, aaPos, Vec2i(m_imageSize));
+	setImageX(0, m_autoAttackOff, aaPos, Vec2i(m_imageSize));
+	setImageX(0, m_autoAttackMixed, aaPos, Vec2i(m_imageSize));
 
-	CHECK_HEAP();
+	setImageX(0, m_autoFleeOn, afPos, Vec2i(m_imageSize));
+	setImageX(0, m_autoFleeOff, afPos, Vec2i(m_imageSize));
+	setImageX(0, m_autoFleeMixed, afPos, Vec2i(m_imageSize));
+
+	if (m_logo != invalidIndex) {
+		ImageWidget::setImageX(0, m_logo, Vec2i(0, 0), Vec2i(m_imageSize * 6, m_imageSize * 6));
+	}
+}
+
+void Display::persist() {
+	Config &cfg = g_config;
+
+	Vec2i pos = m_parent->getPos();
+	int sz = getFuzzySize() + 1;
+
+	cfg.setUiLastDisplaySize(sz);
+	cfg.setUiLastDisplayPosX(pos.x);
+	cfg.setUiLastDisplayPosY(pos.y);
+}
+
+void Display::reset() {
+	Config &cfg = g_config;
+	cfg.setUiLastDisplaySize(2);
+	cfg.setUiLastDisplayPosX(-1);
+	cfg.setUiLastDisplayPosY(-1);
+	if (getFuzzySize() == FuzzySize::SMALL) {
+		static_cast<DisplayFrame*>(m_parent)->onExpand(0);
+	} else if (getFuzzySize() == FuzzySize::LARGE) {
+		static_cast<DisplayFrame*>(m_parent)->onShrink(0);
+	}
+	m_parent->setPos(Vec2i(g_metrics.getScreenW() - 20 - m_parent->getWidth(), 20));
 }
 
 void Display::setFuzzySize(FuzzySize fuzzySize) {
-	
+	m_fuzzySize = fuzzySize;
+	layout();
+	setSize();
+	setPortraitText(getPortraitText());
+	setOrderQueueText(getOrderQueueText());
 }
 
 void Display::setSize() {
@@ -248,8 +315,7 @@ void Display::setSize() {
 		if (m_ui->getSelectedObject()) {
 			sz = m_sizes.portraitSize;
 		} else {
-			// -loadmap doesn't have any faction
-			if (g_world.getThisFaction() && g_world.getThisFaction()->getLogoTex()) {
+			if (m_logo != invalidIndex) {
 				sz = m_sizes.logoSize;
 			} else {
 				setVisible(false);
@@ -289,7 +355,7 @@ void Display::setSelectedCommandPos(int i) {
 	if (m_selectedCommandIndex == i) {
 		return;
 	}
-	if (m_selectedCommandIndex != invalidPos) {
+	if (m_selectedCommandIndex != invalidIndex) {
 		// shrink
 		int ndx = m_selectedCommandIndex + selectionCellCount;
 		Vec2i pos = getImagePos(ndx);
@@ -299,7 +365,7 @@ void Display::setSelectedCommandPos(int i) {
 		ImageWidget::setImageX(0, ndx, pos, size);
 	}
 	m_selectedCommandIndex = i;
-	if (m_selectedCommandIndex != invalidPos) {
+	if (m_selectedCommandIndex != invalidIndex) {
 		assert(!m_ui->getSelection()->isEmpty());
 		// enlarge
 		int ndx = m_selectedCommandIndex + selectionCellCount;
@@ -329,11 +395,11 @@ void Display::setPortraitText(const string &text) {
 	foreach_const (string, it, str) {
 		if (*it == '\n') ++lines;
 	}
-	int yPos = 40;
+	int yPos = m_imageSize * 5 / 4;
 	TextWidget::setTextPos(Vec2i(5, yPos), 1);
 	TextWidget::setText(str, 1);
 
-	m_progressPos = Vec2i(m_imageSize, yPos + lines * int(getFont()->getMetrics()->getHeight() + 1.f));
+	m_progressPos = Vec2i(m_imageSize, yPos + lines * int(m_fontMetrics->getHeight() + 1.f));
 }
 
 void Display::setOrderQueueText(const string &i_text) {
@@ -342,7 +408,7 @@ void Display::setOrderQueueText(const string &i_text) {
 	}
 	int y = m_progressPos.y;
 	if (m_progress != -1) {
-		y += int(getFont()->getMetrics()->getHeight()) + 3;
+		y += int(m_fontMetrics->getHeight()) + 3;
 	}
 	TextWidget::setTextPos(Vec2i(5, y), 2);
 	TextWidget::setText(i_text, 2);
@@ -398,7 +464,7 @@ void Display::clear() {
 		ImageWidget::setImage(0, selectionCellCount + commandCellCount + i);
 	}
 
-	setSelectedCommandPos(invalidPos);
+	setSelectedCommandPos(invalidIndex);
 	setPortraitTitle("");
 	setPortraitText("");
 	setProgressBar(-1);
@@ -411,7 +477,7 @@ const Vec3f progressBarFg1 = Vec3f(0.f, 0.5f, 0.f);
 const Vec3f progressBarFg2 = Vec3f(0.f, 0.1f, 0.f);
 
 void Display::renderProgressBar() {
-	const int h = int(getFont()->getMetrics()->getHeight() + 2);
+	const int h = int(m_fontMetrics->getHeight() + 2);
 	int w = getWidth() - 2 * m_imageSize;
 
 	int bw = m_progress;
@@ -534,7 +600,7 @@ void Display::render() {
 			}
 		}
 	}
-	if (m_selectedCommandIndex != invalidPos) {
+	if (m_selectedCommandIndex != invalidIndex) {
 		assert(ImageWidget::getImage(m_selectedCommandIndex + selectionCellCount));
 		ImageWidget::renderImage(m_selectedCommandIndex + selectionCellCount, light);
 	}
@@ -582,11 +648,11 @@ DisplayButton Display::computeIndex(Vec2i i_pos, bool screenPos) {
 				if (ImageWidget::getImage(i * cellHeightCount * cellWidthCount + index)) {
 					return DisplayButton(DisplaySection(i), index);
 				}
-				return DisplayButton(DisplaySection::INVALID, invalidPos);
+				return DisplayButton(DisplaySection::INVALID, invalidIndex);
 			}
 		}
 	}
-	return DisplayButton(DisplaySection::INVALID, invalidPos);
+	return DisplayButton(DisplaySection::INVALID, invalidIndex);
 }
 
 bool Display::mouseDown(MouseButton btn, Vec2i pos) {
@@ -623,10 +689,10 @@ bool Display::mouseDown(MouseButton btn, Vec2i pos) {
 				}
 				m_ui->computeDisplay();
 				m_ui->computePortraitInfo(m_hoverBtn.m_index);
-				m_pressedBtn = m_hoverBtn = DisplayButton(DisplaySection::INVALID, invalidPos);
+				m_pressedBtn = m_hoverBtn = DisplayButton(DisplaySection::INVALID, invalidIndex);
 				return true;
 			} else {
-				m_pressedBtn = DisplayButton(DisplaySection::INVALID, invalidPos);
+				m_pressedBtn = DisplayButton(DisplaySection::INVALID, invalidIndex);
 			}
 		}
 	}
@@ -647,11 +713,11 @@ bool Display::mouseUp(MouseButton btn, Vec2i pos) {
 					if (m_hoverBtn.m_section == DisplaySection::COMMANDS) {
 						m_ui->commandButtonPressed(m_hoverBtn.m_index);
 					}
-					m_pressedBtn = DisplayButton(DisplaySection::INVALID, invalidPos);
+					m_pressedBtn = DisplayButton(DisplaySection::INVALID, invalidIndex);
 					return true;
 				}
 			}
-			m_pressedBtn = DisplayButton(DisplaySection::INVALID, invalidPos);
+			m_pressedBtn = DisplayButton(DisplaySection::INVALID, invalidIndex);
 		}
 	}
 	return false;
@@ -666,7 +732,7 @@ bool Display::mouseDoubleClick(MouseButton btn, Vec2i pos) {
 		m_hoverBtn = computeIndex(pos, true);
 		if (m_hoverBtn.m_section == DisplaySection::TRANSPORTED) {
 			m_ui->unloadRequest(m_hoverBtn.m_index);
-			m_hoverBtn = DisplayButton(DisplaySection::INVALID, invalidPos);
+			m_hoverBtn = DisplayButton(DisplaySection::INVALID, invalidIndex);
 			return true;
 		}
 	}
@@ -732,7 +798,7 @@ bool Display::mouseMove(Vec2i pos) {
 
 void Display::mouseOut() {
 	WIDGET_LOG( __FUNCTION__ << "()" );
-	m_hoverBtn = DisplayButton(DisplaySection::INVALID, invalidPos);
+	m_hoverBtn = DisplayButton(DisplaySection::INVALID, invalidIndex);
 	setToolTipText2("", "");
 	m_ui->invalidateActivePos();
 	//m_toolTip->setVisible(false);

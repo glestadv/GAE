@@ -80,7 +80,7 @@ public:
 	static const int commandCellCount = cellWidthCount * cellHeightCount;
 	static const int transportCellCount = cellWidthCount * cellHeightCount / 2;
 
-	static const int invalidPos = -1;
+	static const int invalidIndex = -1;
 
 private:
 	UserInterface *m_ui; // 'conceptual' owner, but not a widget, so not our 'parent'
@@ -108,18 +108,21 @@ private:
 
 	FuzzySize m_fuzzySize;
 
-	Vec2i	m_portraitOffset,	// x,y offset for selected unit portrait(s)
-			m_commandOffset,	// x,y offset for command buttons
-			m_carryImageOffset, // x,y offset for loaded unit portrait(s)
-			m_progressPos;		// x,y offset for progress bar
-	int m_progPrecentPos;		// x offset to draw progress bar percentage text (and -1 when no progress bar)
+	Vec2i	m_portraitOffset,       // x,y offset for selected unit portrait(s)
+			m_commandOffset,        // x,y offset for command buttons
+			m_carryImageOffset,     // x,y offset for loaded unit portrait(s)
+			m_progressPos;          // x,y offset for progress bar
+	
+	int     m_progPrecentPos;       // x offset to draw progress bar percentage text (and -1 when no progress bar)
 
-	DisplayButton	m_hoverBtn,		// section/index of button mouse is over
-					m_pressedBtn;	// section/index of button that received a mouse down event
+	DisplayButton	m_hoverBtn,     // section/index of button mouse is over
+					m_pressedBtn;   // section/index of button that received a mouse down event
 
 	CommandTip  *m_toolTip;
+	const FontMetrics *m_fontMetrics;
 
 private:
+	void layout();
 	void renderProgressBar();
 	int getImageOverlayIndex(AutoCmdFlag f, AutoCmdState s);
 
@@ -168,6 +171,8 @@ public:
 	void resetTipPos() {resetTipPos(m_commandOffset);}
 	DisplayButton computeIndex(Vec2i pos, bool screenPos = false);
 	DisplayButton getHoverButton() const { return m_hoverBtn; }
+	void persist();
+	void reset();
 
 	virtual void render() override;
 	virtual string descType() const override { return "DisplayPanel"; }
@@ -188,6 +193,7 @@ private:
 	Display *m_display;
 	UserInterface *m_ui;
 
+public:
 	void onExpand(Widget*);
 	void onShrink(Widget*);
 

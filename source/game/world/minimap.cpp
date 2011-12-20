@@ -114,57 +114,55 @@ MinimapFrame::MinimapFrame(Container *parent, Vec2i pos, bool FoW, bool SoD)
 	setPinned(g_config.getUiPinWidgets());
 }
 
-void MinimapFrame::initMinimp(int w, int h, const World *world, bool resumingGame) {
+void MinimapFrame::initMinimp(FuzzySize size, int w, int h, const World *world, bool resumingGame) {
 	m_minimap->init(w, h, world, resumingGame);
 	Vec2i sz = m_minimap->getSize() + getBordersAll() + Vec2i(0, 20);
 	setSize(sz);
 	Expand.connect(this, &MinimapFrame::onExpand);
 	Shrink.connect(this, &MinimapFrame::onShrink);
+	if (size == FuzzySize::SMALL) {
+		onShrink(0);
+	} else if (size == FuzzySize::LARGE) {
+		onExpand(0);
+	}
+}
+
+void MinimapFrame::doEnableShrinkExpand(FuzzySize sz) {
+	switch (sz) {
+		case FuzzySize::LARGE:
+			enableShrinkExpand(true, false);
+			break;
+		case FuzzySize::MEDIUM:
+			enableShrinkExpand(true, true);
+			break;
+		case FuzzySize::SMALL:
+			enableShrinkExpand(false, true);
+			break;
+		default: assert(false);
+	}
 }
 
 void MinimapFrame::onExpand(Widget*) {
-	assert(m_minimap->getMinimapSize() != MinimapSize::LARGE);
-	MinimapSize sz = m_minimap->getMinimapSize();
+	assert(m_minimap->getMinimapSize() != FuzzySize::LARGE);
+	FuzzySize sz = m_minimap->getMinimapSize();
 	cout << "MinimapFrame::onExpand() : current size: " << sz << ", new size ";
 	++sz;
 	cout << sz << endl;
 
 	m_minimap->setMinimapSize(sz);
-	switch (sz) {
-		case MinimapSize::LARGE:
-			enableShrinkExpand(true, false);
-			break;
-		case MinimapSize::MEDIUM:
-			enableShrinkExpand(true, true);
-			break;
-		case MinimapSize::SMALL:
-			enableShrinkExpand(false, true);
-			break;
-		default: assert(false);
-	}
+	doEnableShrinkExpand(sz);
 	Vec2i size = m_minimap->getSize() + getBordersAll() + Vec2i(0, 20);
 	setSize(size);
 }
 
 void MinimapFrame::onShrink(Widget*) {
-	assert(m_minimap->getMinimapSize() != MinimapSize::SMALL);
-	MinimapSize sz = m_minimap->getMinimapSize();
+	assert(m_minimap->getMinimapSize() != FuzzySize::SMALL);
+	FuzzySize sz = m_minimap->getMinimapSize();
 	cout << "MinimapFrame::onShrink() : current size: " << sz << ", new size ";
 	--sz;
 	cout << sz << endl;
 	m_minimap->setMinimapSize(sz);
-	switch (sz) {
-		case MinimapSize::LARGE:
-			enableShrinkExpand(true, false);
-			break;
-		case MinimapSize::MEDIUM:
-			enableShrinkExpand(true, true);
-			break;
-		case MinimapSize::SMALL:
-			enableShrinkExpand(false, true);
-			break;
-		default: assert(false);
-	}
+	doEnableShrinkExpand(sz);
 	Vec2i size = m_minimap->getSize() + getBordersAll() + Vec2i(0, 20);
 	setSize(size);
 }
@@ -298,6 +296,8 @@ void Minimap::init(int w, int h, const World *world, bool resumingGame) {
 	m_attackNoticeTex->getPixmap()->load("data/core/misc_textures/attack_notice.png");
 
 	CHECK_HEAP();
+
+
 }
 
 Minimap::~Minimap(){
@@ -332,6 +332,31 @@ void Minimap::addAttackNotice(Vec2i pos) {
 	}
 	m_attackNotices.push_back(AttackNoticeCircle());
 	m_attackNotices.back().init(pos);
+}
+
+
+void Minimap::persist() {
+	Config &cfg = g_config;
+
+	Vec2i pos = m_parent->getPos();
+	int sz = getMinimapSize() + 1;
+
+	cfg.setUiLastMinimapSize(sz);
+	cfg.setUiLastMinimapPosX(pos.x);
+	cfg.setUiLastMinimapPosY(pos.y);
+}
+
+void Minimap::reset() {
+	Config &cfg = g_config;
+	cfg.setUiLastMinimapSize(2);
+	cfg.setUiLastMinimapPosX(-1);
+	cfg.setUiLastMinimapPosY(-1);
+	if (getMinimapSize() == FuzzySize::SMALL) {
+		static_cast<MinimapFrame*>(m_parent)->onExpand(0);
+	} else if (getMinimapSize() == FuzzySize::LARGE) {
+		static_cast<MinimapFrame*>(m_parent)->onShrink(0);
+	}
+	m_parent->setPos(Vec2i(10, 50));
 }
 
 // ==================== set ====================
@@ -388,12 +413,12 @@ void Minimap::updateFowTex(float t) {
 
 int minimapSizes[3] = { 64, 128, 256 };
 
-void Minimap::setMinimapSize(MinimapSize ms) {
+void Minimap::setMinimapSize(FuzzySize ms) {
 	fixed sz = minimapSizes[ms];
 	fixed md = std::max(m_w, m_h);
 	fixed zoom = sz / md;
 	if (zoom == m_currZoom) {
-		return;
+		//return;
 	}
 	m_currZoom = zoom;
 	Vec2i size((zoom * m_w).intp(), (zoom * m_h).intp());
@@ -412,15 +437,15 @@ void Minimap::setMinimapSize(MinimapSize ms) {
 	updateUnitTex();
 }
 
-MinimapSize Minimap::getMinimapSize() const {
+FuzzySize Minimap::getMinimapSize() const {
 	int md = std::max(getWidth(), getHeight());
-	if (md == minimapSizes[MinimapSize::LARGE]) {
-		return MinimapSize::LARGE;
-	} else if (md == minimapSizes[MinimapSize::SMALL]) {
-		return MinimapSize::SMALL;
+	if (md == minimapSizes[FuzzySize::LARGE]) {
+		return FuzzySize::LARGE;
+	} else if (md == minimapSizes[FuzzySize::SMALL]) {
+		return FuzzySize::SMALL;
 	}
-	assert(md == minimapSizes[MinimapSize::MEDIUM]);
-	return MinimapSize::MEDIUM;
+	assert(md == minimapSizes[FuzzySize::MEDIUM]);
+	return FuzzySize::MEDIUM;
 }
 
 // ==================== PRIVATE ====================

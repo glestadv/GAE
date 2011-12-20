@@ -101,13 +101,23 @@ Config::Config(const char* fileName) {
 	uiConsoleMaxLines = p->getInt("UiConsoleMaxLines", 10);
 	uiConsoleTimeout = p->getInt("UiConsoleTimeout", 20);
 	uiFocusArrows = p->getBool("UiFocusArrows", true);
+	uiLastDisplayPosX = p->getInt("UiLastDisplayPosX", -1);
+	uiLastDisplayPosY = p->getInt("UiLastDisplayPosY", -1);
+	uiLastDisplaySize = p->getInt("UiLastDisplaySize", 1, 1, 3);
+	uiLastMinimapPosX = p->getInt("UiLastMinimapPosX", -1);
+	uiLastMinimapPosY = p->getInt("UiLastMinimapPosY", -1);
+	uiLastMinimapSize = p->getInt("UiLastMinimapSize", 2, 1, 3);
 	uiLastOptionsPage = p->getInt("UiLastOptionsPage", 0, 0, 5);
+	uiLastResourceBarPosX = p->getInt("UiLastResourceBarPosX", -1);
+	uiLastResourceBarPosY = p->getInt("UiLastResourceBarPosY", -1);
+	uiLastResourceBarSize = p->getInt("UiLastResourceBarSize", 1, 1, 3);
 	uiLastScenario = p->getString("UiLastScenario", "glest_classic/anarchy");
 	uiLastScenarioCatagory = p->getString("UiLastScenarioCatagory", "glest_classic");
 	uiLocale = p->getString("UiLocale", "en");
 	uiMoveCameraAtScreenEdge = p->getBool("UiMoveCameraAtScreenEdge", true);
 	uiPhotoMode = p->getBool("UiPhotoMode", false);
 	uiPinWidgets = p->getBool("UiPinWidgets", false);
+	uiResourceNames = p->getBool("UiResourceNames", true);
 	uiScrollSpeed = p->getFloat("UiScrollSpeed", 1.5f);
 	uiTeamColourMode = p->getInt("UiTeamColourMode", 1, 1, 3);
 
@@ -186,13 +196,23 @@ void Config::save(const char *path) {
 	p->setInt("UiConsoleMaxLines", uiConsoleMaxLines);
 	p->setInt("UiConsoleTimeout", uiConsoleTimeout);
 	p->setBool("UiFocusArrows", uiFocusArrows);
+	p->setInt("UiLastDisplayPosX", uiLastDisplayPosX);
+	p->setInt("UiLastDisplayPosY", uiLastDisplayPosY);
+	p->setInt("UiLastDisplaySize", uiLastDisplaySize);
+	p->setInt("UiLastMinimapPosX", uiLastMinimapPosX);
+	p->setInt("UiLastMinimapPosY", uiLastMinimapPosY);
+	p->setInt("UiLastMinimapSize", uiLastMinimapSize);
 	p->setInt("UiLastOptionsPage", uiLastOptionsPage);
+	p->setInt("UiLastResourceBarPosX", uiLastResourceBarPosX);
+	p->setInt("UiLastResourceBarPosY", uiLastResourceBarPosY);
+	p->setInt("UiLastResourceBarSize", uiLastResourceBarSize);
 	p->setString("UiLastScenario", uiLastScenario);
 	p->setString("UiLastScenarioCatagory", uiLastScenarioCatagory);
 	p->setString("UiLocale", uiLocale);
 	p->setBool("UiMoveCameraAtScreenEdge", uiMoveCameraAtScreenEdge);
 	p->setBool("UiPhotoMode", uiPhotoMode);
 	p->setBool("UiPinWidgets", uiPinWidgets);
+	p->setBool("UiResourceNames", uiResourceNames);
 	p->setFloat("UiScrollSpeed", uiScrollSpeed);
 	p->setInt("UiTeamColourMode", uiTeamColourMode);
 
