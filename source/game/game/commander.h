@@ -70,6 +70,7 @@ public:
 	// CmdResult tryBuild(UnitVector &units, CmdFlags flags, CmdClass commandClass, ProdType prodType, Vec2i &pos);
 
 	//START_DELETE
+	CmdResult trySimpleCommand(Unit *targetUnit, CmdClass cc);
 	CmdResult tryGiveCommand(const Selection *selection, CmdFlags flags,
 		const CommandType *commandType = NULL, CmdClass commandClass = CmdClass::NULL_COMMAND,
 		const Vec2i &pos = Command::invalidPos, Unit *targetUnit = NULL,

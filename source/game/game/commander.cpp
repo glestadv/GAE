@@ -46,6 +46,9 @@ CmdResult Commander::tryUnloadCommand(Unit *unit, CmdFlags flags, const Vec2i &p
 	return pushCommand(g_world.newCommand(ct, CmdFlags(), targetUnit, unit));
 }
 
+CmdResult Commander::trySimpleCommand(Unit *targetUnit, CmdClass cc) {
+	return pushCommand(g_world.newCommand(targetUnit->getType()->getFirstCtOfClass(cc), CmdFlags(), Command::invalidPos, targetUnit));
+}
 
 CmdResult Commander::tryGiveCommand(const Selection *selection, CmdFlags flags,
 		const CommandType *ct, CmdClass cc, const Vec2i &pos, Unit *targetUnit,

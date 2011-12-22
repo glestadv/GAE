@@ -1476,7 +1476,7 @@ void Unit::doUpdateCommand() {
 		const UnitType *ut = getType();
 		setCurrSkill(SkillClass::STOP);
 		if (ut->hasCommandClass(CmdClass::STOP)) {
-			giveCommand(g_world.newCommand(ut->getFirstCtOfClass(CmdClass::STOP), CmdFlags()));
+			g_simInterface.getCommander()->trySimpleCommand(this, CmdClass::STOP);
 		}
 	}
 	//if unit is out of EP, it stops
@@ -2412,7 +2412,7 @@ bool Unit::transform(const TransformCommandType *tct, const UnitType *ut, Vec2i 
 			}
 		}
 		commands.clear();
-		giveCommand(g_world.newCommand(type->getFirstCtOfClass(CmdClass::BUILD_SELF), CmdFlags()));
+		g_simInterface.getCommander()->trySimpleCommand(this, CmdClass::BUILD_SELF);
 		setCurrSkill(SkillClass::BUILD_SELF);
 		return true;
 	}
