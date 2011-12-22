@@ -262,6 +262,7 @@ public:
 	void initWorld();
 	int launchGame();
 	bool updateWorld();
+	virtual void update() {};
 
 	// game speed
 	GameSpeed pause();

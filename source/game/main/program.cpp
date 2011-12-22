@@ -321,9 +321,7 @@ void Program::loop() {
 		// update world
 		while (updateTimer.isTime() && !terminating) {
 			_PROFILE_SCOPE("Program::loop() : Update World/Menu");
-			if (simulationInterface->isNetworkInterface()) {
-				simulationInterface->asNetworkInterface()->update();
-			}
+			simulationInterface->update();
 			m_programState->update();
 		}
 	}

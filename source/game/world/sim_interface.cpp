@@ -119,11 +119,8 @@ SimulationInterface::SimulationInterface(Program &program)
 
 SimulationInterface::~SimulationInterface() {
 	delete stats;
-	stats = 0;
 	delete m_gaia;
-	m_gaia = 0;
 	delete m_skillCycleTable;
-	m_skillCycleTable = 0;
 	delete m_prototypeFactory;
 }
 
