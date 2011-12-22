@@ -1147,10 +1147,14 @@ void Unit::born(bool reborn) {
 		faction->applyUpgradeBoosts(this);
 		if (faction->isThisFaction() && !g_config.getGsAutoRepairEnabled()
 		&& type->getFirstCtOfClass(CmdClass::REPAIR)) {
-			CmdFlags cmdFlags;
-			cmdFlags.set(CmdProps::MISC_ENABLE, false);
-			Command *cmd = g_world.newCommand(CmdDirective::SET_AUTO_REPAIR, cmdFlags, invalidPos, this);
-			g_simInterface.getCommander()->pushCommand(cmd);
+			// NOTE: this might be better in Commander::trySetAutoCommandEnabled, this is the only
+			//	pushCommand call not in commander.cpp - hailstone 22DEC2011
+			if (!g_simInterface.isNetworkInterface()) {
+				CmdFlags cmdFlags;
+				cmdFlags.set(CmdProps::MISC_ENABLE, false);
+				Command *cmd = g_world.newCommand(CmdDirective::SET_AUTO_REPAIR, cmdFlags, invalidPos, this);
+				g_simInterface.getCommander()->pushCommand(cmd);
+			}
 		}
 		if (!isCarried()) {
 			startSkillParticleSystems();
