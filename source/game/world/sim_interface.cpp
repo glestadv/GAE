@@ -438,7 +438,9 @@ void SimulationInterface::doUpdateUnitCommand(Unit *unit) {
 	IF_MAD_SYNC_CHECKS(
 		UnitStateRecord usr(unit);
 		worldLog->addUnitRecord(usr);
-		postCommandUpdate(unit);
+		//if (unit->getCommandCount() > 0 && !unit->getCurrCommand()->isAuto()) {
+			postCommandUpdate(unit);
+		//}
 	)
 }
 
@@ -460,7 +462,9 @@ void SimulationInterface::doUpdateAnimOnDeath(Unit *unit) {
 void SimulationInterface::doUpdateAnim(Unit *unit) {
 	unit->doUpdateAnim(m_skillCycleTable);
 	IF_MAD_SYNC_CHECKS(
-		postAnimUpdate(unit);
+		//if (unit->getCommandCount() > 0 && !unit->getCurrCommand()->isAuto()) {
+			postAnimUpdate(unit);
+		//}
 	)
 }
 

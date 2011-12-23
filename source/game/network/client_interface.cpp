@@ -323,7 +323,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 
 void ClientInterface::updateSkillCycle(Unit *unit) {
 	NETWORK_LOG( "UnitId: " << unit->getId() << " IsMoving: " << unit->isMoving());
-	if (unit->isMoving()) {
+	if (unit->isMoving() /*&& !unit->getCurrCommand()->isAuto()*/) {
 		updateMove(unit);
 	} else {
 		unit->updateSkillCycle(m_skillCycleTable->lookUp(unit).getSkillFrames());

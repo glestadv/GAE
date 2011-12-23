@@ -338,7 +338,7 @@ void ServerInterface::checkAnimUpdate(Unit*, int32 cs) {
 void ServerInterface::updateSkillCycle(Unit *unit) {
 	NETWORK_LOG( "UnitId: " << unit->getId() << " IsMoving: " << unit->isMoving());
 	SimulationInterface::updateSkillCycle(unit);
-	if (unit->isMoving()) {
+	if (unit->isMoving() /*&& !unit->getCurrCommand()->isAuto()*/) {
 		MoveSkillUpdate updt(unit);
 		keyFrame.addUpdate(updt);
 		//NETWORK_LOG( "ServerInterface::updateSkillCycle(): UnitId: " << unit->getId() << " Moving, NextPos: " << unit->getNextPos() );
