@@ -248,6 +248,7 @@ WRAPPED_ENUM( NetworkCommandType,
 
 		MoveSkillUpdate(const Unit *unit);
 		MoveSkillUpdate(const uint8 *ptr) { *this = *((MoveSkillUpdate*)ptr); }
+		MoveSkillUpdate() {}
 		Vec2i posOffset() const { return Vec2i(offsetX, offsetY); }
 	};
 #pragma pack(pop)
@@ -257,6 +258,7 @@ WRAPPED_ENUM( NetworkCommandType,
 		uint8 end_offset	:  8;
 		ProjectileUpdate(const Unit *unit, Projectile *pps);
 		ProjectileUpdate(const uint8 *ptr) { *this = *((ProjectileUpdate*)ptr); }
+		ProjectileUpdate() {}
 	}; // 2 bytes
 #pragma pack(pop)
 

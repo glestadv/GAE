@@ -514,10 +514,12 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 	)
 	if (m_moveUpdates.updateSize) {
 		memcpy(m_moveUpdates.updateBuffer, ptr, m_moveUpdates.updateSize);
+		memcpy(m_moveUpdateList, ptr, m_moveUpdates.updateSize);
 		ptr += m_moveUpdates.updateSize;
 	}
 	if (m_projectileUpdates.updateSize) {
 		memcpy(m_projectileUpdates.updateBuffer, ptr, m_projectileUpdates.updateSize);
+		memcpy(m_projectileUpdateList, ptr, m_projectileUpdates.updateSize);
 		ptr += m_projectileUpdates.updateSize;
 	}
 	if (cmdCount) {
@@ -627,6 +629,7 @@ void KeyFrame::reset() {
 		checksumCounter = checksumCount = 0;
 	)
 	cmdCount = 0;
+	m_moveIndex = m_projectileIndex = 0;
 
 	m_moveUpdates.updateCount = m_moveUpdates.updateSize = 0;
 	m_moveUpdates.writePtr = m_moveUpdates.updateBuffer;
@@ -664,8 +667,9 @@ MoveSkillUpdate KeyFrame::getMoveUpdate() {
 		NETWORK_LOG( "KeyFrame::getMoveUpdate(): ERROR: Insufficient move skill updates in keyframe." );
 		throw GameSyncError("Insufficient move skill updates in keyframe");
 	}
-	MoveSkillUpdate res(m_moveUpdates.readPtr);
-	m_moveUpdates.readPtr += sizeof(MoveSkillUpdate);
+	MoveSkillUpdate res = m_moveUpdateList[m_moveIndex];//(m_moveUpdates.readPtr);
+	++m_moveIndex;
+	//m_moveUpdates.readPtr += sizeof(MoveSkillUpdate);
 	--m_moveUpdates.updateCount;
 	NETWORK_LOG( "KeyFrame::getMoveUpdate(): Pos Offset:" << res.posOffset()
 		<< " Frame Offset: " << int(res.end_offset) 
@@ -701,8 +705,9 @@ ProjectileUpdate KeyFrame::getProjUpdate() {
 		NETWORK_LOG( "KeyFrame::getProjUpdate(): ERROR: Insufficient projectile updates in keyframe." );
 		throw GameSyncError("Insufficient projectile updates in keyframe");
 	}
-	ProjectileUpdate res(m_projectileUpdates.readPtr);
-	m_projectileUpdates.readPtr += sizeof(ProjectileUpdate);
+	ProjectileUpdate res = m_projectileUpdateList[m_projectileIndex];//(m_projectileUpdates.readPtr);
+	++m_projectileIndex;
+	//m_projectileUpdates.readPtr += sizeof(ProjectileUpdate);
 	--m_projectileUpdates.updateCount;
 	//NETWORK_LOG( "KeyFrame::getProjUpdate(): Frame Offset: " << int(res.end_offset) );
 	return res;

@@ -383,9 +383,14 @@ private:
 		uint32	 updateCount;
 	};
 
+	int m_moveIndex;
+	int m_projectileIndex;
+
 	Updates m_moveUpdates;
 	Updates m_projectileUpdates;
 
+	MoveSkillUpdate m_moveUpdateList[max_updates];
+	ProjectileUpdate m_projectileUpdateList[max_updates];
 	NetworkCommand commands[max_cmds];
 	size_t cmdCount;
 
