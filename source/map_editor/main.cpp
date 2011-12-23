@@ -811,8 +811,8 @@ void MainWindow::onMenuBrushHeight(wxCommandEvent &e) {
 	height = e.GetId() - miBrushHeight - heightCount / 2 - 1;
 	enabledGroup = ctHeight;
 	currentBrush = btHeight;
-	SetStatusText(wxT("Brush: Height"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(height)), StatusItems::BRUSH_VALUE);
+	SetStatusText(_("Brush: Height"), StatusItems::BRUSH_TYPE);
+	SetStatusText(_("Value: ") + ToUnicode(intToStr(height)), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuBrushGradient(wxCommandEvent &e) {
@@ -821,8 +821,8 @@ void MainWindow::onMenuBrushGradient(wxCommandEvent &e) {
 	height = e.GetId() - miBrushGradient - heightCount / 2 - 1;
 	enabledGroup = ctGradient;
 	currentBrush = btGradient;
-	SetStatusText(wxT("Brush: Gradient"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(height)), StatusItems::BRUSH_VALUE);
+	SetStatusText(_("Brush: Gradient"), StatusItems::BRUSH_TYPE);
+	SetStatusText(_("Value: ") + ToUnicode(intToStr(height)), StatusItems::BRUSH_VALUE);
 }
 
 
@@ -832,9 +832,9 @@ void MainWindow::onMenuBrushSurface(wxCommandEvent &e) {
 	surface = e.GetId() - miBrushSurface;
 	enabledGroup = ctSurface;
 	currentBrush = btSurface;
-	SetStatusText(wxT("Brush: Surface"), StatusItems::BRUSH_TYPE);
+	SetStatusText(_("Brush: Surface"), StatusItems::BRUSH_TYPE);
 	SetStatusText(
-		wxT("Value: ") + ToUnicode(intToStr(surface)) + wxT(" ")
+		_("Value: ") + ToUnicode(intToStr(surface)) + wxT(" ")
 		+ ToUnicode(surface_descs[surface - 1]), StatusItems::BRUSH_VALUE);
 }
 
@@ -844,9 +844,9 @@ void MainWindow::onMenuBrushObject(wxCommandEvent &e) {
 	object = e.GetId() - miBrushObject - 1;
 	enabledGroup = ctObject;
 	currentBrush = btObject;
-	SetStatusText(wxT("Brush: Object"), StatusItems::BRUSH_TYPE);
+	SetStatusText(_("Brush: Object"), StatusItems::BRUSH_TYPE);
 	SetStatusText(
-		wxT("Value: ") + ToUnicode(intToStr(object)) + wxT(" ")
+		_("Value: ") + ToUnicode(intToStr(object)) + wxT(" ")
 		+ ToUnicode(object_descs[object]), StatusItems::BRUSH_VALUE);
 }
 
@@ -856,9 +856,9 @@ void MainWindow::onMenuBrushResource(wxCommandEvent &e) {
 	resource = e.GetId() - miBrushResource - 1;
 	enabledGroup = ctResource;
 	currentBrush = btResource;
-	SetStatusText(wxT("Brush: Resource"), StatusItems::BRUSH_TYPE);
+	SetStatusText(_("Brush: Resource"), StatusItems::BRUSH_TYPE);
 	SetStatusText(
-		wxT("Value: ") + ToUnicode(intToStr(resource)) + wxT(" ")
+		_("Value: ") + ToUnicode(intToStr(resource)) + wxT(" ")
 		+ ToUnicode(resource_descs[resource]), StatusItems::BRUSH_VALUE);
 }
 
@@ -868,15 +868,15 @@ void MainWindow::onMenuBrushStartLocation(wxCommandEvent &e) {
 	startLocation = e.GetId() - miBrushStartLocation;
 	enabledGroup = ctLocation;
 	currentBrush = btStartLocation;
-	SetStatusText(wxT("Brush: Start Locations"), StatusItems::BRUSH_TYPE);
-	SetStatusText(wxT("Value: ") + ToUnicode(intToStr(startLocation)), StatusItems::BRUSH_VALUE);
+	SetStatusText(_("Brush: Start Locations"), StatusItems::BRUSH_TYPE);
+	SetStatusText(_("Value: ") + ToUnicode(intToStr(startLocation)), StatusItems::BRUSH_VALUE);
 }
 
 void MainWindow::onMenuRadius(wxCommandEvent &e) {
 	uncheckRadius();
 	menuRadius->Check(e.GetId(), true);
 	radius = e.GetId() - miRadius;
-	SetStatusText(wxT("Radius: ") + ToUnicode(intToStr(radius)), StatusItems::BRUSH_RADIUS);
+	SetStatusText(_("Radius: ") + ToUnicode(intToStr(radius)), StatusItems::BRUSH_RADIUS);
 }
 
 void MainWindow::change(int x, int y) {
@@ -1137,7 +1137,7 @@ string SimpleDialog::getValue(const string &key) {
 
 void SimpleDialog::show() {
 
-	Create(NULL, -1, wxT("Edit Values"));
+	Create(NULL, -1, _("Edit Values"));
 
 	wxSizer *sizer = new wxFlexGridSizer(2);
 
@@ -1192,7 +1192,7 @@ int App::MainLoop() {
 	try {
 		return wxApp::MainLoop();
 	} catch (const exception &e) {
-		wxMessageDialog(NULL, ToUnicode(e.what()), wxT("Exception"), wxOK | wxICON_ERROR).ShowModal();
+		wxMessageDialog(NULL, ToUnicode(e.what()), _("Exception"), wxOK | wxICON_ERROR).ShowModal();
 	}
 	return 0;
 }

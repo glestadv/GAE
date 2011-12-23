@@ -76,6 +76,29 @@ msgstr "Rückgängig\tCTRL+Z"
 msgid "Big Rock (Mountain) (unwalkable)"
 msgstr "Großer Felsen (Gebirge)(unbegehbar)"
 
+#, fuzzy
+msgid "Brush: Gradient"
+msgstr "Gradient"
+
+#, fuzzy
+msgid "Brush: Height"
+msgstr "Höhe"
+
+#, fuzzy
+msgid "Brush: Object"
+msgstr "Objekt"
+
+#, fuzzy
+msgid "Brush: Resource"
+msgstr "Resource"
+
+msgid "Brush: Start Locations"
+msgstr ""
+
+#, fuzzy
+msgid "Brush: Surface"
+msgstr "Oberfläche"
+
 msgid "Bush/Grass/Fern (walkable)"
 msgstr "Busch/Gras/Farn (begehbar)"
 
@@ -107,8 +130,14 @@ msgstr ""
 msgid "Discard changes?"
 msgstr "Änderungen verwerfen?"
 
+msgid "Edit Values"
+msgstr ""
+
 msgid "Error"
 msgstr "Fehler"
+
+msgid "Exception"
+msgstr ""
 
 msgid "Flip &X"
 msgstr ""
@@ -139,6 +168,10 @@ msgstr "Spieler"
 
 msgid "Player start position"
 msgstr "Startposition"
+
+#, fuzzy
+msgid "Radius: "
+msgstr "Radius"
 
 msgid "Randomi&ze"
 msgstr ""
@@ -192,6 +225,9 @@ msgid "Undo"
 msgstr "Rückgängig"
 
 msgid "Unsaved"
+msgstr ""
+
+msgid "Value: "
 msgstr ""
 
 msgid "Water Object/Reed/Papyrus (walkable)"

@@ -55,6 +55,24 @@ msgstr ""
 msgid "Big Rock (Mountain) (unwalkable)"
 msgstr ""
 
+msgid "Brush: Gradient"
+msgstr ""
+
+msgid "Brush: Height"
+msgstr ""
+
+msgid "Brush: Object"
+msgstr ""
+
+msgid "Brush: Resource"
+msgstr ""
+
+msgid "Brush: Start Locations"
+msgstr ""
+
+msgid "Brush: Surface"
+msgstr ""
+
 msgid "Bush/Grass/Fern (walkable)"
 msgstr ""
 
@@ -85,7 +103,13 @@ msgstr ""
 msgid "Discard changes?"
 msgstr ""
 
+msgid "Edit Values"
+msgstr ""
+
 msgid "Error"
+msgstr ""
+
+msgid "Exception"
 msgstr ""
 
 msgid "Flip &X"
@@ -116,6 +140,9 @@ msgid "Player"
 msgstr ""
 
 msgid "Player start position"
+msgstr ""
+
+msgid "Radius: "
 msgstr ""
 
 msgid "Randomi&ze"
@@ -170,6 +197,9 @@ msgid "Undo"
 msgstr ""
 
 msgid "Unsaved"
+msgstr ""
+
+msgid "Value: "
 msgstr ""
 
 msgid "Water Object/Reed/Papyrus (walkable)"
