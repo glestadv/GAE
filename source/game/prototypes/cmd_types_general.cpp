@@ -330,7 +330,7 @@ Command *MoveBaseCommandType::doAutoFlee(Unit *unit) const {
 	Unit *sighted = NULL;
 	if (attackerInSight(unit, &sighted)) {
 		Vec2i escapePos = unit->getPos() * 2 - sighted->getPos();
-		return g_world.newCommand(this, CmdFlags(CmdProps::AUTO), escapePos);
+		return g_world.newCommand(this, CmdFlags(CmdProps::AUTO), escapePos, unit);
 	}
 	return 0;
 }
@@ -366,7 +366,7 @@ void MoveCommandType::update(Unit *unit) const {
 		if (!autoCmd->isAuto()) {
 			DEBUG_HOOK();
 		}
-		unit->giveCommand(autoCmd);
+		g_simInterface.getCommander()->pushCommand(autoCmd);
 	}
 }
 
@@ -479,7 +479,7 @@ void StopCommandType::update(Unit *unit) const {
 
 	// check auto commands
 	if (autoCmd = doAutoCommand(unit)) {
-		unit->giveCommand(autoCmd);
+		g_simInterface.getCommander()->pushCommand(autoCmd);
 		return;
 	}
 }

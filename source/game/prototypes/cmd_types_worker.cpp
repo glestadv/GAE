@@ -262,7 +262,7 @@ void RepairCommandType::update(Unit *unit) const {
 	Command *autoCmd;
 	if (command->isAuto() && (autoCmd = doAutoCommand(unit))) {
 		if (autoCmd->getType()->getClass() == CmdClass::ATTACK) {
-			unit->giveCommand(autoCmd);
+			g_simInterface.getCommander()->pushCommand(autoCmd);
 		}
 	}
 
@@ -411,7 +411,7 @@ Command *RepairCommandType::doAutoRepair(Unit *unit) const {
 		testFlags2.set(CmdProps::QUEUE, true);
 		testFlags2.set(CmdProps::AUTO, true);
 
-		newCommand = g_world.newCommand(this, CmdFlags(CmdProps::QUEUE, CmdProps::AUTO), pos);
+		newCommand = g_world.newCommand(this, CmdFlags(CmdProps::QUEUE, CmdProps::AUTO), pos, unit);
 		newCommand->setPos2(unit->getPos());
 		return newCommand;
 	}

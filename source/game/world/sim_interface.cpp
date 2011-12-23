@@ -407,10 +407,10 @@ void SimulationInterface::doQuitGame(QuitSource source) {
 void SimulationInterface::requestCommand(Command *command) {
 	Unit *unit = command->getCommandedUnit();
 
-	if (command->isAuto()) {
+	/*if (command->isAuto()) {
 		// Auto & AI generated commands go straight though
 		pendingCommands.push_back(command);
-	} else {
+	} else {*/
 		// else add to request queue
 		if (command->getArchetype() == CmdDirective::GIVE_COMMAND) {
 			requestedCommands.push_back(NetworkCommand(command));
@@ -429,7 +429,7 @@ void SimulationInterface::requestCommand(Command *command) {
 			requestedCommands.push_back(NetworkCommand(NetworkCommandType::SET_CLOAK, 
 				unit, command->getFlags().get(CmdProps::MISC_ENABLE)));
 		}
-	}
+	//}
 	g_world.deleteCommand(command);
 }
 
