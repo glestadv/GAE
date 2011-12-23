@@ -300,6 +300,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 			keyFrame = KeyFrame(raw);
 			//NETWORK_LOG( "ClientInterface::updateKeyframe(): received keyframe " << (keyFrame.getFrameCount() / GameConstants::networkFramePeriod)
 			//	<< " @ frame " << frameCount );
+			keyFrame.logMoveUpdates();
 			if (keyFrame.getFrameCount() != frameCount + GameConstants::networkFramePeriod) {
 				throw GameSyncError("frame count mismatch. Probable garbled message or memory corruption");
 			}
@@ -321,6 +322,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 }
 
 void ClientInterface::updateSkillCycle(Unit *unit) {
+	NETWORK_LOG( "UnitId: " << unit->getId() << " IsMoving: " << unit->isMoving());
 	if (unit->isMoving()) {
 		updateMove(unit);
 	} else {

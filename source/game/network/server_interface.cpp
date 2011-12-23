@@ -336,6 +336,7 @@ void ServerInterface::checkAnimUpdate(Unit*, int32 cs) {
 #endif
 
 void ServerInterface::updateSkillCycle(Unit *unit) {
+	NETWORK_LOG( "UnitId: " << unit->getId() << " IsMoving: " << unit->isMoving());
 	SimulationInterface::updateSkillCycle(unit);
 	if (unit->isMoving()) {
 		MoveSkillUpdate updt(unit);

@@ -477,7 +477,8 @@ struct KeyFrameMsgHeader {
 	)
 	uint16 moveUpdateCount;
 	uint16 projUpdateCount;
-	uint16 updateSize;
+	uint16 moveUpdateSize;
+	uint16 projUpdateSize;
 	int32 frame;
 
 };
@@ -494,9 +495,12 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 	IF_MAD_SYNC_CHECKS(
 		checksumCount = header.checksumCount;
 	)
-	moveUpdateCount = header.moveUpdateCount;
-	projUpdateCount = header.projUpdateCount;
-	updateSize = header.updateSize;
+
+	m_moveUpdates.updateCount = header.moveUpdateCount;
+	m_projectileUpdates.updateCount = header.projUpdateCount;
+	m_moveUpdates.updateSize = header.moveUpdateSize;
+	m_projectileUpdates.updateSize = header.projUpdateSize;
+
 	cmdCount = header.cmdCount;
 
 	//NETWORK_LOG( "KeyFrame::KeyFrame(RawMessage): Message size: " << raw.size << ", Frame: " << frame << ", Move updates: " << moveUpdateCount
@@ -508,9 +512,13 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 			ptr += checksumCount * sizeof(int32);
 		}
 	)
-	if (updateSize) {
-		memcpy(updateBuffer, ptr, updateSize);
-		ptr += updateSize;
+	if (m_moveUpdates.updateSize) {
+		memcpy(m_moveUpdates.updateBuffer, ptr, m_moveUpdates.updateSize);
+		ptr += m_moveUpdates.updateSize;
+	}
+	if (m_projectileUpdates.updateSize) {
+		memcpy(m_projectileUpdates.updateBuffer, ptr, m_projectileUpdates.updateSize);
+		ptr += m_projectileUpdates.updateSize;
 	}
 	if (cmdCount) {
 		memcpy(commands, ptr, cmdCount * sizeof(NetworkCommand));
@@ -535,13 +543,15 @@ void KeyFrame::buildPacket() {
 	IF_MAD_SYNC_CHECKS(
 		header.checksumCount = this->checksumCount;
 	)
-	header.moveUpdateCount = this->moveUpdateCount;
-	header.projUpdateCount = this->projUpdateCount;
-	header.updateSize = this->updateSize;
-
+	header.moveUpdateCount = m_moveUpdates.updateCount;
+	header.projUpdateCount = m_projectileUpdates.updateCount;
+	
+	header.moveUpdateSize = m_moveUpdates.updateSize;
+	header.projUpdateSize = m_projectileUpdates.updateSize;
 	size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
-	//size_t headerSize = sizeof(KeyFrameMsgHeader);
-	msgHeader.messageSize = sizeof(KeyFrameMsgHeader) + updateSize + commandsSize;
+
+	msgHeader.messageSize = sizeof(KeyFrameMsgHeader) 
+		+ m_moveUpdates.updateSize + m_projectileUpdates.updateSize + commandsSize;
 
 	IF_MAD_SYNC_CHECKS(
 		msgHeader.messageSize += checksumCount * sizeof(int32);
@@ -564,9 +574,13 @@ void KeyFrame::buildPacket() {
 			ptr += checksumCount * sizeof(int32);
 		}
 	)
-	if (updateSize) {
-		memcpy(ptr, updateBuffer, updateSize);
-		ptr += updateSize;
+	if (m_moveUpdates.updateSize) {
+		memcpy(ptr, m_moveUpdates.updateBuffer, m_moveUpdates.updateSize);
+		ptr += m_moveUpdates.updateSize;
+	}
+	if (m_projectileUpdates.updateSize) {
+		memcpy(ptr, m_projectileUpdates.updateBuffer, m_projectileUpdates.updateSize);
+		ptr += m_projectileUpdates.updateSize;
 	}
 	if (commandsSize) {
 		memcpy(ptr, commands, commandsSize);
@@ -612,54 +626,84 @@ void KeyFrame::reset() {
 	IF_MAD_SYNC_CHECKS(
 		checksumCounter = checksumCount = 0;
 	)
-	projUpdateCount = moveUpdateCount = cmdCount = 0;
-	updateSize = 0;
-	writePtr = updateBuffer;
-	readPtr = updateBuffer;
+	cmdCount = 0;
+
+	m_moveUpdates.updateCount = m_moveUpdates.updateSize = 0;
+	m_moveUpdates.writePtr = m_moveUpdates.updateBuffer;
+	m_moveUpdates.readPtr = m_moveUpdates.updateBuffer;
+
+	m_projectileUpdates.updateCount = m_projectileUpdates.updateSize = 0;
+	m_projectileUpdates.writePtr = m_projectileUpdates.updateBuffer;
+	m_projectileUpdates.readPtr = m_projectileUpdates.updateBuffer;
 }
 
 void KeyFrame::addUpdate(MoveSkillUpdate updt) {
 //	assert(writePtr < &updateBuffer[buffer_size - 2]);
-	memcpy(writePtr, &updt, sizeof(MoveSkillUpdate));
-	writePtr += sizeof(MoveSkillUpdate);
-	updateSize += sizeof(MoveSkillUpdate);
-	++moveUpdateCount;
-	//NETWORK_LOG( "KeyFrame::addUpdate(MoveSkillUpdate): Pos Offset:" << updt.posOffset()
-	//	<< " Frame Offset: " << int(updt.end_offset) << " UnitId: " << updt.unitId );
+	memcpy(m_moveUpdates.writePtr, &updt, sizeof(MoveSkillUpdate));
+	m_moveUpdates.writePtr += sizeof(MoveSkillUpdate);
+	m_moveUpdates.updateSize += sizeof(MoveSkillUpdate);
+	++m_moveUpdates.updateCount;
+	NETWORK_LOG( "KeyFrame::addUpdate(MoveSkillUpdate): Pos Offset:" << updt.posOffset()
+		<< " Frame Offset: " << int(updt.end_offset) 
+		<< " UnitId: " << updt.unitId
+		<< " Update Size: " << m_moveUpdates.updateSize );
 }
 
 void KeyFrame::addUpdate(ProjectileUpdate updt) {
 //	assert(writePtr < &updateBuffer[buffer_size - 1]);
-	memcpy(writePtr, &updt, sizeof(ProjectileUpdate));
-	writePtr += sizeof(ProjectileUpdate);
-	updateSize += sizeof(ProjectileUpdate);
-	++projUpdateCount;
+	memcpy(m_projectileUpdates.writePtr, &updt, sizeof(ProjectileUpdate));
+	m_projectileUpdates.writePtr += sizeof(ProjectileUpdate);
+	m_projectileUpdates.updateSize += sizeof(ProjectileUpdate);
+	++m_projectileUpdates.updateCount;
 	//NETWORK_LOG( "KeyFrame::addUpdate(ProjectileUpdate): Frame Offset: " << int(updt.end_offset) );
 }
 
 MoveSkillUpdate KeyFrame::getMoveUpdate() {
-	assert(readPtr < updateBuffer + updateSize - 1);
-	if (!moveUpdateCount) {
+	assert(m_moveUpdates.readPtr < m_moveUpdates.updateBuffer + m_moveUpdates.updateSize - 1);
+	if (!m_moveUpdates.updateCount) {
 		NETWORK_LOG( "KeyFrame::getMoveUpdate(): ERROR: Insufficient move skill updates in keyframe." );
 		throw GameSyncError("Insufficient move skill updates in keyframe");
 	}
-	MoveSkillUpdate res(readPtr);
-	readPtr += sizeof(MoveSkillUpdate);
-	--moveUpdateCount;
-	//NETWORK_LOG( "KeyFrame::getMoveUpdate(): Pos Offset:" << res.posOffset()
-	//	<< " Frame Offset: " << int(res.end_offset) );
+	MoveSkillUpdate res(m_moveUpdates.readPtr);
+	m_moveUpdates.readPtr += sizeof(MoveSkillUpdate);
+	--m_moveUpdates.updateCount;
+	NETWORK_LOG( "KeyFrame::getMoveUpdate(): Pos Offset:" << res.posOffset()
+		<< " Frame Offset: " << int(res.end_offset) 
+		<< " Update Size: " << m_moveUpdates.updateSize
+		<< " Move Update Count: " << m_moveUpdates.updateCount 
+		<< " Frame: " << frame );
 	return res;
 }
 
+void KeyFrame::logMoveUpdates() {
+
+	int updateCount = m_moveUpdates.updateCount;
+	byte_ptr readPtr = m_moveUpdates.readPtr;
+
+	NETWORK_LOG( "KeyFrame::logMoveUpdates(): Update Size: " << m_moveUpdates.updateSize
+		<< " Frame: " << frame );
+
+	while (updateCount) {
+		MoveSkillUpdate res(readPtr);
+		readPtr += sizeof(MoveSkillUpdate);
+		--updateCount;
+
+		NETWORK_LOG( "\tPos Offset:" << res.posOffset()
+			<< " Frame Offset: " << int(res.end_offset) 
+			<< " UnitId: " << res.unitId
+			<< " Move Update Count: " << updateCount );
+	}
+}
+
 ProjectileUpdate KeyFrame::getProjUpdate() {
-	assert(readPtr < updateBuffer + updateSize);
-	if (!projUpdateCount) {
+	assert(m_projectileUpdates.readPtr < m_projectileUpdates.updateBuffer + m_projectileUpdates.updateSize);
+	if (!m_projectileUpdates.updateCount) {
 		NETWORK_LOG( "KeyFrame::getProjUpdate(): ERROR: Insufficient projectile updates in keyframe." );
 		throw GameSyncError("Insufficient projectile updates in keyframe");
 	}
-	ProjectileUpdate res(readPtr);
-	readPtr += sizeof(ProjectileUpdate);
-	--projUpdateCount;
+	ProjectileUpdate res(m_projectileUpdates.readPtr);
+	m_projectileUpdates.readPtr += sizeof(ProjectileUpdate);
+	--m_projectileUpdates.updateCount;
 	//NETWORK_LOG( "KeyFrame::getProjUpdate(): Frame Offset: " << int(res.end_offset) );
 	return res;
 }

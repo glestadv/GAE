@@ -363,6 +363,7 @@ class KeyFrame : public Message {
 private:
 	static const int buffer_size = 1024 * 4;
 	static const int max_cmds = 512;
+	static const int max_updates = 128;
 	static const int max_checksums = 2048;
 	typedef uint8* byte_ptr;
 
@@ -374,12 +375,16 @@ private:
 		uint32	checksumCounter;
 	)
 
-	uint8	 updateBuffer[buffer_size];
-	size_t	 updateSize;
-	uint32	 projUpdateCount;
-	uint32	 moveUpdateCount;
-	byte_ptr writePtr;
-	byte_ptr readPtr;
+	struct Updates {
+		uint8	 updateBuffer[buffer_size];
+		byte_ptr writePtr;
+		byte_ptr readPtr;
+		size_t	 updateSize;
+		uint32	 updateCount;
+	};
+
+	Updates m_moveUpdates;
+	Updates m_projectileUpdates;
 
 	NetworkCommand commands[max_cmds];
 	size_t cmdCount;
@@ -395,6 +400,7 @@ public:
 	virtual unsigned int getSize() const	{return m_packetSize;}
 	virtual const void* getData() const		{return m_packetData;}
 	virtual void log() const override;
+	void logMoveUpdates();
 
 	void setFrameCount(int fc) { frame = fc; }
 	int getFrameCount() const { return frame; }
