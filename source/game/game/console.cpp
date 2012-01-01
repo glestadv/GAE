@@ -60,7 +60,7 @@ Console::~Console() {
 }
 
 void Console::addStdMessage(const string &s){
-	addLine(g_lang.get(s));
+	addLine(s);
 }
 
 void Console::addStdMessage(const string &s, const string &param1, const string &param2, const string &param3) {

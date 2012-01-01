@@ -74,7 +74,7 @@ string RequirableType::getReqDesc(const Faction *f) const{
 		return ss.str();
 	}
 	ss << g_lang.getFactionString(f->getType()->getName(), m_name)
-	   << " " << g_lang.get("Reqs") << ":\n";
+	   << " " << _("Requires") << ":\n";
 	foreach_const (UnitReqs, it, unitReqs) {
 		ss << "  " << (*it)->getName() << endl;
 	}
@@ -184,7 +184,7 @@ string ProducibleType::getReqDesc(const Faction *f) const {
 		return ss.str();
 	}
 	ss << lang.getFactionString(f->getType()->getName(), m_name)
-	   << " " << g_lang.get("Reqs") << ":\n";
+	   << " " << _("Requires") << ":\n";
 	for (int i=0; i < getCostCount(); ++i) {
 		ResourceAmount r = getCost(i, f);
 		string resName = lang.getFactionString(f->getType()->getName(), r.getType()->getName());

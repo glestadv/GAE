@@ -67,7 +67,7 @@ void Options::buildGameTab() {
 	//leftPnl->setSplitDistance(30);
 	//rightPnl->setSplitDistance(30);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("General"));
+	rightPnl->addHeading(leftPnl, _("General"));
 	// Player Name
 	TextBox *tb = rightPnl->addTextBox(lang.get("PlayerName"), g_config.getNetPlayerName());
 	tb->TextChanged.connect(this, &Options::onPlayerNameChanged);
@@ -78,7 +78,7 @@ void Options::buildGameTab() {
 	m_langList->SelectionChanged.connect(this, &Options::onDropListSelectionChanged);
 	m_langList->setDropBoxHeight(200);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("Camera"));
+	rightPnl->addHeading(leftPnl, _("Camera"));
 
 	// Camera min / max altitude
 	SpinnerPair sp = rightPnl->addSpinnerPair(lang.get("CameraAltitude"), lang.get("Min"), lang.get("Max"));
@@ -106,7 +106,7 @@ void Options::buildGameTab() {
 	m_cameraInvertYAxisCheckBox = rightPnl->addCheckBox(lang.get("CameraInvertYAxis"), config.getCameraInvertYAxis());
 	m_cameraInvertYAxisCheckBox->Clicked.connect(this, &Options::onCheckBoxCahnged);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("Behavior"));
+	rightPnl->addHeading(leftPnl, _("Behavior"));
 
 	// Auto repair / return
 	m_autoRepairCheckBox = rightPnl->addCheckBox(lang.get("AutoRepair"), config.getGsAutoRepairEnabled());
@@ -119,7 +119,7 @@ void Options::buildGameTab() {
 	m_focusArrowsCheckBox = rightPnl->addCheckBox(lang.get("FocusArrows"), config.getUiFocusArrows());
 	m_focusArrowsCheckBox->Clicked.connect(this, &Options::onCheckBoxCahnged);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("Interface"));
+	rightPnl->addHeading(leftPnl, _("Interface"));
 
 	m_resoureNamesCheckBox = rightPnl->addCheckBox(lang.get("ResourceNames"), g_config.getUiResourceNames());
 	m_resoureNamesCheckBox->Clicked.connect(this, &Options::onCheckBoxCahnged);
@@ -138,7 +138,7 @@ void Options::buildGameTab() {
 	m_scrollSpeedSpinner->setValue(int(config.getUiScrollSpeed()));
 	m_scrollSpeedSpinner->ValueChanged.connect(this, &Options::onSpinnerValueChanged);
 
-	TabWidget::add(g_lang.get("Game"), container);
+	TabWidget::add(_("Game"), container);
 }
 
 void Options::buildVideoTab() {
@@ -155,7 +155,7 @@ void Options::buildVideoTab() {
 	/*leftPnl->setSplitDistance(40);
 	rightPnl->setSplitDistance(40);*/
 
-	rightPnl->addHeading(leftPnl, g_lang.get("General"));
+	rightPnl->addHeading(leftPnl, _("General"));
 	
 	// Video Mode
 	m_resolutionList = rightPnl->addDropList(lang.get("Resolution"));
@@ -181,7 +181,7 @@ void Options::buildVideoTab() {
 		m_fullscreenCheckBox->setEnabled(false);
 	}
 
-	rightPnl->addHeading(leftPnl, g_lang.get("Shaders"));
+	rightPnl->addHeading(leftPnl, _("Shaders"));
 
 	// Enable Shaders
 	m_useShadersCheckBox = rightPnl->addCheckBox(lang.get("UseShaders"), config.getRenderUseShaders());
@@ -218,7 +218,7 @@ void Options::buildVideoTab() {
 	m_waterRendererList->setSelected(int(config.getRenderTextures3D()));
 	m_waterRendererList->SelectionChanged.connect(this, &Options::onDropListSelectionChanged);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("Shadows"));
+	rightPnl->addHeading(leftPnl, _("Shadows"));
 
 	// Shadow texture size
 	m_shadowTextureSizeList = rightPnl->addDropList(lang.get("ShadowTextureSize"), true);
@@ -250,7 +250,7 @@ void Options::buildVideoTab() {
 	m_shadowsList->setSelected(clamp(int(Renderer::strToShadows(str)), 0, ShadowMode::COUNT - 1));
 	m_shadowsList->SelectionChanged.connect(this, &Options::onDropListSelectionChanged);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("Misc"));
+	rightPnl->addHeading(leftPnl, _("Misc"));
 
 	// Texture filter
 	m_filterList = rightPnl->addDropList(lang.get("TextureFilter"));
@@ -350,24 +350,24 @@ void Options::buildControlsTab() {
 	label->setCell(0);
 	label->setAnchors(Anchors::getFillAnchors());
 	label->setAlignment(Alignment::FLUSH_LEFT);
-	label->setText(g_lang.get("HotKeys"));
+	label->setText(_("Hot-Keys"));
 	panel->setSizeHint(0, SizeHint(-1, g_widgetConfig.getDefaultItemHeight() * 5 / 4));
 
 	KeymapWidget *keymapWidget = new KeymapWidget(panel);
 	keymapWidget->setCell(1);
 	keymapWidget->setAnchors(Anchors::getFillAnchors());
 
-	TabWidget::add(g_lang.get("Controls"), panel);
+	TabWidget::add(_("Controls"), panel);
 }
 
 void Options::buildNetworkTab() {
 	//CellStrip *panel = new CellStrip(this, Orientation::HORIZONTAL, 2);
-	//TabWidget::add(g_lang.get("Network"), panel);
+	//TabWidget::add(_("Network"), panel);
 }
 
 void Options::buildDebugTab() {
 	DebugOptions *dbgOptions = new DebugOptions(this, m_optionsMenu != 0);
-	TabWidget::add(g_lang.get("Debug"), dbgOptions);
+	TabWidget::add(_("Debug"), dbgOptions);
 }
 
 void Options::disableWidgets() {

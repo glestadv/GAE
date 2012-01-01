@@ -37,7 +37,7 @@ Button* buildButton(GameMenu *menu, CellStrip *strip, int cell, const string &tx
 GameMenu::GameMenu()
 		: Frame((Container*)(&g_widgetWindow), ButtonFlags::CLOSE | ButtonFlags::ROLL_UPDOWN)
 		, m_btnStrip(0) {
-	setTitleText(g_lang.get("GameMenu"));
+	setTitleText(_("Game Menu"));
 
 	m_btnStrip = new CellStrip(this, Orientation::VERTICAL, 9); // 8 buttons
 	m_btnStrip->setCell(1);
@@ -56,18 +56,18 @@ void GameMenu::init() {
 	setPos(pos);
 	setSize(size);
 
-	buildButton(this, m_btnStrip, 8, g_lang.get("ExitProgram"), &GameMenu::onExit);
-	buildButton(this, m_btnStrip, 7, g_lang.get("QuitGame"), &GameMenu::onQuit);
-	buildButton(this, m_btnStrip, 6, g_lang.get("SaveGame"), &GameMenu::onSaveGame);
+	buildButton(this, m_btnStrip, 8, _("Exit Program"), &GameMenu::onExit);
+	buildButton(this, m_btnStrip, 7, _("Quit Game"), &GameMenu::onQuit);
+	buildButton(this, m_btnStrip, 6, _("Save Game"), &GameMenu::onSaveGame);
 	m_pinWidgetsBtn = buildButton(this, m_btnStrip, 5,
-		g_config.getUiPinWidgets() ? g_lang.get("UnPinWidgets") : g_lang.get("PinWidgets"),
+		g_config.getUiPinWidgets() ? _("Unpin Widgets") : _("Pin Widgets"),
 		&GameMenu::onPinWidgets);
-	buildButton(this, m_btnStrip, 4, g_lang.get("SaveWidgets"), &GameMenu::onSaveWidgets);
-	buildButton(this, m_btnStrip, 3, g_lang.get("ResetWidgets"), &GameMenu::onResetWidgets);
-	buildButton(this, m_btnStrip, 2, g_lang.get("TogglePhotoMode"), &GameMenu::onTogglePhotoMode);
-	//buildButton(this, m_btnStrip, 2, g_lang.get("ToggleDebug"), &GameMenu::onDebugToggle);
-	buildButton(this, m_btnStrip, 1, g_lang.get("Options"), &GameMenu::onOptions);
-	buildButton(this, m_btnStrip, 0, g_lang.get("ReturnToGame"), &GameMenu::onReturnToGame);
+	buildButton(this, m_btnStrip, 4, _("Save Widgets"), &GameMenu::onSaveWidgets);
+	buildButton(this, m_btnStrip, 3, _("Reset Widgets"), &GameMenu::onResetWidgets);
+	buildButton(this, m_btnStrip, 2, _("Toggle Photo Mode"), &GameMenu::onTogglePhotoMode);
+	//buildButton(this, m_btnStrip, 2, _("Toggle Debug Info"), &GameMenu::onDebugToggle);
+	buildButton(this, m_btnStrip, 1, _("Options"), &GameMenu::onOptions);
+	buildButton(this, m_btnStrip, 0, _("Return to Game"), &GameMenu::onReturnToGame);
 }
 
 //GameMenu* GameMenu::showDialog(Vec2i pos, Vec2i size) {
@@ -92,7 +92,7 @@ void GameMenu::onResetWidgets(Widget*) {
 
 void GameMenu::onPinWidgets(Widget*) {
 	g_gameState.togglePinWidgets(0);
-	m_pinWidgetsBtn->setText(g_config.getUiPinWidgets() ? g_lang.get("UnPinWidgets") : g_lang.get("PinWidgets"));
+	m_pinWidgetsBtn->setText(g_config.getUiPinWidgets() ? _("Unpin Widgets") : _("Pin Widgets"));
 }
 
 void GameMenu::onReturnToGame(Widget*) {

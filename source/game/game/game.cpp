@@ -102,7 +102,7 @@ GameState::GameState(Program &program)
 }
 
 GameState::~GameState() {
-	g_logger.getProgramLog().setState(g_lang.get("Deleting"));
+	g_logger.getProgramLog().setState(_("Deleting"));
 	g_logger.logProgramEvent("~GameState", !program.isTerminating());
 
 	g_renderer.endGame();
@@ -173,7 +173,7 @@ void GameState::load() {
 }
 
 void GameState::init() {
-	g_logger.getProgramLog().setState(g_lang.get("Initializing"));
+	g_logger.getProgramLog().setState(_("Initializing"));
 
 	IF_DEBUG_EDITION( g_debugRenderer.reset(); )
 
@@ -360,7 +360,7 @@ void GameState::displayError(std::exception &e) {
 	Vec2i size(screenDims.x - 200, screenDims.y / 2);
 	Vec2i pos = screenDims / 2 - size / 2;
 	MessageDialog* dialog = MessageDialog::showDialog(pos, size,
-		g_lang.get("Error"), "An error has occurred.\n" + errMsg, g_lang.get("Ok"), "");
+		_("Error"), "An error has occurred.\n" + errMsg, _("Ok"), "");
 	m_modalDialog = dialog;
 	dialog->Button1Clicked.connect(this, &GameState::onErrorDismissed);
 	dialog->Escaped.connect(this, &GameState::onErrorDismissed);
@@ -399,8 +399,8 @@ void GameState::doExitMessage(const string &msg) {
 
 	Vec2i size = g_widgetConfig.getDefaultDialogSize();
 	Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
-	BasicDialog *dialog = MessageDialog::showDialog(pos, size, g_lang.get("ExitGame?"),
-		msg, g_lang.get("Ok"), g_lang.get("Cancel"));
+	BasicDialog *dialog = MessageDialog::showDialog(pos, size, _("Exit Game?"),
+		msg, _("Ok"), _("Cancel"));
 	dialog->Button1Clicked.connect(this, &GameState::onConfirmQuitGame);
 	dialog->Button2Clicked.connect(this, &GameState::destroyDialog);
 	dialog->Escaped.connect(this, &GameState::destroyDialog);
@@ -409,7 +409,7 @@ void GameState::doExitMessage(const string &msg) {
 }
 
 void GameState::confirmQuitGame() {
-	doExitMessage(g_lang.get("ExitGame?"));
+	doExitMessage(_("Exit Game?"));
 }
 
 void GameState::confirmExitProgram() {
@@ -422,8 +422,8 @@ void GameState::confirmExitProgram() {
 	}
 	Vec2i size = g_widgetConfig.getDefaultDialogSize();
 	Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
-	BasicDialog *dialog = MessageDialog::showDialog(pos, size, g_lang.get("ExitProgram?"),
-		g_lang.get("ExitProgram?"), g_lang.get("Ok"), g_lang.get("Cancel"));
+	BasicDialog *dialog = MessageDialog::showDialog(pos, size, _("Exit Program?"),
+		_("Exit Program?"), _("Ok"), _("Cancel"));
 	dialog->Button1Clicked.connect(this, &GameState::onConfirmExitProgram);
 	dialog->Button2Clicked.connect(this, &GameState::destroyDialog);
 	dialog->Escaped.connect(this, &GameState::destroyDialog);
@@ -447,7 +447,7 @@ const string allowMask = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01
 
 void GameState::doSaveBox() {
 	if (!simInterface->getGameSettings().getScenarioPath().empty()) {
-		gui.getRegularConsole()->addLine(g_lang.get("CantSaveScenarios"));
+		gui.getRegularConsole()->addLine(_("Scenarios cannot be saved."));
 		// msg ?
 		return;
 	}
@@ -464,8 +464,8 @@ void GameState::doSaveBox() {
 	gui.resetState();
 	Vec2i size = g_widgetConfig.getDefaultDialogSize();
 	Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
-	InputDialog* dialog = InputDialog::showDialog(pos, size, g_lang.get("SaveGame"),
-		g_lang.get("SelectSaveGame"), g_lang.get("Save"), g_lang.get("Cancel"));
+	InputDialog* dialog = InputDialog::showDialog(pos, size, _("Save Game"),
+		_("Enter file name"), _("Save"), _("Cancel"));
 	m_modalDialog = dialog;
 	dialog->setInputMask(allowMask);
 	dialog->Button1Clicked.connect(this, &GameState::onSaveSelected);
@@ -479,14 +479,14 @@ void GameState::onSaveSelected(Widget*) {
 	string name = in->getInput();
 
 	if (name.empty()) {
-		g_console.addLine(g_lang.get("EnterFilename"));
+		g_console.addLine(_("You must enter a file name to save your game."));
 		return;
 	}
 	saveGame(name);
 	program.removeFloatingWidget(m_modalDialog);
 	m_modalDialog = 0;
 	
-	string msg = g_lang.get("YourGameWasSaved");
+	string msg = _("Your game has been saved to %s");
 	string::size_type pos = msg.find("%s");
 	if (pos != string::npos) {
 		msg.replace(pos, 2, name + ".sav");
@@ -513,7 +513,7 @@ void GameState::toggleOptions(Widget*) {
 		Vec2i screenDims = g_metrics.getScreenDims();
 		Vec2i size(screenDims.x - 200, screenDims.y / 2);
 		Vec2i pos = screenDims / 2 - size / 2;
-		m_options->init(pos, size, g_lang.get("Options"));
+		m_options->init(pos, size, _("Options"));
 
 		m_options->setVisible(true);
 		m_options->Close.connect(this, &GameState::toggleOptions);
@@ -564,7 +564,7 @@ void GameState::doScriptMessage() {
 	Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
 	MessageDialog* dialog = MessageDialog::showDialog(pos, size,
 		g_lang.getScenarioString(m_scriptMessages.front().header),
-		g_lang.getScenarioString(m_scriptMessages.front().text), g_lang.get("Ok"), "");
+		g_lang.getScenarioString(m_scriptMessages.front().text), _("Ok"), "");
 	m_modalDialog = dialog;
 	dialog->Button1Clicked.connect(this, &GameState::destroyDialog);
 	dialog->Escaped.connect(this, &GameState::destroyDialog);
@@ -888,11 +888,11 @@ void GameState::keyDown(const Key &key) {
 		}
 		if (curSpeed != newSpeed) {
 			if (newSpeed == GameSpeed::PAUSED) {
-				gui.getRegularConsole()->addLine(g_lang.get("GamePaused"));
+				gui.getRegularConsole()->addLine(_("Game paused"));
 			} else if (curSpeed == GameSpeed::PAUSED) {
-				gui.getRegularConsole()->addLine(g_lang.get("GameResumed"));
+				gui.getRegularConsole()->addLine(_("Game resumed"));
 			} else {
-				gui.getRegularConsole()->addLine(g_lang.get("GameSpeedSet") + " " + g_lang.get(GameSpeedNames[newSpeed]));
+				gui.getRegularConsole()->addLine(string(_("Game speed set to")) + " " + g_lang.get(GameSpeedNames[newSpeed]));
 			}
 			return;
 		}
@@ -1011,11 +1011,11 @@ void GameState::render2d(){
 
 
 void GameState::showLoseMessageBox() {
-	doExitMessage(g_lang.get("YouLose") + ", " + g_lang.get("ExitGame?"));
+	doExitMessage(string(_("You lose!")) + ", " + _("Exit Game?"));
 }
 
 void GameState::showWinMessageBox() {
-	doExitMessage(g_lang.get("YouWin") + ", " + g_lang.get("ExitGame?"));
+	doExitMessage(string(_("You win!")) + ", " + _("Exit Game?"));
 }
 
 void GameState::saveGame(string name) const {
@@ -1070,7 +1070,7 @@ void ShowMap::keyDown(const Key &key) {
 		gameCamera.reset(true, false);
 	} else if (cmd == UserCommand::QUIT_GAME) {
 		if (!gui.cancelPending()) {
-			doExitMessage(g_lang.get("ExitGame?"));
+			doExitMessage(_("Exit Game?"));
 		}
 	} else {
 		switch (cmd) {

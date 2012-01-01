@@ -1,0 +1,488 @@
+msgid " EP Boost"
+msgstr ""
+
+msgid "AI Player"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Affects"
+msgstr ""
+
+msgid "Afternoon"
+msgstr ""
+
+msgid "Already Upgraded"
+msgstr ""
+
+msgid "Auto Attack"
+msgstr ""
+
+msgid "Auto Flee"
+msgstr ""
+
+msgid "Auto Repair"
+msgstr ""
+
+msgid "Behavior"
+msgstr ""
+
+msgid "Building can't be placed there"
+msgstr ""
+
+msgid "Building doesn't satisfy requirements"
+msgstr ""
+
+msgid "Buildings"
+msgstr ""
+
+msgid "Camera"
+msgstr ""
+
+msgid "Can load"
+msgstr ""
+
+msgid "Can morph to"
+msgstr ""
+
+msgid "Can not load that Unit type."
+msgstr ""
+
+msgid "Can repair"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Category"
+msgstr ""
+
+msgid "Chance"
+msgstr ""
+
+msgid "Chat Message"
+msgstr ""
+
+msgid ""
+"Click to select only this unit. Shift-click to select only units of this "
+"type. Control-click to remove this unit. Control+Shift-click to remove all "
+"units of this type."
+msgstr ""
+
+msgid "Colour"
+msgstr ""
+
+msgid "Common command"
+msgstr ""
+
+msgid "Confirm"
+msgstr ""
+
+msgid "Connect"
+msgstr ""
+
+msgid "Connected"
+msgstr ""
+
+msgid "Control"
+msgstr ""
+
+msgid "Controls"
+msgstr ""
+
+msgid "Costs"
+msgstr ""
+
+msgid "Damage type"
+msgstr ""
+
+msgid "Dawn"
+msgstr ""
+
+msgid "Debug"
+msgstr ""
+
+msgid "Debug Keys"
+msgstr ""
+
+msgid "Debug Mode"
+msgstr ""
+
+msgid "Debug sections"
+msgstr ""
+
+msgid "Defeat"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Deleting"
+msgstr ""
+
+msgid "Destination is Unreachable"
+msgstr ""
+
+msgid "Difficulty"
+msgstr ""
+
+msgid "Disconnect"
+msgstr ""
+
+msgid "Discount"
+msgstr ""
+
+msgid "Double click to immediately unload this unit."
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Dusk"
+msgstr ""
+
+msgid "EP"
+msgstr ""
+
+msgid "Effect"
+msgstr ""
+
+msgid "Elapsed Time"
+msgstr ""
+
+msgid "Engine"
+msgstr ""
+
+msgid "Enter file name"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "Exit Game?"
+msgstr ""
+
+msgid "Exit Program"
+msgstr ""
+
+msgid "Exit Program?"
+msgstr ""
+
+msgid "Faction"
+msgstr ""
+
+msgid "Function not available in network games"
+msgstr ""
+
+msgid "GAE Contributors"
+msgstr ""
+
+msgid "Game"
+msgstr ""
+
+msgid "Game Menu"
+msgstr ""
+
+msgid "Game paused"
+msgstr ""
+
+msgid "Game resumed"
+msgstr ""
+
+msgid "Game speed set to"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "Generates"
+msgstr ""
+
+msgid "HP"
+msgstr ""
+
+msgid "HP Boost"
+msgstr ""
+
+msgid "Harvested"
+msgstr ""
+
+msgid "Hot-Keys"
+msgstr ""
+
+msgid "Includes unexplored areas"
+msgstr ""
+
+msgid "Initializing"
+msgstr ""
+
+msgid "Insufficient Energy"
+msgstr ""
+
+msgid "Interface"
+msgstr ""
+
+msgid "Load"
+msgstr ""
+
+msgid "Load capacity reached."
+msgstr ""
+
+msgid "Map"
+msgstr ""
+
+msgid "Max players"
+msgstr ""
+
+msgid "Mid-day"
+msgstr ""
+
+msgid "Mid-night"
+msgstr ""
+
+msgid "Misc"
+msgstr ""
+
+msgid "Mixed"
+msgstr ""
+
+msgid "Morning"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
+msgid "Night"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "Not Connected"
+msgstr ""
+
+msgid "Not enough resources to produce building"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "Ok"
+msgstr ""
+
+msgid "On"
+msgstr ""
+
+msgid "Only within explored areas"
+msgstr ""
+
+msgid "Options"
+msgstr ""
+
+msgid "Order is Invalid"
+msgstr ""
+
+msgid "Orders on queue"
+msgstr ""
+
+msgid "Performance Reports"
+msgstr ""
+
+msgid "Performance Sections"
+msgstr ""
+
+msgid "PetOnly"
+msgstr ""
+
+msgid "Pin Widgets"
+msgstr ""
+
+msgid "Play now!"
+msgstr ""
+
+msgid "Player"
+msgstr ""
+
+msgid "Position is Invalid"
+msgstr ""
+
+msgid "Produced"
+msgstr ""
+
+msgid "Quit Game"
+msgstr ""
+
+msgid "Recent Hosts"
+msgstr ""
+
+msgid "Refund"
+msgstr ""
+
+msgid "Regen"
+msgstr ""
+
+msgid "Requires"
+msgstr ""
+
+msgid "Reset Widgets"
+msgstr ""
+
+msgid "Resources"
+msgstr ""
+
+msgid "Return"
+msgstr ""
+
+msgid "Return to Game"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save Game"
+msgstr ""
+
+msgid "Save Widgets"
+msgstr ""
+
+msgid "Scenario"
+msgstr ""
+
+msgid "Scenarios cannot be saved."
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "SelfOnly"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+msgid "Server"
+msgstr ""
+
+msgid "Set Meeting Point"
+msgstr ""
+
+msgid "Shaders"
+msgstr ""
+
+msgid "Shadows"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid ""
+"Some network slots are still unconnected. Do you wish to continue without "
+"them?"
+msgstr ""
+
+msgid "Some orders could not be given"
+msgstr ""
+
+msgid "Team"
+msgstr ""
+
+msgid "Team Only"
+msgstr ""
+
+msgid "Tech tree"
+msgstr ""
+
+msgid "The GAE Team"
+msgstr ""
+
+msgid "The Glest Team"
+msgstr ""
+
+msgid "There are no category directories in gae/scenarios"
+msgstr ""
+
+msgid "Tileset"
+msgstr ""
+
+msgid "Time to morph"
+msgstr ""
+
+msgid "Time to produce"
+msgstr ""
+
+msgid "Time to research"
+msgstr ""
+
+msgid "Toggle Cloak"
+msgstr ""
+
+msgid "Toggle Photo Mode"
+msgstr ""
+
+msgid "Transported Units"
+msgstr ""
+
+msgid "Unit cannot have any more pets of that type"
+msgstr ""
+
+msgid "Unit doesn't satisfy requirements"
+msgstr ""
+
+msgid "Units"
+msgstr ""
+
+msgid "Unpin Widgets"
+msgstr ""
+
+msgid "Upgrade doesn't satisfy requirements"
+msgstr ""
+
+msgid "Upgrades"
+msgstr ""
+
+msgid "Upgrading"
+msgstr ""
+
+msgid "Victory"
+msgstr ""
+
+msgid "Waiting for server to launch game"
+msgstr ""
+
+msgid "Walk speed"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "You don't have any saved games"
+msgstr ""
+
+msgid "You lose!"
+msgstr ""
+
+msgid "You must enter a file name to save your game."
+msgstr ""
+
+msgid "You win!"
+msgstr ""
+
+#, c-format
+msgid "Your game has been saved to %s"
+msgstr ""
+
+msgid "allies only"
+msgstr ""
+
+msgid "foes only"
+msgstr ""
+
+msgid "permenant"
+msgstr ""
+
+msgid "pets only"
+msgstr ""

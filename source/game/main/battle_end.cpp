@@ -80,14 +80,14 @@ GameStatsWidget::GameStatsWidget(Container* parent, Vec2i pos, Vec2i size)
 	CellStrip *row = buildRow(this, 0);
 
 	string header = gs.getDescription() + " - " + (stats.getVictory(gs.getThisFactionIndex())
-													? g_lang.get("Victory") : g_lang.get("Defeat"));
+													? _("Victory") : _("Defeat"));
 	StaticText* label = buildLabel(row, 0, header, font, textColour);
 	label->textStyle().m_fontIndex = g_widgetConfig.getDefaultFontIndex(FontUsage::TITLE);
 	label->setAlignment(Alignment::FLUSH_LEFT);
 
 	row = buildRow(this, 2);
-	label = buildLabel(row, 5, g_lang.get("Units"), font, textColour);
-	label = buildLabel(row, 7, g_lang.get("Resources"), font, textColour);
+	label = buildLabel(row, 5, _("Units"), font, textColour);
+	label = buildLabel(row, 7, _("Resources"), font, textColour);
 
 	row = buildRow(this, 3);
 	const char *hdrs[] = {

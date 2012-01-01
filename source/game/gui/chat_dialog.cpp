@@ -38,7 +38,7 @@ ChatDialog::ChatDialog(Container* parent)
 	content->setAnchors(anchors);
 
 	int defHeight = g_widgetConfig.getDefaultItemHeight();
-	OptionWidget *ow = new OptionWidget(content, g_lang.get("TeamOnly"));
+	OptionWidget *ow = new OptionWidget(content, _("Team Only"));
 	ow->setCell(0);
 	ow->setAnchors(Anchors::getCentreAnchors());
 	ow->setAbsoluteSplit(defHeight + 10, false);
@@ -62,8 +62,8 @@ ChatDialog::ChatDialog(Container* parent)
 	m_inputBox->InputEntered.connect(this, &ChatDialog::onInputEntered);
 	m_inputBox->Escaped.connect(this, &ChatDialog::onEscaped);
 
-	setTitleText(g_lang.get("ChatMsg"));
-	setButtonText(g_lang.get("Send"), g_lang.get("Cancel"));
+	setTitleText(_("Chat Message"));
+	setButtonText(_("Send"), _("Cancel"));
 }
 
 bool ChatDialog::mouseDown(MouseButton btn, Vec2i pos) {

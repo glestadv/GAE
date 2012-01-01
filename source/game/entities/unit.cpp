@@ -914,7 +914,7 @@ CmdResult Unit::giveCommand(Command *command) {
 		}
 	} else {
 		if (!energyRes && getFaction()->isThisFaction()) {
-			g_console.addLine(g_lang.get("InsufficientEnergy"));
+			g_console.addLine(_("Insufficient Energy"));
 		}
 		g_world.deleteCommand(command);
 		command = 0;
@@ -1459,7 +1459,7 @@ void Unit::doUpdateCommand() {
 		if (getCurrCommand()) {
 			cancelCurrCommand();
 			if (getFaction()->isThisFaction()) {
-				g_console.addLine(g_lang.get("InsufficientEnergy"));
+				g_console.addLine(_("Insufficient Energy"));
 			}
 		}
 		setCurrSkill(SkillClass::STOP);
@@ -1949,14 +1949,14 @@ bool Unit::decHp(int i) {
 
 string Unit::getShortDesc() const {
 	stringstream ss;
-	ss << g_lang.get("Hp") << ": " << hp << "/" << getMaxHp();
+	ss << _("HP") << ": " << hp << "/" << getMaxHp();
 	if (getHpRegeneration()) {
-		ss << " (" << g_lang.get("Regeneration") << ": " << getHpRegeneration() << ")";
+		ss << " (" << _("Regen") << ": " << getHpRegeneration() << ")";
 	}
 	if (getMaxEp()) {
-		ss << endl << g_lang.get("Ep") << ": " << ep << "/" << getMaxEp();
+		ss << endl << _("EP") << ": " << ep << "/" << getMaxEp();
 		if (getEpRegeneration()) {
-			ss << " (" << g_lang.get("Regeneration") << ": " << getEpRegeneration() << ")";
+			ss << " (" << _("Regen") << ": " << getEpRegeneration() << ")";
 		}
 	}
 	if (!commands.empty()) { // Show current command being executed

@@ -443,7 +443,7 @@ void Display::addToolTipReq(const DisplayableType *dt, bool ok, const string &tx
 }
 
 void Display::setTransportedLabel(bool v) {
-	TextWidget::setText((v ? g_lang.get("Transported") : ""), 4);
+	TextWidget::setText((v ? _("Transported Units") : ""), 4);
 }
 
 // misc
@@ -781,7 +781,7 @@ bool Display::mouseMove(Vec2i pos) {
 			} else if (currBtn.m_section == DisplaySection::COMMANDS) {
 				m_ui->computeCommandInfo(currBtn.m_index);
 			} else if (currBtn.m_section == DisplaySection::TRANSPORTED) {
-				setToolTipText2("", g_lang.get("TransportInfo"), DisplaySection::TRANSPORTED);
+				setToolTipText2("", _("Double click to immediately unload this unit."), DisplaySection::TRANSPORTED);
 			} else {
 				setToolTipText2("", "");
 			}

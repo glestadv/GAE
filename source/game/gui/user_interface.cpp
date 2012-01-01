@@ -394,7 +394,7 @@ void UserInterface::mouseDownLeft(int x, int y) {
 			updateSelection(false, units);
 			computeDisplay();
 		} else {
-			m_console->addStdMessage("InvalidPosition");
+			m_console->addStdMessage(_("Position is Invalid"));
 		}
 		return;
 	}
@@ -440,7 +440,7 @@ void UserInterface::mouseUpLeft(int x, int y) {
 		if (g_renderer.computePosition(Vec2i(x, y), worldPos)) {
 			giveTwoClickOrders(worldPos, 0);
 		} else {
-			m_console->addStdMessage("InvalidPosition");
+			m_console->addStdMessage(_("Position is Invalid"));
 		}
 	}
 }
@@ -465,7 +465,7 @@ void UserInterface::mouseUpRight(int x, int y) {
 					: obj ? obj->getResource()->getPos() : worldPos;
 				giveDefaultOrders(pos, targetUnit);
 			} else {
-				m_console->addStdMessage("InvalidPosition");
+				m_console->addStdMessage(_("Position is Invalid"));
 			}
 		}
 	}
@@ -608,7 +608,7 @@ void UserInterface::hotKey(UserCommand cmd) {
 			break;
 		case UserCommand::SHOW_LUA_CONSOLE:
 			if (g_simInterface.asNetworkInterface()) {
-				g_console.addLine(g_lang.get("NotAvailable"));
+				g_console.addLine(_("Function not available in network games"));
 			} else {
 				m_luaConsole->setVisible(!m_luaConsole->isVisible());
 			}
@@ -946,7 +946,7 @@ void UserInterface::computePortraitInfo(int posDisplay) {
 			string name = g_lang.getTranslatedFactionName(unit->getFaction()->getType()->getName(), unit->getType()->getName());
 			m_display->setToolTipText2(name, unit->getLongDesc(), DisplaySection::SELECTION);
 		} else if (selection->isComandable()) {
-			m_display->setToolTipText2("", g_lang.get("PotraitInfo"), DisplaySection::SELECTION);
+			m_display->setToolTipText2("", _("Click to select only this unit. Shift-click to select only units of this type. Control-click to remove this unit. Control+Shift-click to remove all units of this type."), DisplaySection::SELECTION);
 		}
 	}
 }
@@ -954,11 +954,11 @@ void UserInterface::computePortraitInfo(int posDisplay) {
 inline string describeAutoCommandState(AutoCmdState state) {
 	switch (state) {
 		case AutoCmdState::ALL_ON:
-			return g_lang.get("On");
+			return _("On");
 		case AutoCmdState::ALL_OFF:
-			return g_lang.get("Off");
+			return _("Off");
 		case AutoCmdState::MIXED:
-			return g_lang.get("Mixed");
+			return _("Mixed");
 	}
 	return "";
 }
@@ -979,23 +979,23 @@ void UserInterface::computeCommandInfo(int posDisplay) {
 	}
 	if (!m_selectingSecond) {
 		if (posDisplay == cancelPos) {
-			m_display->setToolTipText2("", g_lang.get("Cancel"));
+			m_display->setToolTipText2("", _("Cancel"));
 		} else if (posDisplay == meetingPointPos) {
-			m_display->setToolTipText2("", g_lang.get("SetMeetingPoint"));
+			m_display->setToolTipText2("", _("Set Meeting Point"));
 		} else if (posDisplay == autoRepairPos) {
-			string str = g_lang.get("AutoRepair") + " ";
-			str += describeAutoCommandState(selection->getAutoRepairState());
+			string str = _("Auto Repair");
+			str += " " + describeAutoCommandState(selection->getAutoRepairState());
 			m_display->setToolTipText2("", str);
 		} else if (posDisplay == autoAttackPos) {
-			string str = g_lang.get("AutoAttack") + " ";
-			str += describeAutoCommandState(selection->getAutoCmdState(AutoCmdFlag::ATTACK));
+			string str = _("Auto Attack");
+			str += " " + describeAutoCommandState(selection->getAutoCmdState(AutoCmdFlag::ATTACK));
 			m_display->setToolTipText2("", str);
 		} else if (posDisplay == autoFleePos) {
-			string str = g_lang.get("AutoFlee") + " ";
-			str += describeAutoCommandState(selection->getAutoCmdState(AutoCmdFlag::FLEE));
+			string str = _("Auto Flee");
+			str += " " + describeAutoCommandState(selection->getAutoCmdState(AutoCmdFlag::FLEE));
 			m_display->setToolTipText2("", str);
 		} else if (posDisplay == cloakTogglePos) {
-			m_display->setToolTipText2("", g_lang.get("ToggleCloak"));
+			m_display->setToolTipText2("", _("Toggle Cloak"));
 		} else {
 			if (selection->isUniform()) { // uniform selection
 				const CommandType *ct = m_display->getCommandType(posDisplay);
@@ -1005,14 +1005,14 @@ void UserInterface::computeCommandInfo(int posDisplay) {
 			} else { // non uniform selection
 				CmdClass cc = m_display->getCommandClass(posDisplay);
 				if (cc != CmdClass::NULL_COMMAND) {
-					m_display->setToolTipText2("", g_lang.get("CommonCommand") + ": "
+					m_display->setToolTipText2("", string(_("Common command")) + ": "
 						+ g_lang.get(CmdClassNames[cc]));
 				}
 			}
 		}
 	} else { // m_selectingSecond
 		if (posDisplay == cancelPos) {
-			m_display->setToolTipText2("", g_lang.get("Return"));
+			m_display->setToolTipText2("", _("Return"));
 			return;
 		}
 		RUNTIME_CHECK(activeCommandType != 0);
@@ -1058,7 +1058,7 @@ void UserInterface::computeSelectionPanel() {
 					if (resName == unit->getLoadType()->getName()) {
 						resName = formatString(resName);
 					}
-					m_display->setLoadInfo(g_lang.get("Load") + ": " + intToStr(unit->getLoadCount()) 
+					m_display->setLoadInfo(string(_("Load")) + ": " + intToStr(unit->getLoadCount()) 
 						+  " " + resName);
 				} else {
 					m_display->setLoadInfo("");
@@ -1068,7 +1068,7 @@ void UserInterface::computeSelectionPanel() {
 			}
 			int ordersQueued = unit->getQueuedOrderCount();
 			if (ordersQueued) {
-				m_display->setOrderQueueText(g_lang.get("OrdersOnQueue") + ": " + intToStr(ordersQueued));
+				m_display->setOrderQueueText(string(_("Orders on queue")) + ": " + intToStr(ordersQueued));
 			} else {
 				m_display->setOrderQueueText("");
 			}
@@ -1219,18 +1219,18 @@ void UserInterface::addOrdersResultToConsole(CmdClass cc, CmdResult result) {
 		case CmdResult::SUCCESS:
 			break;
 		case CmdResult::FAIL_BLOCKED:
-			m_console->addStdMessage("BuildingNoPlace");
+			m_console->addStdMessage(_("Building can't be placed there"));
 			break;
 		case CmdResult::FAIL_REQUIREMENTS:
 				switch (cc) {
 			case CmdClass::BUILD:
-				m_console->addStdMessage("BuildingNoReqs");
+				m_console->addStdMessage(_("Building doesn't satisfy requirements"));
 				break;
 			case CmdClass::PRODUCE:
-				m_console->addStdMessage("UnitNoReqs");
+				m_console->addStdMessage(_("Unit doesn't satisfy requirements"));
 				break;
 			case CmdClass::UPGRADE:
-				m_console->addStdMessage("UpgradeNoReqs");
+				m_console->addStdMessage(_("Upgrade doesn't satisfy requirements"));
 				break;
 			default:
 				break;
@@ -1290,23 +1290,23 @@ void UserInterface::addOrdersResultToConsole(CmdClass cc, CmdResult result) {
 			}
 			break;
 		case CmdResult::FAIL_PET_LIMIT:
-			m_console->addStdMessage("PetLimitReached");
+			m_console->addStdMessage(_("Unit cannot have any more pets of that type"));
 			break;
 
 		case CmdResult::FAIL_LOAD_LIMIT:
-			m_console->addStdMessage("LoadLimitReached");
+			m_console->addStdMessage(_("Load capacity reached."));
 			break;
 
 		case CmdResult::FAIL_INVALID_LOAD:
-			m_console->addStdMessage("CanNotLoadUnit");
+			m_console->addStdMessage(_("Can not load that Unit type."));
 			break;
 
 		case CmdResult::FAIL_UNDEFINED:
-			m_console->addStdMessage("InvalidOrder");
+			m_console->addStdMessage(_("Order is Invalid"));
 			break;
 
 		case CmdResult::SOME_FAILED:
-			m_console->addStdMessage("SomeOrdersFailed");
+			m_console->addStdMessage(_("Some orders could not be given"));
 			break;
 		default:
 			throw runtime_error("unhandled CmdResult");

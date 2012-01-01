@@ -61,13 +61,13 @@ MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu)
 	sPanel->setSizeHint(1, SizeHint(-1, itemHeight * 3 / 2));
 	sPanel->setSizeHint(2, SizeHint());
 
-	OptionWidget *ow = new OptionWidget(sPanel, g_lang.get("Category"));
+	OptionWidget *ow = new OptionWidget(sPanel, _("Category"));
 	ow->setCell(0);
 	m_categoryList = new DropList(ow);
 	m_categoryList->setCell(1);
 	m_categoryList->setAnchors(fillAnchors);
 
-	ow = new OptionWidget(sPanel, g_lang.get("Scenario"));
+	ow = new OptionWidget(sPanel, _("Scenario"));
 	ow->setCell(1);
 	m_scenarioList = new DropList(ow);
 	m_scenarioList->setCell(1);
@@ -90,13 +90,13 @@ MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu)
 	m_returnButton = new Button(btnPanel, Vec2i(0), sz);
 	m_returnButton->setCell(0);
 	m_returnButton->setAnchors(centreAnchors);
-	m_returnButton->setText(g_lang.get("Return"));
+	m_returnButton->setText(_("Return"));
 	m_returnButton->Clicked.connect(this, &MenuStateScenario::onButtonClick);
 
 	m_playNowButton = new Button(btnPanel, Vec2i(0), sz);
 	m_playNowButton->setCell(2);
 	m_playNowButton->setAnchors(centreAnchors);
-	m_playNowButton->setText(g_lang.get("PlayNow"));
+	m_playNowButton->setText(_("Play now!"));
 	m_playNowButton->Clicked.connect(this, &MenuStateScenario::onButtonClick);
 
 	// scan directories...
@@ -118,7 +118,7 @@ MenuStateScenario::MenuStateScenario(Program &program, MainMenu *mainMenu)
 		rootStrip->clear();
 		Vec2i sz = g_widgetConfig.getDefaultDialogSize();
 		m_messageDialog = MessageDialog::showDialog(g_metrics.getScreenDims() / 2 - sz / 2,
-			sz, g_lang.get("Error"), g_lang.get("NoCategoryDirectories"), g_lang.get("Yes"), "");
+			sz, _("Error"), _("There are no category directories in gae/scenarios"), _("Yes"), "");
 		m_messageDialog->Button1Clicked.connect(this, &MenuStateScenario::onConfirmReturn);
 		return;
 	}

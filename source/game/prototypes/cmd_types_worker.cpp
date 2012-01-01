@@ -208,11 +208,11 @@ void RepairCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, Pr
 void RepairCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, ProdTypePtr pt) const {
 	Lang &lang = g_lang;
 	const string factionName = unit->getFaction()->getType()->getName();
-	callback->addElement(g_lang.get("CanRepair") + ":");
+	callback->addElement(string(_("Can repair")) + ":");
 	if (repairSkillType->isSelfOnly()) {
-		callback->addElement(lang.get("SelfOnly"));
+		callback->addElement(_("SelfOnly"));
 	} else if (repairSkillType->isPetOnly()) {
-		callback->addElement(lang.get("PetOnly"));
+		callback->addElement(_("PetOnly"));
 	} else {
 		foreach_const (vector<const UnitType*>, it, repairableUnits) {
 			string name;
@@ -502,7 +502,7 @@ void BuildCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, ProdTy
 		Lang &lang = g_lang;
 		const string factionName = unit->getFaction()->getType()->getName();
 		// buildings built
-		callback->addElement(g_lang.get("Buildings") + ":");
+		callback->addElement(string(_("Buildings")) + ":");
 		foreach_const (vector<const UnitType*>, it, m_buildings) {
 			callback->addItem(*it, lang.getTranslatedFactionName(factionName, (*it)->getName()));
 		}
@@ -683,7 +683,7 @@ void BuildCommandType::blockedBuild(Unit *unit) const {
 	unit->cancelCurrCommand();
 	unit->setCurrSkill(SkillClass::STOP);
 	if (unit->getFactionIndex() == g_world.getThisFactionIndex()) {
-		g_console.addStdMessage("BuildingNoPlace");
+		g_console.addStdMessage(_("Building can't be placed there"));
 	}
 	BUILD_LOG( unit, "site blocked." << cmdCancelMsg );
 }
@@ -696,7 +696,7 @@ void BuildCommandType::acceptBuild(Unit *unit, Command *command, const UnitType 
 		command->setReserveResources(true);
 		if (unit->checkCommand(*command) != CmdResult::SUCCESS) {
 			if (unit->getFactionIndex() == g_world.getThisFactionIndex()) {
-				g_console.addStdMessage("BuildingNoRes");
+				g_console.addStdMessage(_("Not enough resources to produce building"));
 			}
 			BUILD_LOG( unit, "in positioin, late resource allocation failed." << cmdCancelMsg );
 			unit->finishCommand();
@@ -841,7 +841,7 @@ void HarvestCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, P
 
 void HarvestCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, ProdTypePtr pt) const {
 	Lang &lang = g_lang;
-	callback->addElement(g_lang.get("Harvested") + ":");
+	callback->addElement(string(_("Harvested")) + ":");
 	foreach_const (vector<const ResourceType*>, it, m_harvestedResources) {
 		callback->addItem(*it, lang.getTranslatedTechName((*it)->getName()));
 	}

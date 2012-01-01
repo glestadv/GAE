@@ -356,10 +356,10 @@ void formatModifier(string &str, const char *pre, const char* label, int value, 
 
 void addBoostsDesc(string &str, const char *pre, int hpBoost, int epBoost) {
 	if (hpBoost) {
-		str += pre + g_lang.get("HpBoost") + ": " + intToStr(hpBoost);
+		str += string(pre) + _("HP Boost") + ": " + intToStr(hpBoost);
 	}
 	if (epBoost) {
-		str += pre + g_lang.get("EpBoost") + ": " + intToStr(epBoost);
+		str += string(pre) + _(" EP Boost") + ": " + intToStr(epBoost);
 	}
 }
 

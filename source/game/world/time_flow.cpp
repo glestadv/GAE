@@ -103,19 +103,19 @@ string TimeFlow::describeTime() const {
 	}
 	res += intToStr(min) + " (";
 	if (time < dawn * 2.f / 3.f) {
-		res += g_lang.get("MidNight");
+		res += _("Mid-night");
 	} else if (time < dawn) {
-		res += g_lang.get("Dawn");
+		res += _("Dawn");
 	} else if (time < dawn + (midday - dawn) * 2.f / 3.f) {
-		res += g_lang.get("Morning");
+		res += _("Morning");
 	} else if (time < midday) {
-		res += g_lang.get("MidDay");
+		res += _("Mid-day");
 	} else if (time < midday + (midday - dawn) * 2.f / 3.f) {
-		res += g_lang.get("Afternoon");
+		res += _("Afternoon");
 	} else if (time < dusk) {
-		res += g_lang.get("Dusk");
+		res += _("Dusk");
 	} else {
-		res += g_lang.get("Night");
+		res += _("Night");
 	}
 	res += ")";
 	return res;

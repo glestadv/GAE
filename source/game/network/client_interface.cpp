@@ -192,7 +192,7 @@ void ClientInterface::sendTextMessage(const string &text, int teamIndex) {
 }
 
 string ClientInterface::getStatus() const {
-	return g_lang.get("Server") + ": " + serverName;
+	return string(_("Server")) + ": " + serverName;
 }
 
 void ClientInterface::waitForMessage(int timeout) {

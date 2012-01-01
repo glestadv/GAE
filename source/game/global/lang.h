@@ -16,6 +16,9 @@
 #include "util.h"
 #include <set>
 
+#include <libintl.h>
+#define _(STRING) gettext(STRING)
+
 namespace Glest { namespace Global {
 
 using namespace Shared::Util;

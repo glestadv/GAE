@@ -280,30 +280,30 @@ void EffectType::getDesc(string &str) const {
 
 	// effected units
 	if (isEffectsPetsOnly() || isEffectsFoe() || isEffectsAlly()) {
-		str += "\n   " + g_lang.get("Affects") + ": ";
+		str += string("\n   ") + _("Affects") + ": ";
 		if (isEffectsPetsOnly()) {
-			str += g_lang.get("PetsOnly");
+			str += _("pets only");
 		} else if (isEffectsAlly()) {
-			str += g_lang.get("AllyOnly");
+			str += _("allies only");
 		} else {
 			assert(isEffectsFoe());
-			str += g_lang.get("FoeOnly");
+			str += _("foes only");
 		}
 	}
 
 	if (chance != 100) {
-		str += "\n   " + g_lang.get("Chance") + ": " + intToStr(chance.intp()) + "%";
+		str += string("\n   ") + _("Chance") + ": " + intToStr(chance.intp()) + "%";
 	}
 
-	str += "\n   " + g_lang.get("Duration") + ": ";
+	str += string("\n   ") + _("Duration") + ": ";
 	if (isPermanent()) {
-		str += g_lang.get("Permenant");
+		str += _("permenant");
 	} else {
 		str += intToStr(duration);
 	}
 
 	if (damageType) {
-		str += "\n   " + g_lang.get("DamageType") + ": " + g_lang.getTechString(damageType->getName());
+		str += string("\n   ") + _("Damage type") + ": " + g_lang.getTechString(damageType->getName());
 	}
 
 	EnhancementType::getDesc(str, "\n   ");

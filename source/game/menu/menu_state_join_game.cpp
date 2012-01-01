@@ -172,7 +172,7 @@ void MenuStateJoinGame::buildConnectPanel() {
 
 	StaticText* historyLabel = new StaticText(pnl, Vec2i(0), Vec2i(200, 34));
 	historyLabel->setCell(0);
-	historyLabel->setText(g_lang.get("RecentHosts"));
+	historyLabel->setText(_("Recent Hosts"));
 	historyLabel->setAnchors(a2);
 	m_historyList = new DropList(pnl);
 	m_historyList->setCell(1);
@@ -185,7 +185,7 @@ void MenuStateJoinGame::buildConnectPanel() {
 
 	StaticText* serverLabel = new StaticText(pnl);
 	serverLabel->setCell(0);
-	serverLabel->setText(g_lang.get("Server") + " Ip: ");
+	serverLabel->setText(string(_("Server")) + " Ip: ");
 	serverLabel->setAnchors(a2);
 	
 	m_serverTextBox = new TextBox(pnl);
@@ -196,7 +196,7 @@ void MenuStateJoinGame::buildConnectPanel() {
 
 	m_connectLabel = new StaticText(m_connectPanel);
 	m_connectLabel->setCell(2);
-	m_connectLabel->setText(g_lang.get("NotConnected"));
+	m_connectLabel->setText(_("Not Connected"));
 	m_connectLabel->setAnchors(a2);
 
 	// buttons panel, fill
@@ -211,19 +211,19 @@ void MenuStateJoinGame::buildConnectPanel() {
 	// buttons
 	Button* returnButton = new Button(pnl, Vec2i(0), Vec2i(7 * defWidgetHeight, defWidgetHeight));
 	returnButton->setCell(0);
-	returnButton->setText(g_lang.get("Return"));
+	returnButton->setText(_("Return"));
 	returnButton->Clicked.connect(this, &MenuStateJoinGame::onReturn);
 	returnButton->setAnchors(a2);
 
 	Button* connectButton = new Button(pnl, Vec2i(0), Vec2i(7 * defWidgetHeight, defWidgetHeight));
 	connectButton->setCell(1);
-	connectButton->setText(g_lang.get("Connect"));
+	connectButton->setText(_("Connect"));
 	connectButton->Clicked.connect(this, &MenuStateJoinGame::onConnect);
 	connectButton->setAnchors(a2);
 
 	Button* searchButton = new Button(pnl, Vec2i(0), Vec2i(7 * defWidgetHeight, defWidgetHeight));
 	searchButton->setCell(2);
-	searchButton->setText(g_lang.get("Search"));
+	searchButton->setText(_("Search"));
 	searchButton->Clicked.connect(this, &MenuStateJoinGame::onSearchForGame);
 	searchButton->setAnchors(a2);
 
@@ -258,7 +258,7 @@ void MenuStateJoinGame::onConnect(Widget*) {
 	Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
 	assert(!m_messageBox);
 	m_messageBox = MessageDialog::showDialog(pos, size, "Connecting...",
-		"Connecting, Please wait.", g_lang.get("Cancel"), "");
+		"Connecting, Please wait.", _("Cancel"), "");
 	m_messageBox->Button1Clicked.connect(this, &MenuStateJoinGame::onCancelConnect);
 	m_messageBox->Close.connect(this, &MenuStateJoinGame::onCancelConnect);
 	{
@@ -302,8 +302,8 @@ void MenuStateJoinGame::connectThreadDone(ConnectResult result) {
 //		connected = true;
 //		Vec2i pos, size(300, 200);
 //		pos = g_metrics.getScreenDims() / 2 - size / 2;
-//		m_messageBox = MessageDialog::showDialog(pos, size, g_lang.get("Connected"),
-//			g_lang.get("Connected") + "\n" + g_lang.get("WaitingHost"), g_lang.get("Disconnect"), "");
+//		m_messageBox = MessageDialog::showDialog(pos, size, _("Connected"),
+//			_("Connected") + "\n" + _("Waiting for server to launch game"), _("Disconnect"), "");
 //		m_messageBox->Button1Clicked.connect(this, &MenuStateJoinGame::onDisconnect);
 //		m_messageBox->Close.connect(this, &MenuStateJoinGame::onDisconnect);
 //	} else if (result == ConnectResult::CANCELLED) {
@@ -349,7 +349,7 @@ void MenuStateJoinGame::onSearchForGame(Widget*) {
 	Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
 	assert(!m_messageBox);
 	m_messageBox = MessageDialog::showDialog(pos, size, "Searching...",
-		"Searching, Please wait.", g_lang.get("Cancel"), "");
+		"Searching, Please wait.", _("Cancel"), "");
 	m_messageBox->Button1Clicked.connect(this, &MenuStateJoinGame::onCancelSearch);
 	m_messageBox->Close.connect(this, &MenuStateJoinGame::onCancelSearch);
 	{
@@ -424,8 +424,8 @@ void MenuStateJoinGame::update() {
 			m_connected = true;
 			Vec2i size = g_widgetConfig.getDefaultDialogSize();
 			Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
-			m_messageBox = MessageDialog::showDialog(pos, size, g_lang.get("Connected"),
-				g_lang.get("Connected") + "\n" + g_lang.get("WaitingHost"), g_lang.get("Disconnect"), "");
+			m_messageBox = MessageDialog::showDialog(pos, size, _("Connected"),
+				string(_("Connected")) + "\n" + _("Waiting for server to launch game"), _("Disconnect"), "");
 			m_messageBox->Button1Clicked.connect(this, &MenuStateJoinGame::onDisconnect);
 			m_messageBox->Close.connect(this, &MenuStateJoinGame::onDisconnect);
 			cout << "Connected to server, connected message box shown, connected flag set.\n";

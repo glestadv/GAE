@@ -1,0 +1,815 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-12-29 17:48+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Translate Toolkit 1.9.0\n"
+
+msgid " EP Boost"
+msgstr ""
+
+msgid "AI Player"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Affects"
+msgstr ""
+
+msgid "Afternoon"
+msgstr ""
+
+msgid "Already Upgraded"
+msgstr "Bereits verbessert"
+
+msgid "Auto Attack"
+msgstr ""
+
+msgid "Auto Flee"
+msgstr ""
+
+msgid "Auto Repair"
+msgstr "Rekonstruktion"
+
+msgid "Behavior"
+msgstr ""
+
+msgid "Building can't be placed there"
+msgstr "Gebäude kann hier nicht gebaut werden"
+
+msgid "Building doesn't satisfy requirements"
+msgstr "Vorraussetzungen für Gebäude nicht erfüllt"
+
+msgid "Buildings"
+msgstr ""
+
+msgid "Camera"
+msgstr ""
+
+msgid "Can load"
+msgstr ""
+
+msgid "Can morph to"
+msgstr ""
+
+msgid "Can not load that Unit type."
+msgstr ""
+
+msgid "Can repair"
+msgstr "Kann reparieren"
+
+msgid "Cancel"
+msgstr "abbrechen"
+
+msgid "Category"
+msgstr ""
+
+msgid "Chance"
+msgstr ""
+
+msgid "Chat Message"
+msgstr ""
+
+msgid ""
+"Click to select only this unit. Shift-click to select only units of this "
+"type. Control-click to remove this unit. Control+Shift-click to remove all "
+"units of this type."
+msgstr ""
+
+msgid "Colour"
+msgstr ""
+
+msgid "Common command"
+msgstr "Allgemeiner Befehl"
+
+msgid "Confirm"
+msgstr ""
+
+msgid "Connect"
+msgstr "verbinden"
+
+msgid "Connected"
+msgstr "verbunden"
+
+msgid "Control"
+msgstr "Kontrolle"
+
+msgid "Controls"
+msgstr ""
+
+msgid "Costs"
+msgstr ""
+
+msgid "Damage type"
+msgstr ""
+
+msgid "Dawn"
+msgstr ""
+
+msgid "Debug"
+msgstr ""
+
+msgid "Debug Keys"
+msgstr ""
+
+msgid "Debug Mode"
+msgstr ""
+
+msgid "Debug sections"
+msgstr ""
+
+msgid "Defeat"
+msgstr "Verloren"
+
+msgid "Delete"
+msgstr "löschen"
+
+msgid "Deleting"
+msgstr "löschen"
+
+msgid "Destination is Unreachable"
+msgstr ""
+
+msgid "Difficulty"
+msgstr "Schwierigkeit"
+
+msgid "Disconnect"
+msgstr "trennen"
+
+msgid "Discount"
+msgstr "Discount"
+
+msgid "Double click to immediately unload this unit."
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Dusk"
+msgstr ""
+
+msgid "EP"
+msgstr "EP"
+
+msgid "Effect"
+msgstr ""
+
+msgid "Elapsed Time"
+msgstr ""
+
+msgid "Engine"
+msgstr ""
+
+msgid "Enter file name"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Exit"
+msgstr "Beenden"
+
+msgid "Exit Game?"
+msgstr "Spiel beenden?"
+
+msgid "Exit Program"
+msgstr ""
+
+msgid "Exit Program?"
+msgstr ""
+
+msgid "Faction"
+msgstr "Fraktion"
+
+msgid "Function not available in network games"
+msgstr ""
+
+msgid "GAE Contributors"
+msgstr ""
+
+msgid "Game"
+msgstr ""
+
+msgid "Game Menu"
+msgstr ""
+
+msgid "Game paused"
+msgstr "Spiel pausiert"
+
+msgid "Game resumed"
+msgstr "Spiel fortgesetzt"
+
+msgid "Game speed set to"
+msgstr "Geschwindigkeit geändert in"
+
+msgid "General"
+msgstr ""
+
+msgid "Generates"
+msgstr ""
+
+msgid "HP"
+msgstr "HP"
+
+msgid "HP Boost"
+msgstr ""
+
+msgid "Harvested"
+msgstr ""
+
+msgid "Hot-Keys"
+msgstr ""
+
+msgid "Includes unexplored areas"
+msgstr ""
+
+msgid "Initializing"
+msgstr "Initialisiere"
+
+msgid "Insufficient Energy"
+msgstr ""
+
+msgid "Interface"
+msgstr ""
+
+msgid "Load"
+msgstr "gesammelt"
+
+msgid "Load capacity reached."
+msgstr ""
+
+msgid "Map"
+msgstr "Karte"
+
+msgid "Max players"
+msgstr "Max. Spieler"
+
+msgid "Mid-day"
+msgstr ""
+
+msgid "Mid-night"
+msgstr ""
+
+msgid "Misc"
+msgstr ""
+
+msgid "Mixed"
+msgstr ""
+
+msgid "Morning"
+msgstr ""
+
+msgid "Network"
+msgstr "Netzwerk"
+
+msgid "Night"
+msgstr ""
+
+msgid "No"
+msgstr "Nein"
+
+msgid "Not Connected"
+msgstr "Nicht verbunden"
+
+msgid "Not enough resources to produce building"
+msgstr "Nicht genug Ressourcen für den Bau vorhanden"
+
+msgid "Off"
+msgstr "Aus"
+
+msgid "Ok"
+msgstr "OK"
+
+msgid "On"
+msgstr "An"
+
+msgid "Only within explored areas"
+msgstr ""
+
+msgid "Options"
+msgstr "Optionen"
+
+msgid "Order is Invalid"
+msgstr "Ungültiger Befehl"
+
+msgid "Orders on queue"
+msgstr "Aufträge in Warteschlange"
+
+msgid "Performance Reports"
+msgstr ""
+
+msgid "Performance Sections"
+msgstr ""
+
+msgid "PetOnly"
+msgstr ""
+
+msgid "Pin Widgets"
+msgstr ""
+
+msgid "Play now!"
+msgstr "Jetzt spielen!"
+
+msgid "Player"
+msgstr "Spieler"
+
+msgid "Position is Invalid"
+msgstr "Wie soll das gehen, Eure Lordschaft ?"
+
+msgid "Produced"
+msgstr ""
+
+msgid "Quit Game"
+msgstr ""
+
+msgid "Recent Hosts"
+msgstr ""
+
+msgid "Refund"
+msgstr ""
+
+msgid "Regen"
+msgstr "RG"
+
+msgid "Requires"
+msgstr "Benötigt"
+
+msgid "Reset Widgets"
+msgstr ""
+
+msgid "Resources"
+msgstr "Ressourcen"
+
+msgid "Return"
+msgstr "Zurück"
+
+msgid "Return to Game"
+msgstr ""
+
+msgid "Save"
+msgstr "Speichern"
+
+msgid "Save Game"
+msgstr "Spiel speichern"
+
+msgid "Save Widgets"
+msgstr ""
+
+msgid "Scenario"
+msgstr "Mission"
+
+msgid "Scenarios cannot be saved."
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "SelfOnly"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+msgid "Server"
+msgstr "Server"
+
+msgid "Set Meeting Point"
+msgstr ""
+
+msgid "Shaders"
+msgstr ""
+
+msgid "Shadows"
+msgstr "Shatten"
+
+msgid "Size"
+msgstr "Größe"
+
+msgid ""
+"Some network slots are still unconnected. Do you wish to continue without "
+"them?"
+msgstr ""
+
+msgid "Some orders could not be given"
+msgstr "Einige Befehle konnten nicht ausgeführt werden"
+
+msgid "Team"
+msgstr "Team"
+
+msgid "Team Only"
+msgstr ""
+
+msgid "Tech tree"
+msgstr "Technologiebaum"
+
+msgid "The GAE Team"
+msgstr ""
+
+msgid "The Glest Team"
+msgstr ""
+
+msgid "There are no category directories in gae/scenarios"
+msgstr ""
+
+msgid "Tileset"
+msgstr "Umgebung"
+
+msgid "Time to morph"
+msgstr ""
+
+msgid "Time to produce"
+msgstr ""
+
+msgid "Time to research"
+msgstr ""
+
+msgid "Toggle Cloak"
+msgstr ""
+
+msgid "Toggle Photo Mode"
+msgstr ""
+
+msgid "Transported Units"
+msgstr ""
+
+msgid "Unit cannot have any more pets of that type"
+msgstr ""
+
+msgid "Unit doesn't satisfy requirements"
+msgstr "Vorraussetzungen für Einheit nicht erfüllt"
+
+msgid "Units"
+msgstr ""
+
+msgid "Unpin Widgets"
+msgstr ""
+
+msgid "Upgrade doesn't satisfy requirements"
+msgstr "Vorraussetzungen für Verbesserung nicht erfüllt"
+
+msgid "Upgrades"
+msgstr "Verbesserungen"
+
+msgid "Upgrading"
+msgstr "Verbesserungsvorgang läuft"
+
+msgid "Victory"
+msgstr "Sieg"
+
+msgid "Waiting for server to launch game"
+msgstr "Warten auf Host für Spielstart"
+
+msgid "Walk speed"
+msgstr "Bewegungsgeschw."
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "You don't have any saved games"
+msgstr "Keine gespeicherten Spiele !"
+
+msgid "You lose!"
+msgstr "Verloren!"
+
+msgid "You must enter a file name to save your game."
+msgstr ""
+
+msgid "You win!"
+msgstr "Gewonnen!"
+
+#, fuzzy, c-format
+msgid "Your game has been saved to %s"
+msgstr "Spiel wurde gespeichert unter"
+
+msgid "allies only"
+msgstr ""
+
+msgid "foes only"
+msgstr ""
+
+msgid "permenant"
+msgstr ""
+
+msgid "pets only"
+msgstr ""
+
+#~ msgid "% Attack Damage Stolen"
+#~ msgstr "% Abgeworben"
+
+#~ msgid "2D art and web"
+#~ msgstr "2D Gestaltung/Web"
+
+#~ msgid "3D Textures"
+#~ msgstr "3D Texturen"
+
+#~ msgid "3D and 2D art"
+#~ msgstr "2D/3D Gestaltung"
+
+#~ msgid "3D art"
+#~ msgstr "3D Gestaltung"
+
+#~ msgid "About"
+#~ msgstr "Über"
+
+#~ msgid "Address"
+#~ msgstr "Addresse"
+
+#~ msgid "All"
+#~ msgstr "Alle"
+
+#~ msgid "Ambient Volume"
+#~ msgstr "Umgebungslautstärke"
+
+#~ msgid "Animation"
+#~ msgstr "Animationen"
+
+#~ msgid "Api info"
+#~ msgstr "API info"
+
+#~ msgid "Armour"
+#~ msgstr "Rüstung"
+
+#~ msgid "Attack"
+#~ msgstr "Angreifen"
+
+#~ msgid "Attack Speed"
+#~ msgstr "Tempo"
+
+#~ msgid "Attacks"
+#~ msgstr "Greift an"
+
+#~ msgid "Auto config"
+#~ msgstr "Auto"
+
+#~ msgid "Build"
+#~ msgstr "Bauen"
+
+#~ msgid "Build speed"
+#~ msgstr "Baugeschw."
+
+#~ msgid "CPU"
+#~ msgstr "CPU"
+
+#~ msgid "Camera mode set to"
+#~ msgstr "Kamera Modus geändert in"
+
+#~ msgid "Chat mode"
+#~ msgstr "Chat Modus"
+
+#~ msgid "Closed"
+#~ msgstr "geschlossen"
+
+#~ msgid "Command"
+#~ msgstr "Befehl"
+
+#~ msgid "Connected to server"
+#~ msgstr "Mit Server verbunden"
+
+#~ msgid "Consume"
+#~ msgstr "verbrauch"
+
+#~ msgid "Damage"
+#~ msgstr "Schaden"
+
+#~ msgid "Disabled"
+#~ msgstr "deaktiviert"
+
+#~ msgid "EP cost"
+#~ msgstr "EP Kosten"
+
+#~ msgid "Easy"
+#~ msgstr "Einfach"
+
+#~ msgid "Extensions"
+#~ msgstr "Extensions"
+
+#~ msgid "Fields"
+#~ msgstr "Felder"
+
+#~ msgid "Free Camera"
+#~ msgstr "Freie Kamera"
+
+#~ msgid "Fx Volume"
+#~ msgstr "Fx Volume"
+
+#~ msgid "Game camera"
+#~ msgstr "Spielkamera"
+
+#~ msgid "Hard"
+#~ msgstr "Schwer"
+
+#~ msgid "Harvest"
+#~ msgstr "Sammeln"
+
+#~ msgid "Harvest speed"
+#~ msgstr "Sammelgeschw."
+
+#~ msgid "Human"
+#~ msgstr "Mensch"
+
+#~ msgid "Insane"
+#~ msgstr "Brutal"
+
+#~ msgid "Join Game"
+#~ msgstr "Spiel beitreten"
+
+#~ msgid "Kills"
+#~ msgstr "Vernichtet"
+
+#~ msgid "Language"
+#~ msgstr "Sprache"
+
+#~ msgid "Linux port"
+#~ msgstr "Linuxportierung"
+
+#~ msgid "Load Game"
+#~ msgstr "Spiel laden"
+
+#~ msgid "Loaded speed"
+#~ msgstr "Sammelgeschw."
+
+#~ msgid "Loading"
+#~ msgstr "Lade..."
+
+#~ msgctxt "[Lang]MaxLights"
+#~ msgid "Max lights"
+#~ msgstr "Max. Lichtquellen"
+
+#~ msgctxt "[Lang]OpenGlMaxLights"
+#~ msgid "Max lights"
+#~ msgstr "Max lights"
+
+#~ msgid "Max load"
+#~ msgstr "Max. Ladung"
+
+#~ msgid "Max texture size"
+#~ msgstr "Max texture size"
+
+#~ msgid "Medium"
+#~ msgstr "Mittel"
+
+#~ msgid "Modelview matrix stack depth"
+#~ msgstr "Modelview matrix stack depth"
+
+#~ msgid "Morph"
+#~ msgstr "Verwandlung"
+
+#~ msgid "Morph Speed"
+#~ msgstr "Tempo"
+
+#~ msgid "Move"
+#~ msgstr "Bewegen"
+
+#~ msgid "Music Volume"
+#~ msgstr "Musiklautstärke"
+
+#~ msgid "Name"
+#~ msgstr "Name"
+
+#~ msgid "New"
+#~ msgstr "Neu"
+
+#~ msgid "New Game"
+#~ msgstr "Gefecht"
+
+#~ msgid "None"
+#~ msgstr "kein"
+
+#~ msgid "Not enough %s and %s to produce building"
+#~ msgstr "Nicht genug %s und %s um einheit zu konstruieren"
+
+#~ msgid "Not enough %s and %s to produce unit"
+#~ msgstr "Nicht genug %s und %s vorhanden um die Einheit zu bauen"
+
+#~ msgid "Not enough %s and %s to produce upgrade"
+#~ msgstr "Nicht genug %s und %s für das Upgrade vorhanden"
+
+#~ msgid "Not enough %s to produce building"
+#~ msgstr "Nicht genug %s für den Bau vorhanden"
+
+#~ msgid "Not enough %s to produce unit"
+#~ msgstr "Nicht genug %s für Einheit vorhanden"
+
+#~ msgid "Not enough %s to produce upgrade"
+#~ msgstr "Nicht genug %s für Verbesserung vorhanden"
+
+#~ msgid "Not enough resources to produce unit"
+#~ msgstr "Nicht genug Ressourcen für Einheit vorhanden"
+
+#~ msgid "Not enough resources to produce upgrade"
+#~ msgstr "Nicht genug Ressourcen für Verbesserung vorhanden"
+
+#~ msgid "OpenGL Info"
+#~ msgstr "OpenGL Info"
+
+#~ msgid "Platform Extensions"
+#~ msgstr "Platform extensions"
+
+#~ msgid "Port"
+#~ msgstr "Port"
+
+#~ msgid "Previous"
+#~ msgstr "Alt"
+
+#~ msgid "Produce"
+#~ msgstr "produziert"
+
+#~ msgid "Producing"
+#~ msgstr "produzieren"
+
+#~ msgid "Production speed"
+#~ msgstr "Geschwindigkeit"
+
+#~ msgid "Programming"
+#~ msgstr "Programmierung"
+
+#~ msgid "Projected"
+#~ msgstr "in Vorbereitung"
+
+#~ msgid "Projection matrix stack depth"
+#~ msgstr "Projection matrix stack depth"
+
+#~ msgid "Random"
+#~ msgstr "Zufällig"
+
+#~ msgid "Random Locations"
+#~ msgstr "Zufalls-Startpunkt"
+
+#~ msgctxt "[Lang]AttackDistance"
+#~ msgid "Range"
+#~ msgstr "Reichweite"
+
+#~ msgid "Reaction speed"
+#~ msgstr "Reaktionsgeschw."
+
+#~ msgctxt "[Lang]OpenGlRenderer"
+#~ msgid "Renderer"
+#~ msgstr "Renderer"
+
+#~ msgid "Repair"
+#~ msgstr "Reparieren"
+
+#~ msgid "Repair speed"
+#~ msgstr "Repariergeschw."
+
+#~ msgid "Result"
+#~ msgstr "Ergebnis"
+
+#~ msgid "Score"
+#~ msgstr "Punktzahl"
+
+#~ msgid "Server type"
+#~ msgstr "Servertyp"
+
+#~ msgid "Shadow Mapping"
+#~ msgstr "Shadow Mapping"
+
+#~ msgid "Sight"
+#~ msgstr "Sicht"
+
+#~ msgid "Sound and music"
+#~ msgstr "Sound und Musik"
+
+#~ msgid "Splash radius"
+#~ msgstr "Umgebungsradius"
+
+#~ msgid "Stop"
+#~ msgstr "Stop"
+
+#~ msgid "Store"
+#~ msgstr "Lager"
+
+#~ msgid "Upgrade"
+#~ msgstr "Verbesserung"
+
+#~ msgid "Upgrade speed"
+#~ msgstr "Verbesserungsgeschw."
+
+#~ msgid "Vendor"
+#~ msgstr "Vendor"
+
+#~ msgid "Version"
+#~ msgstr "Version"
+
+#~ msgid "Very Easy"
+#~ msgstr "Sehr einfach"
+
+#~ msgid "Very Hard"
+#~ msgstr "Sehr schwer"
+
+#~ msgid "fast"
+#~ msgstr "schnell"
+
+#~ msgid "normal"
+#~ msgstr "normal"
+
+#~ msgid "slow"
+#~ msgstr "langsam"

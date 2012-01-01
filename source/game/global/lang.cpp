@@ -35,7 +35,11 @@ void Lang::setLocale(instring locale) {
 	g_logger.logProgramEvent("Setting locale to '" + locale + "'");
 	m_locale = locale;
 	setlocale(LC_CTYPE, m_locale.c_str());
-	
+
+	setlocale(LC_MESSAGES, "");
+	bindtextdomain("glestadv", "share/locale");
+	textdomain("glestadv");
+
 	m_mainFile = "gae/data/lang/" + m_locale + ".lng";
 	m_mainStrings.clear();
 	m_mainStrings.load(m_mainFile);

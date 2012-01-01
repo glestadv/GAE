@@ -264,19 +264,19 @@ MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu)
 	TeamInfoWidget *teamWidget = new TeamInfoWidget(strip);
 	teamWidget->setCell(0);
 	teamWidget->setAnchors(a);
-	teamWidget->setTeam(g_lang.get("GlestTeam"));
+	teamWidget->setTeam(_("The Glest Team"));
 	teamWidget->setMembers(getGlestTeamMemberCount(), &getGlestTeamMemberField);
 
 	teamWidget = new TeamInfoWidget(strip);
 	teamWidget->setCell(1);
 	teamWidget->setAnchors(a);
-	teamWidget->setTeam(g_lang.get("GaeTeam"));
+	teamWidget->setTeam(_("The GAE Team"));
 	teamWidget->setMembers(getGAETeamMemberCount(), &getGAETeamMemberField);
 
 	teamWidget = new TeamInfoWidget(strip);
 	teamWidget->setCell(2);
 	teamWidget->setAnchors(a);
-	teamWidget->setTeam(g_lang.get("Contributors"));
+	teamWidget->setTeam(_("GAE Contributors"));
 	teamWidget->setMembers(getContributorCount(), &getContributorField);
 
 	rootStrip->layoutCells();
@@ -286,7 +286,7 @@ MenuStateAbout::MenuStateAbout(Program &program, MainMenu *mainMenu)
 	Vec2i btnSize(s * 7, s);
 	Vec2i btnPos((g_metrics.getScreenW() - btnSize.w) / 2, g_metrics.getScreenH() - 50);
 	m_returnButton = new Button(&program, btnPos, btnSize);
-	m_returnButton->setText(g_lang.get("Return"));
+	m_returnButton->setText(_("Return"));
 	m_returnButton->Clicked.connect(this, &MenuStateAbout::onReturn);
 	program.setFade(0.f);
 }

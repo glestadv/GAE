@@ -519,7 +519,7 @@ void MenuStateNewGame::onButtonClick(Widget *source) {
 		if (hasUnconnectedSlots()) {
 			Vec2i sz = g_widgetConfig.getDefaultDialogSize();
 			m_messageDialog = MessageDialog::showDialog(g_metrics.getScreenDims() / 2 - sz / 2,
-				sz, g_lang.get("NotConnected"), g_lang.get("WaitingForConnections"), g_lang.get("Yes"), g_lang.get("No"));
+				sz, _("Not Connected"), _("Some network slots are still unconnected. Do you wish to continue without them?"), _("Yes"), _("No"));
 			m_messageDialog->Button1Clicked.connect(this, &MenuStateNewGame::onCloseUnconnectedSlots);
 			m_messageDialog->Button2Clicked.connect(this, &MenuStateNewGame::onDismissDialog);
 			m_messageDialog->Close.connect(this, &MenuStateNewGame::onDismissDialog);
@@ -675,10 +675,10 @@ bool MenuStateNewGame::loadGameSettings() {
 				m_playerSlots[slot]->setNameText(g_config.getNetPlayerName());
 				break;
 			case ControlType::NETWORK:
-				m_playerSlots[slot]->setNameText(g_lang.get("Network") + ": " + g_lang.get("NotConnected"));
+				m_playerSlots[slot]->setNameText(string(_("Network")) + ": " + _("Not Connected"));
 				break;
 			default:
-				m_playerSlots[slot]->setNameText(g_lang.get("AiPlayer"));
+				m_playerSlots[slot]->setNameText(_("AI Player"));
 				break;
 		}
 		int ndx = -1;
@@ -797,13 +797,13 @@ void MenuStateNewGame::updateControlers() {
 							gs.setPlayerName(i, slot->getName());
 							m_playerSlots[i]->setNameText(slot->getName());
 						} else {
-							m_playerSlots[i]->setNameText(g_lang.get("NotConnected"));
+							m_playerSlots[i]->setNameText(_("Not Connected"));
 						}
 					}
 					break;
 				default:
 					gs.setPlayerName(i, "AI Player");
-					m_playerSlots[i]->setNameText(g_lang.get("AiPlayer"));
+					m_playerSlots[i]->setNameText(_("AI Player"));
 			}
 			switch (m_playerSlots[i]->getControlType()) {
 				case ControlType::HUMAN:

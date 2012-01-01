@@ -251,7 +251,7 @@ void SkillType::doChecksum(Checksum &checksum) const {
 
 void SkillType::descEffects(string &str, const Unit *unit) const {
 	for(EffectTypes::const_iterator i = effectTypes.begin(); i != effectTypes.end(); ++i) {
-		str += g_lang.get("Effect") + ": ";
+		str += string(_("Effect")) + ": ";
 		(*i)->getDesc(str);
 	}
 }

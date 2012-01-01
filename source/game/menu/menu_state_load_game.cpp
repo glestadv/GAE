@@ -113,19 +113,19 @@ MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu)
 	// buttons
 	m_returnButton = new Button(btnPnl, Vec2i(0), sz);
 	m_returnButton->setCell(0);
-	m_returnButton->setText(g_lang.get("Return"));
+	m_returnButton->setText(_("Return"));
 	m_returnButton->Clicked.connect(this, &MenuStateLoadGame::onButtonClick);
 	m_returnButton->setAnchors(centreAnchors);
 
 	m_deleteButton = new Button(btnPnl, Vec2i(0), sz);
 	m_deleteButton->setCell(1);
-	m_deleteButton->setText(g_lang.get("Delete"));
+	m_deleteButton->setText(_("Delete"));
 	m_deleteButton->Clicked.connect(this, &MenuStateLoadGame::onButtonClick);
 	m_deleteButton->setAnchors(centreAnchors);
 
 	m_playNowButton = new Button(btnPnl, Vec2i(0), sz);
 	m_playNowButton->setCell(2);
-	m_playNowButton->setText(g_lang.get("PlayNow"));
+	m_playNowButton->setText(_("Play now!"));
 	m_playNowButton->Clicked.connect(this, &MenuStateLoadGame::onButtonClick);
 	m_playNowButton->setAnchors(centreAnchors);
 
@@ -135,7 +135,7 @@ MenuStateLoadGame::MenuStateLoadGame(Program &program, MainMenu *mainMenu)
 		Vec2i sz = g_widgetConfig.getDefaultDialogSize();
 		strip->clear();
 		m_messageDialog = MessageDialog::showDialog(g_metrics.getScreenDims() / 2 - sz / 2, sz,
-			g_lang.get("Error"), g_lang.get("NoSavedGames"), g_lang.get("Ok"), "");
+			_("Error"), _("You don't have any saved games"), _("Ok"), "");
 		m_messageDialog->Button1Clicked.connect(this, &MenuStateLoadGame::onConfirmReturn);
 		m_messageDialog->Close.connect(this, &MenuStateLoadGame::onConfirmReturn);
 	}
@@ -159,8 +159,8 @@ void MenuStateLoadGame::onButtonClick(Widget *source) {
 
 		const string &fileName = m_savedGameList->getSelectedItem()->getText();
 		m_messageDialog = MessageDialog::showDialog(g_metrics.getScreenDims() / 2 - sz / 2, sz, 
-			g_lang.get("Confirm"), g_lang.get("Delete") + " " + fileName + "?", 
-			g_lang.get("Yes"), g_lang.get("No"));
+			_("Confirm"), string(_("Delete")) + " " + fileName + "?", 
+			_("Yes"), _("No"));
 		m_messageDialog->Button1Clicked.connect(this, &MenuStateLoadGame::onConfirmDelete);
 		m_messageDialog->Button2Clicked.connect(this, &MenuStateLoadGame::onCancelDelete);
 		m_messageDialog->Close.connect(this, &MenuStateLoadGame::onCancelDelete);
@@ -321,8 +321,8 @@ void MenuStateLoadGame::initGameInfo() {
 			sprintf(elapsedTime, "%02d:%02d", elapsedMinutes, elapsedSeconds);
 		}
 
-		string mapDescr = " (" + g_lang.get("MaxPlayers") + ": " + intToStr(mapInfo.players)
-				+ ", " + g_lang.get("Size") + ": " + intToStr(mapInfo.size.x) + " x " + intToStr(mapInfo.size.y) + ")";
+		string mapDescr = string(" (") + _("Max players") + ": " + intToStr(mapInfo.players)
+				+ ", " + _("Size") + ": " + intToStr(mapInfo.size.x) + " x " + intToStr(mapInfo.size.y) + ")";
 
 		const string techName = basename(gs->getTechPath());
 		g_lang.loadTechStrings(techName);
@@ -330,9 +330,9 @@ void MenuStateLoadGame::initGameInfo() {
 		stringstream ss;
 		ss  << m_savedGameList->getSelectedItem()->getText() << ": " << gs->getDescription()
 			<< endl << g_lang.get("Techtree") << ": " << formatString(basename(gs->getTechPath()))
-			<< endl << g_lang.get("Tileset") << ": " << formatString(basename(gs->getTilesetPath()))
-			<< endl << g_lang.get("Map") << ": " << formatString(basename(gs->getMapPath())) << mapDescr
-			<< endl << g_lang.get("ElapsedTime") << ": " << elapsedTime
+			<< endl << _("Tileset") << ": " << formatString(basename(gs->getTilesetPath()))
+			<< endl << _("Map") << ": " << formatString(basename(gs->getMapPath())) << mapDescr
+			<< endl << _("Elapsed Time") << ": " << elapsedTime
 			<< endl;
 
 		if (gs->getFactionCount() > GameConstants::maxPlayers || gs->getFactionCount() < 0) {

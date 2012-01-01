@@ -157,7 +157,7 @@ void Commander::trySetAutoCommandEnabled(const Selection *selection, AutoCmdFlag
 			break;
 	}
 	if (iSim->isNetworkInterface()) {
-		g_console.addLine(g_lang.get("NotAvailable"));
+		g_console.addLine(_("Function not available in network games"));
 	} else {
 		const UnitVector &units = selection->getUnits();
 		foreach_const (UnitVector, i, units) {

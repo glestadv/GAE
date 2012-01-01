@@ -18,6 +18,8 @@ CHECK_INCLUDE_FILE(sys/filio.h HAVE_SYS_FILIO_H)
 CHECK_INCLUDE_FILE(sys/time.h HAVE_SYS_TIME_H)
 CHECK_INCLUDE_FILE(byteswap.h HAVE_BYTESWAP_H)
 
+include(${CMAKE_SOURCE_DIR}/cmake/translation.cmake)
+
 # set paths for config and data
 if(NOT DEFINED GAE_CONFIG_DIR)
 	set(GAE_CONFIG_DIR "" CACHE PATH "user specific directory for configs and logs")

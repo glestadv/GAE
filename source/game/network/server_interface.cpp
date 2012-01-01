@@ -414,7 +414,7 @@ string ServerInterface::getStatus() const {
 		if (slots[i] && slots[i]->isConnected()) {
 				str += slots[i]->getName(); //str += connectionSlot->getRemotePlayerName() + ": " + connectionSlot->getStatus();
 		} else {
-			str += g_lang.get("NotConnected");
+			str += _("Not Connected");
 		}
 		str += '\n';
 	}

@@ -252,16 +252,16 @@ void CommandType::describe(const Unit *unit, CmdDescriptor *callback, ProdTypePt
 	unit->getFaction()->reportReqsAndCosts(this, pt, cmdCheckResult);
 
 	if (cmdCheckResult.m_upgradedAlready) {
-		callback->addItem(pt, g_lang.get("AlreadyUpgraded"));
+		callback->addItem(pt, _("Already Upgraded"));
 	} else if (cmdCheckResult.m_upgradingAlready) {
-		callback->addItem(pt, g_lang.get("Upgrading"));
+		callback->addItem(pt, _("Upgrading"));
 	} else if (!cmdCheckResult.m_availableInSubFaction) {
 		callback->addItem(this, g_lang.get("NotAvailableInSubfaction"));
 	} else {
 		vector<UnitReqResult> &unitReqs = cmdCheckResult.m_unitReqResults;
 		vector<UpgradeReqResult> &upgradeReqs = cmdCheckResult.m_upgradeReqResults;
 		if (!unitReqs.empty() || !upgradeReqs.empty()) {
-			callback->addElement(g_lang.get("Reqs") + ":");
+			callback->addElement(string(_("Requires")) + ":");
 			if (!unitReqs.empty()) {
 				foreach (vector<UnitReqResult>, it, cmdCheckResult.m_unitReqResults) {
 					string name = g_lang.getTranslatedFactionName(factionName, it->getUnitType()->getName());
@@ -277,7 +277,7 @@ void CommandType::describe(const Unit *unit, CmdDescriptor *callback, ProdTypePt
 		}
 		if (pt) {
 			if (!cmdCheckResult.m_resourceCostResults.empty()) {
-				callback->addElement(g_lang.get("Costs") + ":");
+				callback->addElement(string(_("Costs")) + ":");
 				foreach (ResourceCostResults, it, cmdCheckResult.m_resourceCostResults) {
 					string name = g_lang.getTranslatedTechName(it->getResourceType()->getName());
 					string msg = name + " (" + intToStr(it->getCost()) + ")";
@@ -288,7 +288,7 @@ void CommandType::describe(const Unit *unit, CmdDescriptor *callback, ProdTypePt
 				}
 			}
 			if (!cmdCheckResult.m_resourceMadeResults.empty()) {
-				callback->addElement(g_lang.get("Generated") + ":");
+				callback->addElement(string(_("Generates")) + ":");
 				foreach (ResourceMadeResults, it, cmdCheckResult.m_resourceMadeResults) {
 					string name = g_lang.getTranslatedTechName(it->getResourceType()->getName());
 					string msg = name + " (" + intToStr(it->getAmount()) + ")";
@@ -416,7 +416,7 @@ void TeleportCommandType::update(Unit *unit) const {
 		unit->setNextPos(pos);
 	} else {
 		if (unit->getFaction()->isThisFaction()) {
-			g_console.addLine(g_lang.get("InvalidPosition"));
+			g_console.addLine(_("Position is Invalid"));
 		}
 		// finish command
 		unit->setCurrSkill(SkillClass::STOP);
@@ -427,9 +427,9 @@ void TeleportCommandType::update(Unit *unit) const {
 void TeleportCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, ProdTypePtr pt) const {
 	string msg = "\n";
 	if (m_moveSkillType->getVisibleOnly()) {
-		msg += g_lang.get("ExploredTargetOnly");
+		msg += _("Only within explored areas");
 	} else {
-		msg += g_lang.get("UnexploredTargetOk");
+		msg += _("Includes unexplored areas");
 	}
 	callback->addElement(msg);
 }
@@ -588,7 +588,7 @@ void ProduceCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, P
 		// do the time-to-produce calc... 
 		int framesPerCycle = int(floorf((1.f / (float(unit->getSpeed(m_produceSkillType)) / 4000.f)) + 1.f));
 		int timeToBuild = pt->getProductionTime() * framesPerCycle / 40;
-		msg = g_lang.get("TimeToBuild") + ": " + intToStr(timeToBuild);
+		msg = string(_("Time to produce")) + ": " + intToStr(timeToBuild);
 	}
 	callback->addElement(msg);
 }
@@ -597,7 +597,7 @@ void ProduceCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, Prod
 	if (!pt) {
 		Lang &lang = g_lang;
 		const string factionName = unit->getFaction()->getType()->getName();
-		callback->addElement(g_lang.get("Produced") + ":");
+		callback->addElement(string(_("Produced")) + ":");
 		foreach_const (vector<const UnitType*>, it, m_producedUnits) {
 			callback->addItem(*it, lang.getTranslatedFactionName(factionName, (*it)->getName()));
 		}
@@ -732,7 +732,7 @@ void GenerateCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, 
 		// do the time-to-produce calc... 
 		int framesPerCycle = int(floorf((1.f / (float(unit->getSpeed(m_produceSkillType)) / 4000.f)) + 1.f));
 		int timeToBuild = pt->getProductionTime() * framesPerCycle / 40;
-		msg = "\n" + g_lang.get("TimeToBuild") + ": " + intToStr(timeToBuild);
+		msg = string("\n") + _("Time to produce") + ": " + intToStr(timeToBuild);
 	}
 	callback->addElement(msg);
 }
@@ -741,7 +741,7 @@ void GenerateCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, Pro
 	if (!pt) {
 		Lang &lang = g_lang;
 		const string factionName = unit->getFaction()->getType()->getName();
-		callback->addElement(g_lang.get("Produced") + ":");
+		callback->addElement(string(_("Produced")) + ":");
 		foreach_const (vector<const GeneratedType*>, it, m_producibles) {
 			callback->addItem(*it, lang.getTranslatedFactionName(factionName, (*it)->getName()));
 		}
@@ -878,7 +878,7 @@ void UpgradeCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, P
 		// do the time-to-produce calc... 
 		int framesPerCycle = int(floorf((1.f / (float(unit->getSpeed(m_upgradeSkillType)) / 4000.f)) + 1.f));
 		int timeToUpgrade = pt->getProductionTime() * framesPerCycle / 40;
-		msg = g_lang.get("TimeToResearch") + ": " + intToStr(timeToUpgrade);
+		msg = string(_("Time to research")) + ": " + intToStr(timeToUpgrade);
 	}
 	callback->addElement(msg);
 }
@@ -887,7 +887,7 @@ void UpgradeCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, Prod
 	if (!pt) {
 		Lang &lang = g_lang;
 		const string factionName = unit->getFaction()->getType()->getName();
-		callback->addElement(g_lang.get("Upgrades") + ":");
+		callback->addElement(string(_("Upgrades")) + ":");
 		foreach_const (vector<const UpgradeType*>, it, m_producedUpgrades) {
 			callback->addItem(*it, lang.getTranslatedFactionName(factionName, (*it)->getName()));
 		}
@@ -1084,12 +1084,12 @@ void MorphCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, Pro
 		// do the time-to-produce calc... 
 		int framesPerCycle = int(floorf((1.f / (float(unit->getSpeed(m_morphSkillType)) / 4000.f)) + 1.f));
 		int timeToBuild = pt->getProductionTime() * framesPerCycle / 40;
-		msg = g_lang.get("TimeToMorph") + ": " + intToStr(timeToBuild);
+		msg = string(_("Time to morph")) + ": " + intToStr(timeToBuild);
 		if (m_discount != 0) { // discount
-			msg += "\n" + g_lang.get("Discount") + ": " + intToStr(m_discount) + "%";
+			msg += string("\n") + _("Discount") + ": " + intToStr(m_discount) + "%";
 		}
 		if (m_refund != 0) {
-			msg += "\n" + g_lang.get("Refund") + ": " + intToStr(m_refund) + "%";
+			msg += string("\n") + _("Refund") + ": " + intToStr(m_refund) + "%";
 		}
 	}
 	callback->addElement(msg);
@@ -1099,7 +1099,7 @@ void MorphCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, ProdTy
 	if (!pt) {
 		Lang &lang = g_lang;
 		const string factionName = unit->getFaction()->getType()->getName();
-		callback->addElement(g_lang.get("MorphUnits") + ":");
+		callback->addElement(string(_("Can morph to")) + ":");
 		foreach_const (vector<const UnitType*>, it, m_morphUnits) {
 			callback->addItem(*it, lang.getTranslatedFactionName(factionName, (*it)->getName()));
 		}
@@ -1129,7 +1129,7 @@ void MorphCommandType::update(Unit *unit) const {
 			unit->getFaction()->checkAdvanceSubfaction(morphToUnit, false);
 		} else {
 			if (unit->getFactionIndex() == g_world.getThisFactionIndex()) {
-				g_console.addStdMessage("InvalidPosition");
+				g_console.addStdMessage(_("Position is Invalid"));
 			}
 			unit->cancelCurrCommand();
 		}
@@ -1157,7 +1157,7 @@ void MorphCommandType::update(Unit *unit) const {
 			} else {
 				unit->cancelCurrCommand();
 				if (unit->getFactionIndex() == g_world.getThisFactionIndex()) {
-					g_console.addStdMessage("InvalidPosition");
+					g_console.addStdMessage(_("Position is Invalid"));
 				}
 			}
 			unit->setCurrSkill(SkillClass::STOP);
@@ -1244,13 +1244,13 @@ void TransformCommandType::update(Unit *unit) const {
 			} else {
 				unit->cancelCurrCommand();
 				if (unit->getFactionIndex() == g_world.getThisFactionIndex()) {
-					g_console.addStdMessage("InvalidPosition");
+					g_console.addStdMessage(_("Position is Invalid"));
 				}
 				unit->setCurrSkill(SkillClass::STOP);
 			}
 		} else {
 			if (unit->getFactionIndex() == g_world.getThisFactionIndex()) {
-				g_console.addStdMessage("InvalidPosition");
+				g_console.addStdMessage(_("Position is Invalid"));
 			}
 			unit->cancelCurrCommand();
 		}
@@ -1356,7 +1356,7 @@ void LoadCommandType::descSkills(const Unit *unit, CmdDescriptor *callback, Prod
 void LoadCommandType::subDesc(const Unit *unit, CmdDescriptor *callback, ProdTypePtr pt) const {
 	Lang &lang = g_lang;
 	const string factionName = unit->getFaction()->getType()->getName();
-	callback->addElement(g_lang.get("CanLoad") + ":");
+	callback->addElement(string(_("Can load")) + ":");
 	foreach_const (vector<const UnitType*>, it, m_canLoadList) {
 		callback->addItem(*it, lang.getTranslatedFactionName(factionName, (*it)->getName()));
 	}

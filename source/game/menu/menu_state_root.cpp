@@ -68,7 +68,7 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu)
 		// Advanced Engine labels
 		Widgets::StaticText *label = new Widgets::StaticText(pp);
 		label->textStyle().m_fontIndex = g_widgetConfig.getTitleFontNdx();
-		label->setText(g_lang.get("AdvEng1"));
+		label->setText(_("Advanced"));
 		Vec2i sz = label->getTextDimensions() + Vec2i(10,5);
 		int tx = int(255.f / 512.f * logoWidth);
 		int ty = int(60.f / 256.f * logoHeight);
@@ -79,7 +79,7 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu)
 
 		label = new Widgets::StaticText(pp);
 		label->textStyle().m_fontIndex = g_widgetConfig.getTitleFontNdx();
-		label->setText(g_lang.get("AdvEng2"));
+		label->setText(_("Engine"));
 		tx = int(285.f / 512.f * logoWidth);
 		label->setPos(Vec2i(tx, logoHeight - ty - sz.h));
 		label->setSize(label->getTextDimensions() + Vec2i(10,5));
@@ -182,7 +182,7 @@ MenuStateRoot::MenuStateRoot(Program &program, MainMenu *mainMenu)
 			Anchor(AnchorType::RIGID, 15), Anchor(AnchorType::RIGID, 15));
 		label->setAnchors(anchors);
 		label->textStyle().m_fontIndex = g_widgetConfig.getTitleFontNdx();
-		label->setText("Glest : " + g_lang.get("AdvEng1") + " " + g_lang.get("AdvEng2") + gaeVersionString);
+		label->setText(string("Glest : ") + _("Advanced") + " " + _("Engine") + gaeVersionString);
 		Vec2i size = label->getTextDimensions() + Vec2i(5,5);
 		label->setSize(size);
 	}

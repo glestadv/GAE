@@ -34,26 +34,26 @@ DebugOptions::DebugOptions(Container *parent, bool menu)
 	setSizeHint(0, SizeHint(35, -1));
 	setSizeHint(1, SizeHint(65, -1));
 
-	rightPnl->addHeading(leftPnl, g_lang.get("General"));
+	rightPnl->addHeading(leftPnl, _("General"));
 
-	m_debugMode = rightPnl->addCheckBox(g_lang.get("DebugMode"), g_config.getMiscDebugMode());
+	m_debugMode = rightPnl->addCheckBox(_("Debug Mode"), g_config.getMiscDebugMode());
 	m_debugMode->Clicked.connect(this, &DebugOptions::onCheckChanged);
-	m_debugKeys = rightPnl->addCheckBox(g_lang.get("DebugKeys"), g_config.getMiscDebugKeys());
+	m_debugKeys = rightPnl->addCheckBox(_("Debug Keys"), g_config.getMiscDebugKeys());
 	m_debugKeys->Clicked.connect(this, &DebugOptions::onCheckChanged);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("DebugSections"));
+	rightPnl->addHeading(leftPnl, _("Debug sections"));
 	foreach_enum (DebugSection, ds) {
 		m_debugSections[ds] = rightPnl->addCheckBox(g_lang.get(DebugSectionNames[ds]), m_stats->isEnabled(ds));
 		m_debugSections[ds]->Clicked.connect(this, &DebugOptions::onCheckChanged);
 	}
 
-	rightPnl->addHeading(leftPnl, g_lang.get("PerformanceReport"));
+	rightPnl->addHeading(leftPnl, _("Performance Reports"));
 	foreach_enum(TimerReportFlag, trf) {
 		m_timerReports[trf] = rightPnl->addCheckBox(g_lang.get(TimerReportFlagNames[trf]), m_stats->isEnabled(trf));
 		m_timerReports[trf]->Clicked.connect(this, &DebugOptions::onCheckChanged);
 	}
 
-	rightPnl->addHeading(leftPnl, g_lang.get("PerformanceSections"));
+	rightPnl->addHeading(leftPnl, _("Performance Sections"));
 	foreach_enum (TimerSection, ts) {
 		m_timerSections[ts] = rightPnl->addCheckBox(g_lang.get(TimerSectionNames[ts]), m_stats->isEnabled(ts));
 		m_timerSections[ts]->Clicked.connect(this, &DebugOptions::onCheckChanged);

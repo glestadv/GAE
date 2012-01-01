@@ -144,7 +144,7 @@ void Scenario::loadScenarioInfo(string scenario, string category, ScenarioInfo *
 	}
 
 	//add player info
-	scenarioInfo->desc = g_lang.get("Player") + ": ";
+	scenarioInfo->desc = string(_("Player")) + ": ";
 	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
 		if (scenarioInfo->factionControls[i] == ControlType::HUMAN) {
 			const string raw = scenarioInfo->factionTypeNames[i];
@@ -161,10 +161,10 @@ void Scenario::loadScenarioInfo(string scenario, string category, ScenarioInfo *
 	string difficultyString = "Difficulty" + intToStr(scenarioInfo->difficulty);
 
 	scenarioInfo->desc += "\n";
-	scenarioInfo->desc += g_lang.get("Difficulty") + ": " + g_lang.get(difficultyString) + "\n";
-	scenarioInfo->desc += g_lang.get("Map") + ": " + formatString(scenarioInfo->mapName) + "\n";
-	scenarioInfo->desc += g_lang.get("Tileset") + ": " + formatString(scenarioInfo->tilesetName) + "\n";
-	scenarioInfo->desc += g_lang.get("TechTree") + ": " + formatString(scenarioInfo->techTreeName) + "\n";
+	scenarioInfo->desc += string(_("Difficulty")) + ": " + g_lang.get(difficultyString) + "\n";
+	scenarioInfo->desc += string(_("Map")) + ": " + formatString(scenarioInfo->mapName) + "\n";
+	scenarioInfo->desc += string(_("Tileset")) + ": " + formatString(scenarioInfo->tilesetName) + "\n";
+	scenarioInfo->desc += string(_("Tech tree")) + ": " + formatString(scenarioInfo->techTreeName) + "\n";
 }
 
 void Scenario::loadGameSettings(string scenario, string category, const ScenarioInfo *scenarioInfo) {

@@ -166,31 +166,31 @@ PlayerSlotLabels::PlayerSlotLabels(Container* parent)
 	
 	StaticText *label = new StaticText(this);
 	label->setCell(0);
-	label->setText(g_lang.get("Player"));
+	label->setText(_("Player"));
 	label->setShadow(Vec4f(0.f, 0.f, 0.f, 1.f));
 	label->setAnchors(anchors);
 
 	label = new StaticText(this);
 	label->setCell(1);
-	label->setText(g_lang.get("Control"));
+	label->setText(_("Control"));
 	label->setShadow(Vec4f(0.f, 0.f, 0.f, 1.f));
 	label->setAnchors(anchors);
 
 	label = new StaticText(this);
 	label->setCell(2);
-	label->setText(g_lang.get("Faction"));
+	label->setText(_("Faction"));
 	label->setShadow(Vec4f(0.f, 0.f, 0.f, 1.f));
 	label->setAnchors(anchors);
 
 	label = new StaticText(this);
 	label->setCell(3);
-	label->setText(g_lang.get("Team"));
+	label->setText(_("Team"));
 	label->setShadow(Vec4f(0.f, 0.f, 0.f, 1.f));
 	label->setAnchors(anchors);
 
 	label = new StaticText(this);
 	label->setCell(4);
-	label->setText(g_lang.get("Colour"));
+	label->setText(_("Colour"));
 	label->setShadow(Vec4f(0.f, 0.f, 0.f, 1.f));
 	label->setAnchors(anchors);
 }
