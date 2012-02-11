@@ -351,9 +351,14 @@ void ClientInterface::updateMove(Unit *unit) {
 	}
 }
 
-void ClientInterface::updateProjectilePath(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end) {
+void ClientInterface::updateProjectilePath(Unit *unit, Projectile *pps, const Vec3f &start, const Vec3f &end) {
 	try {
 		ProjectileUpdate updt = keyFrame.getProjUpdate();
+		if (unit->getId() != updt.unitId) {
+			NETWORK_LOG( "ClientInterface::updateProjectilePath(): Ids don't match. UnitIdLocal: " << unit->getId() 
+				<< " UnitIdRemote: " << updt.unitId );
+			throw GameSyncError("Bad projectile update"); // msgBox and then graceful exit to Menu please...
+		}
 		if (updt.end_offset == 0) {
 			NETWORK_LOG( "ClientInterface::updateProjectilePath(): ProjectileId: " << pps->getId() 
 				<< " Bad server update, end frame offset is 0. " );

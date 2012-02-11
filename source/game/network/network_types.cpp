@@ -213,6 +213,7 @@ ProjectileUpdate::ProjectileUpdate(const Unit *unit, Projectile *pps) {
 	int offset = pps->getEndFrame() - g_world.getFrameCount();
 	assert(offset < 256 && offset > 0);
 	this->end_offset = offset;
+	this->unitId = unit->getId();
 }
 
 }}//end namespace

@@ -255,7 +255,8 @@ WRAPPED_ENUM( NetworkCommandType,
 
 #pragma pack(push, 1)
 	struct ProjectileUpdate {
-		uint8 end_offset	:  8;
+		uint8	end_offset	:  8;
+		int32   unitId		: 24;
 		ProjectileUpdate(const Unit *unit, Projectile *pps);
 		ProjectileUpdate(const uint8 *ptr) { *this = *((ProjectileUpdate*)ptr); }
 		ProjectileUpdate() {}
