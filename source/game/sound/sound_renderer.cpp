@@ -114,7 +114,9 @@ void SoundRenderer::setMusicVolume(float v) {
 }
 
 StrSound *NextMusicTrackCallback() {
-    return g_soundRenderer.getNextMusicTrack();
+	StrSound *nextTrack = g_soundRenderer.getNextMusicTrack();
+	g_soundRenderer.setStream(nextTrack);
+    return nextTrack;
 }
 
 void SoundRenderer::startMusicPlaylist() {
@@ -265,6 +267,8 @@ void SoundRenderer::setAmbientVolume(float v) {
 
 void SoundRenderer::stopAllSounds(){
 	soundPlayer->stopAllSounds();
+	//this might be needed here, seems to cause lots of memory leaks though??? - hailstone 25Feb2012
+	//musicPlaylistQueue.clear();
 }
 
 void SoundRenderer::loadConfig(){

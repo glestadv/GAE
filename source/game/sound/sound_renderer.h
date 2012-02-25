@@ -82,6 +82,7 @@ public:
     // streams
 	void playStream(StrSound *strSound, bool loop= true, int64 fadeOn=0, RequestNextStream cbFunc=0);
 	void stopStream(StrSound *strSound, int64 fadeOff=0);
+	void setStream(StrSound *v) { musicStream = v; }
 
 	//music
 	void playMusic(StrSound *strSound, bool loop= true, RequestNextStream cbFunc=0);
