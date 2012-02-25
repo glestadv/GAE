@@ -61,6 +61,9 @@ private:
         stMusic() {
             curPlaylist=0;
         }
+		void removePlaylist(const MusicPlaylistType *playlist);
+		bool containsPlaylist(const MusicPlaylistType *playlist) const;
+		const MusicPlaylistType *getRandomPlaylist() const;
     };
     typedef std::vector<stMusic> MusicPlaylistQueue;
     MusicPlaylistQueue musicPlaylistQueue;
@@ -83,9 +86,9 @@ public:
 	//music
 	void playMusic(StrSound *strSound, bool loop= true, RequestNextStream cbFunc=0);
 	void stopMusic(StrSound *strSound);
-    void addPlaylist(const MusicPlaylistType *playlist);
     void startMusicPlaylist();
     StrSound *getNextMusicTrack();
+	void addPlaylist(const MusicPlaylistType *playlist);
     void removePlaylist(const MusicPlaylistType *playlist);
 
 	//fx

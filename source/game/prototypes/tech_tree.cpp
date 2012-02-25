@@ -212,6 +212,7 @@ bool TechTree::load(const string &dir, const set<string> &factionNames){
 
 TechTree::~TechTree(){
 	g_logger.logProgramEvent("~TechTree", !Program::getInstance()->isTerminating());
+	delete m_playlist;
 }
 
 void TechTree::doChecksumResources(Checksum &checksum) const {

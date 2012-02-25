@@ -36,20 +36,13 @@ using Main::Program;
 // ======================================================
 //          Class SubfactionType
 // ======================================================
-SubfactionType::~SubfactionType()
-{
-    if(musicPlaylist) {
-        delete musicPlaylist;
-    }
+SubfactionType::~SubfactionType() {
+	delete musicPlaylist;
 }
 
-void SubfactionType::setMusic(MusicPlaylistType *newMusic)
-{
-    if(musicPlaylist) {
-        delete musicPlaylist;
-    }
-
-    musicPlaylist= newMusic;
+void SubfactionType::setMusic(MusicPlaylistType *newMusic) {
+    delete musicPlaylist;
+    musicPlaylist = newMusic;
 }
 
 
@@ -438,10 +431,9 @@ void FactionType::doChecksum(Checksum &checksum) const {
 }
 
 FactionType::~FactionType() {
-    if(music)
-        delete music;
-    if(m_playlist)
-        delete m_playlist;
+    delete music;
+    delete m_playlist;
+
 	if (attackNotice) {
 		deleteValues(attackNotice->getSounds().begin(), attackNotice->getSounds().end());
 		delete attackNotice;

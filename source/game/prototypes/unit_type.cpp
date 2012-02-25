@@ -108,9 +108,7 @@ UnitType::UnitType()
 }
 
 UnitType::~UnitType(){
-    if(musicPlaylist) {
-        delete musicPlaylist;
-    }
+    delete musicPlaylist;
 
 	deleteValues(selectionSounds.getSounds().begin(), selectionSounds.getSounds().end());
 	deleteValues(commandSounds.getSounds().begin(), commandSounds.getSounds().end());

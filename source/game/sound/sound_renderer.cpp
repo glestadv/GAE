@@ -20,6 +20,9 @@
 
 #include "leak_dumper.h"
 
+#include <algorithm>
+#include <vector>
+
 using namespace Shared::Graphics;
 using namespace Shared::Sound;
 
@@ -83,8 +86,9 @@ void SoundRenderer::stopStream(StrSound *strSound, int64 fadeOff){
 // ======================= Music ============================
 
 void SoundRenderer::playMusic(StrSound *strSound, bool loop, RequestNextStream cbFunc){
-    if(!strSound)
+	if (!strSound) {
         return;
+	}
 
     if (musicStream) {
 	    soundPlayer->stop(musicStream);
@@ -96,7 +100,7 @@ void SoundRenderer::playMusic(StrSound *strSound, bool loop, RequestNextStream c
 }
 
 void SoundRenderer::stopMusic(StrSound *strSound){
-    if(strSound) {
+    if (strSound) {
 	    soundPlayer->stop(strSound);
     }
 	musicStream = 0;
@@ -109,136 +113,105 @@ void SoundRenderer::setMusicVolume(float v) {
 	}
 }
 
-void SoundRenderer::addPlaylist(const MusicPlaylistType *playlist) {
-    if(!musicPlaylistQueue.empty()) {
-        // verify that its not already in the current playlist group
-        for(vectorMusicPlaylist::iterator it=musicPlaylistQueue.back().musicList.begin(); 
-            it!=musicPlaylistQueue.back().musicList.end(); it++ ) {
-                if(*it==playlist) {
-                    return;
-                }
-        }
-    }
-
-    if(musicPlaylistQueue.empty() ||
-      (playlist->getActivationType()== MusicPlaylistType::eActivationType_ReplaceCurrent)){
-        stMusic newMusic;
-        newMusic.musicList.push_back(playlist);
-        musicPlaylistQueue.push_back(newMusic);
-    }
-    else if(playlist->getActivationType()== MusicPlaylistType::eActivationType_AddToCurrent) {
-        musicPlaylistQueue.back().musicList.push_back(playlist);
-    }
-    
-    if(playlist->getActivationMode()==MusicPlaylistType::eActivationMode_Interrupt)
-        startMusicPlaylist();
-}
-
 StrSound *NextMusicTrackCallback() {
     return g_soundRenderer.getNextMusicTrack();
 }
 
 void SoundRenderer::startMusicPlaylist() {
-    StrSound *curMusic= musicStream;
-    StrSound *nextTrack= getNextMusicTrack();
-    if(nextTrack) {
-        stopMusic(curMusic);
-        playMusic(nextTrack, false, NextMusicTrackCallback);
-    }
+    StrSound *nextTrack = getNextMusicTrack();
+    playMusic(nextTrack, false, NextMusicTrackCallback);
 }
 
 StrSound *SoundRenderer::getNextMusicTrack() {
-    if(musicPlaylistQueue.empty()) {
+    if (musicPlaylistQueue.empty()) {
         return 0;
     }
 
-    stMusic& curMusic= musicPlaylistQueue.back();
-    MusicPlaylistType *curPlaylist= curMusic.curPlaylist;
-    if(curPlaylist==0) {
-        if(curMusic.musicList.size()==1) {
-            curMusic.curPlaylist= (MusicPlaylistType*)curMusic.musicList[0];
+    stMusic &curMusic = musicPlaylistQueue.back();
+    MusicPlaylistType *curPlaylist = curMusic.curPlaylist;
+	
+    if (curPlaylist == 0) {
+		// determine first playlist
+		if (curMusic.musicList.empty()) {
+			return 0;
+		} else if (curMusic.musicList.size() == 1) {
+            curMusic.curPlaylist = const_cast<MusicPlaylistType*>(curMusic.musicList[0]);
+        } else {
+            curMusic.curPlaylist = const_cast<MusicPlaylistType*>(curMusic.getRandomPlaylist());
         }
-        else {
-		    int seed = int(Chrono::getCurTicks());
-		    Random random(seed);
-		    int curPlaylist= random.randRange(0, curMusic.musicList.size() - 1);
-            curMusic.curPlaylist= (MusicPlaylistType*)curMusic.musicList[curPlaylist];
-        }
-        StrSound *nextTrack= curMusic.curPlaylist->getNextTrack();
-        if(nextTrack) {
-            musicStream= nextTrack;
-        }
-        return nextTrack;
-    }
-    else {
-        // sequential playlist
-        if(!curPlaylist->isRandom()) {
-            // If it's not random, get next track. If none, then the playlist is done.
-            // In that case just do nothing and continue on to randomly choosing a new playlist
-            StrSound *nextTrack= curPlaylist->getNextTrack();
-            if(nextTrack) {
-                musicStream= nextTrack;
-                return nextTrack;
-            }
-        }
+    } else if (curPlaylist->isRandom()) {
+		// do we need to consider the playlist as done playing?
+		if (!curPlaylist->isLooping() 
+				&& (curPlaylist->getActivationType() == MusicPlaylistType::eActivationType_ReplaceCurrent)) {
+			if (curMusic.musicList.empty()) {
+				return 0;
+			} else if (curMusic.musicList.size() == 1) {
+				musicPlaylistQueue.pop_back();
+				return getNextMusicTrack();
+			} else {
+				curMusic.removePlaylist(curPlaylist);
+				return getNextMusicTrack();
+			}
+		}
 
-        // do we need to consider the playlist as done playing?
-        if(!curPlaylist->isLooping() && 
-            (curPlaylist->getActivationType()==MusicPlaylistType::eActivationType_ReplaceCurrent)) {
-                if(curMusic.musicList.size()==1) {
-                    musicPlaylistQueue.pop_back();
-                    return getNextMusicTrack();
-                }
-                else {
-                    for(vectorMusicPlaylist::iterator it=curMusic.musicList.begin(); 
-                        it!=curMusic.musicList.end(); it++ ) {
-                            if(*it==curPlaylist) {
-                                curMusic.musicList.erase(it);
-                                return getNextMusicTrack();
-                            }
-                    }
-                }
-        }
+		curMusic.curPlaylist = const_cast<MusicPlaylistType*>(curMusic.getRandomPlaylist());
+	}
 
-        //choose a random playlist
-	    int seed = int(Chrono::getCurTicks());
-	    Random random(seed);
-	    int curPlaylistIdx= random.randRange(0, curMusic.musicList.size() - 1);
-        curMusic.curPlaylist= (MusicPlaylistType*)curMusic.musicList[curPlaylistIdx];
-
-        StrSound *nextTrack= curMusic.curPlaylist->getNextTrack();
-        if(nextTrack) {
-            musicStream= nextTrack;
-        }
-        return nextTrack;
-    }
-
-    return 0;
+	return curMusic.curPlaylist->getNextTrack();
 }
 
-void SoundRenderer::removePlaylist(const MusicPlaylistType *playlist)
-{
-    for(MusicPlaylistQueue::iterator queue=musicPlaylistQueue.begin();
-        queue!=musicPlaylistQueue.end(); queue++) {
-        stMusic& curMusic= *queue;
-
-        for(vectorMusicPlaylist::iterator it=curMusic.musicList.begin(); 
-            it!=curMusic.musicList.end(); it++ ) {
-                if(*it==playlist) {
-                    curMusic.musicList.erase(it);
-                    break;
-                }
-        }
-
-        if(curMusic.musicList.empty()) {
-            musicPlaylistQueue.erase(queue);
-            return;
-        }
-
-        if(curMusic.curPlaylist==playlist) {
-            curMusic.curPlaylist=0;
-        }
+void SoundRenderer::addPlaylist(const MusicPlaylistType *playlist) {
+	 // verify that its not already in the current playlist group
+	if (!musicPlaylistQueue.empty() && musicPlaylistQueue.back().containsPlaylist(playlist)) {
+        return;
     }
+
+    if (musicPlaylistQueue.empty() 
+			|| (playlist->getActivationType() == MusicPlaylistType::eActivationType_ReplaceCurrent)) {
+        stMusic newMusic;
+        newMusic.musicList.push_back(playlist);
+        musicPlaylistQueue.push_back(newMusic);
+    } else if (playlist->getActivationType() == MusicPlaylistType::eActivationType_AddToCurrent) {
+        musicPlaylistQueue.back().musicList.push_back(playlist);
+    }
+    
+	if (playlist->getActivationMode() == MusicPlaylistType::eActivationMode_Interrupt) {
+        startMusicPlaylist();
+	}
+}
+
+const MusicPlaylistType *SoundRenderer::stMusic::getRandomPlaylist() const {
+	int seed = int(Chrono::getCurTicks());
+	Random random(seed);
+	int curPlaylistIdx = random.randRange(0, musicList.size() - 1);
+	return musicList[curPlaylistIdx];
+}
+
+void SoundRenderer::stMusic::removePlaylist(const MusicPlaylistType *playlist) {
+	vectorMusicPlaylist::iterator it = std::find(musicList.begin(), musicList.end(), playlist);
+	musicList.erase(it);
+}
+
+bool SoundRenderer::stMusic::containsPlaylist(const MusicPlaylistType *playlist) const {
+	vectorMusicPlaylist::const_iterator it = std::find(musicList.begin(), musicList.end(), playlist);
+	return it != musicList.end();
+}
+
+void SoundRenderer::removePlaylist(const MusicPlaylistType *playlist) {
+	MusicPlaylistQueue::iterator queue = musicPlaylistQueue.begin();
+	for (; queue != musicPlaylistQueue.end(); ++queue) {
+		stMusic& curMusic = *queue;
+		curMusic.removePlaylist(playlist);
+
+		if (curMusic.musicList.empty()) {
+			musicPlaylistQueue.erase(queue);
+			return;
+		}
+
+		if (curMusic.curPlaylist == playlist) {
+			curMusic.curPlaylist = 0;
+		}
+	}
 }
 
 
