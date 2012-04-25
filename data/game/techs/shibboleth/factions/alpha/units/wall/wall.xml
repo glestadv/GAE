@@ -47,7 +47,7 @@
 			<ep-cost value="0"/>
 			<speed value="300"/>
 			<anim-speed value="100"/>
-			<animation path="null.g3d"/>
+			<animation path="../../../../../magitech/factions/tech/units/defense_tower/models/defense_tower.g3d"/>
 			<sound enabled="false"/>
 		</skill>
 
@@ -57,7 +57,7 @@
 			<ep-cost value="0"/>
 			<speed value="300"/>
 			<anim-speed value="300"/>
-			<animation path="null.g3d"/>
+			<animation path="../../../../../magitech/factions/tech/units/defense_tower/models/defense_tower_construction.g3d"/>
 			<sound enabled="false"/>
 		</skill>
 
@@ -67,7 +67,7 @@
 			<ep-cost value="0"/>
 			<speed value="300"/>
 			<anim-speed value="300"/>
-			<animation path="../castle/destruction_models/defense_tower_destruction.g3d"/>
+			<animation path="../../../../../magitech/factions/tech/units/castle/destruction_models/defense_tower_destruction.g3d"/>
 			<sound enabled="true" start-time="0">
 				<sound-file path="../barracks/sounds/tech_building_fall2.wav"/>
 			</sound>

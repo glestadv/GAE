@@ -128,7 +128,7 @@
 			<ep-cost value="0"/>
 			<speed value="300"/>
 			<anim-speed value="300"/>
-			<animation path="../castle/destruction_models/defense_tower_destruction.g3d"/>
+			<animation path="../../../../../magitech/factions/tech/units/castle/destruction_models/defense_tower_destruction.g3d"/>
 			<sound enabled="true" start-time="0">
 				<sound-file path="../barracks/sounds/tech_building_fall2.wav"/>
 			</sound>
@@ -161,7 +161,7 @@
 		<command>
 			<type value="load"/>
 			<name value="load"/>
-			<image path="images/transport_load.bmp"/>
+			<image path="../../../../../magitech/factions/tech/units/defense_tower/images/defense_tower_attack_on.bmp"/>
 			<unit-requirements/>
 			<upgrade-requirements/>
 			<load-skill value="load_skill"/>
@@ -178,7 +178,7 @@
 		<command>
 			<type value="unload"/>
 			<name value="unload"/>
-			<image path="images/transport_unload.bmp"/>
+			<image path="../../../../../magitech/factions/tech/units/defense_tower/images/defense_tower_attack_off.bmp"/>
 			<unit-requirements/>
 			<upgrade-requirements/>
 			<unload-skill value="unload_skill"/>
@@ -188,7 +188,7 @@
 			<type value="build-self"/>
 			<name value="build_self" tip="under_construction"/>
 			<display value="false"/> <!-- Display == false commands must come after all non-false command -->
-			<image path="images/none.bmp"/>
+			<image path="../../../../../magitech/factions/tech/units/defense_tower/images/defense_tower_attack_off.bmp"/>
 			<unit-requirements/>
 			<upgrade-requirements/>
 			<build-self-skill value="build_self_skill"/>

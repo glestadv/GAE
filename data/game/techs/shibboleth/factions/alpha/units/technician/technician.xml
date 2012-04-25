@@ -317,7 +317,7 @@
 			<upgrade-requirements/>
 			<morph-skill value="morph_catapult_skill"/>
 			<morph-unit name= "catapult"/>
-			<discount value="0"/>
+			<cost-modifier refund="0" />
 		</command>
 
 		<command>
