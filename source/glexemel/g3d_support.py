@@ -471,10 +471,6 @@ def G3DLoader(filepath):			#Main Import Routine
 
 def G3DSaver(filepath, context):
 	print ("\nNow Exporting File: " + filepath)
-	fileID = open(filepath,"wb")
-
-	# G3DHeader v4
-	fileID.write(struct.pack("<3cB", b'G', b'3', b'D', 4))
 
 	objs = context.selected_objects
 	if len(objs) == 0:
@@ -485,6 +481,12 @@ def G3DSaver(filepath, context):
 	for obj in objs:
 		if obj.type == 'MESH':
 			meshCount += 1
+			if obj.mode != 'OBJECT': # we want to be in object mode
+				return #FIXME: make this abort nicer
+
+	fileID = open(filepath,"wb")
+	# G3DHeader v4
+	fileID.write(struct.pack("<3cB", b'G', b'3', b'D', 4))
 	# G3DModelHeaderv4
 	fileID.write(struct.pack("<HB", meshCount, 0))
 	# meshes
@@ -500,7 +502,7 @@ def G3DSaver(filepath, context):
 		if len(mesh.materials) > 0:
 			# we have a texture, hopefully
 			material = mesh.materials[0]
-			if material.active_texture.type == 'IMAGE':
+			if material.active_texture.type=='IMAGE' and len(mesh.uv_textures)>0:
 				diffuseColor = material.diffuse_color
 				specularColor = material.specular_color
 				opacity = material.alpha
@@ -508,11 +510,12 @@ def G3DSaver(filepath, context):
 				texname = bpy.path.basename(material.active_texture.image.filepath)
 			else:
 				#FIXME: needs warning in gui
-				print("active texture in first material isn't of type IMAGE")
+				print("active texture in first material isn't of type IMAGE or it's not unwrapped")
+				#continue without texture
 
 		meshname = mesh.name
 		frameCount = context.scene.frame_end - context.scene.frame_start +1
-		#Real face count (only use triangle)
+		#Real face count (triangles)
 		realFaceCount = 0
 		indices=[]
 		newverts=[]
@@ -575,6 +578,7 @@ def G3DSaver(filepath, context):
 		#FIXME: abort when no triangles as it crashs g3dviewer
 		if realFaceCount == 0:
 			print("no triangles found")
+			return
 		indexCount = realFaceCount * 3
 		vertexCount = len(mesh.vertices) + len(newverts)
 		specularPower = 9.999999  # unused, same as old exporter
