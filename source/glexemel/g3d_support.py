@@ -469,7 +469,7 @@ def G3DLoader(filepath):			#Main Import Routine
 		print ("All Done, have a good Day :-)\n\n")
 		return
 
-def G3DSaver(filepath, context):
+def G3DSaver(filepath, context, operator):
 	print ("\nNow Exporting File: " + filepath)
 
 	objs = context.selected_objects
@@ -482,7 +482,9 @@ def G3DSaver(filepath, context):
 		if obj.type == 'MESH':
 			meshCount += 1
 			if obj.mode != 'OBJECT': # we want to be in object mode
-				return #FIXME: make this abort nicer
+				print("ERROR: mesh not in object mode")
+				operator.report({'ERROR'}, "mesh not in object mode")
+				return
 
 	fileID = open(filepath,"wb")
 	# G3DHeader v4
@@ -509,8 +511,8 @@ def G3DSaver(filepath, context):
 				textures = 1
 				texname = bpy.path.basename(material.active_texture.image.filepath)
 			else:
-				#FIXME: needs warning in gui
-				print("active texture in first material isn't of type IMAGE or it's not unwrapped")
+				print("ERROR: active texture in material isn't of type IMAGE or it's not unwrappedi, texture ignored")
+				operator.report({'WARNING'}, "active texture in material isn't of type IMAGE or it's not unwrapped, texture ignored")
 				#continue without texture
 
 		meshname = mesh.name
@@ -575,9 +577,10 @@ def G3DSaver(filepath, context):
 					indices.append(face.vertices[3])
 
 
-		#FIXME: abort when no triangles as it crashs g3dviewer
+		# abort when no triangles as it crashs g3dviewer
 		if realFaceCount == 0:
-			print("no triangles found")
+			print("ERROR: no triangles found")
+			operator.report({'ERROR'}, "no triangles found")
 			return
 		indexCount = realFaceCount * 3
 		vertexCount = len(mesh.vertices) + len(newverts)
@@ -672,7 +675,7 @@ class ExportG3D(bpy.types.Operator, ExportHelper):
 
 	def execute(self, context):
 		try:
-			G3DSaver(self.filepath, context)
+			G3DSaver(self.filepath, context, self)
 		except:
 			import traceback
 			traceback.print_exc()
