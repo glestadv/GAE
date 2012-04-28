@@ -69,7 +69,7 @@
 			<ep-cost value="0" />
 			<speed value="300" />
 			<anim-speed value="300" />
-			<animation path="construction_models/castle_construction.g3d" />
+			<animation path="../../../../../magitech/factions/tech/units/castle/construction_models/castle_construction.g3d" />
 			<sound enabled="false" />
 		</skill>
 
@@ -89,7 +89,7 @@
 			<ep-cost value="0" />
 			<speed value="300" />
 			<anim-speed value="300" />
-			<animation path="models/castle.g3d" />
+			<animation path="../../../../../magitech/factions/tech/units/castle/models/castle.g3d" />
 			<sound enabled="false" />
 		</skill>
 
@@ -129,7 +129,7 @@
 			<ep-cost value="0" />
 			<speed value="300" />
 			<anim-speed value="300" />
-			<animation path="destruction_models/castle_destruction.g3d" />
+			<animation path="../../../../../magitech/factions/tech/units/castle/destruction_models/castle_destruction.g3d" />
 			<sound enabled="true" start-time="0">
 				<sound-file path="../barracks/sounds/tech_building_fall2.wav"/>
 			</sound>

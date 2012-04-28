@@ -12,6 +12,7 @@
 		<time value="200"/>
 		<detector type="permanent">
 			<group value="stealth" />
+			<image path="images/archmage.bmp"/>
 		</detector>
 		<multi-selection value="true"/>
 		<cellmap value="false"/>
@@ -252,7 +253,7 @@
 		<command>
 			<type value="cast-spell" />
 			<name value="healing_light" />
-			<image path="boo.png" />
+			<image path="images/archmage_static_fire.bmp" />
 			<unit-requirements/>
 			<upgrade-requirements/>
 			<cast-spell-skill value="cast_healing_light_skill" />

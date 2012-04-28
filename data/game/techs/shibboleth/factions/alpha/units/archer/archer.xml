@@ -16,6 +16,7 @@
 				<upgrade name="archer_cloak" />
 			</upgrade-requirements>
 			<group value="stealth" />
+			<image path="images/archer.bmp"/>
 		</cloak>
 		<multi-selection value="true"/>
 		<cellmap value="false"/>
