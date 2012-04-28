@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 2, 0),
+	"version": (0, 3, 0),
 	"blender": (2, 6, 1),
 	"api": 36079,
 	"location": "File > Import-Export",
