@@ -486,7 +486,7 @@ def G3DSaver(filepath, context, operator):
 				operator.report({'ERROR'}, "mesh not in object mode")
 				return
 
-	if meshcount == 0:
+	if meshCount == 0:
 		print("ERROR: no meshes found")
 		operator.report({'ERROR'}, "no meshes found")
 		return
