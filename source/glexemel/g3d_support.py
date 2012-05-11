@@ -486,6 +486,11 @@ def G3DSaver(filepath, context, operator):
 				operator.report({'ERROR'}, "mesh not in object mode")
 				return
 
+	if meshCount == 0:
+		print("ERROR: no meshes found")
+		operator.report({'ERROR'}, "no meshes found")
+		return
+
 	fileID = open(filepath,"wb")
 	# G3DHeader v4
 	fileID.write(struct.pack("<3cB", b'G', b'3', b'D', 4))
@@ -511,8 +516,8 @@ def G3DSaver(filepath, context, operator):
 				textures = 1
 				texname = bpy.path.basename(material.active_texture.image.filepath)
 			else:
-				print("ERROR: active texture in material isn't of type IMAGE or it's not unwrappedi, texture ignored")
-				operator.report({'WARNING'}, "active texture in material isn't of type IMAGE or it's not unwrapped, texture ignored")
+				print("WARNING: active texture in first material isn't of type IMAGE or it's not unwrapped, texture ignored")
+				operator.report({'WARNING'}, "active texture in first material isn't of type IMAGE or it's not unwrapped, texture ignored")
 				#continue without texture
 
 		meshname = mesh.name
