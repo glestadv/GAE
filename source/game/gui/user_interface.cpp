@@ -112,6 +112,7 @@ UserInterface::UserInterface(GameState &game)
 		, m_display(0)
 		, m_resourceBar(0)
 		, m_luaConsole(0)
+		, m_objectiveText(0)
 		, selection(0)
 		, m_selectingSecond(false)
 		, m_selectedFacing(CardinalDir::NORTH)
@@ -188,6 +189,12 @@ void UserInterface::init() {
 		m_luaConsole->setVisible(false);
 		m_luaConsole->Button1Clicked.connect(this, &UserInterface::onCloseLuaConsole);
 		m_luaConsole->Close.connect(this, &UserInterface::onCloseLuaConsole);
+
+		m_objectiveText = new StaticText(&g_program);
+		m_objectiveText->setPos(260, 50);
+		m_objectiveText->setSize(g_metrics.getScreenW() - 500, g_widgetConfig.getDefaultItemHeight() * 2);
+		m_objectiveText->setText("");
+		m_objectiveText->setShadow(Vec4f(0.f, 0.f, 0.f, 1.f));
 	}
 
 	int x, y;
