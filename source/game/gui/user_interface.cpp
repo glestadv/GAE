@@ -1251,9 +1251,9 @@ void UserInterface::addOrdersResultToConsole(CmdClass cc, CmdResult result) {
 						if (i) {
 							a += ", ";
 						}
-						a += needed[i]->getName();
+						a += g_lang.lookUp(needed[i]->getName(), g_world.getThisFaction()->getType()->getName());
 					} else {
-						b = needed[i]->getName();
+						b = g_lang.lookUp(needed[i]->getName(), g_world.getThisFaction()->getType()->getName());
 					}
 				}
 

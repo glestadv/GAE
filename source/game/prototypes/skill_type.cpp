@@ -460,7 +460,7 @@ void AttackSkillType::getDesc(string &str, const Unit *unit) const {
 	str += "...";
 	str += intToStr(attackStrength + attackVar);
 	EnhancementType::describeModifier(str, unit->getAttackStrength(this) - attackStrength);
-	str += " ("+ attackType->getName() +")";
+	str += " ("+ lang.get(attackType->getName()) +")";
 	str += "\n";
 
 	TargetBasedSkillType::getDesc(str, unit, "AttackDistance");
