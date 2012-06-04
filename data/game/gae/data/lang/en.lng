@@ -168,6 +168,7 @@ General=General
 AmbientVolume=Ambient Volume
 AutoConfig=Auto config
 Textures3D=3D Textures
+Opaque=Opaque
 OpenGlExtensions=Extensions
 OpenGlInfo=OpenGL Info
 OpenGlMaxLights=Max lights
