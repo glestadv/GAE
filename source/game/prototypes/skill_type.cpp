@@ -711,12 +711,15 @@ void AttackSkillTypes::getDesc(string &str, const Unit *unit) const {
 	if(types.size() == 1) {
 		types[0]->getDesc(str, unit);
 	} else {
-		str += Lang::getInstance().get("Attacks") + ": ";
+		str += g_lang.get("Attacks") + ":";
 		for(int i = 0; i < types.size(); ++i) {
-			if (i) {
-				str += ", ";
+			string nstr = g_lang.get("AttackNum");
+			string::size_type p = nstr.find("%s");
+			if (p != string::npos) {
+				nstr.replace(p, 2, intToStr(i + 1));
 			}
-			str += types[i]->getName();
+			str += "\n" + nstr + "\n";
+			types[i]->getDesc(str, unit);			
 		}
 	}
 }

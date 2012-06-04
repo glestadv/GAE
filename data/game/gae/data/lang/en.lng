@@ -303,6 +303,7 @@ AlreadyUpgraded=Already Upgraded
 Amount=Amount
 Armor=Armour
 AttackDistance=Range
+AttackNum=Attack %s
 AttackPctStolen=% Attack Damage Stolen
 AttackSpeed=Attack Speed
 AttackStrength=Damage
