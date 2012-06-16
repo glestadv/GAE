@@ -1705,7 +1705,7 @@ bool CommandType::unitInRange(const Unit *unit, int range, Unit **rangedPtr,
 		if ((*rangedPtr)->isDead() || !asts->getZone((*rangedPtr)->getCurrZone())) {
 			*rangedPtr = 0;
 		}
-		if (*rangedPtr && (*rangedPtr)->isCloaked()) {
+		if (*rangedPtr && (*rangedPtr)->isCloaked() && (*rangedPtr)->getTeam() != unit->getTeam()) {
 			Vec2i tpos = Map::toTileCoords((*rangedPtr)->getCenteredPos());
 			int cloakGroup = (*rangedPtr)->getType()->getCloakType()->getCloakGroup();
 			if (!g_cartographer.canDetect(unit->getTeam(), cloakGroup, tpos)) {
