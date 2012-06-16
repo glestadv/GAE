@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 4, 0),
+	"version": (0, 5, 0),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
@@ -592,10 +592,12 @@ def G3DSaver(filepath, context, operator):
 		vertexCount = len(mesh.vertices) + len(newverts)
 		specularPower = 9.999999  # unused, same as old exporter
 		properties = 0
-		if textures==1 and mesh.materials[0].use_face_texture_alpha:
+		if mesh.g3d_customColor:
 			properties |= 1
 		if mesh.show_double_sided:
 			properties |= 2
+		if mesh.g3d_noSelect:
+			properties |= 4
 
 		#MeshData
 		vertices = []
@@ -652,6 +654,22 @@ def G3DSaver(filepath, context, operator):
 
 
 #---=== Register ===
+class G3DPanel(bpy.types.Panel):
+	#bl_idname = "OBJECT_PT_G3DPanel"
+	bl_label = "G3D properties"
+	bl_space_type = 'PROPERTIES'
+	bl_region_type = 'WINDOW'
+	bl_context = "data"
+
+	@classmethod
+	def poll(cls, context):
+		return (context.object is not None and context.object.type == 'MESH')
+
+	def draw(self, context):
+		self.layout.label("use Double Sided in Normals panel")
+		self.layout.prop(context.object.data, "g3d_customColor", text="team color")
+		self.layout.prop(context.object.data, "g3d_noSelect", text="non-selectable")
+
 class ImportG3D(bpy.types.Operator, ImportHelper):
 	'''Load a G3D file'''
 	bl_idname = "importg3d.g3d"
@@ -697,6 +715,10 @@ def menu_func_export(self, context):
 	self.layout.operator(ExportG3D.bl_idname, text="Glest 3D File (.g3d)")
 
 def register():
+	# custom mesh properties
+	bpy.types.Mesh.g3d_customColor = bpy.props.BoolProperty()
+	bpy.types.Mesh.g3d_noSelect = bpy.props.BoolProperty()
+
 	bpy.utils.register_module(__name__)
 
 	bpy.types.INFO_MT_file_import.append(menu_func_import)
