@@ -651,7 +651,12 @@ void LoadSkillType::doChecksum(Checksum &checksum) const {
 
 void BeBuiltSkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const UnitType *ft) {
 	SkillType::load(sn, dir, tt, ft);
-	m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	const XmlNode *n = sn->getChild("anim-progress-bound", 0, false);
+	if (n) {
+		m_stretchy = n->getBoolValue();
+	} else {
+		m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	}
 }
 
 // =====================================================
@@ -660,7 +665,12 @@ void BeBuiltSkillType::load(const XmlNode *sn, const string &dir, const TechTree
 
 void BuildSelfSkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const UnitType *ft) {
 	SkillType::load(sn, dir, tt, ft);
-	m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	const XmlNode *n = sn->getChild("anim-progress-bound", 0, false);
+	if (n) {
+		m_stretchy = n->getBoolValue();
+	} else {
+		m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	}
 }
 
 // =====================================================
