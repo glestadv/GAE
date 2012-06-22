@@ -1254,7 +1254,7 @@ int ScriptManager::increaseStore(LuaHandle* luaHandle) {
 				const ResourceType *rt = g_world.getTechTree()->getResourceType(resource);
 				g_world.getFaction(fNdx)->addStore(rt, amount);
 			} catch (runtime_error &e) {
-				addErrorMessage("Error: increaseStore(): Invalid resource type" + resource);
+				addErrorMessage("Error: increaseStore(): Invalid resource type '" + resource + "'");
 			}
 		} else {
 			addErrorMessage("Error: increaseStore(): Invalid faction index " + intToStr(fNdx));

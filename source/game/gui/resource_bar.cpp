@@ -133,15 +133,22 @@ void ResourceBar::reInit(int iconSize) {
 		fontIndex = m_textStyle.m_fontIndex;
 	}
 	const FontMetrics *fm = font->getMetrics();
-	string trailerStrings[ResourceClass::COUNT];
-	trailerStrings[ResourceClass::TECHTREE] = "80000/800000";
-	trailerStrings[ResourceClass::TILESET] = "80000/800000";
-	trailerStrings[ResourceClass::STATIC] = "80000";
-	trailerStrings[ResourceClass::CONSUMABLE] = "8000/80000 (8000)";
+
+	string testerStrings[ResourceClass::COUNT * 2];
+	testerStrings[ResourceClass::TECHTREE] = "80000/800000";
+	testerStrings[ResourceClass::TILESET] = "80000/800000";
+	testerStrings[ResourceClass::STATIC] = "80000";
+	testerStrings[ResourceClass::CONSUMABLE] = "8000/80000 (8000)";
+	testerStrings[ResourceClass::TECHTREE + ResourceClass::COUNT] = "80000  ";
+	testerStrings[ResourceClass::TILESET + ResourceClass::COUNT] = "80000  ";
+	testerStrings[ResourceClass::STATIC + ResourceClass::COUNT] = "80000  ";
+	testerStrings[ResourceClass::CONSUMABLE + ResourceClass::COUNT] = "8000 (8000)  ";
+
 	vector<int> reqWidths;
 	int total_req = 0, i = 0;;
 	foreach_const (vector<const ResourceType*>, it, m_resourceTypes) {
-		string testLine = (includeNames ? m_headerStrings[i] : string("")) + trailerStrings[(*it)->getClass()];
+		const string &tester = (*it)->isInfiniteStore() ? testerStrings[(*it)->getClass() + int(ResourceClass::COUNT)] : testerStrings[(*it)->getClass()];
+		string testLine = (includeNames ? m_headerStrings[i] : string("")) + tester;
 		int w = imgAndPad + int(fm->getTextDiminsions(testLine).w);
 		total_req += w;
 		reqWidths.push_back(w);
@@ -265,9 +272,14 @@ void ResourceBar::update() {
 			}
 			ss << res->getAmount();
 			if (rt->getClass() == ResourceClass::CONSUMABLE) {
-				ss << "/" << m_faction->getStoreAmount(rt) << " (" << res->getBalance() << ")";
+				if (!rt->isInfiniteStore()) {
+					ss << "/" << m_faction->getStoreAmount(rt);
+				}
+				ss << " (" << res->getBalance() << ")";
 			} else if (rt->getClass() != ResourceClass::STATIC) {
-				ss << '/' << m_faction->getStoreAmount(rt);
+				if (!rt->isInfiniteStore()) {
+					ss << '/' << m_faction->getStoreAmount(rt);
+				}
 			}
 			setText(ss.str(), i);
 		}

@@ -36,6 +36,7 @@ private:
 	int interval;		// used only if class == ResourceClass::CONSUMABLE
 	int defResPerPatch;	// used only if class == ResourceClass::TILESET || class == ResourceClass::TECHTREE
 	bool recoupCost;	// used only if class == ResourceClass::STATIC
+	bool infiniteStore; // if true storage rules don't apply
 
 	Model *model;
 	/**
@@ -54,6 +55,7 @@ public:
 	int getInterval() const			{return interval;}
 	int getDefResPerPatch() const	{return defResPerPatch;}
 	bool getRecoupCost() const		{ return recoupCost; }
+	bool isInfiniteStore() const    { return infiniteStore; }
 	const Model *getModel() const	{return model;}
 	bool isDisplay() const			{return display;}
 

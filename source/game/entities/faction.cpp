@@ -780,10 +780,10 @@ void Faction::incResourceAmount(const ResourceType *rt, int amount) {
 		StoredResource *r = &resources[i];
 		if (r->getType() == rt) {
 			r->setAmount(r->getAmount() + amount);
-			if (r->getType()->getClass() != ResourceClass::STATIC 
-			&& r->getType()->getClass() != ResourceClass::CONSUMABLE
-			&& r->getAmount() > getStoreAmount(rt)) {
-				r->setAmount(getStoreAmount(rt));
+			if (r->getType()->getClass() != ResourceClass::STATIC && r->getType()->getClass() != ResourceClass::CONSUMABLE) {
+				if (r->getAmount() > getStoreAmount(rt) && !r->getType()->isInfiniteStore()) {
+					r->setAmount(getStoreAmount(rt));
+				}
 			}
 			return;
 		}
@@ -825,7 +825,7 @@ void Faction::reEvaluateStore() {
 	const TechTree *tt = g_world.getTechTree();
 	for (int i=0; i < tt->getResourceTypeCount(); ++i) {
 		const ResourceType *rt = tt->getResourceType(i);
-		if (rt->getClass() != ResourceClass::STATIC) {
+		if (rt->getClass() != ResourceClass::STATIC && !rt->isInfiniteStore()) {
 			storeMap[rt] = 0;
 		}
 	}
@@ -840,12 +840,14 @@ void Faction::reEvaluateStore() {
 		}
 	}
 	for (int j = 0; j < resources.size(); ++j) {
-		if (resources[j].getType()->getClass() != ResourceClass::STATIC) {
+		if (resources[j].getType()->getClass() != ResourceClass::STATIC && !resources[j].getType()->isInfiniteStore()) {
 			resources[j].setStorage(storeMap[resources[j].getType()]);
 		}
 	}
 }
 
+// script interface
+//TODO: save for reEval...
 void Faction::addStore(const ResourceType *rt, int amount) {
 	for (int j = 0; j < resources.size(); ++j) {
 		if (resources[j].getType() == rt) {
@@ -887,7 +889,7 @@ void Faction::capResource(const ResourceType *rt) {
 void Faction::limitResourcesToStore() {
 	for (int i = 0; i < resources.size(); ++i) {
 		StoredResource *r = &resources[i];
-		if (r->getType()->getClass() != ResourceClass::STATIC && r->getAmount() > r->getStorage()) {
+		if (r->getType()->getClass() != ResourceClass::STATIC && !r->getType()->isInfiniteStore() && r->getAmount() > r->getStorage()) {
 			r->setAmount(r->getStorage());
 		}
 	}
@@ -904,8 +906,8 @@ void Faction::resetResourceAmount(const ResourceType *rt) {
 }
 
 /**
- * Plays an auditory notification of being attacked, if it hasn't been done
- * recently
+ * Plays an auditory notification of being attacked, if it hasn't been done recently
+ * and adds a visual indication on the minimap, if it wont overlap with an existing one.
  */
 void Faction::attackNotice(const Unit *u) {
 	if (factionType->getAttackNotice()) {

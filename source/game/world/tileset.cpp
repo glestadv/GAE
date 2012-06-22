@@ -103,7 +103,7 @@ void Tileset::count(const string &dir){
 }
 
 void Tileset::load(const string &dir, TechTree *tt){
-	random.init(time(NULL));
+	random.init(int(Chrono::getCurMillis()));
 	name = basename(dir);
 	string path = dir + "/" + name +".xml";
 

@@ -140,6 +140,7 @@ bool ResourceType::load(const string &dir, int id) {
 			break;
 	}
 	display = resourceNode->getOptionalBoolValue("display", true);
+	infiniteStore = resourceNode->getOptionalBoolValue("infinite-store", false);
 	return loadOk;
 }
 
