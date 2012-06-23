@@ -661,7 +661,7 @@ void Faction::applyCostsOnInterval(const ResourceType *rt) {
 		}
 	}
 
-	//decrement consumables
+	// decrement consumables
 	for (int j = 0; j < getUnitCount(); ++j) {
 		Unit *unit = getUnit(j);
 		if (unit->isOperative()) {
@@ -670,11 +670,11 @@ void Faction::applyCostsOnInterval(const ResourceType *rt) {
 				incResourceAmount(resource.getType(), -resource.getAmount());
 
 				//decrease unit hp
-				///@todo: Implement rules for specifying what happens when you're consumable
-				//      demand exceeds supply & stores.
-				if (getResource(resource.getType())->getAmount() < 0) {
-					resetResourceAmount(resource.getType());
-					if (unit->decHp(unit->getType()->getMaxHp() / 3)) {
+				if (getResource(rt)->getAmount() < 0) {
+					resetResourceAmount(rt);
+					Modifier dm = rt->getDamageMod();
+					int d = dm.getAddition() + (unit->getType()->getMaxHp() * dm.getMultiplier()).round();
+					if (unit->decHp(d)) {
 						World::getCurrWorld()->doKill(unit, unit);
 					} else {
 						StaticSound *sound = unit->getType()->getFirstStOfClass(SkillClass::DIE)->getSound();
