@@ -156,6 +156,8 @@ void ResourceType::doChecksum(Checksum &checksum) const {
 	checksum.add<ResourceClass>(resourceClass);
 	if (resourceClass == ResourceClass::CONSUMABLE) {
 		checksum.add<int>(interval);
+		checksum.add<fixed>(damageMod.m_addition);
+		checksum.add<fixed>(damageMod.m_multiplier);
 	} else if (resourceClass != ResourceClass::STATIC) {
 		if (resourceClass == ResourceClass::TILESET) {
 			checksum.add<int>(tilesetObject);
@@ -166,6 +168,7 @@ void ResourceType::doChecksum(Checksum &checksum) const {
 		checksum.add<int>(defResPerPatch);
 	}
 	checksum.add<bool>(display);
+	checksum.add<bool>(infiniteStore);
 }
 
 // ==================== misc ====================
