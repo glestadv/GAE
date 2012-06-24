@@ -214,7 +214,7 @@ void Options::buildVideoTab() {
 	// Water Shader
 	m_waterRendererList = rightPnl->addDropList(lang.get("WaterShader"));
 	m_waterRendererList->addItem(lang.get("Opaque"));
-	m_waterRendererList->addItem(lang.get("3D Textures"));
+	m_waterRendererList->addItem(lang.get("Textures3D"));
 	m_waterRendererList->setSelected(int(config.getRenderTextures3D()));
 	m_waterRendererList->SelectionChanged.connect(this, &Options::onDropListSelectionChanged);
 
@@ -250,7 +250,7 @@ void Options::buildVideoTab() {
 	m_shadowsList->setSelected(clamp(int(Renderer::strToShadows(str)), 0, ShadowMode::COUNT - 1));
 	m_shadowsList->SelectionChanged.connect(this, &Options::onDropListSelectionChanged);
 
-	rightPnl->addHeading(leftPnl, g_lang.get("Misc"));
+	rightPnl->addHeading(leftPnl, lang.get("Misc"));
 
 	// Texture filter
 	m_filterList = rightPnl->addDropList(lang.get("TextureFilter"));

@@ -109,7 +109,7 @@ GameStatsWidget::GameStatsWidget(Container* parent, Vec2i pos, Vec2i size)
 			label->setDoubleShadow(colour, Vec4f(0.f, 0.f, 0.f, 1.f), 1);
 			label->setAlignment(Alignment::FLUSH_RIGHT);
 
-			string winlose = stats.getVictory(i) ? "Victory" : "Defeat";
+			string winlose = stats.getVictory(i) ? g_lang.get("Victory") : g_lang.get("Defeat");
 			label = buildLabel(row, 1, winlose, font, textColour);
 
 			int kills = stats.getKills(i);

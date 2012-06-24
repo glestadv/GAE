@@ -97,6 +97,7 @@ public:
 	const int64 &getStopTime() const	{return stopTime;}
 	const int64 &getAccumTime() const	{IF_DEBUG( assert(!running) );return accumTime;}
 	int64 getMillis() const				{return accumTime;}
+	int64 getMillisThisRun() const      {IF_DEBUG( assert(running) );return getCurMillis() - startTime;}
 	static const int64 &getResolution()	{return freq;}
 
 #ifdef _CHRONO_USE_POSIX

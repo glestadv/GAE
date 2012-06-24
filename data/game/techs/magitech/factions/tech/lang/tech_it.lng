@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  
+  
+
+  
+
+
+  
+
+  <head>
+    <title>
+      Attachment – Glest Advanced Engine
+    </title>
+        <link rel="search" href="/apps/trac/glestae/search" />
+        <link rel="help" href="/apps/trac/glestae/wiki/TracGuide" />
+        <link rel="alternate" href="/apps/trac/glestae/raw-attachment/ticket/327/tech_it.lng" title="Original Format" />
+        <link rel="up" href="/apps/trac/glestae/ticket/327" title="Ticket #327" />
+        <link rel="start" href="/apps/trac/glestae/wiki" />
+        <link rel="stylesheet" href="/apps/trac/glestae/chrome/common/css/trac.css" type="text/css" /><link rel="stylesheet" href="/apps/trac/glestae/pygments/trac.css" type="text/css" /><link rel="stylesheet" href="/apps/trac/glestae/chrome/common/css/code.css" type="text/css" />
+        <link rel="shortcut icon" href="/apps/trac/glestae/chrome/common/trac.ico" type="image/x-icon" />
+        <link rel="icon" href="/apps/trac/glestae/chrome/common/trac.ico" type="image/x-icon" />
+      <link type="application/opensearchdescription+xml" rel="search" href="/apps/trac/glestae/search/opensearch" title="Search Glest Advanced Engine" />
+    <script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/jquery.js"></script><script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/trac.js"></script><script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/search.js"></script>
+    <!--[if lt IE 7]>
+    <script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/ie_pre7_hacks.js"></script>
+    <![endif]-->
+  <link type="text/css" href="/apps/trac/glestae/chrome/site/ha-css/default2.css" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="https://static.sourceforge.net/css/develop/hosted.php?secure=1&amp;1339319716" media="all" />
+
+    <!-- BEGIN: AdSolution-Tag 4.2: Global-Code [PLACE IN HTML-HEAD-AREA!] -->
+    <!-- DoubleClick Random Number -->
+    <script type="text/javascript">
+      dfp_ord=Math.random()*10000000000000000;
+      dfp_tile = 1;
+    </script>
+	
+    <!-- End DoubleClick Random Number -->
+    <!-- END: AdSolution-Tag 4.2: Global-Code -->
+
+</head>
+  <body>
+
+<script type="text/javascript">
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+
+<script type="text/javascript">
+  var pageTracker = _gat._getTracker("UA-32013-36");
+</script>
+<div id="sf_header">
+    <div class="sfh_n">
+        <ol class="sfh_n_ol">
+            <li class="sfh_n_li"><span><a href="/" id="sf_logo"><strong>SourceForge</strong></a></span></li>
+            <li class="sfh_n_li"><span><a href="/projects/glestae" title="Summary page hosted on SourceForge.net">Summary</a></span></li>
+            <li class="sfh_n_li"><span><a href="/projects/glestae/files" title="Files available for download">Files</a></span></li>                            <li class="sfh_n_li"><span><a href="/projects/glestae/support">Support</a></span></li>
+                        <li class="sfh_n_li"><span><a href="/support">Report Spam</a></span></li>
+                            <li class="sfh_n_li right"><span><a href="/account/logout.php" class="logout" title="Leaving so soon?">Log out</a></span></li>
+                <li class="sfh_n_li right"><span><a href="/my/" title="Manage the preferences and features of your SourceForge.net account">Account</a></span></li>
+                <li class="sfh_n_li right"><span>Welcome <a href="/users/silnarm/">silnarm</a></span></li>
+                    </ol>
+    </div>
+</div>
+<div id="fad1happ" class="ads">
+   <script type="text/javascript">
+   //<![CDATA[
+    document.write('<script src="https://ad.doubleclick.net/adj/ostg.sourceforge/cons_hosted_apps_p11_spons;pg=default;sz=728x90;tile='+dfp_tile+';tpc=project;tpc=glestae;ord='+dfp_ord+'?" type="text/javascript"><\/script>');
+     dfp_tile++;
+    //]]>
+    </script>
+</div>
+    
+
+	<div id="doc3" class="yui-t6">
+		<div id="bd">
+			<a name="content"></a>
+<!-- End Header -->
+    <div id="banner">
+      <div id="header">
+        <h1><a href="http://sourceforge.net/projects/glestae/">Glest Advanced Engine</a></h1>
+      </div>
+      <form id="search" action="/apps/trac/glestae/search" method="get">
+        <div>
+          <label for="proj-search">Search:</label>
+          <input type="text" id="proj-search" name="q" size="18" value="" />
+          <input type="submit" value="Search" />
+        </div>
+      </form>
+      <div id="metanav" class="nav">
+    <ul>
+      <li class="first">logged in as silnarm</li><li><a href="/apps/trac/glestae/prefs">Preferences</a></li><li><a href="/apps/trac/glestae/wiki/TracGuide">Help/Guide</a></li><li class="last"><a href="/apps/trac/glestae/about">About Trac</a></li>
+    </ul>
+  </div>
+    </div>
+    <div id="mainnav" class="nav">
+    <ul>
+      <li class="first"><a href="/apps/trac/glestae/wiki">Wiki</a></li><li><a href="/apps/trac/glestae/timeline">Timeline</a></li><li><a href="/apps/trac/glestae/roadmap">Roadmap</a></li><li><a href="/apps/trac/glestae/browser">Browse Source</a></li><li><a href="/apps/trac/glestae/report">View Tickets</a></li><li><a href="/apps/trac/glestae/newticket">New Ticket</a></li><li><a href="/apps/trac/glestae/search">Search</a></li><li class="last"><a href="/apps/trac/glestae/admin" title="Administration">Admin</a></li>
+    </ul>
+  </div>
+    <div id="main">
+      <div id="ctxtnav" class="nav">
+        <h2>Context Navigation</h2>
+          <ul>
+            <li class="first last"><a href="/apps/trac/glestae/ticket/327">Back to Ticket #327</a></li>
+          </ul>
+        <hr />
+      </div>
+    <div id="content" class="attachment">
+        <h1><a href="/apps/trac/glestae/ticket/327">Ticket #327</a>: tech_it.lng</h1>
+        <table id="info" summary="Description">
+          <tbody>
+            <tr>
+              <th scope="col">
+                File tech_it.lng, <span title="4238 bytes">4.1 KB</span>
+                (added by Perplesso,  <a class="timeline" href="/apps/trac/glestae/timeline?from=2011-04-09T10%3A51%3A05Z%2B0000&amp;precision=second" title="2011-04-09T10:51:05Z+0000 in Timeline">15 months</a> ago)
+              </th>
+            </tr>
+            <tr>
+              <td class="message searchable">
+                
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div id="preview" class="searchable">
+    <table class="code"><thead><tr><th class="lineno" title="Line numbers">Line</th><th class="content"> </th></tr></thead><tbody><tr><th id="L1"><a href="#L1">1</a></th><td>;</td></tr><tr><th id="L2"><a href="#L2">2</a></th><td>; Unit names and tips</td></tr><tr><th id="L3"><a href="#L3">3</a></th><td>;</td></tr><tr><th id="L4"><a href="#L4">4</a></th><td>aerodrome=Aerodromo</td></tr><tr><th id="L5"><a href="#L5">5</a></th><td>aerodrome_info=Fornisce unità aeree. Solo i Tecnici possono costruirlo.</td></tr><tr><th id="L6"><a href="#L6">6</a></th><td>air_ballista=Balista aerea</td></tr><tr><th id="L7"><a href="#L7">7</a></th><td>air_ballista_info=Struttura difensiva antiaerea.</td></tr><tr><th id="L8"><a href="#L8">8</a></th><td>airship=Aeronave</td></tr><tr><th id="L9"><a href="#L9">9</a></th><td>airship_info=Unità aerea pesante. Devastante contro unità di terra. Lenta e incapace di colpire altre unità aeree.</td></tr><tr><th id="L10"><a href="#L10">10</a></th><td>archer=Arciere</td></tr><tr><th id="L11"><a href="#L11">11</a></th><td>archer_info=Guerriero di base con arma da lancio. Poca resistenza ma buon attacco terrestre e aereo. Debole contro la fanteria corpo a corpo.</td></tr><tr><th id="L12"><a href="#L12">12</a></th><td>barracks=Caserma</td></tr><tr><th id="L13"><a href="#L13">13</a></th><td>barracks_info=Fornisce guerrieri umani.</td></tr><tr><th id="L14"><a href="#L14">14</a></th><td>battle_machine=Macchina da auerra</td></tr><tr><th id="L15"><a href="#L15">15</a></th><td>battle_machine_info=Potente unutà terrestre, capace di devastanti attacchi in mischia. Lenta ma molto resistente. Munita di balestra, può attaccare unità aeree.</td></tr><tr><th id="L16"><a href="#L16">16</a></th><td>blacksmith=Fabbro</td></tr><tr><th id="L17"><a href="#L17">17</a></th><td>blacksmith_info=Potenzia armi e corazza. Richiesto per costruire il Tecnodromo.</td></tr><tr><th id="L18"><a href="#L18">18</a></th><td>castle=Castello</td></tr><tr><th id="L19"><a href="#L19">19</a></th><td>castle_info=Struttura principale. Può conservare risorse e produrre Operaio. Fornisce il potenziamento Addestramento.</td></tr><tr><th id="L20"><a href="#L20">20</a></th><td>catapult=Catapulta</td></tr><tr><th id="L21"><a href="#L21">21</a></th><td>catapult_info=Lenta ma con attacco potente, efficace soprattutto contro gli edifici.</td></tr><tr><th id="L22"><a href="#L22">22</a></th><td>cow=Mucca</td></tr><tr><th id="L23"><a href="#L23">23</a></th><td>cow_info=Più costosa del maiale ma fornisce più cibo.</td></tr><tr><th id="L24"><a href="#L24">24</a></th><td>defense_tower=Torre di difesa</td></tr><tr><th id="L25"><a href="#L25">25</a></th><td>defense_tower_info=Unità difensiva terrestre e aerea.</td></tr><tr><th id="L26"><a href="#L26">26</a></th><td>farm=Fattoria</td></tr><tr><th id="L27"><a href="#L27">27</a></th><td>farm_info=Fornisce cibo e animali.</td></tr><tr><th id="L28"><a href="#L28">28</a></th><td>guard=Guardia</td></tr><tr><th id="L29"><a href="#L29">29</a></th><td>guard_info=Unità pesante corpo a corpo. Lento, molto resistente, buon attacco terrestre.</td></tr><tr><th id="L30"><a href="#L30">30</a></th><td>horseman=Cavaliere</td></tr><tr><th id="L31"><a href="#L31">31</a></th><td>horseman_info=Unità corpo a corpo molto veloce. Buona resistenza e medio attacco di punta.</td></tr><tr><th id="L32"><a href="#L32">32</a></th><td>ornithopter=Ornitottero</td></tr><tr><th id="L33"><a href="#L33">33</a></th><td>ornithopter_info=Unità aerea, utile specialmente contro altre unità aeree, ma può anche attaccare verso il suolo.</td></tr><tr><th id="L34"><a href="#L34">34</a></th><td>pig=Maiale</td></tr><tr><th id="L35"><a href="#L35">35</a></th><td>pig_info=Fornisce cibo ai soldati per sostentarli.</td></tr><tr><th id="L36"><a href="#L36">36</a></th><td>swordman=Spadaccino</td></tr><tr><th id="L37"><a href="#L37">37</a></th><td>swordman_info=Unità corpo a corpo di base. Media resistenza, velocità e attacco terrestre. Può essere promosso a Guardia.</td></tr><tr><th id="L38"><a href="#L38">38</a></th><td>technician=Tecnico</td></tr><tr><th id="L39"><a href="#L39">39</a></th><td>technician_info=Può costruire macchine da guerra e aerodromi. Può raccogliere oro e guarire le altre unità.</td></tr><tr><th id="L40"><a href="#L40">40</a></th><td>technodrome=Tecnodromo</td></tr><tr><th id="L41"><a href="#L41">41</a></th><td>technodrome_info=Fornisce Tecnici.</td></tr><tr><th id="L42"><a href="#L42">42</a></th><td>worker=Operaio</td></tr><tr><th id="L43"><a href="#L43">43</a></th><td>worker_info=Può raccogliere risorse e costruire e riparare la maggior parte delle strutture. Molto debole. Non può attaccare.</td></tr><tr><th id="L44"><a href="#L44">44</a></th><td></td></tr><tr><th id="L45"><a href="#L45">45</a></th><td>;</td></tr><tr><th id="L46"><a href="#L46">46</a></th><td>; Upgrade names and tips</td></tr><tr><th id="L47"><a href="#L47">47</a></th><td>;</td></tr><tr><th id="L48"><a href="#L48">48</a></th><td>advanced_architecture=Architettura Avanzata</td></tr><tr><th id="L49"><a href="#L49">49</a></th><td>advanced_architecture_info=Permette di costruire strutture difensive</td></tr><tr><th id="L50"><a href="#L50">50</a></th><td>blade_weapons=Armi da Taglio</td></tr><tr><th id="L51"><a href="#L51">51</a></th><td>blade_weapons_info=Potenzia l'attacco di Spadaccini e Guardie.</td></tr><tr><th id="L52"><a href="#L52">52</a></th><td>piercing_weapons=Armi da Punta</td></tr><tr><th id="L53"><a href="#L53">53</a></th><td>piercing_weapons_info=Potenzia l'attacco di Arcieri e Cavalieri.</td></tr><tr><th id="L54"><a href="#L54">54</a></th><td>robotics=Robotica</td></tr><tr><th id="L55"><a href="#L55">55</a></th><td>robotics_info=Permette di costruire Macchine da guerra e Aeronavi.</td></tr><tr><th id="L56"><a href="#L56">56</a></th><td>shield_level_1=Scudo livello 1</td></tr><tr><th id="L57"><a href="#L57">57</a></th><td>shield_level_1_info=Rinforza la corazza di Spadaccini, Guardie e Cavalieri.</td></tr><tr><th id="L58"><a href="#L58">58</a></th><td>shield_level_2=Scudo livello 2</td></tr><tr><th id="L59"><a href="#L59">59</a></th><td>shield_level_2_info=Rinforza ulteriormente la corazza di Spadaccini, Guardie e Cavalieri.</td></tr><tr><th id="L60"><a href="#L60">60</a></th><td>stables=Scuderie</td></tr><tr><th id="L61"><a href="#L61">61</a></th><td>stables_info=Permette di addestrare Cavalieri.</td></tr><tr><th id="L62"><a href="#L62">62</a></th><td>training_field=Addestramento</td></tr><tr><th id="L63"><a href="#L63">63</a></th><td>training_field_info=Rende più veloce l'addestramento dei soldati nelle Caserme e permette loro di mantenere la posizione.</td></tr><tr><th id="L64"><a href="#L64">64</a></th><td></td></tr><tr><th id="L65"><a href="#L65">65</a></th><td>;</td></tr><tr><th id="L66"><a href="#L66">66</a></th><td>; Custom command names</td></tr><tr><th id="L67"><a href="#L67">67</a></th><td>;</td></tr><tr><th id="L68"><a href="#L68">68</a></th><td>produce_ornithopter=Costruisci Ornitottero</td></tr><tr><th id="L69"><a href="#L69">69</a></th><td>produce_airship=Costruisci Aeronave</td></tr><tr><th id="L70"><a href="#L70">70</a></th><td>attack_on=Attacco Attivato</td></tr><tr><th id="L71"><a href="#L71">71</a></th><td>attack_off=Attacco Disattivato</td></tr><tr><th id="L72"><a href="#L72">72</a></th><td>missile=Arma da Lancio</td></tr><tr><th id="L73"><a href="#L73">73</a></th><td>hold_position=Mantieni Posizione</td></tr><tr><th id="L74"><a href="#L74">74</a></th><td>produce_swordman=Addestra Spadaccino</td></tr><tr><th id="L75"><a href="#L75">75</a></th><td>produce_archer=Addestra Arciere</td></tr><tr><th id="L76"><a href="#L76">76</a></th><td>produce_guard=Addestra Guardia</td></tr><tr><th id="L77"><a href="#L77">77</a></th><td>produce_horseman=Addestra Cavaliere</td></tr><tr><th id="L78"><a href="#L78">78</a></th><td>create_training_field=Ricerca Addestramento</td></tr><tr><th id="L79"><a href="#L79">79</a></th><td>attack_arrow=Lancia Frecce</td></tr><tr><th id="L80"><a href="#L80">80</a></th><td>produce_worker=Fornisci Operaio</td></tr><tr><th id="L81"><a href="#L81">81</a></th><td>fire_ball=Palla di Fuoco</td></tr><tr><th id="L82"><a href="#L82">82</a></th><td>produce_pig=Fornisci Maiale</td></tr><tr><th id="L83"><a href="#L83">83</a></th><td>produce_cow=Fornisci Mucca</td></tr><tr><th id="L84"><a href="#L84">84</a></th><td>research_stables=Ricerca Suderie</td></tr><tr><th id="L85"><a href="#L85">85</a></th><td>molotov=Bomba</td></tr><tr><th id="L86"><a href="#L86">86</a></th><td>fire_arrow=Lancia Freccia</td></tr><tr><th id="L87"><a href="#L87">87</a></th><td>promote_to_guard=Promuovi a Guardia</td></tr><tr><th id="L88"><a href="#L88">88</a></th><td>build_ultimate=Costruzioni Superiori</td></tr><tr><th id="L89"><a href="#L89">89</a></th><td>heal=Guarisci</td></tr><tr><th id="L90"><a href="#L90">90</a></th><td>mine_gold=Estrai Oro</td></tr><tr><th id="L91"><a href="#L91">91</a></th><td>build_catapult=Costruisci Catapulta</td></tr><tr><th id="L92"><a href="#L92">92</a></th><td>build_battle_machine=Costruisci Macchina da guerra</td></tr><tr><th id="L93"><a href="#L93">93</a></th><td>build_air_ballista=Costruisci Balista aerea</td></tr><tr><th id="L94"><a href="#L94">94</a></th><td>produce_technician=Addestra Tecnico</td></tr><tr><th id="L95"><a href="#L95">95</a></th><td>research_advanced_architecture=Ricerca Architettura avanzata</td></tr><tr><th id="L96"><a href="#L96">96</a></th><td>research_robotics=Ricerca Robotica</td></tr><tr><th id="L97"><a href="#L97">97</a></th><td>build_basic=Costruzioni di base</td></tr><tr><th id="L98"><a href="#L98">98</a></th><td>build_advanced=Costruzioni avanzate</td></tr><tr><th id="L99"><a href="#L99">99</a></th><td>mine=Estrai</td></tr><tr><th id="L100"><a href="#L100">100</a></th><td>harvest_wood=Raccogli legname</td></tr><tr><th id="L101"><a href="#L101">101</a></th><td></td></tr><tr><th id="L102"><a href="#L102">102</a></th><td></td></tr><tr><th id="L103"><a href="#L103">103</a></th><td>;</td></tr><tr><th id="L104"><a href="#L104">104</a></th><td>; Levels</td></tr><tr><th id="L105"><a href="#L105">105</a></th><td>;</td></tr><tr><th id="L106"><a href="#L106">106</a></th><td>elite=Veterano</td></tr></tbody></table>
+        </div>
+          <div class="buttons">
+            <form method="get" action="">
+              <div id="delete">
+                <input type="hidden" name="action" value="delete" />
+                <input type="submit" value="Delete attachment" />
+              </div>
+            </form>
+          </div>
+    </div>
+    <div id="altlinks">
+      <h3>Download in other formats:</h3>
+      <ul>
+        <li class="last first">
+          <a rel="nofollow" href="/apps/trac/glestae/raw-attachment/ticket/327/tech_it.lng">Original Format</a>
+        </li>
+      </ul>
+    </div>
+    </div>
+    <div id="footer" lang="en" xml:lang="en"><hr />
+      <a id="tracpowered" href="http://trac.edgewall.org/"><img src="/apps/trac/glestae/chrome/common/trac_logo_mini.png" height="30" width="107" alt="Trac Powered" /></a>
+      <p class="left">
+        Powered by <a href="/apps/trac/glestae/about"><strong>Trac 0.11.2.1</strong></a><br />
+        By <a href="http://www.edgewall.org/">Edgewall Software</a>.
+      </p>
+      <p class="right"></p>
+    </div>
+<!-- Footer -->
+		</div>
+        </div>
+<!-- End Footer -->
+
+    
+<p class="copyright">&copy; 2012 <a title="Network which provides and promotes Open Source software downloads, development, discussion and news." href="http://geek.net">Geeknet, Inc.</a> &nbsp; <a href="http://geek.net/terms-of-use">Terms of Use</a> - <a href="http://p.sf.net/sourceforge/privacy">Privacy Policy</a>
+- <a href="http://geek.net/opt-out-choices">Cookies/Opt Out</a>
+</p>
+    
+    <script type="text/javascript">
+	pageTracker._trackPageview();
+    </script>
+</body>
+</html>

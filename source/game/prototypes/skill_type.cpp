@@ -460,7 +460,7 @@ void AttackSkillType::getDesc(string &str, const Unit *unit) const {
 	str += "...";
 	str += intToStr(attackStrength + attackVar);
 	EnhancementType::describeModifier(str, unit->getAttackStrength(this) - attackStrength);
-	str += " ("+ attackType->getName() +")";
+	str += " ("+ lang.get(attackType->getName()) +")";
 	str += "\n";
 
 	TargetBasedSkillType::getDesc(str, unit, "AttackDistance");
@@ -651,7 +651,12 @@ void LoadSkillType::doChecksum(Checksum &checksum) const {
 
 void BeBuiltSkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const UnitType *ft) {
 	SkillType::load(sn, dir, tt, ft);
-	m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	const XmlNode *n = sn->getChild("anim-progress-bound", 0, false);
+	if (n) {
+		m_stretchy = n->getBoolValue();
+	} else {
+		m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	}
 }
 
 // =====================================================
@@ -660,7 +665,12 @@ void BeBuiltSkillType::load(const XmlNode *sn, const string &dir, const TechTree
 
 void BuildSelfSkillType::load(const XmlNode *sn, const string &dir, const TechTree *tt, const UnitType *ft) {
 	SkillType::load(sn, dir, tt, ft);
-	m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	const XmlNode *n = sn->getChild("anim-progress-bound", 0, false);
+	if (n) {
+		m_stretchy = n->getBoolValue();
+	} else {
+		m_stretchy = sn->getOptionalBoolValue("anim-stretch", false);
+	}
 }
 
 // =====================================================
@@ -711,12 +721,15 @@ void AttackSkillTypes::getDesc(string &str, const Unit *unit) const {
 	if(types.size() == 1) {
 		types[0]->getDesc(str, unit);
 	} else {
-		str += Lang::getInstance().get("Attacks") + ": ";
+		str += g_lang.get("Attacks") + ":";
 		for(int i = 0; i < types.size(); ++i) {
-			if (i) {
-				str += ", ";
+			string nstr = g_lang.get("AttackNum");
+			string::size_type p = nstr.find("%s");
+			if (p != string::npos) {
+				nstr.replace(p, 2, intToStr(i + 1));
 			}
-			str += types[i]->getName();
+			str += "\n" + nstr + "\n";
+			types[i]->getDesc(str, unit);			
 		}
 	}
 }

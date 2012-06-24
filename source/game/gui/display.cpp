@@ -484,7 +484,7 @@ void Display::renderProgressBar() {
 	///	so they share code. Also potential for caching with
 	/// widthFactor, pos, w and h - hailstone 3Mar2012
 	float widthFactor = w / 100.f;
-	int bw = m_progress * widthFactor;
+	int bw = int(m_progress * widthFactor);
 	Vec2i pos = getScreenPos() + m_progressPos;
 
 	// bar (green bit)

@@ -166,7 +166,16 @@ bool ProgramLog::setupLoadingScreen(const string &dir) {
 		// based on resolution - hailstone 21Jan2011
 
 		// background texture
-		const XmlNode *backgroundImageNode = loadingScreenNode->getChild("background-image", 0, true);
+		int n = loadingScreenNode->getChildCount();
+		int k = 0;
+
+		if (n > 1) {
+			int seed = int(Chrono::getCurMillis());
+			Random random(seed);
+			k = random.randRange(0, n - 1);	
+		}
+
+		const XmlNode *backgroundImageNode = loadingScreenNode->getChild("background-image", k, true);
 
 		if (backgroundImageNode) {
 			// load background image from faction.xml
