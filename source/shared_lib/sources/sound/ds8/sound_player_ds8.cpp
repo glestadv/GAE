@@ -156,24 +156,23 @@ StrSoundBuffer::StrSoundBuffer(){
 	state= sFree;
 }
 
-void StrSoundBuffer::init(IDirectSound8 *dsObject, Sound *sound, uint32 strBufferSize){
-	state= sStopped;
-	if(this->sound==NULL){
-		this->sound= sound;
-		this->size= strBufferSize;
+void StrSoundBuffer::init(IDirectSound8 *dsObject, Sound *sound, uint32 strBufferSize) {
+	state = sStopped;
+	if (!this->sound) {
+		this->sound = sound;
+		this->size = strBufferSize;
 		createDsBuffer(dsObject);
 		dsBuffer->SetCurrentPosition(0);
 		fillDsBuffer();
-	}
-	else if(this->sound!=sound){
-		this->sound= sound;
-		this->size= strBufferSize;
+	} else if (this->sound != sound) {
+		this->sound = sound;
+		this->size = strBufferSize;
 		dsBuffer->SetCurrentPosition(0);
 		fillDsBuffer();
 	}
 }
 
-void StrSoundBuffer::end(){
+void StrSoundBuffer::end() {
 	state= sFree;
 	dsBuffer->Stop();
 	dsBuffer->Release();
@@ -181,16 +180,15 @@ void StrSoundBuffer::end(){
 	sound= NULL;
 }
 
-void StrSoundBuffer::play(int64 fadeOn){
-	assert(state==sStopped);
-	lastPlayCursor= 0;
-	if(fadeOn==0){
-		state= sPlaying;
+void StrSoundBuffer::play(int64 fadeOn) {
+	assert(state == sStopped);
+	lastPlayCursor = 0;
+	if (!fadeOn) {
+		state = sPlaying;
 		dsBuffer->SetVolume(dsVolume(sound->getVolume()));
-	}
-	else{
-		this->fade= fadeOn;
-		state= sFadingOn;
+	} else {
+		this->fade = fadeOn;
+		state = sFadingOn;
 		chrono.reset();
 		chrono.start();
 		dsBuffer->SetVolume(dsVolume(0.f));
@@ -198,54 +196,49 @@ void StrSoundBuffer::play(int64 fadeOn){
 	dsBuffer->Play(0, 0, DSBPLAY_LOOPING);
 }
 
-void StrSoundBuffer::update(){
-
-	switch(state){
-	case sFadingOn:
-		if(chrono.getMillis()>fade){
-			dsBuffer->SetVolume(dsVolume(sound->getVolume()));
-			state= sPlaying;
-		}
-		else{
-			dsBuffer->SetVolume(dsVolume(sound->getVolume()*(static_cast<float>(chrono.getMillis())/fade)));
-		}
-		refreshDsBuffer();
-		break;
-
-	case sFadingOff:
-		if(chrono.getMillis()>fade){
-			state= sStopped;
-			dsBuffer->Stop();
-		}
-		else{
-			dsBuffer->SetVolume(dsVolume(sound->getVolume()*(1.0f-static_cast<float>(chrono.getMillis())/fade)));
+void StrSoundBuffer::update() {
+	switch (state) {
+		case sFadingOn:
+			if (chrono.getMillisThisRun() > fade) {
+				dsBuffer->SetVolume(dsVolume(sound->getVolume()));
+				state = sPlaying;
+			} else {
+				float vol = sound->getVolume() * (float(chrono.getMillisThisRun()) / fade);
+				dsBuffer->SetVolume(dsVolume(vol));
+			}
 			refreshDsBuffer();
-		}
-		break;
+			break;
 
-	case sPlaying:
-		dsBuffer->SetVolume(dsVolume(sound->getVolume()));
-		refreshDsBuffer();
-		break;
+		case sFadingOff:
+			if (chrono.getMillis() > fade) {
+				state = sStopped;
+				dsBuffer->Stop();
+			} else {
+				dsBuffer->SetVolume(dsVolume(sound->getVolume() * (1.0f - float(chrono.getMillisThisRun()) / fade)));
+				refreshDsBuffer();
+			}
+			break;
 
-	default:
-		break;
+		case sPlaying:
+			dsBuffer->SetVolume(dsVolume(sound->getVolume()));
+			refreshDsBuffer();
+			break;
+
+		default:
+			break;
 	}
 }
 
-void StrSoundBuffer::stop(int64 fadeOff){
-
-	if(fadeOff==0){
+void StrSoundBuffer::stop(int64 fadeOff) {
+	if (fadeOff == 0) {
 		dsBuffer->Stop();
 		state= sStopped;
-	}
-	else{
-		this->fade= fadeOff;
-		state= sFadingOff;
+	} else {
+		this->fade = fadeOff;
+		state = sFadingOff;
 		chrono.reset();
 		chrono.start();
 	}
-
 }
 
 // ===================== PRIVATE =======================
@@ -254,24 +247,23 @@ void StrSoundBuffer::fillDsBuffer(){
     void * writePointer;
     unsigned long size;
 
-	//lock
-	HRESULT hr= dsBuffer->Lock(0, 0, &writePointer, &size, NULL, NULL, DSBLOCK_ENTIREBUFFER);
-	if (hr!=DS_OK){
+	// lock
+	HRESULT hr = dsBuffer->Lock(0, 0, &writePointer, &size, NULL, NULL, DSBLOCK_ENTIREBUFFER);
+	if (hr != DS_OK) {
         throw runtime_error("Failed to Lock direct sound buffer");
 	}
 
-	//copy memory
+	// copy memory
 	readChunk(writePointer, size);
 
-	//unlock
-	hr= dsBuffer->Unlock(writePointer, size, NULL, 0 );
-	if (hr!=DS_OK){
+	// unlock
+	hr = dsBuffer->Unlock(writePointer, size, NULL, 0);
+	if (hr != DS_OK) {
         throw runtime_error("Failed to Unlock direct sound buffer");
 	}
 }
 
-
-void StrSoundBuffer::refreshDsBuffer(){
+void StrSoundBuffer::refreshDsBuffer() {
     void *writePointer1, *writePointer2;
     DWORD size1, size2;
 	DWORD playCursor;
@@ -281,53 +273,52 @@ void StrSoundBuffer::refreshDsBuffer(){
 	dsBuffer->GetStatus(&status);
 	assert(!(status & DSBSTATUS_BUFFERLOST));
 
-	HRESULT hr= dsBuffer->GetCurrentPosition(&playCursor, NULL);
-	if(hr!=DS_OK){
+	HRESULT hr = dsBuffer->GetCurrentPosition(&playCursor, NULL);
+	if (hr != DS_OK) {
 		throw runtime_error("Failed to Lock query play position");
 	}
 
-	//compute bytes to lock
-	if(playCursor>=lastPlayCursor){
-		bytesToLock= playCursor - lastPlayCursor;
-	}
-	else{
-		bytesToLock= size - (lastPlayCursor - playCursor);
+	// compute bytes to lock
+	if (playCursor >= lastPlayCursor) {
+		bytesToLock = playCursor - lastPlayCursor;
+	} else {
+		bytesToLock = size - (lastPlayCursor - playCursor);
 	}
 
-	//copy data
-	if(bytesToLock>0){
+	// copy data
+	if (bytesToLock > 0) {
 
-		//lock
-		HRESULT hr=dsBuffer->Lock(lastPlayCursor, bytesToLock, &writePointer1, &size1, &writePointer2, &size2, 0);
-		if (hr!=DS_OK){
+		// lock
+		HRESULT hr = dsBuffer->Lock(lastPlayCursor, bytesToLock, &writePointer1, &size1, &writePointer2, &size2, 0);
+		if (hr != DS_OK) {
 			throw runtime_error("Failed to Lock direct sound buffer");
 		}
 
-		//copy memory
-		assert(size1+size2==bytesToLock);
+		// copy memory
+		assert(size1 + size2 == bytesToLock);
 
 		readChunk(writePointer1, size1);
 		readChunk(writePointer2, size2);
 
-		//unlock
-		hr= dsBuffer->Unlock(writePointer1, size1, writePointer2, size2);
-		if (hr!=DS_OK){
+		// unlock
+		hr = dsBuffer->Unlock(writePointer1, size1, writePointer2, size2);
+		if (hr != DS_OK) {
 			throw runtime_error("Failed to Unlock direct sound buffer");
 		}
 	}
 
-	lastPlayCursor= playCursor;
+	lastPlayCursor = playCursor;
 }
 
-void StrSoundBuffer::readChunk(void *writePointer, uint32 size){
-	StrSound *s= getStrSound();
-	uint32 readSize= s->read(static_cast<int8*>(writePointer), size);
-	if(readSize<size){
-		StrSound *next= s->getNext()==NULL? s: s->getNext();
+void StrSoundBuffer::readChunk(void *writePointer, uint32 size) {
+	StrSound *s = getStrSound();
+	uint32 readSize = s->read(static_cast<int8*>(writePointer), size);
+	if (readSize<size) {
+		StrSound *next = !s->getNext() ? s: s->getNext();
 		next->restart();
 		next->read(&static_cast<int8*>(writePointer)[readSize], size-readSize);
 		next->setVolume(s->getVolume());
-		sound= next;
+		sound = next;
 	}
 }
 
