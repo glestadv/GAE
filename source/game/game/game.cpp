@@ -137,8 +137,7 @@ void GameState::load() {
 	// 4. use defaults
 	ProgramLog &log = g_logger.getProgramLog();
 
-	if (!scenarioName.empty() 
-		&& log.setupLoadingScreen(scenarioPath)) {
+	if (!scenarioName.empty() && log.setupLoadingScreen(scenarioPath)) {
 	} else if (log.setupLoadingScreen(techName + "/factions/" + thisFactionName)) {
 	} else if (log.setupLoadingScreen(techName)) {
 	} else {
@@ -156,8 +155,8 @@ void GameState::load() {
 		}
 	}
 
-	g_logger.getProgramLog().setProgressBar(true);
-	g_logger.getProgramLog().setState(Lang::getInstance().get("Loading"));
+	log.setProgressBar(true);
+	log.setState(Lang::getInstance().get("Loading"));
 
 	if (scenarioName.empty()) {
 		log.setSubtitle(formatString(mapName) + " - " +
@@ -169,7 +168,7 @@ void GameState::load() {
 	simInterface->loadWorld();
 
 	// finished loading
-	g_logger.getProgramLog().setProgressBar(false);
+	log.setProgressBar(false);
 }
 
 void GameState::init() {
