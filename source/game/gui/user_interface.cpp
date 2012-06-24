@@ -1040,6 +1040,7 @@ void UserInterface::computeSelectionPanel() {
 			m_display->setPortraitTitle(name);
 			m_display->setPortraitText(g_lang.get("amount") + ": " + intToStr(r->getAmount()));
 			m_display->setUpImage(0, r->getType()->getImage());
+			m_display->setSize();
 		} ///@todo else (selectable tileset objects ?)
 		return;
 	}

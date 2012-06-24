@@ -166,7 +166,6 @@ bool ProgramLog::setupLoadingScreen(const string &dir) {
 		// based on resolution - hailstone 21Jan2011
 
 		// background texture
-				// background texture
 		int n = loadingScreenNode->getChildCount();
 		int k = 0;
 
