@@ -2206,7 +2206,7 @@ bool Unit::add(Effect *e) {
 			startParticles = false;
 		} else {
 			foreach (Effects, it, effects) {
-				if (e->getType() == (*it)->getType()) {
+				if (e != *it && e->getType() == (*it)->getType()) {
 					startParticles = false;
 					break;
 				}
