@@ -285,6 +285,8 @@ private:
 	void checkEffectCloak();
 	void startSkillParticleSystems();
 
+	void startParticleSystems(const UnitParticleSystemTypes &types);
+
 public:
 	void save(XmlNode *node) const;
 

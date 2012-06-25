@@ -1134,6 +1134,15 @@ void Unit::born(bool reborn) {
 		if (!isCarried()) {
 			startSkillParticleSystems();
 		}
+		
+		if (type->getEmanations().size() > 0) {
+			foreach_const (Emanations, i, type->getEmanations()) {
+				UnitParticleSystemTypes types = (*i)->getSourceParticleTypes();
+				if (!types.empty()) {
+					startParticleSystems(types);
+				}
+			}
+		}
 	}
 	StateChanged(this);
 	faction->onUnitActivated(type);
@@ -2217,21 +2226,7 @@ bool Unit::add(Effect *e) {
 	}
 
 	if (startParticles && !particleTypes.empty()) {
-		Vec2i cPos = getCenteredPos();
-		Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
-		bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
-
-		foreach_const (UnitParticleSystemTypes, it, particleTypes) {
-			UnitParticleSystem *ups = (*it)->createUnitParticleSystem(visible);
-			ups->setPos(getCurrVector());
-			ups->setRotation(getRotation());
-			//ups->setFactionColor(getFaction()->getTexture()->getPixmap()->getPixel3f(0,0));
-			effectParticleSystems.push_back(ups);
-			Colour c = faction->getColour();
-			Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
-			ups->setTeamColour(colour);
-			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
-		}
+		startParticleSystems(particleTypes);
 	}
 
 	if (effects.isDirty()) {
@@ -2239,6 +2234,24 @@ bool Unit::add(Effect *e) {
 	}
 
 	return false;
+}
+
+void Unit::startParticleSystems(const UnitParticleSystemTypes &types) {
+	Vec2i cPos = getCenteredPos();
+	Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
+	bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
+
+	foreach_const (UnitParticleSystemTypes, it, types) {
+		UnitParticleSystem *ups = (*it)->createUnitParticleSystem(visible);
+		ups->setPos(getCurrVector());
+		ups->setRotation(getRotation());
+		//ups->setFactionColor(getFaction()->getTexture()->getPixmap()->getPixel3f(0,0));
+		effectParticleSystems.push_back(ups);
+		Colour c = faction->getColour();
+		Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
+		ups->setTeamColour(colour);
+		g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
+	}
 }
 
 /**

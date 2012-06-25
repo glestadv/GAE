@@ -121,12 +121,16 @@ public:
 class EmanationType : public EffectType {
 private:
 	int radius;
-
+	UnitParticleSystemTypes sourceParticleSystems;
 public:
 	static EffectClass typeClass() { return EffectClass::EMANATION; }
 
 public:
 	virtual ~EmanationType() {}
+
+	UnitParticleSystemTypes& getSourceParticleTypes()			{return sourceParticleSystems;}
+	const UnitParticleSystemTypes& getSourceParticleTypes() const	{return sourceParticleSystems;}
+
 	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
 	virtual void doChecksum(Checksum &checksum) const;
 	int getRadius() const	{return radius;}
