@@ -1350,18 +1350,16 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 			commandType = type->getAttackCommand(targetUnit->getCurrZone());
 		} else if (targetUnit->getFactionIndex() == getFactionIndex()) {
 			const UnitType *tType = targetUnit->getType();
-			if (tType->isOfClass(UnitClass::CARRIER)
-			&& tType->getCommandType<LoadCommandType>(0)->canCarry(type)) {
+			if (tType->isOfClass(UnitClass::CARRIER) && tType->getCommandType<LoadCommandType>(0)->canCarry(type) && targetUnit->isBuilt()) {
 				//move to be loaded
 				commandType = type->getFirstCtOfClass(CmdClass::BE_LOADED);
-			} else if (getType()->isOfClass(UnitClass::CARRIER)
-			&& type->getCommandType<LoadCommandType>(0)->canCarry(tType)) {
-			//load
-			commandType = type->getFirstCtOfClass(CmdClass::LOAD);
-		} else {
-				// repair
-			commandType = getRepairCommandType(targetUnit);
-		}
+			} else if (getType()->isOfClass(UnitClass::CARRIER)	&& type->getCommandType<LoadCommandType>(0)->canCarry(tType)) {
+				//load
+				commandType = type->getFirstCtOfClass(CmdClass::LOAD);
+			} else {
+					// repair
+				commandType = getRepairCommandType(targetUnit);
+			}
 		} else { // repair allies
 			commandType = getRepairCommandType(targetUnit);
 		}
@@ -2242,15 +2240,24 @@ void Unit::startParticleSystems(const UnitParticleSystemTypes &types) {
 	bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
 
 	foreach_const (UnitParticleSystemTypes, it, types) {
-		UnitParticleSystem *ups = (*it)->createUnitParticleSystem(visible);
-		ups->setPos(getCurrVector());
-		ups->setRotation(getRotation());
-		//ups->setFactionColor(getFaction()->getTexture()->getPixmap()->getPixel3f(0,0));
-		effectParticleSystems.push_back(ups);
-		Colour c = faction->getColour();
-		Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
-		ups->setTeamColour(colour);
-		g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
+		bool startNew = true;
+		foreach_const (UnitParticleSystems, upsIt, effectParticleSystems) {
+			if ((*upsIt)->getType() == (*it)) {
+				startNew = false;
+				break;
+			}
+		}
+		if (startNew) {
+			UnitParticleSystem *ups = (*it)->createUnitParticleSystem(visible);
+			ups->setPos(getCurrVector());
+			ups->setRotation(getRotation());
+			//ups->setFactionColor(getFaction()->getTexture()->getPixmap()->getPixel3f(0,0));
+			effectParticleSystems.push_back(ups);
+			Colour c = faction->getColour();
+			Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
+			ups->setTeamColour(colour);
+			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
+		}
 	}
 }
 
