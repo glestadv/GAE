@@ -1,0 +1,458 @@
+; Gàidhlig lang file
+
+; Zones, please translate 'Land' as Surface!
+Air=Adhair
+Land=Tìr
+
+; Team member roles
+GlestTeam=An sgioba aig Glest
+2dArtAndWeb=Ealain 2D is lìn
+3dAnd2dArt=Ealain 3D is 2D
+3dArt=Ealain 3D
+Animation=Beòthachadh
+LinuxPort=Portachadh Linux
+SoundAndMusic=Fuaim is ceòl
+Programming=Prògramachadh
+Translator=Eadar-theangaiche
+QualityAssurance=Barantachd càileachd
+GaeTeam=An sgioba aig GAE
+Contributors=Co-thabhartaichen aig GAE
+
+; 'Advanced Engine' Strings, placed under the Glest logo in the intro & on the new game menu
+AdvEng1=Inneal
+AdvEng2=Adhartach
+
+; Chat related
+ChatMode=Modh cabadaich
+ChatMsg=Teachdaireachd
+All=A h-uile
+TeamOnly=Sgioba a-mhàin
+ChatAudienceAll=Chì a h-uile cluircheadairean na teachdaireachdan.
+ChatAudienceTeam=Chan fhaigh ach buill an sgìoba na teachdaireachdan.
+ChatAudienceToggle=Toglaich luchd-amhairc na cabadaiche
+
+; Game end dialog headers and messages
+BattleOver=Tha am blàr seachad
+Victory=Buannachd
+Defeat=Ruaig
+YouLose=Chaill thu
+YouWin=Bhuannaich thu
+
+; Command classes
+Attack=Ionnsaigh
+Attack-Stopped=Stad air ionnsaigh
+Guard=Freiceadan
+Harvest=Buain
+Be-Loaded=Beir eallach
+Build=Tog
+Load=Tog eallach
+Morph=Cruth-atharraich
+Move=Gluais
+Patrol=Cuairteachan
+Produce=Dèan
+Repair=Càirich
+SetMeetingPoint=Ceann cruinneachaidh
+Stop=Stad
+Teleport=Tele-phortaich
+Unload=Cuir eallach sìos
+Upgrade=Adhartaich
+
+; Missing/Erroneous data
+MapNotFound=Cha deach mapa na cnàmh-sgeòil seo a lorg.
+TechNotFound=Cha deach craobh theicneòlais na cnàmh-sgeòil seo a lorg.
+TilesetNotFound=Cha deach buidheann leacan na cnàmh-sgeòil seo a lorg.
+ScenarioXmlError=Tachair mearachd a' luchdadh XML na cnàmh-sgeòil
+EnterFilename=Feumaidh tu ainm faidhle a chur a-steach mus urrainn dhut faidhle a shàbhaladh
+CantSaveScenarios=Cha ghabh cnàmh-sgeòil sabhaladh.
+
+; Scenario difficulty
+Difficulty=Dùbhlan
+Difficulty0=Glè fhurasta
+Difficulty1=Furasta
+Difficulty2=Meadhannach
+Difficulty3=Doirbh
+Difficulty4=Glè dhoirbh
+Difficulty5=Marbhtach
+
+; Control types
+Human=Neach
+Closed=Gin
+Control=Smachd
+Cpu_Easy=CPU (Furasta)
+Cpu=CPU
+Cpu_Ultra=CPU (Doirbh)
+Cpu_Mega=CPU (Cruaidh)
+
+; Game speed
+VeryFast=Glè luath
+VerySlow=Glè shlaodach
+SpeedDec=Lùghdaich an t-astar
+SpeedInc=Meudaich an t-astar
+SpeedReset=Ath-shuidhich an t-astar
+Slow=slaodach
+Slowest=as slaodaiche
+PauseOff=Stad dheth
+PauseOn=Stad air
+PauseToggle=Toglaich stad
+Normal=Àbhaisteach
+GamePaused=Geama air stad
+GameResumed=Geama a' leantainn
+Fast=luath
+Fastest=as luaithe
+GameSpeedSet=Astar a' gheama air a shocrachadh gu
+
+; Menu strings
+
+; Shared Menu Strings
+PlayNow=Cluich!
+Network=Lìonra
+MaxPlayers=Cluicheadairean suas gu
+Deleting=A' sguabadh às
+Map=Mapa
+Tileset=Buidheann leacan
+TechTree=Craobh theicneòlais
+Return=Till
+
+; Root Menu
+About=Mu dheidhinn
+JoinGame=Geama lìonraidh
+LoadGame=Luchdaich geama
+NewGame=Geama ùr
+Scenario=Cnàmh-sgeul
+Options=Roghainnean
+
+; New Game Menu
+Random=Air thuaiream
+RandomizeLocations=Àiteachan air thuaiream
+Faction=Buidheann
+Team=Sgioba
+Colour=Dath
+NotConnected=Gun cheangal
+WaitingForConnections=Tha cuid de na cluicheadairean gun cheangal fhathast. A bheil thu airson leantainn ort às an aonais?
+AiPlayer=Cluicheadair IF
+Player=Cluicheadair
+
+; Join Game Menu
+Address=Seòladh
+ErrorVersionMismatch=Chan eil tionndadh GAE an fhrithealaiche air astar co-chòrdail ris an tionndach a th' agadsa. Tha %s agad is %s aigesan.
+Connect=Ceangal
+Connected=Ceangailte
+ConnectedToServer=Ceangailte dhan fhrithealaiche
+ConnectionFailed=Dh'fhàillig an ceangal
+GraphicInfo=Mun Api
+FxVolume=Blòighean fuaime
+Language=Cànan
+MusicVolume=Àirde a' chiùil
+Server=Frithealaiche
+ServerType=Seòrsa frithelaiche
+ServerTypeNew=Fear ùr
+ServerTypePrevious=Seann fhear
+Port=Port
+RecentHosts=Òstairean roimhe
+Search=Lorg
+
+; Load Game Menu
+UnableToJoin=Cha ghabh ceangal ris an fhrithealaiche
+WaitingHost=A' feitheamh air geama ùr bhon fhrithealaiche
+ElapsedTime=ÙIne a chaidh seachad
+Delete=Sguab às dha
+Confirm=Dearbhaich
+
+; Scenario Menu
+Category=Seòrsa
+NoSavedGames=Chan eil geamannan agad
+NoCategoryDirectories=Chan eil pasganan seòrsa ann an gae/scenarios
+
+; Options Menu
+General=Coitcheann
+AmbientVolume=Fuaim cùil
+AutoConfig=Fèin-socraich
+; bug, Textures3D should be used
+Textures3D=Innich 3D
+3D Textures=Innich 3D
+OpenGlExtensions=Leudachain
+OpenGlInfo=Fiosrachadh OpenGL
+OpenGlMaxLights=Solasan as motha
+OpenGlMaxTextureSize=Innich as motha
+OpenGlMaxConventionalTextureUnits=Aonadan as motha (àbhaisteach)
+
+OpenGlMaxCombinedTextureUnits=Aonadan as motha (aonaichte)
+
+OpenGlModelviewStack=Modelview matrix stack depth
+OpenGlPlatformExtensions=Leudachain Ùrlair
+OpenGlProjectionStack=Projection matrix stack depth
+OpenGlRenderer=Reandaraiche
+OpenGlVendor=Reiceadair
+OpenGlVersion=Tionndadh
+Shadows=Faileasan
+Shaders=Sgaileadairean
+Projected=Tilgeil
+ShadowMapping=Mapadh
+Disabled=À comas
+MaxLights=Solasan as motha
+Behavior=Giùlan
+Interface=Eadar-aghaidh
+TextureFilter=Criathrag innich
+DebugMode=Modh dì-bhugaidh
+DebugKeys=Meuran dì-bhugaidh
+PlayerName=Ainm a' chluicheadair
+CameraAltitude=Àirde a' chamara
+Min=bho
+Max=gu
+MoveCameraAtScreenEdges=Gluais aig òir an sgrìn
+RenderDistance=Astar reandaraidh
+RenderFoV=Lèirsinn
+MaxRenderFPS=FPS as àirde
+UseShaders=Cleachd sgaileadairean
+TerrainShader=Reandarair tìre
+WaterShader=Reandarair uisge
+ModelShader=Reandarair mhodalan
+Game=Gèama
+Audio=Fuaim
+Video=Bhideo
+Debug=Dì-bhugadh
+Controls=Stiùireadh
+AutoReturn=Fèin-tilleadh
+FocusArrows=Saighdean stiùiridh
+ConsoleMaxLines=Loidhnichean a' chonsoil
+ScrollSpeed=Astar sgrolaidh
+CameraInvertXAxis=Ais-thionndaich sgroladh X
+CameraInvertYAxis=Ais-thionndaich sgroladh Y
+Fullscreen=Làn-sgrìn
+Resolution=Dùmhlachd-bhreacaidh
+ShadowTextureSize=Meud inneach fhaileasan
+SpecularMapping=Mapadh puing ghleansach  
+BumpMapping=Mapadh preasa
+ShadowFrameSkip=Sùrd thar freama fhaileasan
+HotKeys=Hotkeys
+Opaque=Do-lèirsinneach
+
+
+DebugSections=Roinnean Dì-bhugaidh
+Performance=Dèanadas
+Renderer=Reandaraiche
+Camera=Camara
+Gui=GUI
+World=Saoghal
+Resources=Stòrasan
+Cluster_Map=Mapa bhadain
+Particle_Use=Cleachdadh mhìrean
+
+PerformanceSections=Roinnean Dèanadais
+Render_2D=Reandaraich 2D
+Render_3D=Reandaraich 3D
+Render_Swap_Buffers=Suaip bufairean
+Render_Surface=Reandaraich talamh
+Render_Water=Reandaraich uisge
+Render_Models=Reandaraich modalan
+Render_Objects=Reandaraich nithean
+Render_Units=Renadaraich aonadan
+Render_Shadows=Renadaraich faileasan
+Render_Select=Reandaraich taghadh
+PathFinder_Total=Slighean gu lèir
+PathFinder_LowLevel=Slighean ìre ìosal
+PathFinder_Hierarchical=Slighean rangach
+
+PerformanceReport=Aithisgean Dèanadais
+Last_Sec=Diog mu dheireadh
+Last_5_Sec=2 diogan mu dheireadh
+Total_Time=Ùine gu lèir
+Total_Ratio=Ceudad gu lèir
+
+Misc=Measgaichte
+
+; Misc
+Name=Ainm
+No=Cha bu toil
+None=Gin
+Off=: dheth
+Ok=Ceart mar-thà
+Cancel=Sgur dheth
+On=: air
+Yes=Bu toil
+Disconnect=Dì-cheangail
+Disconnected=Air dì-cheangail
+Loading=A' luchdadh
+Initializing=A' tòiseachadh
+
+; Camera
+CameraAngleReset=Ath-shuidhich ceàrn
+CameraCycleMode=Cuairt tro na modhan camara
+CameraGotoLastEvent=Rach dhan tachartas mu dheireadh
+CameraGotoSelection=Rach dhan fheadhainn comharraichte
+CameraModeSet=Modh a' chamara air a shocrachadh gu
+CameraPitchDown=Panaich sìos
+CameraPitchUp=Panaich suas
+CameraPosDown=Gluais an camara sìos
+CameraPosLeft=Gluais an camara gu clì
+CameraPosRight=Gluais an camara gu deas
+CameraPosUp=Gluais an camara suas
+CameraRotateLeft=Tionndadh gu clì
+CameraRotateRight=Tionndadh gu deas
+CameraZoomAndAngleReset=Ath-shuidhich sùm is ceàrn
+CameraZoomIn=Sùm a-steach
+CameraZoomOut=Sùm a-mach
+CameraZoomReset=Ath-shuidhich sùm
+FreeCamera=Camara saor
+GameCamera=Camara a' gheama
+
+; Display panel tips
+PotraitInfo=Dèan briog gus an t-aonad seo a-mhàin a thaghadh. Dèan sioft-briog gus aonadan dhen aon seòrsa a-mhàin a thaghadh. Dèan CTRL-briog gus an t-aonad seo a thoirt air falbh. Dèan CTRL+Sioft-briog gus a h-uile aonad dhen seòrsa seo a thoirt air falbh.
+TransportInfo=Dèan briog dubailte ach an cuir an t-aonad seo eallach sìos sa bhad.
+
+; Game strings
+Affects=Buaidh air
+AlreadyUpgraded=Air adhartachadh mar-thà
+Amount=Meud
+Armor=Armachd
+AttackDistance=Roinn
+AttackPctStolen=% Dochann ionnsaighe air a ghoid
+AttackSpeed=Astar na h-ionnsaighe
+AttackStrength=Dochann
+Attacks=Ionnsaighean
+AutoRepair=Fèin-chàireadh
+AutoAttack=Fèin-ionnsaigh
+AutoFlee=Fèin-teicheadh
+Buildings=Togalaichean
+BuildSpeed=Astar an togail
+CanLoad=Comas giùlain
+CanRepair=Càireadh air
+Command=Òrdugh
+CommonCommand=Òrdugh cumanta
+Consume=Ag ithe
+CostModifiers=Socrachadh chosgaisean
+Discount=Lasachadh
+Detector=Lorgaire
+; todo: is this used?
+Effects=Effects
+Ep=EP
+EpBoost= Leasachadh EP
+EpCost=Cosgais EP
+EpRegeneration=Slànachadh EP
+Error=Mearachd
+Exit=Fàg an seo
+ExitGame?=Am bu toil leat an geama fhàgail?
+ExitProgram?=Am bu toil leat am prògram fhàgail?
+ExploredTargetOnly=Ann an àiteachan rùraichte a-mhàin
+UnexploredTargetOk=A' gabhail a-steach àiteachan neo-aithnichte
+; todo: is this used?
+Fields=Roinnean / Achaidhean
+FogOfWar=Ceò a chogaidh
+Generated=Solarachadh
+Harvested=Buainte
+HarvestSpeed=Astar na buana
+HealthStolen=Slàinte air a goid
+Hp=HP
+HpBoost=Leasachadh HP
+HpRegeneration=Slànachadh HP
+HpRestored=HP Air fhaighinn air ais
+InsufficientEnergy=Cumhachd a dhìth
+Killed=Bàs do
+; todo: is this used?
+Kills=Air milleadh
+LoadedSpeed=Astar fo eallach
+Lost=Caillte
+MaxLoad=Eallach as motha
+; todo: is this used?
+MaxRange=Raon as motha
+Mixed=Measgaichte
+MorphUnits=Comas cruth-atharrachaidh gu
+MorphSpeed=Astar a' chruth-atharrachadh
+OrdersOnQueue=Òrduighean sa chiutha
+Produced=Dèante
+Producing=A' dèanamh
+ProductionSpeed=Astar dèanaidh
+; todo: is this used?
+Range=Raon
+ReactionSpeed=Astar freagairt
+Refund=Ath-dhìoladh
+Regeneration=Slàn
+Repaired=Air a chàradh
+RepairSpeed=Astar an càrachaidh
+Reqs=Riatanasan
+Costs=Cosgaisean
+Resources=Stòrasan
+Result=Toradh
+Save=Sàbhail
+SaveGame=Sàbhail an geama
+Score=Sgòr
+SelectSaveGame=Cuir a-steach ainm faidhle
+ShroudOfDarkness=Sgàil dorchadais
+Send=Cuir
+Sight=Lèirsinn
+Size=Meud
+Speed=Astar
+SplashRadius=Rèideas steallaige
+Store=Stòr
+StoreModifiers=Socrachadh stòraidh
+TimeToBuild=Ùine dèanaidh
+TimeToMorph=Ùine cruth-atharrachaidh
+TimeToResearch=Ùine rannsachaidh
+ToggleCloak=Dìth-chealtair air/dheth
+Transported=Aonadan air an giùilan
+Unavailable=Chan eil fiosrachadh ri fhaighinn.
+Units=Aonadan
+UpgradeSpeed=Astar an adhartachaidh
+Upgrades=Adhartachaidhean
+Upgrading=Ag adhartachadh
+WalkSpeed=Astar coiseachd
+YourGameWasSaved=Chaidh an geama agad a shàbhaladh gu %s
+Zones=Roinntean
+
+; Effect stuff
+Effect=Buaidh air
+AllyOnly=a' bhuidheann
+SelfOnly=e fhèin
+PetsOnly=peatannan
+FoeOnly=nàimhdean
+Chance=Seans
+Duration=Tìde
+Permenant=buan
+DamageType=Seòrsa dochainn
+
+; Time of Day
+MidNight=Meadhan-oidhche
+Dawn=Camhanaich
+Morning=Madainn
+MidDay=Meadhan-latha
+Afternoon=Feasgar
+Dusk=Ciaradh
+Night=Oidhche
+
+; Game Menu
+GameMenu=Clàr a' gheama
+ReturnToGame=Till dhan gheama
+ToggleDebug=Dì-bhugachadh air/dheth
+TogglePhotoMode=Toglaich na clàran
+PinWidgets= Glac meanbh-chlàran
+UnPinWidgets=Saor meanbh-chlàran
+SaveGame=Sàbhail an geama
+QuitGame=Fàg an geama
+ExitProgram=Fàg am prògram
+
+; Command errors
+BuildingNoPlace=Chan urrainnear togalach a chur an siud
+BuildingNoReqs=Chan eil an togalach a' coileanadh na riatanasan
+BuildingNoRes=Chan fhoghainn na stòrasan gus an togalach seo a thogail
+BuildingNoRes1=Chan eil %s gu leòr ann gus an togalach a thogail
+BuildingNoRes2=Chan eil %s no %s gu leòr ann gus an togalach a thogail
+DestinationUnreachable=Cha ghabh an ceann-uidhe ruigsinn
+GenericNoRes1=Chan eil %s gu leòr ann
+GenericNoRes2=Chan eil %s no %s gu leòr ann
+InvalidPosition=Tha an t-àite mì-dhligheach
+MorphNoRes1=Chan eil %s gu leòr ann gus an dèan an t-aonad cruth-atharrachadh
+MorphNoRes2=Chan eil %s no %s gu leòr ann gus an dèan an t-aonad cruth-atharrachadh
+UnitNoReqs=Chan eil an t-aonad a' coileanadh na riatanasan
+UnitNoRes=Chan fhoghainn na stòrasan gus an t-aonad seo a dhèanamh
+UnitNoRes1=Chan eil %s gu leòr ann gus an t-aonad seo a dhèanamh
+UnitNoRes2=Chan eil %s no %s gu leòr ann gus an t-aonad seo a dhèanamh
+UpgradeNoReqs=Chan eil an t-adhartachadh a' coileanadh na riatanasan
+UpgradeNoRes=Chan fhoghainn na stòrasan gus an t-adhartachadh seo a dhèanamh
+UpgradeNoRes1=Chan eil %s gu leòr ann gus an t-adhartachadh seo a dhèanamh
+UpgradeNoRes2=Chan eil %s no %s gu leòr ann gus an t-adhartachadh seo a dhèanamh
+InvalidOrder=Tha an t-òrdugh mì-dhligheach
+LoadLimitReached=Cha ghabh barrachd dheth a ghiùlan.
+PetLimitReached=Chan fhaod an t-aonad seo barrachd pheataichean dhen seòrsa seo fhaighinn
+CanNotLoadUnit=Cha ghabh an t-seòrsa de dh'aonad seo luchdadh.
+NotAvailable=Chan eil am feart seo ri fhaighinn air geamaichean lìonraidh
+SomeOrdersFailed=Cha deach le cuid de na h-òrduighean a chur seachad

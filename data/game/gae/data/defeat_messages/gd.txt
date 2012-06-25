@@ -1,0 +1,51 @@
+; Defeat messages, Gàidhlig
+
+;
+; Should contain one message per line, the character sequence %s will be replaced
+; with the player's name. The sequence %i will be replaced with the player's team number
+;
+
+Chaochail %s.
+Shiubhail %s.
+Chriochnaidh %s.
+Thug %s suas.
+Theast %s.
+Dh'eug %s.
+Chaidh %s dìtheachadh.
+Chaidh cur às do %s.
+Thilg %s suas an deò.
+Is duslach %.
+Chaidh a bheò a thoirt dhe %s.
+Cha do mhair %s.
+Chan eil %s ann tuilleadh.
+Thug %s roimhe call.
+Thuit %s is cha deach e leis èirigh.
+Cha do chleachd %s bataraidhean Duracell.
+Cò an d' fhuair bàs a-rithist? Chan eil cuimhne agam.
+Ghabh %s am pile ceàrr!
+Fhuair na Cylons lord air %s!
+Chaidh %s coltach ris na Borg!
+Ghabh %s norrag is cha dùisg e tuilleadh!
+Dhìochuimhnich %s dè bha e ris.
+Phòs %s am Bàs.
+Dhealaich %s bhon Bheatha.
+Bha %s ri gòrachas.
+Cha chreid %s gun d' fhuair a bàs sa chogadh seo.
+Bha %s airson an gèama fhàgail, ach chaidh a mharbhadh roimhe seo.
+B' fheàrrde %s tilledh gu Age Of Empires.
+Tha %s a' fulang le bàs.
+Tha a h-uile coltas ruaige air %s.
+Cha do dh'ith %s na glasraich.
+Bha %s aig bonn an t-sreath-bhìdh.
+Shiubhail %s sia troighean fon talamh.
+Tha %s ag ràdh soraidh slàn.
+Bha miann caill aig %s.
+Thòisich %s air rànail.
+Bhuannaich %s crannchur..... a bhàis.
+Tha %s a' cnuasadh air carson nach eil an teachdaireachd bàis seo èibhinn!
+Bha %s a' sireadh an t-slighe a-mach is shoirbhich e leis...
+Chaidh sealltainn gu %s ciamar a nì thu e!
+Cha robh seo èibhinn, a chàirdean! Fhuair doine bàs!
+Chaidh %s a-mach à bith.
+Tha dreuchd ùr aig %s mar thaibhse.
+Bu chòir do %s coimhead air an ath-chluiche gus faighinn a-mach càite an deach e ceàrr
