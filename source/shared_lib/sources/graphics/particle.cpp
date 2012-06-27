@@ -61,8 +61,12 @@ ParticleSystemBase::ParticleSystemBase()
 		, speed(1.f)
 		, gravity(0.f)
 		, emissionRate(15.f)
+		, emissionRateRemainder(0.f)
+		, overwriteOld(true)
 		, energy(250)
 		, energyVar(50)
+		, radialVelocity(0.f)
+		, radialVelocityVar(0.f)
 		, radius(0.f)
 		, drawCount(1)
 		, texture(NULL)
@@ -87,8 +91,12 @@ ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &protoType)
 		, speed(protoType.speed)
 		, gravity(protoType.gravity)
 		, emissionRate(protoType.emissionRate)
+		, emissionRateRemainder(0.f)
+		, overwriteOld(protoType.overwriteOld)
 		, energy(protoType.energy)
 		, energyVar(protoType.energyVar)
+		, radialVelocity(protoType.radialVelocity)
+		, radialVelocityVar(protoType.radialVelocityVar)
 		, radius(protoType.radius)
 		, drawCount(protoType.drawCount)
 		, texture(protoType.texture)
@@ -176,6 +184,7 @@ void ParticleSystem::update() {
 				if (aliveParticleCount > 0) {
 					///@todo FIXME: this particle skips an update :(
 					particles[i] = particles[aliveParticleCount];
+					// --i; ?
 				}
 			}
 		}
@@ -185,7 +194,9 @@ void ParticleSystem::update() {
 			emissionRateRemainder = fCount - count;
 			for (int i = 0; i < count; ++i) {
 				Particle *p = createParticle();
-				initParticle(p, i);
+				if (p) {
+					initParticle(p, i);
+				}
 			}
 		}
 	}
@@ -224,17 +235,18 @@ Particle *ParticleSystem::createParticle() {
 		return &particles[aliveParticleCount-1];
 	}
 
-	//if not
-	int minEnergy = particles[0].energy;
-	int minEnergyParticle = 0;
-	for (int i = 0; i < particleCount; ++i) {
-		if (particles[i].energy < minEnergy) {
-			minEnergy = particles[i].energy;
-			minEnergyParticle = i;
+	if (overwriteOld) {
+		int minEnergy = particles[0].energy;
+		int minEnergyParticle = 0;
+		for (int i = 0; i < particleCount; ++i) {
+			if (particles[i].energy < minEnergy) {
+				minEnergy = particles[i].energy;
+				minEnergyParticle = i;
+			}
 		}
+		return &particles[minEnergyParticle];
 	}
-
-	return &particles[minEnergyParticle];
+	return 0;
 }
 
 void ParticleSystem::initParticle(Particle *p, int particleIndex) {
@@ -246,12 +258,22 @@ void ParticleSystem::initParticle(Particle *p, int particleIndex) {
 	p->color2 = getColor2();
 	p->size = getSize();
 	p->energy = getRandEnergy();
+	if (hasAngularVelocity()) {
+		p->angle = getRandAngle();
+		p->angularVel = getRandAngularVelocity();
+	} else {
+		p->angle = 0.f;
+		p->angularVel = 0.f;
+	}
 }
 
 void ParticleSystem::updateParticle(Particle *p) {
 	p->lastPos = p->pos;
 	p->pos = p->pos + p->speed;
 	p->speed = p->speed + p->accel;
+	if (hasAngularVelocity()) {
+		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+	}
 	p->energy--;
 }
 

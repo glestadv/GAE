@@ -21,13 +21,14 @@
 #include "leak_dumper.h"
 #include "program.h"
 #include "sim_interface.h"
+#include "math_util.h"
 
 namespace Glest { namespace Entities {
 using Sim::Tile;
 using Graphics::Renderer;
 using Graphics::SceneCuller;
 using Main::Program;
-
+using namespace Shared;
 // ===========================================================================
 //  GameParticleSystem
 // ===========================================================================
@@ -111,6 +112,7 @@ void FireParticleSystem::updateParticle(Particle *p) {
 		p->color.a *= 0.98f;
 
 	p->speed.x *= 1.001f; // wind
+	p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
 }
 
 // ===========================================================================
@@ -299,6 +301,9 @@ void Projectile::updateParticle(Particle *p) {
 	p->color = color * energyRatio + colorNoEnergy * (1.0f - energyRatio);
 	p->color2 = color2 * energyRatio + color2NoEnergy * (1.0f - energyRatio);
 	p->size = size * energyRatio + sizeNoEnergy * (1.0f - energyRatio);
+	if (hasAngularVelocity()) {
+		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+	}
 	p->energy--;
 }
 
@@ -400,6 +405,9 @@ void Splash::updateParticle(Particle *p) {
 	p->energy--;
 	p->color = color * energyRatio + colorNoEnergy * (1.0f - energyRatio);
 	p->size = size * energyRatio + sizeNoEnergy * (1.0f - energyRatio);
+	if (hasAngularVelocity()) {
+		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+	}
 }
 
 // ===========================================================================
@@ -512,6 +520,9 @@ void UnitParticleSystem::updateParticle(Particle *p) {
 	p->speed += p->accel;
 	p->color = color * energyRatio + colorNoEnergy * (1.f - energyRatio);
 	p->size = size * energyRatio + sizeNoEnergy * (1.f - energyRatio);
+	if (hasAngularVelocity()) {
+		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+	}
 	--p->energy;
 }
 

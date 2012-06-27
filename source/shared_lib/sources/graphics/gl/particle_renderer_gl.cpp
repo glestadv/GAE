@@ -101,6 +101,23 @@ void ParticleRendererGl::renderManager(ParticleManager *pm, ModelRenderer *mr) {
 	assertGl();
 }
 
+GLMatrix buildRotationMatrix(float angle, Vec3f axis) {
+	float sinTheta = sinf(angle);
+	float cosTheta = cosf(angle);
+	float oneMinusCosTheta = 1.f - cosTheta;
+	GLMatrix result(true);
+	result(0, 0) = cosTheta + axis.x * axis.x * oneMinusCosTheta;
+	result(0, 1) = axis.x * axis.y * oneMinusCosTheta - axis.z * sinTheta;
+	result(0, 2) = axis.x * axis.z * oneMinusCosTheta + axis.y * sinTheta;
+	result(1, 0) = axis.x * axis.y * oneMinusCosTheta + axis.z * sinTheta;
+	result(1, 1) = cosTheta + axis.y * axis.y * oneMinusCosTheta;
+	result(1, 2) = axis.y * axis.z * oneMinusCosTheta - axis.x * sinTheta;
+	result(2, 0) = axis.x * axis.z * oneMinusCosTheta - axis.y * sinTheta;
+	result(2, 1) = axis.y * axis.z * oneMinusCosTheta + axis.x * sinTheta;
+	result(2, 2) = cosTheta + axis.z * axis.z * oneMinusCosTheta;
+	return result;
+}
+
 void ParticleRendererGl::renderSystem(ParticleSystem *ps) {
 	assertGl();
 	assert(rendering);
@@ -118,6 +135,9 @@ void ParticleRendererGl::renderSystem(ParticleSystem *ps) {
 	glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
 	rightVector = Vec3f(modelview[0], modelview[4], modelview[8]);
 	upVector = Vec3f(modelview[1], modelview[5], modelview[9]);
+
+	Vec3f rotAxis = rightVector.cross(upVector);
+	rotAxis.normalize();
 
 	// set state
 	if (ps->getTexture() != NULL) {
@@ -140,12 +160,20 @@ void ParticleRendererGl::renderSystem(ParticleSystem *ps) {
 		float size = particle->getSize() * 0.5f;
 		Vec3f pos = particle->getPos();
 		Vec4f color = particle->getColor();
-
-		vertexBuffer[bufferIndex] = pos - (rightVector - upVector) * size;
-		vertexBuffer[bufferIndex+1] = pos - (rightVector + upVector) * size;
-		vertexBuffer[bufferIndex+2] = pos + (rightVector - upVector) * size;
-		vertexBuffer[bufferIndex+3] = pos + (rightVector + upVector) * size;
-
+		if (particle->getAngle() != 0.f) {
+			GLMatrix rotMat = buildRotationMatrix(particle->getAngle(), rotAxis);
+			Vec3f myRightVec = rotMat * rightVector;
+			Vec3f myUpVec = rotMat * upVector;
+			vertexBuffer[bufferIndex] = pos - (myRightVec - myUpVec) * size;
+			vertexBuffer[bufferIndex+1] = pos - (myRightVec + myUpVec) * size;
+			vertexBuffer[bufferIndex+2] = pos + (myRightVec - myUpVec) * size;
+			vertexBuffer[bufferIndex+3] = pos + (myRightVec + myUpVec) * size;
+		} else {
+			vertexBuffer[bufferIndex] = pos - (rightVector - upVector) * size;
+			vertexBuffer[bufferIndex+1] = pos - (rightVector + upVector) * size;
+			vertexBuffer[bufferIndex+2] = pos + (rightVector - upVector) * size;
+			vertexBuffer[bufferIndex+3] = pos + (rightVector + upVector) * size;
+		}
 		colorBuffer[bufferIndex] = color;
 		colorBuffer[bufferIndex+1] = color;
 		colorBuffer[bufferIndex+2] = color;

@@ -149,8 +149,13 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 	// energy
 	energyVar = particleSystemNode->getChildIntValue("energy-var");
 
+	radialVelocity = particleSystemNode->getOptionalFloatValue("radial-velocity", 0.f);
+	radialVelocityVar = particleSystemNode->getOptionalFloatValue("radial-velocity-var", 0.f);
+
 	// draw count
 	drawCount = particleSystemNode->getOptionalIntValue("draw-count", 1);
+
+	overwriteOld = particleSystemNode->getOptionalBoolValue("overwrite-old", true);
 
 	//inner size
 	//innerSize = particleSystemNode->getChildFloatValue("inner-size");

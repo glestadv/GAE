@@ -101,26 +101,29 @@ STRINGY_ENUM( ParticleUse,
 class Particle {
 public:
 	//attributes
-	Vec3f pos;		// 12 bytes
-	Vec3f lastPos;	// 12 bytes
-	Vec3f speed;	// 12 bytes
-	Vec3f accel;	// 12 bytes
-	Vec4f color;	// 16 bytes // belongs in (or already is in) owner system's proto-type ?
-	Vec4f color2;	// 16 bytes // belongs in (or already is in) owner system's proto-type ?
-	float size;		// 4 bytes
-	int energy;		// 4 bytes
-					// 88 bytes
-
+	Vec3f pos;			// 12 bytes
+	Vec3f lastPos;		// 12 bytes
+	Vec3f speed;		// 12 bytes
+	Vec3f accel;		// 12 bytes
+	Vec4f color;		// 16 bytes // belongs in (or already is in) owner system's proto-type ?
+	Vec4f color2;		// 16 bytes // belongs in (or already is in) owner system's proto-type ?
+	float size;			// 4 bytes
+	float angle;		// 4 bytes
+	float angularVel;	// 4 bytes
+	int energy;			// 4 bytes
+						// 96 (64 + 32)
 public:
 	//get
-	Vec3f getPos() const		{return pos;}
-	Vec3f getLastPos() const	{return lastPos;}
-	Vec3f getSpeed() const		{return speed;}
-	Vec3f getAccel() const		{return accel;}
-	Vec4f getColor() const		{return color;}
-	Vec4f getColor2() const		{return color2;}
-	float getSize() const		{return size;}
-	int getEnergy()	const		{return energy;}
+	Vec3f getPos() const				{return pos;}
+	Vec3f getLastPos() const			{return lastPos;}
+	Vec3f getSpeed() const				{return speed;}
+	Vec3f getAccel() const				{return accel;}
+	Vec4f getColor() const				{return color;}
+	Vec4f getColor2() const				{return color2;}
+	float getSize() const				{return size;}
+	float getAngle() const				{return angle;}
+	float getAnglularVelocity() const	{return angularVel;}
+	int getEnergy()	const				{return energy;}
 
 	MEMORY_CHECK_DECLARATIONS(Particle);
 };
@@ -155,11 +158,17 @@ protected:
 	
 	float emissionRate;
 	float emissionRateRemainder;
+
+	bool overwriteOld;
+
 	int energy;
 	int energyVar;
 	
 	float radius;
 	int drawCount;
+
+	float radialVelocity;
+	float radialVelocityVar;
 
 	Texture *texture;	// belongs only in proto-type
 	Model *model;		// belongs only in proto-type
@@ -189,6 +198,8 @@ public:
 	float getEmissionRate() const						{return emissionRate;}
 	int getEnergy() const								{return energy;}
 	int getEnergyVar() const							{return energyVar;}
+	float getRadialVelocty() const						{return radialVelocity;}
+	float getRadialVeloctyVar() const					{return radialVelocityVar;}
 	float getRadius() const								{return radius;}
 	int getDrawCount() const							{return drawCount;}
 
@@ -214,7 +225,13 @@ public:
 	void setRadius(float v)								{radius = v;}
 	void setDrawCount(int v)							{drawCount = v;}
 
-	int getRandEnergy() 				{return energy + random.randRange(-energyVar, energyVar);}
+	int getRandEnergy()            { return energy + random.randRange(-energyVar, energyVar); }
+	bool hasAngularVelocity() const { return radialVelocity != 0.f; }
+	float getRandAngularVelocity() { 
+		float abs = radialVelocity + random.randRange(-radialVelocityVar, radialVelocityVar);
+		return (random.rand() % 2 == 0) ? -abs : abs;
+	}
+	float getRandAngle()           { return radialVelocity == 0.f ? 0.f : random.randRange(0.f, 2 * Math::pi); }
 
 	virtual bool isProjectile() const	{ return false; }
 };
