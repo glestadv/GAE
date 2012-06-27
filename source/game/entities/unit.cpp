@@ -114,7 +114,6 @@ Unit::Unit(CreateParams params)
 		, hp(1)
 		, ep(0)
 		, loadCount(0)
-		, deadCount(0)
 		, lastAnimReset(0)
 		, nextAnimReset(-1)
 		, lastCommandUpdate(0)
@@ -143,8 +142,6 @@ Unit::Unit(CreateParams params)
 		, type(params.type)
 		, loadType(0)
 		, currSkill(0)
-		, toBeUndertaken(false)
-		, carried(false)
 		, m_cloaked(false)
 		, m_cloaking(false)
 		, m_deCloaking(false)
@@ -173,8 +170,7 @@ Unit::Unit(CreateParams params)
 Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld)
 		: targetRef(params.node->getOptionalIntValue("targetRef", -1))
 		, effects(params.node->getChild("effects"))
-		, effectsCreated(params.node->getChild("effectsCreated"))
-        , carried(false) {
+		, effectsCreated(params.node->getChild("effectsCreated")) {
 	const XmlNode *node = params.node;
 	this->faction = params.faction;
 	this->map = params.map;
@@ -185,7 +181,6 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	//hp loaded after recalculateStats()
 	ep = node->getChildIntValue("ep");
 	loadCount = node->getChildIntValue("loadCount");
-	deadCount = node->getChildIntValue("deadCount");
 	kills = node->getChildIntValue("kills");
 	type = faction->getType()->getUnitType(node->getChildStringValue("type"));
 
@@ -217,7 +212,6 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	lastAnimReset = node->getChildIntValue("lastAnimReset");
 
 	highlight = node->getChildFloatValue("highlight");
-	toBeUndertaken = node->getChildBoolValue("toBeUndertaken");
 
 	m_cloaked = node->getChildBoolValue("cloaked");
 	m_cloaking = node->getChildBoolValue("cloaking");
@@ -270,13 +264,10 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 		m_unitsToUnload.push_back(n->getChildIntValue("unit", i));
 	}
 	m_carrier = node->getChildIntValue("unit-carrier");
-	if (m_carrier != -1) {
-		carried = true;
-	}
-
+	
 	faction->add(this);
 	if (hp) {
-		if (!carried) {
+		if (m_carrier == -1) {
 			map->putUnitCells(this, pos);
 			meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
 		}
@@ -308,7 +299,6 @@ void Unit::save(XmlNode *node) const {
 	node->addChild("hp", hp);
 	node->addChild("ep", ep);
 	node->addChild("loadCount", loadCount);
-	node->addChild("deadCount", deadCount);
 	node->addChild("nextCommandUpdate", nextCommandUpdate);
 	node->addChild("lastCommandUpdate", lastCommandUpdate);
 	node->addChild("nextAnimReset", nextAnimReset);
@@ -334,7 +324,6 @@ void Unit::save(XmlNode *node) const {
 	node->addChild("loadType", loadType ? loadType->getName() : "null_value");
 	node->addChild("currSkill", currSkill ? currSkill->getName() : "null_value");
 
-	node->addChild("toBeUndertaken", toBeUndertaken);
 	node->addChild("cloaked", m_cloaked);
 	node->addChild("cloaking", m_cloaking);
 	node->addChild("de-cloaking", m_deCloaking);
@@ -1213,7 +1202,7 @@ void Unit::kill() {
 
 	clearCommands();
 	setCurrSkill(SkillClass::DIE);
-	deadCount = Random(id).randRange(-256, 256); // random decay time
+	progress2 = Random(id).randRange(-256, 256); // random decay time
 
 	//REFACTOR use signal, send this to World/Cartographer/SimInterface
 	world.getCartographer()->removeUnitVisibility(this);
@@ -1717,21 +1706,21 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 		}
 	}
 
-	if (!carried) {
-	// update particle system location/orientation
-	if (fire && moved) {
-		fire->setPos(getCurrVector());
-	}
-	if (moved || rotated) {
-		foreach (UnitParticleSystems, it, skillParticleSystems) {
-			if (moved) (*it)->setPos(getCurrVector());
-			if (rotated) (*it)->setRotation(getRotation());
+	if (!isCarried()) {
+		// update particle system location/orientation
+		if (fire && moved) {
+			fire->setPos(getCurrVector());
 		}
-		foreach (UnitParticleSystems, it, effectParticleSystems) {
-			if (moved) (*it)->setPos(getCurrVector());
-			if (rotated) (*it)->setRotation(getRotation());
+		if (moved || rotated) {
+			foreach (UnitParticleSystems, it, skillParticleSystems) {
+				if (moved) (*it)->setPos(getCurrVector());
+				if (rotated) (*it)->setRotation(getRotation());
+			}
+			foreach (UnitParticleSystems, it, effectParticleSystems) {
+				if (moved) (*it)->setPos(getCurrVector());
+				if (rotated) (*it)->setRotation(getRotation());
+			}
 		}
-	}
 	}
 	// check for cycle completion
 	// '>=' because nextCommandUpdate can be < frameCount if unit is dead
@@ -1740,10 +1729,7 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 		if (currSkill->getClass() != SkillClass::DIE) {
 			return true;
 		} else {
-			++deadCount;
-			if (deadCount >= GameConstants::maxDeadCount) {
-				toBeUndertaken = true;
-			}
+			++progress2;
 		}
 	}
 	return false;

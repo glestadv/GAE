@@ -1625,6 +1625,9 @@ void CastSpellCommandType::update(Unit *unit) const {
 			unit->finishCommand();
 			unit->setCurrSkill(SkillClass::STOP);
 		} else {
+			
+			// check range...
+
 			unit->setTarget(command->getUnit());
 			unit->setCurrSkill(m_castSpellSkillType);
 		}
