@@ -302,6 +302,25 @@ void UnitParticleSystemType::load(const XmlNode *particleSystemNode, const strin
 		if (mode == "black") {
 			setDestBlendFactor(BlendFactor::ONE_MINUS_SRC_ALPHA);
 		}
+
+		// emitter path
+		const XmlNode *pathNode = particleSystemNode->getOptionalChild("emitter-path");
+		if (pathNode) {
+			string ps = pathNode->getAttribute("type")->getRestrictedValue();
+			emitterType = EmitterPathTypeNames.match(ps.c_str());
+			if (emitterType == EmitterPathType::INVALID) {
+				throw runtime_error("'" + ps + "' is not a valid Emitter Path Type");
+			}
+			if (emitterType == EmitterPathType::ORBIT) {
+				emitterAxis = pathNode->getChildVec3fValue("axis");
+				emitterAxis.normalize();
+				emitterDistance = pathNode->getChildFloatValue("distance");
+				emitterSpeed = pathNode->getChildFloatValue("speed");
+			}
+		} else {
+			emitterType = EmitterPathType::NONE;
+		}
+
 	} catch (const std::exception &e) {
 		throw runtime_error("Error loading ParticleSystem: "+ path + "\n" +e.what());
 	}

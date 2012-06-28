@@ -250,6 +250,9 @@ private:
 	bool fixed;
 	float rotation;
 
+	float theta;
+	float lastThetaDelta;
+
 	const UnitParticleSystemType *type;
 
 public:

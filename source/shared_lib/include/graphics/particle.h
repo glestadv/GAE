@@ -86,6 +86,11 @@ STRINGY_ENUM( ProjectileStart,
 	SKY
 );
 
+STRINGY_ENUM( EmitterPathType,
+	NONE,
+	ORBIT
+);
+
 STRINGY_ENUM( ParticleUse,
 	WEATHER,
 	FIRE,

@@ -102,6 +102,11 @@ protected:
 
 	int maxParticles;
 
+	EmitterPathType emitterType;
+	Vec3f emitterAxis;
+	float emitterDistance;
+	float emitterSpeed;
+
 public:
 	UnitParticleSystemType();
 	void load(const XmlNode *particleSystemNode, const string &dir);
@@ -114,6 +119,11 @@ public:
 
 	bool hasTeamColorEnergy() const { return teamColorEnergy; }
 	bool hasTeamColorNoEnergy() const { return teamColorNoEnergy; }
+
+	EmitterPathType getEmitterType() const { return emitterType; }
+	Vec3f getEmitterAxis() const { return emitterAxis; }
+	float getEmitterDistance() const { return emitterDistance; }
+	float getEmitterSpeed() const { return emitterSpeed; }
 
 	UnitParticleSystem* createUnitParticleSystem(bool vis) const {
 		return new UnitParticleSystem(vis, *this, maxParticles);

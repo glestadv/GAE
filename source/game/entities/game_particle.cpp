@@ -431,6 +431,14 @@ UnitParticleSystem::UnitParticleSystem(bool visible, const UnitParticleSystemTyp
 
 	varParticleEnergy = protoType.getEnergyVar();
 	maxParticleEnergy = protoType.getEnergy();
+	
+	if (type->getEmitterType() == EmitterPathType::ORBIT) {
+		theta = random.randRange(0.f, Math::twopi);
+		lastThetaDelta = 0.f;
+	} else {
+		theta = 0.f;
+		lastThetaDelta = 0.f;
+	}
 }
 
 UnitParticleSystem::~UnitParticleSystem() {
@@ -450,6 +458,18 @@ void UnitParticleSystem::render(ParticleRenderer *pr, ModelRenderer *mr) {
 	}
 }
 
+}}
+
+namespace Shared { namespace Graphics { namespace Gl {
+
+extern GLMatrix buildRotationMatrix(float angle, Vec3f axis);
+
+}}}
+
+namespace Glest { namespace Entities {
+
+using namespace Shared::Graphics::Gl;
+
 void UnitParticleSystem::initParticle(Particle *p, int particleIndex) {
 	ParticleSystem::initParticle(p, particleIndex);
 
@@ -468,34 +488,41 @@ void UnitParticleSystem::initParticle(Particle *p, int particleIndex) {
 	oldPos = pos;
 	p->size = size;
 
-	p->speed = Vec3f(
-				direction.x + direction.x * random.randRange(-0.5f, 0.5f),
-				direction.y + direction.y * random.randRange(-0.5f, 0.5f),
-				direction.z + direction.z * random.randRange(-0.5f, 0.5f)
-	);
+	p->speed.x = direction.x + direction.x * random.randRange(-0.5f, 0.5f);
+	p->speed.y = direction.y + direction.y * random.randRange(-0.5f, 0.5f);
+	p->speed.z = direction.z + direction.z * random.randRange(-0.5f, 0.5f);
+
 	p->speed = p->speed * speed;
 	p->accel = Vec3f(0.0f, -gravity, 0.0f);
 
 	if (!relative) {
-		p->pos = Vec3f(
-			pos.x + x + offset.x, 
-			pos.y + random.randRange(-radius / 2.f, radius / 2.f) + offset.y, 
-			pos.z + y + offset.z
-		);
+		p->pos += Vec3f(x + offset.x, random.randRange(-radius / 2.f, radius / 2.f) + offset.y, y + offset.z);
 	} else { // rotate it according to rotation
-		float rad = degToRad(rotation);
-		p->pos = Vec3f(
-				pos.x + x + offset.z * sinf(rad) + offset.x * cosf(rad),
-				pos.y + random.randRange(-radius / 2, radius / 2) + offset.y, 
-				pos.z + y + (offset.z * cosf(rad) - offset.x * sinf(rad))
-		); 
+		const float rad = degToRad(rotation);
+		const float sinRad = sinf(rad);
+		const float cosRad = cosf(rad);
+		p->pos.x += x + offset.z * sinRad + offset.x * cosRad;
+		p->pos.y += random.randRange(-radius / 2, radius / 2) + offset.y;
+		p->pos.z += y + (offset.z * cosRad - offset.x * sinRad);
 		if (relativeDirection) {
-			p->speed = Vec3f(
-				p->speed.z * sinf(rad) + p->speed.x * cosf(rad), 
-				p->speed.y, 
-				(p->speed.z * cosf(rad) - p->speed.x * sinf(rad))
-			);
+			p->speed.x = p->speed.z * sinRad + p->speed.x * cosRad;
+			p->speed.z = p->speed.z * cosRad - p->speed.x * sinRad;
 		}
+	}
+	if (type->getEmitterType() == EmitterPathType::ORBIT) {
+		Vec3f axis = type->getEmitterAxis();
+		// spread out from last update theta to current
+		float myTheta = (lastThetaDelta != 0.f) ? theta - random.randRange(0.f, lastThetaDelta): theta;
+		Vec3f perpendicularAxis; // find perpendicular axis
+		if (axis.x == 0.f && axis.y == 0.f) { // special case for <0, 0, 1>
+			perpendicularAxis = Vec3f(1.f, 0.f, 0.f);
+		} else { // else chose arbitrary perpendicular <y, -x, 0> and normalise
+			perpendicularAxis = Vec3f(axis.y, -axis.x, 0.f);
+			perpendicularAxis.normalize();
+		}
+		GLMatrix rotationMatrix = buildRotationMatrix(myTheta, axis);
+		// translate d units along perpendicular axis and rotate, add offset to particle pos
+		p->pos += rotationMatrix * (perpendicularAxis * type->getEmitterDistance());
 	}
 }
 
@@ -506,6 +533,13 @@ void UnitParticleSystem::update() {
 	}
 	ParticleSystem::update();
 	checkVisibilty(ParticleUse::UNIT);
+	
+	//theta
+	if (type->getEmitterType() == EmitterPathType::ORBIT) {
+		const float dt = 1.f / 40.f;
+		lastThetaDelta = type->getEmitterSpeed() * dt;
+		theta = fmodf(theta + lastThetaDelta, Math::twopi);
+	}
 }
 
 void UnitParticleSystem::updateParticle(Particle *p) {

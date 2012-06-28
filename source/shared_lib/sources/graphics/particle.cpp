@@ -44,7 +44,7 @@ MEMORY_CHECK_IMPLEMENTATION(Particle)
 // =====================================================
 
 ParticleSystemBase::ParticleSystemBase()
-		: random(0)
+		: random(int(Chrono::getCurMillis()))
 		, srcBlendFactor(BlendFactor::SRC_ALPHA)
 		, destBlendFactor(BlendFactor::ONE)
 		, blendEquationMode(BlendMode::FUNC_ADD)
@@ -74,7 +74,7 @@ ParticleSystemBase::ParticleSystemBase()
 }
 
 ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &protoType)
-		: random(0)
+		: random(int(Chrono::getCurMillis()))
 		, srcBlendFactor(protoType.srcBlendFactor)
 		, destBlendFactor(protoType.destBlendFactor)
 		, blendEquationMode(protoType.blendEquationMode)
