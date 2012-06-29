@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 5, 0),
+	"version": (0, 5, 1),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
@@ -666,8 +666,8 @@ class G3DPanel(bpy.types.Panel):
 		return (context.object is not None and context.object.type == 'MESH')
 
 	def draw(self, context):
-		self.layout.label("use Double Sided in Normals panel")
 		self.layout.prop(context.object.data, "g3d_customColor", text="team color")
+		self.layout.prop(context.object.data, "show_double_sided", text="double sided")
 		self.layout.prop(context.object.data, "g3d_noSelect", text="non-selectable")
 
 class ImportG3D(bpy.types.Operator, ImportHelper):
