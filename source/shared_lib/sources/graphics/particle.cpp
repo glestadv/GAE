@@ -57,7 +57,9 @@ ParticleSystemBase::ParticleSystemBase()
 		, teamColorEnergy(false)
 		, teamColorNoEnergy(false)
 		, size(1.f)
+		, sizeVar(0.f)
 		, sizeNoEnergy(1.f)
+		, sizeNoEnergyVar(0.f)
 		, speed(1.f)
 		, gravity(0.f)
 		, emissionRate(15.f)
@@ -88,7 +90,9 @@ ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &protoType)
 		, teamColorEnergy(protoType.teamColorEnergy)
 		, teamColorNoEnergy(protoType.teamColorNoEnergy)
 		, size(protoType.size)
+		, sizeVar(protoType.sizeVar)
 		, sizeNoEnergy(protoType.sizeNoEnergy)
+		, sizeNoEnergyVar(protoType.sizeNoEnergyVar)
 		, speed(protoType.speed)
 		, gravity(protoType.gravity)
 		, emissionRate(protoType.emissionRate)
@@ -249,11 +253,11 @@ Particle *ParticleSystem::createParticle() {
 	}
 
 	if (overwriteOld) {
-		int minEnergy = particles[0].energy;
+		int minEnergy = particles[0].energy.current;
 		int minEnergyParticle = 0;
 		for (int i = 0; i < particleCount; ++i) {
-			if (particles[i].energy < minEnergy) {
-				minEnergy = particles[i].energy;
+			if (particles[i].energy.current < minEnergy) {
+				minEnergy = particles[i].energy.current;
 				minEnergyParticle = i;
 			}
 		}
@@ -269,14 +273,16 @@ void ParticleSystem::initParticle(Particle *p, int particleIndex) {
 	p->accel = Vec3f(0.0f);
 	p->color = getColor();
 	p->color2 = getColor2();
-	p->size = getSize();
-	p->energy = getRandEnergy();
+	p->energy.start = p->energy.current = getRandEnergy();
+	p->size.value = getRandomStartSize();
+	float totalStep = getRandomEndSize() - p->size.value;
+	p->size.step = totalStep / float(p->energy.current);
+	
 	if (hasAngularVelocity()) {
-		p->angle = getRandAngle();
-		p->angularVel = getRandAngularVelocity();
+		p->angle.value = getRandAngle();
+		p->angle.step = getRandAngularVelocity() * (1.f / 40.f);
 	} else {
-		p->angle = 0.f;
-		p->angularVel = 0.f;
+		p->angle.value = p->angle.step = 0.f;
 	}
 	p->texture = getNumTextures() > 1 ? random.randRange(0, getNumTextures() - 1) : 0;
 }
@@ -285,10 +291,11 @@ void ParticleSystem::updateParticle(Particle *p) {
 	p->lastPos = p->pos;
 	p->pos = p->pos + p->speed;
 	p->speed = p->speed + p->accel;
+	p->size.value += p->size.step;
 	if (hasAngularVelocity()) {
-		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
 	}
-	p->energy--;
+	p->energy.current--;
 }
 
 // ===========================================================================
@@ -316,7 +323,7 @@ void RainParticleSystem::initParticle(Particle *p, int particleIndex) {
 
 	p->color = color;
 	p->color2 = color2;
-	p->energy = 10000;
+	p->energy.current = p->energy.start = 10000;
 	p->pos = Vec3f(pos.x + x, pos.y, pos.z + y);
 	p->lastPos = p->pos;
 	p->speed = Vec3f(random.randRange(-speed / 10, speed / 10), -speed,
@@ -351,7 +358,7 @@ void SnowParticleSystem::initParticle(Particle *p, int particleIndex) {
 	float y = random.randRange(-radius, radius);
 
 	p->color = color;
-	p->energy = 10000;
+	p->energy.current = p->energy.start = 10000;
 	p->pos = Vec3f(pos.x + x, pos.y, pos.z + y);
 	p->speed = Vec3f(0.0f, -speed, 0.0f) + windSpeed;
 	p->speed.x += random.randRange(-0.005f, 0.005f);

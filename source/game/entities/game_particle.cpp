@@ -74,6 +74,9 @@ FireParticleSystem::FireParticleSystem(const Unit *unit, bool visible, int parti
 	setTexture(0, g_coreData.getFireTexture1());
 	setTexture(1, g_coreData.getFireTexture2());
 	setSize(unit->getType()->getSize() / 2.f);
+	setSizeVar(0.33f);
+	setSizeNoEnergyVar(unit->getType()->getSize() / 4.f);
+	setSizeNoEnergyVar(0.2f);
 	float emit = unit->getType()->getSize() >= 4 ? unit->getType()->getSize() / 5.f * 35.f : unit->getType()->getSize() / 5.f * 5.f;
 	emit = clamp(emit, 5.f, 35.f);
 	setEmissionRate(emit);
@@ -95,21 +98,23 @@ void FireParticleSystem::initParticle(Particle *p, int particleIndex) {
 	Vec4f halfColorNoEnergy = colorNoEnergy * 0.5f;
 
 	p->color = halfColorNoEnergy + halfColorNoEnergy * radRatio;
-	p->energy = int(energy * radRatio) + random.randRange(-energyVar, energyVar);
+	p->energy.current = p->energy.start = int(energy * radRatio) + random.randRange(-energyVar, energyVar);
 	float halfRadius = radius * 0.5f;
 	p->pos = Vec3f(pos.x + x, pos.y + random.randRange(-halfRadius, halfRadius), pos.z + y);
 	p->lastPos = pos;
-	p->size = size;
+	p->size.value = getRandomStartSize();
+	float totalStep = getRandomEndSize() - p->size.value;
+	p->size.step = totalStep / float(p->energy.current);
 	p->speed = Vec3f(speed * random.randRange(-0.125f, 0.125f), speed * random.randRange(0.5f, 1.5f),
 			speed * random.randRange(-0.125f, 0.125f));
-	p->angularVel = (random.rand() % 2 ? -1.f : +1.f) * random.randRange(Math::pi, Math::twopi);
+	p->angle.step = (random.rand() % 2 ? -1.f : +1.f) * random.randRange(Math::pi, Math::twopi) * (1.f / 40.f);
 	p->texture = getNumTextures() > 1 ? random.randRange(0, getNumTextures() - 1) : 0;
 }
 
 void FireParticleSystem::updateParticle(Particle *p) {
 	p->lastPos = p->pos;
 	p->pos = p->pos+p->speed;
-	p->energy--;
+	p->energy.current--;
 
 	if(p->color.r > 0.0f)
 		p->color.r *= 0.98f;
@@ -119,7 +124,8 @@ void FireParticleSystem::updateParticle(Particle *p) {
 		p->color.a *= 0.96f;
 
 	p->speed.x *= 1.001f; // wind
-	p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+
+	p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
 }
 
 // ===========================================================================
@@ -300,18 +306,18 @@ void Projectile::initParticle(Particle *p, int particleIndex) {
 }
 
 void Projectile::updateParticle(Particle *p) {
-	float energyRatio = clamp(float(p->energy) / energy, 0.f, 1.f);
+	float energyRatio = p->getEnergyRatio();//clamp(float(p->energy) / energy, 0.f, 1.f);
 
 	p->lastPos += p->speed;
 	p->pos += p->speed;
 	p->speed += p->accel;
 	p->color = color * energyRatio + colorNoEnergy * (1.0f - energyRatio);
 	p->color2 = color2 * energyRatio + color2NoEnergy * (1.0f - energyRatio);
-	p->size = size * energyRatio + sizeNoEnergy * (1.0f - energyRatio);
+	p->size.value += p->size.step;
 	if (hasAngularVelocity()) {
-		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
 	}
-	p->energy--;
+	p->energy.current--;
 }
 
 void Projectile::setPath(Vec3f startPos, Vec3f endPos, int frames) {
@@ -391,8 +397,10 @@ void Splash::update() {
 void Splash::initParticle(Particle *p, int particleIndex) {
 	p->pos = pos;
 	p->lastPos = p->pos;
-	p->energy = energy;
-	p->size = size;
+	p->energy.current = p->energy.start = energy;
+	p->size.value = getRandomStartSize();
+	float totalStep = getRandomEndSize() - p->size.value;
+	p->size.step = totalStep / float(p->energy.current);
 	p->color = color;
 	p->speed = Vec3f(
 			horizontalSpreadA * random.randRange(-1.0f, 1.0f) + horizontalSpreadB,
@@ -405,16 +413,16 @@ void Splash::initParticle(Particle *p, int particleIndex) {
 }
 
 void Splash::updateParticle(Particle *p) {
-	float energyRatio = clamp(static_cast<float>(p->energy) / energy, 0.f, 1.f);
+	float energyRatio = p->getEnergyRatio();//clamp(static_cast<float>(p->energy) / energy, 0.f, 1.f);
 
 	p->lastPos = p->pos;
 	p->pos = p->pos + p->speed;
 	p->speed = p->speed + p->accel;
-	p->energy--;
+	p->energy.current--;
 	p->color = color * energyRatio + colorNoEnergy * (1.0f - energyRatio);
-	p->size = size * energyRatio + sizeNoEnergy * (1.0f - energyRatio);
+	p->size.value += p->size.step;
 	if (hasAngularVelocity()) {
-		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
 	}
 }
 
@@ -490,11 +498,10 @@ void UnitParticleSystem::initParticle(Particle *p, int particleIndex) {
 	float radRatio = sqrtf(sqrtf(mod / radius));
 
 	p->color = color;
-	p->energy = int(maxParticleEnergy * radRatio) + random.randRange(-varParticleEnergy, varParticleEnergy);
+	p->energy.start = p->energy.current = int(maxParticleEnergy * radRatio) + random.randRange(-varParticleEnergy, varParticleEnergy);
 
 	p->lastPos = pos;
 	oldPos = pos;
-	p->size = size;
 
 	p->speed.x = direction.x + direction.x * random.randRange(-0.5f, 0.5f);
 	p->speed.y = direction.y + direction.y * random.randRange(-0.5f, 0.5f);
@@ -551,7 +558,7 @@ void UnitParticleSystem::update() {
 }
 
 void UnitParticleSystem::updateParticle(Particle *p) {
-	float energyRatio = clamp(float(p->energy) / maxParticleEnergy, 0.f, 1.f);
+	float energyRatio = p->getEnergyRatio();// clamp(float(p->energy) / maxParticleEnergy, 0.f, 1.f);
 
 	p->lastPos += p->speed;
 	p->pos += p->speed;
@@ -561,11 +568,11 @@ void UnitParticleSystem::updateParticle(Particle *p) {
 	}
 	p->speed += p->accel;
 	p->color = color * energyRatio + colorNoEnergy * (1.f - energyRatio);
-	p->size = size * energyRatio + sizeNoEnergy * (1.f - energyRatio);
+	p->size.value += p->size.step;
 	if (hasAngularVelocity()) {
-		p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
+		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
 	}
-	--p->energy;
+	--p->energy.current;
 }
 
 // ================= SET PARAMS ====================

@@ -101,6 +101,16 @@ STRINGY_ENUM( ParticleUse,
 
 const int MAX_PARTICLE_BUFFERS = 4;
 
+struct ValStep {
+	float value;
+	float step;
+};
+
+struct EnergyVec {
+	int start;
+	int current;
+};
+
 // =====================================================
 //	class Particle
 // =====================================================
@@ -108,33 +118,38 @@ const int MAX_PARTICLE_BUFFERS = 4;
 class Particle {
 public:
 	//attributes
-	Vec3f pos;			// 12 bytes
-	Vec3f lastPos;		// 12 bytes
-	Vec3f speed;		// 12 bytes
-	Vec3f accel;		// 12 bytes
-	Vec4f color;		// 16 bytes // belongs in (or already is in) owner system's proto-type ?
-	
-	Vec4f color2;		// 16 bytes // belongs in (or already is in) owner system's proto-type ?
+	Vec3f pos;			 // 12 bytes
+	Vec3f lastPos;		 // 12 bytes
+	Vec3f speed;		 // 12 bytes
+	Vec3f accel;		 // 12 bytes
+	                     // 48
 
-	float size;			// 4 bytes
-	float angle;		// 4 bytes
-	float angularVel;	// 4 bytes
-	int energy;			// 4 bytes
-						// 96 (64 + 32)
-	int texture;
+	EnergyVec energy;    // 8 bytes
+	ValStep size;        // 8 bytes
+	ValStep angle;       // 8 bytes
+	                     // 24
+
+	Vec4f color;		 // 16 bytes // belongs in (or already is in) owner system's proto-type ?
+	Vec4f color2;		 // 16 bytes // belongs in (or already is in) owner system's proto-type ? only used for line systems...
+	                     // 32
+
+	int texture;         // 4 bytes
+
+	                     // 108
 
 public:
 	//get
+	float getEnergyRatio() const        { return float(energy.current) / float(energy.start); }
 	Vec3f getPos() const				{return pos;}
 	Vec3f getLastPos() const			{return lastPos;}
 	Vec3f getSpeed() const				{return speed;}
 	Vec3f getAccel() const				{return accel;}
 	Vec4f getColor() const				{return color;}
 	Vec4f getColor2() const				{return color2;}
-	float getSize() const				{return size;}
-	float getAngle() const				{return angle;}
-	float getAnglularVelocity() const	{return angularVel;}
-	int getEnergy()	const				{return energy;}
+	float getSize() const				{return size.value;}
+	float getAngle() const				{return angle.value;}
+	float getAnglularVelocity() const	{return angle.step;}
+	int getEnergy()	const				{return energy.current;}
 
 	MEMORY_CHECK_DECLARATIONS(Particle);
 };
@@ -163,12 +178,12 @@ protected:
 	bool teamColorNoEnergy;
 
 	float size;                   // particle scale
-	//float sizeVar;                // particle scale variance
+	float sizeVar;                // particle scale variance
 	float sizeNoEnergy;           // particle scale at end of life
-	//float sizeNoEnergyVar;        // particle scale variance at end of life/
+	float sizeNoEnergyVar;        // particle scale variance at end of life
 
 	float speed;
-	float gravity;
+	float gravity; // Vec3f acceleration ?
 	
 	float emissionRate;
 	float emissionRateRemainder;
@@ -210,6 +225,8 @@ public:
 	const Vec4f &getColorNoEnergy() const				{return colorNoEnergy;}
 	const Vec4f &getColor2NoEnergy() const				{return color2NoEnergy;}
 	float getSize() const 								{return size;}
+	float getRandomStartSize() { return size + random.randRange(-sizeVar, sizeVar); }
+	float getRandomEndSize() {return sizeNoEnergy + random.randRange(-sizeNoEnergyVar, sizeNoEnergyVar);}
 	float getSizeNoEnergy() const						{return sizeNoEnergy;}
 	float getSpeed() const								{return speed;}
 	float getGravity() const							{return gravity;}
@@ -234,7 +251,9 @@ public:
 	void setColorNoEnergy(const Vec4f &v)				{colorNoEnergy = v;}
 	void setColor2NoEnergy(const Vec4f &v)				{color2NoEnergy = v;}
 	void setSize(float v)								{size = v;}
+	void setSizeVar(float v)							{sizeVar = v;}
 	void setSizeNoEnergy(float v)						{sizeNoEnergy = v;}
+	void setSizeNoEnergyVar(float v)					{sizeNoEnergyVar = v;}
 	void setSpeed(float v)								{speed = v;}
 	void setGravity(float v)							{gravity = v;}
 	void setEmissionRate(float v)						{emissionRate = v;}
@@ -349,7 +368,7 @@ protected:
 	//virtual protected
 	virtual void initParticle(Particle *p, int particleIndex);
 	virtual void updateParticle(Particle *p);
-	virtual bool deathTest(Particle *p)			{return p->energy <= 0;}
+	virtual bool deathTest(Particle *p)			{return p->energy.current <= 0;}
 };
 
 // =====================================================

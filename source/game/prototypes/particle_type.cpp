@@ -78,8 +78,7 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 			texture->load(dir + "/" + textureNode->getAttribute("path")->getRestrictedValue());
 			setTexture(i, texture);
 		}
-	} else {
-		// single texture
+	} else { // single texture
 		const XmlNode *textureNode = particleSystemNode->getChild("texture");
 		if (textureNode->getAttribute("value")->getBoolValue()) {
 			Texture2D *texture = renderer.newTexture2D(ResourceScope::GAME);
@@ -145,9 +144,11 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 
 	// size
 	size = particleSystemNode->getChildFloatValue("size");
+	sizeVar = particleSystemNode->getOptionalFloatValue("size-var", 0.f);
 
 	// sizeNoEnergy
 	sizeNoEnergy = particleSystemNode->getChildFloatValue("size-no-energy");
+	sizeNoEnergyVar = particleSystemNode->getOptionalFloatValue("size-no-energy-var", 0.f);
 
 	// speed
 	speed = particleSystemNode->getChildFloatValue("speed") / WORLD_FPS;
