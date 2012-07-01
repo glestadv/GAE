@@ -61,10 +61,12 @@ ParticleRendererGl::ParticleRendererGl() {
 
 	// init texture coordinates for quads
 	for (int i = 0; i < bufferSize; i += 4) {
-		texCoordBuffer[i] = Vec2f(0.0f, 1.0f);
-		texCoordBuffer[i+1] = Vec2f(0.0f, 0.0f);
-		texCoordBuffer[i+2] = Vec2f(1.0f, 0.0f);
-		texCoordBuffer[i+3] = Vec2f(1.0f, 1.0f);
+		for (int j=0; j < MAX_PARTICLE_BUFFERS; ++j) {
+			texCoordBuffer[j][i] = Vec2f(0.0f, 1.0f);
+			texCoordBuffer[j][i+1] = Vec2f(0.0f, 0.0f);
+			texCoordBuffer[j][i+2] = Vec2f(1.0f, 0.0f);
+			texCoordBuffer[j][i+3] = Vec2f(1.0f, 1.0f);
+		}
 	}
 }
 
@@ -140,11 +142,18 @@ void ParticleRendererGl::renderSystem(ParticleSystem *ps) {
 	rotAxis.normalize();
 
 	// set state
-	if (ps->getTexture() != NULL) {
-		glBindTexture(GL_TEXTURE_2D, static_cast<Texture2DGl*>(ps->getTexture())->getHandle());
+	memset(textures, 0, sizeof(int) * MAX_PARTICLE_BUFFERS);
+	for (int i=0; i < ps->getNumTextures(); ++i) {
+		textures[i] = static_cast<Texture2DGl*>(ps->getTexture(i));
+	}
+	if (ps->getNumTextures() == 1) {
+		lastTexture = textures[0]->getHandle();
+		glBindTexture(GL_TEXTURE_2D, textures[0]->getHandle());
 	} else {
+		lastTexture = 0;
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
+
 	glDisable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GREATER, 0.0f);
 	glEnable(GL_TEXTURE_2D);
@@ -153,10 +162,11 @@ void ParticleRendererGl::renderSystem(ParticleSystem *ps) {
 	glEnableClientState(GL_COLOR_ARRAY);
 
 	//fill vertex buffer with billboards
-	int bufferIndex = 0;
+	int bufferIndex[MAX_PARTICLE_BUFFERS] = { 0 };
 
 	for (int i = 0; i < ps->getAliveParticleCount(); ++i) {
 		const Particle *particle = ps->getParticle(i);
+		int tex = particle->texture;
 		float size = particle->getSize() * 0.5f;
 		Vec3f pos = particle->getPos();
 		Vec4f color = particle->getColor();
@@ -164,30 +174,33 @@ void ParticleRendererGl::renderSystem(ParticleSystem *ps) {
 			GLMatrix rotMat = buildRotationMatrix(particle->getAngle(), rotAxis);
 			Vec3f myRightVec = rotMat * rightVector;
 			Vec3f myUpVec = rotMat * upVector;
-			vertexBuffer[bufferIndex] = pos - (myRightVec - myUpVec) * size;
-			vertexBuffer[bufferIndex+1] = pos - (myRightVec + myUpVec) * size;
-			vertexBuffer[bufferIndex+2] = pos + (myRightVec - myUpVec) * size;
-			vertexBuffer[bufferIndex+3] = pos + (myRightVec + myUpVec) * size;
+			vertexBuffer[tex][bufferIndex[tex]] = pos - (myRightVec - myUpVec) * size;
+			vertexBuffer[tex][bufferIndex[tex]+1] = pos - (myRightVec + myUpVec) * size;
+			vertexBuffer[tex][bufferIndex[tex]+2] = pos + (myRightVec - myUpVec) * size;
+			vertexBuffer[tex][bufferIndex[tex]+3] = pos + (myRightVec + myUpVec) * size;
 		} else {
-			vertexBuffer[bufferIndex] = pos - (rightVector - upVector) * size;
-			vertexBuffer[bufferIndex+1] = pos - (rightVector + upVector) * size;
-			vertexBuffer[bufferIndex+2] = pos + (rightVector - upVector) * size;
-			vertexBuffer[bufferIndex+3] = pos + (rightVector + upVector) * size;
+			vertexBuffer[tex][bufferIndex[tex]] = pos - (rightVector - upVector) * size;
+			vertexBuffer[tex][bufferIndex[tex]+1] = pos - (rightVector + upVector) * size;
+			vertexBuffer[tex][bufferIndex[tex]+2] = pos + (rightVector - upVector) * size;
+			vertexBuffer[tex][bufferIndex[tex]+3] = pos + (rightVector + upVector) * size;
 		}
-		colorBuffer[bufferIndex] = color;
-		colorBuffer[bufferIndex+1] = color;
-		colorBuffer[bufferIndex+2] = color;
-		colorBuffer[bufferIndex+3] = color;
+		colorBuffer[tex][bufferIndex[tex]] = color;
+		colorBuffer[tex][bufferIndex[tex]+1] = color;
+		colorBuffer[tex][bufferIndex[tex]+2] = color;
+		colorBuffer[tex][bufferIndex[tex]+3] = color;
 
-		bufferIndex += 4;
+		bufferIndex[tex] += 4;
 
-		if (bufferIndex >= bufferSize) {
-			bufferIndex = 0;
-			renderBufferQuads(bufferSize);
+		if (bufferIndex[tex] >= bufferSize) {
+			bufferIndex[tex] = 0;
+			renderBufferQuads(bufferSize, tex);
 		}
 	}
-	renderBufferQuads(bufferIndex);
-
+	for (int i=0; i < MAX_PARTICLE_BUFFERS; ++i) {
+		if (bufferIndex[i]) {
+			renderBufferQuads(bufferIndex[i], i);
+		}
+	}
 	assertGl();
 }
 
@@ -216,11 +229,11 @@ void ParticleRendererGl::renderSystemLine(ParticleSystem *ps) {
 		for (int i = 0; i < ps->getAliveParticleCount(); ++i) {
 			particle = ps->getParticle(i);
 
-			vertexBuffer[bufferIndex] = particle->getPos();
-			vertexBuffer[bufferIndex + 1] = particle->getLastPos();
+			vertexBuffer[0][bufferIndex] = particle->getPos();
+			vertexBuffer[0][bufferIndex + 1] = particle->getLastPos();
 
-			colorBuffer[bufferIndex] = particle->getColor();
-			colorBuffer[bufferIndex + 1] = particle->getColor2();
+			colorBuffer[0][bufferIndex] = particle->getColor();
+			colorBuffer[0][bufferIndex + 1] = particle->getColor2();
 
 			bufferIndex += 2;
 
@@ -275,17 +288,21 @@ void ParticleRendererGl::renderSingleModel(ParticleSystem *ps, ModelRenderer *mr
 
 // ============== PRIVATE =====================================
 
-void ParticleRendererGl::renderBufferQuads(int quadCount) {
-	glVertexPointer(3, GL_FLOAT, 0, vertexBuffer);
-	glTexCoordPointer(2, GL_FLOAT, 0, texCoordBuffer);
-	glColorPointer(4, GL_FLOAT, 0, colorBuffer);
+void ParticleRendererGl::renderBufferQuads(int quadCount, int buffer) {
+	if (lastTexture != textures[buffer]->getHandle()) {
+		lastTexture = textures[buffer]->getHandle();
+		glBindTexture(GL_TEXTURE_2D, lastTexture);
+	}
+	glVertexPointer(3, GL_FLOAT, 0, vertexBuffer[buffer]);
+	glTexCoordPointer(2, GL_FLOAT, 0, texCoordBuffer[buffer]);
+	glColorPointer(4, GL_FLOAT, 0, colorBuffer[buffer]);
 
 	glDrawArrays(GL_QUADS, 0, quadCount);
 }
 
 void ParticleRendererGl::renderBufferLines(int lineCount) {
-	glVertexPointer(3, GL_FLOAT, 0, vertexBuffer);
-	glColorPointer(4, GL_FLOAT, 0, colorBuffer);
+	glVertexPointer(3, GL_FLOAT, 0, vertexBuffer[0]);
+	glColorPointer(4, GL_FLOAT, 0, colorBuffer[0]);
 
 	glDrawArrays(GL_LINES, 0, lineCount);
 }

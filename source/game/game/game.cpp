@@ -230,7 +230,7 @@ void GameState::init() {
 		weatherParticleSystem= new SnowParticleSystem(1200);
 		weatherParticleSystem->setSpeed(1.5f / WORLD_FPS);
 		weatherParticleSystem->setPos(gameCamera.getPos());
-		weatherParticleSystem->setTexture(g_coreData.getSnowTexture());
+		weatherParticleSystem->setTexture(0, g_coreData.getSnowTexture());
 		g_renderer.manageParticleSystem(weatherParticleSystem, ResourceScope::GAME);
 	}
 

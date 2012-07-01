@@ -557,14 +557,23 @@ void Unit::startSkillParticleSystems() {
 	bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
 	
 	for (unsigned i = 0; i < currSkill->getEyeCandySystemCount(); ++i) {
-		UnitParticleSystem *ups = currSkill->getEyeCandySystem(i)->createUnitParticleSystem(visible);
-		ups->setPos(getCurrVector());
-		ups->setRotation(getRotation());
-		skillParticleSystems.push_back(ups);
-		Colour c = faction->getColour();
-		Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
-		ups->setTeamColour(colour);
-		g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
+		const UnitParticleSystemType *upsType = currSkill->getEyeCandySystem(i);
+		bool start = true;
+		foreach (UnitParticleSystems, it, skillParticleSystems) {
+			if ((*it)->getType() == upsType) {
+				start = false;
+			}
+		}
+		if (start) {
+			UnitParticleSystem *ups = currSkill->getEyeCandySystem(i)->createUnitParticleSystem(visible);
+			ups->setPos(getCurrVector());
+			ups->setRotation(getRotation());
+			skillParticleSystems.push_back(ups);
+			Colour c = faction->getColour();
+			Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
+			ups->setTeamColour(colour);
+			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
+		}
 	}
 }
 
@@ -1917,19 +1926,12 @@ bool Unit::decHp(int i) {
 
 	// fire
 	if (type->getProperty(Property::BURNABLE) && hp < type->getMaxHp() / 2
-	&& fire == NULL && m_carrier == -1) {
-		FireParticleSystem *fps;
+	&& fire == 0 && m_carrier == -1) {
 		Vec2i cPos = getCenteredPos();
 		Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
 		bool vis = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
-		fps = new FireParticleSystem(vis, 200);
-		fps->setSpeed(2.5f / g_config.getGsWorldUpdateFps());
-		fps->setPos(getCurrVector());
-		fps->setRadius(type->getSize() / 3.f);
-		fps->setTexture(g_coreData.getFireTexture());
-		fps->setSize(type->getSize() / 3.f);
-		fire = fps;
-		g_renderer.manageParticleSystem(fps, ResourceScope::GAME);
+		fire = new FireParticleSystem(this, vis, 600);
+		g_renderer.manageParticleSystem(fire, ResourceScope::GAME);
 	}
 
 	// stop fire on death

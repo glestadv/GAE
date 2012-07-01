@@ -81,7 +81,7 @@ public:
 
 class FireParticleSystem : public GameParticleSystem {
 public:
-	FireParticleSystem(bool visible, int particleCount = 2000);
+	FireParticleSystem(const Unit *unit, bool visible, int particleCount = 2000);
 
 	//virtual
 	virtual void update() override;

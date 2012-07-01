@@ -22,6 +22,7 @@
 #include "program.h"
 #include "sim_interface.h"
 #include "math_util.h"
+#include "core_data.h"
 
 namespace Glest { namespace Entities {
 using Sim::Tile;
@@ -63,12 +64,19 @@ void GameParticleSystem::checkVisibilty(ParticleUse use, bool log) {
 //  FireParticleSystem
 // ===========================================================================
 
-FireParticleSystem::FireParticleSystem(bool visible, int particleCount)
+FireParticleSystem::FireParticleSystem(const Unit *unit, bool visible, int particleCount)
 		: GameParticleSystem(ParticleUse::FIRE, visible, particleCount) {
-	setRadius(0.5f);
-	setSpeed(0.01f);
-	setSize(0.6f);
 	setColorNoEnergy(Vec4f(1.0f, 0.5f, 0.0f, 1.0f));
+
+	setSpeed(2.5f / float(GameConstants::updateFps));
+	setPos(unit->getCurrVector());
+	setRadius(unit->getType()->getSize() / 3.f);
+	setTexture(0, g_coreData.getFireTexture1());
+	setTexture(1, g_coreData.getFireTexture2());
+	setSize(unit->getType()->getSize() / 2.f);
+	float emit = unit->getType()->getSize() >= 4 ? unit->getType()->getSize() / 5.f * 35.f : unit->getType()->getSize() / 5.f * 5.f;
+	emit = clamp(emit, 5.f, 35.f);
+	setEmissionRate(emit);
 }
 
 void FireParticleSystem::update() {
@@ -92,11 +100,10 @@ void FireParticleSystem::initParticle(Particle *p, int particleIndex) {
 	p->pos = Vec3f(pos.x + x, pos.y + random.randRange(-halfRadius, halfRadius), pos.z + y);
 	p->lastPos = pos;
 	p->size = size;
-	p->speed = Vec3f(
-			speed * random.randRange(-0.125f, 0.125f),
-			speed * random.randRange(0.5f, 1.5f),
-			speed * random.randRange(-0.125f, 0.125f)
-	);
+	p->speed = Vec3f(speed * random.randRange(-0.125f, 0.125f), speed * random.randRange(0.5f, 1.5f),
+			speed * random.randRange(-0.125f, 0.125f));
+	p->angularVel = (random.rand() % 2 ? -1.f : +1.f) * random.randRange(Math::pi, Math::twopi);
+	p->texture = getNumTextures() > 1 ? random.randRange(0, getNumTextures() - 1) : 0;
 }
 
 void FireParticleSystem::updateParticle(Particle *p) {
@@ -109,7 +116,7 @@ void FireParticleSystem::updateParticle(Particle *p) {
 	if(p->color.g > 0.0f)
 		p->color.g *= 0.98f;
 	if(p->color.a > 0.0f)
-		p->color.a *= 0.98f;
+		p->color.a *= 0.96f;
 
 	p->speed.x *= 1.001f; // wind
 	p->angle = fmodf(p->angle + p->angularVel * (1.f / 40.f), Math::twopi);
@@ -394,6 +401,7 @@ void Splash::initParticle(Particle *p, int particleIndex) {
 	p->speed.normalize();
 	p->speed = p->speed * speed;
 	p->accel = Vec3f(0.0f, -gravity, 0.0f);
+	p->texture = getNumTextures() > 1 ? random.randRange(0, getNumTextures() - 1) : 0;
 }
 
 void Splash::updateParticle(Particle *p) {

@@ -63,20 +63,35 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 		}
 	}
 
-	// texture
-	const XmlNode *textureNode = particleSystemNode->getChild("texture");
-	if (textureNode->getAttribute("value")->getBoolValue()) {
-		Texture2D *texture = renderer.newTexture2D(ResourceScope::GAME);
-		if (textureNode->getAttribute("luminance")->getBoolValue()) {
-			texture->setFormat(Texture::fAlpha);
-			texture->getPixmap()->init(1);
-		} else {
-			texture->getPixmap()->init(4);
+	// multiple textures
+	const XmlNode *texturesNode = particleSystemNode->getOptionalChild("textures");
+	if (texturesNode) {
+		for (int i=0; i < texturesNode->getChildCount(); ++i) {
+			const XmlNode *textureNode = texturesNode->getChild("texture", i);
+			Texture2D *texture = renderer.newTexture2D(ResourceScope::GAME);
+			if (textureNode->getAttribute("luminance")->getBoolValue()) {
+				texture->setFormat(Texture::fAlpha);
+				texture->getPixmap()->init(1);
+			} else {
+				texture->getPixmap()->init(4);
+			}
+			texture->load(dir + "/" + textureNode->getAttribute("path")->getRestrictedValue());
+			setTexture(i, texture);
 		}
-		texture->load(dir + "/" + textureNode->getAttribute("path")->getRestrictedValue());
-		this->texture = texture;
 	} else {
-		texture = NULL;
+		// single texture
+		const XmlNode *textureNode = particleSystemNode->getChild("texture");
+		if (textureNode->getAttribute("value")->getBoolValue()) {
+			Texture2D *texture = renderer.newTexture2D(ResourceScope::GAME);
+			if (textureNode->getAttribute("luminance")->getBoolValue()) {
+				texture->setFormat(Texture::fAlpha);
+				texture->getPixmap()->init(1);
+			} else {
+				texture->getPixmap()->init(4);
+			}
+			texture->load(dir + "/" + textureNode->getAttribute("path")->getRestrictedValue());
+			setTexture(0, texture);
+		}
 	}
 
 	// model
@@ -90,7 +105,7 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 			g_logger.logError(e.what());
 		}
 	} else {
-		model = NULL;
+		model = 0;
 	}
 
 	// primitive type

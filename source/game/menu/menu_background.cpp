@@ -88,7 +88,7 @@ MenuBackground::MenuBackground(){
 		sps->setWindSpeed2(-90.f, 0.5f / WORLD_FPS);
 		sps->setPos(Vec3f(0.f, 25.f, 0.f));
 		sps->setRadius(30.f);
-		sps->setTexture(g_coreData.getSnowTexture());
+		sps->setTexture(0, g_coreData.getSnowTexture());
 		renderer.manageParticleSystem(sps, ResourceScope::MENU);
 	}
 

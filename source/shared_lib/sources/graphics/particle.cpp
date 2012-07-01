@@ -69,8 +69,9 @@ ParticleSystemBase::ParticleSystemBase()
 		, radialVelocityVar(0.f)
 		, radius(0.f)
 		, drawCount(1)
-		, texture(NULL)
-		, model(NULL) {
+		, numTextures(0)
+		, model(0) {
+	memset(textures, 0, MAX_PARTICLE_BUFFERS * sizeof(Texture*));
 }
 
 ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &protoType)
@@ -99,8 +100,20 @@ ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &protoType)
 		, radialVelocityVar(protoType.radialVelocityVar)
 		, radius(protoType.radius)
 		, drawCount(protoType.drawCount)
-		, texture(protoType.texture)
+		, numTextures(protoType.numTextures)
 		, model(protoType.model) {
+	memcpy(textures, protoType.textures, MAX_PARTICLE_BUFFERS * sizeof(Texture*));
+}
+
+void ParticleSystemBase::setTexture(int i, Texture *v) {
+	ASSERT_RANGE(i, 4);
+	if (i < 0 && i >= 4) {
+		throw runtime_error("Too many textures. Particle systems may have at most 4 textures.");
+	}
+	if (textures[i] == 0) {
+		++ numTextures;
+	}
+	textures[i] = v;
 }
 
 // =====================================================
@@ -265,6 +278,7 @@ void ParticleSystem::initParticle(Particle *p, int particleIndex) {
 		p->angle = 0.f;
 		p->angularVel = 0.f;
 	}
+	p->texture = getNumTextures() > 1 ? random.randRange(0, getNumTextures() - 1) : 0;
 }
 
 void ParticleSystem::updateParticle(Particle *p) {

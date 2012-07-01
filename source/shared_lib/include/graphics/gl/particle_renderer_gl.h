@@ -14,6 +14,7 @@
 
 #include "particle_renderer.h"
 #include "opengl.h"
+#include "texture_gl.h"
 
 namespace Shared{ namespace Graphics{ namespace Gl{
 
@@ -29,9 +30,11 @@ public:
 
 private:
 	bool rendering;
-	Vec3f vertexBuffer[bufferSize];
-	Vec2f texCoordBuffer[bufferSize];
-	Vec4f colorBuffer[bufferSize];
+	int lastTexture;
+	const Texture2DGl *textures[MAX_PARTICLE_BUFFERS];
+	Vec3f vertexBuffer[MAX_PARTICLE_BUFFERS][bufferSize];
+	Vec2f texCoordBuffer[MAX_PARTICLE_BUFFERS][bufferSize];
+	Vec4f colorBuffer[MAX_PARTICLE_BUFFERS][bufferSize];
 
 public:
 	//particles
@@ -54,7 +57,7 @@ public:
 	}
 
 protected:
-	void renderBufferQuads(int quadCount);
+	void renderBufferQuads(int quadCount, int buffer);
 	void renderBufferLines(int lineCount);
 
 	static void setBlendFunc(BlendFactor sfactor, BlendFactor dfactor) {

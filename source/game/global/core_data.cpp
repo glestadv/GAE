@@ -70,7 +70,9 @@ bool CoreData::load() {
 	g_logger.logProgramEvent("\tTextures");
 	try {
 		backgroundTexture = loadTexture(dir + "/menu/textures/back.tga");
-		fireTexture = loadAlphaTexture(dir + "/misc_textures/fire_particle.tga");
+		//fireTexture1 = loadAlphaTexture(dir + "/misc_textures/fire_particle.tga");
+		fireTexture1 = loadAlphaTexture(dir + "/misc_textures/fire-particle2.bmp");
+		fireTexture2 = loadAlphaTexture(dir + "/misc_textures/fire-particle1.bmp");
 		snowTexture = loadAlphaTexture(dir + "/misc_textures/snow_particle.tga");
 		logoTexture = loadTexture(dir + "/menu/textures/logo.tga");
 		gplTexture = loadTexture(dir + "/menu/textures/gplv3.tga");

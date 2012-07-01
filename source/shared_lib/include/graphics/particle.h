@@ -99,6 +99,8 @@ STRINGY_ENUM( ParticleUse,
 	UNIT
 );
 
+const int MAX_PARTICLE_BUFFERS = 4;
+
 // =====================================================
 //	class Particle
 // =====================================================
@@ -111,12 +113,16 @@ public:
 	Vec3f speed;		// 12 bytes
 	Vec3f accel;		// 12 bytes
 	Vec4f color;		// 16 bytes // belongs in (or already is in) owner system's proto-type ?
+	
 	Vec4f color2;		// 16 bytes // belongs in (or already is in) owner system's proto-type ?
+
 	float size;			// 4 bytes
 	float angle;		// 4 bytes
 	float angularVel;	// 4 bytes
 	int energy;			// 4 bytes
 						// 96 (64 + 32)
+	int texture;
+
 public:
 	//get
 	Vec3f getPos() const				{return pos;}
@@ -156,8 +162,11 @@ protected:
 	bool teamColorEnergy;
 	bool teamColorNoEnergy;
 
-	float size;
-	float sizeNoEnergy;
+	float size;                   // particle scale
+	//float sizeVar;                // particle scale variance
+	float sizeNoEnergy;           // particle scale at end of life
+	//float sizeNoEnergyVar;        // particle scale variance at end of life/
+
 	float speed;
 	float gravity;
 	
@@ -175,9 +184,12 @@ protected:
 	float radialVelocity;
 	float radialVelocityVar;
 
-	Texture *texture;	// belongs only in proto-type
 	Model *model;		// belongs only in proto-type
 
+private:
+	Texture* textures[MAX_PARTICLE_BUFFERS];
+	int numTextures;
+	
 public:
 	//constructor and destructor
 	ParticleSystemBase();
@@ -189,7 +201,8 @@ public:
 	BlendFactor getDestBlendFactor() const				{return destBlendFactor;}
 	BlendMode getBlendEquationMode() const				{return blendEquationMode;}
 	PrimitiveType getPrimitiveType() const				{return primitiveType;}
-	Texture *getTexture() const							{return texture;}
+	Texture *getTexture(int i) const					{return textures[i];}
+	int getNumTextures() const							{return numTextures;}
 	Model *getModel() const								{return model;}
 	const Vec3f &getOffset() const						{return offset;}
 	const Vec4f &getColor() const						{return color;}
@@ -213,7 +226,7 @@ public:
 	void setDestBlendFactor(BlendFactor v)				{destBlendFactor = v;}
 	void setBlendEquationMode(BlendMode v)				{blendEquationMode = v;}
 	void setPrimitiveType(PrimitiveType v)				{primitiveType = v;}
-	void setTexture(Texture *v)							{texture = v;}
+	void setTexture(int i, Texture *v);
 	void setModel(Model *v)								{model = v;}
 	void setOffset(const Vec3f &v)						{offset = v;}
 	void setColor(const Vec4f &v)						{color = v;}
