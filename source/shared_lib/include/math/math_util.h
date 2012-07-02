@@ -13,6 +13,7 @@
 #define _SHARED_GRAPHICS_MATHUTIL_H_
 
 #include <cmath>
+#include "lang_features.h"
 #include "vec.h"
 
 
