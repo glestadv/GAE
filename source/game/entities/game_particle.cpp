@@ -67,17 +67,18 @@ void GameParticleSystem::checkVisibilty(ParticleUse use, bool log) {
 FireParticleSystem::FireParticleSystem(const Unit *unit, bool visible, int particleCount)
 		: GameParticleSystem(ParticleUse::FIRE, visible, particleCount) {
 	setColorNoEnergy(Vec4f(1.0f, 0.5f, 0.0f, 1.0f));
-
+	setEnergy(50);
+	setEnergyVar(10);
 	setSpeed(2.5f / float(GameConstants::updateFps));
 	setPos(unit->getCurrVector());
 	setRadius(unit->getType()->getSize() / 3.f);
 	setTexture(0, g_coreData.getFireTexture1());
 	setTexture(1, g_coreData.getFireTexture2());
-	setSize(unit->getType()->getSize() / 2.f);
-	setSizeVar(0.33f);
-	setSizeNoEnergyVar(unit->getType()->getSize() / 4.f);
-	setSizeNoEnergyVar(0.2f);
-	float emit = unit->getType()->getSize() >= 4 ? unit->getType()->getSize() / 5.f * 35.f : unit->getType()->getSize() / 5.f * 5.f;
+	setSize(unit->getType()->getSize() / 3.f);
+	setSizeVar(0.3f);
+	setSizeNoEnergyVar(unit->getType()->getSize() / 5.f);
+	setSizeNoEnergyVar(0.1f);
+	float emit = unit->getType()->getSize() >= 4 ? unit->getType()->getSize() / 5.f * 35.f : unit->getType()->getSize() / 5.f * 30.f;
 	emit = clamp(emit, 5.f, 35.f);
 	setEmissionRate(emit);
 }
@@ -97,8 +98,9 @@ void FireParticleSystem::initParticle(Particle *p, int particleIndex) {
 	float radRatio = sqrtf(sqrtf(mod / radius));
 	Vec4f halfColorNoEnergy = colorNoEnergy * 0.5f;
 
-	p->color = halfColorNoEnergy + halfColorNoEnergy * radRatio;
 	p->energy.current = p->energy.start = int(energy * radRatio) + random.randRange(-energyVar, energyVar);
+	p->colour.value = halfColorNoEnergy + halfColorNoEnergy * radRatio;
+	p->colour.step = (-p->colour.value) / float(p->energy.current);
 	float halfRadius = radius * 0.5f;
 	p->pos = Vec3f(pos.x + x, pos.y + random.randRange(-halfRadius, halfRadius), pos.z + y);
 	p->lastPos = pos;
@@ -115,16 +117,68 @@ void FireParticleSystem::updateParticle(Particle *p) {
 	p->lastPos = p->pos;
 	p->pos = p->pos+p->speed;
 	p->energy.current--;
-
-	if(p->color.r > 0.0f)
-		p->color.r *= 0.98f;
-	if(p->color.g > 0.0f)
-		p->color.g *= 0.98f;
-	if(p->color.a > 0.0f)
-		p->color.a *= 0.96f;
-
+	p->colour.value += p->colour.step;
 	p->speed.x *= 1.001f; // wind
+	p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
+}
 
+
+// ===========================================================================
+//  SmokeParticleSystem
+// ===========================================================================
+
+SmokeParticleSystem::SmokeParticleSystem(const Unit *unit, bool visible, int particleCount)
+		: GameParticleSystem(ParticleUse::FIRE, visible, particleCount) {
+	setEnergy(240);
+	setEnergyVar(10);
+	setSpeed(1.f / float(GameConstants::updateFps));
+	setPos(unit->getCurrVector() + Vec3f(0.f, 3.f, 0.f));
+	setRadius(unit->getType()->getSize() / 3.f);
+	setTexture(0, g_coreData.getSmokeTexture());
+	setSize(unit->getType()->getSize() / 2.f);
+	setSizeVar(0.33f);
+	setSizeNoEnergyVar(unit->getType()->getSize() / 1.5f);
+	setSizeNoEnergyVar(0.2f);
+	//float emit = float(unit->getType()->getSize());
+	setEmissionRate(0.2f);
+	setDestBlendFactor(BlendFactor::ONE_MINUS_SRC_ALPHA);
+}
+
+void SmokeParticleSystem::update() {
+	ParticleSystem::update();
+	checkVisibilty(ParticleUse::FIRE);
+}
+
+void SmokeParticleSystem::initParticle(Particle *p, int particleIndex) {
+	float ang = random.randRange(-twopi, twopi);
+	float mod = fabsf(random.randRange(-radius, radius));
+
+	float x = sinf(ang) * mod;
+	float y = cosf(ang) * mod;
+
+	float radRatio = sqrtf(sqrtf(mod / radius));
+
+	p->energy.current = p->energy.start = int(energy * radRatio) + random.randRange(-energyVar, energyVar);
+	p->colour.value = Vec4f(0.6f, 0.6f, 0.6f, 0.175f);
+	p->colour.step = (Vec4f(0.6f, 0.6f, 0.6f, 0.f) - p->colour.value) / float(p->energy.current);
+	float halfRadius = radius * 0.5f;
+	p->pos = Vec3f(pos.x + x, pos.y + random.randRange(-halfRadius, halfRadius), pos.z + y);
+	p->lastPos = pos;
+	p->size.value = getRandomStartSize();
+	float totalStep = getRandomEndSize() - p->size.value;
+	p->size.step = totalStep / float(p->energy.current);
+	p->speed = Vec3f(speed * random.randRange(-0.125f, 0.125f), speed * random.randRange(0.5f, 1.5f),
+			speed * random.randRange(-0.125f, 0.125f));
+	p->angle.step = (random.rand() % 2 ? -1.f : +1.f) * random.randRange(0.01f, Math::halfpi) * (1.f / 40.f);
+	p->texture = getNumTextures() > 1 ? random.randRange(0, getNumTextures() - 1) : 0;
+}
+
+void SmokeParticleSystem::updateParticle(Particle *p) {
+	p->lastPos = p->pos;
+	p->pos = p->pos + p->speed;
+	p->energy.current--;
+	p->colour.value += p->colour.step;
+	p->speed.x *= 1.01f; // wind
 	p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
 }
 
@@ -157,6 +211,18 @@ void DirectedParticleSystem::render(ParticleRenderer *pr, ModelRenderer *mr) {
 }
 
 // ===========================================================================
+//  FreeProjectile
+// ===========================================================================
+
+void FreeProjectile::update() {
+	if (state == sPlay) {
+		m_lastPos = pos;
+		this->pos += m_velocity;
+		m_velocity += Vec3f(0.f, -9.8f, 0.f) / 40.f;
+	}
+}
+
+// ===========================================================================
 //  Projectile
 // ===========================================================================
 
@@ -174,9 +240,9 @@ Projectile::Projectile(CreateParams params)
 }
 
 Projectile::~Projectile() {
-	if (nextParticleSystem != NULL) {
-		nextParticleSystem->prevParticleSystem = NULL;
-	}
+	//if (nextParticleSystem != NULL) {
+		//nextParticleSystem->prevParticleSystem = NULL;
+	//}
 	delete callback;
 }
 
@@ -188,7 +254,7 @@ void Projectile::setCallback(ProjectileCallback *cb) {
 void Projectile::link(Splash *particleSystem) {
 	nextParticleSystem = particleSystem;
 	nextParticleSystem->setState(sPause);
-	nextParticleSystem->prevParticleSystem = this;
+	//nextParticleSystem->prevParticleSystem = this;
 }
 
 void Projectile::update() {
@@ -284,7 +350,7 @@ void Projectile::update() {
 		if (nextParticleSystem) {
 			nextParticleSystem->setState(sPlay);
 			nextParticleSystem->setPos(endPos);
-			nextParticleSystem->setDirection(direction);
+			//nextParticleSystem->setDirection(direction);
 			nextParticleSystem->checkVisibilty(ParticleUse::PROJECTILE, true);
 		}
 	}
@@ -311,8 +377,8 @@ void Projectile::updateParticle(Particle *p) {
 	p->lastPos += p->speed;
 	p->pos += p->speed;
 	p->speed += p->accel;
-	p->color = color * energyRatio + colorNoEnergy * (1.0f - energyRatio);
-	p->color2 = color2 * energyRatio + color2NoEnergy * (1.0f - energyRatio);
+	p->colour.value += p->colour.step;
+	p->colour2.value += p->colour2.step;
 	p->size.value += p->size.step;
 	if (hasAngularVelocity()) {
 		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
@@ -368,8 +434,8 @@ void Projectile::setPath(Vec3f startPos, Vec3f endPos, int frames) {
 // ===========================================================================
 
 Splash::Splash(bool visible, const ParticleSystemBase &model,  int particleCount)
-		: DirectedParticleSystem(ParticleUse::SPLASH, visible, model, particleCount)
-		, prevParticleSystem(0)
+		: GameParticleSystem(ParticleUse::SPLASH, visible, model, particleCount)
+		//, prevParticleSystem(0)
 		, emissionRateFade(1.f)
 		, verticalSpreadA(1.f)
 		, verticalSpreadB(0.f)
@@ -378,9 +444,9 @@ Splash::Splash(bool visible, const ParticleSystemBase &model,  int particleCount
 }
 
 Splash::~Splash() {
-	if (prevParticleSystem != NULL) {
-		prevParticleSystem->nextParticleSystem = NULL;
-	}
+	//if (prevParticleSystem != NULL) {
+	//	prevParticleSystem->nextParticleSystem = NULL;
+	//}
 }
 
 void Splash::update() {
@@ -401,7 +467,10 @@ void Splash::initParticle(Particle *p, int particleIndex) {
 	p->size.value = getRandomStartSize();
 	float totalStep = getRandomEndSize() - p->size.value;
 	p->size.step = totalStep / float(p->energy.current);
-	p->color = color;
+	p->colour.value = getColor();
+	p->colour2.value = getColor2();
+	p->colour.step = (getColorNoEnergy() - getColor()) / float(p->energy.current);
+	p->colour2.step = (getColor2NoEnergy() - getColor2()) / float(p->energy.current);
 	p->speed = Vec3f(
 			horizontalSpreadA * random.randRange(-1.0f, 1.0f) + horizontalSpreadB,
 			verticalSpreadA * random.randRange(-1.0f, 1.0f) + verticalSpreadB,
@@ -419,7 +488,7 @@ void Splash::updateParticle(Particle *p) {
 	p->pos = p->pos + p->speed;
 	p->speed = p->speed + p->accel;
 	p->energy.current--;
-	p->color = color * energyRatio + colorNoEnergy * (1.0f - energyRatio);
+	p->colour.value += p->colour.step;
 	p->size.value += p->size.step;
 	if (hasAngularVelocity()) {
 		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
@@ -497,7 +566,6 @@ void UnitParticleSystem::initParticle(Particle *p, int particleIndex) {
 
 	float radRatio = sqrtf(sqrtf(mod / radius));
 
-	p->color = color;
 	p->energy.start = p->energy.current = int(maxParticleEnergy * radRatio) + random.randRange(-varParticleEnergy, varParticleEnergy);
 
 	p->lastPos = pos;
@@ -525,6 +593,7 @@ void UnitParticleSystem::initParticle(Particle *p, int particleIndex) {
 		}
 	}
 	if (type->getEmitterType() == EmitterPathType::ORBIT) {
+		p->lastPos = p->pos;
 		Vec3f axis = type->getEmitterAxis();
 		// spread out from last update theta to current
 		float myTheta = (lastThetaDelta != 0.f) ? theta - random.randRange(0.f, lastThetaDelta): theta;
@@ -538,6 +607,11 @@ void UnitParticleSystem::initParticle(Particle *p, int particleIndex) {
 		GLMatrix rotationMatrix = buildRotationMatrix(myTheta, axis);
 		// translate d units along perpendicular axis and rotate, add offset to particle pos
 		p->pos += rotationMatrix * (perpendicularAxis * type->getEmitterDistance());
+
+		myTheta -= lastThetaDelta;
+		rotationMatrix = buildRotationMatrix(myTheta, axis);
+		p->lastPos += rotationMatrix * (perpendicularAxis * type->getEmitterDistance());
+
 	}
 }
 
@@ -567,7 +641,8 @@ void UnitParticleSystem::updateParticle(Particle *p) {
 		p->pos += fixedAddition;
 	}
 	p->speed += p->accel;
-	p->color = color * energyRatio + colorNoEnergy * (1.f - energyRatio);
+	p->colour.value += p->colour.step;
+	p->colour2.value += p->colour2.step;
 	p->size.value += p->size.step;
 	if (hasAngularVelocity()) {
 		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);

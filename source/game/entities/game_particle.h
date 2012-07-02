@@ -89,6 +89,16 @@ public:
 	virtual void updateParticle(Particle *p) override;
 };
 
+class SmokeParticleSystem : public GameParticleSystem {
+public:
+	SmokeParticleSystem(const Unit *unit, bool visible, int particleCount = 2000);
+
+	//virtual
+	virtual void update() override;
+	virtual void initParticle(Particle *p, int particleIndex) override;
+	virtual void updateParticle(Particle *p) override;
+};
+
 // ===========================================================================
 //  DirectedParticleSystem
 //
@@ -110,6 +120,32 @@ public:
 };
 
 // =====================================================
+//	class FreeProjectile
+// =====================================================
+
+class FreeProjectile : public DirectedParticleSystem {
+private:
+	Vec3f m_lastPos;
+	Vec3f m_velocity;
+	float m_mass;
+
+public:
+	FreeProjectile(ParticleUse use, bool visible, const ParticleSystemBase &model, int particleCount = 1000)
+			: DirectedParticleSystem(use, visible, model, particleCount), m_lastPos(Vec3f(0.f)), m_mass(0.f) {
+	}
+	virtual void update() override;
+
+	float getMass() const  {return m_mass;}
+	Vec3f getVelocity() const {return m_velocity;}
+	Vec3f getLastPos() const {return m_lastPos;}
+
+	void setMass(float v) { m_mass = v; }
+	void setVelocity(Vec3f v) { m_velocity = v; }
+	void setLastPos(Vec3f v) { m_lastPos = v; }
+
+};
+
+// =====================================================
 //	interface ProjectileCallback
 // =====================================================
 
@@ -124,11 +160,10 @@ public:
 
 class Projectile : public DirectedParticleSystem {
 	friend class Sim::EntityFactory<Projectile>;
-	friend class Splash;
 
 private:
 	int m_id;                   // persist
-	Splash *nextParticleSystem; // no-persist
+	GameParticleSystem *nextParticleSystem; // no-persist
 
 	Vec3f lastPos;   // persist (for convenience, could recalc...)
 	Vec3f startPos;  // persist
@@ -153,8 +188,7 @@ private:
 
 	Random random;             // no-persist
 
-	ProjectileCallback  *callback;
-	//Sim::ParticleDamager *damager; // swizzle
+	ProjectileCallback  *callback; // swizzle
 
 public:
 	struct CreateParams {
@@ -201,13 +235,8 @@ public:
 //	class Splash
 // =====================================================
 
-class Splash : public DirectedParticleSystem {
-public:
-	friend class Projectile;
-
+class Splash : public GameParticleSystem {
 private:
-	Projectile *prevParticleSystem;
-
 	float emissionRateFade;
 	float verticalSpreadA;
 	float verticalSpreadB;

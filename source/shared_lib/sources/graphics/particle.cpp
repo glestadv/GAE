@@ -213,6 +213,8 @@ void ParticleSystem::update() {
 				Particle *p = createParticle();
 				if (p) {
 					initParticle(p, i);
+				} else {
+					break;
 				}
 			}
 		}
@@ -271,10 +273,13 @@ void ParticleSystem::initParticle(Particle *p, int particleIndex) {
 	p->lastPos = pos;
 	p->speed = Vec3f(0.0f);
 	p->accel = Vec3f(0.0f);
-	p->color = getColor();
-	p->color2 = getColor2();
 	p->energy.start = p->energy.current = getRandEnergy();
+	p->colour.value = getColor();
+	p->colour2.value = getColor2();
+	p->colour.step = (getColorNoEnergy() - getColor()) / float(p->energy.current);
+	p->colour2.step = (getColor2NoEnergy() - getColor2()) / float(p->energy.current);
 	p->size.value = getRandomStartSize();
+
 	float totalStep = getRandomEndSize() - p->size.value;
 	p->size.step = totalStep / float(p->energy.current);
 	
@@ -321,9 +326,11 @@ void RainParticleSystem::initParticle(Particle *p, int particleIndex) {
 	float x = random.randRange(-radius, radius);
 	float y = random.randRange(-radius, radius);
 
-	p->color = color;
-	p->color2 = color2;
 	p->energy.current = p->energy.start = 10000;
+	p->colour.value = getColor();
+	p->colour2.value = getColor2();
+	p->colour.step = (getColorNoEnergy() - getColor()) / float(p->energy.current);
+	p->colour2.step = (getColor2NoEnergy() - getColor2()) / float(p->energy.current);
 	p->pos = Vec3f(pos.x + x, pos.y, pos.z + y);
 	p->lastPos = p->pos;
 	p->speed = Vec3f(random.randRange(-speed / 10, speed / 10), -speed,
@@ -357,7 +364,7 @@ void SnowParticleSystem::initParticle(Particle *p, int particleIndex) {
 	float x = random.randRange(-radius, radius);
 	float y = random.randRange(-radius, radius);
 
-	p->color = color;
+	//p->color = color;
 	p->energy.current = p->energy.start = 10000;
 	p->pos = Vec3f(pos.x + x, pos.y, pos.z + y);
 	p->speed = Vec3f(0.0f, -speed, 0.0f) + windSpeed;

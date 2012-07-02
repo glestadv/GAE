@@ -221,6 +221,7 @@ private:
 
 	// eye candy particle systems
 	ParticleSystem *fire;
+	ParticleSystem *smoke;
 	UnitParticleSystems skillParticleSystems;
 	UnitParticleSystems effectParticleSystems;
 

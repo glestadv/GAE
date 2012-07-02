@@ -101,9 +101,10 @@ STRINGY_ENUM( ParticleUse,
 
 const int MAX_PARTICLE_BUFFERS = 4;
 
+template <typename ValueType>
 struct ValStep {
-	float value;
-	float step;
+	ValueType value;
+	ValueType step;
 };
 
 struct EnergyVec {
@@ -118,24 +119,27 @@ struct EnergyVec {
 class Particle {
 public:
 	//attributes
-	Vec3f pos;			 // 12 bytes
-	Vec3f lastPos;		 // 12 bytes
-	Vec3f speed;		 // 12 bytes
-	Vec3f accel;		 // 12 bytes
-	                     // 48
+	Vec3f pos;              // 12 bytes
+	Vec3f lastPos;          // 12 bytes
+	Vec3f speed;            // 12 bytes
+	Vec3f accel;            // 12 bytes
+	                        // 48
 
-	EnergyVec energy;    // 8 bytes
-	ValStep size;        // 8 bytes
-	ValStep angle;       // 8 bytes
-	                     // 24
+	EnergyVec energy;       // 8 bytes
+	ValStep<float> size;    // 8 bytes
+	ValStep<float> angle;   // 8 bytes
+	                        // 24
 
-	Vec4f color;		 // 16 bytes // belongs in (or already is in) owner system's proto-type ?
-	Vec4f color2;		 // 16 bytes // belongs in (or already is in) owner system's proto-type ? only used for line systems...
-	                     // 32
+	ValStep<Vec4f> colour;  // 32
+	ValStep<Vec4f> colour2; // 32
+	                        // 64
 
-	int texture;         // 4 bytes
+	//Vec4f color;		      //  bytes // belongs in (or already is in) owner system's proto-type ?
+	//Vec4f color2;		      //  bytes // belongs in (or already is in) owner system's proto-type ? only used for line systems...
 
-	                     // 108
+	int texture;            // 4 bytes
+	byte padding[20];
+	                        // 160
 
 public:
 	//get
@@ -144,8 +148,8 @@ public:
 	Vec3f getLastPos() const			{return lastPos;}
 	Vec3f getSpeed() const				{return speed;}
 	Vec3f getAccel() const				{return accel;}
-	Vec4f getColor() const				{return color;}
-	Vec4f getColor2() const				{return color2;}
+	Vec4f getColor() const				{return colour.value;}
+	Vec4f getColor2() const				{return colour2.value;}
 	float getSize() const				{return size.value;}
 	float getAngle() const				{return angle.value;}
 	float getAnglularVelocity() const	{return angle.step;}

@@ -178,11 +178,46 @@ void ParticleSystemType::load(const XmlNode *particleSystemNode, const string &d
 
 }
 
+void FreeProjectileType::load(const XmlNode *freeProjectileNode, const string &dir) {
+	DirectedParticleSystemType::load(freeProjectileNode, dir);
+
+	m_mass = freeProjectileNode->getChildFloatValue("mass");
+}
+
+ParticleSystem* FreeProjectileType::create(bool vis) {
+	FreeProjectile *proj = new FreeProjectile(ParticleUse::PROJECTILE, vis, *this);
+	proj->setMass(getMass());
+	Vec3f vel = getDirection() * getSpeed();
+	proj->setVelocity(vel);
+	return proj;
+}
+
+// ===========================================================
+//	class CompoundParticleSystemType
+// ===========================================================
+
+void CompoundParticleSystemType::load(const XmlNode *particleSystemNode, const string &dir) {
+	ParticleSystemType::load(particleSystemNode, dir);
+	// free projectiles
+	const XmlNode *projectilesNode = particleSystemNode->getOptionalChild("free-projectiles");
+	if (projectilesNode) {
+		for (int i=0; i < projectilesNode->getChildCount(); ++i) {
+			const XmlNode *projectileNode = projectilesNode->getChild("free-projectile", i);
+			if (projectileNode) {
+				float offset = projectileNode->getFloatAttribute("start-time");
+				FreeProjectileType *projType = new FreeProjectileType();
+				projType->load(projectileNode, dir);
+				m_projectiles.push_back(ProjInfo(projType, offset));
+			}
+		}
+	}
+}
+
 // ===========================================================
 //	class ProjectileType
 // ===========================================================
 
-void ProjectileType::load(const string &dir, const string &path){
+void ProjectileType::load(const string &dir, const string &path) {
 
 	try {
 		XmlTree xmlTree;
@@ -290,6 +325,25 @@ ParticleSystem *SplashType::create(bool vis) {
 	return ps;
 }
 
+
+// =====================================================
+// 	class DirectedParticleSystemType
+// =====================================================
+
+void DirectedParticleSystemType::load(const XmlNode *particleSystemNode, const string &path) {
+	try {
+		ParticleSystemType::load(particleSystemNode, path);
+
+		direction = particleSystemNode->getChildVec3fValue("direction");
+		
+		relative = particleSystemNode->getChildBoolValue("relative");
+		relativeDirection = particleSystemNode->getOptionalBoolValue("relativeDirection");
+		fixed = particleSystemNode->getChildBoolValue("fixed");
+	} catch (const std::exception &e) {
+		throw runtime_error("Error loading ParticleSystem: "+ path + "\n" + e.what());
+	}
+}
+
 // =====================================================
 // 	class UnitParticleSystemType
 // =====================================================
@@ -299,18 +353,13 @@ UnitParticleSystemType::UnitParticleSystemType() {
 
 void UnitParticleSystemType::load(const XmlNode *particleSystemNode, const string &path) {
 	try {
-		ParticleSystemType::load(particleSystemNode, path);
+		DirectedParticleSystemType::load(particleSystemNode, path);
 
-		direction = particleSystemNode->getChildVec3fValue("direction");
-		
-		relative = particleSystemNode->getChildBoolValue("relative");
-		relativeDirection = particleSystemNode->getOptionalBoolValue("relativeDirection");
-		fixed = particleSystemNode->getChildBoolValue("fixed");
 		teamColorNoEnergy = particleSystemNode->getOptionalBoolValue("teamcolorNoEnergy", false);
 		teamColorEnergy = particleSystemNode->getOptionalBoolValue("teamcolorEnergy", false);
-		maxParticles = particleSystemNode->getOptionalIntValue("max-particles", 200);
-		if (maxParticles > 200) {
-			maxParticles = 200;
+		maxParticles = particleSystemNode->getOptionalIntValue("max-particles", 400);
+		if (maxParticles > 400) {
+			maxParticles = 400;
 		}
 		radius = particleSystemNode->getOptionalFloatValue("radius", 0.5f);
 

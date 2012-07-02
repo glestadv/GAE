@@ -147,6 +147,7 @@ Unit::Unit(CreateParams params)
 		, m_deCloaking(false)
 		, m_cloakAlpha(1.f)
 		, fire(0)
+		, smoke(0)
 		, faction(params.faction)
 		, map(params.map)
 		, commandCallback(0)
@@ -248,7 +249,7 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	computeTotalUpgrade();
 
 	hp = node->getChildIntValue("hp");
-	fire = NULL;
+	fire = smoke = 0;
 
 	n = node->getChild("units-carried");
 	for(int i = 0; i < n->getChildCount(); ++i) {
@@ -1196,6 +1197,8 @@ void Unit::kill() {
 	if (fire) {
 		fire->fade();
 		fire = 0;
+		smoke->fade();
+		smoke = 0;
 	}
 
 	//REFACTOR Use signal, send this code to Faction::onUnitDied();
@@ -1719,6 +1722,7 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 		// update particle system location/orientation
 		if (fire && moved) {
 			fire->setPos(getCurrVector());
+			smoke->setPos(getCurrVector());
 		}
 		if (moved || rotated) {
 			foreach (UnitParticleSystems, it, skillParticleSystems) {
@@ -1894,7 +1898,8 @@ bool Unit::repair(int amount, fixed multiplier) {
 	//stop fire
 	if (hp > type->getMaxHp() / 2 && fire != NULL) {
 		fire->fade();
-		fire = NULL;
+		smoke->fade();
+		fire = smoke = 0;
 	}
 	return false;
 }
@@ -1930,8 +1935,10 @@ bool Unit::decHp(int i) {
 		Vec2i cPos = getCenteredPos();
 		Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
 		bool vis = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
-		fire = new FireParticleSystem(this, vis, 600);
+		fire = new FireParticleSystem(this, vis, 1000);
 		g_renderer.manageParticleSystem(fire, ResourceScope::GAME);
+		smoke = new SmokeParticleSystem(this, vis, 400);
+		g_renderer.manageParticleSystem(smoke, ResourceScope::GAME);
 	}
 
 	// stop fire on death
@@ -1939,7 +1946,8 @@ bool Unit::decHp(int i) {
 		hp = 0;
 		if (fire) {
 			fire->fade();
-			fire = NULL;
+			smoke->fade();
+			fire = smoke = 0;
 		}
 		return true;
 	}
