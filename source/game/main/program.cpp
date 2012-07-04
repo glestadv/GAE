@@ -283,6 +283,7 @@ void Program::loop() {
 			}
 			if (visible) {
 				_PROFILE_SCOPE("Program::loop() : Render");
+				g_renderer.reset();
 				m_programState->renderBg();
 				g_renderer.reset2d();
 				if (m_programState->isGameState()) {

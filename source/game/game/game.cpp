@@ -937,7 +937,6 @@ void GameState::render3d() {
 	Renderer &renderer = g_renderer;
 
 	// init
-	renderer.reset();
 	renderer.reset3d();
 
 	renderer.loadGameCameraMatrix();

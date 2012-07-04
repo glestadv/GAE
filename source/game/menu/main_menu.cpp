@@ -124,7 +124,6 @@ void MainMenu::init() {
 // synchronous render update
 void MainMenu::renderBg() {
 	Renderer &renderer = g_renderer;
-	renderer.reset();
 	renderer.clearBuffers();
 
 	// 3d
