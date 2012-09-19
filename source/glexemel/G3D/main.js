@@ -1,3 +1,9 @@
+/*
+ * structure definition of G3D for okteta
+ *
+ * only works for G3Dv4 (with non-selectable flag)
+ * nontextured models won't work
+ */
 function init() {
 	/*
 	struct FileHeader{
@@ -94,19 +100,21 @@ function init() {
 	indices: indexCount, uint32 values representing the indices
 	*/
 
+	var vertices = struct({
+		Vertices : array(coords, 1)  //length = vertexCount
+	})
+	var normals = struct({
+		Normals : array(coords, 1)  //length = vertexCount
+	})
+
+
 	var meshData = struct({
 		TextureName : textureName,
-		vertices    : array(coords, 1),  //length = frameCount*vertexCount
-		normals     : array(coords, 1),  // -''-
+		vertexFrame : array(vertices, 1),//length = frameCount
+		normalFrame : array(normals, 1), //length = frameCount
 		texcoords   : array(tcoords, 1), //length = vertexCount
 		indices     : array(uint32(), 1) //length = indexCount
 	})
-	//FIXME: changing type doesn't work -> useless
-// 	var meshData_notex = struct({
-// 		vertices  : array(coords, 1),  //length = frameCount*vertexCount
-// 		normals   : array(coords, 1),  // -''-
-// 		indices   : array(uint32(), 1) //length = indexCount
-// 	})
 
 	// general structures
 	var mesh = struct({
@@ -121,39 +129,25 @@ function init() {
 
 	//texture stuff is conditional
 	// array length = 0 doesn't work, and i don't know any other conditional way
-	// so we have copy&paste-fun
 	
 	// array length depends on meshHeader -> update dynamically
 	//set an update function (which gets called everytime the structure changes, i.e. cursor moved)
 	g3d.child("Meshes").updateFunc = function(mainStruct) {
 		this.length = this.parent.ModelHeader.meshCount.value;
 	}
-	//FIXME: changing type doesn't work -> always with texture
-// 	mesh.child("MeshData").updateFunc = function(mainStruct) {
-// 		var t = this.parent.MeshHeader.textures.diffuseTexture.value;
-// 		if(t==true){
-// 			this.type = meshData;
-// 		}else{
-// 			this.type = meshData_notex;
-// 		}
-// 		this.parent.updateFunc(mainStruct);
-// 	}
 	meshData.updateFunc = function(mainStruct) {
 		var mh = this.parent.MeshHeader;
-		var len = mh.frameCount.value * mh.vertexCount.value;
-		this.vertices.length = len;
-		this.normals.length = len;
+		this.vertexFrame.length = mh.frameCount.value;
+		this.normalFrame.length = mh.frameCount.value;
 		this.texcoords.length = mh.vertexCount.value;
 		this.indices.length = mh.indexCount.value;
 	}
-	//FIXME: changing type doesn't work -> useless
-// 	meshData_notex.updateFunc = function(mainStruct) {
-// 		var mh = this.parent.MeshHeader;
-// 		var len = mh.frameCount.value * mh.vertexCount.value;
-// 		this.vertices.length = len;
-// 		this.normals.length = len;
-// 		this.indices.length = mh.indexCount.value;
-// 	}
+	vertices.updateFunc = function(mainStruct){
+		this.Vertices.length = this.parent.parent.parent.MeshHeader.vertexCount.value;
+	}
+	normals.updateFunc = function(mainStruct){
+		this.Normals.length = this.parent.parent.parent.MeshHeader.vertexCount.value;
+	}
 
 	return g3d;
 }
