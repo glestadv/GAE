@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 5, 2),
+	"version": (0, 6, 0),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
@@ -124,7 +124,7 @@ import sys, struct, string, types
 from types import *
 import os
 from os import path
-from os.path import dirname
+from os.path import dirname, abspath
 ###########################################################################
 # Variables that are better Global to handle
 ###########################################################################
@@ -273,7 +273,7 @@ def createMesh(filename,header,data):						  #Create a Mesh inside Blender
 	uvcoords = []
 	image = None
 	if header.hastexture:												  #Load Texture when assigned
-		texturefile = dirname(filename)+os.sep+header.texturefilename
+		texturefile = dirname(abspath(filename))+os.sep+header.texturefilename
 		image = bpy.data.images.load(texturefile) #load_image(texturefile, dirname(filename))
 		for x in range(0,len(data.texturecoords),2): #Prepare the UV
 			uvcoords.append([data.texturecoords[x],data.texturecoords[x+1]])
@@ -371,6 +371,16 @@ def createMesh(filename,header,data):						  #Create a Mesh inside Blender
 			sk.data[i//3].co[2]= data.vertices[x*header.vertexcount*3 + i +2]
 		#meshobj.keyframe_insert("location",-1, frame=(x+1))
 		#meshobj.keyframe_insert(data_path="data.vertices", frame=(x+1))
+
+	for i in range(1,header.framecount-1):
+		shape = mesh.shape_keys.key_blocks[i]
+		shape.value = 0.0
+		shape.keyframe_insert("value", frame=i)
+		shape.value = 1.0
+		shape.keyframe_insert("value", frame=(i+1))
+		shape.value = 0.0
+		shape.keyframe_insert("value", frame=(i+2))
+
 	# update polygon structures from tessfaces
 	mesh.update()
 	mesh.update_tag()
@@ -528,7 +538,7 @@ def G3DSaver(filepath, context, operator):
 		realFaceCount = 0
 		indices=[]
 		newverts=[]
-		mesh.calc_tessface() # tesselate n-polygons to triangles and quads
+		mesh.update(calc_tessface=True) # tesselate n-polygons to triangles & quads
 		if textures == 1:
 			uvtex = mesh.tessface_uv_textures[0]
 			uvlist = []
@@ -542,8 +552,8 @@ def G3DSaver(filepath, context, operator):
 					vindex = face.vertices[i]
 					if vindex not in s:
 						s.add(vindex)
-						uvlist[vindex] = uvdata.uv[i]
-					elif uvlist[vindex] != uvdata.uv[i]:
+						uvlist[vindex] = uvdata.uv[i] # that's a (s,t)-pair
+					elif uvlist[vindex][0] != uvdata.uv[i][0] or uvlist[vindex][1] != uvdata.uv[i][1]:
 						# duplicate vertex because it takes part in different faces
 						# with different texcoords
 						newverts.append(vindex)
@@ -562,8 +572,8 @@ def G3DSaver(filepath, context, operator):
 						vindex = face.vertices[i]
 						if vindex not in s:
 							s.add(vindex)
-							uvlist[vindex] = uvdata.uv[i]
-						elif uvlist[vindex] != uvdata.uv[i]:
+							uvlist[vindex] = uvdata.uv[i] # that's a (s,t)-pair
+						elif uvlist[vindex][0] != uvdata.uv[i][0] or uvlist[vindex][1] != uvdata.uv[i][1]:
 							# duplicate vertex because it takes part in different faces
 							# with different texcoords
 							newverts.append(vindex)
@@ -592,6 +602,11 @@ def G3DSaver(filepath, context, operator):
 			return
 		indexCount = realFaceCount * 3
 		vertexCount = len(mesh.vertices) + len(newverts)
+
+		#DEBUG
+		print("vertexCount: "+ str(len(mesh.vertices)) +" + "+ str(len(newverts)))
+		print("indexcount: "+ str(indexCount) +"::"+ str(len(indices)))
+
 		specularPower = 9.999999  # unused, same as old exporter
 		properties = 0
 		if mesh.g3d_customColor:
