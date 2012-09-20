@@ -318,11 +318,13 @@ void Texture3DGl::init(Filter filter, int maxAnisotropy) {
 		GLint wrap = toWrapModeGl(wrapMode);
 		GLint glFormat = toFormatGl(format, pixmap->getComponents());
 		GLint glInternalFormat;
-		if(compressTextures){
-			glInternalFormat = toCompressedInternalFormatGl(format, pixmap->getComponents());
-		}else{
+//		FIXME: compression disabled, because mesa doesn't like it
+//		       and it's only used for water
+//		if(compressTextures){
+//			glInternalFormat = toCompressedInternalFormatGl(format, pixmap->getComponents());
+//		}else{
 			glInternalFormat = toInternalFormatGl(format, pixmap->getComponents());
-		}
+//		}
 
 		//pixel init var
 		const uint8* pixels = pixmap->getPixels();
