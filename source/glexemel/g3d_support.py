@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 6, 0),
+	"version": (0, 6, 1),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
@@ -264,7 +264,7 @@ class G3DMeshdataV4:											   #Calculate and read the Mesh Datapack
 			self.texturecoords = struct.unpack(texturecoords_format,fileID.read(struct.calcsize(texturecoords_format)))
 		self.indices = struct.unpack(indices_format ,fileID.read(struct.calcsize(indices_format)))
 
-def createMesh(filename,header,data):						  #Create a Mesh inside Blender
+def createMesh(filename,header,data,operator):		#Create a Mesh inside Blender
 	mesh = bpy.data.meshes.new(header.meshname)		#New Mesh
 	meshobj = bpy.data.objects.new(header.meshname+'Object', mesh)	 #New Object for the new Mesh
 	scene = bpy.context.scene
@@ -273,10 +273,17 @@ def createMesh(filename,header,data):						  #Create a Mesh inside Blender
 	uvcoords = []
 	image = None
 	if header.hastexture:												  #Load Texture when assigned
-		texturefile = dirname(abspath(filename))+os.sep+header.texturefilename
-		image = bpy.data.images.load(texturefile) #load_image(texturefile, dirname(filename))
-		for x in range(0,len(data.texturecoords),2): #Prepare the UV
-			uvcoords.append([data.texturecoords[x],data.texturecoords[x+1]])
+		try:
+			texturefile = dirname(abspath(filename))+os.sep+header.texturefilename
+			image = bpy.data.images.load(texturefile) #load_image(texturefile, dirname(filename))
+			for x in range(0,len(data.texturecoords),2): #Prepare the UV
+				uvcoords.append([data.texturecoords[x],data.texturecoords[x+1]])
+		except:
+			import traceback
+			traceback.print_exc()
+			
+			header.hastexture = False
+			operator.report({'WARNING'}, "Couldn't load texture. See console for details.")
 	
 	vertsCO = []
 	vertsNormal = []
@@ -381,6 +388,8 @@ def createMesh(filename,header,data):						  #Create a Mesh inside Blender
 		shape.value = 0.0
 		shape.keyframe_insert("value", frame=(i+2))
 
+	meshobj.active_shape_key_index = 0
+
 	# update polygon structures from tessfaces
 	mesh.update()
 	mesh.update_tag()
@@ -388,7 +397,7 @@ def createMesh(filename,header,data):						  #Create a Mesh inside Blender
 ###########################################################################
 # Import
 ###########################################################################
-def G3DLoader(filepath):			#Main Import Routine
+def G3DLoader(filepath, operator):			#Main Import Routine
 	global imported, sceneID
 	print ("\nNow Importing File: " + filepath)
 	fileID = open(filepath,"rb")
@@ -396,11 +405,13 @@ def G3DLoader(filepath):			#Main Import Routine
 	print ("\nHeader ID         : " + header.id)
 	print ("Version           : " + str(header.version))
 	if header.id != "G3D":
-		print ("This is Not a G3D Model File")
+		print ("ERROR: This is Not a G3D Model File")
+		operator.report({'ERROR'}, "This is Not a G3D Model File")
 		fileID.close
 		return
 	if header.version not in (3, 4):
-		print ("The Version of this G3D File is not Supported")
+		print ("ERROR: The Version of this G3D File is not Supported")
+		operator.report({'ERROR'}, "The Version of this G3D File is not Supported")
 		fileID.close
 		return
 	#in_editmode = Blender.Window.EditMode()			 #Must leave Editmode when active
@@ -430,7 +441,7 @@ def G3DLoader(filepath):			#Main Import Routine
 			meshheader.meshname = basename+str(x+1)	 #Generate Meshname because V3 has none
 			if meshheader.framecount > maxframe: maxframe = meshheader.framecount #Evaluate the maximal animationsteps
 			meshdata = G3DMeshdataV3(fileID,meshheader)
-			createMesh(filepath,meshheader,meshdata)
+			createMesh(filepath,meshheader,meshdata,operator)
 		fileID.close
 		bpy.context.scene.frame_start=1
 		bpy.context.scene.frame_end=maxframe
@@ -464,7 +475,7 @@ def G3DLoader(filepath):			#Main Import Routine
 					meshheader.meshname = basename+str(x+1)
 			if meshheader.framecount > maxframe: maxframe = meshheader.framecount #Evaluate the maximal animationsteps
 			meshdata = G3DMeshdataV4(fileID,meshheader)
-			createMesh(filepath,meshheader,meshdata)
+			createMesh(filepath,meshheader,meshdata,operator)
 		fileID.close
 		
 		bpy.context.scene.frame_start=1
@@ -602,11 +613,6 @@ def G3DSaver(filepath, context, operator):
 			return
 		indexCount = realFaceCount * 3
 		vertexCount = len(mesh.vertices) + len(newverts)
-
-		#DEBUG
-		print("vertexCount: "+ str(len(mesh.vertices)) +" + "+ str(len(newverts)))
-		print("indexcount: "+ str(indexCount) +"::"+ str(len(indices)))
-
 		specularPower = 9.999999  # unused, same as old exporter
 		properties = 0
 		if mesh.g3d_customColor:
@@ -697,7 +703,8 @@ class ImportG3D(bpy.types.Operator, ImportHelper):
 
 	def execute(self, context):
 		try:
-			G3DLoader(**self.as_keywords(ignore=("filter_glob",)))
+			#G3DLoader(**self.as_keywords(ignore=("filter_glob",)))
+			G3DLoader(self.filepath, self)
 		except:
 			import traceback
 			traceback.print_exc()
@@ -752,7 +759,12 @@ if __name__ == '__main__':
 	register()
 #	main()
 
-	#G3DLoader("import.g3d")
+	#for obj in bpy.data.objects:
+	#	if obj.type == 'MESH':
+	#		obj.select = True
+	#		bpy.ops.object.delete()
+	#G3DLoader("import.g3d", None)
+
 	#for obj in bpy.context.selected_objects:
 	#	obj.select = False  # deselect everything, so we get it all
 	#G3DSaver("test.g3d", bpy.context)
