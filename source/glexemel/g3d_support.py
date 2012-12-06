@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 6, 1),
+	"version": (0, 7, 0),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
@@ -125,6 +125,8 @@ from types import *
 import os
 from os import path
 from os.path import dirname, abspath
+
+import subprocess
 ###########################################################################
 # Variables that are better Global to handle
 ###########################################################################
@@ -689,9 +691,9 @@ class G3DPanel(bpy.types.Panel):
 		return (context.object is not None and context.object.type == 'MESH')
 
 	def draw(self, context):
-		self.layout.prop(context.object.data, "g3d_customColor", text="team color")
+		self.layout.prop(context.object.data, "g3d_customColor")
 		self.layout.prop(context.object.data, "show_double_sided", text="double sided")
-		self.layout.prop(context.object.data, "g3d_noSelect", text="non-selectable")
+		self.layout.prop(context.object.data, "g3d_noSelect")
 
 class ImportG3D(bpy.types.Operator, ImportHelper):
 	'''Load a G3D file'''
@@ -721,9 +723,46 @@ class ExportG3D(bpy.types.Operator, ExportHelper):
 	filename_ext = ".g3d"
 	filter_glob = StringProperty(default="*.g3d", options={'HIDDEN'})
 
+	#export options
+	showg3d = bpy.props.BoolProperty(
+				name="show G3D afterwards",
+				description=("Run g3dviewer to show G3D after export. "
+							"g3dviewer needs to be in the scripts directory, "
+							"otherwise the associated program of .g3d is run."),
+				default=False)
+
 	def execute(self, context):
 		try:
 			G3DSaver(self.filepath, context, self)
+			if self.showg3d:
+				print("opening g3dviewer with " + self.filepath)
+				scriptsdir = bpy.utils.script_path_user()
+				dname = os.path.dirname(self.filepath)
+				found = False
+				for f in os.listdir(scriptsdir):
+					if "g3dviewer" in f:
+						f = os.path.join(scriptsdir, f)
+						if os.path.isfile(f) and os.access(f, os.X_OK):
+							cmd = [f, self.filepath]
+							print(cmd)
+							subprocess.Popen(cmd, cwd=dname)
+							found = True
+
+				# try default associated program
+				if not found:
+					if os.name == 'posix':
+						# xdg-open is only a shell script which delegates the job to a
+						# desktop specific program, e.g. if DE=kde than kde-open
+						# needs DE environment variable set, otherwise it just throws it
+						# at the browser, which is not very helpful
+						print("running xdg-open "+self.filepath)
+						subprocess.Popen(['xdg-open', self.filepath], cwd=dname)
+					elif os.name == 'mac':
+						subprocess.Popen(['open', self.filepath], cwd=dname)
+					elif os.name == 'nt':
+						#os.startfile(self.filepath) # no way to change dir
+						subprocess.Popen(['cmd', '/C', 'start', self.filepath], cwd=dname)
+
 		except:
 			import traceback
 			traceback.print_exc()
@@ -740,8 +779,12 @@ def menu_func_export(self, context):
 
 def register():
 	# custom mesh properties
-	bpy.types.Mesh.g3d_customColor = bpy.props.BoolProperty()
-	bpy.types.Mesh.g3d_noSelect = bpy.props.BoolProperty()
+	bpy.types.Mesh.g3d_customColor = bpy.props.BoolProperty(
+			name="team color",
+			description="replace alpha channel of texture with team color")
+	bpy.types.Mesh.g3d_noSelect = bpy.props.BoolProperty(
+			name="non-selectable",
+			description="click on mesh doesn't select unit")
 
 	bpy.utils.register_module(__name__)
 
