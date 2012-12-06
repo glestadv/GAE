@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+	<mime-type type="application/x-g3d">
+		<comment>Glest model format</comment>
+		<glob pattern="*.g3d"/>
+		<icon name="gae_g3dviewer"/>
+		<magic>
+			<match value="G3D" type="string" offset="0"/>
+		</magic>
+	</mime-type>
+	<mime-type type="application/x-gbm">
+		<comment>Glest map format</comment>
+		<icon name="gae_mapeditor"/>
+		<glob pattern="*.gbm"/>
+	</mime-type>
+</mime-info>

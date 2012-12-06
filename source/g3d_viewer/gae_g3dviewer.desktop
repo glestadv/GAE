@@ -5,5 +5,6 @@ Comment=View Glest models in g3d format
 Exec=gae_g3dviewer
 Icon=gae_g3dviewer
 Terminal=false
+MimeType=application/x-g3d;
 Categories=Game;StrategyGame;
 StartupNotify=true
