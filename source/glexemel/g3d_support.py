@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 7, 1),
+	"version": (0, 7, 2),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
@@ -510,12 +510,12 @@ def G3DSaver(filepath, context, operator):
 			if obj.mode != 'OBJECT': # we want to be in object mode
 				print("ERROR: mesh not in object mode")
 				operator.report({'ERROR'}, "mesh not in object mode")
-				return
+				return -1
 
 	if meshCount == 0:
 		print("ERROR: no meshes found")
 		operator.report({'ERROR'}, "no meshes found")
-		return
+		return -1
 
 	fileID = open(filepath,"wb")
 	# G3DHeader v4
@@ -613,7 +613,7 @@ def G3DSaver(filepath, context, operator):
 		if realFaceCount == 0:
 			print("ERROR: no triangles found")
 			operator.report({'ERROR'}, "no triangles found")
-			return
+			return -1
 		indexCount = realFaceCount * 3
 		vertexCount = len(mesh.vertices) + len(newverts)
 		specularPower = 9.999999  # unused, same as old exporter
@@ -676,7 +676,7 @@ def G3DSaver(filepath, context, operator):
 		fileID.write(struct.pack(indices_format, *indices))
 
 	fileID.close()
-	return
+	return 0
 
 
 #---=== Register ===
@@ -734,8 +734,8 @@ class ExportG3D(bpy.types.Operator, ExportHelper):
 
 	def execute(self, context):
 		try:
-			G3DSaver(self.filepath, context, self)
-			if self.showg3d:
+			res = G3DSaver(self.filepath, context, self)
+			if res==0 and self.showg3d:
 				print("opening g3dviewer with " + self.filepath)
 				scriptsdir = bpy.utils.script_path_user()
 				dname = os.path.dirname(self.filepath)
