@@ -103,7 +103,7 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 7, 0),
+	"version": (0, 7, 1),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
@@ -190,6 +190,7 @@ class G3DMeshHeaderv3:										 #Read Meshheader
 			self.customalpha = True
 		else:
 			self.customalpha = False
+		self.noselect = False
 		
 class G3DMeshHeaderv4:										 #Read Meshheader
 	binary_format = "<64c3I8f2I"
