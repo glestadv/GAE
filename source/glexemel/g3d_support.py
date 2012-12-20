@@ -103,14 +103,14 @@
 bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"author": "various, see head of script",
-	"version": (0, 7, 2),
+	"version": (0, 8, 0),
 	"blender": (2, 63, 0),
 	#"api": 36079,
 	"location": "File > Import-Export",
 	"description": "Import/Export .g3d file",
-	"warning": "",
-	"wiki_url": "",
-	"tracker_url": "",
+	"warning": "always keep .blend files",
+	"wiki_url": "http://glest.wikia.com/wiki/G3D_support",
+	"tracker_url": "http://glest.org/glest_board/index.php?topic=6596.0",
 	"category": "Import-Export"}
 ###########################################################################
 # Importing Structures needed (must later verify if i need them really all)
@@ -127,6 +127,8 @@ from os import path
 from os.path import dirname, abspath
 
 import subprocess
+from mathutils import Matrix
+from math import radians
 ###########################################################################
 # Variables that are better Global to handle
 ###########################################################################
@@ -267,7 +269,8 @@ class G3DMeshdataV4:											   #Calculate and read the Mesh Datapack
 			self.texturecoords = struct.unpack(texturecoords_format,fileID.read(struct.calcsize(texturecoords_format)))
 		self.indices = struct.unpack(indices_format ,fileID.read(struct.calcsize(indices_format)))
 
-def createMesh(filename,header,data,operator):		#Create a Mesh inside Blender
+#Create a Mesh inside Blender
+def createMesh(filename, header, data, toblender, operator):
 	mesh = bpy.data.meshes.new(header.meshname)		#New Mesh
 	meshobj = bpy.data.objects.new(header.meshname+'Object', mesh)	 #New Object for the new Mesh
 	scene = bpy.context.scene
@@ -393,6 +396,13 @@ def createMesh(filename,header,data,operator):		#Create a Mesh inside Blender
 
 	meshobj.active_shape_key_index = 0
 
+	if toblender:
+		# rotate from glest to blender orientation
+		#mesh.transform( Matrix( ((1,0,0,0),(0,0,-1,0),(0,1,0,0),(0,0,0,1)) ) )
+		# doesn't work, maybe because of shape keys
+		# use object transformation instead
+		meshobj.rotation_euler = (radians(90), 0, 0)
+
 	# update polygon structures from tessfaces
 	mesh.update()
 	mesh.update_tag()
@@ -400,7 +410,7 @@ def createMesh(filename,header,data,operator):		#Create a Mesh inside Blender
 ###########################################################################
 # Import
 ###########################################################################
-def G3DLoader(filepath, operator):			#Main Import Routine
+def G3DLoader(filepath, toblender, operator):			#Main Import Routine
 	global imported, sceneID
 	print ("\nNow Importing File: " + filepath)
 	fileID = open(filepath,"rb")
@@ -444,7 +454,7 @@ def G3DLoader(filepath, operator):			#Main Import Routine
 			meshheader.meshname = basename+str(x+1)	 #Generate Meshname because V3 has none
 			if meshheader.framecount > maxframe: maxframe = meshheader.framecount #Evaluate the maximal animationsteps
 			meshdata = G3DMeshdataV3(fileID,meshheader)
-			createMesh(filepath,meshheader,meshdata,operator)
+			createMesh(filepath, meshheader, meshdata, toblender, operator)
 		fileID.close
 		bpy.context.scene.frame_start=1
 		bpy.context.scene.frame_end=maxframe
@@ -478,7 +488,7 @@ def G3DLoader(filepath, operator):			#Main Import Routine
 					meshheader.meshname = basename+str(x+1)
 			if meshheader.framecount > maxframe: maxframe = meshheader.framecount #Evaluate the maximal animationsteps
 			meshdata = G3DMeshdataV4(fileID,meshheader)
-			createMesh(filepath,meshheader,meshdata,operator)
+			createMesh(filepath, meshheader, meshdata, toblender, operator)
 		fileID.close
 		
 		bpy.context.scene.frame_start=1
@@ -495,7 +505,7 @@ def G3DLoader(filepath, operator):			#Main Import Routine
 		print ("All Done, have a good Day :-)\n\n")
 		return
 
-def G3DSaver(filepath, context, operator):
+def G3DSaver(filepath, context, toglest, operator):
 	print ("\nNow Exporting File: " + filepath)
 
 	objs = context.selected_objects
@@ -613,6 +623,7 @@ def G3DSaver(filepath, context, operator):
 		if realFaceCount == 0:
 			print("ERROR: no triangles found")
 			operator.report({'ERROR'}, "no triangles found")
+			fileID.close()
 			return -1
 		indexCount = realFaceCount * 3
 		vertexCount = len(mesh.vertices) + len(newverts)
@@ -634,6 +645,11 @@ def G3DSaver(filepath, context, operator):
 			#FIXME: not sure what's better: PREVIEW or RENDER settings
 			m = obj.to_mesh(context.scene, True, 'RENDER')
 			m.transform(obj.matrix_world)  # apply object-mode transformations
+
+			if toglest:
+				# rotate from blender to glest orientation
+				m.transform( Matrix( ((1,0,0,0),(0,0,1,0),(0,-1,0,0),(0,0,0,1)) ) )
+
 			for vertex in m.vertices:
 				vertices.extend(vertex.co)
 				normals.extend(vertex.normal)
@@ -704,10 +720,14 @@ class ImportG3D(bpy.types.Operator, ImportHelper):
 	filename_ext = ".g3d"
 	filter_glob = StringProperty(default="*.g3d", options={'HIDDEN'})
 
+	toblender = bpy.props.BoolProperty(
+				name="rotate to Blender orientation",
+				description="Rotate meshes from Glest to Blender orientation",
+				default=False)
+
 	def execute(self, context):
 		try:
-			#G3DLoader(**self.as_keywords(ignore=("filter_glob",)))
-			G3DLoader(self.filepath, self)
+			G3DLoader(self.filepath, self.toblender, self)
 		except:
 			import traceback
 			traceback.print_exc()
@@ -731,10 +751,14 @@ class ExportG3D(bpy.types.Operator, ExportHelper):
 							"g3dviewer needs to be in the scripts directory, "
 							"otherwise the associated program of .g3d is run."),
 				default=False)
+	toglest = bpy.props.BoolProperty(
+				name="rotate to glest orientation",
+				description="Rotate meshes from Blender to Glest orientation",
+				default=False)
 
 	def execute(self, context):
 		try:
-			res = G3DSaver(self.filepath, context, self)
+			res = G3DSaver(self.filepath, context, self.toglest, self)
 			if res==0 and self.showg3d:
 				print("opening g3dviewer with " + self.filepath)
 				scriptsdir = bpy.utils.script_path_user()
@@ -807,7 +831,7 @@ if __name__ == '__main__':
 	#	if obj.type == 'MESH':
 	#		obj.select = True
 	#		bpy.ops.object.delete()
-	#G3DLoader("import.g3d", None)
+	#G3DLoader("import.g3d", False, None)
 
 	#for obj in bpy.context.selected_objects:
 	#	obj.select = False  # deselect everything, so we get it all
