@@ -43,8 +43,15 @@ function init() {
 	
 	//only 0x1 is currently used, indicating that there is a diffuse texture in this mesh.
 	var textureFlags = struct({
-		diffuseTexture : bitfield("bool", 1),
-		padding        : bitfield("unsigned", 31)
+		diffuseMap  : bitfield("bool", 1),
+		specularMap : bitfield("bool", 1),
+		normalMap   : bitfield("bool", 1),
+		padding     : bitfield("unsigned", 29)
+	})
+
+	var textureUnion = union({
+		flags : textureFlags,
+		hex   : uint32()
 	})
 	
 	/*
@@ -62,7 +69,7 @@ function init() {
 	};
 	*/
 	var meshHeader = struct({
-		name          : array(uint8(), 64),
+		name          : array(char(), 64),
 		frameCount    : uint32(),
 		vertexCount   : uint32(),
 		indexCount    : uint32(),
@@ -71,14 +78,14 @@ function init() {
 		specularPower : float(),
 		opacity       : float(),
 		properties    : meshPropertyFlags,
-		textures      : textureFlags
+		textures      : textureUnion
 	})
 
 	/*
 	A list of uint8[64] texture name values. One for each texture in the mesh. If there are no textures in the mesh no texture names are present. In practice since Glest only uses 1 texture for each mesh the number of texture names should be 0 or 1.
 	*/
 	var textureName = struct({
-		TextureName : array(uint8(), 64)
+		TextureName : array(char(), 64)
 	})
 
 	// some helper
@@ -109,7 +116,6 @@ function init() {
 
 
 	var meshData = struct({
-		TextureName : textureName,
 		vertexFrame : array(vertices, 1),//length = frameCount
 		normalFrame : array(normals, 1), //length = frameCount
 		texcoords   : array(tcoords, 1), //length = vertexCount
@@ -119,6 +125,7 @@ function init() {
 	// general structures
 	var mesh = struct({
 		MeshHeader  : meshHeader,
+		TextureNames: array(textureName, 1),//length = bitcount(meshheader.textures)
 		MeshData    : meshData
 	})
 	var g3d = struct({
@@ -134,6 +141,15 @@ function init() {
 	//set an update function (which gets called everytime the structure changes, i.e. cursor moved)
 	g3d.child("Meshes").updateFunc = function(mainStruct) {
 		this.length = this.parent.ModelHeader.meshCount.value;
+	}
+	mesh.child("TextureNames").updateFunc = function(mainStruct){
+		var bits = this.parent.MeshHeader.textures.hex;
+		var c = 0;
+		while(bits){ //count bits
+			bits &= bits - 1;
+			++c;
+		}
+		this.length = c;
 	}
 	meshData.updateFunc = function(mainStruct) {
 		var mh = this.parent.MeshHeader;
