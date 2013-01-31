@@ -81,15 +81,22 @@
 #Code:
 #enum MeshPropertyFlag{
 #		mpfCustomColor= 1,
-#		mpfTwoSided= 2
+#		mpfTwoSided= 2,
+#		mpfNoSelect= 4
 #};
 #mpfTwoSided: meshes in this mesh are rendered by both sides, if this flag is not present only "counter clockwise" faces are rendered
 #mpfCustomColor: alpha in this model is replaced by a custom color, usually the player color
-#textures: texture flags, only 0x1 is currently used, indicating that there is a diffuse texture in this mesh.
+#textures: texture flags
+#Code:
+#enum MeshTexture{
+#		diffuse = 1,
+#		specular = 2,
+#		normal = 4
+#};
 #================================
 #4. TEXTURE NAMES
 #================================
-#A list of uint8[64] texture name values. One for each texture in the mesh. If there are no textures in the mesh no texture names are present. In practice since Glest only uses 1 texture for each mesh the number of texture names should be 0 or 1.
+#A list of uint8[64] texture name values. One for each texture in the mesh. If there are no textures in the mesh no texture names are present.
 #================================
 #5. MESH DATA
 #================================
@@ -102,12 +109,11 @@
 
 bl_info = {
 	"name": "G3D Mesh Import/Export",
+	"description": "Import/Export .g3d file (Glest 3D)",
 	"author": "various, see head of script",
-	"version": (0, 8, 0),
+	"version": (0, 9, 0),
 	"blender": (2, 63, 0),
-	#"api": 36079,
 	"location": "File > Import-Export",
-	"description": "Import/Export .g3d file",
 	"warning": "always keep .blend files",
 	"wiki_url": "http://glest.wikia.com/wiki/G3D_support",
 	"tracker_url": "http://glest.org/glest_board/index.php?topic=6596.0",
@@ -180,9 +186,9 @@ class G3DMeshHeaderv3:										 #Read Meshheader
 		self.properties= data[6]					   #Property flags
 		if self.properties & 1:					  #PropertyBit is Mesh Textured ?
 			self.hastexture = False
-			self.texturefilename = None
+			self.diffusetexture = None
 		else:
-			self.texturefilename = "".join([str(x, "ascii") for x in data[7:-1] if x[0]< 127 ])
+			self.diffusetexture = "".join([str(x, "ascii") for x in data[7:-1] if x[0]< 127 ])
 			self.hastexture = True
 		if self.properties & 2:					  #PropertyBit is Mesh TwoSided ?
 			self.istwosided = True
@@ -192,44 +198,54 @@ class G3DMeshHeaderv3:										 #Read Meshheader
 			self.customalpha = True
 		else:
 			self.customalpha = False
-		self.noselect = False
 		
 class G3DMeshHeaderv4:										 #Read Meshheader
 	binary_format = "<64c3I8f2I"
 	texname_format = "<64c"
+
+	def _readtexname(self,fileID):
+		temp = fileID.read(struct.calcsize(self.texname_format))
+		data = struct.unpack(self.texname_format,temp)
+		return "".join([str(x, "ascii") for x in data[0:-1] if x[0] < 127 ])
+
 	def __init__(self,fileID):
 		temp = fileID.read(struct.calcsize(self.binary_format))
 		data = struct.unpack(self.binary_format,temp)
 		self.meshname = "".join([str(x, "ascii") for x in data[0:64] if x[0] < 127 ]) #Name of Mesh every Char is a  String on his own
-		self.framecount = data[64]				#Framecount = Number of Animationsteps
-		self.vertexcount = data[65]			   #Number of Vertices in each Frame
-		self.indexcount = data[66]				#Number of Indices in Mesh (Triangles = Indexcount/3)
-		self.diffusecolor = data[67:70]	   #RGB diffuse color
-		self.specularcolor = data[70:73]	  #RGB specular color (unused)
-		self.specularpower = data[73]		 #Specular power (unused)
-		self.opacity = data[74]					   #Opacity
-		self.properties= data[75]				  #Property flags
-		self.textures = data[76]					  #Texture flag
-		if self.properties & 1:					  #PropertyBit is Mesh Alpha Channel custom Color in Game ?
-			self.customalpha = True
-		else:
-			self.customalpha = False
-		if self.properties & 2:					  #PropertyBit is Mesh TwoSided ?
-			self.istwosided = True
-		else:
-			self.istwosided = False
-		if self.properties & 4:
-			self.noselect = True
-		else:
-			self.noselect = False
-		if self.textures & 1:						#PropertyBit is Mesh Textured ?
-			temp = fileID.read(struct.calcsize(self.texname_format))
-			data = struct.unpack(self.texname_format,temp)
-			self.texturefilename = "".join([str(x, "ascii") for x in data[0:-1] if x[0] < 127 ])
+		self.framecount    = data[64]      #Framecount = Number of Animationsteps
+		self.vertexcount   = data[65]      #Number of Vertices in each Frame
+		self.indexcount    = data[66]      #Number of Indices in Mesh (Triangles = Indexcount/3)
+		self.diffusecolor  = data[67:70]   #RGB diffuse color
+		self.specularcolor = data[70:73]   #RGB specular color (unused)
+		self.specularpower = data[73]      #Specular power (unused)
+		self.opacity       = data[74]      #Opacity
+		self.properties    = data[75]      #Property flags
+		self.textures      = data[76]      #Texture flags
+
+		self.customalpha = bool(self.properties & 1)
+		self.istwosided  = bool(self.properties & 2)
+		self.noselect    = bool(self.properties & 4)
+
+		self.hastexture = False
+		self.diffusetexture  = None
+		self.speculartexture = None
+		self.normaltexture   = None
+		if self.textures:						#PropertyBit is Mesh Textured ?
+			if self.textures & 1:  # diffuse
+				self.diffusetexture = self._readtexname(fileID)
+			if self.textures & 2:  # specular
+				self.speculartexture = self._readtexname(fileID)
+			if self.textures & 4:  # normal
+				self.normaltexture = self._readtexname(fileID)
+
 			self.hastexture = True
-		else:
-			self.hastexture = False
-			self.texturefilename = None
+			# read all texture slots, otherwise it's read as data
+			tex = self.textures >> 3
+			while tex:
+				tex &= tex - 1 # set rightmost 1-bit to 0
+				# discard texture name, as we don't know what to do with it
+				fileID.seek(struct.calcsize(self.texname_format))
+				print("warning: ignored texture in undefined texture slot")
 
 class G3DMeshdataV3:											   #Calculate and read the Mesh Datapack
 	def __init__(self,fileID,header):
@@ -277,13 +293,23 @@ def createMesh(filename, header, data, toblender, operator):
 	scene.objects.link(meshobj)
 	scene.update()
 	uvcoords = []
-	image = None
+	img_diffuse  = None
+	img_specular = None
+	img_normal   = None
 	if header.hastexture:												  #Load Texture when assigned
 		try:
-			texturefile = dirname(abspath(filename))+os.sep+header.texturefilename
-			image = bpy.data.images.load(texturefile) #load_image(texturefile, dirname(filename))
+			texturefile = dirname(abspath(filename)) + os.sep +	header.diffusetexture
+			img_diffuse = bpy.data.images.load(texturefile)
 			for x in range(0,len(data.texturecoords),2): #Prepare the UV
 				uvcoords.append([data.texturecoords[x],data.texturecoords[x+1]])
+			
+			if header.isv4:
+				if header.speculartexture:
+					texturefile = dirname(abspath(filename)) + os.sep +	header.speculartexture
+					img_specular = bpy.data.images.load(texturefile)
+				if header.normaltexture:
+					texturefile = dirname(abspath(filename)) + os.sep +	header.normaltexture
+					img_normal = bpy.data.images.load(texturefile)
 		except:
 			import traceback
 			traceback.print_exc()
@@ -329,19 +355,31 @@ def createMesh(filename, header, data, toblender, operator):
 	mesh.tessfaces.foreach_set("use_smooth", [True] * len(mesh.tessfaces))
 	mesh.g3d_customColor = header.customalpha
 	mesh.show_double_sided = header.istwosided
-	mesh.g3d_noSelect = header.noselect
+	if header.isv4:
+		mesh.g3d_noSelect = header.noselect
+	else:
+		mesh.g3d_noSelect = False
 	#===================================================================================================
 	#Material Setup
 	#===================================================================================================
+	def addtexslot(matdata,index,name,img):
+		texture = bpy.data.textures.new(name=name,type='IMAGE')
+		texture.image = img
+		slot = matdata.texture_slots.create(index)
+		slot.texture = texture
+		slot.texture_coords = 'UV'
+
 	if header.hastexture:	   
 		materialname = "pskmat"
 		materials = []
-		texture = bpy.data.textures.new(name=header.texturefilename,type='IMAGE')
-		texture.image = image
 		matdata = bpy.data.materials.new(materialname + '1')
-		slot = matdata.texture_slots.add()
-		slot.texture = texture
-		slot.texture_coords = 'UV'
+
+		addtexslot(matdata, 0, 'diffusetexture', img_diffuse)
+		if img_specular:
+			addtexslot(matdata, 1, 'speculartexture', img_specular)
+		if img_normal:
+			addtexslot(matdata, 2, 'normaltexture', img_normal)
+
 		if header.isv4:
 			matdata.diffuse_color = (header.diffusecolor[0], header.diffusecolor[1],header.diffusecolor[2])
 			matdata.alpha = header.opacity
@@ -366,7 +404,7 @@ def createMesh(filename, header, data, toblender, operator):
 						blender_tface.uv1 = mfaceuv[0][0] #uv = (0,0)
 						blender_tface.uv2 = mfaceuv[0][1] #uv = (0,0)
 						blender_tface.uv3 = mfaceuv[0][2] #uv = (0,0)
-						blender_tface.image = image
+						blender_tface.image = img_diffuse
 					else:
 						blender_tface.uv1 = [0,0]
 						blender_tface.uv2 = [0,0]
@@ -447,7 +485,7 @@ def G3DLoader(filepath, toblender, operator):			#Main Import Routine
 			print ("colorframecount       : " + str(meshheader.colorframecount))
 			print ("pointcount            : " + str(meshheader.vertexcount))
 			print ("indexcount            : " + str(meshheader.indexcount))
-			print ("texturename           : " + str(meshheader.texturefilename))
+			print ("texturename           : " + str(meshheader.diffusetexture))
 			print ("hastexture            : " + str(meshheader.hastexture))
 			print ("istwosided            : " + str(meshheader.istwosided))
 			print ("customalpha           : " + str(meshheader.customalpha))
@@ -483,7 +521,7 @@ def G3DLoader(filepath, toblender, operator):			#Main Import Routine
 			print ("opacity         : %1.6f" %meshheader.opacity)
 			print ("properties      : " + str(meshheader.properties))
 			print ("textures        : " + str(meshheader.textures))
-			print ("texturename     : " + str(meshheader.texturefilename))
+			print ("texturename     : " + str(meshheader.diffusetexture))
 			if len(meshheader.meshname) ==0:	#When no Meshname in File Generate one
 					meshheader.meshname = basename+str(x+1)
 			if meshheader.framecount > maxframe: maxframe = meshheader.framecount #Evaluate the maximal animationsteps
@@ -545,15 +583,25 @@ def G3DSaver(filepath, context, toglest, operator):
 		if len(mesh.materials) > 0:
 			# we have a texture, hopefully
 			material = mesh.materials[0]
-			if material.active_texture.type=='IMAGE' and len(mesh.uv_textures)>0:
+			slot = material.texture_slots[0]
+			# only look for other textures when we have diffuse
+			if slot and slot.texture.type=='IMAGE' and len(mesh.uv_textures)>0:
 				diffuseColor = material.diffuse_color
 				specularColor = material.specular_color
 				opacity = material.alpha
 				textures = 1
-				texname = bpy.path.basename(material.active_texture.image.filepath)
+				texnames = []
+				texnames.append(bpy.path.basename(slot.texture.image.filepath))
+				# specular and normal
+				for i in range(1, 3):
+					slot = material.texture_slots[i]
+					if slot and slot.texture.type=='IMAGE':
+						texnames.append(bpy.path.basename(slot.texture.image.filepath))
+						textures |= 1 << i
+					
 			else:
-				print("WARNING: active texture in first material isn't of type IMAGE or it's not unwrapped, texture ignored")
-				operator.report({'WARNING'}, "active texture in first material isn't of type IMAGE or it's not unwrapped, texture ignored")
+				print("WARNING: first texture slot in first material isn't of type IMAGE or it's not unwrapped, texture ignored")
+				operator.report({'WARNING'}, "first texture slot in first material isn't of type IMAGE or it's not unwrapped, texture ignored")
 				#continue without texture
 
 		meshname = mesh.name
@@ -563,7 +611,7 @@ def G3DSaver(filepath, context, toglest, operator):
 		indices=[]
 		newverts=[]
 		mesh.update(calc_tessface=True) # tesselate n-polygons to triangles & quads
-		if textures == 1:
+		if textures:
 			uvtex = mesh.tessface_uv_textures[0]
 			uvlist = []
 			uvlist[:] = [[0]*2 for i in range(len(mesh.vertices))]
@@ -670,8 +718,9 @@ def G3DSaver(filepath, context, toglest, operator):
 			properties, textures
 		))
 		#Texture names
-		if textures == 1: # only when we have one
-			fileID.write(struct.pack("<64s", bytes(texname, "ascii")))
+		if textures: # only when we have textures
+			for i in range(len(texnames)):
+				fileID.write(struct.pack("<64s", bytes(texnames[i], "ascii")))
 
 		# see G3DMeshdataV4
 		vertex_format = "<%if" % int(frameCount * vertexCount * 3)
@@ -683,7 +732,7 @@ def G3DSaver(filepath, context, toglest, operator):
 		fileID.write(struct.pack(normals_format, *normals))
 
 		# texcoords
-		if textures == 1: # only when we have one
+		if textures: # only when we have textures
 			texcoords = []
 			for uv in uvlist:
 				texcoords.extend(uv)
@@ -723,7 +772,7 @@ class ImportG3D(bpy.types.Operator, ImportHelper):
 	toblender = bpy.props.BoolProperty(
 				name="rotate to Blender orientation",
 				description="Rotate meshes from Glest to Blender orientation",
-				default=False)
+				default=True)
 
 	def execute(self, context):
 		try:
@@ -754,7 +803,7 @@ class ExportG3D(bpy.types.Operator, ExportHelper):
 	toglest = bpy.props.BoolProperty(
 				name="rotate to glest orientation",
 				description="Rotate meshes from Blender to Glest orientation",
-				default=False)
+				default=True)
 
 	def execute(self, context):
 		try:
@@ -831,7 +880,7 @@ if __name__ == '__main__':
 	#	if obj.type == 'MESH':
 	#		obj.select = True
 	#		bpy.ops.object.delete()
-	#G3DLoader("import.g3d", False, None)
+	#G3DLoader("import.g3d", True, None)
 
 	#for obj in bpy.context.selected_objects:
 	#	obj.select = False  # deselect everything, so we get it all
