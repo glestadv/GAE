@@ -18,8 +18,8 @@
 #include "config.h"
 #include "ai_interface.h"
 #include "gaia.h"
-#include "network_types.h"
-#include "network_message.h"
+//#include "network_types.h"
+//#include "network_message.h"
 #include "stats.h"
 #include "FSFactory.hpp"
 #include "util.h"
@@ -159,7 +159,7 @@ public:
 	int size() const { return numEntries; }
 };*/
 
-class SkillCycleTable : public Net::Message {
+class SkillCycleTable /*: public Net::Message*/ {
 private:
 //	struct Data {
 //		uint32 messageType :  8;
@@ -174,12 +174,12 @@ private:
 
 public:
 	SkillCycleTable();
-	SkillCycleTable(RawMessage raw);
+	//SkillCycleTable(RawMessage raw);
     virtual ~SkillCycleTable();
 
-	virtual MessageType getType() const		{ return MessageType::SKILL_CYCLE_TABLE; }
+	/*virtual MessageType getType() const		{ return MessageType::SKILL_CYCLE_TABLE; }
 	virtual unsigned int getSize() const    { return m_packetSize; }
-	virtual const void* getData() const		{ return m_packetData; }
+	virtual const void* getData() const		{ return m_packetData; }*/
 
 	void create(const TechTree *techTree);
 

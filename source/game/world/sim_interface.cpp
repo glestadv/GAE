@@ -61,10 +61,10 @@ SkillCycleTable::SkillCycleTable() : numEntries(0) {
 	cycleTable = 0;
 }
 
-SkillCycleTable::SkillCycleTable(RawMessage raw) {
+/*SkillCycleTable::SkillCycleTable(RawMessage raw) {
 	numEntries = raw.size / sizeof(CycleInfo);
 	cycleTable = reinterpret_cast<CycleInfo*>(raw.data);
-}
+}*/
 
 SkillCycleTable::~SkillCycleTable(){
 	delete[] cycleTable;
@@ -73,26 +73,26 @@ SkillCycleTable::~SkillCycleTable(){
 void SkillCycleTable::create(const TechTree *techTree) {
 	numEntries = g_prototypeFactory.getSkillTypeCount();
 	
-	MsgHeader msgHdr;
+	/*MsgHeader msgHdr;
 	msgHdr.messageType = getType();
-	msgHdr.messageSize = numEntries * sizeof(CycleInfo);
+	msgHdr.messageSize = numEntries * sizeof(CycleInfo);*/
 	
 	if (!numEntries) {
 		cycleTable = 0; // -loadmap
 		return;
 	}
-	NETWORK_LOG( "SkillCycleTable built, numEntries = " << numEntries 
-		<< ", messageSize = " << msgHdr.messageSize << " (@ " << sizeof(CycleInfo) << " ea)" );
+	/*NETWORK_LOG( "SkillCycleTable built, numEntries = " << numEntries 
+		<< ", messageSize = " << msgHdr.messageSize << " (@ " << sizeof(CycleInfo) << " ea)" );*/
 
 	cycleTable = new CycleInfo[numEntries];
 	for (int i=0; i < numEntries; ++i) {
 		cycleTable[i] = g_prototypeFactory.getSkillType(i)->calculateCycleTime();
 	}
-	m_packetSize = sizeof(MsgHeader) + msgHdr.messageSize;
+	/*m_packetSize = sizeof(MsgHeader) + msgHdr.messageSize;
 	m_packetData = new char[m_packetSize];
 	char *ptr = (char*)m_packetData;
 	memcpy(ptr, &msgHdr, sizeof(MsgHeader));
-	memcpy(ptr + sizeof(MsgHeader), cycleTable, msgHdr.messageSize);
+	memcpy(ptr + sizeof(MsgHeader), cycleTable, msgHdr.messageSize);*/
 }
 
 // =====================================================
