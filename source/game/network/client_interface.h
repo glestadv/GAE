@@ -59,7 +59,7 @@ protected:
 	virtual void waitUntilReady();
 	virtual void syncAiSeeds(int aiCount, int *seeds);
 	virtual void doDataSync();
-	virtual void createSkillCycleTable(const TechTree *);
+	virtual void createSkillCycleTable(const TechTree *techTree);
 	virtual void startGame();
 
 	// Game progress, NetworkInterface virtuals

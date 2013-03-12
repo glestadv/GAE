@@ -133,8 +133,8 @@ void ClientInterface::doDataSync() {
 	m_connection->send(&msg);
 }
 
-void ClientInterface::createSkillCycleTable(const TechTree *) {
-	NETWORK_LOG( "ClientInterface::createSkillCycleTable(): waiting for server to send Skill Cycle Table." );
+void ClientInterface::createSkillCycleTable(const TechTree *techTree) {
+	/*NETWORK_LOG( "ClientInterface::createSkillCycleTable(): waiting for server to send Skill Cycle Table." );
 	int skillCount = m_prototypeFactory->getSkillTypeCount();
 	int expectedSize = skillCount * sizeof(CycleInfo);
 	waitForMessage(m_host->getReadyWaitTimeout());
@@ -145,8 +145,9 @@ void ClientInterface::createSkillCycleTable(const TechTree *) {
 	if (raw.size != expectedSize) {
 		throw GarbledMessage(MessageType::SKILL_CYCLE_TABLE, NetSource::SERVER);
 	}
-	//SkillCycleTableMessage skillCycleTableMessage(raw);
-	m_skillCycleTable = new SkillCycleTable(/*skillCycleTableMessage*/raw);
+	//SkillCycleTableMessage skillCycleTableMessage(raw);*/
+	//m_skillCycleTable = new SkillCycleTable(/*skillCycleTableMessage*/raw);
+	SimulationInterface::createSkillCycleTable(techTree);
 }
 
 void ClientInterface::updateLobby() {

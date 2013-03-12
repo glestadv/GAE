@@ -168,10 +168,20 @@ void ServerInterface::update() {
 	m_connection.update(this);
 
 	// update all slots
+	bool allFinishedTurn = true;
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (slots[i] && slots[i]->isConnected()) {
 			updateSlot(i);
+
+			/*if (!slots[i]->isFinishedTurn()) {
+				allFinishedTurn = false;
+			}*/
 		}
+	}
+
+	if (allFinishedTurn) {
+		//send the current turn commands to all clients
+		//execute [current turn - n] queued commands
 	}
 }
 
@@ -308,7 +318,7 @@ void ServerInterface::createSkillCycleTable(const TechTree *techTree) {
 	NETWORK_LOG( "ServerInterface::createSkillCycleTable(): Creating and sending SkillCycleTable." );
 	SimulationInterface::createSkillCycleTable(techTree);
 	//SkillCycleTableMessage skillCycleTableMessage(m_skillCycleTable);
-	broadcastMessage(m_skillCycleTable/*&skillCycleTableMessage*/);
+	//broadcastMessage(m_skillCycleTable/*&skillCycleTableMessage*/);
 }
 
 #if MAD_SYNC_CHECKING
