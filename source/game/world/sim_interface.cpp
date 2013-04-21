@@ -12,6 +12,7 @@
 
 #include "client_interface.h"
 #include "server_interface.h"
+#include "turn_manager.h"
 
 #include "profiler.h"
 #include "leak_dumper.h"
@@ -115,6 +116,7 @@ SimulationInterface::SimulationInterface(Program &program)
 		, m_skillCycleTable(0)
 		, m_processingCommand(CmdClass::NULL_COMMAND) {
 	m_prototypeFactory = new PrototypeFactory();
+	m_turnManager = new TurnManager();
 }
 
 SimulationInterface::~SimulationInterface() {
@@ -122,6 +124,7 @@ SimulationInterface::~SimulationInterface() {
 	delete m_gaia;
 	delete m_skillCycleTable;
 	delete m_prototypeFactory;
+	delete m_turnManager;
 }
 
 void SimulationInterface::constructGameWorld(GameState *g) {
@@ -272,13 +275,23 @@ bool SimulationInterface::updateWorld() {
 
 	// World
 	world->processFrame();
-	frameProccessed();
+
+	// a turn is made up of:
+	//	- check state (server send checksum to make sure the state is correct, send desync reason)
+	//	- receive all commands (remote and local) at turn n for turn n + 2
+	//	- after y time stop receiveing commands for turn n 
+	//	- givePendingCommands
+	//	- go to next turn, increment turn
+	//	- send ack of finished turn
+
+	m_turnManager->update(commander);
+	//frameProccessed();
 
 	// give pending commands
-	foreach (Commands, it, pendingCommands) {
+	/*foreach (Commands, it, pendingCommands) {
 		commander->giveCommand(it->toCommand());
 	}
-	pendingCommands.clear();
+	pendingCommands.clear();*/
 	return true;
 }
 
@@ -404,6 +417,11 @@ void SimulationInterface::doQuitGame(QuitSource source) {
 	quit = true;
 }
 
+void SimulationInterface::requestCommand(const NetworkCommand *networkCommand) {
+	//requestedCommands.push_back(*networkCommand);
+	m_turnManager->requestCommand(networkCommand);
+}
+
 void SimulationInterface::requestCommand(Command *command) {
 	Unit *unit = command->getCommandedUnit();
 
@@ -413,20 +431,20 @@ void SimulationInterface::requestCommand(Command *command) {
 	} else {*/
 		// else add to request queue
 		if (command->getArchetype() == CmdDirective::GIVE_COMMAND) {
-			requestedCommands.push_back(NetworkCommand(command));
+			/*requestedCommands.push_back*/m_turnManager->requestCommand(NetworkCommand(command));
 		} else if (command->getArchetype() == CmdDirective::CANCEL_COMMAND) {
-			requestedCommands.push_back(NetworkCommand(NetworkCommandType::CANCEL_COMMAND, unit, Vec2i(-1)));
+			m_turnManager->requestCommand(NetworkCommand(NetworkCommandType::CANCEL_COMMAND, unit, Vec2i(-1)));
 		} else if (command->getArchetype() == CmdDirective::SET_AUTO_REPAIR) {
-			requestedCommands.push_back(NetworkCommand(NetworkCommandType::SET_AUTO_REPAIR, 
+			m_turnManager->requestCommand(NetworkCommand(NetworkCommandType::SET_AUTO_REPAIR, 
 				unit, command->getFlags().get(CmdProps::MISC_ENABLE)));
 		} else if (command->getArchetype() == CmdDirective::SET_AUTO_ATTACK) {
-			requestedCommands.push_back(NetworkCommand(NetworkCommandType::SET_AUTO_ATTACK, 
+			m_turnManager->requestCommand(NetworkCommand(NetworkCommandType::SET_AUTO_ATTACK, 
 				unit, command->getFlags().get(CmdProps::MISC_ENABLE)));
 		} else if (command->getArchetype() == CmdDirective::SET_AUTO_FLEE) {
-			requestedCommands.push_back(NetworkCommand(NetworkCommandType::SET_AUTO_FLEE, 
+			m_turnManager->requestCommand(NetworkCommand(NetworkCommandType::SET_AUTO_FLEE, 
 				unit, command->getFlags().get(CmdProps::MISC_ENABLE)));
 		} else if (command->getArchetype() == CmdDirective::SET_CLOAK) {
-			requestedCommands.push_back(NetworkCommand(NetworkCommandType::SET_CLOAK, 
+			m_turnManager->requestCommand(NetworkCommand(NetworkCommandType::SET_CLOAK, 
 				unit, command->getFlags().get(CmdProps::MISC_ENABLE)));
 		}
 	//}

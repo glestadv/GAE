@@ -39,6 +39,9 @@ private:
 	bool launchGame;
 	int playerIndex;
 
+	int64 time;
+
+
 public:
 	ClientInterface(Program &prog);
 	virtual ~ClientInterface();

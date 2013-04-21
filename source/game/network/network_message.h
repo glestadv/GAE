@@ -356,6 +356,23 @@ public:
 	virtual const void* getData() const		{return &data;}
 };
 
+// ==============================================================
+//	class TurnFinishedMessage
+// ==============================================================
+/**	Message sent by the client at the end of a turn */
+class TurnFinishedMessage : public Message {
+private:
+	MsgHeader data;
+
+public:
+	TurnFinishedMessage();
+	TurnFinishedMessage(RawMessage raw);
+
+	virtual MessageType getType() const		{return MessageType::TURN_FINISHED;}
+	virtual unsigned int getSize() const	{return sizeof(data);}
+	virtual const void* getData() const		{return &data;}
+};
+
 // =====================================================
 //	class KeyFrame
 // =====================================================

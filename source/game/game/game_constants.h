@@ -75,6 +75,7 @@ namespace Glest {
 					GAME_SPEED,
 					COMMAND_LIST,
 					TEXT,
+					TURN_FINISHED,
 					KEY_FRAME,
 					SKILL_CYCLE_TABLE,
 					SYNC_ERROR,

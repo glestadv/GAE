@@ -49,7 +49,6 @@ private:
 public:
 	Commander(SimulationInterface *iSim) : world(0), iSim(iSim) { }
     void init(World *world)		{this->world = world;}
-	void updateNetwork();
 
 	CmdResult tryUnloadCommand(Unit *unit, CmdFlags flags, const Vec2i &pos, Unit *targetUnit) const;
 

@@ -39,7 +39,8 @@ ConnectionSlot::ConnectionSlot(ServerInterface* serverInterface, int playerIndex
 		: m_serverInterface(serverInterface)
 		, m_playerIndex(playerIndex)
 		, m_connection(NULL)
-		, m_ready(false) {
+		, m_ready(false)
+		, m_turnDone(false) {
 }
 
 ConnectionSlot::~ConnectionSlot() {
@@ -84,6 +85,8 @@ void ConnectionSlot::processMessages() {
 			for (int i=0; i < cmdList.getCommandCount(); ++i) {
 				m_serverInterface->requestCommand(cmdList.getCommand(i));
 			}
+		} else if (raw.type == MessageType::TURN_FINISHED) {
+			m_turnDone = true;
 		} else if (raw.type == MessageType::QUIT) {
 		/*
 			QuitMessage quitMsg(raw);

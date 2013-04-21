@@ -49,7 +49,8 @@ ClientInterface::ClientInterface(Program &prog)
 		, m_host(NULL)
 		, launchGame(false)
 		, introDone(false)
-		, playerIndex(-1) {
+		, playerIndex(-1)
+		, time(0){
 }
 
 ClientInterface::~ClientInterface() {
@@ -286,14 +287,32 @@ void ClientInterface::update() {
 }
 
 void ClientInterface::updateKeyframe(int frameCount) {
+	/*Chrono timer;
+
+	int64 passedTime = timer.getCurMillis() - time;
+	printf("updateKeyFrame() %i ", passedTime);
+
+	time = timer.getCurMillis();*/
+
 	if (!m_connection) {
 		return;
 	}
+
+	//m_turnManager.addCommands(keyFrame.getTurn(), commands);
+	//if (keyFrame.doNextTurn()) {
+	//	m_turnManager.executeCurrentTurn();
+	//	m_turnManager.nextTurn();
+	//}
 
 	// give all commands from last KeyFrame
 	for (size_t i=0; i < keyFrame.getCmdCount(); ++i) {
 		pendingCommands.push_back(*keyFrame.getCmd(i));
 	}
+
+	// acknowledge the commands have been given
+	TurnFinishedMessage turnFinished;
+	m_connection->send(&turnFinished);
+
 	while (true) {
 		waitForMessage();
 		RawMessage raw = m_connection->getNextMessage();

@@ -26,6 +26,7 @@ class ServerInterface;
 class ConnectionSlot {
 private:
 	bool				m_ready;
+	bool				m_turnDone;
 	int					m_playerIndex;
 	ServerInterface*	m_serverInterface;
 	NetworkSession*		m_connection;
@@ -50,6 +51,9 @@ public:
 	string getName() const			{return m_connection ? m_connection->getRemotePlayerName() : "";}
 
 	const NetworkSession *getSession() const {return m_connection;}
+
+	void startNextTurn() {m_turnDone = false;}
+	bool isFinishedTurn() {return m_turnDone;}
 
 protected:
 	virtual void processMessages();

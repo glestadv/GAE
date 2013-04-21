@@ -104,6 +104,8 @@ using namespace Debug;
 
 namespace Sim {
 
+class TurnManager;
+
 WRAPPED_ENUM( QuitSource, LOCAL, SERVER )
 WRAPPED_ENUM( GameStatus, NO_CHANGE, LOST, WON )
 
@@ -225,6 +227,8 @@ protected:
 	PrototypeFactory *m_prototypeFactory;
 	SkillCycleTable *m_skillCycleTable;
 
+	TurnManager *m_turnManager;
+
 	IF_MAD_SYNC_CHECKS(
 		WorldLog *worldLog;
 	)
@@ -292,9 +296,7 @@ public:
 	void doQuitGame(QuitSource source);
 
 	// commands
-	virtual void requestCommand(const NetworkCommand *networkCommand) {
-		requestedCommands.push_back(*networkCommand);
-	}
+	virtual void requestCommand(const NetworkCommand *networkCommand);
 	virtual void requestCommand(Command *command);
 
 	// change interface type

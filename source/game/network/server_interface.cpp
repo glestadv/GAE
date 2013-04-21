@@ -168,20 +168,10 @@ void ServerInterface::update() {
 	m_connection.update(this);
 
 	// update all slots
-	bool allFinishedTurn = true;
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		if (slots[i] && slots[i]->isConnected()) {
 			updateSlot(i);
-
-			/*if (!slots[i]->isFinishedTurn()) {
-				allFinishedTurn = false;
-			}*/
 		}
-	}
-
-	if (allFinishedTurn) {
-		//send the current turn commands to all clients
-		//execute [current turn - n] queued commands
 	}
 }
 
@@ -378,15 +368,39 @@ void ServerInterface::updateKeyframe(int frameCount) {
 	//NETWORK_LOG( "ServerInterface::updateKeyframe(): Building & sending keyframe " 
 	//	<< (frameCount / GameConstants::networkFramePeriod) << " @ frame " << frameCount);
 
-	// build command list, remove commands from requested and add to pending
-	while (!requestedCommands.empty()) {
-		keyFrame.add(requestedCommands.back());
-		pendingCommands.push_back(requestedCommands.back());
-		requestedCommands.pop_back();
+	// wait until all clients have completed excecuting the current turn
+	bool allFinishedTurn = true;
+	for (int i=0; i < GameConstants::maxPlayers; ++i) {
+		if (slots[i] && slots[i]->isConnected() && !slots[i]->isFinishedTurn()) {
+			allFinishedTurn = false;
+			break;
+		}
 	}
+
+	// if not then do nothing and try again next time so the rendering isn't blocked
+	if (allFinishedTurn) {
+
+		// build command list, remove commands from requested and add to pending
+		while (!requestedCommands.empty()) {
+			keyFrame.add(requestedCommands.back());
+			pendingCommands.push_back(requestedCommands.back());
+			requestedCommands.pop_back();
+		}
+
+		
+
+		// prepare for next turn
+		for (int i=0; i < GameConstants::maxPlayers; ++i) {
+			if (slots[i] && slots[i]->isConnected()) {
+				slots[i]->startNextTurn();
+			}
+		}
+	}
+
 	keyFrame.setFrameCount(frameCount);
 	keyFrame.buildPacket();
 	broadcastMessage(&keyFrame);
+	m_connection.flush();
 	
 	keyFrame.reset();
 }

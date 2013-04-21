@@ -466,6 +466,23 @@ bool QuitMessage::receive(NetworkConnection* connection) {
 */
 
 // =====================================================
+//	class TurnFinishedMessage
+// =====================================================
+
+TurnFinishedMessage::TurnFinishedMessage() {
+	data.messageType = getType();
+	data.messageSize = 0;
+}
+
+TurnFinishedMessage::TurnFinishedMessage(RawMessage raw) {
+	data.messageType = raw.type;
+	data.messageSize = raw.size;
+	if (raw.size || raw.data) {
+		throw GarbledMessage(getType());
+	}
+}
+
+// =====================================================
 //	class KeyFrame
 // =====================================================
 
@@ -479,7 +496,8 @@ struct KeyFrameMsgHeader {
 	uint16 projUpdateCount;
 	uint16 moveUpdateSize;
 	uint16 projUpdateSize;
-	int32 frame;
+	int32 frame; //FIX: GameSpeedMessage uses uint32 for frame?
+	int32 turn;
 
 };
 #pragma pack(pop)
