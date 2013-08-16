@@ -124,6 +124,9 @@ else (MSVC)
 	if(NOT CMAKE_CXX_FLAGS MATCHES -fno-rtti)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti" CACHE STRING "" FORCE)
 	endif()
+	if(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" CACHE STRING "" FORCE)
+	endif()
 endif (MSVC)
 
 include_directories(${LUA_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${VORBIS_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR}

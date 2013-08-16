@@ -64,7 +64,7 @@
  */
 
 #if REALLY_GNUC && GCC_FULL_VERSION < 30000
-#	error Sorry, you're compiler is too old and we don't want to support it.
+#	error "Sorry, you're compiler is too old and we don't want to support it."
 #endif
 
 #if defined(_MSC_VER) && _MSC_VER < 1300 /* MSVC 2003 */
