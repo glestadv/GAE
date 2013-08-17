@@ -111,12 +111,12 @@ bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"description": "Import/Export .g3d file (Glest 3D)",
 	"author": "various, see head of script",
-	"version": (0, 9, 0),
+	"version": (0, 10, 0),
 	"blender": (2, 63, 0),
 	"location": "File > Import-Export",
 	"warning": "always keep .blend files",
 	"wiki_url": "http://glest.wikia.com/wiki/G3D_support",
-	"tracker_url": "http://glest.org/glest_board/index.php?topic=6596.0",
+	"tracker_url": "https://forum.megaglest.org/index.php?topic=6596",
 	"category": "Import-Export"}
 ###########################################################################
 # Importing Structures needed (must later verify if i need them really all)
@@ -359,6 +359,7 @@ def createMesh(filename, header, data, toblender, operator):
 		mesh.g3d_noSelect = header.noselect
 	else:
 		mesh.g3d_noSelect = False
+	mesh.g3d_fullyOpaque = False
 	#===================================================================================================
 	#Material Setup
 	#===================================================================================================
@@ -708,6 +709,9 @@ def G3DSaver(filepath, context, toglest, operator):
 
 		context.scene.frame_set(fcurrent)
 
+		if mesh.g3d_fullyOpaque:
+			opacity = 1.0
+
 		# MeshHeader
 		fileID.write(struct.pack("<64s3I8f2I",
 			bytes(meshname, "ascii"),
@@ -760,6 +764,7 @@ class G3DPanel(bpy.types.Panel):
 		self.layout.prop(context.object.data, "g3d_customColor")
 		self.layout.prop(context.object.data, "show_double_sided", text="double sided")
 		self.layout.prop(context.object.data, "g3d_noSelect")
+		self.layout.prop(context.object.data, "g3d_fullyOpaque")
 
 class ImportG3D(bpy.types.Operator, ImportHelper):
 	'''Load a G3D file'''
@@ -859,6 +864,9 @@ def register():
 	bpy.types.Mesh.g3d_noSelect = bpy.props.BoolProperty(
 			name="non-selectable",
 			description="click on mesh doesn't select unit")
+	bpy.types.Mesh.g3d_fullyOpaque = bpy.props.BoolProperty(
+			name="fully opaque",
+			description="sets opacity to 1.0, ignoring what's set in materials")
 
 	bpy.utils.register_module(__name__)
 
