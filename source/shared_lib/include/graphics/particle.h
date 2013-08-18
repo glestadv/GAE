@@ -138,7 +138,7 @@ public:
 	//Vec4f color2;		      //  bytes // belongs in (or already is in) owner system's proto-type ? only used for line systems...
 
 	int texture;            // 4 bytes
-	byte padding[20];
+	unsigned char padding[20];
 	                        // 160
 
 public:
