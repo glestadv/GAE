@@ -58,6 +58,8 @@ DebugOptions::DebugOptions(Container *parent, bool menu)
 		m_timerSections[ts] = rightPnl->addCheckBox(g_lang.get(TimerSectionNames[ts]), m_stats->isEnabled(ts));
 		m_timerSections[ts]->Clicked.connect(this, &DebugOptions::onCheckChanged);
 	}
+
+	m_rootWindow->registerUpdate(this);
 }
 
 void DebugOptions::onCheckChanged(Widget *widget) {
@@ -96,6 +98,15 @@ void DebugOptions::onCheckChanged(Widget *widget) {
 		}
 	}
 	assert(false);
+}
+
+void DebugOptions::update() {
+	if (m_debugMode->isChecked() && !g_config.getMiscDebugMode()) {
+		m_debugMode->setChecked(false);
+	}
+	if (!m_debugMode->isChecked() && g_config.getMiscDebugMode()) {
+		m_debugMode->setChecked(true);
+	}
 }
 
 }}

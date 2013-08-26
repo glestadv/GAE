@@ -44,6 +44,8 @@ public:
 	DebugOptions(Container *parent, bool menu);
 
 	void onCheckChanged(Widget *cb);
+
+	virtual void update() override;
 };
 
 }}
