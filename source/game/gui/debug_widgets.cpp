@@ -62,6 +62,10 @@ DebugOptions::DebugOptions(Container *parent, bool menu)
 	m_rootWindow->registerUpdate(this);
 }
 
+DebugOptions::~DebugOptions() {
+	m_rootWindow->unregisterUpdate(this);
+}
+
 void DebugOptions::onCheckChanged(Widget *widget) {
 	CheckBox *cb = static_cast<CheckBox*>(widget);
 	if (cb == m_debugMode) {
