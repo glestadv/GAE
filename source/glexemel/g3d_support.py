@@ -111,7 +111,7 @@ bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"description": "Import/Export .g3d file (Glest 3D)",
 	"author": "various, see head of script",
-	"version": (0, 10, 0),
+	"version": (0, 10, 1),
 	"blender": (2, 63, 0),
 	"location": "File > Import-Export",
 	"warning": "always keep .blend files",
@@ -412,8 +412,6 @@ def createMesh(filename, header, data, toblender, operator):
 						blender_tface.uv3 = [0,0]
 	imported.append(meshobj)			#Add to Imported Objects
 	sk = meshobj.shape_key_add()
-	#mesh.shape_keys.use_relative = False
-	#sk.interpolation = 'KEY_LINEAR'
 	for x in range(1,header.framecount):	#Put in Vertex Positions for Keyanimation
 		#print("Frame"+str(x))
 		sk = meshobj.shape_key_add()
@@ -421,10 +419,8 @@ def createMesh(filename, header, data, toblender, operator):
 			sk.data[i//3].co[0]= data.vertices[x*header.vertexcount*3 + i]
 			sk.data[i//3].co[1]= data.vertices[x*header.vertexcount*3 + i +1]
 			sk.data[i//3].co[2]= data.vertices[x*header.vertexcount*3 + i +2]
-		#meshobj.keyframe_insert("location",-1, frame=(x+1))
-		#meshobj.keyframe_insert(data_path="data.vertices", frame=(x+1))
 
-	for i in range(1,header.framecount-1):
+	for i in range(1,header.framecount):
 		shape = mesh.shape_keys.key_blocks[i]
 		shape.value = 0.0
 		shape.keyframe_insert("value", frame=i)
@@ -607,54 +603,70 @@ def G3DSaver(filepath, context, toglest, operator):
 
 		meshname = mesh.name
 		frameCount = context.scene.frame_end - context.scene.frame_start +1
-		#Real face count (triangles)
-		realFaceCount = 0
-		indices=[]
-		newverts=[]
+		realFaceCount = 0 # real face count (triangles)
+		indices=[]        # list of indices
+		newverts=[]       # list of vertex indices which need to be duplicated
+		uvlist = []       # list of texcoords
 		mesh.update(calc_tessface=True) # tesselate n-polygons to triangles & quads
 		if textures:
 			uvtex = mesh.tessface_uv_textures[0]
-			uvlist = []
 			uvlist[:] = [[0]*2 for i in range(len(mesh.vertices))]
-			s = set()
+			# blender allows to have multiple texcoords per vertex,
+			# in g3d format every vertex can only have one texcoord
+			# -> duplicate vertex
+			# the dictionary/map vdict collects all the stuff
+			# index to "unique" vertices from blender
+			#   -> tuple( list of texcoords, list of indices to the duplicated vertex )
+			vdict = dict()
+			nextIndex = len(mesh.vertices)
 			for face in mesh.tessfaces:
-				faceindices = [] # we create new faces when duplicating vertices
+				# when a vertex is duplicated it gets a new index, so the
+				# triple of indices describing the face is different too
+				faceindices = []
 				realFaceCount += 1
 				uvdata = uvtex.data[face.index]
 				for i in range(3):
-					vindex = face.vertices[i]
-					if vindex not in s:
-						s.add(vindex)
-						uvlist[vindex] = uvdata.uv[i] # that's a (s,t)-pair
-					elif uvlist[vindex][0] != uvdata.uv[i][0] or uvlist[vindex][1] != uvdata.uv[i][1]:
-						# duplicate vertex because it takes part in different faces
-						# with different texcoords
-						newverts.append(vindex)
-						uvlist.append(uvdata.uv[i])
-						#FIXME: probably better with some counter
-						vindex = len(mesh.vertices) + len(newverts) -1
+					#closure, got rid of copy&paste, still looking weird
+					def getTexCoords():
+						nonlocal nextIndex, vdict, uvlist, newverts
+						vindex = face.vertices[i]
+						if vindex not in vdict: # new vertex -> add it
+							vdict[vindex] = [uvdata.uv[i]], [vindex]
+							uvlist[vindex] = uvdata.uv[i] # that's a (s,t)-pair
+						else:
+							found = False
+							idx = 0
+							for ele in vdict[vindex][0]:
+								if uvdata.uv[i][0] == ele[0] and uvdata.uv[i][1] == ele[1]:
+									found = True
+									break
+								idx += 1
+							if found: # same vertex and texcoord before
+								# it could be a different index now, the index of a new
+								# duplicated vertex
+								#vindex = vdict[vindex][1][ vdict[vindex][0].index(uvdata.uv[i]) ]
+								vindex = vdict[vindex][1][idx]
+							else: # same vertex as before but with different texcoord -> duplicate
+								vdict[vindex][0].append(uvdata.uv[i])
+								vdict[vindex][1].append(nextIndex)
 
-					faceindices.append(vindex)
+								# duplicate vertex because it takes part in different faces
+								# with different texcoords
+								newverts.append(vindex)
+								uvlist.append(uvdata.uv[i])
+								# new index for the duplicated vertex
+								vindex = nextIndex
+								nextIndex += 1
+
+						faceindices.append(vindex)
+					getTexCoords()
 				indices.extend(faceindices)
 
-				#FIXME: stupid copy&paste
 				if len(face.vertices) == 4:
 					faceindices = []
 					realFaceCount += 1
 					for i in [0,2,3]:
-						vindex = face.vertices[i]
-						if vindex not in s:
-							s.add(vindex)
-							uvlist[vindex] = uvdata.uv[i] # that's a (s,t)-pair
-						elif uvlist[vindex][0] != uvdata.uv[i][0] or uvlist[vindex][1] != uvdata.uv[i][1]:
-							# duplicate vertex because it takes part in different faces
-							# with different texcoords
-							newverts.append(vindex)
-							uvlist.append(uvdata.uv[i])
-							#FIXME: probably better with some counter
-							vindex = len(mesh.vertices) + len(newverts) -1
-
-						faceindices.append(vindex)
+						getTexCoords()
 					indices.extend(faceindices)
 		else:
 			for face in mesh.tessfaces:
@@ -703,6 +715,7 @@ def G3DSaver(filepath, context, toglest, operator):
 				vertices.extend(vertex.co)
 				normals.extend(vertex.normal)
 
+			# duplicate vertices and corresponding normals, for every frame
 			for nv in newverts:
 				vertices.extend(m.vertices[nv].co)
 				normals.extend(m.vertices[nv].normal)
