@@ -111,8 +111,8 @@ bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"description": "Import/Export .g3d file (Glest 3D)",
 	"author": "various, see head of script",
-	"version": (0, 10, 1),
-	"blender": (2, 63, 0),
+	"version": (0, 11, 0),
+	"blender": (2, 65, 0),
 	"location": "File > Import-Export",
 	"warning": "always keep .blend files",
 	"wiki_url": "http://glest.wikia.com/wiki/G3D_support",
@@ -125,6 +125,7 @@ import bpy
 from bpy.props import StringProperty
 from bpy_extras.image_utils import load_image
 from bpy_extras.io_utils import ImportHelper, ExportHelper
+import bmesh
 
 import sys, struct, string, types
 from types import *
@@ -413,13 +414,13 @@ def createMesh(filename, header, data, toblender, operator):
 	imported.append(meshobj)			#Add to Imported Objects
 	sk = meshobj.shape_key_add()
 	for x in range(1,header.framecount):	#Put in Vertex Positions for Keyanimation
-		#print("Frame"+str(x))
 		sk = meshobj.shape_key_add()
 		for i in range(0,header.vertexcount*3,3):
 			sk.data[i//3].co[0]= data.vertices[x*header.vertexcount*3 + i]
 			sk.data[i//3].co[1]= data.vertices[x*header.vertexcount*3 + i +1]
 			sk.data[i//3].co[2]= data.vertices[x*header.vertexcount*3 + i +2]
 
+	# activate one shapekey per frame
 	for i in range(1,header.framecount):
 		shape = mesh.shape_keys.key_blocks[i]
 		shape.value = 0.0
@@ -441,6 +442,14 @@ def createMesh(filename, header, data, toblender, operator):
 	# update polygon structures from tessfaces
 	mesh.update()
 	mesh.update_tag()
+
+	# remove duplicates
+	bm = bmesh.new()
+	bm.from_mesh(mesh)
+	bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+	bm.to_mesh(mesh)
+	bm.free()
+
 	return
 ###########################################################################
 # Import
