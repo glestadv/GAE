@@ -111,7 +111,7 @@ bl_info = {
 	"name": "G3D Mesh Import/Export",
 	"description": "Import/Export .g3d file (Glest 3D)",
 	"author": "various, see head of script",
-	"version": (0, 11, 0),
+	"version": (0, 11, 1),
 	"blender": (2, 65, 0),
 	"location": "File > Import-Export",
 	"warning": "always keep .blend files",
@@ -719,6 +719,8 @@ def G3DSaver(filepath, context, toglest, operator):
 			if toglest:
 				# rotate from blender to glest orientation
 				m.transform( Matrix( ((1,0,0,0),(0,0,1,0),(0,-1,0,0),(0,0,0,1)) ) )
+				# transform normals too
+				m.calc_normals()
 
 			for vertex in m.vertices:
 				vertices.extend(vertex.co)
