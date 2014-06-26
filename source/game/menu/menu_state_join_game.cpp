@@ -338,13 +338,11 @@ void MenuStateJoinGame::connectThreadDone(ConnectResult result) {
 //}
 
 void MenuStateJoinGame::onDisconnect(Widget*) {
-	cout << "MenuStateJoinGame::onDisconnect()\n";
 	program.removeFloatingWidget(m_messageBox);
 	m_messageBox = 0;
 	g_simInterface.asClientInterface()->reset();
 	m_connectPanel->setVisible(true);
-	m_connectLabel->setText("Not connected. Last connection terminated.");///@todo localise
-	cout << "message box removed, client interface reset, connect panel shown.\n";
+	m_connectLabel->setText(g_lang.get("ConnectSevered"));
 }
 
 void MenuStateJoinGame::onTextModified(Widget*) {
@@ -358,8 +356,8 @@ void MenuStateJoinGame::onSearchForGame(Widget*) {
 	Vec2i size = g_widgetConfig.getDefaultDialogSize();
 	Vec2i pos = g_metrics.getScreenDims() / 2 - size / 2;
 	assert(!m_messageBox);
-	m_messageBox = MessageDialog::showDialog(pos, size, "Searching...",
-		"Searching, Please wait.", g_lang.get("Cancel"), "");
+	m_messageBox = MessageDialog::showDialog(pos, size, g_lang.get("SearchingHdr"),
+		g_lang.get("SearchingWait"), g_lang.get("Cancel"), "");
 	m_messageBox->Button1Clicked.connect(this, &MenuStateJoinGame::onCancelSearch);
 	m_messageBox->Close.connect(this, &MenuStateJoinGame::onCancelSearch);
 	{
@@ -390,7 +388,7 @@ void MenuStateJoinGame::onCancelSearch(Widget*) {
 		program.removeFloatingWidget(m_messageBox);
 		m_messageBox = 0;
 		m_connectPanel->setVisible(true);
-		m_connectLabel->setText("Not connected. Last search cancelled.");///@todo localise
+		m_connectLabel->setText(g_lang.get("ConnectAborted"));
 		/*** *** CONCURRENCY ERROR *** ***/
 		/*** *** CONCURRENCY ERROR *** ***/
 

@@ -118,6 +118,13 @@ bool ResourceType::load(const string &dir, int id) {
 			try { // interval
 				const XmlNode *intervalNode = typeNode->getChild("interval");
 				interval = intervalNode->getAttribute("value")->getIntValue();
+				const XmlNode *dNode = typeNode->getOptionalChild("damage");
+				if (dNode) {
+					damageMod.m_addition = dNode->getOptionalIntAttribute("absolute", 0);
+					damageMod.m_multiplier = dNode->getOptionalIntAttribute("percent", 0) / fixed(100);
+				} else {
+					damageMod = Modifier(0, fixed(33) / fixed(100));
+				}
 			} catch (runtime_error e) {
 				g_logger.logXmlError(path, e.what());
 				loadOk = false;
@@ -140,6 +147,7 @@ bool ResourceType::load(const string &dir, int id) {
 			break;
 	}
 	display = resourceNode->getOptionalBoolValue("display", true);
+	infiniteStore = resourceNode->getOptionalBoolValue("infinite-store", false);
 	return loadOk;
 }
 
@@ -148,6 +156,8 @@ void ResourceType::doChecksum(Checksum &checksum) const {
 	checksum.add<ResourceClass>(resourceClass);
 	if (resourceClass == ResourceClass::CONSUMABLE) {
 		checksum.add<int>(interval);
+		checksum.add<fixed>(damageMod.m_addition);
+		checksum.add<fixed>(damageMod.m_multiplier);
 	} else if (resourceClass != ResourceClass::STATIC) {
 		if (resourceClass == ResourceClass::TILESET) {
 			checksum.add<int>(tilesetObject);
@@ -158,6 +168,7 @@ void ResourceType::doChecksum(Checksum &checksum) const {
 		checksum.add<int>(defResPerPatch);
 	}
 	checksum.add<bool>(display);
+	checksum.add<bool>(infiniteStore);
 }
 
 // ==================== misc ====================

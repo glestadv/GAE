@@ -763,7 +763,7 @@ void MenuStateNewGame::updateControlers() {
 			gs.setStartLocationIndex(i, -1);
 			gs.setColourIndex(i, -1);
 			gs.setResourceMultiplier(i, 1.f);
-			m_playerSlots[i]->setNameText("No Player");
+			m_playerSlots[i]->setNameText(g_lang.get("NoPlayer"));
 			m_playerSlots[i]->setSelectedFaction(-1);
 			m_playerSlots[i]->setSelectedTeam(-1);
 			m_playerSlots[i]->setSelectedColour(-1);

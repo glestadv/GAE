@@ -123,6 +123,7 @@ private:
 	Display *m_display;
 	ResourceBar *m_resourceBar;
 	LuaConsole *m_luaConsole;
+	StaticText *m_objectiveText;
 
 	Random random;
 
@@ -248,6 +249,12 @@ public:
 
 	void load(const XmlNode *node);
 	void save(XmlNode *node) const;
+
+	void setScriptDisplay(const string &msg) {
+		string txt = msg;
+		m_objectiveText->getFont()->getMetrics()->wrapText(txt, m_objectiveText->getWidth() - 5);
+		m_objectiveText->setText(txt);
+	}
 
 private:
 	//void mouseDownLeftDisplay(int posDisplay);

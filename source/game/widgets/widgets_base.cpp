@@ -952,9 +952,10 @@ TextRenderInfo::TextRenderInfo(const string &txt, int font, int colour, const Ve
 	WidgetConfig &cfg = g_widgetConfig;
 	Colour c = cfg.getColour(colour);
 	Colour black(0u, 0u, 0u, 255u);
-	Colour shadow = (c + black * 2u) / 3u;
-	m_shadowColour = cfg.getColourIndex(shadow);
+	//Colour shadow = (c + black * 2u) / 3u;
+	m_shadowColour = cfg.getColourIndex(black);
 	m_shadowColour2 = cfg.getColourIndex(black);
+	m_shadowOffset = Vec2i(1, 1);
 }
 
 // =====================================================

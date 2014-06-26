@@ -181,7 +181,7 @@ void ParticleSystem::update() {
 		}
 		if (state != sFade) {
 			float fCount = emissionRateRemainder + emissionRate;
-			int count = fCount;
+			int count = int(fCount);
 			emissionRateRemainder = fCount - count;
 			for (int i = 0; i < count; ++i) {
 				Particle *p = createParticle();

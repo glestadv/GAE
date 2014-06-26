@@ -455,7 +455,7 @@ public:
 	virtual void load(const XmlNode *sn, const string &dir, const TechTree *tt, const UnitType *ut) override;
 	virtual void doChecksum(Checksum &checksum) const override;
 	virtual void getDesc(string &str, const Unit *unit) const override {
-		descSpeed(str, unit, "Speed");
+		descSpeed(str, unit, "LoadSpeed");
 		descEpCost(str, unit);
 	}
 
@@ -471,7 +471,7 @@ class UnloadSkillType: public SkillType{
 public:
 	UnloadSkillType() : SkillType("Unload"){}
 	virtual void getDesc(string &str, const Unit *unit) const override {
-		descSpeed(str, unit, "Speed");
+		descSpeed(str, unit, "UnloadSpeed");
 		descEpCost(str, unit);
 	}
 

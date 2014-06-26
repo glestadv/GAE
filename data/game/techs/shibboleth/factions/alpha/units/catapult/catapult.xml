@@ -60,7 +60,7 @@
       <ep-cost value="0"/>
       <speed value="150"/>
       <anim-speed value="150"/>
-      <animation path="models/catapult_walking.g3d"/>
+      <animation path="../../../../../magitech/factions/tech/units/catapult/models/catapult_walking.g3d"/>
       <sound enabled="true" start-time="0.1">
         <sound-file path="sounds/catapult_walk1.wav"/>
         <sound-file path="sounds/catapult_walk2.wav"/>

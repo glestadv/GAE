@@ -1,0 +1,323 @@
+; Italian lang file
+
+; Zones, translate 'Land' as Surface!
+Air=Aereo
+Land=Terrestre
+
+; Team member roles
+2dArtAndWeb=Grafica 2D e sito web
+3dAnd2dArt=Grafica 2D e 3D
+3dArt=Grafica 3D
+Animation=Animazioni
+LinuxPort=Conversione a Linux
+SoundAndMusic=Effetti sonori e musiche
+Programming=Programmazione
+
+; 'Advanced Engine' Strings, placed under the Glest logo in the intro & on the new game menu
+AdvEng1=Advanced
+AdvEng2=Engine
+
+; Chat related
+ChatMode=Modalità chat
+ChatMsg=Messaggio
+All=Tutti
+TeamOnly=Propria sq.
+ChatAudienceAll=Chat visibile a tutti
+ChatAudienceTeam=Chat visib. squadra.
+ChatAudienceToggle=Cambia visiblità chat
+
+; Game end dialog headers and messages
+BattleOver=Sconfitta
+Victory=Vittoria
+Defeat=Sconfitta
+YouLose=Hai perso!
+YouWin=Hai vinto!
+
+; Command classes
+Attack=Attacca
+Attack-Stopped=Attacco interrotto
+Guard=Sorveglia
+Harvest=Raccogli
+Be-Loaded=Sali
+Build=Costruisci
+Load=Carica
+Morph=Trasforma
+Move=Sposta
+Patrol=Pattuglia
+Produce=Produci
+Repair=Ripara
+SetMeetingPoint=Punto di ritrovo
+Stop=Ferma
+Unload=Scarica
+Upgrade=Potenzia
+
+; Missing/Erroneous data
+MapNotFound=Mappa non trovata per questo scenario.
+TechNotFound=Albero tecnologie non trovato per questo scenario.
+TilesetNotFound=Tileset non trovato per questo scenario.
+ScenarioXmlError=Erorre durante l'apertura del file XML dello scenario
+
+; Scenario difficulty
+Difficulty=Difficioltà
+Difficulty0=Molto facile
+Difficulty1=Facile
+Difficulty2=Media
+Difficulty3=Difficile
+Difficulty4=Molto difficile
+Difficulty5=Ardua
+
+; Control types
+Human=Umano
+Closed=Chiuso
+Control=Controllo
+Cpu_Easy=CPU (Facile)
+Cpu=CPU
+Cpu_Ultra=CPU (Ultra)
+Cpu_Mega=CPU (Mega)
+
+; Game speed
+VeryFast=Molto veloce
+VerySlow=Molto lento
+SpeedDec=Rallenta
+SpeedInc=Accelera
+SpeedReset=Azzera veloc.
+Slow=Lento
+Slowest=Lentissimo
+PauseOff=Pausa disattivata
+PauseOn=Pausa attivata
+PauseToggle=Attiva/disattiva pausa
+Normal=Normaie
+GamePaused=In pausa
+GameResumed=Fine pausa
+Fast=Veloce
+Fastest=Velocissimo
+GameSpeedSet=Velocità gioco impostata a
+
+; Menu strings
+; Shared Menu Strings
+PlayNow=Gioca ora!
+Network=Rete
+MaxPlayers=Giocatori massimi
+Deleting=Eliminazione
+Map=Mappa
+Tileset=Tileset
+TechTree=Albero tecnologie
+Return=Indietro
+
+; Root Menu
+About=Riconoscimenti
+JoinGame=Partecipa
+LoadGame=Apri partita
+NewGame=Nuova partita
+Scenario=Scenario
+Options=Opzioni
+
+; New Game Menu
+Random=Casuale
+RandomizeLocations=Posizione casuale
+Faction=Fazione
+Team=Sq.
+Colour=Col.
+NotConnected=Non connesso
+WaitingForConnections=Alcuni slot di rete sono ancora disconnessi
+AiPlayer=Computer
+Player=Giocatore
+
+; Join Game Menu
+Address=Indirizzo
+ErrorVersionMismatch=Il PC remoto ha una versione diversa di Glest, incompatibile con GAE incompatible of GAE: la propria è %s, quella remota è %s.
+Connect=Connetti
+Connected=Connesso
+ConnectedToServer=Connesso al server
+ConnectionFailed=Connessione non riuscita
+GraphicInfo=Info API
+FxVolume=Volume effetti
+Language=Lingua
+MusicVolume=Volume musica
+Server=Server
+ServerType=Tipo server
+ServerTypeNew=Nuovo
+ServerTypePrevious=Precedente
+Port=Porta
+RecentHosts=Host recenti
+Search=Ricerca
+
+; Load Game Menu
+UnableToJoin=Impossibile connettersi al server
+WaitingHost=In attesa che il server avvii la partita
+ElapsedTime=Tempo trascorso
+Delete=Elimina
+Confirm=Conferma
+
+; Scenario Menu
+Category=Categoria
+NoSavedGames=Nessuna partita salvata
+NoCategoryDirectories=Non ci sono categorie nella cartella gae/scenarios
+
+; Options Menu
+AmbientVolume=Volume ambiente
+AutoConfig=Auto config
+Textures3D=Texture 3D
+OpenGlExtensions=Estensioni
+OpenGlInfo=Informazioni OpenGL
+OpenGlMaxLights=Fonti di luce massime
+OpenGlMaxTextureSize=Massima dimensione texture
+OpenGlMaxTextureUnits=Massime unità texture
+OpenGlModelviewStack=Profondità stack matrice vis. modelli
+OpenGlPlatformExtensions=Estensioni piattaforma
+OpenGlProjectionStack=Profondità stack matrice proiezione
+OpenGlRenderer=Dispositivo di rendering
+OpenGlVendor=Fornitore
+OpenGlVersion=Versione
+Shadows=Ombre
+Projected=Proiettate
+ShadowMapping=Mappatura ombre
+Disabled=Disabilitato
+MaxLights=Fonti luce massime
+Filter=Filtro
+
+; Misc
+None=Nessuno
+No=No
+Off=Disattivato
+Ok=Ok
+Cancel=Annulla
+On=Attivato
+Yes=Sì
+Disconnect=Disconnetti
+Disconnected=disconnesso
+Loading=Caricamento in corso
+Initializing=Inizializzazione in corso
+
+; Camera
+CameraAngleReset=Azzera angolo
+CameraCycleMode=Cambia modalità
+CameraGotoLastEvent=Vai all'ultimo evento
+CameraGotoSelection=Vai a selezione
+CameraModeSet=Visuale cambiata a
+CameraPitchDown=Orienta visuale in basso
+CameraPitchUp=Orienta visuale in alto
+CameraPosDown=Sposta visuale in basso
+CameraPosLeft=Sposta visuale a sinistra
+CameraPosRight=Sposta visuale a destra
+CameraPosUp=Sposta la visuale in alto
+CameraRotateLeft=Routa a sinistra
+CameraRotateRight=Ruota a destra
+CameraZoomAndAngleReset=Azzera zoom e angolo
+CameraZoomIn=Aumenta zoom
+CameraZoomOut=Dimin. zoom
+CameraZoomReset=Azzera zoom
+FreeCamera=Visuale libera
+GameCamera=Visuale gioco
+
+; Display panel tips
+PotraitInfo=Fare clis per selezionare solo questa unità. Fare clic tenendo premuto MAIUSC per selezionare tutte quelle dello stesso tipo. Fare clic tenendo premuto CTRL per rimuoverla dalla selezione. Fare clic tenendo premuti CTRL e MAIUSC per rimuovere tutte quelle dello stesso tipo.
+TransportInfo=Fare doppio clic per far scendere l'unità.
+
+; Game strings
+AlreadyUpgraded=Già potenziato
+Amount=Quantità
+Armor=Corazza
+AttackDistance=Raggio attacco
+AttackPctStolen=% danno da attacco sottratto
+AttackSpeed=Velocità attacco
+AttackStrength=Danno inflitto
+Attacks=Attacchi
+AutoRepair=Riparaz. autom.
+BuildSpeed=Velocità costr.
+CanRepair=Può riparare
+Command=Comando
+CommonCommand=COmando comune
+Consume=Consuma
+Discount=Riduzione
+Effects=Effetti
+Ep=EP
+EpCost=Costo EP
+EpRegeneration=Rigeneraz. EP
+Error=Errore
+Exit=Esci
+ExitGame?=Uscire dalla partita?
+ExitProgram?=Uscire dall'applicazione?
+Fields=Campi
+FogOfWar=Nebbia di guerra
+Harvested=Raccolto
+HarvestSpeed=Veloc. raccolta
+HealthStolen=HP sottratti
+Hp=HP
+HpRegeneration=Rigenerazione HP
+HpRestored=HP Ripristinata
+Killed=Ucciso
+Kills=Uccisioni
+LoadedSpeed=Veloc. caric.
+Lost=Persi
+MaxLoad=Capac. carico
+MaxRange=Raggio azione max
+Mixed=Misti
+MorphSpeed=Veloc. trasform.
+OrdersOnQueue=Ordini in coda
+Produced=Prodotto
+Producing=Produzione
+ProductionSpeed=Velocità produzione
+Range=Raggio azione
+ReactionSpeed=Velocità reazione
+Regeneration=Rigen.
+RepairSpeed=Velocità riparazione
+Reqs=Richiede
+Resources=Risorse
+Result=Risultato
+Save=Salva
+SaveGame=Salva partita
+Score=Punteggio
+SelectSaveGame=Nome file
+SelfOnly=solo sè stesso
+PetOnly=solo animale
+Send=Invia
+Sight=Campo visivo
+Size=Dimensione
+Speed=Velocità
+SplashRadius=Raggio azione
+Store=Immagazz.
+Transported=Unità trasportate
+Unavailable=Nessuna inform. dispon..
+Units=Unità
+UpgradeSpeed=Velocità potenziamento
+Upgrades=Potenziam.
+Upgrading=Potenziam. in corso
+WalkSpeed=Velocità movimento
+YourGameWasSaved=Partita salvata in %s
+Zones=Zone
+
+; Game Menu
+GameMenu=Menu partita
+ReturnToGame=Torna alla partita
+ToggleDebug=Info debug
+TogglePhotoMode=Mod. schermata
+SaveGame=Salva partita
+QuitGame=Abbandona partita
+ExitProgram=Esci dall'applicazione
+
+; Command errors
+BuildingNoPlace=Impossibile posizionare qui
+BuildingNoReqs=Requisiti insufficienti per l'edificio
+BuildingNoRes=Risorse insufficienti per la costruzione
+BuildingNoRes1=%s insufficiente per la costruzione
+BuildingNoRes2=%s e %s insufficienti per la costruzione
+GenericNoRes1=%s insufficiente
+GenericNoRes2=%s e %s insufficienti
+InvalidPosition=Posizione non valida
+MorphNoRes1=%s insufficiente per la trasformazione
+MorphNoRes2=%s e %s insufficienti per pa trasformazione
+UnitNoReqs=Requisiti insufficienti per l'unità
+UnitNoRes=Risorse insufficienti per produrre l'unità
+UnitNoRes1=%s insufficiente per produrre l'unità
+UnitNoRes2=%s e %s insufficienti per produrre l'unità
+UpgradeNoReqs=Requisiti insufficienti per il potenziamento
+UpgradeNoRes=Risorse insufficienti per il potenziamento
+UpgradeNoRes1=%s insufficiente per il potenziamento
+UpgradeNoRes2=%s e %s insufficienti per il potenziamento
+InvalidOrder=Ordine non valido
+LoadLimitReached=Spazio insufficiente.
+PetLimitReached=L'unità non può condurre altri animali di questo tipo
+CanNotLoadUnit=Impossibile far salire unità di questo tipo.
+NotAvailable=Funzione non disponibile nelle partite in rete
+SomeOrdersFailed=Impossibile impartire alcuni ordini
