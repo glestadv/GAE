@@ -1,0 +1,109 @@
+;
+; Unit names and tips
+;
+aerodrome=Raon Adhair
+aerodrome_info=Nì e aonadan adhair. Cha tèid ga thogail ach le Teicneolaiche.
+air_ballista=Bogha-tilgeil Adhair
+air_ballista_info=Structar gus dìon an aghaidh ionnsaighean bhon adhair.
+airship=Long Adhair
+airship_info=Aonad adhair trom. Nì e milleadh mòr air aonadan tìreach. Slaodach is gun chomas ionnsaighean a thoirt air aonadan adhair eile.
+archer=Boghadair
+archer_info=Cathaiche air astar bunasach. Aghaidheachd lag air ach math air ionnsaighean tìre is adhair. Lag an aghaidh aonadan dlùtha.
+barracks=Taigh-feachd
+barracks_info=Nì e cathaichean mhic-an-duine.
+battle_machine=Inneal-catha
+battle_machine_info=An t-aonad tìre as fheàrr, Nì e milleadh mòr air aonadan dlùtha. Aghaidheachd glè àrd. Tha crois-bhogha aige cuideachd. Astar slaodach.
+blacksmith=Gobha
+blacksmith_info=Adhartaichidh e airm is sgiathan. Riatanach gus Aonadh nan Teicneolaichean a thogail.
+castle=Caisteal
+castle_info=Am prìomh thogalach. Nì e Obraichean is cumaidh e stòrasan. Nì e adhartachadh air Roinn Trèanaidh.
+catapult=Crann-tabhail
+catapult_info=Slaodach ach tha ionnsaigh làidir aige, gu h-àraidh an aghaidh togalaichean.
+cow=Bò
+cow_info=Solairidh i barrachd bidhe ach tha i nas daoire.
+defense_tower=Tùr-dìon
+defense_tower_info=Aonad dìon an aghaidh ionnsaighean tìre is adhair.
+farm=Tuathanas
+farm_info=Nì e biadh is aonadan tuathanais.
+guard=Geàrd
+guard_info=Cathaiche dlùth trom. Astar slaodach, aghaidheachd uabhasach àrd, is math air ionnsaigh a thoirt air aonadan tìreach.
+horseman=Marcaiche
+horseman_info=Cathaiche dlùth luath. Aghaidheachd àrd is ionnsaigh shathaidh mheadhannach.
+ornithopter=Eun-sgiathaiche
+ornithopter_info=Aonad athair, anabarrach math an aghaidh aonadan adhair eile, ach gun chomas ionnsaigh a thoirt air aonadan tìreach.
+pig=Muc
+pig_info=Solairidh i biadh ach nach fhaigh na cathaichean bàs leis an acras.
+swordman=Claidheamhair
+swordman_info=Cathaiche dlùth bunasach. Aghaidheachd, astar is ionnsaigh air aonadan tìreach meadhanach. Gabhaidh e adhartachadh gu Geàrd.
+technician=Teicneolaiche
+technician_info=Nì e innealan-catha is togaidh e Raointean Adhair. Tha e comasach air òr a bhuain is aonadan eile a shlànachadh.
+technodrome=Aonadh nan Teicneolaichean
+technodrome_info=Nì e Teicneolaichean.
+worker=Obraiche
+worker_info=Buainidh e stòras sam bith is togaidh no càraichidh e an cuid as motha de na togalaichean. Glè lag. Gun chomas ionnsaigh a thoirt.
+
+;
+; Upgrade names and tips
+;
+advanced_architecture=Ailtireachd Adhartach
+advanced_architecture_info=Adhartas gus structaran dìon a thogail.
+upgrade_blade_weapons=Adhartaich na h-Airmean Lanna
+blade_weapons=Airm Lanna
+blade_weapons_info=Bidh ionnsaighean aig Claidheamhairean is Geàrdan nas treasa.
+upgrade_piercing_weapons=Adhartaich na h-Airmean Sathaidh
+piercing_weapons=Airm Sathaidh
+piercing_weapons_info=Bidh ionnsaighean aig Boghadairean is Marcaichean nas treasa.
+robotics=Robotaireachd
+robotics_info=Adhartas gus Innealan-catha is Longan Adhair a dhèanamh.
+upgrade_shield=Adhartaich na Sgiathan
+shield_level_1=Sgiath Ìre 1
+shield_level_1_info=Bidh armachd nan Claidheamhairean, Geàrdan is and Marcaichean nas treasa.
+shield_level_2=Sgiath Ìre 2
+shield_level_2_info=Bidh armachd nan Claidheamhairean, Geàrdan is and Marcaichean nas treasa buileach.
+stables=Stàball
+stables_info=Adhartas gus Marcaichean a dhèanamh.
+training_field=Roinn Trèanaidh
+training_field_info=Fàsaidh an Taigh-feachd nas luaithe is bidh cathaichean comasach air fuireach ann an àite.
+
+;
+; Custom command names
+;
+produce_ornithopter=Dèan Eun-sgiathaiche
+produce_airship=Dèan Long Adhair
+attack_on=Ionnsaighean Air
+attack_off=Ionnsaighean Dheth
+missile=Airm-tilgidh
+hold_position=Fuirich
+produce_swordman=Dèan Claidheamhair
+produce_archer=Dèan Boghadair
+produce_guard=Dèan Geàrd
+produce_horseman=Dèan Marcaiche
+create_training_field=Tog Roinn Trèanaidh
+attack_arrow=Ionnsaigh le saighead
+produce_worker=Dèan Obraiche
+fire_ball=Bàla Teine
+produce_pig=Dèan Muc
+produce_cow=Dèan Bò
+research_stables=Rannsaich an Stàball
+molotov=Molotov
+fire_arrow=Tilg Saighead
+promote_to_guard=Adhartaich gu Geàrd
+build_ultimate=Sàr-thogail
+heal=Slànaich
+mine_gold=Tochail Òr
+build_catapult=Tog Crann-tabhail
+build_battle_machine=Tog Inneal-catha
+build_air_ballista=Tog Bogha-tilgeil Adhair
+produce_technician=Dèan Teicneolaiche
+research_advanced_architecture=Rannsaich Ailtireachd Adhartach
+research_robotics=Robotaireachd
+build_basic=Togail Bunasach
+build_advanced=Togail Adhartach
+mine=Tochail
+harvest_wood=Buain Maide
+
+
+;
+; Levels
+;
+elite=Sàr-laoch

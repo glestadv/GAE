@@ -1159,6 +1159,15 @@ void Unit::born(bool reborn) {
 		if (!isCarried()) {
 			startSkillParticleSystems();
 		}
+		
+		if (type->getEmanations().size() > 0) {
+			foreach_const (Emanations, i, type->getEmanations()) {
+				UnitParticleSystemTypes types = (*i)->getSourceParticleTypes();
+				if (!types.empty()) {
+					startParticleSystems(types);
+				}
+			}
+		}
 	}
 	StateChanged(this);
 	faction->onUnitActivated(type);
@@ -1357,39 +1366,41 @@ TravelState Unit::travel(const Vec2i &pos, const MoveSkillType *moveSkill) {
   * @return the CommandType to execute
   */
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
-	const CommandType *commandType = NULL;
-	Tile *sc = map->getTile(Map::toTileCoords(pos));
-
+	const CommandType *commandType = 0;
+	
 	if (targetUnit) {
-		//attack enemies
-		if (!isAlly(targetUnit)) {
+		if (!isAlly(targetUnit)) { // Enemy! Attack!!
 			commandType = type->getAttackCommand(targetUnit->getCurrZone());
-		} else if (targetUnit->getFactionIndex() == getFactionIndex()) {
+			return commandType; // do not give suicidal move command if can't attack target
+			// should give attack command to location ?
+
+		} else if (targetUnit->getFactionIndex() == getFactionIndex()) { // Our-unit, try Load/Repair
 			const UnitType *tType = targetUnit->getType();
-			if (tType->isOfClass(UnitClass::CARRIER)
-			&& tType->getCommandType<LoadCommandType>(0)->canCarry(type)) {
-				//move to be loaded
+			if (tType->isOfClass(UnitClass::CARRIER) && tType->getCommandType<LoadCommandType>(0)->canCarry(type) && targetUnit->isBuilt()) {
+				// move to be loaded
 				commandType = type->getFirstCtOfClass(CmdClass::BE_LOADED);
-			} else if (getType()->isOfClass(UnitClass::CARRIER)
-			&& type->getCommandType<LoadCommandType>(0)->canCarry(tType)) {
-			//load
-			commandType = type->getFirstCtOfClass(CmdClass::LOAD);
-		} else {
+			} else if (getType()->isOfClass(UnitClass::CARRIER)	&& type->getCommandType<LoadCommandType>(0)->canCarry(tType)) { 
+				// load
+				commandType = type->getFirstCtOfClass(CmdClass::LOAD);
+			} else { 
 				// repair
+				commandType = getRepairCommandType(targetUnit);
+			}
+
+		} else { // Ally, try repair
 			commandType = getRepairCommandType(targetUnit);
 		}
-		} else { // repair allies
-			commandType = getRepairCommandType(targetUnit);
-		}
-	} else {
-		//check harvest command
-		MapResource *resource = sc->getResource();
-		if (resource != NULL) {
+
+	} else { // No target unit
+		// check harvest command
+		Tile *tile = map->getTile(Map::toTileCoords(pos));
+		MapResource *resource = tile->getResource();
+		if (resource) {
 			commandType = type->getHarvestCommand(resource->getType());
 		}
 	}
 
-	//default command is move command
+	// default command is move command
 	if (!commandType) {
 		commandType = type->getFirstCtOfClass(CmdClass::MOVE);
 	}
@@ -2231,7 +2242,7 @@ bool Unit::add(Effect *e) {
 			startParticles = false;
 		} else {
 			foreach (Effects, it, effects) {
-				if (e->getType() == (*it)->getType()) {
+				if (e != *it && e->getType() == (*it)->getType()) {
 					startParticles = false;
 					break;
 				}
@@ -2242,11 +2253,30 @@ bool Unit::add(Effect *e) {
 	}
 
 	if (startParticles && !particleTypes.empty()) {
-		Vec2i cPos = getCenteredPos();
-		Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
-		bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
+		startParticleSystems(particleTypes);
+	}
 
-		foreach_const (UnitParticleSystemTypes, it, particleTypes) {
+	if (effects.isDirty()) {
+		recalculateStats();
+	}
+
+	return false;
+}
+
+void Unit::startParticleSystems(const UnitParticleSystemTypes &types) {
+	Vec2i cPos = getCenteredPos();
+	Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
+	bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
+
+	foreach_const (UnitParticleSystemTypes, it, types) {
+		bool startNew = true;
+		foreach_const (UnitParticleSystems, upsIt, effectParticleSystems) {
+			if ((*upsIt)->getType() == (*it)) {
+				startNew = false;
+				break;
+			}
+		}
+		if (startNew) {
 			UnitParticleSystem *ups = (*it)->createUnitParticleSystem(visible);
 			ups->setPos(getCurrVector());
 			ups->setRotation(getRotation());
@@ -2258,12 +2288,6 @@ bool Unit::add(Effect *e) {
 			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
 		}
 	}
-
-	if (effects.isDirty()) {
-		recalculateStats();
-	}
-
-	return false;
 }
 
 /**

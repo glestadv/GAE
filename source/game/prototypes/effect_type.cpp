@@ -180,7 +180,7 @@ bool EffectType::load(const XmlNode *en, const string &dir, const TechTree *tt, 
 		if(lightNode) {
 			light = lightNode->getAttribute("enabled")->getBoolValue();
 
-			if(light) {
+			if (light) {
 				lightColour.x = lightNode->getAttribute("red")->getFloatValue(0.f, 1.f);
 				lightColour.y = lightNode->getAttribute("green")->getFloatValue(0.f, 1.f);
 				lightColour.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);
@@ -317,12 +317,29 @@ void EffectType::getDesc(string &str) const {
 bool EmanationType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {
 	EffectType::load(n, dir, tt, ft);
 
-	//radius
+	// radius
 	try { radius = n->getAttribute("radius")->getIntValue(); }
 	catch (runtime_error e) {
 		g_logger.logError ( dir, e.what () );
 		return false;
 	}
+
+	try { // source-particle systems
+		const XmlNode *particlesNode = n->getOptionalChild("source-particle-systems");
+		if (particlesNode) {
+			for (int i=0; i < particlesNode->getChildCount(); ++i) {
+				const XmlNode *particleFileNode = particlesNode->getChild("particle-file", i);
+				string path = particleFileNode->getAttribute("path")->getRestrictedValue();
+				UnitParticleSystemType *unitParticleSystemType = new UnitParticleSystemType();
+				unitParticleSystemType->load(dir,  dir + "/" + path);
+				sourceParticleSystems.push_back(unitParticleSystemType);
+			}
+		}
+	} catch (runtime_error e) {
+		g_logger.logXmlError(dir, e.what ());
+		return false;
+	}
+
 	return true;
 }
 

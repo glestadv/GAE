@@ -1,0 +1,104 @@
+;
+; Unit names and tips
+;
+archmage=Àrd-dhraoidh
+archmage_info=An cathaiche draoidheach as fheàrr. Slaodach is lag ach comasach air ionnsaighean steallaige iongantach cumhachdach, an dà chuid an aghaidh aonadan tìreach is adhair.
+archmage_tower=Tùr Àrd-dhraoidheachd
+archmage_tower_info=Riatanach gus Àrd-dhraoidhean a thrèanadh. Nì e adhartachadh air Gairm Dhràgoin.
+battlemage=Draoidh-catha
+battlemage_info=Cathaiche draoidheil subailte. Tha ionnsaigh air astar cumhachdach, astar math is armachd ceart gu leòr aige. Lag an aghaidh aonadan tìreach. Gabhaidh e adhartachadh gu Àrd-dhraoidh.
+behemoth=Mòr-bhèist
+behemoth_info=An t-aonad dlùth draoidheach as adhartaiche. Slaodach ach comasach air ionnsaighean làidir, gu h-àraidh an aghaidh togalaichean is aonadan le armachd maide.
+daemon=Deamhan
+daemon_info=Cathaiche dlùth bunasach gus caitheamh. Lag is saor. 'S e an fheum a th' air a bhith a' cumail aonadan dlùth an nàmhaid air falbh bho na cathaichean air astar agad cho fad 's a ghabhas.
+dragon=Dràgon
+dragon_info=Aonad adhair cumhachdadh is subailte. Luath is comasach air ionnsaighean a thoirt an dà chuid air aonadan tìreach is adhair. Lag an aghaidh ionnsaighean sathaidh.
+drake_rider=Marcaiche Ràic
+drake_rider_info=Luath is le aghaidheachd nas fheàrr na an Gairmeir. Seo an t-aonad as fheàrr air ionnsaighean luatha no a bhith na bheachdair.
+energy_source=Tobar Cumhachd
+energy_source_info=Solairidh e cumachd gus an àireamh as motha de dh'aonadan a mheudachadh.
+ghost_armor=Taibhs-armachd
+ghost_armor_info=Aonad dlùth meadhannach. Slaodach, ach le aghaidheachd is ionnsaigh mhath.
+golem=Goileam
+golem_info=Aonad dìon. Tha e feumach air cumhachd gus gluasad, ach tha ionnsaigh thìreach chumhachdach aige is sàr-aghaidheachd.
+initiate=Foghlamaiche
+initiate_info=Bhuainidh e stòrasan is togaidh e structaran. Glè lag ach comasach air ionnsaigh bhunasach ann an èiginn. Gabhaidh e adhartachadh gu Draoidh-catha.
+library=Leabharlann
+library_info=Bidh thu comasach air Teannachadh Cumhachd, Geurachadh Cumhachd is Doras Ifrinne rannsachadh.
+mage_tower=Tùr Draoidheachd
+mage_tower_info=Prìomh thogalach. Nì e Foghlamaichean is cumaidh e stòrasan.
+summoner=Gairmeir
+summoner_info=Gairmidh i creutairean a bheir taic dhut le sabaid. Slaodach is lag, is tha ionnsaigh chumhachdadh ach glè fheumail air cumhachd aice, an dà chuid an aghaidh aonadan tìreach is adhair. Gabhaidh i adhartachadh gu Marcaiche Ràic.
+summoner_guild=Comann nan Gairmeirean
+summoner_guild_info=Nì e Gairmeirean is rannsachadh air Gairm Àrsaidh.
+tower_of_souls=Tùr nan Anman
+tower_of_souls_info=Structar dìon a nì sgrios air ionnsaighean adhair.
+wicker_behemoth=Mòr-bhèist shlatach
+wicker_behemoth_info=Structar gun bheatha a bhios a dhìth gus Mòr-bhèist a dhèanamh.
+
+
+; additional command tips
+;
+stop_info=Fuirich gun dad a dhèanamh.
+move_info=Faigh beagan eacarsaich.
+attack_info=Leum air do nàimhdean!
+repair_info=Càirich togalaichean is structaran a dh'fhulaing.
+build_info=Tog structaran gus barrachd dhraoidhean a thrèanadh is adhartachaidhean a rannsachadh.
+ritual_info=Dèan deas-gnàthan gus beatha a thoirt air structaran.
+harvest1_info=Buain òr is clach a bhios a dhìth ort gus am feachd agad fhastadh is a thogail.
+harvest2_info=Buain maide. Cha bhi cus maide a dhìth air draoidhean, ach feumaidh tu beagan dhi!
+
+
+;
+; Upgrade names and tips
+;
+ancient_summoning=Gairm Àrsaidh
+ancient_summoning_info=Meudaichidh seo an cumhachd a tha aig na Gairmeirean is bidh i comasach air Taibhsean-armachd a ghairm.
+dragon_call=Gairm Dhràgoin
+dragon_call_info=Riatanach ach an gairmeas an Gairmeir Dràgonan.
+energy_compression=Teannachadh Cumhachd
+energy_compression_info=Meudaichidh seo an cumhachd a tha aig Draoidhean-catha, Gairmeirean is Àrd-dhraoidhean.
+energy_sharpening=Geurachadh Cumhachd
+energy_sharpening_info=Nì seo na h-ionnsaighean aig Draoidhean-catha, Gairmeirean is Àrd-dhraoidhean nas treasa.
+hell_gate=Doras Ifrinne
+hell_gate_info=Bidh Foghlamaichean comasach air Mòr-bhèistean a thogail.
+
+;
+; Custom command names
+;
+ice_nova=Spreidheadh Deighe
+static_fire=Teine Seasmhach
+hold_position=Fuirich
+research_dragon_call=Rannsaich Gairm Dhràgoin
+fire_bolt=Saighead Theine
+promote_to_archmage=Adhartaich gu Àrd-dhraoidh
+breath=Gabh Anail Theine
+fire_breath=Anail Theine
+flare=Lasan
+ritual=Deas-ghnàth
+mine=Tochladh
+promote_to_battlemage=Adhartaich gu Draoidh-catha
+research_energy_compression=Rannsaich Teannachadh Cumhachd
+research_energy_sharpening=Rannsaich Geurachadh Cumhachd
+research_hell_gate=Rannsaich Doras Ifrinne
+produce_initiate=Dèan Foghlamaiche
+summon_daemon=Gairm Deamhan
+summon_ghost_armor=Gairm Taibhs-armachd
+summon_dragon=Gairm Dràgon
+summon_drake=Gairm Ràc
+produce_summoner=Dèan Gairmeir
+research_ancient_summoning=Rannsaich Gairm Àrsaidh
+attack_off=Ionnsaighean Dheth
+attack_on=Ionnsaighean Air
+promote_to_behemoth=Beòthaich Mòr-bhèist
+
+build_specific=Tog %s
+ritual_specific=Tog %s
+
+;
+; Level names
+;
+expert=Eòlaiche
+master=Àrd-ghaoisear
+legendary=Seann-sgeulach
+ancient=Àrsaidh

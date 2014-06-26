@@ -1,0 +1,43 @@
+;
+; Resource names
+;
+energy=Cumhachd
+food=Biadh
+gold=Òr
+stone=Clach
+wood=Maide
+
+;
+; Faction names
+;
+alpha=ALPHA
+magic=Draoidheach
+tech=Teicneolach
+
+;
+; Attack type names
+;
+slashing=gearraidh
+piercing=biorach
+impact=bualaidh
+energy=cumhachd
+
+;
+; Armour type names
+;
+organic=Fàs-bheartach
+leather=Leathair
+wood=Maide
+metal=Meatailt
+stone=Cloiche
+
+;
+; Cloak groups
+;
+Stealth=Falach
+;
+; Cloak/Detect strings
+;
+Cloak=cleòca %s
+SingleDetector=lorgaire %s
+MultiDetector=Lorgaire (%s)

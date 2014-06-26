@@ -1,0 +1,11 @@
+;message headers
+Storming=An Ionnsaigh
+
+;message strings
+Brief1=Cuir taic ris an Gairmear agad gus ionnsaigh a thoirt air a h-uile bailtean nàimhdeil. Feumaidh i mairsinn beò.
+
+;objective strings
+ObjectiveWest=Ceann-uidhe: Cuir às dha bhaile nan draoidhean taobh siar. Feumaidh an Gairmear mairsinn beò.
+ObjectiveNorthEast=Ceann-uidhe: Cuir às dhan bhaile theicneòlach taobh ear-thuath. Feumaidh an Gairmear mairsinn beò.
+ObjectiveSouthEast=Ceann-uidhe: Cuir às dhan bhaile taobh ear-dheas. Feumaidh an Gairmear mairsinn beò.
+			

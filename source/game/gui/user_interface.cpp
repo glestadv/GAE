@@ -427,6 +427,7 @@ void UserInterface::mouseDownLeft(int x, int y) {
 		updateSelection(false, units);
 	}
 	computeDisplay();
+	m_display->setSize();
 }
 
 void UserInterface::mouseDownRight(int x, int y) {
