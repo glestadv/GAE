@@ -103,14 +103,18 @@ void ModelRendererGl::loadShaders(const vector<string> &setNames) {
 	}
 }
 
-void ModelRendererGl::setShader(const string &name) {
+void ModelRendererGl::setShader(const string &name, bool gl3) {
 	for (int i=0; i < m_shaders.size(); ++i) {
 		if (m_shaders[i]->getName() == name) {
 			m_shaderIndex = i;
 			return;
 		}
 	}
-	GlslProgram *program = loadShader("gae/shaders/", name);
+	string dir = "gae/shaders/";
+	//if (gl3) {
+	//	dir += "gl3/";
+	//}
+	GlslProgram *program = loadShader(dir, name);
 	if (program) {
 		m_shaders.push_back(program);
 		m_shaderIndex = m_shaders.size() - 1;
@@ -155,10 +159,41 @@ const string& ModelRendererGl::getShaderName() {
 	return m_shaders[m_shaderIndex]->getName();
 }
 
+void ModelRendererGl::setFogColour(const Vec3f &colour) {
+	glFogfv(GL_FOG_COLOR, Vec4f(colour, 1.f).ptr());
+}
+
+void ModelRendererGl::setMainLight(const Vec3f &direction, const Vec3f &diffuse, const Vec3f &ambient) {
+	glLightfv(GL_LIGHT0, GL_POSITION, Vec4f(direction, 0.f).ptr());
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, Vec4f(diffuse, 1.f).ptr());
+	glLightfv(GL_LIGHT0, GL_AMBIENT, Vec4f(ambient, 1.f).ptr());
+
+	///@todo add some spec!
+	glLightfv(GL_LIGHT0, GL_SPECULAR, Vec4f(0.0f, 0.0f, 0.f, 1.f).ptr());
+
+	for (int i= 1; i < 8; ++i) {
+		glDisable(GL_LIGHT0 + i);
+	}
+}
+
+void ModelRendererGl::setPointLight(int i, const Vec3f &position, const Vec3f &colour, const Vec3f &spec, const Vec3f &attenuation) {
+	GLenum lightEnum = GL_LIGHT1 + i;
+	glEnable(lightEnum);
+	glLightfv(lightEnum, GL_POSITION, Vec4f(position, 1.f).ptr());
+	glLightfv(lightEnum, GL_AMBIENT, Vec4f(colour, 1.f).ptr());
+	glLightfv(lightEnum, GL_DIFFUSE, Vec4f(colour, 1.f).ptr());
+	glLightfv(lightEnum, GL_SPECULAR, Vec4f(spec, 1.f).ptr());
+	glLightf(lightEnum, GL_CONSTANT_ATTENUATION, attenuation.x);
+	glLightf(lightEnum, GL_LINEAR_ATTENUATION, attenuation.y);
+	glLightf(lightEnum, GL_QUADRATIC_ATTENUATION, attenuation.z);
+}
+
 void ModelRendererGl::begin(RenderMode mode, bool fog, MeshCallback *meshCallback) {
+	// assertions
 	assert(!m_rendering);
 	assertGl();
 
+	// init members
 	m_renderMode = mode;
 	m_useFog = fog;
 	m_meshCallback = meshCallback;
@@ -191,7 +226,7 @@ void ModelRendererGl::begin(RenderMode mode, bool fog, MeshCallback *meshCallbac
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	}	
 
-	//assertions
+	// assertions
 	assertGl();
 }
 
@@ -262,12 +297,13 @@ void ModelRendererGl::renderOutlined(const Model *model, int lineWidth, const Ve
 		renderMeshOutline(model->getMesh(i));
 	}
 
+	// restore stuff
 	glDisable(GL_STENCIL_TEST);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_LIGHTING);
 
-	//assertions
+	// assert GL
 	assertGl();
 }
 

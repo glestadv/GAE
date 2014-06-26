@@ -42,6 +42,19 @@ using namespace Shared::Util;
 
 namespace Glest { namespace Graphics {
 
+#if _GAE_DEBUG_EDITION_
+void reportRenderUnits(vector<const Unit*> *unitLists) {
+	cout << "renderUnitsReport ::\n";
+	for (int i=0; i < GameConstants::maxPlayers + 1; ++i) {
+		foreach_const (vector<const Unit*>, it, unitLists[i]) {
+			string unitType = (*it)->getType()->getName();
+			string factionType = i ? (*it)->getFaction()->getType()->getName() : "gaia";
+			cout << "\tUnit: " << unitType << " of faction " << (i - 1) << " (" << factionType << ")\n";
+		}
+	}
+}
+#endif
+
 // =====================================================
 // 	class MeshCallbackTeamColor
 // =====================================================
@@ -146,7 +159,11 @@ const Vec4f Renderer::defColor          = Vec4f(1.f, 1.f, 1.f, 1.f);
 
 // ==================== constructor and destructor ====================
 
-Renderer::Renderer() {
+Renderer::Renderer()
+		: m_useFrameBufferObject(false)
+		, m_fbHandle(0)
+		, m_colourBuffer(0)
+		, m_depthBuffer(0) {
 	GraphicsInterface &gi= GraphicsInterface::getInstance();
 	FactoryRepository &fr= FactoryRepository::getInstance();
 	Config &config= Config::getInstance();
@@ -173,6 +190,20 @@ Renderer::Renderer() {
 	game = 0;
 	m_mainMenu = 0;
 	m_teamColourMode = TeamColourMode::DISABLED;
+
+	int tmp1, tmp2;
+	getGlVersion(m_glMajorVersion, tmp1, tmp2);
+	
+	if (m_glMajorVersion >= 3) {
+		m_useFrameBufferObject = true;
+	} else {
+		if (isGlExtensionSupported("GL_EXT_framebuffer_object")
+		&&  isGlExtensionSupported("GL_EXT_packed_depth_stencil")
+		&&  isGlExtensionSupported("GL_EXT_framebuffer_blit")
+		&&  isGlExtensionSupported("GL_ARB_draw_buffers")) {
+			m_useFrameBufferObject = true;
+		}
+	}
 }
 
 Renderer::~Renderer(){
@@ -194,6 +225,27 @@ Renderer &Renderer::getInstance(){
 	return renderer;
 }
 
+void checkFramebufferStatus(GLenum status) {
+	if (status != GL_FRAMEBUFFER_COMPLETE) {
+		switch (status) {
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+				throw runtime_error("Framebuffer status: Incomplete Attachment");
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+				throw runtime_error("Framebuffer status: Missing Attachment");
+			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+				throw runtime_error("Framebuffer status: Incomplete Draw Buffer");
+			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+				throw runtime_error("Incomplete Read Buffer");
+			case GL_FRAMEBUFFER_UNSUPPORTED:
+				throw runtime_error("Framebuffer status: Unsupported RenderBuffer format");
+			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+				throw runtime_error("Framebuffer status: Incomplete Multisample");
+			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+				throw runtime_error("Framebuffer status: Incomplete Layer Targets");
+		}
+		throw runtime_error("Framebuffer status: Unknown Error");
+	}
+}
 
 // ==================== init ====================
 
@@ -202,7 +254,7 @@ bool Renderer::init() {
 	{	ONE_TIME_TIMER(Renderer_Load_Config, cout);
 		// config
 		g_logger.logProgramEvent("Initialising renderer.");
-		Config &config= Config::getInstance();
+		Config &config = Config::getInstance();
 		loadConfig();
 		if (config.getRenderCheckGlCaps()) {
 			checkGlCaps();
@@ -226,54 +278,99 @@ bool Renderer::init() {
 			return false;
 		}
 	}
-	// load shader code (todo ?: do this in initGame(), so a shader-set can be selected in menu)
-	if (g_config.getRenderTestingShaders()) {
-		ONE_TIME_TIMER(Renderer_Load_Test_Shaders, cout);
-		// some hacky stuff so we can test easier, get a list of shader 'sets' to load
-		string names = g_config.getRenderModelTestShaders();
-		g_logger.logProgramEvent("\t'renderTestShaders' is set, loading model shaders: " + names + ".");
-		char *tmp = new char[names.size() + 1];
-		strcpy(tmp, names.c_str());
-		vector<string> programNames;
-		char *tok = strtok(tmp, ",");
-		while (tok) {
-			string name = tok;
-			trimString(name);
-			programNames.push_back(name);
-			tok = strtok(0, ",");
-		}
-		delete [] tmp;
-		static_cast<ModelRendererGl*>(modelRenderer)->loadShaders(programNames);
-		while (mediaErrorLog.hasError()) {
-			MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
-			g_logger.logError(rec.path, rec.msg);
-		}
-	// load single model shader
-	} else if (g_config.getRenderUseShaders()) {
-		ONE_TIME_TIMER(Renderer_Load_Shader, cout);
-		bool bump = g_config.getRenderEnableBumpMapping();
-		bool spec = g_config.getRenderEnableSpecMapping();
-		if (spec) {
-			if (!fileExists("gae/shaders/spec.vs") || !fileExists("gae/shaders/bump_spec.vs")) {
-				g_config.setRenderEnableSpecMapping(false);
-				spec = false;
+
+	if (useFrameBufferObject()) {
+		Vec2i windowSize = Vec2i(g_config.getDisplayWidth(), g_config.getDisplayHeight());
+		
+		// allocate buffer handles
+		glGenFramebuffersEXT(1, &m_fbHandle);
+		glGenRenderbuffersEXT(1, &m_colourBuffer);
+		glGenRenderbuffersEXT(1, &m_depthBuffer);
+	
+		// bind frame buffer
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fbHandle);
+
+		// bind colour buffer, allocate storage and attach to frame buffer
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_colourBuffer);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA8, windowSize.w, windowSize.h);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, m_colourBuffer);
+
+		assertGl();
+
+		// ditto for depth/stencil buffer
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_depthBuffer);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT, windowSize.w, windowSize.h);
+		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER_EXT, m_depthBuffer);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_depthBuffer);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_depthBuffer);
+		
+		assertGl();
+
+		GLenum status;
+		status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		checkFramebufferStatus(status);
+		glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+		
+		assertGl();
+
+		// load shader
+		//static_cast<ModelRendererGl*>(modelRenderer)->setShader("basic", true);
+		//while (mediaErrorLog.hasError()) {
+		//	MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
+		//	g_logger.logError(rec.path, rec.msg);
+		//}
+
+	}
+	if (isGl2()) {
+		// load shader code (todo ?: do this in initGame(), so a shader-set can be selected in menu)
+		if (g_config.getRenderTestingShaders()) {
+			ONE_TIME_TIMER(Renderer_Load_Test_Shaders, cout);
+			// some hacky stuff so we can test easier, get a list of shader 'sets' to load
+			string names = g_config.getRenderModelTestShaders();
+			g_logger.logProgramEvent("\t'renderTestShaders' is set, loading model shaders: " + names + ".");
+			char *tmp = new char[names.size() + 1];
+			strcpy(tmp, names.c_str());
+			vector<string> programNames;
+			char *tok = strtok(tmp, ",");
+			while (tok) {
+				string name = tok;
+				trimString(name);
+				programNames.push_back(name);
+				tok = strtok(0, ",");
 			}
-		}
-		string name;
-		if (bump && spec) {
-			name = "bump_spec";
-		} else if (bump) {
-			name = "bump";
-		} else if (spec) {
-			name = "spec";
-		} else {
-			name = "basic";
-		}
-		g_logger.logProgramEvent("Loading model shader: " + name + ".");
-		static_cast<ModelRendererGl*>(modelRenderer)->setShader(name);
-		while (mediaErrorLog.hasError()) {
-			MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
-			g_logger.logError(rec.path, rec.msg);
+			delete [] tmp;
+			static_cast<ModelRendererGl*>(modelRenderer)->loadShaders(programNames);
+			while (mediaErrorLog.hasError()) {
+				MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
+				g_logger.logError(rec.path, rec.msg);
+			}
+		// load single model shader
+		} else if (g_config.getRenderUseShaders()) {
+			ONE_TIME_TIMER(Renderer_Load_Shader, cout);
+			bool bump = g_config.getRenderEnableBumpMapping();
+			bool spec = g_config.getRenderEnableSpecMapping();
+			if (spec) {
+				if (!fileExists("gae/shaders/spec.vs") || !fileExists("gae/shaders/bump_spec.vs")) {
+					g_config.setRenderEnableSpecMapping(false);
+					spec = false;
+				}
+			}
+			string name;
+			if (bump && spec) {
+				name = "bump_spec";
+			} else if (bump) {
+				name = "bump";
+			} else if (spec) {
+				name = "spec";
+			} else {
+				name = "basic";
+			}
+			g_logger.logProgramEvent("Loading model shader: " + name + ".");
+			static_cast<ModelRendererGl*>(modelRenderer)->setShader(name);
+			while (mediaErrorLog.hasError()) {
+				MediaErrorLog::ErrorRecord rec = mediaErrorLog.popError();
+				g_logger.logError(rec.path, rec.msg);
+			}
 		}
 	}
 	g_logger.logProgramEvent("\tinit 2d display lists.");
@@ -403,7 +500,7 @@ void Renderer::initMenu(MainMenu *mm){
 	init3dListMenu(mm);
 }
 
-void Renderer::reset3d(){
+void Renderer::reset3d() {
 	assertGl();
 	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
 	loadProjectionMatrix();
@@ -415,6 +512,12 @@ void Renderer::reset3d(){
 	pointCount= 0;
 	triangleCount= 0;
 	assertGl();
+}
+
+void Renderer::reset() {
+	if (useFrameBufferObject()) {
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fbHandle);
+	}
 }
 
 void Renderer::reset2d() {
@@ -537,6 +640,13 @@ void Renderer::renderParticleManager(ResourceScope rs){
 
 void Renderer::swapBuffers() {
 	//_PROFILE_FUNCTION();
+	if (useFrameBufferObject()) {
+		Vec2i windowSize = Vec2i(g_config.getDisplayWidth(), g_config.getDisplayHeight());
+		glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_fbHandle);
+		glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
+		glBlitFramebufferEXT(0, 0, windowSize.w, windowSize.h, 0, 0, windowSize.w, windowSize.h, 
+			GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
 	glFlush();
 	GraphicsInterface::getInstance().getCurrentContext()->swapBuffers();
 }
@@ -558,17 +668,19 @@ void Renderer::setupLighting() {
 	// sun/moon light
 	Vec3f lightColour = computeLightColor(time);
 	Vec3f fogColor = world->getTileset()->getFogColor();
-	Vec4f lightPos = timeFlow->isDay()? computeSunPos(time): computeMoonPos(time);
+	Vec4f lightPos = timeFlow->isDay() ? computeSunPos(time) : computeMoonPos(time);
 	nearestLightPos = lightPos;
 
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPos.ptr());
-	glLightfv(GL_LIGHT0, GL_AMBIENT, Vec4f(lightColour * lightAmbFactor, 1.f).ptr());
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, Vec4f(lightColour, 1.f).ptr());
+	modelRenderer->setMainLight(Vec3f(lightPos), lightColour, lightColour * lightAmbFactor);
+	modelRenderer->setFogColour(fogColor * lightColour);
+	//glLightfv(GL_LIGHT0, GL_POSITION, lightPos.ptr());
+	//glLightfv(GL_LIGHT0, GL_AMBIENT, Vec4f(lightColour * lightAmbFactor, 1.f).ptr());
+	//glLightfv(GL_LIGHT0, GL_DIFFUSE, Vec4f(lightColour, 1.f).ptr());
 
 	///@todo add some spec!
-	glLightfv(GL_LIGHT0, GL_SPECULAR, Vec4f(0.0f, 0.0f, 0.f, 1.f).ptr());
+	//glLightfv(GL_LIGHT0, GL_SPECULAR, Vec4f(0.0f, 0.0f, 0.f, 1.f).ptr());
 
-	glFogfv(GL_FOG_COLOR, Vec4f(fogColor * lightColour, 1.f).ptr());
+	//glFogfv(GL_FOG_COLOR, Vec4f(fogColor * lightColour, 1.f).ptr());
 
 	++lightCount;
 
@@ -577,7 +689,7 @@ void Renderer::setupLighting() {
 		glDisable(GL_LIGHT0 + i);
 	}
 
-	//unit lights (not projectiles)
+	// unit lights (not projectiles)
 	if (timeFlow->isTotalNight()) {
 		for (int i=0; i < world->getFactionCount() && lightCount < maxLights; ++i) {
 			for (int j=0; j < world->getFaction(i)->getUnitCount() && lightCount < maxLights; ++j) {
@@ -589,12 +701,15 @@ void Renderer::setupLighting() {
 					pos.y += 4.f;
 					GLenum lightEnum = GL_LIGHT0 + lightCount;
 
-					glEnable(lightEnum);
-					glLightfv(lightEnum, GL_POSITION, pos.ptr());
-					glLightfv(lightEnum, GL_AMBIENT, Vec4f(unit->getType()->getLightColour()).ptr());
-					glLightfv(lightEnum, GL_DIFFUSE, Vec4f(unit->getType()->getLightColour()).ptr());
-					glLightfv(lightEnum, GL_SPECULAR, Vec4f(unit->getType()->getLightColour() * 0.3f).ptr());
-					glLightf(lightEnum, GL_QUADRATIC_ATTENUATION, 0.05f);
+					modelRenderer->setPointLight(lightCount - 1, Vec3f(pos), unit->getType()->getLightColour(), 
+						unit->getType()->getLightColour() * 0.3, Vec3f(1.f, 0.f, 0.05f));
+
+					//glEnable(lightEnum);
+					//glLightfv(lightEnum, GL_POSITION, pos.ptr());
+					//glLightfv(lightEnum, GL_AMBIENT, Vec4f(unit->getType()->getLightColour()).ptr());
+					//glLightfv(lightEnum, GL_DIFFUSE, Vec4f(unit->getType()->getLightColour()).ptr());
+					//glLightfv(lightEnum, GL_SPECULAR, Vec4f(unit->getType()->getLightColour() * 0.3f).ptr());
+					//glLightf(lightEnum, GL_QUADRATIC_ATTENUATION, 0.05f);
 
 					++lightCount;
 
@@ -619,6 +734,8 @@ void Renderer::loadGameCameraMatrix() {
 	glRotatef(gameCamera->getVAng(), -1, 0, 0);
 	glRotatef(gameCamera->getHAng(), 0, 1, 0);
 	glTranslatef(-gameCamera->getPos().x, -gameCamera->getPos().y, -gameCamera->getPos().z);
+
+
 }
 
 void Renderer::loadCameraMatrix(const Camera *camera) {
@@ -629,11 +746,63 @@ void Renderer::loadCameraMatrix(const Camera *camera) {
 	glLoadIdentity();
 	glMultMatrixf(orientation.toMatrix4().ptr());
 	glTranslatef(-position.x, -position.y, -position.z);
+
+
 }
 
 void Renderer::computeVisibleArea() {
 	culler.establishScene();
-	IF_DEBUG_EDITION( Debug::getDebugRenderer().sceneEstablished(culler); )
+
+	m_objectsToRender.clear();
+	for (int i=0; i < GameConstants::maxPlayers + 1; ++i) {
+		m_unitsToRender[i].clear();
+	}
+	static UnitSet unitsSeen;
+	unitsSeen.clear();
+
+	World &world = g_world;
+
+	// map objects
+	Map *map = world.getMap();
+	int thisTeamIndex = world.getThisTeamIndex();
+	for (SceneCuller::iterator it = culler.tile_begin(); it != culler.tile_end(); ++it ) {
+		const Vec2i &pos = *it;
+		if (!map->isInsideTile(pos)) continue;
+		Tile *tile = map->getTile(pos);
+		MapObject *o = tile->getObject();
+		if (o && tile->isExplored(thisTeamIndex)) {
+			m_objectsToRender.push_back(o);
+		}
+	}
+
+	const Faction *thisFaction = world.getThisFaction();
+	// units
+	// alive units, from cells
+	for (SceneCuller::iterator it = culler.cell_begin(); it != culler.cell_end(); ++it ) {
+		const Vec2i &pos = *it;
+		if (!map->isInside(pos)) continue;
+		foreach_enum (Zone, z) {
+			const Unit *unit = map->getCell(pos)->getUnit(z);
+			if (unit && thisFaction->canSee(unit) && unitsSeen.find(unit) == unitsSeen.end()) {
+				unitsSeen.insert(unit);
+				m_unitsToRender[unit->getFactionIndex() + 1].push_back(unit);
+			}
+ 		}
+	}
+	// dead units, check all (they aren't in cells anymore)
+	UnitFactory &factory = world.getUnitFactory();
+	for (Units::const_iterator it = factory.begin_dead(); it != factory.end_dead(); ++it) {
+		if (thisFaction->canSee(*it) && culler.isInside((*it)->getCenteredPos())) {
+			m_unitsToRender[(*it)->getFactionIndex() + 1].push_back(*it);
+		}
+	}
+	IF_DEBUG_EDITION( 
+		Debug::getDebugRenderer().sceneEstablished(culler); 
+		if (Debug::reportRenderUnitsFlag) {
+			reportRenderUnits(m_unitsToRender);
+			Debug::reportRenderUnitsFlag = false;
+		}
+	)
 }
 
 // =======================================
@@ -813,38 +982,35 @@ void Renderer::renderObjects() {
 
 	int thisTeamIndex = world->getThisTeamIndex();
 
-	SceneCuller::iterator it = culler.tile_begin();
-	for ( ; it != culler.tile_end(); ++it ) {
-		const Vec2i &pos = *it;
-		if (!map->isInsideTile(pos)) continue;
-		Tile *sc= map->getTile(pos);
-		MapObject *o= sc->getObject();
-		if(o && sc->isExplored(thisTeamIndex)) {
-
-			const Model *objModel= sc->getObject()->getModel();
-			Vec3f v= o->getPos();
+	foreach_const (ConstMapObjVector, it, m_objectsToRender) {
+		const MapObject *obj = *it;
+		const Vec2i tilePos = obj->getTilePos();
+		if (!map->isInsideTile(tilePos)) continue;
+		Tile *tile = map->getTile(tilePos);
+		if (tile->isExplored(thisTeamIndex)) {
+			const Model *objModel = obj->getModel();
+			Vec3f vec = obj->getPos();
 
 			// ambient and diffuse color is taken from tile pos on FoW tex (ie, shades of grey)
-			float fowFactor= fowTex->getPixmap()->getPixelf(pos.x, pos.y);
-			Vec4f color= Vec4f(Vec3f(fowFactor), 1.f);
-			glColor4fv(color.ptr());
-			Vec4f matColour = color * ambFactor;
+			float fowFactor = fowTex->getPixmap()->getPixelf(tilePos.x, tilePos.y);
+			Vec4f colour = Vec4f(Vec3f(fowFactor), 1.f);
+			glColor4fv(colour.ptr());
+			Vec4f matColour = colour * ambFactor;
 			glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, matColour.ptr());
 			Vec4f fogColour = Vec4f(baseFogColor * fowFactor, 1.f);
 			glFogfv(GL_FOG_COLOR, fogColour.ptr());
 
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
-				glTranslatef(v.x, v.y, v.z);
-				glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
+				glTranslatef(vec.x, vec.y, vec.z);
+				glRotatef(obj->getRotation(), 0.f, 1.f, 0.f);
 
 				objModel->updateInterpolationData(0.f, true);
 				modelRenderer->render(objModel);
 
-				triangleCount+= objModel->getTriangleCount();
-				pointCount+= objModel->getVertexCount();
+				triangleCount += objModel->getTriangleCount();
+				pointCount += objModel->getVertexCount();
 			glPopMatrix();
-
 		}
 	}
 	modelRenderer->end();
@@ -982,31 +1148,6 @@ void Renderer::renderWater(){
 	assertGl();
 }
 
-#if _GAE_DEBUG_EDITION_
-
-} // end namespace Graphics
-
-namespace Debug {
-
-bool reportRenderUnitsFlag = false;
-
-} // end namespace Debug
-
-namespace Graphics {
-
-void reportRenderUnits(vector<const Unit*> *unitLists) {
-	cout << "renderUnitsReport ::\n";
-	for (int i=0; i < GameConstants::maxPlayers + 1; ++i) {
-		foreach_const (vector<const Unit*>, it, unitLists[i]) {
-			string unitType = (*it)->getType()->getName();
-			string factionType = i ? (*it)->getFaction()->getType()->getName() : "gaia";
-			cout << "\tUnit: " << unitType << " of faction " << (i - 1) << " (" << factionType << ")\n";
-		}
-	}
-}
-
-#endif
-
 void Renderer::renderUnits() {
 	SECTION_TIMER(RENDER_UNITS);
 	SECTION_TIMER(RENDER_MODELS);
@@ -1016,11 +1157,11 @@ void Renderer::renderUnits() {
 	MeshCallbackTeamColor meshCallbackTeamColor;
 
 	assertGl();
-
+	
 	glPushAttrib(GL_ENABLE_BIT | GL_FOG_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT);
 	glEnable(GL_COLOR_MATERIAL);
 
-	if(m_shadowMode == ShadowMode::MAPPED){
+	if (m_shadowMode == ShadowMode::MAPPED) {
 		glActiveTexture(shadowTexUnit);
 		glEnable(GL_TEXTURE_2D);
 
@@ -1034,32 +1175,9 @@ void Renderer::renderUnits() {
 
 	modelRenderer->begin(RenderMode::UNITS, g_world.getTileset()->getFog(), &meshCallbackTeamColor);
 
-	ConstUnitVector toRender[GameConstants::maxPlayers + 1];
-
-	///@todo Just use cells to determine the alive ones, then check all dead ones
-	for (int i=0; i < world->getFactionCount(); ++i) { 
-		for (int j=0; j < world->getFaction(i)->getUnitCount(); ++j) {
-			unit = world->getFaction(i)->getUnit(j);
-			if (thisFaction->canSee(unit) && culler.isInside(unit->getCenteredPos())) {
-				toRender[i + 1].push_back(unit);
-			}
-		}
-	}
-	for (int i=0; i < world->getGlestimals()->getUnitCount(); ++i) {
-			unit = world->getGlestimals()->getUnit(i);
-			if (thisFaction->canSee(unit) && culler.isInside(unit->getPos())) {
-				toRender[0].push_back(unit);
-			}
-	}
-	IF_DEBUG_EDITION(
-		if (Debug::reportRenderUnitsFlag) {
-			reportRenderUnits(toRender);
-			Debug::reportRenderUnitsFlag = false;
-		}
-	)
 	const int frame = g_world.getFrameCount();
 	for (int i=0; i < GameConstants::maxPlayers + 1; ++i) {
-		if (toRender[i].empty()) continue;
+		if (m_unitsToRender[i].empty()) continue;
 
 		if (i) {
 			meshCallbackTeamColor.setTeamTexture(world->getFaction(i - 1)->getTexture());
@@ -1073,7 +1191,7 @@ void Renderer::renderUnits() {
 
 		glMatrixMode(GL_MODELVIEW);
 
-		foreach (ConstUnitVector, it, toRender[i]) {
+		foreach (ConstUnitVector, it, m_unitsToRender[i]) {
 			unit = *it;
 			if (unit->isCarried()) {
 				continue;
@@ -1172,10 +1290,8 @@ void Renderer::renderSelectionEffects() {
 	glLineWidth(2.f);
 
 	// units
-	for (int i=0; i<selection->getCount(); ++i) {
-
-		const Unit *unit= selection->getUnit(i);
-
+	for (int i=0; i < selection->getCount(); ++i) {
+		const Unit *unit = selection->getUnit(i);
 		RUNTIME_CHECK(!unit->isCarried() && unit->getPos().x >= 0 && unit->getPos().y >= 0);
 
 		// translate
@@ -1227,37 +1343,33 @@ void Renderer::renderSelectionEffects() {
 			}
 		}
 
-		//meeting point arrow
-		if(unit->getType()->hasMeetingPoint()){
-			Vec2i pos= unit->getMeetingPos();
-			Vec3f arrowTarget= Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
+		// meeting point arrow
+		if (unit->getType()->hasMeetingPoint()) {
+			Vec2i pos = unit->getMeetingPos();
+			Vec3f arrowTarget = Vec3f( (float)pos.x, map->getCell(pos)->getHeight(), (float)pos.y );
 			renderArrow(unit->getCurrVectorFlat(), arrowTarget, Vec3f(0.f, 0.f, 1.f), 0.3f);
 		}
 
 	}
 
-	//render selection hightlights
-	for(int i=0; i<world->getFactionCount(); ++i){
-		for(int j=0; j<world->getFaction(i)->getUnitCount(); ++j){
-			const Unit *unit= world->getFaction(i)->getUnit(j);
-
+	// render selection hightlights
+	for (int i=0; i<world->getFactionCount(); ++i) {
+		for (int j=0; j<world->getFaction(i)->getUnitCount(); ++j) {
+			const Unit *unit = world->getFaction(i)->getUnit(j);
 			if (unit->isHighlighted() && !unit->isCarried()) {
-				float highlight= unit->getHightlight();
-				if(g_world.getThisFactionIndex()==unit->getFactionIndex()){
+				float highlight = unit->getHightlight();
+				if (g_world.getThisFactionIndex() == unit->getFactionIndex()) {
 					glColor4f(0.f, 1.f, 0.f, highlight);
-				}
-				else{
+				} else {
 					glColor4f(1.f, 0.f, 0.f, highlight);
 				}
-
 				RUNTIME_CHECK(!unit->isCarried() && unit->getPos().x >= 0 && unit->getPos().y >= 0);
-				Vec3f v= unit->getCurrVectorFlat();
-				v.y+= 0.3f;
+				Vec3f v = unit->getCurrVectorFlat();
+				v.y += 0.3f;
 				renderSelectionCircle(v, unit->getType()->getSize(), selectionCircleRadius);
 			}
 		}
 	}
-
 	glPopAttrib();
 }
 
@@ -1911,25 +2023,11 @@ void Renderer::renderUnitsForShadows() {
 
 	modelRenderer->begin(RenderMode::SHADOWS, false, 0);
 
-	vector<const Unit*> toRender[GameConstants::maxPlayers + 1];
-	set<const Unit*> unitsSeen;
-	for (SceneCuller::iterator it = culler.cell_begin(); it != culler.cell_end(); ++it ) {
-		const Vec2i &pos = *it;
-		if (!map->isInside(pos)) continue;
-		for (Zone z(0); z < Zone::COUNT; ++z) {
-			const Unit *unit = map->getCell(pos)->getUnit(z);
-			if (unit && thisFaction->canSee(unit) && unitsSeen.find(unit) == unitsSeen.end()) {
-				unitsSeen.insert(unit);
-				toRender[unit->getFactionIndex() + 1].push_back(unit);
-			}
- 		}
-	}
-
 	for (int i=0; i < GameConstants::maxPlayers + 1; ++i) {
-		if (toRender[i].empty()) continue;
+		if (m_unitsToRender[i].empty()) continue;
 
-		vector<const Unit *>::iterator it = toRender[i].begin();
-		for ( ; it != toRender[i].end(); ++it) {
+		vector<const Unit *>::iterator it = m_unitsToRender[i].begin();
+		for ( ; it != m_unitsToRender[i].end(); ++it) {
 			unit = *it;
 			if (unit->isCarried() || unit->isCloaked()) {
 				continue;
@@ -1938,23 +2036,23 @@ void Renderer::renderUnitsForShadows() {
 			glPushMatrix();
 			RUNTIME_CHECK(!unit->isCarried() && unit->getPos().x >= 0 && unit->getPos().y >= 0);
 
-			//translate
+			// translate
 			Vec3f currVec = unit->getCurrVectorFlat();
 			glTranslatef(currVec.x, currVec.y, currVec.z);
 
-			//rotate
+			// rotate
 			glRotatef(unit->getRotation(), 0.f, 1.f, 0.f);
 
 			// faded shadows
 			float color = 1.0f - shadowAlpha;
 				
-			//dead alpha
+			// dead/cloak alpha
 			float alpha = unit->getRenderAlpha();
 			float fade = alpha < 1.0;
 			color *= alpha;
 			changeColor = changeColor || fade;
 
-			if(m_shadowMode == ShadowMode::MAPPED) {
+			if (m_shadowMode == ShadowMode::MAPPED) {
 				if(changeColor) {
 					//fprintf(stderr, "color = %f\n", color);
 					glColor3f(color, color, color);
@@ -1971,7 +2069,7 @@ void Renderer::renderUnitsForShadows() {
 				continue;
 			}
 
-			//render
+			// render
 			const Model *model = unit->getCurrentModel();
 			model->updateInterpolationData(unit->getAnimProgress(), unit->isAlive());
 			modelRenderer->render(model);
@@ -2009,21 +2107,16 @@ void Renderer::renderObjectsForShadows() {
 
 	int thisTeamIndex = world->getThisTeamIndex();
 
-	SceneCuller::iterator it = culler.tile_begin();
-	for ( ; it != culler.tile_end(); ++it) {
-		const Vec2i &pos = *it;
-		if (!map->isInside(pos)) {
-			continue;
-		}
-		Tile *sc = map->getTile(pos);
-		MapObject *o = sc->getObject();
-		if(o && sc->isExplored(thisTeamIndex)) {
-			Vec3f v = o->getPos();
+	foreach (ConstMapObjVector, it, m_objectsToRender) {
+		const MapObject *obj = *it;
+		Tile *tile = map->getTile(obj->getTilePos());
+		if(tile->isExplored(thisTeamIndex)) {
+			Vec3f v = obj->getPos();
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 				glTranslatef(v.x, v.y, v.z);
-				glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
-				modelRenderer->render(o->getModel());
+				glRotatef(obj->getRotation(), 0.f, 1.f, 0.f);
+				modelRenderer->render(obj->getModel());
 			glPopMatrix();
 		}
 	}
@@ -2048,28 +2141,14 @@ void Renderer::renderUnitsForSelection() {
 
 	modelRenderer->begin(RenderMode::SELECTION, false, 0);
 
-	vector<const Unit*> toRender[GameConstants::maxPlayers + 1];
-	set<const Unit*> unitsSeen;
-	for (SceneCuller::iterator it = culler.cell_begin(); it != culler.cell_end(); ++it ) {
-		const Vec2i &pos = *it;
-		if (!map->isInside(pos)) continue;
-		for (Zone z(0); z < Zone::COUNT; ++z) {
-			const Unit *unit = map->getCell(pos)->getUnit(z);
-			if (unit && thisFaction->canSee(unit) && unitsSeen.find(unit) == unitsSeen.end()) {
-				unitsSeen.insert(unit);
-				toRender[unit->getFactionIndex() + 1].push_back(unit);
-			}
- 		}
-	}
-
 	for (int i=0; i < GameConstants::maxPlayers + 1; ++i) {
-		if (toRender[i].empty()) continue;
+		if (m_unitsToRender[i].empty()) continue;
 
 		glPushName(i);
-		vector<const Unit *>::iterator it = toRender[i].begin();
-		for ( ; it != toRender[i].end(); ++it) {
+		vector<const Unit *>::iterator it = m_unitsToRender[i].begin();
+		for ( ; it != m_unitsToRender[i].end(); ++it) {
 			unit = *it;
-			if (unit->isCarried()) {
+			if (unit->isDead() || unit->isCarried()) {
 				continue;
 			}
 			glPushName(unit->getId());
@@ -2112,24 +2191,19 @@ void Renderer::renderObjectsForSelection() {
 
 	int thisTeamIndex = world->getThisTeamIndex();
 
-	SceneCuller::iterator it = culler.tile_begin();
-	for ( ; it != culler.tile_end(); ++it) {
-		const Vec2i &pos = *it;
-		if (!map->isInside(pos)) {
-			continue;
-		}
-		Tile *sc = map->getTile(pos);
-		MapObject *o = sc->getObject();
-		if (o && sc->isExplored(thisTeamIndex) && o->getResource()) {
+	foreach (ConstMapObjVector, it, m_objectsToRender) {
+		const MapObject *obj = *it;
+		Tile *tile = map->getTile(obj->getTilePos());
+		if (tile->isExplored(thisTeamIndex) && obj->getResource()) {
 			glPushName(0x101);	// resource
-			glPushName(o->getId());	// obj id
+			glPushName(obj->getId());	// obj id
 
-			Vec3f v = o->getPos();
+			Vec3f v = obj->getPos();
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 				glTranslatef(v.x, v.y, v.z);
-				glRotatef(o->getRotation(), 0.f, 1.f, 0.f);
-				modelRenderer->render(o->getModel());
+				glRotatef(obj->getRotation(), 0.f, 1.f, 0.f);
+				modelRenderer->render(obj->getModel());
 			glPopMatrix();
 
 			glPopName();
@@ -2143,45 +2217,42 @@ void Renderer::renderObjectsForSelection() {
 
 // ==================== gl caps ====================
 
-void Renderer::checkGlCaps(){
+void Renderer::checkGlCaps() {
 
-	//opengl 1.3
-	if(!isGlVersionSupported(1, 3, 0)){
+	// opengl 1.3
+	if (!isGlVersionSupported(1, 3, 0)) {
 		string message;
-
 		message += "Your system supports OpenGL version \"";
  		message += getGlVersion() + string("\"\n");
  		message += "Glest needs at least version 1.3 to work\n";
  		message += "You may solve this problem by installing your latest video card drivers";
-
  		throw runtime_error(message.c_str());
 	}
 
-	//opengl 1.4 or extension
-	if(!isGlVersionSupported(1, 4, 0)){
+	// opengl 1.4 or extension
+	if (!isGlVersionSupported(1, 4, 0)) {
 		checkExtension("GL_ARB_texture_env_crossbar", "Glest");
 	}
 
 	//checkExtension("GL_ARB_imaging", "Blending");
 }
 
-void Renderer::checkGlOptionalCaps(){
-
-	//shadows
-	if(m_shadowMode == ShadowMode::PROJECTED || m_shadowMode == ShadowMode::MAPPED){
-		if(getGlMaxTextureUnits()<3){
+void Renderer::checkGlOptionalCaps() {
+	// shadows
+	if (m_shadowMode == ShadowMode::PROJECTED || m_shadowMode == ShadowMode::MAPPED) {
+		if (getGlMaxTextureUnits() < 3) {
 			throw runtime_error("Your system doesn't support 3 texture units, required for shadows");
 		}
 	}
 
-	//shadow mapping
-	if(m_shadowMode == ShadowMode::MAPPED){
+	// shadow mapping
+	if (m_shadowMode == ShadowMode::MAPPED) {
 		checkExtension("GL_ARB_shadow", "Shadow Mapping");
 	}
 }
 
-void Renderer::checkExtension(const string &extension, const string &msg){
-	if(!isGlExtensionSupported(extension.c_str())){
+void Renderer::checkExtension(const string &extension, const string &msg) {
+	if (!isGlExtensionSupported(extension.c_str())) {
 		string str= "OpenGL extension not supported: " + extension +  ", required for " + msg;
 		throw runtime_error(str);
 	}

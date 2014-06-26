@@ -612,6 +612,9 @@ public:
 	void onUnitDied(Unit *unit);	// book a visit with the grim reaper
 	void update();					// send the grim reaper on his rounds
 	void deleteUnit(Unit *unit);	// should only be called to undo a creation
+
+	Units::const_iterator begin_dead() const { return m_deadList.begin(); }
+	Units::const_iterator end_dead() const { return m_deadList.end();}
 };
 
 }}// end namespace
