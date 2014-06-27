@@ -655,8 +655,7 @@ Projectile* Unit::launchProjectile(ProjectileType *projType, const Vec3f &endPos
 		assert(lct->areProjectilesAllowed());
 		Vec2f offsets = lct->getProjectileOffset();
 		startPos.y += offsets.y;
-		int seed = int(Chrono::getCurMicros());
-		Random random(seed);
+		Random random(id);
 		float rad = degToRad(float(random.randRange(0, 359)));
 		startPos.x += cosf(rad) * offsets.x;
 		startPos.z += sinf(rad) * offsets.x;
