@@ -73,6 +73,35 @@ GLint toInternalFormatGl(Texture::Format format, int components) {
 		case Texture::fAuto:
 			switch (components) {
 				case 1:
+					return GL_LUMINANCE8;
+				case 3:
+					return GL_RGB8;
+				case 4:
+					return GL_RGBA8;
+				default:
+					assert(false);
+					return GL_RGBA8;
+			}
+			break;
+		case Texture::fLuminance:
+			return GL_LUMINANCE8;
+		case Texture::fAlpha:
+			return GL_ALPHA8;
+		case Texture::fRgb:
+			return GL_RGB8;
+		case Texture::fRgba:
+			return GL_RGBA8;
+		default:
+			assert(false);
+			return GL_RGB8;
+	}
+}
+
+GLint toCompressedInternalFormatGl(Texture::Format format, int components){
+	switch(format){
+		case Texture::fAuto:
+			switch (components) {
+				case 1:
 					return GL_COMPRESSED_LUMINANCE;
 				case 3:
 					return GL_COMPRESSED_RGB;
@@ -108,7 +137,12 @@ void Texture1DGl::init(Filter filter, int maxAnisotropy) {
 		// texture params
 		GLint wrap = toWrapModeGl(wrapMode);
 		GLint glFormat = toFormatGl(format, pixmap->getComponents());
-		GLint glInternalFormat = toInternalFormatGl(format, pixmap->getComponents());
+		GLint glInternalFormat;
+		if(compressTextures){
+			glInternalFormat = toCompressedInternalFormatGl(format, pixmap->getComponents());
+		}else{
+			glInternalFormat = toInternalFormatGl(format, pixmap->getComponents());
+		}
 
 		// pixel init var
 		const uint8* pixels = pixmap->getPixels();
@@ -193,7 +227,12 @@ void Texture2DGl::init(Filter filter, int maxAnisotropy) {
 		//params
 		GLint wrap = toWrapModeGl(wrapMode);
 		GLint glFormat = toFormatGl(format, pixmap->getComponents());
-		GLint glInternalFormat = toInternalFormatGl(format, pixmap->getComponents());
+		GLint glInternalFormat;
+		if(compressTextures){
+			glInternalFormat = toCompressedInternalFormatGl(format, pixmap->getComponents());
+		}else{
+			glInternalFormat = toInternalFormatGl(format, pixmap->getComponents());
+		}
 
 		//pixel init var
 		const uint8* pixels = pixmap->getPixels();
@@ -278,7 +317,14 @@ void Texture3DGl::init(Filter filter, int maxAnisotropy) {
 		//params
 		GLint wrap = toWrapModeGl(wrapMode);
 		GLint glFormat = toFormatGl(format, pixmap->getComponents());
-		GLint glInternalFormat = toInternalFormatGl(format, pixmap->getComponents());
+		GLint glInternalFormat;
+//		FIXME: compression disabled, because mesa doesn't like it
+//		       and it's only used for water
+//		if(compressTextures){
+//			glInternalFormat = toCompressedInternalFormatGl(format, pixmap->getComponents());
+//		}else{
+			glInternalFormat = toInternalFormatGl(format, pixmap->getComponents());
+//		}
 
 		//pixel init var
 		const uint8* pixels = pixmap->getPixels();
@@ -361,7 +407,12 @@ void TextureCubeGl::init(Filter filter, int maxAnisotropy) {
 			const Pixmap2D *currentPixmap = pixmap->getFace(i);
 
 			GLint glFormat= toFormatGl(format, currentPixmap->getComponents());
-			GLint glInternalFormat= toInternalFormatGl(format, currentPixmap->getComponents());
+			GLint glInternalFormat;
+			if(compressTextures){
+				glInternalFormat = toCompressedInternalFormatGl(format, currentPixmap->getComponents());
+			}else{
+				glInternalFormat = toInternalFormatGl(format, currentPixmap->getComponents());
+			}
 
 			//pixel init var
 			const uint8* pixels = currentPixmap->getPixels();

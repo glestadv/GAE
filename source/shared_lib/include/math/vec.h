@@ -474,7 +474,7 @@ public:
 		x += v.x;
 		y += v.y;
 		z += v.z;
-		w += w.z;
+		w += v.w;
 		return *this;
 	}
 
@@ -482,7 +482,7 @@ public:
 		x -= v.x;
 		y -= v.y;
 		z -= v.z;
-		w -= w.z;
+		w -= v.w;
 		return *this;
 	}
 

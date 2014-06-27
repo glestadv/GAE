@@ -126,6 +126,12 @@ else (MSVC)
 	if(NOT CMAKE_CXX_FLAGS MATCHES -fno-rtti)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti" CACHE STRING "" FORCE)
 	endif()
+	#FIXME: clang++ fails to build in c++11 mode
+	if(CMAKE_COMPILER_IS_GNUCXX)
+		if(NOT CMAKE_CXX_FLAGS MATCHES "-std=")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" CACHE STRING "" FORCE)
+		endif()
+	endif(CMAKE_COMPILER_IS_GNUCXX)
 endif (MSVC)
 
 include_directories(${LUA_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${VORBIS_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR}

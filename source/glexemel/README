@@ -1,13 +1,25 @@
 === GLEXEMEL ===
-An XML format for the G3D file format used by the game Glest:
-  http://www.glest.org
+Provides support scripts and converters for the model format G3D
 
-This XML format allows for exporters to create XML file descriptions that
-can then be converted to binary.
+g3d_support.py:
+Mesh Import/Export script for the newest Blender version
+install it in Blender as an Addon
+http://glest.wikia.com/wiki/G3D_support
 
-Note: This package is not yet part of Glest, although it is offered for
-inclusion should the developers wish.
+g3d_xml_exporter.py:
+old export script for Blender 2.49
+creates XML format and then runs converter, if found
 
-Copyright (C) Jonathan Merritt 2005.
-This package may be distributed under the terms of the GNU General Public
-License (see the file COPYING for more details).
+g3d.dtd:
+XML format of G3D
+needed by the converters xml2g and g2xml
+
+xml2g.c:
+converts XML format into binary format which is use by the game
+
+g2xml.c:
+converts binary format into XML format
+
+G3D/*:
+structure definition of G3D for Okteta
+http://docs.kde.org/stable/en/kdesdk/okteta/tools-structures.html

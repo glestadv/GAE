@@ -10,6 +10,11 @@ if(wxWidgets_FOUND)
 	add_subdirectory(map_editor)
 	add_subdirectory(g3d_viewer)
 	add_subdirectory(configurator)
+
+	if(UNIX AND NOT APPLE)
+		# define .g3d and .gbm file types to associate default programs
+		install(FILES gae-mime.xml DESTINATION share/mime/packages)
+	endif(UNIX AND NOT APPLE)
 else(wxWidgets_FOUND)
 	message(STATUS "disabled map editor, g3d viewer and configurator")
 endif(wxWidgets_FOUND)

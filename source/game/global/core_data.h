@@ -50,7 +50,9 @@ private:
 			gplTexture,
 			gaeSplashTexture,
 			backgroundTexture,
-			fireTexture,
+			fireTexture1,
+			fireTexture2,
+			smokeTexture,
 			snowTexture,
 			waterSplashTexture,
 			mouseTexture;
@@ -63,7 +65,9 @@ public:
 	void closeSounds();
 
 	TexPtr getBackgroundTexture() const		{return backgroundTexture;}
-	TexPtr getFireTexture() const			{return fireTexture;}
+	TexPtr getFireTexture1() const			{return fireTexture1;}
+	TexPtr getFireTexture2() const			{return fireTexture2;}
+	TexPtr getSmokeTexture() const          {return smokeTexture;}
 	TexPtr getSnowTexture() const			{return snowTexture;}
 	TexPtr getLogoTexture() const			{return logoTexture;}
 	TexPtr getGplTexture() const			{return gplTexture;}

@@ -42,6 +42,70 @@ public:
 };
 
 // ===========================================================
+//	class DirectedParticleSystemType 
+//
+///	A particle system type that includes direction parameters.
+// ===========================================================
+
+class DirectedParticleSystemType : public ParticleSystemType {
+private:
+	Vec3f direction;
+	bool relative;
+	bool relativeDirection;
+	bool fixed;
+
+public:
+	DirectedParticleSystemType() : ParticleSystemType() {}
+
+	void load(const XmlNode *particleSystemNode, const string &path);
+
+	Vec3f getDirection() const { return direction; }
+	bool isRelative() const { return relative; }
+	bool isRelativeDirection() const { return relativeDirection; }
+	bool isFixed() const { return fixed; }
+};
+
+// ===========================================================
+//	class FreeProjectileType
+// ===========================================================
+
+class FreeProjectileType : public DirectedParticleSystemType {
+private:
+	float m_mass;
+
+public:
+	void load(const XmlNode *particleSystemNode, const string &dir);
+
+	virtual ParticleSystem *create(bool vis) override;
+
+	float getMass() const { return m_mass; }
+	void setMass(float v) { m_mass = v; }
+};
+
+// ===========================================================
+//	class CompoundParticleSystemType
+// ===========================================================
+
+class CompoundParticleSystemType: public ParticleSystemType {
+protected:
+	struct ProjInfo {
+		const FreeProjectileType *type;
+		float startOffset;
+
+		ProjInfo(const FreeProjectileType *t, float offset) : type(t), startOffset(offset) {}
+	};
+	typedef vector<ProjInfo> Projectiles;
+
+	Projectiles m_projectiles;
+
+public:
+	void load(const XmlNode *particleSystemNode, const string &dir);
+
+	bool hasFreeProjectiles() const  {return !m_projectiles.empty(); }
+
+};
+
+// ===========================================================
 //	class ProjectileType
 // ===========================================================
 
@@ -56,7 +120,7 @@ private:
 
 public:
 	void load(const string &dir, const string &path);
-	virtual ParticleSystem *create(bool vis);
+	virtual ParticleSystem *create(bool vis) override;
 	Projectile *createProjectileParticleSystem(bool vis) {return (Projectile*)create(vis);}
 
 	ProjectileStart getStart() const	{return start;}
@@ -77,13 +141,8 @@ private:
 
 public:
 	void load(const string &dir, const string &path);
-	virtual ParticleSystem *create(bool vis);
+	virtual ParticleSystem *create(bool vis) override;
 	Splash *createSplashParticleSystem(bool vis) {return (Splash*)create(vis);}
-};
-
-class ParticleSystemTypeCompound: public SplashType {
-public:
-	void load(const string &dir, const string &path);
 };
 
 // ===========================================================
@@ -92,33 +151,32 @@ public:
 ///	A particle system type that is attached to units.
 // ===========================================================
 
-class UnitParticleSystemType : public ParticleSystemType {
+class UnitParticleSystemType : public DirectedParticleSystemType {
 protected:
-	//string type;
-	Vec3f direction;
-	bool relative;
-	bool relativeDirection; // ?
-	bool fixed;
-
 	int maxParticles;
+
+	EmitterPathType emitterType;
+	Vec3f emitterAxis;
+	float emitterDistance;
+	float emitterSpeed;
 
 public:
 	UnitParticleSystemType();
 	void load(const XmlNode *particleSystemNode, const string &dir);
 	void load(const string &dir, const string &path);
 
-	Vec3f getDirection() const { return direction; }
-	bool isRelative() const { return relative; }
-	bool isRelativeDirection() const { return relativeDirection; }
-	bool isFixed() const { return fixed; }
-
 	bool hasTeamColorEnergy() const { return teamColorEnergy; }
 	bool hasTeamColorNoEnergy() const { return teamColorNoEnergy; }
+
+	EmitterPathType getEmitterType() const { return emitterType; }
+	Vec3f getEmitterAxis() const { return emitterAxis; }
+	float getEmitterDistance() const { return emitterDistance; }
+	float getEmitterSpeed() const { return emitterSpeed; }
 
 	UnitParticleSystem* createUnitParticleSystem(bool vis) const {
 		return new UnitParticleSystem(vis, *this, maxParticles);
 	}
-	virtual ParticleSystem* create(bool vis) { return createUnitParticleSystem(vis); }
+	virtual ParticleSystem* create(bool vis) override { return createUnitParticleSystem(vis); }
 };
 typedef vector<UnitParticleSystemType*> UnitParticleSystemTypes;
 

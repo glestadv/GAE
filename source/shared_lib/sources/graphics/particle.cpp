@@ -44,7 +44,7 @@ MEMORY_CHECK_IMPLEMENTATION(Particle)
 // =====================================================
 
 ParticleSystemBase::ParticleSystemBase()
-		: random(0)
+		: random(int(Chrono::getCurMillis()))
 		, srcBlendFactor(BlendFactor::SRC_ALPHA)
 		, destBlendFactor(BlendFactor::ONE)
 		, blendEquationMode(BlendMode::FUNC_ADD)
@@ -57,20 +57,27 @@ ParticleSystemBase::ParticleSystemBase()
 		, teamColorEnergy(false)
 		, teamColorNoEnergy(false)
 		, size(1.f)
+		, sizeVar(0.f)
 		, sizeNoEnergy(1.f)
+		, sizeNoEnergyVar(0.f)
 		, speed(1.f)
 		, gravity(0.f)
 		, emissionRate(15.f)
+		, emissionRateRemainder(0.f)
+		, overwriteOld(true)
 		, energy(250)
 		, energyVar(50)
+		, radialVelocity(0.f)
+		, radialVelocityVar(0.f)
 		, radius(0.f)
 		, drawCount(1)
-		, texture(NULL)
-		, model(NULL) {
+		, numTextures(0)
+		, model(0) {
+	memset(textures, 0, MAX_PARTICLE_BUFFERS * sizeof(Texture*));
 }
 
 ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &protoType)
-		: random(0)
+		: random(int(Chrono::getCurMillis()))
 		, srcBlendFactor(protoType.srcBlendFactor)
 		, destBlendFactor(protoType.destBlendFactor)
 		, blendEquationMode(protoType.blendEquationMode)
@@ -83,16 +90,34 @@ ParticleSystemBase::ParticleSystemBase(const ParticleSystemBase &protoType)
 		, teamColorEnergy(protoType.teamColorEnergy)
 		, teamColorNoEnergy(protoType.teamColorNoEnergy)
 		, size(protoType.size)
+		, sizeVar(protoType.sizeVar)
 		, sizeNoEnergy(protoType.sizeNoEnergy)
+		, sizeNoEnergyVar(protoType.sizeNoEnergyVar)
 		, speed(protoType.speed)
 		, gravity(protoType.gravity)
 		, emissionRate(protoType.emissionRate)
+		, emissionRateRemainder(0.f)
+		, overwriteOld(protoType.overwriteOld)
 		, energy(protoType.energy)
 		, energyVar(protoType.energyVar)
+		, radialVelocity(protoType.radialVelocity)
+		, radialVelocityVar(protoType.radialVelocityVar)
 		, radius(protoType.radius)
 		, drawCount(protoType.drawCount)
-		, texture(protoType.texture)
+		, numTextures(protoType.numTextures)
 		, model(protoType.model) {
+	memcpy(textures, protoType.textures, MAX_PARTICLE_BUFFERS * sizeof(Texture*));
+}
+
+void ParticleSystemBase::setTexture(int i, Texture *v) {
+	ASSERT_RANGE(i, 4);
+	if (i < 0 && i >= 4) {
+		throw runtime_error("Too many textures. Particle systems may have at most 4 textures.");
+	}
+	if (textures[i] == 0) {
+		++ numTextures;
+	}
+	textures[i] = v;
 }
 
 // =====================================================
@@ -176,6 +201,7 @@ void ParticleSystem::update() {
 				if (aliveParticleCount > 0) {
 					///@todo FIXME: this particle skips an update :(
 					particles[i] = particles[aliveParticleCount];
+					// --i; ?
 				}
 			}
 		}
@@ -185,7 +211,11 @@ void ParticleSystem::update() {
 			emissionRateRemainder = fCount - count;
 			for (int i = 0; i < count; ++i) {
 				Particle *p = createParticle();
-				initParticle(p, i);
+				if (p) {
+					initParticle(p, i);
+				} else {
+					break;
+				}
 			}
 		}
 	}
@@ -224,17 +254,18 @@ Particle *ParticleSystem::createParticle() {
 		return &particles[aliveParticleCount-1];
 	}
 
-	//if not
-	int minEnergy = particles[0].energy;
-	int minEnergyParticle = 0;
-	for (int i = 0; i < particleCount; ++i) {
-		if (particles[i].energy < minEnergy) {
-			minEnergy = particles[i].energy;
-			minEnergyParticle = i;
+	if (overwriteOld) {
+		int minEnergy = particles[0].energy.current;
+		int minEnergyParticle = 0;
+		for (int i = 0; i < particleCount; ++i) {
+			if (particles[i].energy.current < minEnergy) {
+				minEnergy = particles[i].energy.current;
+				minEnergyParticle = i;
+			}
 		}
+		return &particles[minEnergyParticle];
 	}
-
-	return &particles[minEnergyParticle];
+	return 0;
 }
 
 void ParticleSystem::initParticle(Particle *p, int particleIndex) {
@@ -242,17 +273,34 @@ void ParticleSystem::initParticle(Particle *p, int particleIndex) {
 	p->lastPos = pos;
 	p->speed = Vec3f(0.0f);
 	p->accel = Vec3f(0.0f);
-	p->color = getColor();
-	p->color2 = getColor2();
-	p->size = getSize();
-	p->energy = getRandEnergy();
+	p->energy.start = p->energy.current = getRandEnergy();
+	p->colour.value = getColor();
+	p->colour2.value = getColor2();
+	p->colour.step = (getColorNoEnergy() - getColor()) / float(p->energy.current);
+	p->colour2.step = (getColor2NoEnergy() - getColor2()) / float(p->energy.current);
+	p->size.value = getRandomStartSize();
+
+	float totalStep = getRandomEndSize() - p->size.value;
+	p->size.step = totalStep / float(p->energy.current);
+	
+	if (hasAngularVelocity()) {
+		p->angle.value = getRandAngle();
+		p->angle.step = getRandAngularVelocity() * (1.f / 40.f);
+	} else {
+		p->angle.value = p->angle.step = 0.f;
+	}
+	p->texture = getNumTextures() > 1 ? random.randRange(0, getNumTextures() - 1) : 0;
 }
 
 void ParticleSystem::updateParticle(Particle *p) {
 	p->lastPos = p->pos;
 	p->pos = p->pos + p->speed;
 	p->speed = p->speed + p->accel;
-	p->energy--;
+	p->size.value += p->size.step;
+	if (hasAngularVelocity()) {
+		p->angle.value = fmodf(p->angle.value + p->angle.step, Math::twopi);
+	}
+	p->energy.current--;
 }
 
 // ===========================================================================
@@ -278,9 +326,11 @@ void RainParticleSystem::initParticle(Particle *p, int particleIndex) {
 	float x = random.randRange(-radius, radius);
 	float y = random.randRange(-radius, radius);
 
-	p->color = color;
-	p->color2 = color2;
-	p->energy = 10000;
+	p->energy.current = p->energy.start = 10000;
+	p->colour.value = getColor();
+	p->colour2.value = getColor2();
+	p->colour.step = (getColorNoEnergy() - getColor()) / float(p->energy.current);
+	p->colour2.step = (getColor2NoEnergy() - getColor2()) / float(p->energy.current);
 	p->pos = Vec3f(pos.x + x, pos.y, pos.z + y);
 	p->lastPos = p->pos;
 	p->speed = Vec3f(random.randRange(-speed / 10, speed / 10), -speed,
@@ -314,8 +364,8 @@ void SnowParticleSystem::initParticle(Particle *p, int particleIndex) {
 	float x = random.randRange(-radius, radius);
 	float y = random.randRange(-radius, radius);
 
-	p->color = color;
-	p->energy = 10000;
+	//p->color = color;
+	p->energy.current = p->energy.start = 10000;
 	p->pos = Vec3f(pos.x + x, pos.y, pos.z + y);
 	p->speed = Vec3f(0.0f, -speed, 0.0f) + windSpeed;
 	p->speed.x += random.randRange(-0.005f, 0.005f);
