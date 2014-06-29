@@ -81,7 +81,7 @@ public:
 	virtual ~TurnManager() {}
 
 	/** Processes the turns. */
-	virtual void update(Commander *commander);
+	virtual bool update(Commander *commander);
 
 	/** Commands to be executed in currentTurn + futureTurns turns. */
 	void requestCommand(const NetworkCommand *networkCommand);

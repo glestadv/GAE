@@ -33,7 +33,7 @@ TurnManager::TurnManager()
 	m_turnTimer.setInterval(m_turnLength);
 }
 
-void TurnManager::update(Commander *commander) {
+bool TurnManager::update(Commander *commander) {
 	
 	// check for remote commands
 
@@ -48,7 +48,9 @@ void TurnManager::update(Commander *commander) {
 		givePendingCommands(commander);
 		finishTurn();
 		m_turnTimer.reset();
+		return true;
 	}
+	return false;
 
 	//client on receiveing keyframe sends ack
 	//server only continue after all clients have sent ack

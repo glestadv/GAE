@@ -25,6 +25,7 @@
 
 #include "random.h"
 #include "sim_interface.h"
+#include "turn_manager.h"
 
 #include "leak_dumper.h"
 #include "logger.h"
@@ -51,6 +52,7 @@ ClientInterface::ClientInterface(Program &prog)
 		, introDone(false)
 		, playerIndex(-1)
 		, time(0){
+	m_turnManager = new TurnManager();
 }
 
 ClientInterface::~ClientInterface() {
@@ -59,6 +61,7 @@ ClientInterface::~ClientInterface() {
 	}
 	delete m_host;
 	m_host = NULL;
+	delete m_turnManager;
 }
 
 void ClientInterface::connect(const Ip &ip, int port) {
@@ -189,6 +192,8 @@ void ClientInterface::waitUntilReady() {
 		throw InvalidMessage(MessageType::READY, raw.type);
 	}
 
+	NETWORK_LOG( "Received MessageType::READY" );
+
 	//delay the start a bit, so clients have more room to get messages
 	sleep(GameConstants::networkExtraLatency);
 }
@@ -215,7 +220,7 @@ void ClientInterface::waitForMessage(int timeout) {
 		if (chrono.getMillis() > timeout) {
 			throw TimeOut(NetSource::SERVER);
 		} else {
-			sleep(2);
+			sleep(20);
 			m_host->update(this);
 		}
 	}
@@ -298,56 +303,53 @@ void ClientInterface::updateKeyframe(int frameCount) {
 		return;
 	}
 
-	//m_turnManager.addCommands(keyFrame.getTurn(), commands);
-	//if (keyFrame.doNextTurn()) {
-	//	m_turnManager.executeCurrentTurn();
-	//	m_turnManager.nextTurn();
-	//}
+	if (m_turnManager->update(commander)) {
+		// acknowledge the commands have been given
+		TurnFinishedMessage turnFinished;
+		m_connection->send(&turnFinished);
 
-	// give all commands from last KeyFrame
-	for (size_t i=0; i < keyFrame.getCmdCount(); ++i) {
-		pendingCommands.push_back(*keyFrame.getCmd(i));
-	}
-
-	// acknowledge the commands have been given
-	TurnFinishedMessage turnFinished;
-	m_connection->send(&turnFinished);
-
-	while (true) {
-		waitForMessage();
-		RawMessage raw = m_connection->getNextMessage();
-		if (raw.type == MessageType::KEY_FRAME) {
-			keyFrame = KeyFrame(raw);
-			//NETWORK_LOG( "ClientInterface::updateKeyframe(): received keyframe " << (keyFrame.getFrameCount() / GameConstants::networkFramePeriod)
-			//	<< " @ frame " << frameCount );
-			keyFrame.logMoveUpdates();
-			if (keyFrame.getFrameCount() != frameCount + GameConstants::networkFramePeriod) {
-				throw GameSyncError("frame count mismatch. Probable garbled message or memory corruption");
+		while (true) {
+			waitForMessage();
+			RawMessage raw = m_connection->getNextMessage();
+			if (raw.type == MessageType::KEY_FRAME) {
+				keyFrame = KeyFrame(raw);
+				for (size_t i=0; i < keyFrame.getCmdCount(); ++i) {
+					m_turnManager->requestCommand(*keyFrame.getCmd(i));
+				}
+				//NETWORK_LOG( "ClientInterface::updateKeyframe(): received keyframe " << (keyFrame.getFrameCount() / GameConstants::networkFramePeriod)
+				//	<< " @ frame " << frameCount );
+				keyFrame.logMoveUpdates();
+				/*if (keyFrame.getFrameCount() != frameCount + GameConstants::networkFramePeriod) {
+					throw GameSyncError("frame count mismatch. Probable garbled message or memory corruption");
+				}*/
+				return;
+			} else if (raw.type == MessageType::TEXT) {
+				TextMessage textMsg(raw);
+				NETWORK_LOG( "ClientInterface::updateKeyframe(): Received text message from server. Size: " << raw.size << " from: "
+					<< textMsg.getSender() << " msg: " << textMsg.getText() );
+				NetworkInterface::processTextMessage(textMsg);
+			} else if (raw.type == MessageType::QUIT) {
+				NETWORK_LOG( "ClientInterface::updateKeyframe(): Received quit message from server." );
+				QuitMessage quitMsg(raw);
+				quitGame(QuitSource::SERVER);
+				return;
+			} else {
+				throw InvalidMessage(MessageType::KEY_FRAME, raw.type);
 			}
-			return;
-		} else if (raw.type == MessageType::TEXT) {
-			TextMessage textMsg(raw);
-			NETWORK_LOG( "ClientInterface::updateKeyframe(): Received text message from server. Size: " << raw.size << " from: "
-				<< textMsg.getSender() << " msg: " << textMsg.getText() );
-			NetworkInterface::processTextMessage(textMsg);
-		} else if (raw.type == MessageType::QUIT) {
-			NETWORK_LOG( "ClientInterface::updateKeyframe(): Received quit message from server." );
-			QuitMessage quitMsg(raw);
-			quitGame(QuitSource::SERVER);
-			return;
-		} else {
-			throw InvalidMessage(MessageType::KEY_FRAME, raw.type);
 		}
 	}
 }
 
 void ClientInterface::updateSkillCycle(Unit *unit) {
+	SimulationInterface::updateSkillCycle(unit);
+#if 0
 	NETWORK_LOG( "UnitId: " << unit->getId() << " IsMoving: " << unit->isMoving());
 	if (unit->isMoving() /*&& !unit->getCurrCommand()->isAuto()*/) {
 		updateMove(unit);
 	} else {
 		unit->updateSkillCycle(m_skillCycleTable->lookUp(unit).getSkillFrames());
 	}
+#endif
 }
 
 void ClientInterface::updateMove(Unit *unit) {
@@ -367,11 +369,13 @@ void ClientInterface::updateMove(Unit *unit) {
 		unit->updateSkillCycle(updt.end_offset);
 		//NETWORK_LOG( "ClientInterface::updateMove(): UnitId: " << unit->getId() << " NextPos: " << unit->getNextPos() );
 	} catch (GameSyncError &e) {
-		handleSyncError();
+		//handleSyncError();
 	}
 }
 
 void ClientInterface::updateProjectilePath(Unit *unit, Projectile *pps, const Vec3f &start, const Vec3f &end) {
+	SimulationInterface::updateProjectilePath(unit, pps, start, end);
+	return;
 	try {
 		ProjectileUpdate updt = keyFrame.getProjUpdate();
 		if (unit->getId() != updt.unitId) {
@@ -391,7 +395,7 @@ void ClientInterface::updateProjectilePath(Unit *unit, Projectile *pps, const Ve
 		//}
 		//NETWORK_LOG( logStart << " startPos: " << start << ", endPos: " << end << ", arrivalOffset: " << updt.end_offset );
 	} catch (GameSyncError &e) {
-		handleSyncError();
+		//handleSyncError();
 	}
 }
 

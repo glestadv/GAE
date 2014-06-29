@@ -20,6 +20,7 @@
 #include "game.h"
 #include "network_types.h"
 #include "sim_interface.h"
+#include "turn_manager.h"
 
 #include "leak_dumper.h"
 #include "logger.h"
@@ -48,6 +49,7 @@ ServerInterface::ServerInterface(Program &prog)
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		slots[i] = 0;
 	}
+	m_turnManager = new TurnManager();
 }
 
 ServerInterface::~ServerInterface() {
@@ -55,6 +57,7 @@ ServerInterface::~ServerInterface() {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		delete slots[i];
 	}
+	delete m_turnManager;
 }
 
 void ServerInterface::bindPort() {
@@ -336,19 +339,21 @@ void ServerInterface::checkAnimUpdate(Unit*, int32 cs) {
 #endif
 
 void ServerInterface::updateSkillCycle(Unit *unit) {
-	NETWORK_LOG( "UnitId: " << unit->getId() << " IsMoving: " << unit->isMoving());
+	//NETWORK_LOG( "UnitId: " << unit->getId() << " IsMoving: " << unit->isMoving());
 	SimulationInterface::updateSkillCycle(unit);
+#if 0
 	if (unit->isMoving() /*&& !unit->getCurrCommand()->isAuto()*/) {
 		MoveSkillUpdate updt(unit);
 		keyFrame.addUpdate(updt);
 		//NETWORK_LOG( "ServerInterface::updateSkillCycle(): UnitId: " << unit->getId() << " Moving, NextPos: " << unit->getNextPos() );
 	}
+#endif
 }
 
 void ServerInterface::updateProjectilePath(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end) {
 	SimulationInterface::updateProjectilePath(u, pps, start, end);
-	ProjectileUpdate updt(u, pps);
-	keyFrame.addUpdate(updt);
+	//ProjectileUpdate updt(u, pps);
+	//keyFrame.addUpdate(updt);
 	//string logStart = "ServerInterface::updateProjectilePath(): ProjectileId: " + intToStr(pps->getId());
 	//if (pps->getTarget()) {
 	//	logStart += ", TargetId: " + intToStr(pps->getTarget()->getId());
@@ -378,16 +383,13 @@ void ServerInterface::updateKeyframe(int frameCount) {
 	}
 
 	// if not then do nothing and try again next time so the rendering isn't blocked
-	if (allFinishedTurn) {
-
+	if (allFinishedTurn && m_turnManager->update(commander)) {
 		// build command list, remove commands from requested and add to pending
 		while (!requestedCommands.empty()) {
 			keyFrame.add(requestedCommands.back());
-			pendingCommands.push_back(requestedCommands.back());
+			/*pendingCommands.push_back*/m_turnManager->requestCommand(requestedCommands.back());
 			requestedCommands.pop_back();
 		}
-
-		
 
 		// prepare for next turn
 		for (int i=0; i < GameConstants::maxPlayers; ++i) {
@@ -395,14 +397,14 @@ void ServerInterface::updateKeyframe(int frameCount) {
 				slots[i]->startNextTurn();
 			}
 		}
-	}
 
-	keyFrame.setFrameCount(frameCount);
-	keyFrame.buildPacket();
-	broadcastMessage(&keyFrame);
-	m_connection.flush();
-	
-	keyFrame.reset();
+		keyFrame.setFrameCount(frameCount);
+		keyFrame.buildPacket();
+		broadcastMessage(&keyFrame);
+		m_connection.flush();
+		
+		keyFrame.reset();
+	}
 }
 
 void ServerInterface::waitUntilReady() {
