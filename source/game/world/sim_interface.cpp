@@ -256,6 +256,16 @@ int SimulationInterface::launchGame() {
 	//
 }
 
+void SimulationInterface::frameProccessed() {
+	//std::copy(requestedCommands.begin(), requestedCommands.end(), std::back_inserter(pendingCommands));
+	//requestedCommands.clear();
+
+	foreach (Commands, it, requestedCommands) {
+		commander->giveCommand(it->toCommand());
+	}
+	requestedCommands.clear();
+}
+
 bool SimulationInterface::updateWorld() {
 	SECTION_TIMER(WORLD_TOTAL);
 	if (speed == GameSpeed::PAUSED) {
@@ -283,12 +293,6 @@ bool SimulationInterface::updateWorld() {
 
 	//m_turnManager->update(commander);
 	frameProccessed();
-
-	// give pending commands
-	/*foreach (Commands, it, pendingCommands) {
-		commander->giveCommand(it->toCommand());
-	}
-	pendingCommands.clear();*/
 	return true;
 }
 

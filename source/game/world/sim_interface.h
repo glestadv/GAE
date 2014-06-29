@@ -343,10 +343,7 @@ protected:
 	virtual void startGame() { }
 
 	/** Called after each world frame is processed, issues pending commands */
-	virtual void frameProccessed() {
-		std::copy(requestedCommands.begin(), requestedCommands.end(), std::back_inserter(pendingCommands));
-		requestedCommands.clear();
-	}
+	virtual void frameProccessed();
 
 	/** Called when a quit request is received */
 	virtual void quitGame(QuitSource) { }
