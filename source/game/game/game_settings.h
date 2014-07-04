@@ -41,6 +41,7 @@ private:
 	ControlType factionControls[maxPlayers];
 	float resourceMultipliers[maxPlayers];
 
+    int tilesetSeed;
 	int thisFactionIndex;
 	int factionCount;
 	int teams[maxPlayers];
@@ -83,7 +84,8 @@ public:
 	int getTeam(int i) const						{ASSERT_I(); return teams[i];}
 	int getStartLocationIndex(int i) const			{ASSERT_I(); return startLocationIndex[i];}
 	int getColourIndex(int i) const					{ASSERT_I(); return colourIndices[i];}
-	
+	int getTilesetSeed() const						{return tilesetSeed;}
+
 	bool getDefaultUnits() const					{return defaultUnits;}
 	bool getDefaultResources() const				{return defaultResources;}
 	bool getDefaultVictoryConditions() const		{return defaultVictoryConditions;}
@@ -107,6 +109,7 @@ public:
 	void setTeam(int i, int v)						{ASSERT_I(); teams[i] = v;}
 	void setStartLocationIndex(int i, int v)		{ASSERT_I(); startLocationIndex[i] = v;}
 	void setColourIndex(int i, int v)				{ASSERT_I(); colourIndices[i] = v;}
+	void setTilesetSeed(int v)						{tilesetSeed = v;}
 
 	void setDefaultUnits(bool v) 					{defaultUnits = v;}
 	void setDefaultResources(bool v) 				{defaultResources = v;}

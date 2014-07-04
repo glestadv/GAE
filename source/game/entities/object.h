@@ -51,8 +51,9 @@ public:
 		MapObjectType *objectType;
 		Vec2i tilePos;
 		const Vec3f pos;
-		CreateParams(MapObjectType *objectType, const Vec2i &tilePos, const Vec3f &worldPos) 
-			: objectType(objectType), tilePos(tilePos), pos(worldPos) {}
+		int seed;
+		CreateParams(MapObjectType *objectType, const Vec2i &tilePos, const Vec3f &worldPos, int seed) 
+			: objectType(objectType), tilePos(tilePos), pos(worldPos), seed(seed) {}
 	};
 
 private:

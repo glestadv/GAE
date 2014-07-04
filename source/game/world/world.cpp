@@ -68,7 +68,7 @@ World *World::singleton = 0;
 
 // ===================== PUBLIC ========================
 
-World::World(SimulationInterface *simInterface) 
+World::World(SimulationInterface *simInterface)
 		: scenario(NULL)
 		, m_simInterface(simInterface)
 		, game(*simInterface->getGameState())
@@ -129,7 +129,7 @@ void World::init(const XmlNode *worldNode) {
 	// must be done after map.init()
 	routePlanner = new RoutePlanner(this);
 	cartographer = new Cartographer(this);
-	
+
 	if (worldNode) {
 		loadSaved(worldNode);
 		g_userInterface.initMinimap(fogOfWar, shroudOfDarkness, true);
@@ -211,7 +211,8 @@ void World::preload() {
 
 //load tileset
 bool World::loadTileset() {
-	tileset.load(m_simInterface->getGameSettings().getTilesetPath(), &techTree);
+    GameSettings &gs = m_simInterface->getGameSettings();
+	tileset.load(gs.getTilesetPath(), &techTree, gs.getTilesetSeed());
 	timeFlow.init(&tileset);
 	return true;
 }
@@ -336,7 +337,7 @@ void World::processFrame() {
 	//consumable resource (e.g., food) costs
 	for (int i = 0; i < techTree.getResourceTypeCount(); ++i) {
 		const ResourceType *rt = techTree.getResourceType(i);
-		if (rt->getClass() == ResourceClass::CONSUMABLE 
+		if (rt->getClass() == ResourceClass::CONSUMABLE
 		&& frameCount % (rt->getInterval() * WORLD_FPS) == 0) {
 			for (int i = 0; i < getFactionCount(); ++i) {
 				getFaction(i)->applyCostsOnInterval(rt);
@@ -347,7 +348,7 @@ void World::processFrame() {
 	//fow smoothing
 	if (fogOfWarSmoothing && ((frameCount + 1) % (fogOfWarSmoothingFrameSkip + 1)) == 0) {
 		float fogFactor = float(frameCount % WORLD_FPS) / WORLD_FPS;
-		
+
 		g_userInterface.getMinimap()->updateFowTex(clamp(fogFactor, 0.f, 1.f));
 	}
 
@@ -618,7 +619,7 @@ void World::moveUnitCells(Unit *unit) {
 		&& g_renderer.getCuller().isInside(newCentrePos)) {
 			for (int i = 0; i < 3; ++i) {
 				waterEffects.addWaterSplash(
-					Vec2f(unit->getLastPos().x + random.randRange(-0.4f, 0.4f), 
+					Vec2f(unit->getLastPos().x + random.randRange(-0.4f, 0.4f),
 						  unit->getLastPos().y + random.randRange(-0.4f, 0.4f))
 				);
 			}
@@ -835,7 +836,7 @@ int World::giveStopCommand(int unitId, const string &cmdName) {
 			return LuaCmdResult::NO_CAPABLE_COMMAND;
 		}
 	} else if (cmdName == "attack-stopped") {
-		const AttackStoppedCommandType *asct = 
+		const AttackStoppedCommandType *asct =
 			(AttackStoppedCommandType *)unit->getType()->getFirstCtOfClass(CmdClass::ATTACK_STOPPED);
 		if (asct) {
 			return unit->giveCommand(newCommand(asct, CmdFlags()));
@@ -939,7 +940,7 @@ int World::getUnitCount(int factionIndex) {
 	if (factionIndex >= 0 && factionIndex < factions.size()) {
 		Faction* faction= &factions[factionIndex];
 		int count = 0;
-		
+
 		for (int i= 0; i<faction->getUnitCount(); ++i) {
 			const Unit* unit= faction->getUnit(i);
 			if (unit->isAlive()) {
@@ -952,7 +953,7 @@ int World::getUnitCount(int factionIndex) {
 	}
 }
 
-/** @return number of units of type a faction has, -1 if faction index invalid, 
+/** @return number of units of type a faction has, -1 if faction index invalid,
   * -2 if unitType not found */
 int World::getUnitCountOfType(int factionIndex, const string &typeName) {
 	if (factionIndex >= 0 && factionIndex < factions.size()) {
@@ -981,10 +982,10 @@ int World::getUnitCountOfType(int factionIndex, const string &typeName) {
 //creates each faction looking at each faction name contained in GameSettings
 void World::initFactions() {
 	g_logger.logProgramEvent("Faction types", true);
-	
+
 	glestimals.init(&tileset.getGlestimalFactionType(), ControlType::INVALID, "Glestimals",
 		&techTree, -1, -1, -1, -1, false, false);
-	
+
 	GameSettings &gs = m_simInterface->getGameSettings();
 	this->thisFactionIndex = gs.getThisFactionIndex();
 	if (!gs.getFactionCount()) {
@@ -1015,7 +1016,7 @@ void World::initFactions() {
 		//  m_simInterface->getStats()->setFactionTypeName(i, formatString(gs.getFactionTypeName(i)));
 		//  m_simInterface->getStats()->setControl(i, gs.getFactionControl(i));
 	}
-	thisTeamIndex = getFaction(thisFactionIndex)->getTeam();	
+	thisTeamIndex = getFaction(thisFactionIndex)->getTeam();
 }
 
 //place units randomly aroud start location
@@ -1143,18 +1144,18 @@ void World::exploreCells(const Vec2i &newPos, int sightRange, int teamIndex) {
 //computes the fog of war texture, contained in the minimap
 void World::computeFow() {
 	//GameSettings &gs = m_simInterface->getGameSettings();
-	
+
 	///@todo move to Minimap
 	//reset texture
 	Minimap *minimap = g_userInterface.getMinimap();
 	minimap->resetFowTex();
 
-	// reset visibility in cells		
+	// reset visibility in cells
 	for (int i = 0; i < map.getTileW(); ++i) {
 		for (int j = 0; j < map.getTileH(); ++j) {
 			Tile *tile = map.getTile(i, j);
 			for (int k = 0; k < GameConstants::maxPlayers; ++k) {
-				bool val =			// if no fog and no shroud, or no fog and shroud with this 
+				bool val =			// if no fog and no shroud, or no fog and shroud with this
 					(!fogOfWar		// tile seen previously, then set visible
 					&& (!shroudOfDarkness || (shroudOfDarkness && tile->isExplored(k))));
 				tile->setVisible(k, val);
@@ -1181,7 +1182,7 @@ void World::computeFow() {
 			}
 		}
 	}
-	
+
 	// compute texture
 	if (unfogActive) { // scripted map reveal
 		doUnfog();
