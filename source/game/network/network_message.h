@@ -53,7 +53,7 @@ struct MsgHeader {
 // ==============================================================
 //	class Message
 // ==============================================================
-/** Abstract base class for network messages, requires concrete subclasses 
+/** Abstract base class for network messages, requires concrete subclasses
   * to implement receive(NetworkConnection*)/send(NetworkConnection*)
   */
 class Message {
@@ -183,6 +183,7 @@ private:
 		int8 defaultVictoryConditions;
 		int8 fogOfWar;
 		int8 shroudOfDarkness;
+		int32 tilesetSeed;
 	} data;
 
 public:
@@ -292,7 +293,7 @@ public:
 	virtual unsigned int getSize() const    { return (dataHeaderSize + sizeof(NetworkCommand) * data.commandCount); }
 	virtual const void* getData() const     { return &data; }
 	virtual void log() const override;
-	
+
 	bool addCommand(const NetworkCommand* networkCommand);
 	void clear()									{data.commandCount = 0;}
 	int getCommandCount() const						{return data.commandCount;}

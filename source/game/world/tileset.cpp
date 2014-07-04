@@ -102,8 +102,9 @@ void Tileset::count(const string &dir){
 	logger.getProgramLog().setUnitCount(objCount);
 }
 
-void Tileset::load(const string &dir, TechTree *tt){
-	random.init(time(NULL));
+void Tileset::load(const string &dir, TechTree *tt, int seed){
+	surfaceSeed = seed;
+	random.init(/*int(Chrono::getCurMillis())*/seed);
 	name = basename(dir);
 	string path = dir + "/" + name +".xml";
 
@@ -242,12 +243,12 @@ Tileset::~Tileset(){
 }
 
 const Pixmap2D *Tileset::getSurfPixmap(int type) const {
-	int64 seed = Chrono::getCurTicks();
-	Random rndm(seed);
+	//int64 seed = Chrono::getCurTicks();
+	Random rndm(surfaceSeed);
 	float r = rndm.randRange(0.f, 1.f);
 	int var = 0;
 	float max = 0.f;
-	
+
 	for (int i=0; i < surfProbs[type].size(); ++i) {
 		max += surfProbs[type][i];
 		if (r <= max) {

@@ -129,16 +129,19 @@ private:
 
 	FactionType glestimalFactionType;
 
+	int surfaceSeed;
+
 public:
 	~Tileset();
 
 	void count(const string &dir);
-	void load(const string &dir, TechTree *tt);
+	void load(const string &dir, TechTree *tt, int seed);
 	void doChecksum(Checksum &checksum) const;
 
 	//get
 	string getName() const							{return name;}
 	MapObjectType *getObjectType(int i)				{return &objectTypes[i];}
+	int getObjectSeed()								{return random.rand();}
 	float getSurfProb(int surf, int var) const		{return surfProbs[surf][var];}
 	Texture3D *getWaterTex() const					{return waterTex;}
 	bool getWaterEffects() const					{return waterEffects;}

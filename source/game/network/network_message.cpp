@@ -148,6 +148,7 @@ LaunchMessage::LaunchMessage(const GameSettings *gameSettings){
 	data.defaultVictoryConditions= gameSettings->getDefaultVictoryConditions();
 	data.fogOfWar = gameSettings->getFogOfWar();
 	data.shroudOfDarkness = gameSettings->getShroudOfDarkness();
+	data.tilesetSeed = gameSettings->getTilesetSeed();
 
 	for(int i= 0; i<data.factionCount; ++i){
 		data.factionTypeNames[i]= gameSettings->getFactionTypeName(i);
@@ -179,6 +180,7 @@ void LaunchMessage::buildGameSettings(GameSettings *gameSettings) const{
 	gameSettings->setDefaultVictoryConditions(data.defaultVictoryConditions);
 	gameSettings->setFogOfWar(data.fogOfWar);
 	gameSettings->setShroudOfDarkness(data.shroudOfDarkness);
+	gameSettings->setTilesetSeed(data.tilesetSeed);
 
 	for(int i= 0; i<data.factionCount; ++i){
 		gameSettings->setFactionTypeName(i, data.factionTypeNames[i].getString());
@@ -245,10 +247,10 @@ DataSyncMessage::DataSyncMessage(World &world) : m_packetSize(0), m_packetData(0
 
 	NETWORK_LOG( "DataSync" );
 	NETWORK_LOG( "========" );
-	NETWORK_LOG( 
+	NETWORK_LOG(
 		"CommandType count = " << header.m_cmdTypeCount
-		<< ", SkillType count = " << header.m_skillTypeCount 
-		<< ", ProdType count = " << header.m_prodTypeCount 
+		<< ", SkillType count = " << header.m_skillTypeCount
+		<< ", ProdType count = " << header.m_prodTypeCount
 		<< ", CloakType count = " << header.m_cloakTypeCount
 	);
 	m_checkSumData = new int32[getChecksumCount()];
@@ -263,14 +265,14 @@ DataSyncMessage::DataSyncMessage(World &world) : m_packetSize(0), m_packetData(0
 			m_checkSumData[++n] = g_prototypeFactory.getChecksum(ct);
 			NETWORK_LOG(
 				"CommandType id:" << ct->getId() << " " << ct->getName() << " of UnitType: "
-				<< ct->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: " 
+				<< ct->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: "
 				<< intToHex(m_checkSumData[n - 1])
 			);
 		}
 		for (int i=0; i < header.m_skillTypeCount; ++i) {
 			const SkillType *st = g_prototypeFactory.getSkillType(i);
 			m_checkSumData[++n] = g_prototypeFactory.getChecksum(st);
-			NETWORK_LOG( 
+			NETWORK_LOG(
 				"SkillType id: " << st->getId() << " " << st->getName() << " of UnitType: "
 				<< st->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: "
 				<< intToHex(m_checkSumData[n - 1])
@@ -282,13 +284,13 @@ DataSyncMessage::DataSyncMessage(World &world) : m_packetSize(0), m_packetData(0
 			if (g_prototypeFactory.isUnitType(pt)) {
 				const UnitType *ut = static_cast<const UnitType*>(pt);
 				NETWORK_LOG(
-					"UnitType id: " << ut->getId() << " " << ut->getName() << " of FactionType: " 
+					"UnitType id: " << ut->getId() << " " << ut->getName() << " of FactionType: "
 					<< ut->getFactionType()->getName() << ", checksum[" << (n - 1) << "]: "
 					<< intToHex(m_checkSumData[n - 1])
 				);
 			} else if (g_prototypeFactory.isUpgradeType(pt)) {
 				const UpgradeType *ut = static_cast<const UpgradeType*>(pt);
-				NETWORK_LOG( 
+				NETWORK_LOG(
 					"UpgradeType id: " << ut->getId() << " " << ut->getName() << " of FactionType: "
 					<< ut->getFactionType()->getName() << ", checksum[" << (n - 1) << "]: "
 					<< intToHex(m_checkSumData[n - 1])
@@ -297,7 +299,7 @@ DataSyncMessage::DataSyncMessage(World &world) : m_packetSize(0), m_packetData(0
 				const GeneratedType *gt = static_cast<const GeneratedType*>(pt);
 				NETWORK_LOG(
 					"GeneratedType id: " << gt->getId() << " " << gt->getName() << " of CommandType: "
-					<< gt->getCommandType()->getName() << " of UnitType: " 
+					<< gt->getCommandType()->getName() << " of UnitType: "
 					<< gt->getCommandType()->getUnitType()->getName() << ", checksum[" << (n - 1) << "]: "
 					<< intToHex(m_checkSumData[n - 1])
 				);
@@ -547,12 +549,12 @@ void KeyFrame::buildPacket() {
 	)
 	header.moveUpdateCount = m_moveUpdates.updateCount;
 	header.projUpdateCount = m_projectileUpdates.updateCount;
-	
+
 	header.moveUpdateSize = m_moveUpdates.updateSize;
 	header.projUpdateSize = m_projectileUpdates.updateSize;
 	size_t commandsSize = header.cmdCount * sizeof(NetworkCommand);
 
-	msgHeader.messageSize = sizeof(KeyFrameMsgHeader) 
+	msgHeader.messageSize = sizeof(KeyFrameMsgHeader)
 		+ m_moveUpdates.updateSize + m_projectileUpdates.updateSize + commandsSize;
 
 	IF_MAD_SYNC_CHECKS(
@@ -560,7 +562,7 @@ void KeyFrame::buildPacket() {
 	)
 	size_t totalSize = msgHeader.messageSize + sizeof(MsgHeader);
 
-//	NETWORK_LOG( "KeyFrame::buildPacket(): Message size: " << msgHeader.messageSize << ", Frame: " << frame << ", Move updates: " << moveUpdateCount 
+//	NETWORK_LOG( "KeyFrame::buildPacket(): Message size: " << msgHeader.messageSize << ", Frame: " << frame << ", Move updates: " << moveUpdateCount
 //		<< ", Projectile updates: " << projUpdateCount << ", Commands: " << cmdCount << ", Checksums: " << checksumCount );
 
 	m_packetSize = totalSize;
@@ -647,7 +649,7 @@ void KeyFrame::addUpdate(MoveSkillUpdate updt) {
 	m_moveUpdates.updateSize += sizeof(MoveSkillUpdate);
 	++m_moveUpdates.updateCount;
 	NETWORK_LOG( "KeyFrame::addUpdate(MoveSkillUpdate): Pos Offset:" << updt.posOffset()
-		<< " Frame Offset: " << int(updt.end_offset) 
+		<< " Frame Offset: " << int(updt.end_offset)
 		<< " UnitId: " << updt.unitId
 		<< " Update Size: " << m_moveUpdates.updateSize );
 }
@@ -672,9 +674,9 @@ MoveSkillUpdate KeyFrame::getMoveUpdate() {
 	//m_moveUpdates.readPtr += sizeof(MoveSkillUpdate);
 	--m_moveUpdates.updateCount;
 	NETWORK_LOG( "KeyFrame::getMoveUpdate(): Pos Offset:" << res.posOffset()
-		<< " Frame Offset: " << int(res.end_offset) 
+		<< " Frame Offset: " << int(res.end_offset)
 		<< " Update Size: " << m_moveUpdates.updateSize
-		<< " Move Update Count: " << m_moveUpdates.updateCount 
+		<< " Move Update Count: " << m_moveUpdates.updateCount
 		<< " Frame: " << frame );
 	return res;
 }
@@ -693,7 +695,7 @@ void KeyFrame::logMoveUpdates() {
 		--updateCount;
 
 		NETWORK_LOG( "\tPos Offset:" << res.posOffset()
-			<< " Frame Offset: " << int(res.end_offset) 
+			<< " Frame Offset: " << int(res.end_offset)
 			<< " UnitId: " << res.unitId
 			<< " Move Update Count: " << updateCount );
 	}

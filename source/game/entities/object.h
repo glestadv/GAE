@@ -49,7 +49,9 @@ public:
 	struct CreateParams {
 		MapObjectType *objectType;
 		const Vec3f pos;
-		CreateParams(MapObjectType *objectType, const Vec3f &pos) : objectType(objectType), pos(pos) {}
+		int seed;
+		CreateParams(MapObjectType *objectType, const Vec2i &tilePos, const Vec3f &worldPos, int seed) 
+			: objectType(objectType), tilePos(tilePos), pos(worldPos), seed(seed) {}
 	};
 
 private:
