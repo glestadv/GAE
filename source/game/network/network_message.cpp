@@ -561,9 +561,9 @@ struct KeyFrameMsgHeader {
 	IF_MAD_SYNC_CHECKS(
 		uint16	checksumCount;
 	)
-	uint16 moveUpdateCount;
-	uint16 projUpdateCount;
-	uint16 updateSize;
+	::uint16 moveUpdateCount;
+	::uint16 projUpdateCount;
+	::uint16 updateSize;
 	int32 frame;
 
 };

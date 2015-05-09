@@ -107,7 +107,7 @@ class SurfaceAtlas2 : public SurfaceAtlas {
 private:
 	//const Texture2D *m_texture;
 	vector<const Texture2D*> m_textures;
-	uint32 *m_infosByPos;
+	::uint32 *m_infosByPos;
 
 public:
 	SurfaceAtlas2(Vec2i size);

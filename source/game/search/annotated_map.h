@@ -25,7 +25,6 @@ typedef list<Vec2i>::const_iterator VLConIt;
 typedef list<Vec2i>::reverse_iterator VLRevIt;
 typedef list<Vec2i>::const_reverse_iterator VLConRevIt;
 
-using Shared::Platform::int64;
 using Glest::Sim::Map;
 
 namespace Glest {
@@ -49,7 +48,7 @@ class ExplorationMap;
 struct CellMetrics {
 	CellMetrics() { memset(this, 0, sizeof(*this)); }
 	
-	uint16 get(const Field field) const { /**< get metrics for field */
+	::uint16 get(const Field field) const { /**< get metrics for field */
 		switch (field) {
 			case Field::LAND:		return field0;
 			case Field::AIR:		return field1;
@@ -62,7 +61,7 @@ struct CellMetrics {
 		}
 	}
 	
-	void set(const Field field, uint16 val) { /**< set metrics for field */
+	void set(const Field field, ::uint16 val) { /**< set metrics for field */
 		switch (field) {
 			case Field::LAND:		field0 = val; return;
 			case Field::AIR:		field1 = val; return;
@@ -75,7 +74,7 @@ struct CellMetrics {
 		}
 	}
 	
-	void setAll(uint16 val)	{ /**< set clearance of all fields to val */
+	void setAll(::uint16 val)	{ /**< set clearance of all fields to val */
 		field0 = field1 = field2 = field3 = field4 = val; 
 	}
 
@@ -91,13 +90,13 @@ struct CellMetrics {
 	void setDirty(const bool val)		{ dirty = val;	} /**< set dirty flag */	
 
 private:
-	uint16 field0 : 3; /**< Field::LAND = land + shallow water */
-	uint16 field1 : 3; /**< Field::AIR = air */
-	uint16 field2 : 3; /**< Field::ANY_WATER = shallow + deep water */
-	uint16 field3 : 3; /**< Field::DEEP_WATER = deep water */
-	uint16 field4 : 3; /**< Field::AMPHIBIOUS = land + shallow + deep water */
+	::uint16 field0 : 3; /**< Field::LAND = land + shallow water */
+	::uint16 field1 : 3; /**< Field::AIR = air */
+	::uint16 field2 : 3; /**< Field::ANY_WATER = shallow + deep water */
+	::uint16 field3 : 3; /**< Field::DEEP_WATER = deep water */
+	::uint16 field4 : 3; /**< Field::AMPHIBIOUS = land + shallow + deep water */
 
-	uint16  dirty : 1; /**< used in 'team' maps as a 'dirty bit' (clearances have changed
+	::uint16 dirty : 1; /**< used in 'team' maps as a 'dirty bit' (clearances have changed
 					     * but team hasn't seen that change yet). */
 };
 
