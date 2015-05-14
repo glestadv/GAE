@@ -64,7 +64,7 @@ STRINGY_ENUM( FuzzySize, SMALL, MEDIUM, LARGE );
 class WidgetConfig {
 	typedef const Texture2D*		TexPtr;
 	typedef const Font*				FontPtr;
-	typedef map<string, uint32>		IndexByNameMap;
+	typedef map<string, ::uint32>	IndexByNameMap;
 	typedef map<Font*, int>         FontSizeMap;
 	//typedef vector<BorderStyle>     BorderStyles;
 	//typedef vector<BackgroundStyle> BackgroundStyles;
@@ -169,9 +169,9 @@ public:
 	int getTextureIndex(const string &name) const;
 
 	// get Colour/Font/Texture by index
-	Colour     getColour(uint32 ndx) const     { return m_colours[ndx];   }
-	FontPtr    getFont(uint32 ndx) const       { return m_fonts[ndx];     }
-	TexPtr     getTexture(uint32 ndx) const	   { return m_textures[ndx];  }
+	Colour     getColour(::uint32 ndx) const     { return m_colours[ndx];   }
+	FontPtr    getFont(::uint32 ndx) const       { return m_fonts[ndx];     }
+	TexPtr     getTexture(::uint32 ndx) const	   { return m_textures[ndx];  }
 
 	FontPtr getFont(const string &name) {
 		int ndx = getFontIndex(name);

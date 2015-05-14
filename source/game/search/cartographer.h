@@ -32,8 +32,8 @@ namespace Glest { namespace Search {
 class ExplorationMap {
 #	pragma pack(push, 2)
 		struct ExplorationState {	/**< The exploration state of one tile for one team */			
-			uint16 visCounter : 15;	/**< Visibility counter, the number of team's units that can see this tile */ 
-			uint16 explored	  :  1;	/**< Explored flag */
+			::uint16 visCounter	: 15;	/**< Visibility counter, the number of team's units that can see this tile */ 
+			::uint16 explored	:  1;	/**< Explored flag */
 		}; // max 32768 units per _team_
 #	pragma pack(pop)
 	ExplorationState *state; /**< The Data */

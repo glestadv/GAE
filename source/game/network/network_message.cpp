@@ -494,10 +494,10 @@ struct KeyFrameMsgHeader {
 	IF_MAD_SYNC_CHECKS(
 		uint16	checksumCount;
 	)
-	uint16 moveUpdateCount;
-	uint16 projUpdateCount;
-	uint16 moveUpdateSize;
-	uint16 projUpdateSize;
+	::uint16 moveUpdateCount;
+	::uint16 projUpdateCount;
+	::uint16 moveUpdateSize;
+	::uint16 projUpdateSize;
 	int32 frame; //FIX: GameSpeedMessage uses uint32 for frame?
 	int32 turn;
 

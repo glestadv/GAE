@@ -145,7 +145,7 @@ if(WIN32)
 	# FIXME: VC project needs to be build with static vorbis/ogg libs
 	find_library(VORBISFILE_STATIC_LIBRARY NAMES vorbisfile_static HINTS ${GAE_WINDEPS} PATH_SUFFIXES lib)
 	find_library(VORBIS_STATIC_LIBRARY NAMES vorbis_static HINTS ${GAE_WINDEPS} PATH_SUFFIXES lib)
-	find_library(OGG_STATIC_LIBRARY NAMES ogg_static HINTS ${GAE_WINDEPS} PATH_SUFFIXES lib)
+	find_library(OGG_STATIC_LIBRARY NAMES ogg_static libogg_static HINTS ${GAE_WINDEPS} PATH_SUFFIXES lib)
 else(WIN32)
 	find_package(SDL 1.2 REQUIRED)
 	find_package(OpenAL REQUIRED)

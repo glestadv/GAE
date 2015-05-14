@@ -53,8 +53,8 @@ WRAPPED_ENUM( Alignment, NONE, CENTERED, JUSTIFIED, FLUSH_LEFT, FLUSH_RIGHT );
 // =====================================================
 
 class Anchor {
-	uint32	m_type  :  2;
-	uint32	m_value : 30;
+	::uint32	m_type  :  2;
+	::uint32	m_value : 30;
 
 public:
 	Anchor(AnchorType type, int val) : m_type(type), m_value(val) {}
