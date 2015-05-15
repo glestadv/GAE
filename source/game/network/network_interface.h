@@ -87,9 +87,6 @@ public:
 
 	KeyFrame& getKeyFrame() { return keyFrame; }
 
-	/** Called frequently to check for and/or send new network messages */
-	virtual void update() = 0;
-
 	// send chat message
 	virtual void sendTextMessage(const string &text, int teamIndex) = 0;
 
