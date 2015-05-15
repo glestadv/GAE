@@ -53,10 +53,10 @@ public:
 	ServerInterface(Program &prog);
 	virtual ~ServerInterface();
 
-	virtual GameRole getNetworkRole() const { return GameRole::SERVER; }
+	virtual GameRole getNetworkRole() const override { return GameRole::SERVER; }
 	bool isSyncReady() const { return m_dataSync; }
 	
-	virtual void updateSkillCycle(Unit *unit);
+	virtual void updateSkillCycle(Unit *unit) override;
 
 #	if MAD_SYNC_CHECKING
 		void dumpFrame(int frame);
@@ -67,12 +67,12 @@ protected:
 	// See documentation in sim_interface.h
 
 	//message processing
-	virtual void doDataSync();
-	virtual void update();
-	virtual void updateKeyframe(int frameCount);
-	virtual void waitUntilReady();
-	virtual void syncAiSeeds(int aiCount, int *seeds);
-	virtual void createSkillCycleTable(const TechTree *techTree);
+	virtual void doDataSync() override;
+	virtual void update() override;
+	virtual void updateKeyframe(int frameCount) override;
+	virtual void waitUntilReady() override;
+	virtual void syncAiSeeds(int aiCount, int *seeds) override;
+	virtual void createSkillCycleTable(const TechTree *techTree) override;
 
 #	if MAD_SYNC_CHECKING
 		// unit/projectile updates
@@ -83,10 +83,10 @@ protected:
 #	endif
 
 	//virtual void updateMove(Unit *unit);
-	virtual void updateProjectilePath(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end);
+	virtual void updateProjectilePath(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end) override;
 
 	//misc
-	virtual string getStatus() const;
+	virtual string getStatus() const override;
 
 public:
 	// ConnectionSlot management
@@ -104,12 +104,12 @@ public:
 	void process(TextMessage &msg, int requestor);
 
 	// message sending
-	virtual void sendTextMessage(const string &text, int teamIndex);
-	virtual void quitGame(QuitSource);
+	virtual void sendTextMessage(const string &text, int teamIndex) override;
+	virtual void quitGame(QuitSource) override;
 
 	// network events
-	virtual void onConnect(NetworkSession *session);
-	virtual void onDisconnect(NetworkSession *session, DisconnectReason reason);
+	virtual void onConnect(NetworkSession *session) override;
+	virtual void onDisconnect(NetworkSession *session, DisconnectReason reason) override;
 
 private:
 	void broadcastMessage(const Message* networkMessage, int excludeSlot= -1);

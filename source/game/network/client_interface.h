@@ -43,7 +43,7 @@ public:
 	ClientInterface(Program &prog);
 	virtual ~ClientInterface();
 
-	virtual GameRole getNetworkRole() const { return GameRole::CLIENT; }
+	virtual GameRole getNetworkRole() const override { return GameRole::CLIENT; }
 
 	/** Called instead of update() while in MenuStateJoinGame */
 	virtual void updateLobby();
@@ -56,18 +56,18 @@ protected:
 	// See documentation in sim_interface.h & net_interface.h
 
 	// Game launch hooks, SimulationInterface virtuals
-	virtual void waitUntilReady();
-	virtual void syncAiSeeds(int aiCount, int *seeds);
-	virtual void doDataSync();
-	virtual void createSkillCycleTable(const TechTree *techTree);
-	virtual void startGame();
+	virtual void waitUntilReady() override;
+	virtual void syncAiSeeds(int aiCount, int *seeds) override;
+	virtual void doDataSync() override;
+	virtual void createSkillCycleTable(const TechTree *techTree) override;
+	virtual void startGame() override;
 
-	// Game progress, NetworkInterface virtuals
-	virtual void update();
-	virtual void updateKeyframe(int frameCount);
+	// Game progress, [Simulation|Network]Interface virtuals
+	virtual void update() override;
+	virtual void updateKeyframe(int frameCount) override;
 
 	// projectile updates, SimulationInterface virtuals
-	virtual void updateProjectilePath(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end);
+	virtual void updateProjectilePath(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end) override;
 
 	// move skill needs special handling, NetworkInterface virtual
 	virtual void updateMove(Unit *unit);
@@ -99,12 +99,12 @@ public:
 	void reset();
 
 	// message sending
-	virtual void sendTextMessage(const string &text, int teamIndex);
-	virtual void quitGame(QuitSource);
+	virtual void sendTextMessage(const string &text, int teamIndex) override;
+	virtual void quitGame(QuitSource) override;
 
 	// network events
-	virtual void onConnect(NetworkSession *session);
-	virtual void onDisconnect(NetworkSession *session, DisconnectReason reason);
+	virtual void onConnect(NetworkSession *session) override;
+	virtual void onDisconnect(NetworkSession *session, DisconnectReason reason) override;
 
 private:
 	void waitForMessage(int timeout = messageWaitTimeout);
