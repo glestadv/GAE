@@ -227,7 +227,7 @@ public:
 	virtual const void* getData() const		{return m_packetData;}
 	virtual void log() const override;
 
-	int32 getChecksum(int i) { m_checkSumData[i]; }
+	int32 getChecksum(int i) { return m_checkSumData[i]; }
 
 	int32 getCmdTypeCount()	  const { return header.m_cmdTypeCount;   }
 	int32 getSkillTypeCount() const { return header.m_skillTypeCount; }
