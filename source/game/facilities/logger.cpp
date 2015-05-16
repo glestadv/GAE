@@ -306,7 +306,9 @@ Logger::Logger()
 	m_errorLog = new LogFile("glestadv-error.log", "Error", TimeStampType::NONE);
 	m_aiLog  = new AiLogFile();
 	m_networkLog  = new LogFile("glestadv-network.log", "Network", TimeStampType::MILLIS);
-
+	
+	m_syncLog = new LogFile( "glestadv-sync.log", "Sync", TimeStampType::NONE );
+	
 	// enabled by preprocessor symbol
 #	if LOG_WIDGET_EVENTS
 		m_widgetLog  = new LogFile("glestadv-widget.log", "Widget", TimeStampType::MILLIS);

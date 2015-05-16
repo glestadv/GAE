@@ -67,55 +67,69 @@ void NetworkInterface::postCommandUpdate(Unit *unit) {
 	cs.add(unit->getId());
 	cs.add(unit->getFactionIndex());
 	cs.add(unit->getCurrSkill()->getId());
+
+	int frame = g_world.getFrameCount();
+
 	switch (unit->getCurrSkill()->getClass()) {
 		case SkillClass::MOVE:
-			//NETWORK_LOG( "NetworkInterface::postCommandUpdate(): unit->getNextPos(): " << unit->getNextPos());
 			cs.add(unit->getNextPos());
+			SYNC_LOG( "Cmd:: Frame: " << frame << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() 
+				<< ", CurrSkillId: " << unit->getCurrSkill()->getId() << ", NextPos: " << unit->getNextPos().x << "," << unit->getNextPos().y );
 			break;
 		case SkillClass::ATTACK:
 		case SkillClass::REPAIR:
 		case SkillClass::BUILD:
-			if (unit->getTarget()) {
-				cs.add(unit->getTarget());
-				//NETWORK_LOG( "NetworkInterface::postCommandUpdate(): unit->getTarget(): " << unit->getTarget());
-			}
+			cs.add(unit->getTarget());
+			SYNC_LOG( "Cmd:: Frame: " << frame << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() 
+				<< ", CurrSkillId: " << unit->getCurrSkill()->getId() << ", TargetUnit: " << unit->getTarget() );
+			break;
+		default:
+			SYNC_LOG( "Cmd:: Frame: " << frame << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() << ", CurrSkillId: " << unit->getCurrSkill()->getId() );
 			break;
 	}
-	//NETWORK_LOG( "NetworkInterface::postCommandUpdate(): UnitID: " << unit->getId()
-	//		<< ", FactionIndex: " << unit->getFactionIndex()
-	//		<< ", CurrSkillId: " << unit->getCurrSkill()->getId() );
 	checkCommandUpdate(unit, cs.getSum());
 }
 
 void NetworkInterface::postProjectileUpdate(Unit *u, int endFrame) {
+	int frame = g_world.getFrameCount();
 	Checksum cs;
 	cs.add(u->getId());
 	cs.add(u->getCurrSkill()->getName());
 	if (u->anyCommand()) {
 		if (u->getCurrCommand()->getUnit()) {
 			cs.add(u->getCurrCommand()->getUnit()->getId());
+			SYNC_LOG( "Proj:: Frame: " << frame << ", Unit: " << u->getId() << ", Skill: " << u->getCurrSkill()->getName() 
+				<< ", TargetUnit: " << u->getCurrCommand()->getUnit()->getId() << ", EndFrame: " << endFrame );
 		} else {
 			cs.add(u->getCurrCommand()->getPos());
+			SYNC_LOG( "Proj:: Frame: " << frame << ", Unit: " << u->getId() << ", Skill: " << u->getCurrSkill()->getName() 
+				<< ", TargetPos: " << u->getCurrCommand()->getPos().x << "," << u->getCurrCommand()->getPos().y << ", EndFrame: " << endFrame );
 		}
+	} else {
+		SYNC_LOG( "Proj:: Frame: " << frame << ", Unit: " << u->getId() << ", Skill: " << u->getCurrSkill()->getName() << ", EndFrame: " << endFrame );
 	}
 	cs.add(endFrame);
 	checkProjectileUpdate(u, endFrame, cs.getSum());
 }
 
 void NetworkInterface::postAnimUpdate(Unit *unit) {
+	int frame = g_world.getFrameCount();
 	if (unit->getSystemStartFrame() != -1) {
 		Checksum cs;
 		cs.add(unit->getId());
 		cs.add(unit->getSystemStartFrame());
 		checkAnimUpdate(unit, cs.getSum());
+		SYNC_LOG( "Anim:: Frame: " << frame << ", Unit: " << unit->getId() << ", SystemStartFrame: " << unit->getSystemStartFrame() );
 	}
 }
 
 void NetworkInterface::postUnitBorn(Unit *unit) {
+	int frame = g_world.getFrameCount();
 	Checksum cs;
 	cs.add(unit->getType()->getName());
 	cs.add(unit->getId());
 	cs.add(unit->getFactionIndex());
+	SYNC_LOG( "Born:: Frame: " << frame << ", Type: " << unit->getType()->getName() << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() );
 	checkUnitBorn(unit, cs.getSum());
 }
 
