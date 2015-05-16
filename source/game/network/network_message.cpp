@@ -150,7 +150,7 @@ LaunchMessage::LaunchMessage(const GameSettings *gameSettings){
 	data.shroudOfDarkness = gameSettings->getShroudOfDarkness();
 	data.tilesetSeed = gameSettings->getTilesetSeed();
 
-	for(int i= 0; i<data.factionCount; ++i){
+	for (int i= 0; i < data.factionCount; ++i) {
 		data.factionTypeNames[i]= gameSettings->getFactionTypeName(i);
 		data.factionControls[i]= gameSettings->getFactionControl(i);
 		data.teams[i]= gameSettings->getTeam(i);
@@ -168,27 +168,27 @@ LaunchMessage::LaunchMessage(RawMessage raw) {
 }
 
 /** Fills in a GameSettings object from this message (for clients) */
-void LaunchMessage::buildGameSettings(GameSettings *gameSettings) const{
-	gameSettings->setDescription(data.description.getString());
-	gameSettings->setMapPath(data.map.getString());
-	gameSettings->setTilesetPath(data.tileset.getString());
-	gameSettings->setTechPath(data.tech.getString());
-	gameSettings->setFactionCount(data.factionCount);
-	gameSettings->setThisFactionIndex(data.thisFactionIndex);
-	gameSettings->setDefaultResources(data.defaultResources);
-	gameSettings->setDefaultUnits(data.defaultUnits);
-	gameSettings->setDefaultVictoryConditions(data.defaultVictoryConditions);
-	gameSettings->setFogOfWar(data.fogOfWar);
-	gameSettings->setShroudOfDarkness(data.shroudOfDarkness);
-	gameSettings->setTilesetSeed(data.tilesetSeed);
+void LaunchMessage::buildGameSettings( GameSettings *gameSettings ) const {
+	gameSettings->setDescription( data.description.getString() );
+	gameSettings->setMapPath( data.map.getString() );
+	gameSettings->setTilesetPath( data.tileset.getString() );
+	gameSettings->setTechPath( data.tech.getString() );
+	gameSettings->setFactionCount( data.factionCount );
+	gameSettings->setThisFactionIndex( data.thisFactionIndex );
+	gameSettings->setDefaultResources( data.defaultResources );
+	gameSettings->setDefaultUnits( data.defaultUnits );
+	gameSettings->setDefaultVictoryConditions( data.defaultVictoryConditions );
+	gameSettings->setFogOfWar( data.fogOfWar );
+	gameSettings->setShroudOfDarkness( data.shroudOfDarkness );
+	gameSettings->setTilesetSeed( data.tilesetSeed );
 
-	for(int i= 0; i<data.factionCount; ++i){
-		gameSettings->setFactionTypeName(i, data.factionTypeNames[i].getString());
-		gameSettings->setFactionControl(i, static_cast<ControlType>(data.factionControls[i]));
-		gameSettings->setTeam(i, data.teams[i]);
-		gameSettings->setStartLocationIndex(i, data.startLocationIndex[i]);
-		gameSettings->setColourIndex(i, data.colourIndices[i]);
-		gameSettings->setResourceMultiplier(i, data.resourceMultipliers[i]);
+	for (int i= 0; i<data.factionCount; ++i) {
+		gameSettings->setFactionTypeName( i, data.factionTypeNames[i].getString() );
+		gameSettings->setFactionControl( i, static_cast<ControlType>( data.factionControls[i] ) );
+		gameSettings->setTeam( i, data.teams[i] );
+		gameSettings->setStartLocationIndex( i, data.startLocationIndex[i] );
+		gameSettings->setColourIndex( i, data.colourIndices[i] );
+		gameSettings->setResourceMultiplier( i, data.resourceMultipliers[i] );
 	}
 }
 

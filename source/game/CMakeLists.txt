@@ -93,6 +93,8 @@ if (WIN32)
 
 	# exclude conflicting c runtime libs
 	set_target_properties(glestadv PROPERTIES  LINK_FLAGS_DEBUG "/NODEFAULTLIB:\"libcmt.lib\" /NODEFAULTLIB:\"msvcrt.lib\" /NODEFAULTLIB:\"msvcrt_d.lib\"")
+	set_target_properties(glestadv PROPERTIES  LINK_FLAGS_MINSIZEREL "/NODEFAULTLIB:\"libcmt_d.lib\" /NODEFAULTLIB:\"msvcrt.lib\" /NODEFAULTLIB:\"msvcrt_d.lib\"")
+	set_target_properties(glestadv PROPERTIES  LINK_FLAGS_RELWITHDEBINFO "/NODEFAULTLIB:\"libcmt_d.lib\" /NODEFAULTLIB:\"msvcrt.lib\" /NODEFAULTLIB:\"msvcrt_d.lib\"")
 	set_target_properties(glestadv PROPERTIES  LINK_FLAGS_RELEASE "/NODEFAULTLIB:\"libcmt_d.lib\" /NODEFAULTLIB:\"msvcrt.lib\" /NODEFAULTLIB:\"msvcrt_d.lib\"")
 endif (WIN32)
 

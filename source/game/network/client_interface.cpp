@@ -112,16 +112,20 @@ void ClientInterface::doLaunchMessage() {
 	GameSettings &gameSettings = g_simInterface.getGameSettings();
 	gameSettings.clear();
 	launchMsg.buildGameSettings(&gameSettings);
-	// replace server player by network
+
+	
 	for (int i=0; i < gameSettings.getFactionCount(); ++i) {
-		// replace by network
+		// replace server player by network
 		if (gameSettings.getFactionControl(i) == ControlType::HUMAN) {
 			gameSettings.setFactionControl(i, ControlType::NETWORK);
+			NETWORK_LOG( "GS:: Found Human player at index " << i << ", changed control type to Network" );
 		}
-		// set the faction index
+		// set the 'this faction' index & change ControlType for local player
 		if (gameSettings.getStartLocationIndex(i) == playerIndex) {
 			gameSettings.setThisFactionIndex(i);
+			RUNTIME_CHECK(gameSettings.getFactionControl(i) == ControlType::NETWORK);
 			gameSettings.setFactionControl(i, ControlType::HUMAN);
+			NETWORK_LOG( "GS:: Found proper this faction at index " << i << " changed control type to Human, set this faction to " << i );
 		}
 	}
 	launchGame = true;
