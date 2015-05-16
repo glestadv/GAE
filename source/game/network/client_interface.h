@@ -27,7 +27,7 @@ namespace Glest { namespace Net {
 //	class ClientInterface
 // =====================================================
 /** A concrete SimulationInterface for interacting with a ClientConnection */
-class ClientInterface: public NetworkInterface {
+class ClientInterface : public NetworkInterface {
 private:
 	static const int messageWaitTimeout = 10000; // 10 seconds
 	static const int waitSleepTime = 5; // 5 milli-seconds

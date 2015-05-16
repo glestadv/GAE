@@ -40,7 +40,7 @@ WRAPPED_ENUM( NetworkState, LOBBY, GAME )
 // =====================================================
 
 /** An abstract SimulationInterface for network games */
-class NetworkInterface: public SimulationInterface {
+class NetworkInterface : public SimulationInterface {
 public:
 	typedef vector<NetworkCommand> Commands;
 
@@ -58,7 +58,7 @@ protected:
 	std::vector<ChatMsg> chatMessages;
 
 	/** Called after each frame is processed, SimulationInterface virtual */
-	virtual void frameProccessed();
+	virtual void frameProccessed() override;
 
 	/** send/receive key-frame, issue queued commands */
 	virtual void updateKeyframe(int frameCount) = 0;

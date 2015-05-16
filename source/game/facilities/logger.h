@@ -246,6 +246,7 @@ private:
 
 	LogFile       *m_widgetLog;   // Pre-processor controlled
 	WorldLogFile  *m_worldLog;    // Pre-processor controlled
+	LogFile       *m_syncLog;
 
 private:
 	Logger();
@@ -306,6 +307,11 @@ public:
 		m_aiLog->add(faction, component, level, msg);
 	}
 
+	// Sync
+	void logSyncEvent(const string &msg) {
+		m_syncLog->add(msg);
+	}
+
 #	if LOG_WORLD_EVENTS
 
 	bool shouldLogCmdEvent(int faction, CmdClass cc,  int level) const {
@@ -347,6 +353,15 @@ public:
 #else
 #	define LOG_NETWORK(x)
 #	define NETWORK_LOG(x)
+#endif
+
+#define LOG_SYNC_MESSAGES 1
+#if LOG_SYNC_MESSAGES
+#	define LOG_SYNC(x) g_logger.logSyncEvent(x)
+#	define SYNC_LOG(x) {stringstream _ss; _ss << x; g_logger.logSyncEvent(_ss.str()); }
+#else
+#	define LOG_SYNC(x)
+#	define SYNC_LOG(x)
 #endif
 
 #define _LOG(x) {										\
