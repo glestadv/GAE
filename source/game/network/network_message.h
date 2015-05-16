@@ -418,6 +418,7 @@ private:
 public:
 	KeyFrame() : m_packetSize(0), m_packetData(0) { reset(); }
 	KeyFrame(RawMessage raw);
+	KeyFrame(const KeyFrame &that);
 
 	virtual MessageType getType() const		{return MessageType::KEY_FRAME;}
 	virtual unsigned int getSize() const	{return m_packetSize;}

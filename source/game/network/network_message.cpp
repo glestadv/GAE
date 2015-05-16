@@ -549,6 +549,29 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 	log();
 }
 
+KeyFrame::KeyFrame(const KeyFrame &that) {
+	reset();
+	frame = that.frame;
+	IF_MAD_SYNC_CHECKS(
+		checksumCount = that.checksumCount;
+	);
+	m_moveUpdates.updateCount = that.m_moveUpdates.updateCount;
+	m_moveUpdates.updateSize = that.m_moveUpdates.updateSize;
+	if (m_moveUpdates.updateSize) {
+		memcpy(m_moveUpdates.updateBuffer, that.m_moveUpdates.updateBuffer, m_moveUpdates.updateSize);
+	}
+	m_projectileUpdates.updateCount = that.m_projectileUpdates.updateCount;
+	m_projectileUpdates.updateSize = that.m_projectileUpdates.updateSize;
+	if (m_projectileUpdates.updateSize) {
+		memcpy(m_projectileUpdates.updateBuffer, that.m_projectileUpdates.updateBuffer, m_projectileUpdates.updateSize);
+	}
+
+	cmdCount = that.cmdCount;
+	if (cmdCount) {
+		memcpy(commands, that.commands, cmdCount * sizeof(NetworkCommand));
+	}
+}
+
 void KeyFrame::buildPacket() {
 	if (m_packetData) {
 		delete m_packetData;
@@ -627,6 +650,7 @@ int32 KeyFrame::getNextChecksum() {
 		);
 		throw GameSyncError("Insufficient checksums in keyFrame.");
 	}
+	SYNC_LOG( "Check:: checksums[" << (checksumCounter) << "] == " << (checksums[checksumCounter]) );
 	return checksums[checksumCounter++];
 }
 
@@ -635,6 +659,7 @@ void KeyFrame::addChecksum(int32 cs) {
 		throw runtime_error("Error: insufficient room for checksums in keyframe, increase KeyFrame::max_checksums.");
 	}
 	checksums[checksumCount++] = cs;
+	SYNC_LOG( "Check:: checksums[" << (checksumCount - 1) << "] == " << (checksums[checksumCount - 1]) );
 }
 
 #endif
