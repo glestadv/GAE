@@ -1403,6 +1403,21 @@ void LoadCommandType::update(Unit *unit) const {
 		unitsToCarry.erase(std::find(unitsToCarry.begin(), unitsToCarry.end(), closest->getId()));
 		unit->setCurrSkill(loadSkillType);
 		unit->clearPath();
+
+		if (closest->getLoadCount() > 0 && unit->getType()->getStore(closest->getLoadType(), closest->getFaction()) > 0) {
+			// update resources
+			int resourceAmount = closest->getLoadCount();
+			// Just do this for all players ???
+			if (closest->getFaction()->getCpuControl()) {
+				const float &mult = g_simInterface.getGameSettings().getResourceMultilpier(closest->getFactionIndex());
+				resourceAmount = int(resourceAmount * mult);
+			}
+			closest->getFaction()->incResourceAmount(closest->getLoadType(), resourceAmount);
+			g_simInterface.getStats()->harvest(closest->getFactionIndex(), resourceAmount);
+			ScriptManager::onResourceHarvested(closest);
+
+			closest->setLoadCount(0);
+		}
 		if (unit->getCarriedCount() == m_loadCapacity && !unitsToCarry.empty()) {
 			foreach (UnitIdList, it, unitsToCarry) {
 				Unit *unit = g_world.getUnit(*it);
@@ -1617,6 +1632,9 @@ void CastSpellCommandType::update(Unit *unit) const {
 			unit->finishCommand();
 			unit->setCurrSkill(SkillClass::STOP);
 		} else {
+			
+			// check range...
+
 			unit->setTarget(command->getUnit());
 			unit->setCurrSkill(m_castSpellSkillType);
 		}
@@ -1712,7 +1730,7 @@ bool CommandType::unitInRange(const Unit *unit, int range, Unit **rangedPtr,
 		if ((*rangedPtr)->isDead() || !asts->getZone((*rangedPtr)->getCurrZone())) {
 			*rangedPtr = 0;
 		}
-		if (*rangedPtr && (*rangedPtr)->isCloaked()) {
+		if (*rangedPtr && (*rangedPtr)->isCloaked() && (*rangedPtr)->getTeam() != unit->getTeam()) {
 			Vec2i tpos = Map::toTileCoords((*rangedPtr)->getCenteredPos());
 			int cloakGroup = (*rangedPtr)->getType()->getCloakType()->getCloakGroup();
 			if (!g_cartographer.canDetect(unit->getTeam(), cloakGroup, tpos)) {

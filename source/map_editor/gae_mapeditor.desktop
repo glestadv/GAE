@@ -5,5 +5,6 @@ Comment=Create maps for Glest Advanced Engine
 Exec=gae_mapeditor
 Icon=gae_mapeditor
 Terminal=false
+MimeType=application/x-gbm;
 Categories=Game;StrategyGame;
 StartupNotify=true

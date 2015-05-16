@@ -141,14 +141,17 @@ public:
 	//typedef list<UnitId> Pets;
 
 private:
+	const UnitType *type;			/**< the UnitType of this unit */
+
 	// basic stats
 	int id;					/**< unique identifier  */
 	int hp;					/**< current hit points */
 	int ep;					/**< current energy points */
 	int loadCount;			/**< current 'load' (resources carried) */
-	int deadCount;			/**< how many frames this unit has been dead */
-	int progress2;			/**< 'secondary' skill progress counter (progress for Production) */
+	int progress2;			/**< 'secondary' skill progress counter (progress for Production) / or number of frames dead */
 	int kills;				/**< number of kills */
+
+	const ResourceType *loadType;	/**< the type if resource being carried */
 
 	// housed unit bits
 	UnitIdList	m_carriedUnits;
@@ -186,19 +189,13 @@ private:
 
 	const Level *level;				/**< current Level */
 
-	const UnitType *type;			/**< the UnitType of this unit */
-	const ResourceType *loadType;	/**< the type if resource being carried */
 	const SkillType *currSkill;		/**< the SkillType currently being executed */
 
 	// some flags
-	bool toBeUndertaken;			/**< awaiting a date with the grim reaper */
-
 	bool m_autoCmdEnable[AutoCmdFlag::COUNT];
-	//bool autoRepairEnabled;			/**< is auto repair enabled */
 
-	bool carried;					/**< is the unit being carried */
-	//bool visible;
-
+	//bool carried;					/**< is the unit being carried */
+	
 	bool	m_cloaked;
 
 	bool	m_cloaking, m_deCloaking;
@@ -224,6 +221,7 @@ private:
 
 	// eye candy particle systems
 	ParticleSystem *fire;
+	ParticleSystem *smoke;
 	UnitParticleSystems skillParticleSystems;
 	UnitParticleSystems effectParticleSystems;
 
@@ -285,6 +283,8 @@ private:
 	void checkEffectCloak();
 	void startSkillParticleSystems();
 
+	void startParticleSystems(const UnitParticleSystemTypes &types);
+
 public:
 	void save(XmlNode *node) const;
 
@@ -313,7 +313,7 @@ public:
 	float getHpRatio() const					{return clamp(float(hp) / getMaxHp(), 0.f, 1.f);}
 	fixed getHpRatioFixed() const				{ return fixed(hp) / getMaxHp(); }
 	float getEpRatio() const					{return !type->getMaxEp() ? 0.0f : clamp(float(ep)/getMaxEp(), 0.f, 1.f);}
-	bool getToBeUndertaken() const				{return toBeUndertaken;}
+	bool getToBeUndertaken() const				{return progress2 > GameConstants::maxDeadCount;}
 	UnitId getTarget() const					{return targetRef;}
 	Vec2i getNextPos() const					{return nextPos;}
 	Vec2i getTargetPos() const					{return targetPos;}
@@ -343,7 +343,7 @@ public:
 	const Emanations &getEmanations() const		{return type->getEmanations();}
 	const Commands &getCommands() const			{return commands;}
 	const RepairCommandType *getRepairCommandType(const Unit *u) const;
-	int getDeadCount() const					{return deadCount;}
+	int getDeadCount() const					{return progress2;}
 	void setModelFacing(CardinalDir value);
 	CardinalDir getModelFacing() const			{ return m_facing; }
 	int getCloakGroup() const                   { return type->getCloakType()->getCloakGroup(); }
@@ -357,7 +357,7 @@ public:
 	void housedUnitDied(Unit *unit);
 
 	//bool isVisible() const					{return carried;}
-	void setCarried(Unit *host)				{carried = (host != 0); m_carrier = (host ? host->getId() : -1);}
+	void setCarried(Unit *host)				{m_carrier = (host ? host->getId() : -1);}
 	void loadUnitInit(Command *command);
 	void unloadUnitInit(Command *command);
 	//----
@@ -421,9 +421,9 @@ public:
 	bool isIdle() const					{return currSkill->getClass() == SkillClass::STOP;}	
 	bool isMoving() const				{return currSkill->getClass() == SkillClass::MOVE;}
 	bool isMobile ()					{ return type->isMobile(); }
-	bool isCarried() const				{return carried;}
+	bool isCarried() const				{return m_carrier != -1;}
 	bool isHighlighted() const			{return highlight > 0.f;}
-	bool isPutrefacting() const			{return deadCount;}
+	//bool isPutrefacting() const			{return deadCount;}
 	bool isAlly(const Unit *unit) const	{return faction->isAlly(unit->getFaction());}
 	bool isInteresting(InterestingUnitType iut) const;
 	bool isAutoCmdEnabled(AutoCmdFlag f) const	{return m_autoCmdEnable[f];}
@@ -612,6 +612,9 @@ public:
 	void onUnitDied(Unit *unit);	// book a visit with the grim reaper
 	void update();					// send the grim reaper on his rounds
 	void deleteUnit(Unit *unit);	// should only be called to undo a creation
+
+	Units::const_iterator begin_dead() const { return m_deadList.begin(); }
+	Units::const_iterator end_dead() const { return m_deadList.end();}
 };
 
 }}// end namespace

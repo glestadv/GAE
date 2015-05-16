@@ -137,8 +137,7 @@ void GameState::load() {
 	// 4. use defaults
 	ProgramLog &log = g_logger.getProgramLog();
 
-	if (!scenarioName.empty() 
-		&& log.setupLoadingScreen(scenarioPath)) {
+	if (!scenarioName.empty() && log.setupLoadingScreen(scenarioPath)) {
 	} else if (log.setupLoadingScreen(techName + "/factions/" + thisFactionName)) {
 	} else if (log.setupLoadingScreen(techName)) {
 	} else {
@@ -156,8 +155,8 @@ void GameState::load() {
 		}
 	}
 
-	g_logger.getProgramLog().setProgressBar(true);
-	g_logger.getProgramLog().setState(Lang::getInstance().get("Loading"));
+	log.setProgressBar(true);
+	log.setState(Lang::getInstance().get("Loading"));
 
 	if (scenarioName.empty()) {
 		log.setSubtitle(formatString(mapName) + " - " +
@@ -169,7 +168,7 @@ void GameState::load() {
 	simInterface->loadWorld();
 
 	// finished loading
-	g_logger.getProgramLog().setProgressBar(false);
+	log.setProgressBar(false);
 }
 
 void GameState::init() {
@@ -202,7 +201,7 @@ void GameState::init() {
 	m_gameMenu->setVisible(false);
 
 	///@todo StaticText (?) for script message
-	m_scriptDisplayPos = Vec2i(175, g_metrics.getScreenH() - 64);
+	//m_scriptDisplayPos = Vec2i(175, g_metrics.getScreenH() - 64);
 
 	// init world, and place camera
 	simInterface->initWorld();
@@ -231,7 +230,7 @@ void GameState::init() {
 		weatherParticleSystem= new SnowParticleSystem(1200);
 		weatherParticleSystem->setSpeed(1.5f / WORLD_FPS);
 		weatherParticleSystem->setPos(gameCamera.getPos());
-		weatherParticleSystem->setTexture(g_coreData.getSnowTexture());
+		weatherParticleSystem->setTexture(0, g_coreData.getSnowTexture());
 		g_renderer.manageParticleSystem(weatherParticleSystem, ResourceScope::GAME);
 	}
 
@@ -542,22 +541,6 @@ void GameState::addScriptMessage(const string &header, const string &msg) {
 	}
 }
 
-void GameState::setScriptDisplay(const string &msg) {
-	m_scriptDisplay = msg;
-	if (!msg.empty()) {
-		const FontMetrics *fm = g_widgetConfig.getMenuFont()->getMetrics();
-		int space = g_metrics.getScreenW() - 175 - 320;
-		fm->wrapText(m_scriptDisplay, space);
-		int lines = 1;
-		foreach (string, c, m_scriptDisplay) {
-			if (*c == '\n') {
-				++lines;
-			}
-		}
-		m_scriptDisplayPos.y = g_metrics.getScreenH() - 64 - int(fm->getHeight() * (lines - 1));
-	}
-}
-
 void GameState::doScriptMessage() {
 	assert(!m_scriptMessages.empty());
 	Vec2i size = g_widgetConfig.getDefaultDialogSize();
@@ -650,13 +633,13 @@ void GameState::updateCamera() {
 // ==================== render ====================
 
 //render
-void GameState::renderBg(){
+void GameState::renderBg() {
 	SECTION_TIMER(RENDER_3D);
 	renderFps++;
 	render3d();
 }
 
-void GameState::renderFg(){
+void GameState::renderFg() {
 	SECTION_TIMER(RENDER_SWAP_BUFFERS);
 	render2d();
 	Renderer::getInstance().swapBuffers();
@@ -949,47 +932,47 @@ void GameState::quitGame() {
 
 // ==================== render ====================
 
-void GameState::render3d(){
+void GameState::render3d() {
 	_PROFILE_FUNCTION();
 	Renderer &renderer = g_renderer;
 
-	//init
+	// init
 	renderer.reset3d();
 
 	renderer.loadGameCameraMatrix();
 	renderer.computeVisibleArea();
 	renderer.setupLighting();
 
-	//shadow map
+	// shadow map
 	renderer.renderShadowsToTexture();
 
-	//clear buffers
+	// clear buffers
 	renderer.clearBuffers();
 
-	//surface
+	// surface
 	renderer.renderSurface();
 
-	//selection circles
+	// selection circles
 	renderer.renderSelectionEffects();
 
-	//units
+	// units
 	renderer.renderUnits();
 
-	//objects
+	// objects
 	renderer.renderObjects();
 
-	//water
+	// water
 	renderer.renderWater();
 	renderer.renderWaterEffects();
 
-	//particles
+	// particles
 	renderer.renderParticleManager(ResourceScope::GAME);
 
-	//mouse 3d
+	// mouse 3d
 	renderer.renderMouse3d();
 }
 
-void GameState::render2d(){
+void GameState::render2d() {
 	_PROFILE_FUNCTION();
 
 	// init
@@ -997,13 +980,6 @@ void GameState::render2d(){
 
 	// selection box
 	g_renderer.renderSelectionQuad();
-
-	// script display text
-	if (!m_scriptDisplay.empty() && !m_modalDialog) {
-		///@todo put on widget
-		//g_renderer.renderText(m_scriptDisplay, g_widgetConfig.getMenuFont()[FontSize::NORMAL];,
-		//	gui.getDisplay()->getColor(), m_scriptDisplayPos.x, m_scriptDisplayPos.y, false);
-	}
 }
 
 

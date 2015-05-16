@@ -1,0 +1,17 @@
+[Desktop Entry]
+Encoding=UTF-8
+Icon=
+Type=Service
+ServiceTypes=KPluginInfo
+
+Name=G3D model format
+Comment=3D model format for Glest and its forks
+
+X-KDE-PluginInfo-Author=Frank Tetzel
+X-KDE-PluginInfo-Email=foo.bar@email.org
+X-KDE-PluginInfo-Name=G3D
+X-KDE-PluginInfo-Version=0.1
+X-KDE-PluginInfo-Website=http://www.plugin.org/
+X-KDE-PluginInfo-Category=structure/js
+X-KDE-PluginInfo-License=LGPL
+X-KDE-PluginInfo-EnabledByDefault=false

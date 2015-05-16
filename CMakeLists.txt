@@ -57,7 +57,9 @@ if(DEFINED GAE_WINDEPS AND WIN32)
 		#message("WXWIN Not Defined, setting wxWidgets_ROOT_DIR to windeps/wx")
 		set(wxWidgets_ROOT_DIR ${GAE_WINDEPS}/wx)
 	endif(DEFINED WXWIN)
-	set(ENV{FREETYPE_DIR} ${GAE_WINDEPS})
+	#set(ENV{FREETYPE_DIR} ${GAE_WINDEPS}) #broken in cmake 2.8.7
+	set(FREETYPE_INCLUDE_DIR_ft2build "${GAE_WINDEPS}/include")
+	set(FREETYPE_INCLUDE_DIR_freetype2 "${GAE_WINDEPS}/include/freetype2")
 	set(ENV{GLEW_DIR} ${GAE_WINDEPS}/glew-1.5.7)
 else(DEFINED GAE_WINDEPS AND WIN32)
 	if (WIN32)
@@ -124,6 +126,12 @@ else (MSVC)
 	if(NOT CMAKE_CXX_FLAGS MATCHES -fno-rtti)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti" CACHE STRING "" FORCE)
 	endif()
+	#FIXME: clang++ fails to build in c++11 mode
+	if(CMAKE_COMPILER_IS_GNUCXX)
+		if(NOT CMAKE_CXX_FLAGS MATCHES "-std=")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" CACHE STRING "" FORCE)
+		endif()
+	endif(CMAKE_COMPILER_IS_GNUCXX)
 endif (MSVC)
 
 include_directories(${LUA_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${VORBIS_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR}

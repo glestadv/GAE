@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include "leak_dumper.h"
 #include <string.h>
+#include <stdio.h> // for SEEK_SET, SEEK_...
 
 namespace Shared { namespace PhysFS {
 

@@ -774,7 +774,7 @@ int ScriptManager::setFactionTrigger(LuaHandle* luaHandle) {
 int ScriptManager::showMessage(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
 	string txt, hdr;
-	if ( extractArgs(args, "showMessage", "str,str", &txt, &hdr) ) {
+	if (extractArgs(args, "showMessage", "str,str", &txt, &hdr)) {
 		//g_gameState.pause (); // this needs to be optional, default false
 		g_gameState.addScriptMessage(hdr, txt);
 	}
@@ -786,14 +786,14 @@ int ScriptManager::setDisplayText(LuaHandle* luaHandle) {
 	string txt;
 	if (extractArgs(args,"setDisplayText", "str", &txt)) {
 		string msg = g_lang.getScenarioString(txt);
-		g_gameState.setScriptDisplay(msg);
+		g_userInterface.setScriptDisplay(msg);
 	}
 	return args.getReturnCount();
 }
 
 int ScriptManager::clearDisplayText(LuaHandle* luaHandle) {
 	LuaArguments args(luaHandle);
-	g_gameState.setScriptDisplay("");
+	g_userInterface.setScriptDisplay("");
 	return args.getReturnCount();
 }
 
@@ -1254,7 +1254,7 @@ int ScriptManager::increaseStore(LuaHandle* luaHandle) {
 				const ResourceType *rt = g_world.getTechTree()->getResourceType(resource);
 				g_world.getFaction(fNdx)->addStore(rt, amount);
 			} catch (runtime_error &e) {
-				addErrorMessage("Error: increaseStore(): Invalid resource type" + resource);
+				addErrorMessage("Error: increaseStore(): Invalid resource type '" + resource + "'");
 			}
 		} else {
 			addErrorMessage("Error: increaseStore(): Invalid faction index " + intToStr(fNdx));

@@ -313,6 +313,15 @@ public:
 	void populateElement(TiXmlElement *node) const;
 	//DOMElement *buildElement(XERCES_CPP_NAMESPACE::DOMDocument *document) const;
 
+	int getOptionalIntAttribute(const char* name, int defaultValue = 0) const {
+		const XmlAttribute *attrib = getAttribute(name, false);
+		if (attrib) {
+			return attrib->getIntValue();
+		} else {
+			return defaultValue;
+		}
+	}
+
 	int getOptionalIntValue(const char* name, int defaultValue = 0) const {
 		const XmlNode *node = getChild(name, 0, false);
 		return !node ? defaultValue : node->getAttribute("value")->getIntValue();

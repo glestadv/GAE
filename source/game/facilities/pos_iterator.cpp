@@ -12,11 +12,13 @@
 #include "pch.h"
 #include "pos_iterator.h"
 
+#include <algorithm>
+
 #include "leak_dumper.h"
 
 namespace Glest { namespace Util {
 
-PosCircularIteratorFactory::PosCircularIteratorFactory(int maxRadius) :
+PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 		maxRadius(maxRadius),
 		// I promise this calculation is correct and I'm sorry that it looks ugly :)
 		dataSize(((maxRadius + 1) / 2) * ((maxRadius & 0xfffffffe) + 1)),
@@ -30,11 +32,12 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(int maxRadius) :
 	
 	// Calculate distance data
 	PosData *p = data;
-	for(int step = 0; step < maxRadius; ++step) {
-		for(int off = 0; off <= step; ++off) {
+	for(unsigned int step = 0; step < maxRadius; ++step) {
+		for(unsigned int off = 0; off <= step; ++off) {
 			p->step = step;
 			p->off = off;
-			p->dist = int(sqrtf(float(step * step + off * off)));
+			p->fdist = sqrtf(float(step * step + off * off));
+			p->dist = int(p->fdist);
 			++p;
 		}
 	}
@@ -43,10 +46,10 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(int maxRadius) :
 	assert(dataEnd == &data[dataSize]);
 	
 	// Sort data by distance
-	qsort(data, dataSize, sizeof(PosData), PosCircularIteratorFactory::comparePosData);
+	std::sort(data, &data[dataSize]);
 
 	// Calculate radius index
-	int nextRadius = 0;
+	unsigned int nextRadius = 0;
 	for(p = data; p != dataEnd && nextRadius < maxRadius; ++p) {
 		if(p->dist >= nextRadius) {
 			radiusIndex[nextRadius++] = p;
@@ -64,13 +67,7 @@ PosCircularIteratorFactory::~PosCircularIteratorFactory() {
 	delete[] radiusIndex;
 }
 
-int PosCircularIteratorFactory::comparePosData(const void *p1, const void *p2) {
-	const PosData &pd1 = *reinterpret_cast<const PosData *>(p1);
-	const PosData &pd2 = *reinterpret_cast<const PosData *>(p2);
-	return pd1.dist == pd1.dist ? 0 : (pd1.dist > pd2.dist ? 1 : -1);
-}
-
-PosCircularIterator *PosCircularIteratorFactory::getIterator(bool reversed, int maxDistance, int minDistance) const {
+PosCircularIterator *PosCircularIteratorFactory::getIterator(bool reversed, unsigned int maxDistance, unsigned int minDistance) const {
 	assert(minDistance >= 0);
 	assert(maxDistance >= minDistance);
 	assert(maxDistance <= maxRadius);
@@ -84,7 +81,7 @@ PosCircularIterator *PosCircularIteratorFactory::getIterator(bool reversed, int 
 	const PosData *last = getLastOfDistance(maxDistance);
 	return reversed 
 			? new PosCircularIterator(last + 1, first, last, 0)
-			: new PosCircularIterator(first - 1, first, last, 7);
+			: new PosCircularIterator(first - 1, first, last, 3);
 }
 
 

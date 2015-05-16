@@ -593,7 +593,11 @@ void LuaArguments::checkTable(int ndx, size_t size) const {
 		string emsg = "Argument " + descArgPos(ndx) + " expected Table, got " + getType(ndx) + ".\n";
 		throw LuaError(emsg);
 	}
+#if LUA_VERSION_NUM > 501
+	size_t tableSize = lua_rawlen(luaState, ndx);
+#else
 	size_t tableSize = lua_objlen(luaState, ndx);
+#endif
 	if (tableSize != size) {
 		string emsg = "Argument " + descArgPos(ndx) + " expected Table with " + intToStr(size) 
 			+ " elements, got Table with " + intToStr(tableSize) + " elements.\n";
@@ -606,7 +610,11 @@ size_t LuaArguments::checkTable(int ndx, size_t minSize, size_t maxSize) const {
 		string emsg = "Argument " + descArgPos(ndx) + " expected Table, got " + getType(ndx) + ".\n";
 		throw LuaError(emsg);
 	}
+#if LUA_VERSION_NUM > 501
+	size_t tableSize = lua_rawlen(luaState, ndx);
+#else
 	size_t tableSize = lua_objlen(luaState, ndx);
+#endif
 	if (tableSize < minSize || tableSize > maxSize) {
 		string emsg = "Argument " + descArgPos(ndx) + " expected Table with " 
 			+ intToStr(minSize) + " to " + intToStr(maxSize) + " elements, got Table with "

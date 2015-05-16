@@ -86,6 +86,11 @@ STRINGY_ENUM( ProjectileStart,
 	SKY
 );
 
+STRINGY_ENUM( EmitterPathType,
+	NONE,
+	ORBIT
+);
+
 STRINGY_ENUM( ParticleUse,
 	WEATHER,
 	FIRE,
@@ -94,6 +99,19 @@ STRINGY_ENUM( ParticleUse,
 	UNIT
 );
 
+const int MAX_PARTICLE_BUFFERS = 4;
+
+template <typename ValueType>
+struct ValStep {
+	ValueType value;
+	ValueType step;
+};
+
+struct EnergyVec {
+	int start;
+	int current;
+};
+
 // =====================================================
 //	class Particle
 // =====================================================
@@ -101,26 +119,41 @@ STRINGY_ENUM( ParticleUse,
 class Particle {
 public:
 	//attributes
-	Vec3f pos;		// 12 bytes
-	Vec3f lastPos;	// 12 bytes
-	Vec3f speed;	// 12 bytes
-	Vec3f accel;	// 12 bytes
-	Vec4f color;	// 16 bytes // belongs in (or already is in) owner system's proto-type ?
-	Vec4f color2;	// 16 bytes // belongs in (or already is in) owner system's proto-type ?
-	float size;		// 4 bytes
-	int energy;		// 4 bytes
-					// 88 bytes
+	Vec3f pos;              // 12 bytes
+	Vec3f lastPos;          // 12 bytes
+	Vec3f speed;            // 12 bytes
+	Vec3f accel;            // 12 bytes
+	                        // 48
+
+	EnergyVec energy;       // 8 bytes
+	ValStep<float> size;    // 8 bytes
+	ValStep<float> angle;   // 8 bytes
+	                        // 24
+
+	ValStep<Vec4f> colour;  // 32
+	ValStep<Vec4f> colour2; // 32
+	                        // 64
+
+	//Vec4f color;		      //  bytes // belongs in (or already is in) owner system's proto-type ?
+	//Vec4f color2;		      //  bytes // belongs in (or already is in) owner system's proto-type ? only used for line systems...
+
+	int texture;            // 4 bytes
+	unsigned char padding[20];
+	                        // 160
 
 public:
 	//get
-	Vec3f getPos() const		{return pos;}
-	Vec3f getLastPos() const	{return lastPos;}
-	Vec3f getSpeed() const		{return speed;}
-	Vec3f getAccel() const		{return accel;}
-	Vec4f getColor() const		{return color;}
-	Vec4f getColor2() const		{return color2;}
-	float getSize() const		{return size;}
-	int getEnergy()	const		{return energy;}
+	float getEnergyRatio() const        { return float(energy.current) / float(energy.start); }
+	Vec3f getPos() const				{return pos;}
+	Vec3f getLastPos() const			{return lastPos;}
+	Vec3f getSpeed() const				{return speed;}
+	Vec3f getAccel() const				{return accel;}
+	Vec4f getColor() const				{return colour.value;}
+	Vec4f getColor2() const				{return colour2.value;}
+	float getSize() const				{return size.value;}
+	float getAngle() const				{return angle.value;}
+	float getAnglularVelocity() const	{return angle.step;}
+	int getEnergy()	const				{return energy.current;}
 
 	MEMORY_CHECK_DECLARATIONS(Particle);
 };
@@ -148,22 +181,34 @@ protected:
 	bool teamColorEnergy;
 	bool teamColorNoEnergy;
 
-	float size;
-	float sizeNoEnergy;
+	float size;                   // particle scale
+	float sizeVar;                // particle scale variance
+	float sizeNoEnergy;           // particle scale at end of life
+	float sizeNoEnergyVar;        // particle scale variance at end of life
+
 	float speed;
-	float gravity;
+	float gravity; // Vec3f acceleration ?
 	
 	float emissionRate;
 	float emissionRateRemainder;
+
+	bool overwriteOld;
+
 	int energy;
 	int energyVar;
 	
 	float radius;
 	int drawCount;
 
-	Texture *texture;	// belongs only in proto-type
+	float radialVelocity;
+	float radialVelocityVar;
+
 	Model *model;		// belongs only in proto-type
 
+private:
+	Texture* textures[MAX_PARTICLE_BUFFERS];
+	int numTextures;
+	
 public:
 	//constructor and destructor
 	ParticleSystemBase();
@@ -175,7 +220,8 @@ public:
 	BlendFactor getDestBlendFactor() const				{return destBlendFactor;}
 	BlendMode getBlendEquationMode() const				{return blendEquationMode;}
 	PrimitiveType getPrimitiveType() const				{return primitiveType;}
-	Texture *getTexture() const							{return texture;}
+	Texture *getTexture(int i) const					{return textures[i];}
+	int getNumTextures() const							{return numTextures;}
 	Model *getModel() const								{return model;}
 	const Vec3f &getOffset() const						{return offset;}
 	const Vec4f &getColor() const						{return color;}
@@ -183,12 +229,16 @@ public:
 	const Vec4f &getColorNoEnergy() const				{return colorNoEnergy;}
 	const Vec4f &getColor2NoEnergy() const				{return color2NoEnergy;}
 	float getSize() const 								{return size;}
+	float getRandomStartSize() { return size + random.randRange(-sizeVar, sizeVar); }
+	float getRandomEndSize() {return sizeNoEnergy + random.randRange(-sizeNoEnergyVar, sizeNoEnergyVar);}
 	float getSizeNoEnergy() const						{return sizeNoEnergy;}
 	float getSpeed() const								{return speed;}
 	float getGravity() const							{return gravity;}
 	float getEmissionRate() const						{return emissionRate;}
 	int getEnergy() const								{return energy;}
 	int getEnergyVar() const							{return energyVar;}
+	float getRadialVelocty() const						{return radialVelocity;}
+	float getRadialVeloctyVar() const					{return radialVelocityVar;}
 	float getRadius() const								{return radius;}
 	int getDrawCount() const							{return drawCount;}
 
@@ -197,7 +247,7 @@ public:
 	void setDestBlendFactor(BlendFactor v)				{destBlendFactor = v;}
 	void setBlendEquationMode(BlendMode v)				{blendEquationMode = v;}
 	void setPrimitiveType(PrimitiveType v)				{primitiveType = v;}
-	void setTexture(Texture *v)							{texture = v;}
+	void setTexture(int i, Texture *v);
 	void setModel(Model *v)								{model = v;}
 	void setOffset(const Vec3f &v)						{offset = v;}
 	void setColor(const Vec4f &v)						{color = v;}
@@ -205,7 +255,9 @@ public:
 	void setColorNoEnergy(const Vec4f &v)				{colorNoEnergy = v;}
 	void setColor2NoEnergy(const Vec4f &v)				{color2NoEnergy = v;}
 	void setSize(float v)								{size = v;}
+	void setSizeVar(float v)							{sizeVar = v;}
 	void setSizeNoEnergy(float v)						{sizeNoEnergy = v;}
+	void setSizeNoEnergyVar(float v)					{sizeNoEnergyVar = v;}
 	void setSpeed(float v)								{speed = v;}
 	void setGravity(float v)							{gravity = v;}
 	void setEmissionRate(float v)						{emissionRate = v;}
@@ -214,7 +266,13 @@ public:
 	void setRadius(float v)								{radius = v;}
 	void setDrawCount(int v)							{drawCount = v;}
 
-	int getRandEnergy() 				{return energy + random.randRange(-energyVar, energyVar);}
+	int getRandEnergy()            { return energy + random.randRange(-energyVar, energyVar); }
+	bool hasAngularVelocity() const { return radialVelocity != 0.f; }
+	float getRandAngularVelocity() { 
+		float abs = radialVelocity + random.randRange(-radialVelocityVar, radialVelocityVar);
+		return (random.rand() % 2 == 0) ? -abs : abs;
+	}
+	float getRandAngle()           { return radialVelocity == 0.f ? 0.f : random.randRange(0.f, 2 * Math::pi); }
 
 	virtual bool isProjectile() const	{ return false; }
 };
@@ -314,7 +372,7 @@ protected:
 	//virtual protected
 	virtual void initParticle(Particle *p, int particleIndex);
 	virtual void updateParticle(Particle *p);
-	virtual bool deathTest(Particle *p)			{return p->energy <= 0;}
+	virtual bool deathTest(Particle *p)			{return p->energy.current <= 0;}
 };
 
 // =====================================================

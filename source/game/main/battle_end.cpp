@@ -2,6 +2,7 @@
 //	This file is part of Glest (www.glest.org)
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
+//                2009-2011 James McCulloch
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -108,7 +109,7 @@ GameStatsWidget::GameStatsWidget(Container* parent, Vec2i pos, Vec2i size)
 			label->setDoubleShadow(colour, Vec4f(0.f, 0.f, 0.f, 1.f), 1);
 			label->setAlignment(Alignment::FLUSH_RIGHT);
 
-			string winlose = stats.getVictory(i) ? "Victory" : "Defeat";
+			string winlose = stats.getVictory(i) ? g_lang.get("Victory") : g_lang.get("Defeat");
 			label = buildLabel(row, 1, winlose, font, textColour);
 
 			int kills = stats.getKills(i);
@@ -153,6 +154,7 @@ void BattleEnd::update() {
 }
 
 void BattleEnd::renderBg() {
+	g_renderer.reset();
 	g_renderer.clearBuffers();
 	g_renderer.renderBackground(g_coreData.getBackgroundTexture());
 }
@@ -181,4 +183,4 @@ void BattleEnd::mouseDownLeft(int x, int y) {
 	}
 }
 
-}}//end namespace
+}} // end namespace

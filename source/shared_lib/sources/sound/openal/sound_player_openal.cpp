@@ -189,20 +189,20 @@ void StreamSoundSource::update()
 	// handle fading
 	switch(fadeState) {
 		case FadingOn:
-			if(chrono.getMillis() > fade) {
+			if(chrono.getMillisThisRun() > fade) {
 				alSourcef(source, AL_GAIN, sound->getVolume());
 				fadeState = NoFading;
 			} else {
 				alSourcef(source, AL_GAIN, sound->getVolume() *
-						static_cast<float> (chrono.getMillis())/fade);
+						static_cast<float> (chrono.getMillisThisRun())/fade);
 			}
 			break;
 		case FadingOff:
-			if(chrono.getMillis() > fade) {
+			if(chrono.getMillisThisRun() > fade) {
 				stop();
 			} else {
 				alSourcef(source, AL_GAIN, sound->getVolume() *
-						(1.0f - static_cast<float>(chrono.getMillis())/fade));
+						(1.0f - static_cast<float>(chrono.getMillisThisRun())/fade));
 			}
 			break;
 		default:

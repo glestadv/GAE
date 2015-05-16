@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  
+  
+
+  
+
+
+  
+
+  <head>
+    <title>
+      Attachment – Glest Advanced Engine
+    </title>
+        <link rel="search" href="/apps/trac/glestae/search" />
+        <link rel="help" href="/apps/trac/glestae/wiki/TracGuide" />
+        <link rel="alternate" href="/apps/trac/glestae/raw-attachment/ticket/327/magic_it.lng" title="Original Format" />
+        <link rel="up" href="/apps/trac/glestae/ticket/327" title="Ticket #327" />
+        <link rel="start" href="/apps/trac/glestae/wiki" />
+        <link rel="stylesheet" href="/apps/trac/glestae/chrome/common/css/trac.css" type="text/css" /><link rel="stylesheet" href="/apps/trac/glestae/pygments/trac.css" type="text/css" /><link rel="stylesheet" href="/apps/trac/glestae/chrome/common/css/code.css" type="text/css" />
+        <link rel="shortcut icon" href="/apps/trac/glestae/chrome/common/trac.ico" type="image/x-icon" />
+        <link rel="icon" href="/apps/trac/glestae/chrome/common/trac.ico" type="image/x-icon" />
+      <link type="application/opensearchdescription+xml" rel="search" href="/apps/trac/glestae/search/opensearch" title="Search Glest Advanced Engine" />
+    <script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/jquery.js"></script><script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/trac.js"></script><script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/search.js"></script>
+    <!--[if lt IE 7]>
+    <script type="text/javascript" src="/apps/trac/glestae/chrome/common/js/ie_pre7_hacks.js"></script>
+    <![endif]-->
+  <link type="text/css" href="/apps/trac/glestae/chrome/site/ha-css/default2.css" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="https://static.sourceforge.net/css/develop/hosted.php?secure=1&amp;1339319698" media="all" />
+
+    <!-- BEGIN: AdSolution-Tag 4.2: Global-Code [PLACE IN HTML-HEAD-AREA!] -->
+    <!-- DoubleClick Random Number -->
+    <script type="text/javascript">
+      dfp_ord=Math.random()*10000000000000000;
+      dfp_tile = 1;
+    </script>
+	
+    <!-- End DoubleClick Random Number -->
+    <!-- END: AdSolution-Tag 4.2: Global-Code -->
+
+</head>
+  <body>
+
+<script type="text/javascript">
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+
+<script type="text/javascript">
+  var pageTracker = _gat._getTracker("UA-32013-36");
+</script>
+<div id="sf_header">
+    <div class="sfh_n">
+        <ol class="sfh_n_ol">
+            <li class="sfh_n_li"><span><a href="/" id="sf_logo"><strong>SourceForge</strong></a></span></li>
+            <li class="sfh_n_li"><span><a href="/projects/glestae" title="Summary page hosted on SourceForge.net">Summary</a></span></li>
+            <li class="sfh_n_li"><span><a href="/projects/glestae/files" title="Files available for download">Files</a></span></li>                            <li class="sfh_n_li"><span><a href="/projects/glestae/support">Support</a></span></li>
+                        <li class="sfh_n_li"><span><a href="/support">Report Spam</a></span></li>
+                            <li class="sfh_n_li right"><span><a href="/account/logout.php" class="logout" title="Leaving so soon?">Log out</a></span></li>
+                <li class="sfh_n_li right"><span><a href="/my/" title="Manage the preferences and features of your SourceForge.net account">Account</a></span></li>
+                <li class="sfh_n_li right"><span>Welcome <a href="/users/silnarm/">silnarm</a></span></li>
+                    </ol>
+    </div>
+</div>
+<div id="fad1happ" class="ads">
+   <script type="text/javascript">
+   //<![CDATA[
+    document.write('<script src="https://ad.doubleclick.net/adj/ostg.sourceforge/cons_hosted_apps_p11_spons;pg=default;sz=728x90;tile='+dfp_tile+';tpc=project;tpc=glestae;ord='+dfp_ord+'?" type="text/javascript"><\/script>');
+     dfp_tile++;
+    //]]>
+    </script>
+</div>
+    
+
+	<div id="doc3" class="yui-t6">
+		<div id="bd">
+			<a name="content"></a>
+<!-- End Header -->
+    <div id="banner">
+      <div id="header">
+        <h1><a href="http://sourceforge.net/projects/glestae/">Glest Advanced Engine</a></h1>
+      </div>
+      <form id="search" action="/apps/trac/glestae/search" method="get">
+        <div>
+          <label for="proj-search">Search:</label>
+          <input type="text" id="proj-search" name="q" size="18" value="" />
+          <input type="submit" value="Search" />
+        </div>
+      </form>
+      <div id="metanav" class="nav">
+    <ul>
+      <li class="first">logged in as silnarm</li><li><a href="/apps/trac/glestae/prefs">Preferences</a></li><li><a href="/apps/trac/glestae/wiki/TracGuide">Help/Guide</a></li><li class="last"><a href="/apps/trac/glestae/about">About Trac</a></li>
+    </ul>
+  </div>
+    </div>
+    <div id="mainnav" class="nav">
+    <ul>
+      <li class="first"><a href="/apps/trac/glestae/wiki">Wiki</a></li><li><a href="/apps/trac/glestae/timeline">Timeline</a></li><li><a href="/apps/trac/glestae/roadmap">Roadmap</a></li><li><a href="/apps/trac/glestae/browser">Browse Source</a></li><li><a href="/apps/trac/glestae/report">View Tickets</a></li><li><a href="/apps/trac/glestae/newticket">New Ticket</a></li><li><a href="/apps/trac/glestae/search">Search</a></li><li class="last"><a href="/apps/trac/glestae/admin" title="Administration">Admin</a></li>
+    </ul>
+  </div>
+    <div id="main">
+      <div id="ctxtnav" class="nav">
+        <h2>Context Navigation</h2>
+          <ul>
+            <li class="first last"><a href="/apps/trac/glestae/ticket/327">Back to Ticket #327</a></li>
+          </ul>
+        <hr />
+      </div>
+    <div id="content" class="attachment">
+        <h1><a href="/apps/trac/glestae/ticket/327">Ticket #327</a>: magic_it.lng</h1>
+        <table id="info" summary="Description">
+          <tbody>
+            <tr>
+              <th scope="col">
+                File magic_it.lng, <span title="4270 bytes">4.2 KB</span>
+                (added by Perplesso,  <a class="timeline" href="/apps/trac/glestae/timeline?from=2011-04-09T10%3A50%3A32Z%2B0000&amp;precision=second" title="2011-04-09T10:50:32Z+0000 in Timeline">15 months</a> ago)
+              </th>
+            </tr>
+            <tr>
+              <td class="message searchable">
+                
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div id="preview" class="searchable">
+    <table class="code"><thead><tr><th class="lineno" title="Line numbers">Line</th><th class="content"> </th></tr></thead><tbody><tr><th id="L1"><a href="#L1">1</a></th><td>;</td></tr><tr><th id="L2"><a href="#L2">2</a></th><td>; Unit names and tips</td></tr><tr><th id="L3"><a href="#L3">3</a></th><td>;</td></tr><tr><th id="L4"><a href="#L4">4</a></th><td>archmage=Arcimago</td></tr><tr><th id="L5"><a href="#L5">5</a></th><td>archmage_info=Il più potente mago da battaglia. Lento, debole, ma capace di attacchi ad altissima energia, contro unità terrestri e aeree.</td></tr><tr><th id="L6"><a href="#L6">6</a></th><td>archmage_tower=Torre degli arcimaghi</td></tr><tr><th id="L7"><a href="#L7">7</a></th><td>archmage_tower_info=Richiesta per addestrare Arcimaghi, fornisce il potenziamento Invocazione del dragone.</td></tr><tr><th id="L8"><a href="#L8">8</a></th><td>battlemage=Mago combattente</td></tr><tr><th id="L9"><a href="#L9">9</a></th><td>battlemage_info=Versatile guerriero magico. Buona potenza d'attacco e raggio d'azione, velocità e corazza. Debole contro unità corpo a corpo. Può essere promosso ad Arcimago.</td></tr><tr><th id="L10"><a href="#L10">10</a></th><td>behemoth=Behemoth</td></tr><tr><th id="L11"><a href="#L11">11</a></th><td>behemoth_info=Il più avanzato guerriero magico corpo a corpo. Lento ma capace di attacchi potenti, soprattutto contro edifici e unità con armatura di legno.</td></tr><tr><th id="L12"><a href="#L12">12</a></th><td>daemon=Demone</td></tr><tr><th id="L13"><a href="#L13">13</a></th><td>daemon_info=Guerriero corpo a corpo di base. Debole ma economico. Il suo scopo è tenere, il più a lungo possibile, le unità corpo a corpo nemiche lontane dai tuoi guerrieri con attacco a lungo raggio.</td></tr><tr><th id="L14"><a href="#L14">14</a></th><td>dragon=Dragone volante</td></tr><tr><th id="L15"><a href="#L15">15</a></th><td>dragon_info=Potente e versatile unità aerea. Veloce e capace di colpire unità terrestri e aeree. Debole verso le ferite da punta.</td></tr><tr><th id="L16"><a href="#L16">16</a></th><td>drake_rider=Domatrice di Draghi</td></tr><tr><th id="L17"><a href="#L17">17</a></th><td>drake_rider_info=Veloce e più resistente della Medium, ideale per esplorazione o attacchi veloci.</td></tr><tr><th id="L18"><a href="#L18">18</a></th><td>energy_source=Sorgente di energia</td></tr><tr><th id="L19"><a href="#L19">19</a></th><td>energy_source_info=Incrementa la capacità di popolazione fornendo energia.</td></tr><tr><th id="L20"><a href="#L20">20</a></th><td>ghost_armor=Fantasma in armatura</td></tr><tr><th id="L21"><a href="#L21">21</a></th><td>ghost_armor_info=Unità corpo a corpo media. Lenta, ma con buon attacco.</td></tr><tr><th id="L22"><a href="#L22">22</a></th><td>golem=Golem</td></tr><tr><th id="L23"><a href="#L23">23</a></th><td>golem_info=Unità da difesa. Per muoversi ha bisogno di energia, ma ha un potente attacco di terra e un'eccellente resistenza.</td></tr><tr><th id="L24"><a href="#L24">24</a></th><td>initiate=Iniziato</td></tr><tr><th id="L25"><a href="#L25">25</a></th><td>initiate_info=Raccoglie risorse e costruisce edifici. Molto debole ma capace di attaccare in caso di emergenza. Può essere promosso a Mago combattente.</td></tr><tr><th id="L26"><a href="#L26">26</a></th><td>library=Biblioteca</td></tr><tr><th id="L27"><a href="#L27">27</a></th><td>library_info=Fornisce potenziamenti: Concentrazione di energia, Amplificazione di energia e Porta dell'inferno.</td></tr><tr><th id="L28"><a href="#L28">28</a></th><td>mage_tower=Torre dei maghi</td></tr><tr><th id="L29"><a href="#L29">29</a></th><td>mage_tower_info=Struttura principale. Può conservare risorse e fornire Iniziati.</td></tr><tr><th id="L30"><a href="#L30">30</a></th><td>summoner=Medium</td></tr><tr><th id="L31"><a href="#L31">31</a></th><td>summoner_info=Può invocare creature. Lenta e debole, ha un attacco potente ma che consuma energia, contro unità terrestri e aeree. Può diventare una Domatrice di dragni.</td></tr><tr><th id="L32"><a href="#L32">32</a></th><td>summoner_guild=Corporazione dei medium</td></tr><tr><th id="L33"><a href="#L33">33</a></th><td>summoner_guild_info=Fornisce Medium e il potenziamento Invocazione ancestrale.</td></tr><tr><th id="L34"><a href="#L34">34</a></th><td>tower_of_souls=Torre delle anime</td></tr><tr><th id="L35"><a href="#L35">35</a></th><td>tower_of_souls_info=Struttura difensiva capace di potenti attacchi antiaerei.</td></tr><tr><th id="L36"><a href="#L36">36</a></th><td>wicker_behemoth=Simulacro di behemoth</td></tr><tr><th id="L37"><a href="#L37">37</a></th><td>wicker_behemoth_info=Struttura intermedia richiesta per invocare un Behemoth</td></tr><tr><th id="L38"><a href="#L38">38</a></th><td></td></tr><tr><th id="L39"><a href="#L39">39</a></th><td>;</td></tr><tr><th id="L40"><a href="#L40">40</a></th><td>; Upgrade names and tips</td></tr><tr><th id="L41"><a href="#L41">41</a></th><td>;</td></tr><tr><th id="L42"><a href="#L42">42</a></th><td>ancient_summoning=Invocazione ancestrale</td></tr><tr><th id="L43"><a href="#L43">43</a></th><td>ancient_summoning_info=Aumenta la capacità energetica delle Medium e permette loro di invocare Fantasmi in armatura.</td></tr><tr><th id="L44"><a href="#L44">44</a></th><td>dragon_call=Invocazione del dragone</td></tr><tr><th id="L45"><a href="#L45">45</a></th><td>dragon_call_info=Richiesta per permettere alle Medium di invocare i Dragoni volanti.</td></tr><tr><th id="L46"><a href="#L46">46</a></th><td>energy_compression=Concentrazione di energia</td></tr><tr><th id="L47"><a href="#L47">47</a></th><td>energy_compression_info=Potenzia la capacità energetica di Maghi combattenti, Medium e Arcimaghi.</td></tr><tr><th id="L48"><a href="#L48">48</a></th><td>energy_sharpening=Amplificazione di energia</td></tr><tr><th id="L49"><a href="#L49">49</a></th><td>energy_sharpening_info=Potenzia l'attacco di Maghi combattenti, Medium e Arcimaghi.</td></tr><tr><th id="L50"><a href="#L50">50</a></th><td>hell_gate=Porta dell'inferno</td></tr><tr><th id="L51"><a href="#L51">51</a></th><td>hell_gate_info=Permette agli Iniziati di costruire Simulacri di behemoth e invocarli.</td></tr><tr><th id="L52"><a href="#L52">52</a></th><td></td></tr><tr><th id="L53"><a href="#L53">53</a></th><td>;</td></tr><tr><th id="L54"><a href="#L54">54</a></th><td>; Custom command names</td></tr><tr><th id="L55"><a href="#L55">55</a></th><td>;</td></tr><tr><th id="L56"><a href="#L56">56</a></th><td>ice_nova=Sfera di ghiaccio</td></tr><tr><th id="L57"><a href="#L57">57</a></th><td>static_fire=Fuoco stazionario</td></tr><tr><th id="L58"><a href="#L58">58</a></th><td>hold_position=Mantieni posizione</td></tr><tr><th id="L59"><a href="#L59">59</a></th><td>research_dragon_call=Ricerca Invocazione del dragone</td></tr><tr><th id="L60"><a href="#L60">60</a></th><td>fire_bolt=Sfera di fuoco</td></tr><tr><th id="L61"><a href="#L61">61</a></th><td>promote_to_archmage=Promuovi ad Arcimago</td></tr><tr><th id="L62"><a href="#L62">62</a></th><td>breath=Sputa fuoco</td></tr><tr><th id="L63"><a href="#L63">63</a></th><td>fire_breath=Sputa fuoco</td></tr><tr><th id="L64"><a href="#L64">64</a></th><td>flare=Sfera di energia</td></tr><tr><th id="L65"><a href="#L65">65</a></th><td>ritual=Rituale</td></tr><tr><th id="L66"><a href="#L66">66</a></th><td>mine=Estrai</td></tr><tr><th id="L67"><a href="#L67">67</a></th><td>promote_to_battlemage=Promuovi a Mago combattente</td></tr><tr><th id="L68"><a href="#L68">68</a></th><td>research_energy_compression=Ricerca Concentrazione di energia</td></tr><tr><th id="L69"><a href="#L69">69</a></th><td>research_energy_sharpening=Ricerca Amplificazione di energia</td></tr><tr><th id="L70"><a href="#L70">70</a></th><td>research_hell_gate=Ricerca Porta dell'inferno</td></tr><tr><th id="L71"><a href="#L71">71</a></th><td>produce_initiate=Addestra Iniziato</td></tr><tr><th id="L72"><a href="#L72">72</a></th><td>summon_daemon=Invoca Demone</td></tr><tr><th id="L73"><a href="#L73">73</a></th><td>summon_ghost_armor=Invoca Fantasma in armatura</td></tr><tr><th id="L74"><a href="#L74">74</a></th><td>summon_dragon=Invoca Dragone volante</td></tr><tr><th id="L75"><a href="#L75">75</a></th><td>summon_drake=Invoca Drago</td></tr><tr><th id="L76"><a href="#L76">76</a></th><td>produce_summoner=Addestra Medium</td></tr><tr><th id="L77"><a href="#L77">77</a></th><td>research_ancient_summoning=Ricerca Invocazione ancestrale</td></tr><tr><th id="L78"><a href="#L78">78</a></th><td>attack_off=Attacco disattivato</td></tr><tr><th id="L79"><a href="#L79">79</a></th><td>attack_on=Attacco attivato</td></tr><tr><th id="L80"><a href="#L80">80</a></th><td>promote_to_behemoth=Anima behemoth</td></tr><tr><th id="L81"><a href="#L81">81</a></th><td></td></tr><tr><th id="L82"><a href="#L82">82</a></th><td>;</td></tr><tr><th id="L83"><a href="#L83">83</a></th><td>; Level names</td></tr><tr><th id="L84"><a href="#L84">84</a></th><td>;</td></tr><tr><th id="L85"><a href="#L85">85</a></th><td>expert=Veterano</td></tr><tr><th id="L86"><a href="#L86">86</a></th><td>master=Maestro</td></tr><tr><th id="L87"><a href="#L87">87</a></th><td>legendary=Leggendario</td></tr><tr><th id="L88"><a href="#L88">88</a></th><td>ancient=Antico</td></tr></tbody></table>
+        </div>
+          <div class="buttons">
+            <form method="get" action="">
+              <div id="delete">
+                <input type="hidden" name="action" value="delete" />
+                <input type="submit" value="Delete attachment" />
+              </div>
+            </form>
+          </div>
+    </div>
+    <div id="altlinks">
+      <h3>Download in other formats:</h3>
+      <ul>
+        <li class="last first">
+          <a rel="nofollow" href="/apps/trac/glestae/raw-attachment/ticket/327/magic_it.lng">Original Format</a>
+        </li>
+      </ul>
+    </div>
+    </div>
+    <div id="footer" lang="en" xml:lang="en"><hr />
+      <a id="tracpowered" href="http://trac.edgewall.org/"><img src="/apps/trac/glestae/chrome/common/trac_logo_mini.png" height="30" width="107" alt="Trac Powered" /></a>
+      <p class="left">
+        Powered by <a href="/apps/trac/glestae/about"><strong>Trac 0.11.2.1</strong></a><br />
+        By <a href="http://www.edgewall.org/">Edgewall Software</a>.
+      </p>
+      <p class="right"></p>
+    </div>
+<!-- Footer -->
+		</div>
+        </div>
+<!-- End Footer -->
+
+    
+<p class="copyright">&copy; 2012 <a title="Network which provides and promotes Open Source software downloads, development, discussion and news." href="http://geek.net">Geeknet, Inc.</a> &nbsp; <a href="http://geek.net/terms-of-use">Terms of Use</a> - <a href="http://p.sf.net/sourceforge/privacy">Privacy Policy</a>
+- <a href="http://geek.net/opt-out-choices">Cookies/Opt Out</a>
+</p>
+    
+    <script type="text/javascript">
+	pageTracker._trackPageview();
+    </script>
+</body>
+</html>

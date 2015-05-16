@@ -40,6 +40,7 @@ private:
 	int id;
 	MapObjectType *objectType;
 	MapResource *resource;
+	Vec2i tilePos;
 	Vec3f pos;
 	float rotation;
 	int variation;
@@ -48,6 +49,7 @@ private:
 public:
 	struct CreateParams {
 		MapObjectType *objectType;
+		Vec2i tilePos;
 		const Vec3f pos;
 		int seed;
 		CreateParams(MapObjectType *objectType, const Vec2i &tilePos, const Vec3f &worldPos, int seed) 
@@ -66,6 +68,7 @@ public:
 	int getId() const 					{return id;}
 	const MapObjectType *getType() const{return objectType;}
 	MapResource *getResource() const	{return resource;}
+	Vec2i getTilePos() const            { return tilePos; }
 	Vec3f getPos() const				{return pos;}
 	float getRotation()	const			{return rotation;}
 	const Model *getModel() const;
@@ -73,6 +76,9 @@ public:
 
 	void setResource(const ResourceType *resourceType, const Vec2i &pos);
 };
+
+typedef vector<MapObject*>          MapObjectVector;
+typedef vector<const MapObject*>    ConstMapObjVector;
 
 }}//end namespace
 

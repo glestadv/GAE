@@ -31,16 +31,16 @@ namespace Glest { namespace ProtoTypes {
 class ResourceType: public DisplayableType {
 private:
 	ResourceClass resourceClass;
-	int tilesetObject;	// used only if class == ResourceClass::TILESET, object number in the map
-	int resourceNumber;	// used only if class == ResourceClass::TECHTREE, resource number in the map
-	int interval;		// used only if class == ResourceClass::CONSUMABLE
-	int defResPerPatch;	// used only if class == ResourceClass::TILESET || class == ResourceClass::TECHTREE
-	bool recoupCost;	// used only if class == ResourceClass::STATIC
+	int tilesetObject;	/**< used only if class == ResourceClass::TILESET, object number in the map */
+	int resourceNumber;	/**< used only if class == ResourceClass::TECHTREE, resource number in the map */
+	int interval;		/**< used only if class == ResourceClass::CONSUMABLE */
+	int defResPerPatch;	/**< used only if class == ResourceClass::TILESET || class == ResourceClass::TECHTREE */
+	bool recoupCost;	/**< used only if class == ResourceClass::STATIC */
+	bool infiniteStore; /**< if true storage rules don't apply */
+	Modifier damageMod; /**< used only if class == ResourceClass::CONSUMABLE, damage to do per interval if no resources to consume */
 
 	Model *model;
-	/**
-	 * Rather or not to display this resource at the top of the screen (defaults to true).
-	 */
+	/** Wether or not to display this resource at the top of the screen (defaults to true). */
 	bool display;
 
 public:
@@ -54,8 +54,10 @@ public:
 	int getInterval() const			{return interval;}
 	int getDefResPerPatch() const	{return defResPerPatch;}
 	bool getRecoupCost() const		{ return recoupCost; }
+	bool isInfiniteStore() const    { return infiniteStore; }
 	const Model *getModel() const	{return model;}
 	bool isDisplay() const			{return display;}
+	Modifier getDamageMod() const   { return damageMod; }
 
 	static ResourceClass strToRc(const string &s);
 };

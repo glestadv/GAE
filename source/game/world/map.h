@@ -74,7 +74,7 @@ public:
 	// is
 	bool isSubmerged () const		{ return surfaceType != SurfaceType::LAND;			}
 	bool isDeepSubmerged () const	{ return surfaceType == SurfaceType::DEEP_WATER;	}
-	bool isFree(Zone zone) const	{ return !getUnit(zone) || getUnit(zone)->isPutrefacting(); }
+	bool isFree(Zone zone) const	{ return !getUnit(zone); }
 
 	// set
 	void setUnit(Zone zone, Unit *unit)	{ units[zone]= unit;	}

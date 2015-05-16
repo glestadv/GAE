@@ -114,7 +114,6 @@ Unit::Unit(CreateParams params)
 		, hp(1)
 		, ep(0)
 		, loadCount(0)
-		, deadCount(0)
 		, lastAnimReset(0)
 		, nextAnimReset(-1)
 		, lastCommandUpdate(0)
@@ -143,13 +142,12 @@ Unit::Unit(CreateParams params)
 		, type(params.type)
 		, loadType(0)
 		, currSkill(0)
-		, toBeUndertaken(false)
-		, carried(false)
 		, m_cloaked(false)
 		, m_cloaking(false)
 		, m_deCloaking(false)
 		, m_cloakAlpha(1.f)
 		, fire(0)
+		, smoke(0)
 		, faction(params.faction)
 		, map(params.map)
 		, commandCallback(0)
@@ -173,8 +171,7 @@ Unit::Unit(CreateParams params)
 Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld)
 		: targetRef(params.node->getOptionalIntValue("targetRef", -1))
 		, effects(params.node->getChild("effects"))
-		, effectsCreated(params.node->getChild("effectsCreated"))
-        , carried(false) {
+		, effectsCreated(params.node->getChild("effectsCreated")) {
 	const XmlNode *node = params.node;
 	this->faction = params.faction;
 	this->map = params.map;
@@ -185,7 +182,6 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	//hp loaded after recalculateStats()
 	ep = node->getChildIntValue("ep");
 	loadCount = node->getChildIntValue("loadCount");
-	deadCount = node->getChildIntValue("deadCount");
 	kills = node->getChildIntValue("kills");
 	type = faction->getType()->getUnitType(node->getChildStringValue("type"));
 
@@ -217,7 +213,6 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	lastAnimReset = node->getChildIntValue("lastAnimReset");
 
 	highlight = node->getChildFloatValue("highlight");
-	toBeUndertaken = node->getChildBoolValue("toBeUndertaken");
 
 	m_cloaked = node->getChildBoolValue("cloaked");
 	m_cloaking = node->getChildBoolValue("cloaking");
@@ -254,7 +249,7 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	computeTotalUpgrade();
 
 	hp = node->getChildIntValue("hp");
-	fire = NULL;
+	fire = smoke = 0;
 
 	n = node->getChild("units-carried");
 	for(int i = 0; i < n->getChildCount(); ++i) {
@@ -270,13 +265,10 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 		m_unitsToUnload.push_back(n->getChildIntValue("unit", i));
 	}
 	m_carrier = node->getChildIntValue("unit-carrier");
-	if (m_carrier != -1) {
-		carried = true;
-	}
-
+	
 	faction->add(this);
 	if (hp) {
-		if (!carried) {
+		if (m_carrier == -1) {
 			map->putUnitCells(this, pos);
 			meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
 		}
@@ -308,7 +300,6 @@ void Unit::save(XmlNode *node) const {
 	node->addChild("hp", hp);
 	node->addChild("ep", ep);
 	node->addChild("loadCount", loadCount);
-	node->addChild("deadCount", deadCount);
 	node->addChild("nextCommandUpdate", nextCommandUpdate);
 	node->addChild("lastCommandUpdate", lastCommandUpdate);
 	node->addChild("nextAnimReset", nextAnimReset);
@@ -334,7 +325,6 @@ void Unit::save(XmlNode *node) const {
 	node->addChild("loadType", loadType ? loadType->getName() : "null_value");
 	node->addChild("currSkill", currSkill ? currSkill->getName() : "null_value");
 
-	node->addChild("toBeUndertaken", toBeUndertaken);
 	node->addChild("cloaked", m_cloaked);
 	node->addChild("cloaking", m_cloaking);
 	node->addChild("de-cloaking", m_deCloaking);
@@ -568,14 +558,23 @@ void Unit::startSkillParticleSystems() {
 	bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
 	
 	for (unsigned i = 0; i < currSkill->getEyeCandySystemCount(); ++i) {
-		UnitParticleSystem *ups = currSkill->getEyeCandySystem(i)->createUnitParticleSystem(visible);
-		ups->setPos(getCurrVector());
-		ups->setRotation(getRotation());
-		skillParticleSystems.push_back(ups);
-		Colour c = faction->getColour();
-		Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
-		ups->setTeamColour(colour);
-		g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
+		const UnitParticleSystemType *upsType = currSkill->getEyeCandySystem(i);
+		bool start = true;
+		foreach (UnitParticleSystems, it, skillParticleSystems) {
+			if ((*it)->getType() == upsType) {
+				start = false;
+			}
+		}
+		if (start) {
+			UnitParticleSystem *ups = currSkill->getEyeCandySystem(i)->createUnitParticleSystem(visible);
+			ups->setPos(getCurrVector());
+			ups->setRotation(getRotation());
+			skillParticleSystems.push_back(ups);
+			Colour c = faction->getColour();
+			Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
+			ups->setTeamColour(colour);
+			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
+		}
 	}
 }
 
@@ -1158,6 +1157,15 @@ void Unit::born(bool reborn) {
 		if (!isCarried()) {
 			startSkillParticleSystems();
 		}
+		
+		if (type->getEmanations().size() > 0) {
+			foreach_const (Emanations, i, type->getEmanations()) {
+				UnitParticleSystemTypes types = (*i)->getSourceParticleTypes();
+				if (!types.empty()) {
+					startParticleSystems(types);
+				}
+			}
+		}
 	}
 	StateChanged(this);
 	faction->onUnitActivated(type);
@@ -1213,6 +1221,8 @@ void Unit::kill() {
 	if (fire) {
 		fire->fade();
 		fire = 0;
+		smoke->fade();
+		smoke = 0;
 	}
 
 	//REFACTOR Use signal, send this code to Faction::onUnitDied();
@@ -1228,7 +1238,7 @@ void Unit::kill() {
 
 	clearCommands();
 	setCurrSkill(SkillClass::DIE);
-	deadCount = Random(id).randRange(-256, 256); // random decay time
+	progress2 = Random(id).randRange(-256, 256); // random decay time
 
 	//REFACTOR use signal, send this to World/Cartographer/SimInterface
 	world.getCartographer()->removeUnitVisibility(this);
@@ -1356,39 +1366,41 @@ TravelState Unit::travel(const Vec2i &pos, const MoveSkillType *moveSkill) {
   * @return the CommandType to execute
   */
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
-	const CommandType *commandType = NULL;
-	Tile *sc = map->getTile(Map::toTileCoords(pos));
-
+	const CommandType *commandType = 0;
+	
 	if (targetUnit) {
-		//attack enemies
-		if (!isAlly(targetUnit)) {
+		if (!isAlly(targetUnit)) { // Enemy! Attack!!
 			commandType = type->getAttackCommand(targetUnit->getCurrZone());
-		} else if (targetUnit->getFactionIndex() == getFactionIndex()) {
+			return commandType; // do not give suicidal move command if can't attack target
+			// should give attack command to location ?
+
+		} else if (targetUnit->getFactionIndex() == getFactionIndex()) { // Our-unit, try Load/Repair
 			const UnitType *tType = targetUnit->getType();
-			if (tType->isOfClass(UnitClass::CARRIER)
-			&& tType->getCommandType<LoadCommandType>(0)->canCarry(type)) {
-				//move to be loaded
+			if (tType->isOfClass(UnitClass::CARRIER) && tType->getCommandType<LoadCommandType>(0)->canCarry(type) && targetUnit->isBuilt()) {
+				// move to be loaded
 				commandType = type->getFirstCtOfClass(CmdClass::BE_LOADED);
-			} else if (getType()->isOfClass(UnitClass::CARRIER)
-			&& type->getCommandType<LoadCommandType>(0)->canCarry(tType)) {
-			//load
-			commandType = type->getFirstCtOfClass(CmdClass::LOAD);
-		} else {
+			} else if (getType()->isOfClass(UnitClass::CARRIER)	&& type->getCommandType<LoadCommandType>(0)->canCarry(tType)) { 
+				// load
+				commandType = type->getFirstCtOfClass(CmdClass::LOAD);
+			} else { 
 				// repair
+				commandType = getRepairCommandType(targetUnit);
+			}
+
+		} else { // Ally, try repair
 			commandType = getRepairCommandType(targetUnit);
 		}
-		} else { // repair allies
-			commandType = getRepairCommandType(targetUnit);
-		}
-	} else {
-		//check harvest command
-		MapResource *resource = sc->getResource();
-		if (resource != NULL) {
+
+	} else { // No target unit
+		// check harvest command
+		Tile *tile = map->getTile(Map::toTileCoords(pos));
+		MapResource *resource = tile->getResource();
+		if (resource) {
 			commandType = type->getHarvestCommand(resource->getType());
 		}
 	}
 
-	//default command is move command
+	// default command is move command
 	if (!commandType) {
 		commandType = type->getFirstCtOfClass(CmdClass::MOVE);
 	}
@@ -1730,21 +1742,22 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 		}
 	}
 
-	if (!carried) {
-	// update particle system location/orientation
-	if (fire && moved) {
-		fire->setPos(getCurrVector());
-	}
-	if (moved || rotated) {
-		foreach (UnitParticleSystems, it, skillParticleSystems) {
-			if (moved) (*it)->setPos(getCurrVector());
-			if (rotated) (*it)->setRotation(getRotation());
+	if (!isCarried()) {
+		// update particle system location/orientation
+		if (fire && moved) {
+			fire->setPos(getCurrVector());
+			smoke->setPos(getCurrVector());
 		}
-		foreach (UnitParticleSystems, it, effectParticleSystems) {
-			if (moved) (*it)->setPos(getCurrVector());
-			if (rotated) (*it)->setRotation(getRotation());
+		if (moved || rotated) {
+			foreach (UnitParticleSystems, it, skillParticleSystems) {
+				if (moved) (*it)->setPos(getCurrVector());
+				if (rotated) (*it)->setRotation(getRotation());
+			}
+			foreach (UnitParticleSystems, it, effectParticleSystems) {
+				if (moved) (*it)->setPos(getCurrVector());
+				if (rotated) (*it)->setRotation(getRotation());
+			}
 		}
-	}
 	}
 	// check for cycle completion
 	// '>=' because nextCommandUpdate can be < frameCount if unit is dead
@@ -1753,10 +1766,7 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 		if (currSkill->getClass() != SkillClass::DIE) {
 			return true;
 		} else {
-			++deadCount;
-			if (deadCount >= GameConstants::maxDeadCount) {
-				toBeUndertaken = true;
-			}
+			++progress2;
 		}
 	}
 	return false;
@@ -1912,7 +1922,8 @@ bool Unit::repair(int amount, fixed multiplier) {
 	//stop fire
 	if (hp > type->getMaxHp() / 2 && fire != NULL) {
 		fire->fade();
-		fire = NULL;
+		smoke->fade();
+		fire = smoke = 0;
 	}
 	return false;
 }
@@ -1944,19 +1955,14 @@ bool Unit::decHp(int i) {
 
 	// fire
 	if (type->getProperty(Property::BURNABLE) && hp < type->getMaxHp() / 2
-	&& fire == NULL && m_carrier == -1) {
-		FireParticleSystem *fps;
+	&& fire == 0 && m_carrier == -1) {
 		Vec2i cPos = getCenteredPos();
 		Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
 		bool vis = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
-		fps = new FireParticleSystem(vis, 200);
-		fps->setSpeed(2.5f / g_config.getGsWorldUpdateFps());
-		fps->setPos(getCurrVector());
-		fps->setRadius(type->getSize() / 3.f);
-		fps->setTexture(g_coreData.getFireTexture());
-		fps->setSize(type->getSize() / 3.f);
-		fire = fps;
-		g_renderer.manageParticleSystem(fps, ResourceScope::GAME);
+		fire = new FireParticleSystem(this, vis, 1000);
+		g_renderer.manageParticleSystem(fire, ResourceScope::GAME);
+		smoke = new SmokeParticleSystem(this, vis, 400);
+		g_renderer.manageParticleSystem(smoke, ResourceScope::GAME);
 	}
 
 	// stop fire on death
@@ -1964,7 +1970,8 @@ bool Unit::decHp(int i) {
 		hp = 0;
 		if (fire) {
 			fire->fade();
-			fire = NULL;
+			smoke->fade();
+			fire = smoke = 0;
 		}
 		return true;
 	}
@@ -2230,7 +2237,7 @@ bool Unit::add(Effect *e) {
 			startParticles = false;
 		} else {
 			foreach (Effects, it, effects) {
-				if (e->getType() == (*it)->getType()) {
+				if (e != *it && e->getType() == (*it)->getType()) {
 					startParticles = false;
 					break;
 				}
@@ -2241,11 +2248,30 @@ bool Unit::add(Effect *e) {
 	}
 
 	if (startParticles && !particleTypes.empty()) {
-		Vec2i cPos = getCenteredPos();
-		Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
-		bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
+		startParticleSystems(particleTypes);
+	}
 
-		foreach_const (UnitParticleSystemTypes, it, particleTypes) {
+	if (effects.isDirty()) {
+		recalculateStats();
+	}
+
+	return false;
+}
+
+void Unit::startParticleSystems(const UnitParticleSystemTypes &types) {
+	Vec2i cPos = getCenteredPos();
+	Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
+	bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
+
+	foreach_const (UnitParticleSystemTypes, it, types) {
+		bool startNew = true;
+		foreach_const (UnitParticleSystems, upsIt, effectParticleSystems) {
+			if ((*upsIt)->getType() == (*it)) {
+				startNew = false;
+				break;
+			}
+		}
+		if (startNew) {
 			UnitParticleSystem *ups = (*it)->createUnitParticleSystem(visible);
 			ups->setPos(getCurrVector());
 			ups->setRotation(getRotation());
@@ -2257,12 +2283,6 @@ bool Unit::add(Effect *e) {
 			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
 		}
 	}
-
-	if (effects.isDirty()) {
-		recalculateStats();
-	}
-
-	return false;
 }
 
 /**

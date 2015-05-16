@@ -213,7 +213,7 @@
 			<upgrade-requirements/>
 			<morph-skill value="morph_skill"/>
 			<morph-unit name= "archer"/>
-			<discount value="60"/>
+			<cost-modifier refund="60" />
 		</command>
 
 		<!-- The positioning on the display for this is 'hookey-pookey' (aka magic) -->
