@@ -182,6 +182,68 @@ void Commander::trySetCloak(const Selection *selection, bool enabled) const {
 	}
 }
 
+
+CmdResult Commander::pushCommand(Command *command) const {
+	RUNTIME_CHECK(command);
+	RUNTIME_CHECK(command->getCommandedUnit());
+	CmdResult result = command->getCommandedUnit()->checkCommand(*command);
+	//COMMAND_LOG( __FUNCTION__ << "(): " << *command->getCommandedUnit() << ", " << *command 
+	//	<< ", Result=" << CmdResultNames[result] );
+	if (result == CmdResult::SUCCESS) {
+		iSim->requestCommand(command);
+	} else {
+		g_world.deleteCommand(command);
+	}
+	return result;
+}
+
+void Commander::giveCommand( Command *command ) const {
+	//COMMAND_LOG( __FUNCTION__ << "(): " << *command->getCommandedUnit() << ", " << *command );
+	Unit* unit = command->getCommandedUnit();
+
+	//execute command, if unit is still alive and non-deleted
+	if (unit && unit->isAlive()) {
+		switch (command->getArchetype()) {
+			case CmdDirective::GIVE_COMMAND:
+				assert( command->getType() );
+				unit->giveCommand( command );
+				break;
+			case CmdDirective::CANCEL_COMMAND:
+				unit->cancelCommand();
+				g_world.deleteCommand( command );
+				break;
+			case CmdDirective::SET_AUTO_REPAIR:
+				unit->setAutoCmdEnable( AutoCmdFlag::REPAIR, command->isMiscEnabled() );
+				g_world.deleteCommand( command );
+				break;
+			case CmdDirective::SET_AUTO_ATTACK:
+				unit->setAutoCmdEnable( AutoCmdFlag::ATTACK, command->isMiscEnabled() );
+				g_world.deleteCommand( command );
+				break;
+			case CmdDirective::SET_AUTO_FLEE:
+				unit->setAutoCmdEnable( AutoCmdFlag::FLEE, command->isMiscEnabled() );
+				g_world.deleteCommand( command );
+				break;
+			case CmdDirective::SET_CLOAK: {
+				bool cloak = command->isMiscEnabled();
+				if (cloak && !unit->isCloaked()) {
+					if (unit->getFaction()->reqsOk( unit->getType()->getCloakType() )) {
+						unit->cloak();
+					}
+				} else if (!cloak && unit->isCloaked()) {
+					unit->deCloak();
+				}
+				break;
+			}
+			default:
+				assert( false );
+		}
+	} else {
+		g_world.deleteCommand( command );
+	}
+}
+
+
 // ==================== PRIVATE ====================
 
 Vec2i Commander::computeRefPos(const Selection *selection) const{
@@ -236,66 +298,6 @@ CmdResult Commander::computeResult(const CmdResults &results) const {
 				return unique ? results.front() : CmdResult(CmdResult::FAIL_UNDEFINED);
 			}
 		}
-	}
-}
-
-CmdResult Commander::pushCommand(Command *command) const {
-	RUNTIME_CHECK(command);
-	RUNTIME_CHECK(command->getCommandedUnit());
-	CmdResult result = command->getCommandedUnit()->checkCommand(*command);
-	//COMMAND_LOG( __FUNCTION__ << "(): " << *command->getCommandedUnit() << ", " << *command 
-	//	<< ", Result=" << CmdResultNames[result] );
-	if (result == CmdResult::SUCCESS) {
-		iSim->requestCommand(command);
-	} else {
-		g_world.deleteCommand(command);
-	}
-	return result;
-}
-
-void Commander::giveCommand(Command *command) const {
-	//COMMAND_LOG( __FUNCTION__ << "(): " << *command->getCommandedUnit() << ", " << *command );
-	Unit* unit = command->getCommandedUnit();
-
-	//execute command, if unit is still alive and non-deleted
-	if (unit && unit->isAlive()) {
-		switch (command->getArchetype()) {
-			case CmdDirective::GIVE_COMMAND:
-				assert(command->getType());
-				unit->giveCommand(command);
-				break;
-			case CmdDirective::CANCEL_COMMAND:
-				unit->cancelCommand();
-				g_world.deleteCommand(command);
-				break;
-			case CmdDirective::SET_AUTO_REPAIR:
-				unit->setAutoCmdEnable(AutoCmdFlag::REPAIR, command->isMiscEnabled());
-				g_world.deleteCommand(command);
-				break;
-			case CmdDirective::SET_AUTO_ATTACK:
-				unit->setAutoCmdEnable(AutoCmdFlag::ATTACK, command->isMiscEnabled());
-				g_world.deleteCommand(command);
-				break;
-			case CmdDirective::SET_AUTO_FLEE:
-				unit->setAutoCmdEnable(AutoCmdFlag::FLEE, command->isMiscEnabled());
-				g_world.deleteCommand(command);
-				break;
-			case CmdDirective::SET_CLOAK: {
-				bool cloak = command->isMiscEnabled();
-				if (cloak && !unit->isCloaked()) {
-					if (unit->getFaction()->reqsOk(unit->getType()->getCloakType())) {
-						unit->cloak();
-					}
-				} else if (!cloak && unit->isCloaked()) {
-					unit->deCloak();
-				}
-				break;
-			}
-			default:
-				assert(false);
-		}
-	} else {
-		g_world.deleteCommand(command);
 	}
 }
 
