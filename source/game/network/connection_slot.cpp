@@ -76,16 +76,15 @@ void ConnectionSlot::processMessages() {
 		} else if (raw.type == MessageType::HELLO) {
 			HelloMessage msg(raw);
 			std::string ourVer = getNetworkVersionString();
-			std::string theirVer = msg.getDataRef().m_versionString.getString();
-			if (ourVer != theirVer) {
+			if (ourVer != msg.data().m_versionString.getString()) {
 				BadVersionMessage msg;
-				msg.getDataRef().m_versionString = ourVer;
+				msg.data().m_versionString = ourVer;
 				m_connection->send(&msg);
 				m_connection->disconnect( DisconnectReason::VERSION_MISMATCH );
 			} else {
-				m_connection->setRemoteNames( msg.getDataRef().m_hostName.getString(), msg.getDataRef().m_playerName.getString() );
+				m_connection->setRemoteNames( msg.data().m_hostName.getString(), msg.data().m_playerName.getString() );
 				IntroMessage intro;
-				intro.getDataRef().playerIndex = m_playerIndex;
+				intro.data().playerIndex = m_playerIndex;
 				m_connection->send(&intro);
 			}
 		//} else if (raw.type == MessageType::INTRO) {

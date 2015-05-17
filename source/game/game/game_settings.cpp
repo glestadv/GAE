@@ -22,36 +22,36 @@ using Shared::Platform::Chrono;
 
 namespace Glest { namespace Sim {
 
-GameSettings::GameSettings(const XmlNode *node) {
-	description = node->getChildStringValue("description");
-	mapPath = node->getChildStringValue("mapPath");
-	tilesetPath = node->getChildStringValue("tilesetPath");
-	techPath = node->getChildStringValue("techPath");
-	scenarioPath = node->getChildStringValue("scenarioPath");
-	thisFactionIndex = node->getChildIntValue("thisFactionIndex");
-	factionCount = node->getChildIntValue("factionCount");
-	fogOfWar = node->getChildBoolValue("fogOfWar");
-	shroudOfDarkness = node->getChildBoolValue("shroudOfDarkness");
-	randomStartLocs = node->getChildBoolValue("randomStartLocs");
+GameSettings::GameSettings( const XmlNode *node ) {
+	description = node->getChildStringValue( "description" );
+	mapPath = node->getChildStringValue( "mapPath" );
+	tilesetPath = node->getChildStringValue( "tilesetPath" );
+	techPath = node->getChildStringValue( "techPath" );
+	scenarioPath = node->getChildStringValue( "scenarioPath" );
+	thisFactionIndex = node->getChildIntValue( "thisFactionIndex" );
+	factionCount = node->getChildIntValue( "factionCount" );
+	fogOfWar = node->getChildBoolValue( "fogOfWar" );
+	shroudOfDarkness = node->getChildBoolValue( "shroudOfDarkness" );
+	randomStartLocs = node->getChildBoolValue( "randomStartLocs" );
 
-	defaultUnits = node->getChildBoolValue("defaultUnits");
-	defaultResources = node->getChildBoolValue("defaultResources");
-	defaultVictoryConditions = node->getChildBoolValue("defaultVictoryConditions");
+	defaultUnits = node->getChildBoolValue( "defaultUnits" );
+	defaultResources = node->getChildBoolValue( "defaultResources" );
+	defaultVictoryConditions = node->getChildBoolValue( "defaultVictoryConditions" );
 
-	XmlNode *factionsNode = node->getChild("factions");
-	assert(GameConstants::maxPlayers >= factionsNode->getChildCount());
+	XmlNode *factionsNode = node->getChild( "factions" );
+	assert( GameConstants::maxPlayers >= factionsNode->getChildCount() );
 	int i = 0;
 	for ( ; i < factionsNode->getChildCount(); ++i) {
-		XmlNode *factionNode = factionsNode->getChild("faction", i);
+		XmlNode *factionNode = factionsNode->getChild( "faction", i);
 
-		factionTypeNames[i] = factionNode->getChildStringValue("type");
-		playerNames[i] = factionNode->getChildStringValue("playerName");
-		factionControls[i] = enum_cast<ControlType>(factionNode->getChildIntValue("control"));
-		teams[i] = factionNode->getChildIntValue("team");
-		startLocationIndex[i] = factionNode->getChildIntValue("startLocationIndex");
-		slotIndex[i] = factionsNode->getChildIntValue("slotIndex");
-		colourIndices[i] = factionNode->getChildIntValue("colourIndex");
-		resourceMultipliers[i] = factionNode->getChildFloatValue("resourceMultiplier");
+		factionTypeNames[i] = factionNode->getChildStringValue( "type" );
+		playerNames[i] = factionNode->getChildStringValue( "playerName" );
+		factionControls[i] = enum_cast<ControlType>(factionNode->getChildIntValue( "control" ));
+		teams[i] = factionNode->getChildIntValue( "team" );
+		startLocationIndex[i] = factionNode->getChildIntValue( "startLocationIndex" );
+		slotIndex[i] = factionsNode->getChildIntValue( "slotIndex" );
+		colourIndices[i] = factionNode->getChildIntValue( "colourIndex" );
+		resourceMultipliers[i] = factionNode->getChildFloatValue( "resourceMultiplier" );
 	}
 	for ( ; i < GameConstants::maxPlayers; ++i) {
 		factionTypeNames[i] = "";
@@ -155,56 +155,56 @@ void GameSettings::compact() {
 	}
 }
 
-void GameSettings::save(XmlNode *node) const {
-	node->addChild("description", description);
-	node->addChild("mapPath", mapPath);
-	node->addChild("tilesetPath", tilesetPath);
-	node->addChild("techPath", techPath);
-	node->addChild("scenarioPath", scenarioPath);
-	node->addChild("thisFactionIndex", thisFactionIndex);
-	node->addChild("factionCount", factionCount);
-	node->addChild("fogOfWar", fogOfWar);
-	node->addChild("shroudOfDarkness", shroudOfDarkness);
-	node->addChild("randomStartLocs", randomStartLocs);
-	node->addChild("defaultUnits", defaultUnits);
-	node->addChild("defaultResources", defaultResources);
-	node->addChild("defaultVictoryConditions", defaultVictoryConditions);
+void GameSettings::save( XmlNode *node ) const {
+	node->addChild( "description", description );
+	node->addChild( "mapPath", mapPath );
+	node->addChild( "tilesetPath", tilesetPath );
+	node->addChild( "techPath", techPath );
+	node->addChild( "scenarioPath", scenarioPath );
+	node->addChild( "thisFactionIndex", thisFactionIndex );
+	node->addChild( "factionCount", factionCount );
+	node->addChild( "fogOfWar", fogOfWar );
+	node->addChild( "shroudOfDarkness", shroudOfDarkness );
+	node->addChild( "randomStartLocs", randomStartLocs );
+	node->addChild( "defaultUnits", defaultUnits );
+	node->addChild( "defaultResources", defaultResources );
+	node->addChild( "defaultVictoryConditions", defaultVictoryConditions );
 
-	XmlNode *factionsNode = node->addChild("factions");
+	XmlNode *factionsNode = node->addChild( "factions" );
 	for (int i = 0; i < factionCount; ++i) {
-		XmlNode *factionNode = factionsNode->addChild("faction");
-		factionNode->addChild("type", factionTypeNames[i]);
-		factionNode->addChild("playerName", playerNames[i]);
-		factionNode->addChild("control", factionControls[i]);
-		factionNode->addChild("team", teams[i]);
-		factionNode->addChild("startLocationIndex", startLocationIndex[i]);
-		factionNode->addChild("slotIndex", slotIndex[i]);
-		factionNode->addChild("colourIndex", colourIndices[i]);
-		factionNode->addChild("resourceMultiplier", resourceMultipliers[i]);
+		XmlNode *factionNode = factionsNode->addChild( "faction" );
+		factionNode->addChild( "type", factionTypeNames[i] );
+		factionNode->addChild( "playerName", playerNames[i] );
+		factionNode->addChild( "control", factionControls[i] );
+		factionNode->addChild( "team", teams[i] );
+		factionNode->addChild( "startLocationIndex", startLocationIndex[i] );
+		factionNode->addChild( "slotIndex", slotIndex[i] );
+		factionNode->addChild( "colourIndex", colourIndices[i] );
+		factionNode->addChild( "resourceMultiplier", resourceMultipliers[i] );
 	}
 }
 
-void GameSettings::randomiseFactions(const vector<string> &possibleFactions) {
-	Random random(Chrono::getCurMillis());
+void GameSettings::randomiseFactions( const vector<string> &possibleFactions ) {
+	Random random( (int)Chrono::getCurMillis() );
 	for (int i = 0; i < getFactionCount(); ++i) {
-		if (getFactionTypeName(i) == "Random") {
-			int ndx = random.randRange(0, possibleFactions.size() - 1);
-			setFactionTypeName(i, possibleFactions[ndx]);
+		if (getFactionTypeName( i ) == "Random" ) {
+			int ndx = random.randRange( 0, possibleFactions.size() - 1 );
+			setFactionTypeName( i, possibleFactions[ndx] );
 		}
 	}
 }
 
 void GameSettings::randomizeLocs( int maxPlayers ) {
 	Random rand;
-	rand.init( Shared::Platform::Chrono::getCurMillis() );
+	rand.init( (int)Shared::Platform::Chrono::getCurMillis() );
 
 	std::vector<int> locs;
-	for (int i = 0; i < maxPlayers; i++) {
+	for (int i = 0; i < maxPlayers; ++i) {
 		locs.push_back(i);
 	}
 	jumble(locs, rand);
 
-	for (int i = 0; i < maxPlayers; i++) {
+	for (int i = 0; i < maxPlayers; ++i) {
 		if (getFactionControl(i) != ControlType::CLOSED) {
 			setStartLocationIndex( i, locs.back() );
 			locs.pop_back();

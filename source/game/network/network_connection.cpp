@@ -162,7 +162,7 @@ void NetworkHost::update(NetworkInterface *networkInterface) {
 							char *buffer = ((char*)event.packet->data) + MsgHeader::headerSize;
 							memcpy((char*)rawMsg.data, buffer, header.messageSize);
 						} else {
-							rawMsg.data = 0;
+							rawMsg.data = nullptr;
 						}
 
 						session->pushMessage(rawMsg);

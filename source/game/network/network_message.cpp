@@ -46,83 +46,6 @@ void Message::log() const {
 }
 
 // =====================================================
-//	class IntroMessage
-// =====================================================
-//
-//IntroMessage::IntroMessage() {
-//	data.messageType = MessageType::INVALID_MSG;
-//	data.playerIndex = -1;
-//}
-//
-//IntroMessage::IntroMessage(const string &pName, const string &hName, int playerIndex) {
-//	data.messageType = getType();
-//	data.messageSize = sizeof(Data) - 4;
-//	data.playerName = pName;
-//	data.hostName = hName;
-//	data.playerIndex = static_cast<int16>(playerIndex);
-//	NETWORK_LOG( "IntroMessage constructed, player name: " << pName << ", host name: " << hName << ", player index: " << playerIndex );
-//}
-//
-//IntroMessage::IntroMessage(RawMessage raw) {
-//	data.messageType = raw.type;
-//	data.messageSize = raw.size;
-//	memcpy(&data.playerName, raw.data, raw.size);
-//	delete [] raw.data;
-//	NETWORK_LOG( "IntroMessage received, player name: " << data.playerName.getString() << ", host name: " << data.hostName.getString() << ", player index: " << data.playerIndex );
-//}
-//
-//void IntroMessage::log() const {
-//	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
-//		<< ", messageSize: " << data.messageSize << ", player name: " << data.playerName.getString()
-//		<< ", host name: " << data.hostName.getString() << ", player index: " << data.playerIndex
-//	);
-//}
-
-// =====================================================
-//	class ReadyMessage
-// =====================================================
-
-ReadyMessage::ReadyMessage() {
-	data.messageType = getType();
-	data.messageSize = 0;
-}
-
-ReadyMessage::ReadyMessage(RawMessage raw) {
-	data.messageType = raw.type;
-	data.messageSize = raw.size;
-	if (raw.size || raw.data) {
-		throw GarbledMessage(MessageType::READY);
-	}
-}
-
-// =====================================================
-//	class AiSeedSyncMessage
-// =====================================================
-
-AiSeedSyncMessage::AiSeedSyncMessage(){
-	data.messageType = MessageType::INVALID_MSG;
-	data.messageSize = 0;
-	data.seedCount = -1;
-}
-
-AiSeedSyncMessage::AiSeedSyncMessage(int count, int32 *seeds) {
-	assert(count > 0 && count <= maxAiSeeds);
-	data.messageType = getType();
-	data.messageSize = sizeof(Data) - 4;
-	data.seedCount = count;
-	for (int i=0; i < count; ++i) {
-		data.seeds[i] = seeds[i];
-	}
-}
-
-AiSeedSyncMessage::AiSeedSyncMessage(RawMessage raw) {
-	data.messageType = raw.type;
-	data.messageSize = raw.size;
-	memcpy(&data.seedCount, raw.data, raw.size);
-	delete [] raw.data;
-}
-
-// =====================================================
 //	class LaunchMessage
 // =====================================================
 
@@ -633,7 +556,7 @@ int32 KeyFrame::getNextChecksum() {
 		);
 		throw GameSyncError("Insufficient checksums in keyFrame.");
 	}
-	SYNC_LOG( "Check:: checksums[" << (checksumCounter) << "] == " << (checksums[checksumCounter]) );
+	SYNC_LOG( "Check:: checksums[" << (checksumCounter) << "] == " << intToHex(checksums[checksumCounter]) );
 	return checksums[checksumCounter++];
 }
 
@@ -642,7 +565,7 @@ void KeyFrame::addChecksum(int32 cs) {
 		throw runtime_error("Error: insufficient room for checksums in keyframe, increase KeyFrame::max_checksums.");
 	}
 	checksums[checksumCount++] = cs;
-	SYNC_LOG( "Check:: checksums[" << (checksumCount - 1) << "] == " << (checksums[checksumCount - 1]) );
+	SYNC_LOG( "Check:: checksums[" << (checksumCount - 1) << "] == " << intToHex(checksums[checksumCount - 1]) );
 }
 
 #endif

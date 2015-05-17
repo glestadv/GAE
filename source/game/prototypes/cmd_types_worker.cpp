@@ -288,12 +288,12 @@ void RepairCommandType::update(Unit *unit) const {
 		} else {
 			// if no more damaged units and on auto command, turn around
 			if (command->isAuto() && command->hasPos2()) {
-				if (Config::getInstance().getGsAutoReturnEnabled()) {
+				//if (Config::getInstance().getGsAutoReturnEnabled()) {
 					command->popPos();
 					unit->clearPath();
-				} else {
-					unit->finishCommand();
-				}
+				//} else {
+				//	unit->finishCommand();
+				//}
 			}
 			targetPos = command->getPos();
 		}

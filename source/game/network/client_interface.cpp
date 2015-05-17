@@ -82,7 +82,7 @@ void ClientInterface::reset() {
 
 void ClientInterface::sendHelloMessage() {
 	HelloMessage msg;
-	msg.getDataRef().m_versionString = getNetworkVersionString();
+	msg.data().m_versionString = getNetworkVersionString();
 	m_connection->send(&msg);
 }
 
@@ -91,13 +91,13 @@ void ClientInterface::doIntroMessage() {
 	RawMessage msg = m_connection->getNextMessage();
 	if (msg.type == MessageType::BAD_VERSION) {
 		BadVersionMessage bad( msg );
-		throw VersionMismatch( NetSource::SERVER, bad.getDataRef().m_versionString.getString(), getNetworkVersionString() );
+		throw VersionMismatch( NetSource::SERVER, bad.data().m_versionString.getString(), getNetworkVersionString() );
 	}
 	if (msg.type != MessageType::INTRO) {
 		throw InvalidMessage( MessageType::INTRO, msg.type );
 	}
 	IntroMessage introMsg(msg);
-	playerIndex = introMsg.getDataRef().playerIndex;
+	playerIndex = introMsg.data().playerIndex;
 	if (playerIndex < 0 || playerIndex >= GameConstants::maxPlayers) {
 		throw GarbledMessage(introMsg.getType(), NetSource::SERVER);
 	}
@@ -409,23 +409,26 @@ void ClientInterface::checkUnitBorn(Unit *unit, int32 cs) {
 	if (cs != server_cs) {
 		NETWORK_LOG( "ClientInterface::checkUnitBorn(): Sync Error: unit type: " << unit->getType()->getName()
 			<< " unit id: " << unit->getId() << " faction: " << unit->getFactionIndex() );
-		NETWORK_LOG( "\tserver checksum " << intToHex(server_cs) << " my checksum " << intToHex(cs) );
+		NETWORK_LOG( "\tserver checksum " << intToHex( server_cs ) << " my checksum " << intToHex( cs ) );
 		handleSyncError();
 	}
 }
 
 void ClientInterface::checkCommandUpdate(Unit *unit, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
-	if (cs != keyFrame.getNextChecksum()) {
+	int32 server_cs = keyFrame.getNextChecksum();
+	if (cs != server_cs) {
 		NETWORK_LOG( "ClientInterface::checkCommandUpdate(): Sync Error: unit id: " << unit->getId() << " unit type: " << unit->getType()->getName()
 			<< ", skill class: " << SkillClassNames[unit->getCurrSkill()->getClass()] );
+		NETWORK_LOG( "\tserver checksum " << intToHex( server_cs ) << " my checksum " << intToHex( cs ) );
 		handleSyncError();
 	}
 }
 
 void ClientInterface::checkProjectileUpdate(Unit *unit, int endFrame, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
-	if (cs != keyFrame.getNextChecksum()) {
+	int32 server_cs = keyFrame.getNextChecksum();
+	if (cs != server_cs) {
 		if (unit->getCurrCommand()->getUnit()) {
 			NETWORK_LOG( "ClientInterface::checkProjectileUpdate(): Sync Error: unit id: " << unit->getId() << " skill: "
 				<< unit->getCurrSkill()->getName() << " target id: "
@@ -435,16 +438,19 @@ void ClientInterface::checkProjectileUpdate(Unit *unit, int endFrame, int32 cs) 
 				<< unit->getCurrSkill()->getName() << " target pos: "
 				<< unit->getCurrCommand()->getPos() << " end frame: " << endFrame );
 		}
+		NETWORK_LOG( "\tserver checksum " << intToHex( server_cs ) << " my checksum " << intToHex( cs ) );
 		handleSyncError();
 	}
 }
 
 void ClientInterface::checkAnimUpdate(Unit *unit, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
-	if (cs != keyFrame.getNextChecksum()) {
+	int32 server_cs = keyFrame.getNextChecksum();
+	if (cs != server_cs) {
 		const CycleInfo &inf = m_skillCycleTable->lookUp(unit);
 		NETWORK_LOG( "ClientInterface::checkAnimUpdate(): Sync Error: unit id: " << unit->getId()
 			<< " attack offset: " << inf.getAttackOffset() );
+		NETWORK_LOG( "\tserver checksum " << intToHex( server_cs ) << " my checksum " << intToHex( cs ) );
 		handleSyncError();
 	}
 }

@@ -95,11 +95,11 @@ public:
 	}
 
 	// Implementing Message
-	virtual MessageType getType() const  { return MessageType(MsgType); }
-	virtual unsigned int getSize() const { return sizeof( m_data ); }
-	virtual const void* getData() const  { return &m_data; }
+	virtual MessageType  getType() const override { return MessageType(MsgType); }
+	virtual unsigned int getSize() const override { return sizeof( m_data ); }
+	virtual const void*  getData() const override { return &m_data; }
 
-	DataType& getDataRef() { return m_data; }
+	DataType& data() { return m_data; }
 };
 
 static const int maxVersionStringSize = 64;
@@ -132,61 +132,38 @@ typedef SimpleMessage< MessageType::BAD_VERSION, BadVersionMessageData > BadVers
 // ==============================================================
 /**	Message sent from the server to the client
   *	when the client connects and vice versa */
-struct IntroMessageData {
-	uint32 messageType :  8;
-	uint32 messageSize : 24;
+struct IntroMessageData : public MsgHeader {
 	int16 playerIndex;
 };
 
 typedef SimpleMessage< MessageType::INTRO, IntroMessageData > IntroMessage;
 
+static const int maxAiSeeds = 6;
 
 // ==============================================================
-//	class AiSeedSyncMessage
+//	struct AiSeedSyncData & class AiSeedSyncMessage
 // ==============================================================
 /** Message sent if there are AI players, to seed their Random objects */
-class AiSeedSyncMessage : public Message {
-private:
-	static const int maxAiSeeds = 3;
 
-private:
-	struct Data {
-		uint32 messageType :  8;
-		uint32 messageSize : 24;
-		int8 seedCount;
-		int32 seeds[maxAiSeeds];
-	} data;
+struct AiSeedSyncData : public MsgHeader {
+	int8 seedCount;
+	int32 seeds[maxAiSeeds];
+};
 
+class AiSeedSyncMessage : public SimpleMessage< MessageType::AI_SYNC, AiSeedSyncData > {
 public:
-	AiSeedSyncMessage();
-	AiSeedSyncMessage(int count, int32 *seeds);
-	AiSeedSyncMessage(RawMessage raw);
+	AiSeedSyncMessage() : SimpleMessage< MessageType::AI_SYNC, AiSeedSyncData >() { m_data.seedCount = 0; memset(m_data.seeds, 0, maxAiSeeds * sizeof(int32)); }
+	AiSeedSyncMessage(RawMessage raw) : SimpleMessage< MessageType::AI_SYNC, AiSeedSyncData >(raw) { }
 
-	// Implementing Message
-	virtual MessageType getType() const		{return MessageType::AI_SYNC;}
-	virtual unsigned int getSize() const	{return sizeof(data);}
-	virtual const void* getData() const		{return &data;}
-
-	int getSeedCount() const { return data.seedCount; }
-	int32 getSeed(int i) const { return data.seeds[i]; }
+	int getSeedCount() const { return m_data.seedCount; }
+	int32 getSeed(int i) const { return m_data.seeds[i]; }
 };
 
 // ==============================================================
-//	class ReadyMessage
+//	typedef ReadyMessage
 // ==============================================================
-/**	Message sent at the beggining of the game */
-class ReadyMessage : public Message {
-private:
-	MsgHeader data;
-
-public:
-	ReadyMessage();
-	ReadyMessage(RawMessage raw);
-
-	virtual MessageType getType() const		{return MessageType::READY;}
-	virtual unsigned int getSize() const	{return sizeof(data);}
-	virtual const void* getData() const		{return &data;}
-};
+/**	Message sent at the begining of the game */
+typedef SimpleMessage< MessageType::READY, MsgHeader > ReadyMessage;
 
 // ==============================================================
 //	class LaunchMessage
@@ -259,9 +236,9 @@ public:
 	DataSyncMessage(RawMessage raw);
 	DataSyncMessage(World &world);
 
-	virtual MessageType getType() const		{return MessageType::DATA_SYNC;}
-	virtual unsigned int getSize() const	{return m_packetSize;}
-	virtual const void* getData() const		{return m_packetData;}
+	virtual MessageType getType() const override  { return MessageType::DATA_SYNC; }
+	virtual unsigned int getSize() const override { return m_packetSize; }
+	virtual const void* getData() const override  { return m_packetData; }
 	virtual void log() const override;
 
 	int32 getChecksum(int i) { return m_checkSumData[i]; }

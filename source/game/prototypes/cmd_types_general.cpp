@@ -1706,14 +1706,13 @@ CmdResult SetMeetingPointCommandType::check(const Unit *unit, const Command &com
   * @return true if the unit has any enemy in range, with results written to rangedPtr and past.
   *  false if no enemies in range, rangedPtr & past will be unchanged.
   */
-bool CommandType::unitInRange(const Unit *unit, int range, Unit **rangedPtr, 
-					const AttackSkillTypes *asts, const AttackSkillType **past) {
+bool CommandType::unitInRange( const Unit *unit, int range, Unit **rangedPtr, const AttackSkillTypes *asts, const AttackSkillType **past ) {
 	_PROFILE_COMMAND_UPDATE();
 	Vec2i effectivePos;
 	fixedVec2 fixedCentre;
 	fixed halfSize;
 	if (unit->isCarried()) {
-		Unit *carrier = g_world.getUnit(unit->getCarrier());
+		Unit *carrier = g_world.getUnit( unit->getCarrier() );
 		effectivePos = carrier->getCenteredPos();
 		fixedCentre = carrier->getFixedCenteredPos();
 		halfSize = carrier->getType()->getHalfSize();
@@ -1727,20 +1726,20 @@ bool CommandType::unitInRange(const Unit *unit, int range, Unit **rangedPtr,
 
 	// if called with a target unit, check that is still alive/visible
 	if (*rangedPtr) {
-		if ((*rangedPtr)->isDead() || !asts->getZone((*rangedPtr)->getCurrZone())) {
-			*rangedPtr = 0;
+		if ((*rangedPtr)->isDead() || !asts->getZone( (*rangedPtr)->getCurrZone() )) {
+			*rangedPtr = nullptr;
 		}
 		if (*rangedPtr && (*rangedPtr)->isCloaked() && (*rangedPtr)->getTeam() != unit->getTeam()) {
-			Vec2i tpos = Map::toTileCoords((*rangedPtr)->getCenteredPos());
+			Vec2i tpos = Map::toTileCoords( (*rangedPtr)->getCenteredPos() );
 			int cloakGroup = (*rangedPtr)->getType()->getCloakType()->getCloakGroup();
-			if (!g_cartographer.canDetect(unit->getTeam(), cloakGroup, tpos)) {
-				*rangedPtr = 0;
+			if (!g_cartographer.canDetect( unit->getTeam(), cloakGroup, tpos )) {
+				*rangedPtr = nullptr;
 			}
 		}
 	}
 	if (range == 0) { // blind unit
 		if (*rangedPtr) {
-			*rangedPtr = NULL;
+			*rangedPtr = nullptr;
 		}
 		return false;
 	}
@@ -1749,30 +1748,30 @@ bool CommandType::unitInRange(const Unit *unit, int range, Unit **rangedPtr,
 	} else {
 		Targets enemies;
 		Vec2i pos;
-		PosCircularIteratorOrdered pci(g_world.getMap()->getBounds(), effectivePos, 
-			g_world.getPosIteratorFactory().getInsideOutIterator(1, range + halfSize.intp()));
+		PosCircularIteratorOrdered pci( g_world.getMap()->getBounds(), effectivePos, 
+			g_world.getPosIteratorFactory().getInsideOutIterator( 1, range + halfSize.intp() ) );
 
 		Map *map = g_world.getMap();
-		while (pci.getNext(pos, distance)) {
+		while (pci.getNext( pos, distance )) {
 			foreach_enum (Zone, z) { // all zones
-				if (!asts || asts->getZone(z)) { // looking for target in z?
+				if (!asts || asts->getZone( z )) { // looking for target in z?
 					// does cell contain a bad guy?
-					Unit *possibleEnemy = map->getCell(pos)->getUnit(z);
-					if (possibleEnemy && possibleEnemy->isAlive() && !unit->isAlly(possibleEnemy)) {
+					Unit *possibleEnemy = map->getCell( pos )->getUnit( z );
+					if (possibleEnemy && possibleEnemy->isAlive() && !unit->isAlly( possibleEnemy )) {
 						if (possibleEnemy->isCloaked()) {
 							int cloakGroup = possibleEnemy->getCloakGroup();
-							Vec2i tpos = Map::toTileCoords(possibleEnemy->getCenteredPos());
-							if (!g_cartographer.canDetect(unit->getTeam(), cloakGroup, tpos)) {
+							Vec2i tpos = Map::toTileCoords( possibleEnemy->getCenteredPos() );
+							if (!g_cartographer.canDetect( unit->getTeam(), cloakGroup, tpos )) {
 								continue;
 							}
 						}
 						// If bad guy has an attack command we can short circut this loop now
-						if (possibleEnemy->getType()->hasCommandClass(CmdClass::ATTACK)) {
+						if (possibleEnemy->getType()->hasCommandClass( CmdClass::ATTACK )) {
 							*rangedPtr = possibleEnemy;
 							goto unitOnRange_exitLoop;
 						}
 						// otherwise, we'll record it and figure out who to slap later.
-						enemies.record(possibleEnemy, distance);
+						enemies.record( possibleEnemy, distance );
 					}
 				}
 			}
@@ -1786,33 +1785,31 @@ bool CommandType::unitInRange(const Unit *unit, int range, Unit **rangedPtr,
 		needDistance = true;
 	}
 unitOnRange_exitLoop:
-	assert(*rangedPtr);
+	assert( *rangedPtr );
 	
 	if (needDistance) {
 		const fixed &targetHalfSize = (*rangedPtr)->getType()->getHalfSize();
-		distance = fixedCentre.dist((*rangedPtr)->getFixedCenteredPos()) - targetHalfSize;
+		distance = fixedCentre.dist( (*rangedPtr)->getFixedCenteredPos() ) - targetHalfSize;
 	}
 
 	// check to see if we like this target.
 	if (asts && past) {
-		return bool(*past = asts->getPreferredAttack(unit, *rangedPtr, (distance - halfSize).intp()));
+		return bool(*past = asts->getPreferredAttack( unit, *rangedPtr, (distance - halfSize).intp() ));
 	}
 	return true;
 }
 
-bool CommandType::attackerInSight(const Unit *unit, Unit **rangedPtr) {
-	return unitInRange(unit, unit->getSight(), rangedPtr, NULL, NULL);
+bool CommandType::attackerInSight( const Unit *unit, Unit **rangedPtr ) {
+	return unitInRange( unit, unit->getSight(), rangedPtr, nullptr, nullptr );
 }
 
-bool CommandType::attackableInRange(const Unit *unit, Unit **rangedPtr, 
-			const AttackSkillTypes *asts, const AttackSkillType **past) {
-	int range = min(unit->getMaxRange(asts), unit->getSight());
-	return unitInRange(unit, range, rangedPtr, asts, past);
+bool CommandType::attackableInRange( const Unit *unit, Unit **rangedPtr, const AttackSkillTypes *asts, const AttackSkillType **past ) {
+	int range = min( unit->getMaxRange( asts ), unit->getSight() );
+	return unitInRange( unit, range, rangedPtr, asts, past );
 }
 
-bool CommandType::attackableInSight(const Unit *unit, Unit **rangedPtr, 
-			const AttackSkillTypes *asts, const AttackSkillType **past) {
-	return unitInRange(unit, unit->getSight(), rangedPtr, asts, past);
+bool CommandType::attackableInSight( const Unit *unit, Unit **rangedPtr, const AttackSkillTypes *asts, const AttackSkillType **past ) {
+	return unitInRange( unit, unit->getSight(), rangedPtr, asts, past );
 }
 
 }}//end namespace

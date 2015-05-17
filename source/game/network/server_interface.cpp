@@ -497,7 +497,11 @@ void ServerInterface::syncAiSeeds(int aiCount, int *seeds) {
 	NETWORK_LOG( "ServerInterface::syncAiSeeds(): Sending " << aiCount << " Ai random number seeds..." );
 	assert(aiCount && seeds);
 	SimulationInterface::syncAiSeeds(aiCount, seeds);
-	AiSeedSyncMessage seedSyncMsg(aiCount, seeds);
+	AiSeedSyncMessage seedSyncMsg;
+	seedSyncMsg.data().seedCount = aiCount;
+	for (int i=0; i < aiCount; ++i) {
+		seedSyncMsg.data().seeds[i] = seeds[i];
+	}
 	broadcastMessage(&seedSyncMsg);
 	m_connection.flush();
 }

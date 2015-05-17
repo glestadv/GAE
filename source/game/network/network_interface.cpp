@@ -74,17 +74,18 @@ void NetworkInterface::postCommandUpdate(Unit *unit) {
 		case SkillClass::MOVE:
 			cs.add(unit->getNextPos());
 			SYNC_LOG( "Cmd:: Frame: " << frame << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() 
-				<< ", CurrSkillId: " << unit->getCurrSkill()->getId() << ", NextPos: " << unit->getNextPos().x << "," << unit->getNextPos().y );
+				<< ", CurrCmdId: " << unit->getCurrCommand()->getId() << ", CurrSkillId: " << unit->getCurrSkill()->getId() << ", NextPos: " << unit->getNextPos() );
 			break;
 		case SkillClass::ATTACK:
 		case SkillClass::REPAIR:
 		case SkillClass::BUILD:
 			cs.add(unit->getTarget());
 			SYNC_LOG( "Cmd:: Frame: " << frame << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() 
-				<< ", CurrSkillId: " << unit->getCurrSkill()->getId() << ", TargetUnit: " << unit->getTarget() );
+				<< ", CurrCmdId: " << unit->getCurrCommand()->getId() << ", CurrSkillId: " << unit->getCurrSkill()->getId() << ", TargetUnit: " << unit->getTarget() );
 			break;
 		default:
-			SYNC_LOG( "Cmd:: Frame: " << frame << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() << ", CurrSkillId: " << unit->getCurrSkill()->getId() );
+			SYNC_LOG( "Cmd:: Frame: " << frame << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex()
+				<< ", CurrCmdId: " << (unit->anyCommand() ? unit->getCurrCommand()->getId() : -1) << ", CurrSkillId: " << unit->getCurrSkill()->getId() );
 			break;
 	}
 	checkCommandUpdate(unit, cs.getSum());

@@ -28,10 +28,12 @@ class MenuStateJoinGame;
 
 WRAPPED_ENUM( ConnectResult, CANCELLED, FAILED, SUCCESS );
 
+using Glest::Net::Ip;
+
 // ===============================
 // 	class ConnectThread
 // ===============================
-using Glest::Net::Ip;
+
 class ConnectThread : public Thread {
 private:
 	MenuStateJoinGame &m_menu;
