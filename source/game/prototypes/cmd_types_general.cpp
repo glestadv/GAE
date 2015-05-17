@@ -359,7 +359,9 @@ bool CommandType::unitInRange( const Unit *unit, int range, Unit **rangedPtr, co
 			g_world.getPosIteratorFactory().getInsideOutIterator( 1, range + halfSize.intp() ) );
 
 		Map *map = g_world.getMap();
-		while (pci.getNext( pos, distance )) {
+
+		bool go = true;
+		while (pci.getNext( pos, distance ) && go) {
 			foreach_enum (Zone, z) { // all zones
 				if (!asts || asts->getZone( z )) { // looking for target in z?
 					// does cell contain a bad guy?
@@ -372,32 +374,42 @@ bool CommandType::unitInRange( const Unit *unit, int range, Unit **rangedPtr, co
 								continue;
 							}
 						}
+
 						// If bad guy has an attack command we can short circut this loop now
 						if (possibleEnemy->getType()->hasCommandClass( CmdClass::ATTACK )) {
 							*rangedPtr = possibleEnemy;
-							goto unitOnRange_exitLoop;
+							SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", Found target with attack, Attacking unit: " 
+								<< possibleEnemy->getId() << " @ " << possibleEnemy->getPos());
+							go = false;
+						} else {
+							// otherwise, we'll record it and figure out who to slap later.
+							SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", Found potential target " 
+								<< possibleEnemy->getId() << " @ " << possibleEnemy->getPos() );
+							enemies.record( possibleEnemy, distance );
 						}
-						// otherwise, we'll record it and figure out who to slap later.
-						enemies.record( possibleEnemy, distance );
 					}
 				}
 			}
 		}
 	
-		if (!enemies.size()) {
-			return false;
+		if (*rangedPtr == nullptr) {
+			if (!enemies.size()) {
+				return false;
+			}	
+			*rangedPtr = enemies.getNearest();
+			needDistance = true;
 		}
-	
-		*rangedPtr = enemies.getNearest();
-		needDistance = true;
 	}
-unitOnRange_exitLoop:
+
 	assert( *rangedPtr );
 	
 	if (needDistance) {
 		const fixed &targetHalfSize = (*rangedPtr)->getType()->getHalfSize();
 		distance = fixedCentre.dist( (*rangedPtr)->getFixedCenteredPos() ) - targetHalfSize;
 	}
+
+	SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() 
+		<< ", new target unit: " << (*rangedPtr)->getId() << " @ " << (*rangedPtr)->getPos() );
 
 	// check to see if we like this target.
 	if (asts && past) {

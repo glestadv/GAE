@@ -129,7 +129,7 @@ bool AttackCommandType::updateGeneric( Unit *unit, Command *command, const Attac
 	if (attackableInRange( unit, &target, &attackSkillTypes, &ast )) { // found a target in range
 		assert( ast );
 		if (unit->getEp() >= ast->getEpCost()) { // enough ep for skill?
-			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", new target: " << target->getId() );
+			//SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", new target: " << target->getId() );
 			unit->setCurrSkill( ast );
 			unit->setTarget( target );
 		} else {
