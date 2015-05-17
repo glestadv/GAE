@@ -25,7 +25,7 @@ namespace Glest { namespace Net {
 //	class NetworkSession
 // =====================================================
 
-WRAPPED_ENUM( DisconnectReason, DEFAULT, IN_GAME, NO_FREE_SLOTS )
+WRAPPED_ENUM( DisconnectReason, DEFAULT, IN_GAME, NO_FREE_SLOTS, VERSION_MISMATCH )
 
 class NetworkSession {
 protected:

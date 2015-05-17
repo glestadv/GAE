@@ -237,39 +237,31 @@ void NetworkHost::removeSession(NetworkSession *session) {
 //	class ClientHost
 // =====================================================
 
-void ClientHost::connect(const string &address, int port) {
-	assert(NetworkHost::getSessionCount() == 0);
+void ClientHost::connect( const string &address, int port ) {
+	assert( NetworkHost::getSessionCount() == 0 );
 
-	ENetHost *client = enet_host_create(NULL /* create a client host */,
-                1 /* only allow 1 outgoing connection */,
-                2 /* allow up 2 channels to be used, 0 and 1 */,
-                57600 / 8 /* 56K modem with 56 Kbps downstream bandwidth */,
-                14400 / 8 /* 56K modem with 14 Kbps upstream bandwidth */);
-
-    if (client == NULL) {
+	// create host, 1 connection, 2 channels, no bandwidth limits
+	ENetHost *client = enet_host_create( nullptr, 1, 2, 0, 0 );
+    if (client == nullptr) {
 		NETWORK_LOG( "An error occurred while trying to create an ENet client host." );
-        throw runtime_error("An error occurred while trying to create an ENet client host.");
+        throw runtime_error( "An error occurred while trying to create an ENet client host." );
     }
 
-	NetworkHost::setHost(client);
+	NetworkHost::setHost( client );
 
 	ENetAddress eNetAddress;
-	enet_address_set_host(&eNetAddress, address.c_str());
+	enet_address_set_host( &eNetAddress, address.c_str() );
     eNetAddress.port = port;
 
-	connect(client, &eNetAddress);
+	connect( client, &eNetAddress );
 }
 
-void ClientHost::connect(ENetHost *client, ENetAddress *eNetAddress) {
-    ENetEvent event;
-
+void ClientHost::connect( ENetHost *client, ENetAddress *eNetAddress ) {
     /* Initiate the connection, allocating the two channels 0 and 1. */
-    ENetPeer *peer = enet_host_connect(client, eNetAddress, 2, 0);
-    
-    if (peer == NULL)
-    {
+    ENetPeer *peer = enet_host_connect( client, eNetAddress, 2, 0 );
+    if (peer == nullptr) {
 	   NETWORK_LOG( "No available peers for initiating an ENet connection." );
-       throw runtime_error("No available peers for initiating an ENet connection.");
+       throw runtime_error( "No available peers for initiating an ENet connection." );
     }
 }
 
@@ -278,13 +270,13 @@ bool ClientHost::isConnected() {
 }
 
 NetworkSession *ClientHost::getServerSession() {
-	assert(isConnected());
-	return NetworkHost::getSession(0);
+	assert( isConnected() );
+	return NetworkHost::getSession( 0 );
 }
 
-void ClientHost::send(const Message* message) {
+void ClientHost::send( const Message* message ) {
 	if (isConnected()) {
-		getServerSession()->send(message);
+		getServerSession()->send( message );
 	}
 }
 /*
@@ -299,7 +291,7 @@ void ClientHost::setRemoteNames(const string &hostName, const string &playerName
 //	class ServerHost
 // =====================================================
 
-void ServerHost::bind(int port) {    
+void ServerHost::bind( int port ) {    
     /* Bind the server to the default localhost.     */
     /* A specific host address can be specified by   */
     /* enet_address_set_host (& address, "x.x.x.x"); */
@@ -307,20 +299,18 @@ void ServerHost::bind(int port) {
     m_address.port = port;
 }
 
-void ServerHost::listen(int connectionQueueSize) {
+void ServerHost::listen( int connectionQueueSize ) {
 	if (NetworkHost::isHostSet()) {
 		//NetworkHost::setPeerCount(connectionQueueSize); //doesn't seem to work
 	} else {
-		ENetHost *server = enet_host_create(&m_address, connectionQueueSize,
-									  2      /* allow up to 2 channels to be used, 0 and 1 */,
-									  0      /* assume any amount of incoming bandwidth */,
-									  0      /* assume any amount of outgoing bandwidth */);
+		// create host, 1 connection, 2 channels, no bandwidth limits
+		ENetHost *server = enet_host_create( &m_address, connectionQueueSize, 2, 0, 0 );
 		if (server == NULL) {
 			NETWORK_LOG( "An error occurred while trying to create an ENet server host." );
-			throw runtime_error("An error occurred while trying to create an ENet server host.");
+			throw runtime_error( "An error occurred while trying to create an ENet server host." );
 		}
 
-		NetworkHost::setHost(server);
+		NetworkHost::setHost( server );
 	}
 }
 

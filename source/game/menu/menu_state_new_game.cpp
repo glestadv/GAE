@@ -761,6 +761,7 @@ void MenuStateNewGame::updateControlers() {
 			gs.setPlayerName(i, "");
 			gs.setTeam(i, -1);
 			gs.setStartLocationIndex(i, -1);
+			gs.setSlotIndex(i, -1);
 			gs.setColourIndex(i, -1);
 			gs.setResourceMultiplier(i, 1.f);
 			m_playerSlots[i]->setNameText(g_lang.get("NoPlayer"));
@@ -832,6 +833,7 @@ void MenuStateNewGame::updateControlers() {
 			assert(m_playerSlots[i]->getSelectedTeamIndex() >= 0 && m_playerSlots[i]->getSelectedTeamIndex() < GameConstants::maxPlayers);
 			gs.setTeam(i, m_playerSlots[i]->getSelectedTeamIndex());
 			gs.setStartLocationIndex(i, i);
+			gs.setSlotIndex(i, i);
 			assert(m_playerSlots[i]->getSelectedColourIndex() >= 0 && m_playerSlots[i]->getSelectedColourIndex() < GameConstants::maxColours);
 			gs.setColourIndex(i, m_playerSlots[i]->getSelectedColourIndex());
 			m_playerSlots[i]->setFree(false);

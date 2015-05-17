@@ -148,7 +148,7 @@ int ServerInterface::getSlotIndexBySession(NetworkSession *session) {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		if(slots[i] && slots[i]->getSession() == session) {
 			return i;
-		}
+		} 
 	}
 	return -1;
 }
@@ -456,10 +456,10 @@ void ServerInterface::onConnect(NetworkSession *session) {
 	if (index != -1) {
 		slots[index]->setSession(session);
 
-		NETWORK_LOG( "Connection established, slot " << index << " sending intro message." );
-		IntroMessage networkMessageIntro(getNetworkVersionString(),
-			g_config.getNetPlayerName(), m_connection.getHostName(), index);
-		slots[index]->send(&networkMessageIntro);
+		NETWORK_LOG( "Connection established, slot " << index << " awaiting hello message." );
+		//IntroMessage networkMessageIntro(getNetworkVersionString(),
+		//	g_config.getNetPlayerName(), m_connection.getHostName(), index);
+		//slots[index]->send(&networkMessageIntro);
 	} else {
 		session->disconnect(DisconnectReason::NO_FREE_SLOTS);
 		///@todo add spectator handling code here

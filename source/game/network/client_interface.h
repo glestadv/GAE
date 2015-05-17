@@ -109,6 +109,7 @@ public:
 private:
 	void waitForMessage(int timeout = messageWaitTimeout);
 
+	void sendHelloMessage();
 	void doIntroMessage();
 	void doLaunchMessage();
 };

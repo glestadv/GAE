@@ -46,6 +46,7 @@ private:
 	int factionCount;
 	int teams[maxPlayers];
 	int startLocationIndex[maxPlayers];
+	int slotIndex[maxPlayers];
 	int colourIndices[maxPlayers];
 
 	bool defaultUnits;
@@ -83,6 +84,7 @@ public:
 	int getFactionCount() const						{return factionCount;}
 	int getTeam(int i) const						{ASSERT_I(); return teams[i];}
 	int getStartLocationIndex(int i) const			{ASSERT_I(); return startLocationIndex[i];}
+	int getSlotIndex(int i) const					{ASSERT_I(); return slotIndex[i];}
 	int getColourIndex(int i) const					{ASSERT_I(); return colourIndices[i];}
 	int getTilesetSeed() const						{return tilesetSeed;}
 
@@ -108,6 +110,7 @@ public:
 	void setFactionCount(int v)						{factionCount = v;}
 	void setTeam(int i, int v)						{ASSERT_I(); teams[i] = v;}
 	void setStartLocationIndex(int i, int v)		{ASSERT_I(); startLocationIndex[i] = v;}
+	void setSlotIndex(int i, int v)					{ASSERT_I(); slotIndex[i] = v;}
 	void setColourIndex(int i, int v)				{ASSERT_I(); colourIndices[i] = v;}
 	void setTilesetSeed(int v)						{tilesetSeed = v;}
 

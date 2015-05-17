@@ -73,11 +73,26 @@ void ConnectionSlot::processMessages() {
 			NETWORK_LOG( "Received text message on slot " << m_playerIndex );
 			TextMessage textMsg(raw);
 			m_serverInterface->process(textMsg, m_playerIndex);
-		} else if (raw.type == MessageType::INTRO) {
-			IntroMessage msg(raw);
-			NETWORK_LOG( "Received intro message on slot " << m_playerIndex << ", host name = "
-				<< msg.getHostName() << ", player name = " << msg.getPlayerName() );
-			m_connection->setRemoteNames(msg.getHostName(), msg.getPlayerName());
+		} else if (raw.type == MessageType::HELLO) {
+			HelloMessage msg(raw);
+			std::string ourVer = getNetworkVersionString();
+			std::string theirVer = msg.getDataRef().m_versionString.getString();
+			if (ourVer != theirVer) {
+				BadVersionMessage msg;
+				msg.getDataRef().m_versionString = ourVer;
+				m_connection->send(&msg);
+				m_connection->disconnect( DisconnectReason::VERSION_MISMATCH );
+			} else {
+				m_connection->setRemoteNames( msg.getDataRef().m_hostName.getString(), msg.getDataRef().m_playerName.getString() );
+				IntroMessage intro;
+				intro.getDataRef().playerIndex = m_playerIndex;
+				m_connection->send(&intro);
+			}
+		//} else if (raw.type == MessageType::INTRO) {
+		//	IntroMessage msg(raw);
+		//	NETWORK_LOG( "Received intro message on slot " << m_playerIndex << ", host name = "
+		//		<< msg.getHostName() << ", player name = " << msg.getPlayerName() );
+		//	m_connection->setRemoteNames(msg.getHostName(), msg.getPlayerName());
 		} else if (raw.type == MessageType::COMMAND_LIST) {
 			NETWORK_LOG( "Received command list message on slot " << m_playerIndex );
 			CommandListMessage cmdList(raw);

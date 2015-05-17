@@ -66,8 +66,14 @@ namespace Glest {
 		STRINGY_ENUM(
 			MessageType,
 					NO_MSG,
+					HELLO,
+					BAD_VERSION,
+
 					INTRO,
 					PING,
+					SLOT_REQUEST,
+					SLOT_SETTINGS,
+					GAME_SETTINGS,
 					LAUNCH,
 					AI_SYNC,
 					READY,

@@ -40,7 +40,7 @@ namespace Glest { namespace Net {
 // =====================================================
 
 void Message::log() const {
-	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(getType())]
+	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType( getType() )]
 		<< ", messageSize: " << getSize()
 	);
 }
@@ -48,36 +48,35 @@ void Message::log() const {
 // =====================================================
 //	class IntroMessage
 // =====================================================
-
-IntroMessage::IntroMessage(){
-	data.messageType = MessageType::INVALID_MSG;
-	data.playerIndex = -1;
-}
-
-IntroMessage::IntroMessage(const string &versionString, const string &pName, const string &hName, int playerIndex){
-	data.messageType = getType();
-	data.messageSize = sizeof(Data) - 4;
-	data.versionString = versionString;
-	data.playerName = pName;
-	data.hostName = hName;
-	data.playerIndex = static_cast<int16>(playerIndex);
-	cout << "IntroMessage constructed, Version string: " << versionString << endl;
-}
-
-IntroMessage::IntroMessage(RawMessage raw) {
-	data.messageType = raw.type;
-	data.messageSize = raw.size;
-	memcpy(&data.versionString, raw.data, raw.size);
-	delete raw.data;
-	cout << "IntroMessage received, Version string: " << data.versionString.getString() << endl;
-}
-
-void IntroMessage::log() const {
-	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
-		<< ", messageSize: " << data.messageSize << ", player name: " << data.playerName.getString()
-		<< ", host name: " << data.hostName.getString() << ", player index: " << data.playerIndex
-	);
-}
+//
+//IntroMessage::IntroMessage() {
+//	data.messageType = MessageType::INVALID_MSG;
+//	data.playerIndex = -1;
+//}
+//
+//IntroMessage::IntroMessage(const string &pName, const string &hName, int playerIndex) {
+//	data.messageType = getType();
+//	data.messageSize = sizeof(Data) - 4;
+//	data.playerName = pName;
+//	data.hostName = hName;
+//	data.playerIndex = static_cast<int16>(playerIndex);
+//	NETWORK_LOG( "IntroMessage constructed, player name: " << pName << ", host name: " << hName << ", player index: " << playerIndex );
+//}
+//
+//IntroMessage::IntroMessage(RawMessage raw) {
+//	data.messageType = raw.type;
+//	data.messageSize = raw.size;
+//	memcpy(&data.playerName, raw.data, raw.size);
+//	delete [] raw.data;
+//	NETWORK_LOG( "IntroMessage received, player name: " << data.playerName.getString() << ", host name: " << data.hostName.getString() << ", player index: " << data.playerIndex );
+//}
+//
+//void IntroMessage::log() const {
+//	NETWORK_LOG( __FUNCTION__ << "(): message sent, type: " << MessageTypeNames[MessageType(data.messageType)]
+//		<< ", messageSize: " << data.messageSize << ", player name: " << data.playerName.getString()
+//		<< ", host name: " << data.hostName.getString() << ", player index: " << data.playerIndex
+//	);
+//}
 
 // =====================================================
 //	class ReadyMessage
@@ -120,7 +119,7 @@ AiSeedSyncMessage::AiSeedSyncMessage(RawMessage raw) {
 	data.messageType = raw.type;
 	data.messageSize = raw.size;
 	memcpy(&data.seedCount, raw.data, raw.size);
-	delete raw.data;
+	delete [] raw.data;
 }
 
 // =====================================================
@@ -137,24 +136,25 @@ LaunchMessage::LaunchMessage(const GameSettings *gameSettings){
 	data.messageType = getType();
 	data.messageSize = sizeof(Data) - 4;
 
-	data.description= gameSettings->getDescription();
-	data.map= gameSettings->getMapPath();
-	data.tileset= gameSettings->getTilesetPath();
-	data.tech= gameSettings->getTechPath();
-	data.factionCount= gameSettings->getFactionCount();
-	data.thisFactionIndex= gameSettings->getThisFactionIndex();
-	data.defaultResources= gameSettings->getDefaultResources();
-	data.defaultUnits= gameSettings->getDefaultUnits();
-	data.defaultVictoryConditions= gameSettings->getDefaultVictoryConditions();
+	data.description = gameSettings->getDescription();
+	data.map = gameSettings->getMapPath();
+	data.tileset = gameSettings->getTilesetPath();
+	data.tech = gameSettings->getTechPath();
+	data.factionCount = gameSettings->getFactionCount();
+	data.thisFactionIndex = gameSettings->getThisFactionIndex();
+	data.defaultResources = gameSettings->getDefaultResources();
+	data.defaultUnits = gameSettings->getDefaultUnits();
+	data.defaultVictoryConditions = gameSettings->getDefaultVictoryConditions();
 	data.fogOfWar = gameSettings->getFogOfWar();
 	data.shroudOfDarkness = gameSettings->getShroudOfDarkness();
 	data.tilesetSeed = gameSettings->getTilesetSeed();
 
 	for (int i= 0; i < data.factionCount; ++i) {
-		data.factionTypeNames[i]= gameSettings->getFactionTypeName(i);
-		data.factionControls[i]= gameSettings->getFactionControl(i);
-		data.teams[i]= gameSettings->getTeam(i);
-		data.startLocationIndex[i]= gameSettings->getStartLocationIndex(i);
+		data.factionTypeNames[i] = gameSettings->getFactionTypeName(i);
+		data.factionControls[i] = gameSettings->getFactionControl(i);
+		data.teams[i] = gameSettings->getTeam(i);
+		data.startLocationIndex[i] = gameSettings->getStartLocationIndex(i);
+		data.slotIndex[i] = gameSettings->getSlotIndex(i);
 		data.colourIndices[i] = gameSettings->getColourIndex(i);
 		data.resourceMultipliers[i] = gameSettings->getResourceMultilpier(i);
 	}
@@ -164,7 +164,7 @@ LaunchMessage::LaunchMessage(RawMessage raw) {
 	data.messageType = raw.type;
 	data.messageSize = raw.size;
 	memcpy(&data.description, raw.data, raw.size);
-	delete raw.data;
+	delete [] raw.data;
 }
 
 /** Fills in a GameSettings object from this message (for clients) */
@@ -187,6 +187,7 @@ void LaunchMessage::buildGameSettings( GameSettings *gameSettings ) const {
 		gameSettings->setFactionControl( i, static_cast<ControlType>( data.factionControls[i] ) );
 		gameSettings->setTeam( i, data.teams[i] );
 		gameSettings->setStartLocationIndex( i, data.startLocationIndex[i] );
+		gameSettings->setSlotIndex( i, data.slotIndex[i] );
 		gameSettings->setColourIndex( i, data.colourIndices[i] );
 		gameSettings->setResourceMultiplier( i, data.resourceMultipliers[i] );
 	}
@@ -371,7 +372,7 @@ GameSpeedMessage::GameSpeedMessage(RawMessage raw) {
 	data.messageType = raw.type;
 	data.messageSize = raw.size;
 	memcpy(&data + sizeof(MsgHeader), raw.data, raw.size);
-	delete raw.data;
+	delete [] raw.data;
 }
 
 // =====================================================
@@ -400,7 +401,7 @@ CommandListMessage::CommandListMessage(RawMessage raw) {
 	uint8* ptr = reinterpret_cast<uint8*>(&data);
 	ptr += 4;
 	memcpy(ptr, raw.data, raw.size);
-	delete raw.data;
+	delete [] raw.data;
 }
 
 void CommandListMessage::log() const {
@@ -433,7 +434,7 @@ TextMessage::TextMessage(RawMessage raw) {
 	data.messageType = raw.type;
 	data.messageSize = raw.size;
 	memcpy(&data.text, raw.data, raw.size);
-	delete raw.data;
+	delete [] raw.data;
 }
 
 /*
@@ -527,7 +528,7 @@ KeyFrame::KeyFrame(RawMessage raw) : m_packetSize(0), m_packetData(0) {
 	if (cmdCount) {
 		memcpy(commands, ptr, cmdCount * sizeof(NetworkCommand));
 	}
-	delete raw.data;
+	delete [] raw.data;
 	log();
 }
 
@@ -765,7 +766,7 @@ SyncErrorMsg::SyncErrorMsg(RawMessage raw) {
 	data.messageType = raw.type;
 	data.messageSize = raw.size;
 	data.frameCount = *reinterpret_cast<uint32*>(raw.data);
-	delete raw.data;
+	delete [] raw.data;
 }
 
 void SyncErrorMsg::log() const {

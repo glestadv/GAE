@@ -68,6 +68,7 @@ void ClientInterface::connect(const Ip &ip, int port) {
 	while (!m_host->isConnected() /* || timed out*/) { ///@todo cancel on time out
 		m_host->update(this);
 	}
+	sendHelloMessage();
 }
 
 void ClientInterface::reset() {
@@ -79,26 +80,28 @@ void ClientInterface::reset() {
 	introDone = false;
 }
 
+void ClientInterface::sendHelloMessage() {
+	HelloMessage msg;
+	msg.getDataRef().m_versionString = getNetworkVersionString();
+	m_connection->send(&msg);
+}
+
 void ClientInterface::doIntroMessage() {
 	NETWORK_LOG( "ClientInterface::doIntroMessage()" );
 	RawMessage msg = m_connection->getNextMessage();
+	if (msg.type == MessageType::BAD_VERSION) {
+		BadVersionMessage bad( msg );
+		throw VersionMismatch( NetSource::SERVER, bad.getDataRef().m_versionString.getString(), getNetworkVersionString() );
+	}
 	if (msg.type != MessageType::INTRO) {
-		throw InvalidMessage(MessageType::INTRO, msg.type);
+		throw InvalidMessage( MessageType::INTRO, msg.type );
 	}
 	IntroMessage introMsg(msg);
-	if (introMsg.getVersionString() != getNetworkVersionString()) {
-		throw VersionMismatch(NetSource::CLIENT, getNetworkVersionString(), introMsg.getVersionString());
-	}
-	playerIndex = introMsg.getPlayerIndex();
+	playerIndex = introMsg.getDataRef().playerIndex;
 	if (playerIndex < 0 || playerIndex >= GameConstants::maxPlayers) {
 		throw GarbledMessage(introMsg.getType(), NetSource::SERVER);
 	}
-	serverName = introMsg.getHostName();
-
-	m_connection->setRemoteNames(introMsg.getHostName(), introMsg.getPlayerName());
-	//send reply
-	IntroMessage replyMsg(getNetworkVersionString(), g_config.getNetPlayerName(), m_host->getHostName(), -1);
-	m_connection->send(&replyMsg);
+	NETWORK_LOG( "Intro Message recieved, playerIndex = " << playerIndex );
 	introDone = true;
 }
 
@@ -113,7 +116,7 @@ void ClientInterface::doLaunchMessage() {
 	gameSettings.clear();
 	launchMsg.buildGameSettings(&gameSettings);
 
-	
+	NETWORK_LOG( "GS:: Recieved GameSettings, my slot index is " << playerIndex );
 	for (int i=0; i < gameSettings.getFactionCount(); ++i) {
 		// replace server player by network
 		if (gameSettings.getFactionControl(i) == ControlType::HUMAN) {
@@ -121,7 +124,7 @@ void ClientInterface::doLaunchMessage() {
 			NETWORK_LOG( "GS:: Found Human player at index " << i << ", changed control type to Network" );
 		}
 		// set the 'this faction' index & change ControlType for local player
-		if (gameSettings.getStartLocationIndex(i) == playerIndex) {
+		if (gameSettings.getSlotIndex(i) == playerIndex) {
 			gameSettings.setThisFactionIndex(i);
 			RUNTIME_CHECK(gameSettings.getFactionControl(i) == ControlType::NETWORK);
 			gameSettings.setFactionControl(i, ControlType::HUMAN);

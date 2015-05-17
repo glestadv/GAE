@@ -49,6 +49,7 @@ GameSettings::GameSettings(const XmlNode *node) {
 		factionControls[i] = enum_cast<ControlType>(factionNode->getChildIntValue("control"));
 		teams[i] = factionNode->getChildIntValue("team");
 		startLocationIndex[i] = factionNode->getChildIntValue("startLocationIndex");
+		slotIndex[i] = factionsNode->getChildIntValue("slotIndex");
 		colourIndices[i] = factionNode->getChildIntValue("colourIndex");
 		resourceMultipliers[i] = factionNode->getChildFloatValue("resourceMultiplier");
 	}
@@ -58,6 +59,7 @@ GameSettings::GameSettings(const XmlNode *node) {
 		factionControls[i] = ControlType::CLOSED;
 		teams[i] = -1;
 		startLocationIndex[i] = -1;
+		slotIndex[i] = -1;
 		colourIndices[i] = -1;
 		resourceMultipliers[i] = 1.f;
 	}
@@ -86,6 +88,7 @@ void GameSettings::clear() {
 		resourceMultipliers[i] = 1.f;
 		teams[i] = -1;
 		startLocationIndex[i] = -1;
+		slotIndex[i] = -1;
 		colourIndices[i] = -1;
 	}
 	thisFactionIndex = -1;
@@ -117,8 +120,9 @@ void GameSettings::compact() {
 		if (slotFlags[i]) ++count;
 	}
 	factionCount = count;
-	for (int i = 0; i < GameConstants::maxPlayers; ) {
-		if (!slotFlags[i]) { // need to shuffle everything from here down one slot
+	for (int i = 0; i < GameConstants::maxPlayers; ++i) {
+		if (!slotFlags[i]) {
+			// gap, need to shuffle everything from here down one slot
 			bool done = true; // if everything else is false, we're finished
 			for (int j = i + 1; j < GameConstants::maxPlayers; ++j) {
 				factionTypeNames[j - 1] = factionTypeNames[j];
@@ -127,6 +131,7 @@ void GameSettings::compact() {
 				resourceMultipliers[j - 1] = resourceMultipliers[j];
 				teams[j - 1] = teams[j];
 				startLocationIndex[j - 1] = startLocationIndex[j];
+				slotIndex[j - 1] =  slotIndex[j];
 				colourIndices[j - 1] = colourIndices[j];
 				if (thisFactionIndex == j) --thisFactionIndex;
 				slotFlags[j - 1] = slotFlags[j];
@@ -140,11 +145,12 @@ void GameSettings::compact() {
 			resourceMultipliers[k] = 1.f;
 			teams[k] = -1;
 			startLocationIndex[k] = -1;
+			slotIndex[i] = -1;
 			slotFlags[k] = false;
 
-			if (done) break;
-		} else {
-			++i;
+			if (done) {
+				break;
+			}
 		}
 	}
 }
@@ -172,6 +178,7 @@ void GameSettings::save(XmlNode *node) const {
 		factionNode->addChild("control", factionControls[i]);
 		factionNode->addChild("team", teams[i]);
 		factionNode->addChild("startLocationIndex", startLocationIndex[i]);
+		factionNode->addChild("slotIndex", slotIndex[i]);
 		factionNode->addChild("colourIndex", colourIndices[i]);
 		factionNode->addChild("resourceMultiplier", resourceMultipliers[i]);
 	}
@@ -187,25 +194,24 @@ void GameSettings::randomiseFactions(const vector<string> &possibleFactions) {
 	}
 }
 
-void GameSettings::randomizeLocs(int maxPlayers) {
-	bool *slotUsed = new bool[maxPlayers];
+void GameSettings::randomizeLocs( int maxPlayers ) {
 	Random rand;
+	rand.init( Shared::Platform::Chrono::getCurMillis() );
 
-	memset(slotUsed, 0, sizeof(bool)*maxPlayers);
-	rand.init(Shared::Platform::Chrono::getCurMillis ());
+	std::vector<int> locs;
+	for (int i = 0; i < maxPlayers; i++) {
+		locs.push_back(i);
+	}
+	jumble(locs, rand);
 
-	for(int i = 0; i < maxPlayers; i++) {
-		int slot = rand.randRange(0, 3 - i);
-		for(int j = slot; j < slot + maxPlayers; j++) {
-			int k = j % maxPlayers;
-			if(!slotUsed[j % maxPlayers]) {
-				slotUsed[j % maxPlayers] = true;
-				startLocationIndex[k] = i;
-				break;
-			}
+	for (int i = 0; i < maxPlayers; i++) {
+		if (getFactionControl(i) != ControlType::CLOSED) {
+			setStartLocationIndex( i, locs.back() );
+			locs.pop_back();
+		} else {
+			setStartLocationIndex( i, -1 );
 		}
 	}
-	delete [] slotUsed;
 }
 
 }}//end namespace

@@ -54,7 +54,7 @@ struct MsgHeader {
 //	class Message
 // ==============================================================
 /** Abstract base class for network messages, requires concrete subclasses
-  * to implement receive(NetworkConnection*)/send(NetworkConnection*)
+  * to implement getType(), getSize() & getData()
   */
 class Message {
 public:
@@ -66,44 +66,80 @@ public:
 	virtual void log() const;
 };
 
+/** Concrete template class for 'simple' (fixed size) message types
+  * Can be typedefed, or derivered if you want to provide nicer getters.
+  * You could of course put your nice getters in DataType, so a typedef should do.
+  */
+template < int MsgType, typename DataType >
+class SimpleMessage : public Message {
+protected:
+	DataType m_data;
+
+public:
+	SimpleMessage() {
+		m_data.messageType = MsgType;
+		m_data.messageSize = sizeof(DataType) - MsgHeader::headerSize;
+	}
+
+	SimpleMessage( const DataType &data ) {
+		m_data = data;
+	}
+
+	SimpleMessage( RawMessage raw ) {
+		m_data.messageType = raw.type;
+		m_data.messageSize = raw.size;
+		if (raw.size) {
+			memcpy( ((unsigned char *)&m_data) + MsgHeader::headerSize, raw.data, raw.size );
+			delete [] raw.data;
+		}
+	}
+
+	// Implementing Message
+	virtual MessageType getType() const  { return MessageType(MsgType); }
+	virtual unsigned int getSize() const { return sizeof( m_data ); }
+	virtual const void* getData() const  { return &m_data; }
+
+	DataType& getDataRef() { return m_data; }
+};
+
+static const int maxVersionStringSize = 64;
+static const int maxNameSize = 16;
+
+// ==============================================================
+//	typedef HelloMessage
+// ==============================================================
+
+struct HelloMessageData : public MsgHeader {
+	NetworkString< maxVersionStringSize > m_versionString;
+	NetworkString< maxNameSize > m_playerName;
+	NetworkString< maxNameSize > m_hostName;
+};
+
+typedef SimpleMessage< MessageType::HELLO, HelloMessageData >       HelloMessage;
+
+// ==============================================================
+//	struct BadVersionMessageData & typedef BadVersionMessage
+// ==============================================================
+
+struct BadVersionMessageData : public MsgHeader {
+	NetworkString< maxVersionStringSize > m_versionString;
+};
+
+typedef SimpleMessage< MessageType::BAD_VERSION, BadVersionMessageData > BadVersionMessage;
+
 // ==============================================================
 //	class IntroMessage
 // ==============================================================
 /**	Message sent from the server to the client
   *	when the client connects and vice versa */
-class IntroMessage : public Message {
-private:
-	static const int maxVersionStringSize = 64;
-	static const int maxNameSize = 16;
-
-private:
-	struct Data {
-		uint32 messageType :  8;
-		uint32 messageSize : 24;
-		NetworkString<maxVersionStringSize> versionString;
-		NetworkString<maxNameSize> playerName;
-		NetworkString<maxNameSize> hostName;
-		int16 playerIndex;
-	} data; // 4 + 64 + 32 + 2 == 102
-
-	// 0x 01 00 00 66
-
-public:
-	IntroMessage();
-	IntroMessage(const string &versionString, const string &pName, const string &hName, int playerIndex);
-	IntroMessage(RawMessage raw);
-
-	// Implementing Message
-	virtual MessageType getType() const		{return MessageType::INTRO;}
-	virtual unsigned int getSize() const	{return sizeof(data);}
-	virtual const void* getData() const		{return &data;}
-	virtual void log() const override;
-
-	string getVersionString() const		{return data.versionString.getString();}
-	string getPlayerName() const		{return data.playerName.getString();}
-	string getHostName() const			{return data.hostName.getString();}
-	int getPlayerIndex() const			{return data.playerIndex;}
+struct IntroMessageData {
+	uint32 messageType :  8;
+	uint32 messageSize : 24;
+	int16 playerIndex;
 };
+
+typedef SimpleMessage< MessageType::INTRO, IntroMessageData > IntroMessage;
+
 
 // ==============================================================
 //	class AiSeedSyncMessage
@@ -177,6 +213,7 @@ private:
 		int8 factionCount;
 		int8 teams[GameConstants::maxPlayers];
 		int8 startLocationIndex[GameConstants::maxPlayers];
+		int8 slotIndex[GameConstants::maxPlayers];
 		int8 colourIndices[GameConstants::maxPlayers];
 		int8 defaultResources;
 		int8 defaultUnits;
