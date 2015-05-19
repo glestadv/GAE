@@ -284,6 +284,7 @@ public:
 	// world interface [all for networking]
 	void startFrame(int frame);
 	void doUnitBorn(Unit *unit);
+	void doUnitDeath(Unit *unit);
 	void doUpdateProjectile(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end);
 	void doUpdateUnitCommand(Unit *unit);
 	void doUpdateAnimOnDeath(Unit *unit);
@@ -370,6 +371,9 @@ protected:
 
 	/** Called afer a unit is born */
 	virtual void postUnitBorn(Unit *unit) {}
+
+	/** Called afer a unit dies */
+	virtual void postUnitDeath(Unit *unit) {}
 #endif
 };
 

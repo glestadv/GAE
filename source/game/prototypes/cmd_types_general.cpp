@@ -361,7 +361,9 @@ bool CommandType::unitInRange( const Unit *unit, int range, Unit **rangedPtr, co
 		Map *map = g_world.getMap();
 
 		bool go = true;
+		std::vector<Vec2i> sequence;
 		while (pci.getNext( pos, distance ) && go) {
+			sequence.push_back(pos);
 			foreach_enum (Zone, z) { // all zones
 				if (!asts || asts->getZone( z )) { // looking for target in z?
 					// does cell contain a bad guy?
@@ -378,12 +380,12 @@ bool CommandType::unitInRange( const Unit *unit, int range, Unit **rangedPtr, co
 						// If bad guy has an attack command we can short circut this loop now
 						if (possibleEnemy->getType()->hasCommandClass( CmdClass::ATTACK )) {
 							*rangedPtr = possibleEnemy;
-							SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", Found target with attack, Attacking unit: " 
+							SYNC_LOG( "unitInRange():: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", Found target with attack, Attacking unit: " 
 								<< possibleEnemy->getId() << " @ " << possibleEnemy->getPos());
 							go = false;
 						} else {
 							// otherwise, we'll record it and figure out who to slap later.
-							SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", Found potential target " 
+							SYNC_LOG( "unitInRange():: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", Found potential target " 
 								<< possibleEnemy->getId() << " @ " << possibleEnemy->getPos() );
 							enemies.record( possibleEnemy, distance );
 						}
@@ -391,6 +393,13 @@ bool CommandType::unitInRange( const Unit *unit, int range, Unit **rangedPtr, co
 				}
 			}
 		}
+
+		stringstream ss;
+		ss << "unitInRange():: Frame " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", Search Sequence: ";
+		foreach_const (vector<Vec2i>, it, sequence) {
+			ss << (it != sequence.begin() ? ", " : "") << (*it);
+		}
+		LOG_SYNC( ss.str() );
 	
 		if (*rangedPtr == nullptr) {
 			if (!enemies.size()) {

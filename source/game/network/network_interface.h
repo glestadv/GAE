@@ -73,12 +73,14 @@ protected:
 	virtual void checkProjectileUpdate(Unit *unit, int endFrame, int32 checksum) = 0;
 	virtual void checkAnimUpdate(Unit *unit, int32 checksum) = 0;
 	virtual void checkUnitBorn(Unit *unit, int32 checksum) = 0;
+	virtual void checkUnitDeath(Unit *unit, int32 checksum) = 0;
 
 	/** SimulationInterface post 'interesting event' virtuals (calc checksum and pass to checkXxxXxx()) */
-	virtual void postCommandUpdate(Unit *unit);
-	virtual void postProjectileUpdate(Unit *unit, int endFrame);
-	virtual void postAnimUpdate(Unit *unit);
-	virtual void postUnitBorn(Unit *unit);
+	virtual void postCommandUpdate(Unit *unit) override;
+	virtual void postProjectileUpdate(Unit *unit, int endFrame) override;
+	virtual void postAnimUpdate(Unit *unit) override;
+	virtual void postUnitBorn(Unit *unit) override;
+	virtual void postUnitDeath(Unit *unit) override;
 #endif
 
 public:

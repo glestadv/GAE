@@ -1192,6 +1192,7 @@ void checkTargets(const Unit *dead) {
 void Unit::kill() {
 	assert(hp <= 0);
 	ULC_UNIT_LOG( this, "killed." );
+
 	hp = 0;
 	World &world = g_world;
 
@@ -1250,6 +1251,7 @@ void Unit::kill() {
 	if (type->isDetector()) {
 		world.getCartographer()->detectorDeactivated(this);
 	}
+	g_simInterface.doUnitDeath(this);
 }
 
 void Unit::housedUnitDied(Unit *unit) {

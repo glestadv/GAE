@@ -414,6 +414,17 @@ void ClientInterface::checkUnitBorn(Unit *unit, int32 cs) {
 	}
 }
 
+void ClientInterface::checkUnitDeath(Unit *unit, int32 cs) {
+//	NETWORK_LOG( __FUNCTION__ );
+	int32 server_cs = keyFrame.getNextChecksum();
+	if (cs != server_cs) {
+		NETWORK_LOG( "ClientInterface::checkUnitDeath(): Sync Error: unit type: " << unit->getType()->getName()
+			<< " unit id: " << unit->getId() << " faction: " << unit->getFactionIndex() );
+		NETWORK_LOG( "\tserver checksum " << intToHex( server_cs ) << " my checksum " << intToHex( cs ) );
+		handleSyncError();
+	}
+}
+
 void ClientInterface::checkCommandUpdate(Unit *unit, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ );
 	int32 server_cs = keyFrame.getNextChecksum();

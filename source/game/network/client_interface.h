@@ -76,10 +76,11 @@ protected:
 		void handleSyncError();
 
 		// unit/projectile checks, NetworkInterface virtuals
-		virtual void checkCommandUpdate(Unit *unit, int32);
-		virtual void checkUnitBorn(Unit *unit, int32);
-		virtual void checkProjectileUpdate(Unit *unit, int, int32);
-		virtual void checkAnimUpdate(Unit *unit, int32);
+		virtual void checkCommandUpdate(Unit *unit, int32) override;
+		virtual void checkUnitBorn(Unit *unit, int32) override;
+		virtual void checkUnitDeath(Unit *unit, int32) override;
+		virtual void checkProjectileUpdate(Unit *unit, int, int32) override;
+		virtual void checkAnimUpdate(Unit *unit, int32) override;
 #	endif
 
 	//misc

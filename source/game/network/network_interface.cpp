@@ -56,7 +56,7 @@ void NetworkInterface::processTextMessage(TextMessage &msg) {
 
 void NetworkInterface::frameProccessed() {
 	if (world->getFrameCount() % GameConstants::networkFramePeriod == 0) {
-		updateKeyframe(world->getFrameCount());
+		updateKeyframe( world->getFrameCount() );
 	}
 }
 
@@ -134,6 +134,16 @@ void NetworkInterface::postUnitBorn(Unit *unit) {
 	checkUnitBorn(unit, cs.getSum());
 }
 
+void NetworkInterface::postUnitDeath(Unit *unit) {
+	int frame = g_world.getFrameCount();
+	Checksum cs;
+	cs.add(unit->getType()->getName());
+	cs.add(unit->getId());
+	cs.add(unit->getFactionIndex());
+	SYNC_LOG( "Death:: Frame: " << frame << ", Type: " << unit->getType()->getName() << ", Unit: " << unit->getId() << ", FactionIndex: " << unit->getFactionIndex() 
+		<< ", Pos: " << unit->getPos() );
+	checkUnitDeath(unit, cs.getSum());
+}
 #endif
 
 }} // end namespace

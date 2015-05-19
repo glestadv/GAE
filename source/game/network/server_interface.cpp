@@ -328,6 +328,11 @@ void ServerInterface::checkUnitBorn(Unit *unit, int32 cs) {
 	keyFrame.addChecksum(cs);
 }
 
+void ServerInterface::checkUnitDeath(Unit *unit, int32 cs) {
+//	NETWORK_LOG( __FUNCTION__ << " Adding checksum " << intToHex(cs) );
+	keyFrame.addChecksum(cs);
+}
+
 void ServerInterface::checkCommandUpdate(Unit*, int32 cs) {
 //	NETWORK_LOG( __FUNCTION__ << " Adding checksum " << intToHex(cs) );
 	keyFrame.addChecksum(cs);

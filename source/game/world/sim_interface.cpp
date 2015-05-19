@@ -476,6 +476,12 @@ void SimulationInterface::doUnitBorn(Unit *unit) {
 	)
 }
 
+void SimulationInterface::doUnitDeath(Unit *unit) {
+	IF_MAD_SYNC_CHECKS(
+		postUnitDeath(unit);
+	)
+}
+
 void SimulationInterface::doUpdateProjectile(Unit *u, Projectile *pps, const Vec3f &start, const Vec3f &end) {
 	updateProjectilePath(u, pps, start, end);
 	IF_MAD_SYNC_CHECKS(
