@@ -198,6 +198,7 @@ private:
 		int8 fogOfWar;
 		int8 shroudOfDarkness;
 		int32 tilesetSeed;
+		int32 worldSeed;
 	} data;
 
 public:

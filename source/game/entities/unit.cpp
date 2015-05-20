@@ -713,8 +713,8 @@ Splash* Unit::createSplash(SplashType *splashType, const Vec3f &pos) {
 void Unit::startSpellSystems(const CastSpellSkillType *sst) {
 	RUNTIME_CHECK(getCurrCommand()->getType()->getClass() == CmdClass::CAST_SPELL);
 	SpellAffect affect = static_cast<const CastSpellCommandType*>(getCurrCommand()->getType())->getSpellAffects();
-	Projectile *projectile = 0;
-	Splash *splash = 0;
+	Projectile *projectile = nullptr;
+	Splash *splash = nullptr;
 	Vec3f endPos = getTargetVec();
 
 	// projectile
@@ -722,7 +722,7 @@ void Unit::startSpellSystems(const CastSpellSkillType *sst) {
 		projectile = launchProjectile(sst->getProjParticleType(), endPos);
 		projectile->setCallback(new SpellDeliverer(this, targetRef));
 	} else {
-		Unit *target = 0;
+		Unit *target = nullptr;
 		if (affect == SpellAffect::SELF) {
 			target = this;
 		} else if (affect == SpellAffect::TARGET) {
@@ -746,8 +746,8 @@ void Unit::startSpellSystems(const CastSpellSkillType *sst) {
 }
 
 void Unit::startAttackSystems(const AttackSkillType *ast) {
-	Projectile *projectile = 0;
-	Splash *splash = 0;
+	Projectile *projectile = nullptr;
+	Splash *splash = nullptr;
 	Vec3f endPos = getTargetVec();
 
 	// projectile
@@ -756,7 +756,7 @@ void Unit::startAttackSystems(const AttackSkillType *ast) {
 		if (ast->getProjParticleType()->isTracking() && targetRef != -1) {
 			projectile->setCallback(new ParticleDamager(this, g_world.getUnit(targetRef)));
 		} else {
-			projectile->setCallback(new ParticleDamager(this, 0));
+			projectile->setCallback(new ParticleDamager(this, nullptr));
 		}
 	} else {
 		g_world.hit(this);
@@ -1196,6 +1196,7 @@ void Unit::kill() {
 	hp = 0;
 	World &world = g_world;
 
+	// clear queue of units still to load
 	if (!m_unitsToCarry.empty()) {
 		foreach (UnitIdList, it, m_unitsToCarry) {
 			Unit *unit = world.getUnit(*it);
@@ -1206,6 +1207,7 @@ void Unit::kill() {
 		m_unitsToCarry.clear();
 	}
 
+	// kill any units that were loaded
 	if (!m_carriedUnits.empty()) {
 		foreach (UnitIdList, it, m_carriedUnits) {
 			Unit *unit = world.getUnit(*it);
@@ -1214,16 +1216,19 @@ void Unit::kill() {
 		}
 		m_carriedUnits.clear();
 	}
+
+	// notify carrier
 	if (isCarried()) {
 		Unit *carrier = g_world.getUnit(getCarrier());
 		carrier->housedUnitDied(this);
 	}
 
+	// put out the fire
 	if (fire) {
 		fire->fade();
-		fire = 0;
+		fire = nullptr;
 		smoke->fade();
-		smoke = 0;
+		smoke = nullptr;
 	}
 
 	//REFACTOR Use signal, send this code to Faction::onUnitDied();
@@ -1235,6 +1240,7 @@ void Unit::kill() {
 		faction->onUnitDeActivated(type);
 	}
 
+	// signal everyone connected to our Died event
 	Died(this);
 
 	clearCommands();
@@ -1247,7 +1253,7 @@ void Unit::kill() {
 		map->clearUnitCells(this, pos);
 	}
 	g_simInterface.doUpdateAnimOnDeath(this);
-	checkTargets(this); // hack... 'tracking' particle systems might reference this
+	checkTargets(this); // hack... 'tracking' particle systems might reference this [REFACTOR use UnitId in tracking system]
 	if (type->isDetector()) {
 		world.getCartographer()->detectorDeactivated(this);
 	}
@@ -1525,11 +1531,11 @@ void Unit::updateAnimDead() {
   * sound start time and attack start time
   * @param frameOffset the number of frames the new anim cycle with take
   * @param soundOffset the number of frames from now to start the skill sound (or -1 if no sound)
-  * @param attackOffset the number  of frames from now to start attack systems (or -1 if no attack)*/
+  * @param attackOffset the number of frames from now to start attack systems (or -1 if no attack)*/
 void Unit::updateAnimCycle(int frameOffset, int soundOffset, int attackOffset) {
 	if (frameOffset == -1) { // hacky handle move skill
 		assert(currSkill->getClass() == SkillClass::MOVE);
-		static const float speedModifier = 1.f / GameConstants::speedDivider / float(WORLD_FPS);
+		static const float speedModifier = 1.f / GameConstants::speedDivider / float(WORLD_FPS); // 0.00025
 		float animSpeed = currSkill->getAnimSpeed() * speedModifier;
 		//if moving to a higher cell move slower else move faster
 		float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();
@@ -1659,7 +1665,7 @@ void Unit::doKill(Unit *killed) {
 		killed->kill();
 	}
 
-	if (!killed->isMobile()) {
+	if (!killed->isMobile()) { // should be in killed's kill() ... or Died event handler in Cartographer
 		// obstacle removed
 		g_cartographer.updateMapMetrics(killed->getPos(), killed->getSize());
 	}

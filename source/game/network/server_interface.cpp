@@ -514,7 +514,9 @@ void ServerInterface::syncAiSeeds(int aiCount, int *seeds) {
 void ServerInterface::doLaunchBroadcast() {
 	NETWORK_LOG( "ServerInterface::doLaunchBroadcast(): Launching game." );
 	gameSettings.setTilesetSeed(int(Chrono::getCurMillis()));
+	gameSettings.setWorldSeed(-int(Chrono::getCurMillis()));
 	LaunchMessage networkMessageLaunch(&gameSettings);
+	
 	broadcastMessage(&networkMessageLaunch);
 	m_connection.flush();
 }

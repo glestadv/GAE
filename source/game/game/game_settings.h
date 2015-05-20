@@ -42,6 +42,7 @@ private:
 	float resourceMultipliers[maxPlayers];
 
     int tilesetSeed;
+	int worldSeed;
 	int thisFactionIndex;
 	int factionCount;
 	int teams[maxPlayers];
@@ -87,6 +88,7 @@ public:
 	int getSlotIndex(int i) const					{ASSERT_I(); return slotIndex[i];}
 	int getColourIndex(int i) const					{ASSERT_I(); return colourIndices[i];}
 	int getTilesetSeed() const						{return tilesetSeed;}
+	int getWorldSeed() const						{return worldSeed;}
 
 	bool getDefaultUnits() const					{return defaultUnits;}
 	bool getDefaultResources() const				{return defaultResources;}
@@ -113,6 +115,7 @@ public:
 	void setSlotIndex(int i, int v)					{ASSERT_I(); slotIndex[i] = v;}
 	void setColourIndex(int i, int v)				{ASSERT_I(); colourIndices[i] = v;}
 	void setTilesetSeed(int v)						{tilesetSeed = v;}
+	void setWorldSeed(int v)						{worldSeed = v;}
 
 	void setDefaultUnits(bool v) 					{defaultUnits = v;}
 	void setDefaultResources(bool v) 				{defaultResources = v;}

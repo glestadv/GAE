@@ -271,9 +271,10 @@ public:
 
 	void initSurveyor(Faction *f);
 
+	void setRandomSeed(int32 seed) { random.init(seed); }
+
 	int getCloakGroupId(const string &name);
 	const string& getCloakGroupName(int id);
-
 	int getCloakGroupCount() const { return m_cloakGroupIdCounter; }
 
 	// update

@@ -71,6 +71,7 @@ LaunchMessage::LaunchMessage(const GameSettings *gameSettings){
 	data.fogOfWar = gameSettings->getFogOfWar();
 	data.shroudOfDarkness = gameSettings->getShroudOfDarkness();
 	data.tilesetSeed = gameSettings->getTilesetSeed();
+	data.worldSeed = gameSettings->getWorldSeed();
 
 	for (int i= 0; i < data.factionCount; ++i) {
 		data.factionTypeNames[i] = gameSettings->getFactionTypeName(i);
@@ -104,6 +105,7 @@ void LaunchMessage::buildGameSettings( GameSettings *gameSettings ) const {
 	gameSettings->setFogOfWar( data.fogOfWar );
 	gameSettings->setShroudOfDarkness( data.shroudOfDarkness );
 	gameSettings->setTilesetSeed( data.tilesetSeed );
+	gameSettings->setWorldSeed( data.worldSeed );
 
 	for (int i= 0; i<data.factionCount; ++i) {
 		gameSettings->setFactionTypeName( i, data.factionTypeNames[i].getString() );

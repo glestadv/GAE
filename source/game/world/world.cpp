@@ -92,6 +92,8 @@ World::World(SimulationInterface *simInterface)
 	assert(!singleton);
 	singleton = this;
 	alive = false;
+
+	setRandomSeed( gs.getWorldSeed() );
 }
 
 World::~World() {
@@ -359,11 +361,11 @@ void World::processFrame() {
 	}
 }
 
-void World::hit(Unit *attacker) {
-	hit(attacker, static_cast<const AttackSkillType*>(attacker->getCurrSkill()), attacker->getTargetPos(), attacker->getTargetField());
+void World::hit( Unit *attacker ) {
+	hit( attacker, static_cast<const AttackSkillType*>( attacker->getCurrSkill() ), attacker->getTargetPos(), attacker->getTargetField() );
 }
 
-void World::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked) {
+void World::hit( Unit *attacker, const AttackSkillType* ast, const Vec2i &targetPos, Field targetField, Unit *attacked ) {
 	//_PROFILE_FUNCTION();
 	typedef std::map<Unit*, fixed> DistMap;
 	//hit attack positions
@@ -371,69 +373,69 @@ void World::hit(Unit *attacker, const AttackSkillType* ast, const Vec2i &targetP
 		Vec2i pos;
 		fixed distance;
 		DistMap hitSet;
-		Util::PosCircularIteratorSimple pci(map.getBounds(), targetPos, ast->getSplashRadius());
-		while (pci.getNext(pos, distance)) {
-			if ((attacked = map.getCell(pos)->getUnit(targetField))
-			&& (hitSet.find(attacked) == hitSet.end() || hitSet[attacked] > distance)) {
+		Util::PosCircularIteratorSimple pci( map.getBounds(), targetPos, ast->getSplashRadius() );
+		while (pci.getNext( pos, distance )) {
+			if ((attacked = map.getCell( pos )->getUnit( targetField ))
+			&& (hitSet.find( attacked ) == hitSet.end() || hitSet[attacked] > distance)) {
 				hitSet[attacked] = distance;
 			}
 		}
 		foreach (DistMap, it, hitSet) {
-			damage(attacker, ast, it->first, it->second);
+			damage( attacker, ast, it->first, it->second );
 			if (ast->hasEffects()) {
-				applyEffects(attacker, ast->getEffectTypes(), it->first, it->second);
+				applyEffects( attacker, ast->getEffectTypes(), it->first, it->second );
 			}
 		}
 	} else {
 		if (!attacked) {
-			attacked = map.getCell(targetPos)->getUnit(targetField);
+			attacked = map.getCell( targetPos )->getUnit( targetField );
 		}
 		if (attacked && attacked->isAlive()) {
-			damage(attacker, ast, attacked, 0);
+			damage( attacker, ast, attacked, 0 );
 			if (ast->hasEffects()) {
-				applyEffects(attacker, ast->getEffectTypes(), attacked, 0);
+				applyEffects( attacker, ast->getEffectTypes(), attacked, 0 );
 			}
 			if (attacked->getAttackedTrigger()) {
-				ScriptManager::onAttackedTrigger(attacked);
-				attacked->setAttackedTrigger(false);
+				ScriptManager::onAttackedTrigger( attacked );
+				attacked->setAttackedTrigger( false );
 			}
 		}
 	}
 }
 
-void World::damage(Unit *attacker, const AttackSkillType* ast, Unit *attacked, fixed distance) {
+void World::damage( Unit *attacker, const AttackSkillType* ast, Unit *attacked, fixed distance ) {
 	int var = ast->getAttackVar();
 	int armor = attacked->getArmor();
-	fixed damageMultiplier = getTechTree()->getDamageMultiplier(ast->getAttackType(),
-							 attacked->getType()->getArmourType());
+	fixed damageMultiplier = getTechTree()->getDamageMultiplier( ast->getAttackType(),
+							 attacked->getType()->getArmourType() );
 	//compute damage
-	fixed fDamage = attacker->getAttackStrength(ast);
-	fDamage = ((fDamage + random.randRange(-var, var)) / (distance + 1) - armor) * damageMultiplier;
+	fixed fDamage = attacker->getAttackStrength( ast );
+	fDamage = ((fDamage + random.randRange( -var, var )) / (distance + 1) - armor) * damageMultiplier;
 	if (fDamage < 1) {
 		fDamage = 1;
 	}
 	int damage = fDamage.intp();
-	if (attacked->decHp(damage)) {
-		doKill(attacker, attacked);
+	SYNC_LOG( "damage():: Attacker: " << attacker->getId() << ", Attacked: " << attacked->getId() << ", Damage: " << damage );
+	if (attacked->decHp( damage )) {
+		doKill( attacker, attacked );
 	}
-	if (attacked->getFaction()->isThisFaction()
-	&& !g_renderer.getCuller().isInside(attacked->getPos())) {
-		attacked->getFaction()->attackNotice(attacked);
+	if (attacked->getFaction()->isThisFaction() && !g_renderer.getCuller().isInside( attacked->getPos() )) {
+		attacked->getFaction()->attackNotice( attacked );
 	}
 }
 
-void World::damage(Unit *unit, int hp) {
-	if (unit->decHp(hp)) {
-		ScriptManager::onUnitDied(unit);
+void World::damage( Unit *unit, int hp ) {
+	if (unit->decHp( hp )) {
+		ScriptManager::onUnitDied( unit );
 		unit->kill();
 		if (!unit->isMobile()) { // obstacle removed
-			cartographer->updateMapMetrics(unit->getPos(), unit->getSize());
+			cartographer->updateMapMetrics( unit->getPos(), unit->getSize() );
 		}
 	}
 }
 
-void World::doKill(Unit *killer, Unit *killed) {
-	killer->doKill(killed);
+void World::doKill( Unit *killer, Unit *killed ) {
+	killer->doKill( killed );
 }
 
 // Apply effects to a specific location, with or without splash
