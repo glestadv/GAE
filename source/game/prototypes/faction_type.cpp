@@ -36,153 +36,153 @@ using Main::Program;
 //          Class FactionType
 // ======================================================
 
-FactionType::FactionType()
-		: music(0)
-		, attackNotice(0)
-		, enemyNotice(0)
-		, attackNoticeDelay(0)
-		, enemyNoticeDelay(0)
-		, m_logoTeamColour(0)
-		, m_logoRgba(0) {
-	subfactions.push_back(string("base"));
+FactionType::FactionType( )
+		: m_music( nullptr )
+		, m_attackNotice( nullptr )
+		, m_enemyNotice( nullptr )
+		, m_attackNoticeDelay( 0 )
+		, m_enemyNoticeDelay( 0 )
+		, m_logoTeamColour( nullptr )
+		, m_logoRgba( nullptr ) {
+	m_subfactions.push_back( string( "base" ) );
 }
 
-bool FactionType::preLoad(const string &dir, const TechTree *techTree) {
-	m_name = basename(dir);
+bool FactionType::preLoad( const string &dir, const TechTree *techTree ) {
+	m_name = basename( dir );
 
 	// a1) preload units
 	string unitsPath = dir + "/units/*.";
 	vector<string> unitFilenames;
 	bool loadOk = true;
 	try { 
-		findAll(unitsPath, unitFilenames); 
+		findAll( unitsPath, unitFilenames ); 
 	} catch (runtime_error e) {
-		g_logger.logError(e.what());
+		g_logger.logError( e.what( ) );
 		loadOk = false;
 	}
-	for (int i = 0; i < unitFilenames.size(); ++i) {
+	for (int i = 0; i < unitFilenames.size( ); ++i) {
 		string path = dir + "/units/" + unitFilenames[i];
-		UnitType *ut = g_prototypeFactory.newUnitType();
-		unitTypes.push_back(ut);
-		unitTypes.back()->preLoad(path);
+		UnitType *ut = g_prototypeFactory.newUnitType( );
+		m_unitTypes.push_back( ut );
+		m_unitTypes.back( )->preLoad( path );
 	}
 	// a2) preload upgrades
 	string upgradesPath= dir + "/upgrades/*.";
 	vector<string> upgradeFilenames;
 	try { 
-		findAll(upgradesPath, upgradeFilenames); 
+		findAll( upgradesPath, upgradeFilenames ); 
 	} catch (runtime_error e) {
-		g_logger.logError(e.what());
+		g_logger.logError( e.what( ) );
 		// allow no upgrades
 	}
-	for (int i = 0; i < upgradeFilenames.size(); ++i) {
+	for (int i = 0; i < upgradeFilenames.size( ); ++i) {
 		string path = dir + "/upgrades/" + upgradeFilenames[i];
-		UpgradeType *ut = g_prototypeFactory.newUpgradeType();
-		upgradeTypes.push_back(ut);
-		upgradeTypes.back()->preLoad(path);
+		UpgradeType *ut = g_prototypeFactory.newUpgradeType( );
+		m_upgradeTypes.push_back( ut );
+		m_upgradeTypes.back( )->preLoad( path );
 	}
 	return loadOk;
 }
 
-bool FactionType::preLoadGlestimals(const string &dir, const TechTree *techTree) {
-	m_name = basename(dir);
+bool FactionType::preLoadGlestimals( const string &dir, const TechTree *techTree ) {
+	m_name = basename( dir );
 
 	// a1) preload units
 	string unitsPath = dir + "/glestimals/*.";
 	vector<string> unitFilenames;
 	bool loadOk = true;
 	try { 
-		findAll(unitsPath, unitFilenames); 
+		findAll( unitsPath, unitFilenames ); 
 	} catch (runtime_error e) {
-		g_logger.logError(e.what());
+		g_logger.logError( e.what( ) );
 		loadOk = false;
 	}
-	for (int i = 0; i < unitFilenames.size(); ++i) {
+	for (int i = 0; i < unitFilenames.size( ); ++i) {
 		string path = dir + "/glestimals/" + unitFilenames[i];
-		UnitType *ut = g_prototypeFactory.newUnitType();
-		unitTypes.push_back(ut);
-		unitTypes.back()->preLoad(path);
+		UnitType *ut = g_prototypeFactory.newUnitType( );
+		m_unitTypes.push_back( ut );
+		m_unitTypes.back( )->preLoad( path );
 	}
 	return loadOk;
 }
 
 /// load a faction, given a directory @param ndx faction index, and hence id 
 /// @param dir path to faction directory @param techTree pointer to TechTree
-bool FactionType::load(int ndx, const string &dir, const TechTree *techTree) {
+bool FactionType::load( int ndx, const string &dir, const TechTree *techTree ) {
 	m_id = ndx;
-	m_name = basename(dir);
+	m_name = basename( dir );
 	Logger &logger = g_logger;
-	logger.logProgramEvent("Loading faction type: " + m_name, true);
+	logger.logProgramEvent( "Loading faction type: " + m_name, true );
 	bool loadOk = true;
 
 	// 1. Open xml file
 	string path = dir + "/" + m_name + ".xml";
 	XmlTree xmlTree;
 	try {
-		xmlTree.load(path);
+		xmlTree.load( path );
 	} catch (runtime_error e) {
-		g_logger.logXmlError(path, "File missing or wrongly named.");
+		logger.logXmlError( path, "File missing or wrongly named." );
 		return false; // bail
 	}
 	const XmlNode *factionNode;
 	try {
-		factionNode = xmlTree.getRootNode();
+		factionNode = xmlTree.getRootNode( );
 	} catch (runtime_error e) {
-		g_logger.logXmlError(path, "File appears to lack contents.");
+		logger.logXmlError( path, "File appears to lack contents." );
 		return false; // bail
 	}
 
 	// 2. Read subfaction list
-	const XmlNode *subfactionsNode = factionNode->getChild("subfactions", 0, false);
+	const XmlNode *subfactionsNode = factionNode->getChild( "subfactions", 0, false );
 	if (subfactionsNode) {
-		for (int i = 0; i < subfactionsNode->getChildCount(); ++i) {
+		for (int i = 0; i < subfactionsNode->getChildCount( ); ++i) {
 			// can't have more subfactions than an int has bits
-			if (i >= sizeof(int) * 8) {
-				throw runtime_error("Too many goddam subfactions.  Go write some code. " + dir);
+			if (i >= sizeof( int ) * 8) {
+				throw runtime_error( "Too many goddam subfactions.  Go write some code. " + dir );
 			}
-			subfactions.push_back(subfactionsNode->getChild("subfaction", i)->getAttribute("name")->getRestrictedValue());
+			m_subfactions.push_back( subfactionsNode->getChild( "subfaction", i )->getAttribute( "name" )->getRestrictedValue( ) );
 		}
 	}
 
-	// progress : 0 - unitFileNames.size()
+	// progress : 0 - unitFileNames.size( )
 
 	// 3. Load units
-	for (int i = 0; i < unitTypes.size(); ++i) {
-		string str = dir + "/units/" + unitTypes[i]->getName();
-		if (unitTypes[i]->load(str, techTree, this)) {
-			g_prototypeFactory.setChecksum(unitTypes[i]);
+	for (int i = 0; i < m_unitTypes.size( ); ++i) {
+		string str = dir + "/units/" + m_unitTypes[i]->getName( );
+		if (m_unitTypes[i]->load( str, techTree, this )) {
+			g_prototypeFactory.setChecksum( m_unitTypes[i] );
 		} else {
 			loadOk = false;
 		}
-		logger.getProgramLog().unitLoaded();
+		logger.getProgramLog( ).unitLoaded( );
 	}
 
 	// 4. Add BeLoadedCommandType to units that need them
 
 	// 4a. Discover which mobile unit types can be loaded(/housed) in other units
-	foreach_const (UnitTypes, uit, unitTypes) {
+	foreach_const (UnitTypes, uit, m_unitTypes) {
 		const UnitType *ut = *uit;
-		for (int i=0; i < ut->getCommandTypeCount<LoadCommandType>(); ++i) {
-			const LoadCommandType *lct = ut->getCommandType<LoadCommandType>(i);
-			foreach (UnitTypes, luit, unitTypes) {
+		for (int i=0; i < ut->getCommandTypeCount<LoadCommandType>( ); ++i) {
+			const LoadCommandType *lct = ut->getCommandType<LoadCommandType>( i );
+			foreach (UnitTypes, luit, m_unitTypes) {
 				UnitType *lut = *luit;
-				if (lct->canCarry(lut) && lut->getFirstCtOfClass(CmdClass::MOVE)) {
-					loadableUnitTypes.insert(lut);
+				if (lct->canCarry( lut ) && lut->getFirstCtOfClass( CmdClass::MOVE )) {
+					m_loadableUnitTypes.insert( lut );
 				}
 			}
 		}
 
 	}
 	// 4b. Give mobile housable unit types a be-loaded command type
-	foreach (UnitTypeSet, it, loadableUnitTypes) {
-		(*it)->addBeLoadedCommand();
+	foreach (UnitTypeSet, it, m_loadableUnitTypes) {
+		(*it)->addBeLoadedCommand( );
 	}
 
 	// 5. Load upgrades
-	for (int i = 0; i < upgradeTypes.size(); ++i) {
-		string str = dir + "/upgrades/" + upgradeTypes[i]->getName();
-		if (upgradeTypes[i]->load(str, techTree, this)) {
-			g_prototypeFactory.setChecksum(upgradeTypes[i]);
+	for (int i = 0; i < m_upgradeTypes.size( ); ++i) {
+		string str = dir + "/upgrades/" + m_upgradeTypes[i]->getName( );
+		if (m_upgradeTypes[i]->load( str, techTree, this )) {
+			g_prototypeFactory.setChecksum( m_upgradeTypes[i] );
 		} else {
 			loadOk = false;
 		}
@@ -190,226 +190,226 @@ bool FactionType::load(int ndx, const string &dir, const TechTree *techTree) {
 
 	// 6. Read starting resources
 	try {
-		const XmlNode *startingResourcesNode = factionNode->getChild("starting-resources");
-		startingResources.resize(startingResourcesNode->getChildCount());
-		for (int i = 0; i < startingResources.size(); ++i) {
+		const XmlNode *startingResourcesNode = factionNode->getChild( "starting-resources" );
+		m_startingResources.resize( startingResourcesNode->getChildCount( ) );
+		for (int i = 0; i < m_startingResources.size( ); ++i) {
 			try {
-				const XmlNode *resourceNode = startingResourcesNode->getChild("resource", i);
-				string name = resourceNode->getAttribute("name")->getRestrictedValue();
-				int amount = resourceNode->getAttribute("amount")->getIntValue();
-				startingResources[i].init(techTree->getResourceType(name), amount);
+				const XmlNode *resourceNode = startingResourcesNode->getChild( "resource", i );
+				string name = resourceNode->getAttribute( "name" )->getRestrictedValue( );
+				int amount = resourceNode->getAttribute( "amount" )->getIntValue( );
+				m_startingResources[i].init( techTree->getResourceType( name ), amount );
 			} catch (runtime_error e) {
-				g_logger.logXmlError(path, e.what());
+				logger.logXmlError( path, e.what( ) );
 				loadOk = false;
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(path, e.what());
+		logger.logXmlError( path, e.what( ) );
 		loadOk = false;
 	}
 
 	// 7. Read starting units
 	try {
-		const XmlNode *startingUnitsNode = factionNode->getChild("starting-units");
-		for (int i = 0; i < startingUnitsNode->getChildCount(); ++i) {
+		const XmlNode *startingUnitsNode = factionNode->getChild( "starting-units" );
+		for (int i = 0; i < startingUnitsNode->getChildCount( ); ++i) {
 			try {
-				const XmlNode *unitNode = startingUnitsNode->getChild("unit", i);
-				string name = unitNode->getAttribute("name")->getRestrictedValue();
-				int amount = unitNode->getAttribute("amount")->getIntValue();
-				startingUnits.push_back(PairPUnitTypeInt(getUnitType(name), amount));
+				const XmlNode *unitNode = startingUnitsNode->getChild( "unit", i );
+				string name = unitNode->getAttribute( "name" )->getRestrictedValue( );
+				int amount = unitNode->getAttribute( "amount" )->getIntValue( );
+				m_startingUnits.push_back( PairPUnitTypeInt( getUnitType( name ), amount ) );
 			} catch (runtime_error e) {
-				g_logger.logXmlError(path, e.what());
+				logger.logXmlError( path, e.what( ) );
 				loadOk = false;
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(path, e.what());
+		logger.logXmlError( path, e.what( ) );
 		loadOk = false;
 	}
 
 	// 8. Read music
 	try {
-		const XmlNode *musicNode= factionNode->getChild("music");
-		bool value = musicNode->getAttribute("value")->getBoolValue();
+		const XmlNode *musicNode= factionNode->getChild( "music" );
+		bool value = musicNode->getAttribute( "value" )->getBoolValue( );
 		if (value) {
-			XmlAttribute *playListAttr = musicNode->getAttribute("play-list", false);
+			XmlAttribute *playListAttr = musicNode->getAttribute( "play-list", false );
 			if (playListAttr) {
-				if (playListAttr->getBoolValue()) {
-					const XmlAttribute *shuffleAttrib = musicNode->getAttribute("shuffle", false);
-					bool shuffle = (shuffleAttrib && shuffleAttrib->getBoolValue() ? true : false);
+				if (playListAttr->getBoolValue( )) {
+					const XmlAttribute *shuffleAttrib = musicNode->getAttribute( "shuffle", false );
+					bool shuffle = (shuffleAttrib && shuffleAttrib->getBoolValue( ) ? true : false);
 
 					vector<StrSound*> tracks;
-					for (int i=0; i < musicNode->getChildCount(); ++i) {
-						StrSound *sound = new StrSound();
-						sound->open(dir+"/"+musicNode->getChild("music-file", i)->getAttribute("path")->getRestrictedValue());
-						tracks.push_back(sound);
+					for (int i=0; i < musicNode->getChildCount( ); ++i) {
+						StrSound *sound = new StrSound( );
+						sound->open( dir + "/" + musicNode->getChild( "music-file", i )->getAttribute( "path" )->getRestrictedValue( ) );
+						tracks.push_back( sound );
 					}
-					if (tracks.empty()) {
-						throw runtime_error("No tracks in play-list!");
+					if (tracks.empty( )) {
+						throw runtime_error( "No tracks in play-list!" );
 					}
 					if (shuffle) {
-						int seed = int(Chrono::getCurTicks());
-						Random random(seed);
-						Shared::Util::jumble(tracks, random);
+						int seed = int( Chrono::getCurTicks( ) );
+						Random random( seed );
+						jumble( tracks, random );
 					}
-					vector<StrSound*>::iterator it = tracks.begin();
+					vector<StrSound*>::iterator it = tracks.begin( );
 					vector<StrSound*>::iterator it2 = it + 1;
-					while (it2 != tracks.end()) {
-						(*it)->setNext(*it2);
+					while (it2 != tracks.end( )) {
+						(*it)->setNext( *it2 );
 						++it; ++it2;
 					}
-					music = tracks[0];
+					m_music = tracks[0];
 				}
 			} else {
-				XmlAttribute *pathAttr = musicNode->getAttribute("path", false);
+				XmlAttribute *pathAttr = musicNode->getAttribute( "path", false );
 				if (pathAttr) {
-					music = new StrSound();
-					music->open(dir + "/" + pathAttr->getRestrictedValue());
+					m_music = new StrSound( );
+					m_music->open( dir + "/" + pathAttr->getRestrictedValue( ) );
 				} else {
-					g_logger.logXmlError(path, "'music' node must have either a 'path' or 'play-list' attribute");
+					logger.logXmlError( path, "'music' node must have either a 'path' or 'play-list' attribute" );
 					loadOk = false;
 				}
 			}
 		}
 	} catch (runtime_error e) { 
-		g_logger.logXmlError(path, e.what());
+		logger.logXmlError( path, e.what( ) );
 		loadOk = false;
 	}
 
 	// 9. Load faction logo pixmaps
 	try {
-		const XmlNode *logoNode = factionNode->getOptionalChild("logo");
-		if (logoNode && logoNode->getBoolValue()) {
-			const XmlNode *n = logoNode->getOptionalChild("team-colour");
+		const XmlNode *logoNode = factionNode->getOptionalChild( "logo" );
+		if (logoNode && logoNode->getBoolValue( )) {
+			const XmlNode *n = logoNode->getOptionalChild( "team-colour" );
 			if (n) {
-				string logoPath = dir + "/" + n->getRestrictedAttribute("path");
-				m_logoTeamColour = new Pixmap2D();
-				m_logoTeamColour->load(logoPath);
+				string logoPath = dir + "/" + n->getRestrictedAttribute( "path" );
+				m_logoTeamColour = new Pixmap2D( );
+				m_logoTeamColour->load( logoPath );
 			} else {
-				m_logoTeamColour = 0;
+				m_logoTeamColour = nullptr;
 		}
 			n = logoNode->getOptionalChild("rgba-colour");
 			if (n) {
-				string logoPath = dir + "/" + n->getRestrictedAttribute("path");
-				m_logoRgba = new Pixmap2D();
-				m_logoRgba->load(logoPath);
+				string logoPath = dir + "/" + n->getRestrictedAttribute( "path" );
+				m_logoRgba = new Pixmap2D( );
+				m_logoRgba->load( logoPath );
 			} else {
-				m_logoRgba = 0;
+				m_logoRgba = nullptr;
 			}
 		}
 	} catch (runtime_error &e) {
-		g_logger.logXmlError(path, e.what());
+		g_logger.logXmlError( path, e.what( ) );
 		delete m_logoTeamColour;
 		delete m_logoRgba;
-		m_logoTeamColour = m_logoRgba = 0;
+		m_logoTeamColour = m_logoRgba = nullptr;
 	}
 
 	// 10. Notification sounds
 
 	// 10a. Notification of being attacked off screen
 	try {
-		const XmlNode *attackNoticeNode= factionNode->getChild("attack-notice", 0, false);
-		if (attackNoticeNode && attackNoticeNode->getAttribute("enabled")->getBoolValue()) {
-			attackNoticeDelay = attackNoticeNode->getAttribute("min-delay")->getIntValue();
-			attackNotice = new SoundContainer();
-			attackNotice->resize(attackNoticeNode->getChildCount());
-			for (int i=0; i < attackNoticeNode->getChildCount(); ++i) {
-				string path = attackNoticeNode->getChild("sound-file", i)->getAttribute("path")->getRestrictedValue();
-				StaticSound *sound = new StaticSound();
-				sound->load(dir + "/" + path);
-				(*attackNotice)[i] = sound;
+		const XmlNode *attackNoticeNode= factionNode->getChild( "attack-notice", 0, false );
+		if (attackNoticeNode && attackNoticeNode->getAttribute( "enabled" )->getBoolValue( )) {
+			m_attackNoticeDelay = attackNoticeNode->getAttribute( "min-delay" )->getIntValue( );
+			m_attackNotice = new SoundContainer( );
+			m_attackNotice->resize( attackNoticeNode->getChildCount( ) );
+			for (int i=0; i < attackNoticeNode->getChildCount( ); ++i) {
+				string path = attackNoticeNode->getChild( "sound-file", i )->getAttribute( "path" )->getRestrictedValue( );
+				StaticSound *sound = new StaticSound( );
+				sound->load( dir + "/" + path );
+				(*m_attackNotice)[i] = sound;
 			}
-			if (attackNotice->getSounds().size() == 0) {
-				g_logger.logXmlError(path, "An enabled attack-notice must contain at least one sound-file.");
+			if (m_attackNotice->getSounds( ).size( ) == 0) {
+				g_logger.logXmlError( path, "An enabled attack-notice must contain at least one sound-file." );
 				loadOk = false;
 			}
 		}
 	} catch (runtime_error &e) {
-		g_logger.logXmlError(path, e.what());
+		g_logger.logXmlError( path, e.what( ) );
 		loadOk = false;
 	}
 	// 10b. Notification of visual contact with enemy off screen
 	try {
-		const XmlNode *enemyNoticeNode= factionNode->getChild("enemy-notice", 0, false);
-		if (enemyNoticeNode && enemyNoticeNode->getAttribute("enabled")->getRestrictedValue() == "true") {
-			enemyNoticeDelay = enemyNoticeNode->getAttribute("min-delay")->getIntValue();
-			enemyNotice = new SoundContainer();
-			enemyNotice->resize(enemyNoticeNode->getChildCount());
-			for (int i = 0; i < enemyNoticeNode->getChildCount(); ++i) {
-				string path= enemyNoticeNode->getChild("sound-file", i)->getAttribute("path")->getRestrictedValue();
-				StaticSound *sound= new StaticSound();
-				sound->load(dir + "/" + path);
-				(*enemyNotice)[i]= sound;
+		const XmlNode *enemyNoticeNode= factionNode->getChild( "enemy-notice", 0, false );
+		if (enemyNoticeNode && enemyNoticeNode->getAttribute( "enabled" )->getRestrictedValue( ) == "true") {
+			m_enemyNoticeDelay = enemyNoticeNode->getAttribute( "min-delay" )->getIntValue( );
+			m_enemyNotice = new SoundContainer( );
+			m_enemyNotice->resize( enemyNoticeNode->getChildCount( ) );
+			for (int i = 0; i < enemyNoticeNode->getChildCount( ); ++i) {
+				string path= enemyNoticeNode->getChild( "sound-file", i )->getAttribute( "path" )->getRestrictedValue( );
+				StaticSound *sound= new StaticSound( );
+				sound->load( dir + "/" + path );
+				(*m_enemyNotice)[i]= sound;
 			}
-			if (enemyNotice->getSounds().size() == 0) {
-				g_logger.logXmlError(path, "An enabled enemy-notice must contain at least one sound-file.");
+			if (m_enemyNotice->getSounds( ).size( ) == 0) {
+				g_logger.logXmlError( path, "An enabled enemy-notice must contain at least one sound-file." );
 				loadOk = false;
 			}
 		}
 	} catch (runtime_error &e) {
-		g_logger.logXmlError(path, e.what());
+		g_logger.logXmlError( path, e.what( ) );
 		loadOk = false;
 	}
 	return loadOk;
 }
 
-bool FactionType::loadGlestimals(const string &dir, const TechTree *techTree) {
-	Logger &logger = Logger::getInstance();
-	logger.logProgramEvent("Glestimal Faction: " + dir, true);
+bool FactionType::loadGlestimals( const string &dir, const TechTree *techTree ) {
+	Logger &logger = Logger::getInstance( );
+	logger.logProgramEvent( "Glestimal Faction: " + dir, true );
 	m_id = -1;
-	m_name = basename(dir);
+	m_name = basename( dir );
 	bool loadOk = true;
 
 	// load glestimals
-	for (int i = 0; i < unitTypes.size(); ++i) {
-		string str = dir + "/glestimals/" + unitTypes[i]->getName();
-		if (unitTypes[i]->load(str, techTree, this, true)) {
+	for (int i = 0; i < m_unitTypes.size( ); ++i) {
+		string str = dir + "/glestimals/" + m_unitTypes[i]->getName( );
+		if (m_unitTypes[i]->load( str, techTree, this, true )) {
 			Checksum checksum;
-			unitTypes[i]->doChecksum(checksum);
-			g_prototypeFactory.setChecksum(unitTypes[i]);
+			m_unitTypes[i]->doChecksum( checksum );
+			g_prototypeFactory.setChecksum( m_unitTypes[i] );
 		} else {
 			loadOk = false;
 		}
 		///@todo count glestimals
-		//logger.unitLoaded();
+		//logger.unitLoaded( );
 	}
 	return loadOk;
 }
 
-void FactionType::doChecksum(Checksum &checksum) const {
-	checksum.add(m_name);
-	foreach_const (UnitTypes, it, unitTypes) {
-		(*it)->doChecksum(checksum);
+void FactionType::doChecksum( Checksum &checksum ) const {
+	checksum.add( m_name );
+	foreach_const (UnitTypes, it, m_unitTypes) {
+		(*it)->doChecksum( checksum );
 	}
-	foreach_const (UpgradeTypes, it, upgradeTypes) {
-		(*it)->doChecksum(checksum);
+	foreach_const (UpgradeTypes, it, m_upgradeTypes) {
+		(*it)->doChecksum( checksum );
 	}
-	foreach_const (StartingUnits, it, startingUnits) {
-		checksum.add(it->first->getName());
-		checksum.add<int>(it->second);
+	foreach_const (StartingUnits, it, m_startingUnits) {
+		checksum.add( it->first->getName( ) );
+		checksum.add<int>( it->second );
 	}
-	foreach_const (Resources, it, startingResources) {
-		checksum.add(it->getType()->getName());
-		checksum.add<int>(it->getAmount());
+	foreach_const (Resources, it, m_startingResources) {
+		checksum.add( it->getType( )->getName( ) );
+		checksum.add<int>( it->getAmount( ) );
 	}
-	foreach_const (Subfactions, it, subfactions) {
-		checksum.add(*it);
+	foreach_const (Subfactions, it, m_subfactions) {
+		checksum.add( *it );
 	}
 }
 
-FactionType::~FactionType() {
-	while (music) {
-		StrSound *delMusic = music;
-		music = music->getNext();
+FactionType::~FactionType( ) {
+	while (m_music) {
+		StrSound *delMusic = m_music;
+		m_music = m_music->getNext( );
 		delete delMusic;
 	}
-	if (attackNotice) {
-		deleteValues(attackNotice->getSounds().begin(), attackNotice->getSounds().end());
-		delete attackNotice;
+	if (m_attackNotice) {
+		deleteValues( m_attackNotice->getSounds( ).begin( ), m_attackNotice->getSounds( ).end( ) );
+		delete m_attackNotice;
 	}
-	if (enemyNotice) {
-		deleteValues(enemyNotice->getSounds().begin(), enemyNotice->getSounds().end());
-		delete enemyNotice;
+	if (m_enemyNotice) {
+		deleteValues( m_enemyNotice->getSounds( ).begin( ), m_enemyNotice->getSounds( ).end( ) );
+		delete m_enemyNotice;
 	}
 	delete m_logoTeamColour;
 	delete m_logoRgba;
@@ -417,37 +417,37 @@ FactionType::~FactionType() {
 
 // ==================== get ====================
 
-int FactionType::getSubfactionIndex(const string &m_name) const {
-    for (int i = 0; i < subfactions.size();i++) {
-		if (subfactions[i] == m_name) {
+int FactionType::getSubfactionIndex( const string &name ) const {
+    for (int i = 0; i < m_subfactions.size( ); i++) {
+		if (m_subfactions[i] == name) {
             return i;
 		}
     }
-	throw runtime_error("Subfaction not found: " + m_name);
+	throw runtime_error( "Subfaction not found: " + name );
 }
 
-const UnitType *FactionType::getUnitType(const string &m_name) const{
-    for (int i = 0; i < unitTypes.size(); ++i) {
-		if (unitTypes[i]->getName() == m_name) {
-            return unitTypes[i];
+const UnitType *FactionType::getUnitType( const string &name ) const{
+    for (int i = 0; i < m_unitTypes.size( ); ++i) {
+		if (m_unitTypes[i]->getName( ) == name) {
+            return m_unitTypes[i];
 		}
     }
-	throw runtime_error("Unit not found: " + m_name);
+	throw runtime_error("Unit not found: " + name);
 }
 
-const UpgradeType *FactionType::getUpgradeType(const string &m_name) const{
-    for (int i = 0; i < upgradeTypes.size(); ++i) {
-		if (upgradeTypes[i]->getName() == m_name) {
-            return upgradeTypes[i];
+const UpgradeType *FactionType::getUpgradeType(const string &name) const{
+    for (int i = 0; i < m_upgradeTypes.size( ); ++i) {
+		if (m_upgradeTypes[i]->getName( ) == name) {
+            return m_upgradeTypes[i];
 		}
     }
-	throw runtime_error("Upgrade not found: " + m_name);
+	throw runtime_error("Upgrade not found: " + name);
 }
 
 int FactionType::getStartingResourceAmount(const ResourceType *resourceType) const{
-	for (int i = 0; i < startingResources.size(); ++i) {
-		if (startingResources[i].getType() == resourceType) {
-			return startingResources[i].getAmount();
+	for (int i = 0; i < m_startingResources.size( ); ++i) {
+		if (m_startingResources[i].getType( ) == resourceType) {
+			return m_startingResources[i].getAmount( );
 		}
 	}
 	return 0;

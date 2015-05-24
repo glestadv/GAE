@@ -34,32 +34,32 @@ namespace Glest { namespace ProtoTypes {
 
 using Shared::Util::mediaErrorLog;
 
-void NameIdPair::doChecksum(Shared::Util::Checksum &checksum) const {
-	checksum.add(m_id);
-	checksum.add(m_name);
+void NameIdPair::doChecksum( Shared::Util::Checksum &checksum ) const {
+	checksum.add( m_id );
+	checksum.add( m_name );
 }
 
 // =====================================================
 // 	class DisplayableType
 // =====================================================
 
-bool DisplayableType::load(const XmlNode *baseNode, const string &dir) {
-	string xmlPath = dir + "/" + basename(dir) + ".xml";
+bool DisplayableType::load( const XmlNode *baseNode, const string &dir ) {
+	string xmlPath = dir + "/" + basename( dir ) + ".xml";
 	string imgPath;
 	try {
-		const XmlNode *imageNode = baseNode->getChild("image");
-		imgPath = dir + "/" + imageNode->getAttribute("path")->getRestrictedValue();
-		image = g_renderer.getTexture2D(ResourceScope::GAME, imgPath);
-		if (baseNode->getOptionalChild("name")) {
-			m_name = baseNode->getChild("name")->getStringValue();
+		const XmlNode *imageNode = baseNode->getChild( "image" );
+		imgPath = dir + "/" + imageNode->getAttribute( "path" )->getRestrictedValue( );
+		m_image = g_renderer.getTexture2D( ResourceScope::GAME, imgPath );
+		if (baseNode->getOptionalChild( "name" )) {
+			m_name = baseNode->getChild( "name" )->getStringValue( );
 		}
 	} catch (runtime_error &e) {
-		g_logger.logXmlError(xmlPath, e.what());
+		g_logger.logXmlError( xmlPath, e.what( ) );
 		return false;
 	}
-	while (mediaErrorLog.hasError()) {
-		MediaErrorLog::ErrorRecord record = mediaErrorLog.popError();
-		g_logger.logMediaError(xmlPath, record.path, record.msg.c_str());
+	while (mediaErrorLog.hasError( )) {
+		MediaErrorLog::ErrorRecord record = mediaErrorLog.popError( );
+		g_logger.logMediaError( xmlPath, record.path, record.msg.c_str( ) );
 	}
 	return true;
 }
@@ -68,218 +68,218 @@ bool DisplayableType::load(const XmlNode *baseNode, const string &dir) {
 // 	class RequirableType
 // =====================================================
 
-string RequirableType::getReqDesc(const Faction *f) const{
+string RequirableType::getReqDesc( const Faction *f ) const {
 	stringstream ss;
-	if (unitReqs.empty() && upgradeReqs.empty()) {
-		return ss.str();
+	if (m_unitReqs.empty( ) && m_upgradeReqs.empty( )) {
+		return ss.str( );
 	}
-	ss << g_lang.getFactionString(f->getType()->getName(), m_name)
-	   << " " << g_lang.get("Reqs") << ":\n";
-	foreach_const (UnitReqs, it, unitReqs) {
-		ss << "  " << (*it)->getName() << endl;
+	ss << g_lang.getFactionString( f->getType( )->getName( ), m_name )
+	   << " " << g_lang.get( "Reqs" ) << ":\n";
+	foreach_const (UnitReqs, it, m_unitReqs) {
+		ss << "  " << (*it)->getName( ) << endl;
 	}
-	foreach_const (UpgradeReqs, it, upgradeReqs) {
-		ss << "  " << (*it)->getName() << endl;
+	foreach_const (UpgradeReqs, it, m_upgradeReqs) {
+		ss << "  " << (*it)->getName( ) << endl;
 	}
-	return ss.str();
+	return ss.str( );
 }
 
-bool RequirableType::load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft) {
-	bool loadOk = DisplayableType::load(baseNode, dir);
+bool RequirableType::load( const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft ) {
+	bool loadOk = DisplayableType::load( baseNode, dir );
 	
 	try { // Unit requirements
-		const XmlNode *unitRequirementsNode = baseNode->getChild("unit-requirements", 0, false);
-		if(unitRequirementsNode) {
-			for(int i = 0; i < unitRequirementsNode->getChildCount(); ++i) {
-				const XmlNode *unitNode = unitRequirementsNode->getChild("unit", i);
-				string name = unitNode->getRestrictedAttribute("name");
-				unitReqs.push_back(ft->getUnitType(name));
+		const XmlNode *unitRequirementsNode = baseNode->getChild( "unit-requirements", 0, false );
+		if (unitRequirementsNode) {
+			for (int i = 0; i < unitRequirementsNode->getChildCount( ); ++i ) {
+				const XmlNode *unitNode = unitRequirementsNode->getChild( "unit", i );
+				string name = unitNode->getRestrictedAttribute( "name" );
+				m_unitReqs.push_back( ft->getUnitType( name ) );
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // Upgrade requirements
-		const XmlNode *upgradeRequirementsNode = baseNode->getChild("upgrade-requirements", 0, false);
-		if(upgradeRequirementsNode) {
-			for(int i = 0; i < upgradeRequirementsNode->getChildCount(); ++i) {
-				const XmlNode *upgradeReqNode = upgradeRequirementsNode->getChild("upgrade", i);
-				string name = upgradeReqNode->getRestrictedAttribute("name");
-				upgradeReqs.push_back(ft->getUpgradeType(name));
+		const XmlNode *upgradeRequirementsNode = baseNode->getChild( "upgrade-requirements", 0, false);
+		if (upgradeRequirementsNode) {
+			for (int i = 0; i < upgradeRequirementsNode->getChildCount( ); ++i ) {
+				const XmlNode *upgradeReqNode = upgradeRequirementsNode->getChild( "upgrade", i );
+				string name = upgradeReqNode->getRestrictedAttribute( "name" );
+				m_upgradeReqs.push_back( ft->getUpgradeType( name ) );
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // Subfactions required
-		const XmlNode *subfactionsNode = baseNode->getChild("subfaction-restrictions", 0, false);
-		if(subfactionsNode) {
-			for(int i = 0; i < subfactionsNode->getChildCount(); ++i) {
-				string name = subfactionsNode->getChild("subfaction", i)->getRestrictedAttribute("name");
-				subfactionsReqs |= 1 << ft->getSubfactionIndex(name);
+		const XmlNode *subfactionsNode = baseNode->getChild( "subfaction-restrictions", 0, false );
+		if (subfactionsNode) {
+			for (int i = 0; i < subfactionsNode->getChildCount( ); ++i ) {
+				string name = subfactionsNode->getChild( "subfaction", i )->getRestrictedAttribute( "name" );
+				m_subfactionsReqs |= 1 << ft->getSubfactionIndex( name );
 			}
 		} else {
-			subfactionsReqs = -1; //all subfactions
+			m_subfactionsReqs = -1; //all subfactions
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	return loadOk;
 }
 
-void RequirableType::doChecksum(Checksum &checksum) const {
-	NameIdPair::doChecksum(checksum);
-	foreach_const (UnitReqs, it, unitReqs) {
-		checksum.add((*it)->getName());
-		checksum.add((*it)->getId());
+void RequirableType::doChecksum( Checksum &checksum ) const {
+	NameIdPair::doChecksum( checksum );
+	foreach_const (UnitReqs, it, m_unitReqs) {
+		checksum.add( (*it)->getName( ) );
+		checksum.add( (*it)->getId( ) );
 	}
-	foreach_const (UpgradeReqs, it, upgradeReqs) {
-		checksum.add((*it)->getName());
-		checksum.add((*it)->getId());
+	foreach_const (UpgradeReqs, it, m_upgradeReqs) {
+		checksum.add( (*it)->getName( ) );
+		checksum.add( (*it)->getId( ) );
 	}
-	checksum.add(subfactionsReqs);
+	checksum.add( m_subfactionsReqs );
 }
 
 // =====================================================
 // 	class ProducibleType
 // =====================================================
 
-ProducibleType::ProducibleType() :
-		RequirableType(),
-		costs(),
-		cancelImage(NULL),
-		productionTime(0),
-		advancesToSubfaction(-1),
-		advancementIsImmediate(false) {
+ProducibleType::ProducibleType( ) :
+		RequirableType( ),
+		m_costs( ),
+		m_cancelImage( nullptr ),
+		m_productionTime( 0 ),
+		m_advancesToSubfaction( -1 ),
+		m_advancementIsImmediate( false ) {
 }
 
-ProducibleType::~ProducibleType() {
+ProducibleType::~ProducibleType( ) {
 }
 
-ResourceAmount ProducibleType::getCost(int i, const Faction *f) const {
-	Modifier mod = f->getCostModifier(this, costs[i].getType());
-	ResourceAmount res(costs[i]);
-	res.setAmount((res.getAmount() * mod.getMultiplier()).intp() + mod.getAddition());
+ResourceAmount ProducibleType::getCost( int i, const Faction *f ) const {
+	Modifier mod = f->getCostModifier( this, m_costs[i].getType( ) );
+	ResourceAmount res( m_costs[i] );
+	res.setAmount( (res.getAmount( ) * mod.getMultiplier( )).intp( ) + mod.getAddition( ) );
 	return res;
 }
 
-ResourceAmount ProducibleType::getCost(const ResourceType *rt, const Faction *f) const {
-	for (int i = 0; i < costs.size(); ++i) {
-		if (costs[i].getType() == rt) {
-			return getCost(i, f);
+ResourceAmount ProducibleType::getCost( const ResourceType *rt, const Faction *f ) const {
+	for (int i = 0; i < m_costs.size( ); ++i ) {
+		if (m_costs[i].getType( ) == rt) {
+			return getCost( i, f );
 		}
 	}
-	return ResourceAmount();
+	return ResourceAmount( );
 }
 
-string ProducibleType::getReqDesc(const Faction *f) const {
+string ProducibleType::getReqDesc( const Faction *f ) const {
 	Lang &lang = g_lang;
 	stringstream ss;
-	if (unitReqs.empty() && upgradeReqs.empty() && costs.empty()) {
-		return ss.str();
+	if (m_unitReqs.empty( ) && m_upgradeReqs.empty( ) && m_costs.empty( )) {
+		return ss.str( );
 	}
-	ss << lang.getFactionString(f->getType()->getName(), m_name)
-	   << " " << g_lang.get("Reqs") << ":\n";
-	for (int i=0; i < getCostCount(); ++i) {
-		ResourceAmount r = getCost(i, f);
-		string resName = lang.getFactionString(f->getType()->getName(), r.getType()->getName());
-		if (resName == r.getType()->getName()) {
-			resName = lang.getTechString(r.getType()->getName());
-			if (resName == r.getType()->getName()) {
-				resName = formatString(resName);
+	ss << lang.getFactionString( f->getType( )->getName( ), m_name )
+	   << " " << g_lang.get( "Reqs" ) << ":\n";
+	for (int i=0; i < getCostCount( ); ++i ) {
+		ResourceAmount r = getCost( i, f );
+		string resName = lang.getFactionString( f->getType( )->getName( ), r.getType( )->getName( ) );
+		if (resName == r.getType( )->getName( )) {
+			resName = lang.getTechString( r.getType( )->getName( ) );
+			if (resName == r.getType( )->getName( )) {
+				resName = formatString( resName );
 			}
 		}
-		ss << "  " << resName << ": " << r.getAmount() << endl;
+		ss << "  " << resName << ": " << r.getAmount( ) << endl;
 	}
-	foreach_const (UnitReqs, it, unitReqs) {
-		ss << "  " << (*it)->getName() << endl;
+	foreach_const (UnitReqs, it, m_unitReqs) {
+		ss << "  " << (*it)->getName( ) << endl;
 	}
-	foreach_const (UpgradeReqs, it, upgradeReqs) {
-		ss << "  " << (*it)->getName() << endl;
+	foreach_const (UpgradeReqs, it, m_upgradeReqs) {
+		ss << "  " << (*it)->getName( ) << endl;
 	}
-	return ss.str();
+	return ss.str( );
 }
 
-bool ProducibleType::load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType) {
-	string xmlPath = dir + "/" + basename(dir) + ".xml";
+bool ProducibleType::load( const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType ) {
+	string xmlPath = dir + "/" + basename( dir ) + ".xml";
 	bool loadOk = true;
-	if (!RequirableType::load(baseNode, dir, techTree, factionType)) {
+	if (!RequirableType::load( baseNode, dir, techTree, factionType )) {
 		loadOk = false;
 	}
 	
 	// Production time
-	try { productionTime = baseNode->getChildIntValue("time"); }
+	try { m_productionTime = baseNode->getChildIntValue( "time" ); }
 	catch (runtime_error e) {
-		g_logger.logXmlError(xmlPath, e.what());
+		g_logger.logXmlError( xmlPath, e.what( ) );
 		loadOk = false;
 	}
 	// Cancel image
 	string imgPath;
 	try {
-		const XmlNode *imageCancelNode = baseNode->getChild("image-cancel");
-		imgPath = dir + "/" + imageCancelNode->getRestrictedAttribute("path");
-		cancelImage = g_renderer.getTexture2D(ResourceScope::GAME, imgPath);
+		const XmlNode *imageCancelNode = baseNode->getChild( "image-cancel" );
+		imgPath = dir + "/" + imageCancelNode->getRestrictedAttribute( "path" );
+		m_cancelImage = g_renderer.getTexture2D( ResourceScope::GAME, imgPath );
 	} catch (runtime_error e) {
-		g_logger.logXmlError(xmlPath, e.what());
+		g_logger.logXmlError( xmlPath, e.what( ) );
 		loadOk = false;
 	}
-	while (mediaErrorLog.hasError()) {
-		MediaErrorLog::ErrorRecord record = mediaErrorLog.popError();
-		g_logger.logMediaError(xmlPath, record.path, record.msg.c_str());
+	while (mediaErrorLog.hasError( )) {
+		MediaErrorLog::ErrorRecord record = mediaErrorLog.popError( );
+		g_logger.logMediaError( xmlPath, record.path, record.msg.c_str( ) );
 	}
 
 	// Resource requirements
 	try {
-		const XmlNode *resourceRequirementsNode = baseNode->getChild("resource-requirements", 0, false);
-		if(resourceRequirementsNode) {
-			costs.resize(resourceRequirementsNode->getChildCount());
-			for(int i = 0; i < costs.size(); ++i) {
+		const XmlNode *resourceRequirementsNode = baseNode->getChild( "resource-requirements", 0, false );
+		if (resourceRequirementsNode) {
+			m_costs.resize( resourceRequirementsNode->getChildCount( ) );
+			for (int i = 0; i < m_costs.size( ); ++i ) {
 				try {
-					const XmlNode *resourceNode = resourceRequirementsNode->getChild("resource", i);
-					string name = resourceNode->getAttribute("name")->getRestrictedValue();
-					int amount = resourceNode->getAttribute("amount")->getIntValue();
-					costs[i].init(techTree->getResourceType(name), amount);
+					const XmlNode *resourceNode = resourceRequirementsNode->getChild( "resource", i );
+					string name = resourceNode->getAttribute( "name" )->getRestrictedValue( );
+					int amount = resourceNode->getAttribute( "amount" )->getIntValue( );
+					m_costs[i].init( techTree->getResourceType( name ), amount );
 				} catch (runtime_error e) {
-					g_logger.logXmlError(dir, e.what());
+					g_logger.logXmlError( dir, e.what( ) );
 					loadOk = false;
 				}
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	//subfaction advancement
 	try {
-		const XmlNode *advancementNode = baseNode->getChild("advances-to-subfaction", 0, false);
-		if(advancementNode) {
-			advancesToSubfaction = factionType->getSubfactionIndex(
-				advancementNode->getAttribute("name")->getRestrictedValue());
-			advancementIsImmediate = advancementNode->getAttribute("is-immediate")->getBoolValue();
+		const XmlNode *advancementNode = baseNode->getChild( "advances-to-subfaction", 0, false );
+		if (advancementNode) {
+			m_advancesToSubfaction = factionType->getSubfactionIndex(
+				advancementNode->getAttribute( "name" )->getRestrictedValue( ) );
+			m_advancementIsImmediate = advancementNode->getAttribute( "is-immediate" )->getBoolValue( );
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	return loadOk;
 }
 
-void ProducibleType::doChecksum(Checksum &checksum) const {
-	RequirableType::doChecksum(checksum);
-	foreach_const (Costs, it, costs) {
-		checksum.add(it->getType()->getId());
-		checksum.add(it->getType()->getName());
-		checksum.add(it->getAmount());
+void ProducibleType::doChecksum( Checksum &checksum ) const {
+	RequirableType::doChecksum( checksum );
+	foreach_const (Costs, it, m_costs) {
+		checksum.add( it->getType( )->getId( ) );
+		checksum.add( it->getType( )->getName( ) );
+		checksum.add( it->getAmount( ) );
 	}
-	checksum.add(productionTime);
-	checksum.add(advancesToSubfaction);
-	checksum.add(advancementIsImmediate);
+	checksum.add( m_productionTime );
+	checksum.add( m_advancesToSubfaction );
+	checksum.add( m_advancementIsImmediate );
 }
 
 }}//end namespace

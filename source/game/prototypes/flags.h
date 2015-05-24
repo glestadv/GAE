@@ -39,91 +39,91 @@ class TechTree;
  * value) and an optional storage type T, defaulting to int.  Flags is very
  * lightweight, consiting of only the value of type T.
  */
-template<class E, size_t max, class T =unsigned int> class Flags {
+template<class E, size_t max, class T = unsigned int> class Flags {
 public:
 	T flags;
 
-	Flags() {
-		assert(max <= sizeof(flags) * 8);
+	Flags( ) {
+		assert( max <= sizeof( flags ) * 8);
 		flags = 0;
 	}
 
 	/* BAD, overriding Flags(E flag)
 	Flags(T flags) {
-		assert(max <= sizeof(flags) * 8);
+		assert( max <= sizeof( flags ) * 8 );
 		this->flags = flags;
 	}*/
 
 	//Flags(E flag1, bool val1 /*= true*/) {
-	//	assert(max <= sizeof(flags) * 8);
+	//	assert( max <= sizeof( flags ) * 8 );
 	//	flags = 0;
-	//	set(flag1, val1);
+	//	set( flag1, val1);
 	//}
 
 	//Flags(E flag1, bool val1, E flag2, bool val2) {
-	//	assert(max <= sizeof(flags) * 8);
+	//	assert( max <= sizeof( flags ) * 8 );
 	//	flags = 0;
-	//	set(flag1, val1);
-	//	set(flag2, val2);
+	//	set( flag1, val1);
+	//	set( flag2, val2);
 	//}
 
-	Flags(E flag1) {
-		assert(max <= sizeof(flags) * 8);
+	Flags( E flag1 ) {
+		assert( max <= sizeof( flags ) * 8 );
 		flags = 0;
-		set(flag1, true);
+		set( flag1, true );
 	}
 
-	Flags(E flag1, E flag2) {
-		assert(max <= sizeof(flags) * 8);
+	Flags( E flag1, E flag2 ) {
+		assert( max <= sizeof( flags ) * 8 );
 		flags = 0;
-		set(flag1, true);
-		set(flag2, true);
+		set( flag1, true );
+		set( flag2, true );
 	}
 
-	Flags(E flag1, E flag2, E flag3) {
-		assert(max <= sizeof(flags) * 8);
+	Flags( E flag1, E flag2, E flag3 ) {
+		assert( max <= sizeof( flags ) * 8 );
 		flags = 0;
-		set(flag1, true);
-		set(flag2, true);
-		set(flag3, true);
+		set( flag1, true );
+		set( flag2, true );
+		set( flag3, true );
 	}
 
-	Flags(E flag1, E flag2, E flag3, E flag4) {
-		assert(max <= sizeof(flags) * 8);
+	Flags( E flag1, E flag2, E flag3, E flag4 ) {
+		assert( max <= sizeof( flags ) * 8 );
 		flags = 0;
-		set(flag1, true);
-		set(flag2, true);
-		set(flag3, true);
-		set(flag4, true);
+		set( flag1, true );
+		set( flag2, true );
+		set( flag3, true );
+		set( flag4, true );
 	}
 
 	/** Sets a boolean flag. */
-	void set(E flag, bool value) {
-		assert(flag < sizeof(flags) * 8);
-		assert(flag < max);
+	void set( E flag, bool value ) {
+		assert( flag < sizeof( flags ) * 8);
+		assert( flag < max );
 		flags = value ? flags | (1 << flag) : flags & ~(1 << flag);
 	}
 
 	/** Retrieve the value of a boolean flag. */
-	bool get(E flag) const {
-		assert(flag < sizeof(flags) * 8);
-		assert(flag < max);
+	bool get( E flag ) const {
+		assert( flag < sizeof( flags ) * 8 );
+		assert( flag < max );
 		return flags & (1 << flag);
 	}
 
 	/** Assignment operator.  Copies the flags from the supplied T value. */
-	Flags &operator =(const T &f) {
+	Flags &operator=( const T &f ) {
 		flags = f;
 		return flags;
 	}
 
 	/** Cast operator to return the flags of type T. */
-	operator T() {
+	operator T( ) {
 		return flags;
 	}
 
 	/** Clears all flags. */
-	void reset() {
+	void reset( ) {
 		flags = 0;
 	}
 };
@@ -140,14 +140,14 @@ public:
  */
 template<class E, size_t max, class T = unsigned int> class XmlBasedFlags : public Flags<E, max, T> {
 public:
-	virtual ~XmlBasedFlags(){}
+	virtual ~XmlBasedFlags( ) { }
 	/**
 	 * Called to initialize the Flags object from an xml node.  The derived
 	 * class should in turn call the protected load method passing the
 	 * appropriate values for childNodeName and flagNames.
 	 */
-	virtual void load(const XmlNode *node, const string &dir,
-			const TechTree *tt, const FactionType *ft) = 0;
+	virtual void load( const XmlNode *node, const string &dir,
+			const TechTree *tt, const FactionType *ft ) = 0;
 
 protected:
 	/**
@@ -170,27 +170,27 @@ protected:
 	 * @param flagNames the EnumNames object for E.
 	 *
 	 */
-	void load(const XmlNode *baseNode, const string &dir, const TechTree *tt,
+	void load( const XmlNode *baseNode, const string &dir, const TechTree *tt,
 			const FactionType *ft, const char* childNodeName,
-			const EnumNames<E> &flagNames) {
+			const EnumNames<E> &flagNames ) {
 		string nodeName;
 		string flagName;
 		const XmlNode *node;
 		int f;
 
-		for (int i = 0; i < baseNode->getChildCount(); ++i) {
-			node = baseNode->getChild(i);
-			nodeName = node->getName();
+		for (int i = 0; i < baseNode->getChildCount( ); ++i) {
+			node = baseNode->getChild( i );
+			nodeName = node->getName( );
 			if (nodeName == childNodeName) {
-				flagName = node->getAttribute("value")->getRestrictedValue();
+				flagName = node->getAttribute( "value" )->getRestrictedValue( );
 			} else {
 				flagName = nodeName;
 			}
-			E result = flagNames.match(flagName.c_str());
+			E result = flagNames.match( flagName.c_str( ) );
 			if (result == E::INVALID) {
-				throw runtime_error(string() + "Invalid " + childNodeName + ": " + flagName + ": " + dir);
+				throw runtime_error( string( ) + "Invalid " + childNodeName + ": " + flagName + ": " + dir );
 			} else {
-				this->set(result, true);
+				this->set( result, true );
 			}
 		}
 	}

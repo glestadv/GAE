@@ -3,7 +3,7 @@
 //
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //                2008-2009 Daniel Santos
-//                2009-2010 James McCulloch
+//                2009-2015 James McCulloch
 //
 //	You can redistribute this code and/or modify it under
 //	the terms of the GNU General Public License as published
@@ -48,11 +48,11 @@ bool AttackCommandTypeBase::load( const XmlNode *n, const string &dir, const Tec
 	//single attack skill
 	if(attackSkillNode) {
 		try {
-			skillName = attackSkillNode->getAttribute( "value" )->getRestrictedValue();
+			skillName = attackSkillNode->getAttribute( "value" )->getRestrictedValue( );
 			ast = static_cast<const AttackSkillType*>( unitType->getSkillType( skillName, SkillClass::ATTACK ) );
-			attackSkillTypes.push_back( ast, AttackSkillPreferences() );
+			m_attackSkillTypes.push_back( ast, AttackSkillPreferences( ) );
 		} catch (runtime_error e) {
-			g_logger.logXmlError( dir, e.what() );
+			g_logger.logXmlError( dir, e.what( ) );
 			loadOk = false;
 		}
 	} else { //multiple attack skills
@@ -64,39 +64,39 @@ bool AttackCommandTypeBase::load( const XmlNode *n, const string &dir, const Tec
 			if (!attackSkillsNode) {
 				throw runtime_error( "Must specify either a single <attack-skill> node or an <attack-skills> node with nested <attack-skill>s." );
 			}
-			int count = attackSkillsNode->getChildCount();
+			int count = attackSkillsNode->getChildCount( );
 
 			for(int i = 0; i < count; ++i) {
 				try {
 					AttackSkillPreferences prefs;
 					attackSkillNode = attackSkillsNode->getChild( "attack-skill", i );
-					skillName = attackSkillNode->getAttribute( "value" )->getRestrictedValue();
+					skillName = attackSkillNode->getAttribute( "value" )->getRestrictedValue( );
 					ast = static_cast<const AttackSkillType*>( unitType->getSkillType( skillName, SkillClass::ATTACK ) );
 					flagsNode = attackSkillNode->getChild( "flags", 0, false );
 					if (flagsNode) {
 						prefs.load( flagsNode, dir, tt, ft );
 					}
-					attackSkillTypes.push_back( ast, prefs );
+					m_attackSkillTypes.push_back( ast, prefs );
 				}
 				catch (runtime_error e) {
-					g_logger.logXmlError( dir, e.what () );
+					g_logger.logXmlError( dir, e.what( ) );
 					loadOk = false;
 				}
 			}
 		} catch (runtime_error e) {
-			g_logger.logXmlError( dir, e.what() );
+			g_logger.logXmlError( dir, e.what( ) );
 			loadOk = false;
 		}
 	}
 	if (loadOk) {
-		attackSkillTypes.init();
+		m_attackSkillTypes.init( );
 	}
 	return loadOk;
 }
 
 /** Returns an attack skill for the given field if one exists. */ /*
 const AttackSkillType * AttackCommandTypeBase::getAttackSkillType( Field field ) const {
-	for (AttackSkillTypes::const_iterator i = attackSkillTypes.begin(); i != attackSkillTypes.end(); i++) {
+	for (AttackSkillTypes::const_iterator i = attackSkillTypes.begin( ); i != attackSkillTypes.end( ); i++) {
 		if (i->first->getField( field )) {
 			return i->first;
 		}
@@ -113,7 +113,7 @@ const AttackSkillType * AttackCommandTypeBase::getAttackSkillType( Field field )
   * @returns true when completed */
 bool AttackCommandType::updateGeneric( Unit *unit, Command *command, const AttackCommandType *act, 
 										  Unit* target, const Vec2i &targetPos ) const {
-	if (target && target->getHp() <= 0) {
+	if (target && target->isDead( )) {
 		// the target is dead, finish command so the unit doesn't 
 		// wander to the target pos
 		unit->setCurrSkill( SkillClass::STOP );
@@ -122,24 +122,24 @@ bool AttackCommandType::updateGeneric( Unit *unit, Command *command, const Attac
 
 	const AttackSkillType *ast = nullptr;
 
-	if (target && !attackSkillTypes.getZone( target->getCurrZone() )) { // if have target but can't attack it
-		unit->finishCommand();
+	if (target && !m_attackSkillTypes.getZone( target->getCurrZone( ) )) { // if have target but can't attack it
+		unit->finishCommand( );
 		return true;
 	}
-	if (attackableInRange( unit, &target, &attackSkillTypes, &ast )) { // found a target in range
+	if (attackableInRange( unit, &target, &m_attackSkillTypes, &ast )) { // found a target in range
 		assert( ast );
-		if (unit->getEp() >= ast->getEpCost()) { // enough ep for skill?
-			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", new target: " << target->getId() );
+		if (unit->getEp( ) >= ast->getEpCost( )) { // enough ep for skill?
+			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount( ) << ", Unit: " << unit->getId( ) << ", new target: " << target->getId( ) );
 			unit->setCurrSkill( ast );
 			unit->setTarget( target );
 		} else {
-			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", found target, but not enough EP to attack." );
+			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount( ) << ", Unit: " << unit->getId( ) << ", found target, but not enough EP to attack." );
 			unit->setCurrSkill( SkillClass::STOP ); ///@todo check other attack skills for a cheaper one??
 		}
 		return false;
 	}
 
-	if (unit->isCarried()) { // if housed, dont try to wander off!
+	if (unit->isCarried( )) { // if housed, dont try to wander off!
 		unit->setCurrSkill( SkillClass::STOP );
 		return true;
 	}
@@ -149,71 +149,71 @@ bool AttackCommandType::updateGeneric( Unit *unit, Command *command, const Attac
 
 	// couldn't attack anyone, look for someone to smite nearby, compute target pos
 	Vec2i pos;
-	if (attackableInSight( unit, &target, &attackSkillTypes, NULL )) { // got a target
-		pos = target->getNearestOccupiedCell( unit->getPos() );
-		if (pos != unit->getTargetPos()) {
-			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", new target pos: " << pos );
+	if (attackableInSight( unit, &target, &m_attackSkillTypes, nullptr )) { // got a target
+		pos = target->getNearestOccupiedCell( unit->getPos( ) );
+		if (pos != unit->getTargetPos( )) {
+			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount( ) << ", Unit: " << unit->getId( ) << ", new target pos: " << pos );
 			unit->setTargetPos( pos );
-			unit->clearPath();
+			unit->clearPath( );
 		} else {
-			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount() << ", Unit: " << unit->getId() << ", new targetPos = current targetPos." );
+			SYNC_LOG( "Attack:: Frame: " << g_world.getFrameCount( ) << ", Unit: " << unit->getId( ) << ", new targetPos = current targetPos." );
 		}
 	} else { // if no more targets and on auto command, then turn around
-		if (command->isAuto() && command->hasPos2()) {
-			//if (g_config.getGsAutoReturnEnabled()) {
-				command->popPos();
-				pos = command->getPos();
-				RUNTIME_CHECK( g_world.getMap()->isInside( pos ) );
-				unit->clearPath();
+		if (command->isAuto( ) && command->hasPos2( )) {
+			//if (g_config.getGsAutoReturnEnabled( )) {
+				command->popPos( );
+				pos = command->getPos( );
+				RUNTIME_CHECK( g_world.getMap( )->isInside( pos ) );
+				unit->clearPath( );
 			//} else {
 			//	unit->setCurrSkill( SkillClass::STOP );
 			//	return true;
 			//}
 		} else { // no targets & not auto-command, use command target pos
 			pos = targetPos;
-			RUNTIME_CHECK( g_world.getMap()->isInside( pos ) );
+			RUNTIME_CHECK( g_world.getMap( )->isInside( pos ) );
 		}
 	}
 
-	return unit->travel( pos, act->getMoveSkillType() ) == TravelState::ARRIVED;
+	return unit->travel( pos, act->getMoveSkillType( ) ) == TravelState::ARRIVED;
 }
 
 void AttackCommandType::update( Unit *unit ) const {
-	_PROFILE_COMMAND_UPDATE();
-	Command *command = unit->getCurrCommand();
-	assert( command->getType() == this );
-	Unit *target = command->getUnit();
+	_PROFILE_COMMAND_UPDATE( );
+	Command *command = unit->getCurrCommand( );
+	assert( command->getType( ) == this );
+	Unit *target = command->getUnit( );
 
-	if (updateGeneric( unit, command, this, target, command->getPos() )) {
-		unit->finishCommand();
+	if (updateGeneric( unit, command, this, target, command->getPos( ) )) {
+		unit->finishCommand( );
 	}
 }
 
 bool AttackCommandType::load( const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft ) {
 	bool ok = MoveBaseCommandType::load( n, dir, tt, ft );
-	return AttackCommandTypeBase::load( n, dir, tt, ft, unitType ) && ok;
+	return AttackCommandTypeBase::load( n, dir, tt, ft, m_unitType ) && ok;
 }
 
 void AttackCommandType::descSkills( const Unit *unit, CmdDescriptor *callback, ProdTypePtr pt ) const {
 	string msg = g_lang.get( "WalkSpeed" ) + ": " + intToStr( unit->getSpeed( m_moveSkillType ) ) + "\n";
-	attackSkillTypes.getDesc( msg, unit );
+	m_attackSkillTypes.getDesc( msg, unit );
 	callback->addElement( msg );
 }
 
 
 Command *AttackCommandType::doAutoAttack( Unit *unit ) const {
 	if (!unit->isAutoCmdEnabled( AutoCmdFlag::ATTACK )) {
-		return 0;
+		return nullptr;
 	}
 	// look for someone to smite
 	Unit *sighted = nullptr;
-	if (!unit->getFaction()->isAvailable( this )
-	|| !attackableInSight( unit, &sighted, &attackSkillTypes, nullptr )) {
-		return 0;
+	if (!unit->getFaction( )->isAvailable( this )
+	|| !attackableInSight( unit, &sighted, &m_attackSkillTypes, nullptr )) {
+		return nullptr;
 	}
-	Command *newCommand = g_world.newCommand( this, CmdFlags( CmdProps::AUTO ), sighted->getPos(), unit );
-	newCommand->setPos2( unit->getPos() );
-	assert( newCommand->isAuto() );
+	Command *newCommand = g_world.newCommand( this, CmdFlags( CmdProps::AUTO ), sighted->getPos( ), unit );
+	newCommand->setPos2( unit->getPos( ) );
+	assert( newCommand->isAuto( ) );
 	return newCommand;
 }
 
@@ -222,11 +222,11 @@ Command *AttackCommandType::doAutoAttack( Unit *unit ) const {
 // =====================================================
 
 void AttackStoppedCommandType::update( Unit *unit ) const {
-	Command *command = unit->getCurrCommand();
-	assert( command->getType() == this );
+	Command *command = unit->getCurrCommand( );
+	assert( command->getType( ) == this );
 	Unit *enemy = nullptr;
 	const AttackSkillType *ast = nullptr;
-	if (attackableInRange( unit, &enemy, &attackSkillTypes, &ast )) {
+	if (attackableInRange( unit, &enemy, &m_attackSkillTypes, &ast )) {
 		assert( ast );
 		unit->setCurrSkill( ast );
 		unit->setTarget( enemy, true, true );
@@ -237,22 +237,22 @@ void AttackStoppedCommandType::update( Unit *unit ) const {
 
 bool AttackStoppedCommandType::load( const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft ) {
 	bool ok = StopBaseCommandType::load( n, dir, tt, ft );
-	return AttackCommandTypeBase::load( n, dir, tt, ft, unitType ) && ok;
+	return AttackCommandTypeBase::load( n, dir, tt, ft, m_unitType ) && ok;
 }
 
 Command *AttackStoppedCommandType::doAutoAttack( Unit *unit ) const {
 	// look for someone to smite
 	Unit *sighted = nullptr;
-	if (!unit->getFaction()->isAvailable( this ) || !attackableInRange( unit, &sighted, &attackSkillTypes, nullptr )) {
-		return 0;
+	if (!unit->getFaction( )->isAvailable( this ) || !attackableInRange( unit, &sighted, &m_attackSkillTypes, nullptr )) {
+		return nullptr;
 	}
-	Command *newCommand = g_world.newCommand( this, CmdFlags(CmdProps::AUTO), sighted->getPos(), unit );
+	Command *newCommand = g_world.newCommand( this, CmdFlags(CmdProps::AUTO), sighted->getPos( ), unit );
 	return newCommand;
 }
 
 void AttackStoppedCommandType::descSkills( const Unit *unit, CmdDescriptor *callback, ProdTypePtr pt ) const {
 	string msg;
-	attackSkillTypes.getDesc( msg, unit );	
+	m_attackSkillTypes.getDesc( msg, unit );	
 	callback->addElement( msg );
 }
 
@@ -261,32 +261,32 @@ void AttackStoppedCommandType::descSkills( const Unit *unit, CmdDescriptor *call
 // =====================================================
 
 void PatrolCommandType::update( Unit *unit ) const {
-	_PROFILE_COMMAND_UPDATE();
-	Command *command = unit->getCurrCommand();
-	assert( command->getType() == this );
-	Unit *target = command->getUnit();
-	Unit *target2 = command->getUnit2();
+	_PROFILE_COMMAND_UPDATE( );
+	Command *command = unit->getCurrCommand( );
+	assert( command->getType( ) == this );
+	Unit *target = command->getUnit( );
+	Unit *target2 = command->getUnit2( );
 	Vec2i pos;
 
 	if (target) {	// patrolling toward a target unit
- 		if (target->isDead()) { // check target
-			pos = target->getCenteredPos();
+ 		if (target->isDead( )) { // check target
+			pos = target->getCenteredPos( );
 			command->setUnit( nullptr );
 			command->setPos( pos );
 		} else { // if target not dead calc nearest pos with patrol range 
-			pos = Map::getNearestPos( unit->getPos(), target->getPos(), 1, getMaxDistance() );
+			pos = Map::getNearestPos( unit->getPos( ), target->getPos( ), 1, getMaxDistance( ) );
 		}
 	} else { // no target unit, use command pos
-		pos = command->getPos();
+		pos = command->getPos( );
 	}
-	if (target2 && target2->isDead()) { // patrolling away from a unit, check target
+	if (target2 && target2->isDead( )) { // patrolling away from a unit, check target
 		command->setUnit2( nullptr );
-		command->setPos2( target2->getCenteredPos() );
+		command->setPos2( target2->getCenteredPos( ) );
 	}
 	// If destination reached or blocked, turn around on next update.
-	if (updateGeneric( unit, command, this, NULL, pos )) {
-		unit->clearPath();
-		command->swap();
+	if (updateGeneric( unit, command, this, nullptr, pos )) {
+		unit->clearPath( );
+		command->swap( );
 	}
 }
 
@@ -296,14 +296,14 @@ void PatrolCommandType::tick( const Unit *unit, Command &command ) const {
 
 void PatrolCommandType::finish( Unit *unit, Command &command ) const {
 	// remember where we started from
-	command.setPos2( unit->getPos() );
+	command.setPos2( unit->getPos( ) );
 }
 
 void PatrolCommandType::descSkills( const Unit *unit, CmdDescriptor *callback, ProdTypePtr pt ) const {
 	string msg;
 	m_moveSkillType->getDesc( msg, unit );
 	// max-range ...
-	attackSkillTypes.getDesc( msg, unit );
+	m_attackSkillTypes.getDesc( msg, unit );
 	callback->addElement( msg );
 }
 
@@ -312,27 +312,27 @@ void PatrolCommandType::descSkills( const Unit *unit, CmdDescriptor *callback, P
 // =====================================================
 
 void GuardCommandType::update( Unit *unit ) const {
-	_PROFILE_COMMAND_UPDATE();
-	Command *command = unit->getCurrCommand();
-	assert( command->getType() == this );
-	Unit *target = command->getUnit();
+	_PROFILE_COMMAND_UPDATE( );
+	Command *command = unit->getCurrCommand( );
+	assert( command->getType( ) == this );
+	Unit *target = command->getUnit( );
 	Vec2i pos;
 
-	if (target && target->isDead()) {
+	if (target && target->isDead( )) {
 		//if you suck ass as a body guard then you have to hang out where your client died.
 		command->setUnit( nullptr );
-		command->setPos( target->getPos() );
+		command->setPos( target->getPos( ) );
 		target = nullptr;
 	}
 	// calculate target pos
 	if (target) {
-		pos = Map::getNearestPos( unit->getPos(), target, 1, getMaxDistance() );
+		pos = Map::getNearestPos( unit->getPos( ), target, 1, getMaxDistance( ) );
 	} else {
-		pos = Map::getNearestPos( unit->getPos(), command->getPos(), 1, getMaxDistance() );
+		pos = Map::getNearestPos( unit->getPos( ), command->getPos( ), 1, getMaxDistance( ) );
 	}
 	// if within 'guard range' and no bad guys to attack
 	if (updateGeneric( unit, command, this, nullptr, pos )) { 
-		unit->clearPath();
+		unit->clearPath( );
 		unit->setCurrSkill( SkillClass::STOP );  // just hang-ten
 	}
 }
@@ -346,9 +346,9 @@ bool GuardCommandType::load( const XmlNode *n, const string &dir, const TechTree
 
 	//distance
 	try {
-		m_maxDistance = n->getChild( "max-distance" )->getAttribute( "value" )->getIntValue();
+		m_maxDistance = n->getChild( "max-distance" )->getAttribute( "value" )->getIntValue( );
 	} catch (runtime_error e) {
-		g_logger.logXmlError( dir, e.what () );
+		g_logger.logXmlError( dir, e.what ( ) );
 		loadOk = false;
 	}
 	return loadOk;
@@ -363,7 +363,7 @@ void GuardCommandType::descSkills( const Unit *unit, CmdDescriptor *callback, Pr
 	string msg;
 	m_moveSkillType->getDesc( msg, unit );
 	// max-range ...
-	attackSkillTypes.getDesc( msg, unit );
+	m_attackSkillTypes.getDesc( msg, unit );
 	callback->addElement( msg );
 }
 
@@ -373,7 +373,7 @@ void GuardCommandType::descSkills( const Unit *unit, CmdDescriptor *callback, Pr
 // =====================================================
 
 void Targets::record( Unit *target, fixed dist ) {
-	if (find( target ) == end()) {
+	if (find( target ) == end( )) {
 		insert( std::make_pair( target, dist ) );
 	}
 	if (dist < distance) {
@@ -384,7 +384,7 @@ void Targets::record( Unit *target, fixed dist ) {
 
 Unit* Targets::getNearestSkillClass( SkillClass sc ) {
 	foreach(Targets, it, *this) {
-		if (it->first->getType()->hasSkillClass( sc )) {
+		if (it->first->getType( )->hasSkillClass( sc )) {
 			return it->first;
 		}
 	}
@@ -393,7 +393,7 @@ Unit* Targets::getNearestSkillClass( SkillClass sc ) {
 
 Unit* Targets::getNearestHpRatio( fixed hpRatio ) {
 	foreach(Targets, it, *this) {
-		if (it->first->getHpRatioFixed() < hpRatio) {
+		if (it->first->getHpRatioFixed( ) < hpRatio) {
 			return it->first;
 		}
 	}

@@ -41,8 +41,8 @@ class FactionType;
  */
 class EffectTypeFlags : public XmlBasedFlags<EffectTypeFlag, EffectTypeFlag::COUNT>{
 public:
-	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<EffectTypeFlag, EffectTypeFlag::COUNT>::load(node, dir, tt, ft, "flag", EffectTypeFlagNames);
+	void load( const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft ) {
+		XmlBasedFlags<EffectTypeFlag, EffectTypeFlag::COUNT>::load( node, dir, tt, ft, "flag", EffectTypeFlagNames );
 	}
 };
 
@@ -56,84 +56,84 @@ typedef vector<EffectType*> EffectTypes;
  */
 class EffectType: public EnhancementType, public DisplayableType {
 private:
-	EffectBias bias;
-	EffectStacking stacking;
+	EffectBias m_bias;
+	EffectStacking m_stacking;
 
-	int duration;
-	fixed chance;
-	bool light;
-	Vec3f lightColour;
-	StaticSound *sound;
-	float soundStartTime;
-	bool loopSound;
-	EffectTypes recourse;
-	EffectTypeFlags flags;
-	string affectTag;
-	const AttackType *damageType;
-	bool display;
-	UnitParticleSystemTypes particleSystems;
-	const FactionType *factionType;
-
-public:
-	static EffectClass typeClass() { return EffectClass::EFFECT; }
+	int m_duration;
+	fixed m_chance;
+	bool m_light;
+	Vec3f m_lightColour;
+	StaticSound *m_sound;
+	float m_soundStartTime;
+	bool m_loopSound;
+	EffectTypes m_recourse;
+	EffectTypeFlags m_flags;
+	string m_affectTag;
+	const AttackType *m_damageType;
+	bool m_display;
+	UnitParticleSystemTypes m_particleSystems;
+	const FactionType *m_factionType;
 
 public:
-	EffectType();
-	virtual ~EffectType() { delete sound; }
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
-	virtual void doChecksum(Checksum &checksum) const;
+	static EffectClass typeClass( ) { return EffectClass::EFFECT; }
 
-	const FactionType* getFactionType() const {return factionType;}
-	EffectBias getBias() const				{return bias;}
-	EffectStacking getStacking() const		{return stacking;}
-	const EffectTypeFlags &getFlags() const	{return flags;}
-	bool getFlag(EffectTypeFlag flag) const	{return flags.get(flag);}
-	const AttackType *getDamageType() const	{return damageType;}
-	const string& getAffectTag() const		{return affectTag;}
+public:
+	EffectType( );
+	virtual ~EffectType( ) { delete m_sound; }
+	virtual bool load( const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft );
+	virtual void doChecksum( Checksum &checksum ) const;
 
-	bool isEffectsAlly() const				{return getFlag(EffectTypeFlag::ALLY);}
-	bool isEffectsFoe() const				{return getFlag(EffectTypeFlag::FOE);}
-	//bool isEffectsNormalUnits() const		{return !getFlag(EffectTypeFlag::NO_NORMAL_UNITS);}
-	//bool isEffectsBuildings() const			{return getFlag(EffectTypeFlag::BUILDINGS);}
-	bool isEffectsPetsOnly() const			{return getFlag(EffectTypeFlag::PETS_ONLY);}
-	//bool isEffectsNonLiving() const			{return getFlag(EffectTypeFlag::NON_LIVING);}
-	bool isScaleSplashStrength() const		{return getFlag(EffectTypeFlag::SCALE_SPLASH_STRENGTH);}
-	bool isEndsWhenSourceDies() const		{return getFlag(EffectTypeFlag::ENDS_WITH_SOURCE);}
-	bool idRecourseEndsWithRoot() const		{return getFlag(EffectTypeFlag::RECOURSE_ENDS_WITH_ROOT);}
-	bool isPermanent() const				{return getFlag(EffectTypeFlag::PERMANENT);}
-	bool isTickImmediately() const			{return getFlag(EffectTypeFlag::TICK_IMMEDIATELY);}
-	bool isCauseCloak() const				{return getFlag(EffectTypeFlag::CAUSES_CLOAK);}
+	const FactionType* getFactionType( ) const  { return m_factionType;       }
+	EffectBias getBias( ) const                 { return m_bias;              }
+	EffectStacking getStacking( ) const         { return m_stacking;          }
+	const EffectTypeFlags &getFlags( ) const    { return m_flags;             }
+	bool getFlag( EffectTypeFlag flag ) const   { return m_flags.get( flag ); }
+	const AttackType *getDamageType( ) const    { return m_damageType;        }
+	const string& getAffectTag( ) const         { return m_affectTag;         }
 
-	int getDuration() const								{return duration;}
-	fixed getChance() const								{return chance;}
-	bool isLight() const								{return light;}
-	bool isDisplay() const								{return display;}
-	Vec3f getLightColour() const						{return lightColour;}
-	UnitParticleSystemTypes& getParticleTypes()			{return particleSystems;}
-	const UnitParticleSystemTypes& getParticleTypes() const	{return particleSystems;}
-	StaticSound *getSound() const						{return sound;}
-	float getSoundStartTime() const						{return soundStartTime;}
-	bool isLoopSound() const							{return loopSound;}
-	const EffectTypes &getRecourse() const				{return recourse;}
-	void getDesc(string &str) const;
+	bool isEffectsAlly( ) const             { return getFlag( EffectTypeFlag::ALLY );                    }
+	bool isEffectsFoe( ) const              { return getFlag( EffectTypeFlag::FOE );                     }
+	//bool isEffectsNormalUnits( ) const    { return !getFlag( EffectTypeFlag::NO_NORMAL_UNITS );        }
+	//bool isEffectsBuildings( ) const      { return getFlag( EffectTypeFlag::BUILDINGS );               }
+	bool isEffectsPetsOnly( ) const         { return getFlag( EffectTypeFlag::PETS_ONLY );               }
+	//bool isEffectsNonLiving( ) const      { return getFlag( EffectTypeFlag::NON_LIVING );              }
+	bool isScaleSplashStrength( ) const     { return getFlag( EffectTypeFlag::SCALE_SPLASH_STRENGTH );   }
+	bool isEndsWhenSourceDies( ) const      { return getFlag( EffectTypeFlag::ENDS_WITH_SOURCE );        }
+	bool idRecourseEndsWithRoot( ) const    { return getFlag( EffectTypeFlag::RECOURSE_ENDS_WITH_ROOT ); }
+	bool isPermanent( ) const               { return getFlag( EffectTypeFlag::PERMANENT );               }
+	bool isTickImmediately( ) const         { return getFlag( EffectTypeFlag::TICK_IMMEDIATELY );        }
+	bool isCauseCloak( ) const              { return getFlag( EffectTypeFlag::CAUSES_CLOAK );            }
+
+	int getDuration( ) const                                 { return m_duration;         }
+	fixed getChance( ) const                                 { return m_chance;           }
+	bool isLight( ) const                                    { return m_light;            }
+	bool isDisplay( ) const                                  { return m_display;          }
+	Vec3f getLightColour( ) const                            { return m_lightColour;      }
+	UnitParticleSystemTypes& getParticleTypes( )             { return m_particleSystems;  }
+	const UnitParticleSystemTypes& getParticleTypes( ) const { return m_particleSystems;  }
+	StaticSound *getSound( ) const                           { return m_sound;            }
+	float getSoundStartTime( ) const                         { return m_soundStartTime;   }
+	bool isLoopSound( ) const                                { return m_loopSound;        }
+	const EffectTypes &getRecourse( ) const                  { return m_recourse;         }
+	void getDesc( string &str ) const;
 };
 
 class EmanationType : public EffectType {
 private:
-	int radius;
-	UnitParticleSystemTypes sourceParticleSystems;
+	int m_radius;
+	UnitParticleSystemTypes m_sourceParticleSystems;
 public:
-	static EffectClass typeClass() { return EffectClass::EMANATION; }
+	static EffectClass typeClass( ) { return EffectClass::EMANATION; }
 
 public:
-	virtual ~EmanationType() {}
+	virtual ~EmanationType( ) { }
 
-	UnitParticleSystemTypes& getSourceParticleTypes()			{return sourceParticleSystems;}
-	const UnitParticleSystemTypes& getSourceParticleTypes() const	{return sourceParticleSystems;}
+	UnitParticleSystemTypes& getSourceParticleTypes( )              { return m_sourceParticleSystems; }
+	const UnitParticleSystemTypes& getSourceParticleTypes( ) const  { return m_sourceParticleSystems; }
 
-	virtual bool load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft);
-	virtual void doChecksum(Checksum &checksum) const;
-	int getRadius() const	{return radius;}
+	virtual bool load( const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft );
+	virtual void doChecksum( Checksum &checksum ) const;
+	int getRadius( ) const	{ return m_radius; }
 };
 
 typedef vector<EmanationType*> Emanations;

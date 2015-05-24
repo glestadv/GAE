@@ -39,177 +39,177 @@ namespace Glest { namespace ProtoTypes {
 
 // ==================== misc ====================
 
-void UnitStats::reset() {
-	maxHp = 0;
-	hpRegeneration = 0;
-	maxEp = 0;
-	epRegeneration = 0;
-	sight = 0;
-	armor = 0;
+void UnitStats::reset( ) {
+	m_maxHp = 0;
+	m_hpRegeneration = 0;
+	m_maxEp = 0;
+	m_epRegeneration = 0;
+	m_sight = 0;
+	m_armor = 0;
 
-	attackStrength = 0;
-	effectStrength = 0;
-	attackPctStolen = 0;
-	attackRange = 0;
-	moveSpeed = 0;
-	attackSpeed = 0;
-	prodSpeed = 0;
-	repairSpeed = 0;
-	harvestSpeed = 0;
+	m_attackStrength = 0;
+	m_effectStrength = 0;
+	m_attackPctStolen = 0;
+	m_attackRange = 0;
+	m_moveSpeed = 0;
+	m_attackSpeed = 0;
+	m_prodSpeed = 0;
+	m_repairSpeed = 0;
+	m_harvestSpeed = 0;
 }
 
-void UnitStats::setValues(const UnitStats &o) {
-	maxHp = o.maxHp;
-	hpRegeneration = o.hpRegeneration;
-	maxEp = o.maxEp;
-	epRegeneration = o.epRegeneration;
-	sight = o.sight;
-	armor = o.armor;
+void UnitStats::setValues( const UnitStats &o) {
+	m_maxHp = o.m_maxHp;
+	m_hpRegeneration = o.m_hpRegeneration;
+	m_maxEp = o.m_maxEp;
+	m_epRegeneration = o.m_epRegeneration;
+	m_sight = o.m_sight;
+	m_armor = o.m_armor;
 
-	attackStrength = o.attackStrength;
-	effectStrength = o.effectStrength;
-	attackPctStolen = o.attackPctStolen;
-	attackRange = o.attackRange;
-	moveSpeed = o.moveSpeed;
-	attackSpeed = o.attackSpeed;
-	prodSpeed = o.prodSpeed;
-	repairSpeed = o.repairSpeed;
-	harvestSpeed = o.harvestSpeed;
+	m_attackStrength = o.m_attackStrength;
+	m_effectStrength = o.m_effectStrength;
+	m_attackPctStolen = o.m_attackPctStolen;
+	m_attackRange = o.m_attackRange;
+	m_moveSpeed = o.m_moveSpeed;
+	m_attackSpeed = o.m_attackSpeed;
+	m_prodSpeed = o.m_prodSpeed;
+	m_repairSpeed = o.m_repairSpeed;
+	m_harvestSpeed = o.m_harvestSpeed;
 }
 
-void UnitStats::addStatic(const EnhancementType &e, fixed strength) {
-	maxHp += (e.getMaxHp() * strength).intp();
-	hpRegeneration += (e.getHpRegeneration() * strength).intp();
-	maxEp += (e.getMaxEp() * strength).intp();
-	epRegeneration += (e.getEpRegeneration() * strength).intp();
-	sight += (e.getSight() * strength).intp();
-	armor += (e.getArmor() * strength).intp();
-	attackStrength += (e.getAttackStrength() * strength).intp();
-	effectStrength += e.getEffectStrength() * strength;
-	attackPctStolen += e.getAttackPctStolen() * strength;
-	attackRange += (e.getAttackRange() * strength).intp();
-	moveSpeed += (e.getMoveSpeed() * strength).intp();
-	attackSpeed += (e.getAttackSpeed() * strength).intp();
-	prodSpeed += (e.getProdSpeed() * strength).intp();
-	repairSpeed += (e.getRepairSpeed() * strength).intp();
-	harvestSpeed += (e.getHarvestSpeed() * strength).intp();
+void UnitStats::addStatic( const EnhancementType &e, fixed strength ) {
+	m_maxHp += (e.getMaxHp( ) * strength).intp( );
+	m_hpRegeneration += (e.getHpRegeneration( ) * strength).intp( );
+	m_maxEp += (e.getMaxEp( ) * strength).intp( );
+	m_epRegeneration += (e.getEpRegeneration( ) * strength).intp( );
+	m_sight += (e.getSight( ) * strength).intp( );
+	m_armor += (e.getArmor( ) * strength).intp( );
+	m_attackStrength += (e.getAttackStrength( ) * strength).intp( );
+	m_effectStrength += e.getEffectStrength( ) * strength;
+	m_attackPctStolen += e.getAttackPctStolen( ) * strength;
+	m_attackRange += (e.getAttackRange( ) * strength).intp( );
+	m_moveSpeed += (e.getMoveSpeed( ) * strength).intp( );
+	m_attackSpeed += (e.getAttackSpeed( ) * strength).intp( );
+	m_prodSpeed += (e.getProdSpeed( ) * strength).intp( );
+	m_repairSpeed += (e.getRepairSpeed( ) * strength).intp( );
+	m_harvestSpeed += (e.getHarvestSpeed( ) * strength).intp( );
 }
 
-void UnitStats::applyMultipliers(const EnhancementType &e) {
-	maxHp = (maxHp * e.getMaxHpMult()).intp();
-	hpRegeneration = (hpRegeneration * e.getHpRegenerationMult()).intp();
-	maxEp = (maxEp * e.getMaxEpMult()).intp();
-	epRegeneration = (epRegeneration * e.getEpRegenerationMult()).intp();
-	sight = std::max((sight * e.getSightMult()).intp(), 1);
-	armor = (armor * e.getArmorMult()).intp();
-	attackStrength = (attackStrength * e.getAttackStrengthMult()).intp();
-	effectStrength = effectStrength * e.getEffectStrengthMult();
-	attackPctStolen = attackPctStolen * e.getAttackPctStolenMult();
-	attackRange = (attackRange * e.getAttackRangeMult()).intp();
-	moveSpeed = (moveSpeed * e.getMoveSpeedMult()).intp();
-	attackSpeed = (attackSpeed * e.getAttackSpeedMult()).intp();
-	prodSpeed = (prodSpeed * e.getProdSpeedMult()).intp();
-	repairSpeed = (repairSpeed * e.getRepairSpeedMult()).intp();
-	harvestSpeed = (harvestSpeed * e.getHarvestSpeedMult()).intp();
+void UnitStats::applyMultipliers( const EnhancementType &e ) {
+	m_maxHp = (m_maxHp * e.getMaxHpMult( )).intp( );
+	m_hpRegeneration = (m_hpRegeneration * e.getHpRegenerationMult( )).intp( );
+	m_maxEp = (m_maxEp * e.getMaxEpMult( )).intp( );
+	m_epRegeneration = (m_epRegeneration * e.getEpRegenerationMult( )).intp( );
+	m_sight = std::max( (m_sight * e.getSightMult( )).intp( ), 1 );
+	m_armor = (m_armor * e.getArmorMult( )).intp( );
+	m_attackStrength = (m_attackStrength * e.getAttackStrengthMult( )).intp( );
+	m_effectStrength = m_effectStrength * e.getEffectStrengthMult( );
+	m_attackPctStolen = m_attackPctStolen * e.getAttackPctStolenMult( );
+	m_attackRange = (m_attackRange * e.getAttackRangeMult( )).intp( );
+	m_moveSpeed = (m_moveSpeed * e.getMoveSpeedMult( )).intp( );
+	m_attackSpeed = (m_attackSpeed * e.getAttackSpeedMult( )).intp( );
+	m_prodSpeed = (m_prodSpeed * e.getProdSpeedMult( )).intp( );
+	m_repairSpeed = (m_repairSpeed * e.getRepairSpeedMult( )).intp( );
+	m_harvestSpeed = (m_harvestSpeed * e.getHarvestSpeedMult( )).intp( );
 }
 
-void UnitStats::sanitiseUnitStats() {
-	if (maxHp < 0) maxHp = 0;
-	if (maxEp < 0) maxEp = 0;
-	if (sight < 0) sight = 0;
-	if (armor < 0) armor = 0;
-	if (attackStrength < 0) attackStrength = 0;
-	if (effectStrength < 0) effectStrength = 0;
-	if (attackPctStolen < 0) attackPctStolen = 0;
-	if (attackRange < 0) attackRange = 0;
-	if (moveSpeed < 0) moveSpeed = 0;
-	if (attackSpeed < 0) attackSpeed = 0;
-	if (prodSpeed < 0) prodSpeed = 0;
-	if (repairSpeed < 0) repairSpeed = 0;
-	if (harvestSpeed < 0) harvestSpeed = 0;
+void UnitStats::sanitiseUnitStats( ) {
+	if (m_maxHp < 0) m_maxHp = 0;
+	if (m_maxEp < 0) m_maxEp = 0;
+	if (m_sight < 0) m_sight = 0;
+	if (m_armor < 0) m_armor = 0;
+	if (m_attackStrength < 0) m_attackStrength = 0;
+	if (m_effectStrength < 0) m_effectStrength = 0;
+	if (m_attackPctStolen < 0) m_attackPctStolen = 0;
+	if (m_attackRange < 0) m_attackRange = 0;
+	if (m_moveSpeed < 0) m_moveSpeed = 0;
+	if (m_attackSpeed < 0) m_attackSpeed = 0;
+	if (m_prodSpeed < 0) m_prodSpeed = 0;
+	if (m_repairSpeed < 0) m_repairSpeed = 0;
+	if (m_harvestSpeed < 0) m_harvestSpeed = 0;
 }
 
 // legacy load for Unit class
-bool UnitStats::load(const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType) {
+bool UnitStats::load( const XmlNode *baseNode, const string &dir, const TechTree *techTree, const FactionType *factionType ) {
 	bool loadOk = true;
-	//maxHp
-	try { maxHp = baseNode->getChildIntValue("max-hp"); }
+	//m_maxHp
+	try { m_maxHp = baseNode->getChildIntValue( "max-hp" ); }
 	catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
-	//hpRegeneration
-	try { hpRegeneration = baseNode->getChild("max-hp")->getIntAttribute("regeneration"); }
+	//m_hpRegeneration
+	try { m_hpRegeneration = baseNode->getChild( "max-hp" )->getIntAttribute( "regeneration" ); }
 	catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
-	//maxEp
-	try { maxEp = baseNode->getChildIntValue("max-ep"); }
+	//m_maxEp
+	try { m_maxEp = baseNode->getChildIntValue( "max-ep" ); }
 	catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	try {
-		//epRegeneration
-		XmlAttribute *epRegenAttr = baseNode->getChild("max-ep")->getAttribute("regeneration", false);
-		epRegeneration = epRegenAttr ? epRegenAttr->getIntValue() : 0;
+		//m_epRegeneration
+		XmlAttribute *epRegenAttr = baseNode->getChild( "max-ep" )->getAttribute( "regeneration", false );
+		m_epRegeneration = epRegenAttr ? epRegenAttr->getIntValue( ) : 0;
 	}
 	catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
-	//sight
-	try { sight = baseNode->getChildIntValue("sight"); }
+	//m_sight
+	try { m_sight = baseNode->getChildIntValue( "m_sight" ); }
 	catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
-	//armor
-	try { armor = baseNode->getChildIntValue("armor"); }
+	//m_armor
+	try { m_armor = baseNode->getChildIntValue( "m_armor" ); }
 	catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	return loadOk;
 }
 
-void UnitStats::doChecksum(Checksum &checksum) const {
-	checksum.add(maxHp);
-	checksum.add(hpRegeneration);
-	checksum.add(maxEp);
-	checksum.add(epRegeneration);
-	checksum.add(sight);
-	checksum.add(armor);
+void UnitStats::doChecksum( Checksum &checksum ) const {
+	checksum.add( m_maxHp );
+	checksum.add( m_hpRegeneration );
+	checksum.add( m_maxEp );
+	checksum.add( m_epRegeneration );
+	checksum.add( m_sight );
+	checksum.add( m_armor );
 
-	checksum.add(attackStrength);
-	checksum.add(effectStrength);
-	checksum.add(attackPctStolen);
-	checksum.add(attackRange);
-	checksum.add(moveSpeed);
-	checksum.add(attackSpeed);
-	checksum.add(prodSpeed);
-	checksum.add(repairSpeed);
-	checksum.add(harvestSpeed);
+	checksum.add( m_attackStrength );
+	checksum.add( m_effectStrength );
+	checksum.add( m_attackPctStolen );
+	checksum.add( m_attackRange );
+	checksum.add( m_moveSpeed );
+	checksum.add( m_attackSpeed );
+	checksum.add (m_prodSpeed );
+	checksum.add( m_repairSpeed );
+	checksum.add( m_harvestSpeed );
 }
 
-void UnitStats::save(XmlNode *node) const {
-	node->addChild("max-ep", maxHp);
-	node->addChild("hp-regeneration", hpRegeneration);
-	node->addChild("max-ep", maxEp);
-	node->addChild("ep-regeneration", epRegeneration);
-	node->addChild("sight", sight);
-	node->addChild("armor", armor);
+void UnitStats::save( XmlNode *node ) const {
+	node->addChild( "max-ep", m_maxHp );
+	node->addChild( "hp-regeneration", m_hpRegeneration );
+	node->addChild( "max-ep", m_maxEp );
+	node->addChild( "ep-regeneration", m_epRegeneration );
+	node->addChild( "m_sight", m_sight );
+	node->addChild( "m_armor", m_armor );
 
-	node->addChild("attack-strength", attackStrength);
-	node->addChild("effect-strength", effectStrength);
-	node->addChild("attack-percent-stolen", attackPctStolen);
-	node->addChild("attack-range", attackRange);
-	node->addChild("move-speed", moveSpeed);
-	node->addChild("attack-speed", attackSpeed);
-	node->addChild("production-speed", prodSpeed);
-	node->addChild("repair-speed", repairSpeed);
-	node->addChild("harvest-speed", harvestSpeed);
+	node->addChild( "attack-strength", m_attackStrength );
+	node->addChild( "effect-strength", m_effectStrength );
+	node->addChild( "attack-percent-stolen", m_attackPctStolen );
+	node->addChild( "attack-range", m_attackRange );
+	node->addChild( "move-speed", m_moveSpeed );
+	node->addChild( "attack-speed", m_attackSpeed );
+	node->addChild( "production-speed", m_prodSpeed );
+	node->addChild( "repair-speed", m_repairSpeed );
+	node->addChild( "harvest-speed", m_harvestSpeed );
 }
 
 // ===============================
@@ -218,310 +218,310 @@ void UnitStats::save(XmlNode *node) const {
 
 // ==================== misc ====================
 
-void EnhancementType::reset() {
-	UnitStats::reset();
-	maxHpMult = 1;
-	hpRegenerationMult = 1;
-	maxEpMult = 1;
-	epRegenerationMult = 1;
-	sightMult = 1;
-	armorMult = 1;
-	attackStrengthMult = 1;
-	effectStrengthMult = 1;
-	attackPctStolenMult = 1;
-	attackRangeMult = 1;
-	moveSpeedMult = 1;
-	attackSpeedMult = 1;
-	prodSpeedMult = 1;
-	repairSpeedMult = 1;
-	harvestSpeedMult = 1;
-	hpBoost = epBoost = 0;
+void EnhancementType::reset( ) {
+	UnitStats::reset( );
+	m_maxHpMult = 1;
+	m_hpRegenerationMult = 1;
+	m_maxEpMult = 1;
+	m_epRegenerationMult = 1;
+	m_sightMult = 1;
+	m_armorMult = 1;
+	m_attackStrengthMult = 1;
+	m_effectStrengthMult = 1;
+	m_attackPctStolenMult = 1;
+	m_attackRangeMult = 1;
+	m_moveSpeedMult = 1;
+	m_attackSpeedMult = 1;
+	m_prodSpeedMult = 1;
+	m_repairSpeedMult = 1;
+	m_harvestSpeedMult = 1;
+	m_hpBoost = m_epBoost = 0;
 }
 
-void EnhancementType::save(XmlNode *node) const {
-	XmlNode *m = node->addChild("multipliers");
+void EnhancementType::save( XmlNode *node ) const {
+	XmlNode *m = node->addChild( "multipliers" );
 
-	m->addChild("max-ep", maxHpMult);
-	m->addChild("hp-regeneration", hpRegenerationMult);
-	m->addChild("hp-boost", hpBoost);
-	m->addChild("max-ep", maxEpMult);
-	m->addChild("ep-regeneration", epRegenerationMult);
-	m->addChild("ep-boost", epBoost);
-	m->addChild("sight", sightMult);
-	m->addChild("armor", armorMult);
+	m->addChild( "max-ep", m_maxHpMult );
+	m->addChild( "hp-regeneration", m_hpRegenerationMult );
+	m->addChild( "hp-boost", m_hpBoost );
+	m->addChild( "max-ep", m_maxEpMult );
+	m->addChild( "ep-regeneration", m_epRegenerationMult );
+	m->addChild( "ep-boost", m_epBoost );
+	m->addChild( "m_sight", m_sightMult );
+	m->addChild( "m_armor", m_armorMult );
 
-	m->addChild("attack-strength", attackStrengthMult);
-	m->addChild("effect-strength", effectStrengthMult);
-	m->addChild("attack-percent-stolen", attackPctStolenMult);
-	m->addChild("attack-range", attackRangeMult);
-	m->addChild("move-speed", moveSpeedMult);
-	m->addChild("attack-speed", attackSpeedMult);
-	m->addChild("production-speed", prodSpeedMult);
-	m->addChild("repair-speed", repairSpeedMult);
-	m->addChild("harvest-speed", harvestSpeedMult);
+	m->addChild( "attack-strength", m_attackStrengthMult );
+	m->addChild( "effect-strength", m_effectStrengthMult );
+	m->addChild( "attack-percent-stolen", m_attackPctStolenMult );
+	m->addChild( "attack-range", m_attackRangeMult );
+	m->addChild( "move-speed", m_moveSpeedMult );
+	m->addChild( "attack-speed", m_attackSpeedMult );
+	m->addChild( "production-speed", m_prodSpeedMult );
+	m->addChild( "repair-speed", m_repairSpeedMult );
+	m->addChild( "harvest-speed", m_harvestSpeedMult );
 }
 
-void EnhancementType::addMultipliers(const EnhancementType &e, fixed strength){
-	maxHpMult += (e.getMaxHpMult() - 1) * strength;
-	hpRegenerationMult += (e.getHpRegenerationMult() - 1) * strength;
-	maxEpMult += (e.getMaxEpMult() - 1) * strength;
-	epRegenerationMult += (e.getEpRegenerationMult() - 1) * strength;
-	sightMult += (e.getSightMult() - 1) * strength;
-	armorMult += (e.getArmorMult() - 1) * strength;
-	attackStrengthMult += (e.getAttackStrengthMult() - 1) * strength;
-	effectStrengthMult += (e.getEffectStrengthMult() - 1) * strength;
-	attackPctStolenMult += (e.getAttackPctStolenMult() - 1) * strength;
-	attackRangeMult += (e.getAttackRangeMult() - 1) * strength;
-	moveSpeedMult += (e.getMoveSpeedMult() - 1) * strength;
-	attackSpeedMult += (e.getAttackSpeedMult() - 1) * strength;
-	prodSpeedMult += (e.getProdSpeedMult() - 1) * strength;
-	repairSpeedMult += (e.getRepairSpeedMult() - 1) * strength;
-	harvestSpeedMult += (e.getHarvestSpeedMult() - 1) * strength;
+void EnhancementType::addMultipliers( const EnhancementType &e, fixed strength ) {
+	m_maxHpMult += (e.getMaxHpMult( ) - 1) * strength;
+	m_hpRegenerationMult += (e.getHpRegenerationMult( ) - 1) * strength;
+	m_maxEpMult += (e.getMaxEpMult( ) - 1) * strength;
+	m_epRegenerationMult += (e.getEpRegenerationMult( ) - 1) * strength;
+	m_sightMult += (e.getSightMult( ) - 1) * strength;
+	m_armorMult += (e.getArmorMult( ) - 1) * strength;
+	m_attackStrengthMult += (e.getAttackStrengthMult( ) - 1) * strength;
+	m_effectStrengthMult += (e.getEffectStrengthMult( ) - 1) * strength;
+	m_attackPctStolenMult += (e.getAttackPctStolenMult( ) - 1) * strength;
+	m_attackRangeMult += (e.getAttackRangeMult( ) - 1) * strength;
+	m_moveSpeedMult += (e.getMoveSpeedMult( ) - 1) * strength;
+	m_attackSpeedMult += (e.getAttackSpeedMult( ) - 1) * strength;
+	m_prodSpeedMult += (e.getProdSpeedMult( ) - 1) * strength;
+	m_repairSpeedMult += (e.getRepairSpeedMult( ) - 1) * strength;
+	m_harvestSpeedMult += (e.getHarvestSpeedMult( ) - 1) * strength;
 }
 
-void EnhancementType::clampMultipliers() {
+void EnhancementType::clampMultipliers( ) {
 	fixed low;
-	low.raw() = (1 << 6); // lowest 'fixed' fraction that is 'safe' to multiply
-	if (maxHpMult <= 0) {
-		maxHpMult = low;
+	low.raw( ) = (1 << 6); // lowest 'fixed' fraction that is 'safe' to multiply
+	if (m_maxHpMult < low) {
+		m_maxHpMult = low;
 	}
-	if (hpRegenerationMult <= 0) {
-		hpRegenerationMult = low;
+	if (m_hpRegenerationMult < low) {
+		m_hpRegenerationMult = low;
 	}
-	if (maxEpMult <= 0) {
-		maxEpMult = low;
+	if (m_maxEpMult < low) {
+		m_maxEpMult = low;
 	}
-	if (epRegenerationMult <= 0) {
-		epRegenerationMult = low;
+	if (m_epRegenerationMult < low) {
+		m_epRegenerationMult = low;
 	}
-	if (sightMult <= 0) {
-		sightMult = low;
+	if (m_sightMult < low) {
+		m_sightMult = low;
 	}
-	if (armorMult <= 0) {
-		armorMult = low;
+	if (m_armorMult < low) {
+		m_armorMult = low;
 	}
-	if (attackStrengthMult <= 0) {
-		attackStrengthMult = low;
+	if (m_attackStrengthMult < low) {
+		m_attackStrengthMult = low;
 	}
-	if (effectStrengthMult <= 0) {
-		effectStrengthMult = low;
+	if (m_effectStrengthMult < low) {
+		m_effectStrengthMult = low;
 	}
-	if (attackPctStolenMult <= 0) {
-		attackPctStolenMult = low;
+	if (m_attackPctStolenMult < low) {
+		m_attackPctStolenMult = low;
 	}
-	if (attackRangeMult <= 0) {
-		attackRangeMult = low;
+	if (m_attackRangeMult < low) {
+		m_attackRangeMult = low;
 	}
-	if (attackSpeedMult <= 0) {
-		attackSpeedMult = low;
+	if (m_attackSpeedMult < low) {
+		m_attackSpeedMult = low;
 	}
-	if (moveSpeedMult <= 0) {
-		moveSpeedMult = low;
+	if (m_moveSpeedMult < low) {
+		m_moveSpeedMult = low;
 	}
-	if (prodSpeedMult <= 0) {
-		prodSpeedMult = low;
+	if (m_prodSpeedMult < low) {
+		m_prodSpeedMult = low;
 	}
-	if (repairSpeedMult <= 0) {
-		repairSpeedMult = low;
+	if (m_repairSpeedMult < low) {
+		m_repairSpeedMult = low;
 	}
-	if (harvestSpeedMult <= 0) {
-		harvestSpeedMult = low;
+	if (m_harvestSpeedMult < low) {
+		m_harvestSpeedMult = low;
 	}
 }
 
-void formatModifier(string &str, const char *pre, const char* label, int value, fixed multiplier) {
-	Lang &lang = Lang::getInstance();
+void formatModifier( string &str, const char *pre, const char* label, int value, fixed multiplier ) {
+	Lang &lang = Lang::getInstance( );
 
 	if (value) {
-		str += pre + lang.get(label) + ": ";
+		str += pre + lang.get( label ) + ": ";
 		if (value > 0) {
 			str += "+";
 		}
-		str += intToStr(value);
+		str += intToStr( value );
 	}
 
 	if (multiplier != 1) {
-		if(value) {
+		if (value) {
 			str += ", ";
 		} else {
-			str += pre + lang.get(label) + ": ";
+			str += pre + lang.get( label ) + ": ";
 		}
 
 		if (multiplier > 1) {
 			str += "+";
 		}
-		str += intToStr(((multiplier - 1) * 100).intp()) + "%";
+		str += intToStr( ((multiplier - 1) * 100).intp( ) ) + "%";
 	}
 }
 
-void addBoostsDesc(string &str, const char *pre, int hpBoost, int epBoost) {
-	if (hpBoost) {
-		str += pre + g_lang.get("HpBoost") + ": " + intToStr(hpBoost);
+void addBoostsDesc( string &str, const char *pre, int m_hpBoost, int m_epBoost ) {
+	if (m_hpBoost) {
+		str += pre + g_lang.get( "HpBoost" ) + ": " + intToStr( m_hpBoost );
 	}
-	if (epBoost) {
-		str += pre + g_lang.get("EpBoost") + ": " + intToStr(epBoost);
+	if (m_epBoost) {
+		str += pre + g_lang.get( "EpBoost" ) + ": " + intToStr( m_epBoost );
 	}
 }
 
-void EnhancementType::getDesc(string &str, const char *pre) const {
-	formatModifier(str, pre, "Hp", maxHp, maxHpMult);
-	formatModifier(str, pre, "HpRegeneration", hpRegeneration, hpRegenerationMult);
-	formatModifier(str, pre, "Sight", sight, sightMult);
-	formatModifier(str, pre, "Ep", maxEp, maxEpMult);
-	formatModifier(str, pre, "EpRegeneration", epRegeneration, epRegenerationMult);
-	formatModifier(str, pre, "AttackStrength", attackStrength, attackStrengthMult);
-	formatModifier(str, pre, "EffectStrength", (effectStrength * 100).intp(), effectStrengthMult);
-	formatModifier(str, pre, "AttackPctStolen", (attackPctStolen * 100).intp(), attackPctStolenMult);
-	formatModifier(str, pre, "AttackSpeed", attackSpeed, attackSpeedMult);
-	formatModifier(str, pre, "AttackDistance", attackRange, attackRangeMult);
-	formatModifier(str, pre, "Armor", armor, armorMult);
-	formatModifier(str, pre, "WalkSpeed", moveSpeed, moveSpeedMult);
-	formatModifier(str, pre, "ProductionSpeed", prodSpeed, prodSpeedMult);
-	formatModifier(str, pre, "RepairSpeed", repairSpeed, repairSpeedMult);
-	formatModifier(str, pre, "HarvestSpeed", harvestSpeed, harvestSpeedMult);
-	addBoostsDesc(str, pre, hpBoost, epBoost);
+void EnhancementType::getDesc( string &str, const char *pre ) const {
+	formatModifier( str, pre, "Hp", m_maxHp, m_maxHpMult );
+	formatModifier( str, pre, "HpRegeneration", m_hpRegeneration, m_hpRegenerationMult );
+	formatModifier( str, pre, "Sight", m_sight, m_sightMult );
+	formatModifier( str, pre, "Ep", m_maxEp, m_maxEpMult );
+	formatModifier( str, pre, "EpRegeneration", m_epRegeneration, m_epRegenerationMult );
+	formatModifier( str, pre, "AttackStrength", m_attackStrength, m_attackStrengthMult );
+	formatModifier( str, pre, "EffectStrength", (m_effectStrength * 100).intp( ), m_effectStrengthMult );
+	formatModifier( str, pre, "AttackPctStolen", (m_attackPctStolen * 100).intp( ), m_attackPctStolenMult );
+	formatModifier( str, pre, "AttackSpeed", m_attackSpeed, m_attackSpeedMult );
+	formatModifier( str, pre, "AttackDistance", m_attackRange, m_attackRangeMult );
+	formatModifier( str, pre, "Armor", m_armor, m_armorMult );
+	formatModifier( str, pre, "WalkSpeed", m_moveSpeed, m_moveSpeedMult );
+	formatModifier( str, pre, "ProductionSpeed", m_prodSpeed, m_prodSpeedMult );
+	formatModifier( str, pre, "RepairSpeed", m_repairSpeed, m_repairSpeedMult );
+	formatModifier( str, pre, "HarvestSpeed", m_harvestSpeed, m_harvestSpeedMult );
+	addBoostsDesc( str, pre, m_hpBoost, m_epBoost );
 }
 
 //Initialize value from <static-modifiers>
-void EnhancementType::initStaticModifier(const XmlNode *node, const string &dir) {
-	const string &name = node->getName();
-	int value = node->getAttribute("value")->getIntValue();
+void EnhancementType::initStaticModifier( const XmlNode *node, const string &dir ) {
+	const string &name = node->getName( );
+	int value = node->getAttribute( "value" )->getIntValue( );
 
 	if (name == "max-hp") {
-		maxHp = value;
+		m_maxHp = value;
 	} else if (name == "max-ep") {
-		maxEp = value;
+		m_maxEp = value;
 	} else if (name == "hp-regeneration") {
-		hpRegeneration = value;
+		m_hpRegeneration = value;
 	} else if (name == "ep-regeneration") {
-		epRegeneration = value;
-	} else if (name == "sight") {
-		sight = value;
-	} else if (name == "armor") {
-		armor = value;
+		m_epRegeneration = value;
+	} else if (name == "m_sight") {
+		m_sight = value;
+	} else if (name == "m_armor") {
+		m_armor = value;
 	} else if (name == "attack-strength") {
-		attackStrength = value;
+		m_attackStrength = value;
 	} else if (name == "effect-strength") {
-		effectStrength = fixed(value) / 100;
+		m_effectStrength = fixed(value) / 100;
 	} else if (name == "attack-percent-stolen") {
-		attackPctStolen	= fixed(value) / 100;
+		m_attackPctStolen	= fixed(value) / 100;
 	} else if (name == "attack-range") {
-		attackRange = value;
+		m_attackRange = value;
 	} else if (name == "move-speed") {
-		moveSpeed = value;
+		m_moveSpeed = value;
 	} else if (name == "attack-speed") {
-		attackSpeed = value;
+		m_attackSpeed = value;
 	} else if (name == "production-speed") {
-		prodSpeed = value;
+		m_prodSpeed = value;
 	} else if (name == "repair-speed") {
-		repairSpeed = value;
+		m_repairSpeed = value;
 	} else if (name == "harvest-speed") {
-		harvestSpeed = value;
+		m_harvestSpeed = value;
 	} else {
-		throw runtime_error("Not a valid child of <static-modifiers>: " + name + ": " + dir);
+		throw runtime_error( "Not a valid child of <static-modifiers>: " + name + ": " + dir );
 	}
 }
 
 //Initialize value from <multipliers>
-void EnhancementType::initMultiplier(const XmlNode *node, const string &dir) {
-	const string &name = node->getName();
-	fixed value = node->getAttribute("value")->getFixedValue();
+void EnhancementType::initMultiplier( const XmlNode *node, const string &dir ) {
+	const string &name = node->getName( );
+	fixed value = node->getAttribute( "value" )->getFixedValue( );
 
 	if (name == "max-hp") {
-		maxHpMult = value;
+		m_maxHpMult = value;
 	} else if (name == "max-ep") {
-		maxEpMult = value;
+		m_maxEpMult = value;
 	} else if (name == "hp-regeneration") {
-		hpRegenerationMult = value;
+		m_hpRegenerationMult = value;
 	} else if (name == "ep-regeneration") {
-		epRegenerationMult = value;
-	} else if (name == "sight") {
-		sightMult = value;
-	} else if (name == "armor") {
-		armorMult = value;
+		m_epRegenerationMult = value;
+	} else if (name == "m_sight") {
+		m_sightMult = value;
+	} else if (name == "m_armor") {
+		m_armorMult = value;
 	} else if (name == "attack-strength") {
-		attackStrengthMult = value;
+		m_attackStrengthMult = value;
 	} else if (name == "effect-strength") {
-		effectStrengthMult = value;
+		m_effectStrengthMult = value;
 	} else if (name == "attack-percent-stolen") {
-		attackPctStolenMult = value;
+		m_attackPctStolenMult = value;
 	} else if (name == "attack-range") {
-		attackRangeMult = value;
+		m_attackRangeMult = value;
 	} else if (name == "move-speed") {
-		moveSpeedMult = value;
+		m_moveSpeedMult = value;
 	} else if (name == "attack-speed") {
-		attackSpeedMult = value;
+		m_attackSpeedMult = value;
 	} else if (name == "production-speed") {
-		prodSpeedMult = value;
+		m_prodSpeedMult = value;
 	} else if (name == "repair-speed") {
-		repairSpeedMult = value;
+		m_repairSpeedMult = value;
 	} else if (name == "harvest-speed") {
-		harvestSpeedMult = value;
+		m_harvestSpeedMult = value;
 	} else {
-		throw runtime_error("Not a valid child of <multipliers>: <" + name + ">: " + dir);
+		throw runtime_error( "Not a valid child of <multipliers>: <" + name + ">: " + dir );
 	}
 }
 
-bool EnhancementType::load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft) {
+bool EnhancementType::load( const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft ) {
 	const XmlNode *node;
 	bool loadOk = true;
 	// static modifiers
 	try {
-		node = baseNode->getChild("static-modifiers", 0, false);
+		node = baseNode->getChild( "static-modifiers", 0, false );
 		if(node) {
-			for (int i = 0; i < node->getChildCount(); ++i) {
-				initStaticModifier(node->getChild(i), dir);
+			for (int i = 0; i < node->getChildCount( ); ++i) {
+				initStaticModifier( node->getChild( i ), dir );
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	// multipliers
 	try {
-		node = baseNode->getChild("multipliers", 0, false);
+		node = baseNode->getChild( "multipliers", 0, false );
 		if (node) {
-			for (int i = 0; i < node->getChildCount(); ++i) {
-				initMultiplier(node->getChild(i), dir);
+			for (int i = 0; i < node->getChildCount( ); ++i) {
+				initMultiplier( node->getChild( i ), dir );
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	// stat boost
 	try {
-		node = baseNode->getChild("point-boosts", 0, false);
+		node = baseNode->getChild( "point-boosts", 0, false );
 		if (node) {
-			hpBoost = node->getOptionalIntValue("hp-boost");
-			epBoost = node->getOptionalIntValue("ep-boost");
+			m_hpBoost = node->getOptionalIntValue( "hp-boost" );
+			m_epBoost = node->getOptionalIntValue( "ep-boost" );
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	return loadOk;
 }
 
-void EnhancementType::doChecksum(Checksum &checksum) const {
-	UnitStats::doChecksum(checksum);
-	checksum.add(maxHpMult);
-	checksum.add(hpRegenerationMult);
-	checksum.add(hpBoost);
-	checksum.add(maxEpMult);
-	checksum.add(epRegenerationMult);
-	checksum.add(epBoost);
-	checksum.add(sightMult);
-	checksum.add(armorMult);
-	checksum.add(attackStrengthMult);
-	checksum.add(effectStrengthMult);
-	checksum.add(attackPctStolenMult);
-	checksum.add(attackRangeMult);
-	checksum.add(moveSpeedMult);
-	checksum.add(attackSpeedMult);
-	checksum.add(prodSpeedMult);
-	checksum.add(repairSpeedMult);
-	checksum.add(harvestSpeedMult);
+void EnhancementType::doChecksum( Checksum &checksum ) const {
+	UnitStats::doChecksum( checksum );
+	checksum.add( m_maxHpMult );
+	checksum.add( m_hpRegenerationMult );
+	checksum.add( m_hpBoost );
+	checksum.add( m_maxEpMult );
+	checksum.add( m_epRegenerationMult );
+	checksum.add( m_epBoost );
+	checksum.add( m_sightMult );
+	checksum.add( m_armorMult );
+	checksum.add( m_attackStrengthMult );
+	checksum.add( m_effectStrengthMult );
+	checksum.add( m_attackPctStolenMult );
+	checksum.add( m_attackRangeMult );
+	checksum.add( m_moveSpeedMult );
+	checksum.add( m_attackSpeedMult );
+	checksum.add( m_prodSpeedMult );
+	checksum.add( m_repairSpeedMult );
+	checksum.add( m_harvestSpeedMult );
 }
 
 }}//end namespace

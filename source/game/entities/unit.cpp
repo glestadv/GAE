@@ -186,7 +186,7 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	type = faction->getType()->getUnitType(node->getChildStringValue("type"));
 
 	s = node->getChildStringValue("loadType");
-	loadType = s == "null_value" ? NULL : g_world.getTechTree()->getResourceType(s);
+	loadType = s == "null_value" ? nullptr : g_world.getTechTree()->getResourceType(s);
 
 	lastRotation = node->getChildFloatValue("lastRotation");
 	targetRotation = node->getChildFloatValue("targetRotation");
@@ -205,7 +205,7 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	faceTarget = node->getChildBoolValue("faceTarget");
 	useNearestOccupiedCell = node->getChildBoolValue("useNearestOccupiedCell");
 	s = node->getChildStringValue("currSkill");
-	currSkill = s == "null_value" ? NULL : type->getSkillType(s);
+	currSkill = s == "null_value" ? nullptr : type->getSkillType(s);
 
 	nextCommandUpdate = node->getChildIntValue("nextCommandUpdate");
 	lastCommandUpdate = node->getChildIntValue("lastCommandUpdate");
@@ -422,7 +422,7 @@ int Unit::getProductionPercent() const {
 	return -1;
 }
 
-/** query next available level @return next level, or NULL */
+/** query next available level @return next level, or nullptr */
 const Level *Unit::getNextLevel() const{
 	if (!level && type->getLevelCount()) {
 		return type->getLevel(0);
@@ -524,7 +524,7 @@ bool Unit::isBuilding() const {
 
 /** find a repair command type that can repair a unit with
   * @param u the unit in need of repairing
-  * @return a RepairCommandType that can repair u, or NULL
+  * @return a RepairCommandType that can repair u, or nullptr
   */
 const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 	for (int i = 0; i < type->getCommandTypeCount<RepairCommandType>(); i++) {
@@ -818,7 +818,7 @@ Vec3f Unit::getCurrVectorFlat() const {
 
 /** query first available (and currently executable) command type of a class
   * @param commandClass CmdClass of interest
-  * @return the first executable CommandType matching commandClass, or NULL
+  * @return the first executable CommandType matching commandClass, or nullptr
   */
 const CommandType *Unit::getFirstAvailableCt(CmdClass commandClass) const {
 	typedef vector<CommandType*> CommandTypes;
@@ -836,7 +836,7 @@ const CommandType *Unit::getFirstAvailableCt(CmdClass commandClass) const {
 			return ct;
 		}
 	}
-	return NULL;
+	return nullptr;
 	*/
 }
 
@@ -990,14 +990,14 @@ Command *Unit::popCommand() {
 	commands.erase(commands.begin());
 	clearPath();
 
-	Command *command = commands.empty() ? NULL : commands.front();
+	Command *command = commands.empty() ? nullptr : commands.front();
 
 	// we don't let hacky set meeting point commands actually get anywhere
 	while(command && command->getType()->getClass() == CmdClass::SET_MEETING_POINT) {
 		setMeetingPos(command->getPos());
 		g_world.deleteCommand(command);
 		commands.erase(commands.begin());
-		command = commands.empty() ? NULL : commands.front();
+		command = commands.empty() ? nullptr : commands.front();
 	}
 	if (command) {
 		CMD_LOG( "new current is " << command->getType()->getName() << " command." );
@@ -1178,7 +1178,7 @@ void checkTargets(const Unit *dead) {
 		if (*it && (*it)->isProjectile()) {
 			Projectile* pps = static_cast<Projectile*>(*it);
 			if (pps->getTarget() == dead) {
-				pps->setTarget(NULL);
+				pps->setTarget(nullptr);
 			}
 		}
 	}
@@ -1370,7 +1370,7 @@ TravelState Unit::travel(const Vec2i &pos, const MoveSkillType *moveSkill) {
 
 /** Deduce a command based on a location and/or unit clicked
   * @param pos position clicked (or position of targetUnit)
-  * @param targetUnit unit clicked or NULL
+  * @param targetUnit unit clicked or nullptr
   * @return the CommandType to execute
   */
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
@@ -1835,10 +1835,10 @@ void Unit::checkEffectCloak() {
 
 /**
  * Update the unit by one tick.
- * @returns if the unit died during this call, the killer is returned, NULL otherwise.
+ * @returns if the unit died during this call, the killer is returned, nullptr otherwise.
  */
 Unit* Unit::tick() {
-	Unit *killer = NULL;
+	Unit *killer = nullptr;
 	
 	// tick command types
 	for (Commands::iterator i = commands.begin(); i != commands.end(); ++i) {
@@ -1928,7 +1928,7 @@ bool Unit::repair(int amount, fixed multiplier) {
 		}
 	}
 	//stop fire
-	if (hp > type->getMaxHp() / 2 && fire != NULL) {
+	if (hp > type->getMaxHp() / 2 && fire != nullptr) {
 		fire->fade();
 		smoke->fade();
 		fire = smoke = 0;
@@ -2141,7 +2141,7 @@ void Unit::applyUpgrade(const UpgradeType *upgradeType) {
 /** recompute stats, re-evaluate upgrades & level and recalculate totalUpgrade */
 void Unit::computeTotalUpgrade() {
 	faction->getUpgradeManager()->computeTotalUpgrade(this, &totalUpgrade);
-	level = NULL;
+	level = nullptr;
 	for (int i = 0; i < type->getLevelCount(); ++i) {
 		const Level *level = type->getLevel(i);
 		if (kills >= level->getKills()) {
@@ -2180,7 +2180,7 @@ void Unit::recalculateStats() {
 		UnitStats::addStatic(*(*i)->getType(), (*i)->getStrength());
 
 		// take care of effect damage type
-		hpRegeneration += (*i)->getActualHpRegen() - (*i)->getType()->getHpRegeneration();
+		m_hpRegeneration += (*i)->getActualHpRegen() - (*i)->getType()->getHpRegeneration();
 	}
 
 	effects.clearDirty();
@@ -2347,7 +2347,7 @@ void Unit::incKills() {
 	++kills;
 
 	const Level *nextLevel = getNextLevel();
-	if (nextLevel != NULL && kills >= nextLevel->getKills()) {
+	if (nextLevel != nullptr && kills >= nextLevel->getKills()) {
 		level = nextLevel;
 		totalUpgrade.sum(level);
 		recalculateStats();

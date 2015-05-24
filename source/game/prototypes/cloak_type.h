@@ -47,25 +47,25 @@ private:
 	ShaderProgram    *m_enemyShader;
 
 private:
-	CloakType(const UnitType *ut);
+	CloakType( const UnitType *ut );
 
 public:
-	virtual ~CloakType();
+	virtual ~CloakType( );
 
-	void load(const string &dir, const XmlNode *xmlNode, const TechTree *tt,
-		vector<string> &out_decloakSkillNames, vector<SkillClass> &out_decloakSkillClasses);
+	void load( const string &dir, const XmlNode *xmlNode, const TechTree *tt,
+		vector<string> &out_decloakSkillNames, vector<SkillClass> &out_decloakSkillClasses );
 
-	const UnitType* getUnitType() const    { return m_unitType; }
-	CloakClass getClass() const            { return m_class; }
-	bool isCloakGroup(int group) const     { return m_group == group; }
-	int  getCloakGroup() const             { return m_group; }
-	int  getEnergyCost() const             { return m_cost; }
-	StaticSound* getCloakSound() const     { return m_cloakSound; }
-	StaticSound* getDeCloakSound() const   { return m_deCloakSound; }
-	ShaderProgram* getAllyShader() const   { return m_allyShader; }
-	ShaderProgram* getEnemyShader() const  { return m_enemyShader; }
+	const UnitType* getUnitType( ) const    { return m_unitType;        }
+	CloakClass getClass( ) const            { return m_class;           }
+	bool isCloakGroup( int group ) const    { return m_group == group;  }
+	int  getCloakGroup( ) const             { return m_group;           }
+	int  getEnergyCost( ) const             { return m_cost;            }
+	StaticSound* getCloakSound( ) const     { return m_cloakSound;      }
+	StaticSound* getDeCloakSound( ) const   { return m_deCloakSound;    }
+	ShaderProgram* getAllyShader( ) const   { return m_allyShader;      }
+	ShaderProgram* getEnemyShader( ) const  { return m_enemyShader;     }
 
-	void doChecksum(Checksum &cs) const;
+	void doChecksum( Checksum &cs ) const;
 };
 
 // =====================================================
@@ -91,22 +91,22 @@ private:
 	DetectorType(const UnitType *ut);
 
 public:
-	virtual ~DetectorType();
+	virtual ~DetectorType( );
 
-	void load(const string &dir, const XmlNode *xmlNode, const TechTree *tt);
+	void load( const string &dir, const XmlNode *xmlNode, const TechTree *tt );
 
-	const UnitType* getUnitType() const    { return m_unitType; }
-	DetectorClass getClass() const         { return m_class; }
-	int  getEnergyCost() const             { return m_cost; }
-	bool detectsCloakGroup(int group) const;
-	int  getGroupCount() const             { return m_groups.size(); }
-	int  getGroup(int i) const             { return m_groups[i]; }
-	//Groups::const_iterator groups_begin() const  { return m_groups.begin(); }
-	//Groups::const_iterator groups_end() const    { return m_groups.end();   }
+	const UnitType* getUnitType( ) const    { return m_unitType;             }
+	DetectorClass getClass( ) const         { return m_class;                }
+	int  getEnergyCost( ) const             { return m_cost;                 }
+	bool detectsCloakGroup( int group ) const;
+	int  getGroupCount( ) const             { return m_groups.size( );       }
+	int  getGroup( int i ) const            { return m_groups[i];            }
+	//Groups::const_iterator groups_begin( ) const  { return m_groups.begin( ); }
+	//Groups::const_iterator groups_end( ) const    { return m_groups.end( );   }
 
-	StaticSound* getDetectOnSound() const  { return m_detectionOnSound; }
-	StaticSound* getDetectffSound() const  { return m_detectionOffSound; }
-	StaticSound* getDetectSound() const    { return m_detectionMadeSound; }
+	StaticSound* getDetectOnSound( ) const  { return m_detectionOnSound;     }
+	StaticSound* getDetectffSound( ) const  { return m_detectionOffSound;    }
+	StaticSound* getDetectSound( ) const    { return m_detectionMadeSound;   }
 
 	void doChecksum(Checksum &cs) const;
 };

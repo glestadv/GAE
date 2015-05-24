@@ -256,7 +256,7 @@ public:
 		Unit* master;
 
 		CreateParams(const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, 
-				CardinalDir face = CardinalDir::NORTH, Unit* master = NULL)
+				CardinalDir face = CardinalDir::NORTH, Unit* master = nullptr)
 			: pos(pos), type(type), faction(faction), map(map), face(face), master(master) { }
 	};
 
@@ -376,7 +376,7 @@ public:
 	 * supplied skill, taking into account all upgrades & effects.
 	 */
 	int getAttackStrength(const AttackSkillType *ast) const	{
-		return (ast->getAttackStrength() * attackStrengthMult + attackStrength).intp();
+		return (ast->getAttackStrength() * m_attackStrengthMult + m_attackStrength).intp();
 	}
 
 	/**
@@ -396,14 +396,14 @@ public:
 	int getMaxRange(const SkillType *st) const {
 		switch(st->getClass()) {
 			case SkillClass::ATTACK:
-				return (st->getMaxRange() * attackRangeMult + attackRange).intp();
+				return (st->getMaxRange() * m_attackRangeMult + m_attackRange).intp();
 			default:
 				return st->getMaxRange();
 		}
 	}
 
 	int getMaxRange(const AttackSkillTypes *asts) const {
-		return (asts->getMaxRange() * attackRangeMult + attackRange).intp();
+		return (asts->getMaxRange() * m_attackRangeMult + m_attackRange).intp();
 	}
 
 	// pos
@@ -433,8 +433,8 @@ public:
 	bool isTargetUnitVisible(int teamIndex) const;
 	bool isActive() const;
 	bool isBuilding() const;
-	bool isDead() const					{return !hp;}
-	bool isAlive() const				{return hp;}
+	bool isDead() const					{return hp <= 0;}
+	bool isAlive() const				{return hp > 0;}
 	bool isDamaged() const				{return hp < getMaxHp();}
 	bool isOperative() const			{return isAlive() && isBuilt();}
 	bool isBeingBuilt() const			{
@@ -516,7 +516,7 @@ public:
 
 	//other
 	void resetHighlight();
-	const CommandType *computeCommandType(const Vec2i &pos, const Unit *targetUnit= NULL) const;
+	const CommandType *computeCommandType(const Vec2i &pos, const Unit *targetUnit= nullptr) const;
 
 	string getShortDesc() const;
 	int getQueuedOrderCount() const { return (commands.size() > 1 ? commands.size() - 1 : 0); }
@@ -580,7 +580,7 @@ public:
 
 private:
 	float computeHeight(const Vec2i &pos) const;
-	void updateTarget(const Unit *target = NULL);
+	void updateTarget(const Unit *target = nullptr);
 	void clearCommands();
 	CmdResult undoCommand(const Command &command);
 	void recalculateStats();
@@ -604,7 +604,7 @@ public:
 	~UnitFactory() { }
 
 	Unit* newUnit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld = true);
-	Unit* newUnit(const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, CardinalDir face, Unit* master = NULL);
+	Unit* newUnit(const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, CardinalDir face, Unit* master = nullptr);
 
 	Unit* getUnit(int id) { return EntityFactory<Unit>::getInstance(id); }
 	Unit* getObject(int id) { return EntityFactory<Unit>::getInstance(id); }

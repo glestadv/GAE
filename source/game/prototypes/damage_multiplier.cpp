@@ -20,31 +20,31 @@ namespace Glest { namespace ProtoTypes {
 // 	class DamageMultiplierTable
 // =====================================================
 
-DamageMultiplierTable::DamageMultiplierTable() 
-		: values(0) {
+DamageMultiplierTable::DamageMultiplierTable( ) 
+		: m_values( 0 ) {
 }
 
-DamageMultiplierTable::~DamageMultiplierTable() {
-	delete [] values;
+DamageMultiplierTable::~DamageMultiplierTable( ) {
+	delete[] m_values;
 }
 
-void DamageMultiplierTable::init(int attackTypeCount, int armorTypeCount){
-	this->attackTypeCount= attackTypeCount;
-	this->armorTypeCount= armorTypeCount;
+void DamageMultiplierTable::init( int attackTypeCount, int armorTypeCount ) {
+	m_attackTypeCount= attackTypeCount;
+	m_armorTypeCount= armorTypeCount;
 
 	int valueCount= attackTypeCount*armorTypeCount;
-	values= new fixed[valueCount];
-	for(int i=0; i<valueCount; ++i){
-		values[i] = 1;
+	m_values= new fixed[valueCount];
+	for (int i=0; i < valueCount; ++i) {
+		m_values[i] = 1;
 	}
 }
 
-fixed DamageMultiplierTable::getDamageMultiplier(const AttackType *att, const ArmourType *art) const {
-	return values[attackTypeCount*art->getId()+att->getId()];
+fixed DamageMultiplierTable::getDamageMultiplier( const AttackType *att, const ArmourType *art ) const {
+	return m_values[m_attackTypeCount * art->getId( ) + att->getId( )];
 }
 
-void DamageMultiplierTable::setDamageMultiplier(const AttackType *att, const ArmourType *art, fixed value) {
-	values[attackTypeCount*art->getId()+att->getId()]= value;
+void DamageMultiplierTable::setDamageMultiplier( const AttackType *att, const ArmourType *art, fixed value ) {
+	m_values[m_attackTypeCount * art->getId( ) + att->getId( )]= value;
 }
 
 }}//end namespaces
