@@ -364,9 +364,11 @@ inline float saturate(float value) {
 	return clamp(value, 0.f, 1.f);
 }
 
+#if _MSC_VER <= 1700 // MSVC v11.0 (2012)
 inline int round(float f){
      return int(roundf(f));
 }
+#endif
 
 
 inline float remap(float in, const float oldMin, const float oldMax, const float newMin, const float newMax) {

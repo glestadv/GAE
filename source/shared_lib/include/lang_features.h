@@ -286,7 +286,7 @@
 #		define CXX11_RVALUE_REFERENCES_20
 #		define CXX11_EXCEPTION_PTR
 #	endif
-#	if _MSC_VER >= 1700 // MSVC v11.0 (not yet released)
+#	if _MSC_VER >= 1700 // MSVC v11.0 (2012)
 #		define CXX11_DECLTYPE_11
 #		define CXX11_RVALUE_REFERENCES_21
 #	endif
@@ -368,16 +368,20 @@
  */
 
 #if defined(_MSC_VER)
+#	if _MSC_VER <= 1700 // MSVC v11.0 (2012)
 	// TODO: this needs a better check to make sure we don't already have it in some form
-#	define __NEED_ROUND_FUNC
+#		define __NEED_ROUND_FUNC
 	// TODO: function inlines would be better (type safe, etc.)
-#	define snprintf					_snprintf
-#	define strtoull(np,ep,b)		_strtoui64(np,ep,b)
-#	define strtof(np,ep)			((float)strtod(np,ep))
-#	define strtold(np,ep)			((long double)strtod(np,ep))
+#		define snprintf					_snprintf
+#		define strtoull(np,ep,b)		_strtoui64(np,ep,b)
+#		define strtof(np,ep)			((float)strtod(np,ep))
+#		define strtold(np,ep)			((long double)strtod(np,ep))
+
+#		define log2(x)					(log(float(x))/log(2.f))
+#	endif
 #	define strcasecmp				stricmp
-#	define log2(x)					(log(float(x))/log(2.f))
 #endif
+
 
 /* strtok in msvcrt uses TLS for thread safety and can therefore be aliased to strtok omitting the
  * POSIX-defined saveptr parameter of strtok_r.  The same is true for HP-UX's libc.*/
