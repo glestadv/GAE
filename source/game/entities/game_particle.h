@@ -38,7 +38,7 @@ class Splash;
 
 class GameParticleSystem : public ParticleSystem {
 protected:
-	int64 lastVisCheck; // time last visibility check was made
+	int64 m_lastVisCheck; // time last visibility check was made
 
 	static const int64 test_interval = 200;
 
@@ -51,7 +51,7 @@ public:
 		if (visible) {
 			initArray(use);
 		}
-		lastVisCheck = 0;
+		m_lastVisCheck = 0;
 	}
 
 	GameParticleSystem(ParticleUse use, bool visible, const ParticleSystemBase &model, int particleCount)
@@ -60,7 +60,7 @@ public:
 		if (visible) {
 			initArray(use);
 		}
-		lastVisCheck = 0;
+		m_lastVisCheck = 0;
 	}
 
 	void checkVisibilty(ParticleUse use, bool log = false);
@@ -107,16 +107,16 @@ public:
 
 class DirectedParticleSystem : public GameParticleSystem {
 protected:
-	Vec3f direction;
-	bool fog;
+	Vec3f m_direction;
+	bool m_fog;
 
 public:
 	DirectedParticleSystem(ParticleUse use, bool visible, const ParticleSystemBase &model, int particleCount);
 	virtual ~DirectedParticleSystem() {}
 
 	virtual void render(ParticleRenderer *pr, ModelRenderer *mr) override;
-	Vec3f getDirection() const {return direction;}
-	void setDirection(const Vec3f &dir) { direction = dir; }
+	Vec3f getDirection() const {return m_direction;}
+	void setDirection(const Vec3f &dir) { m_direction = dir; }
 };
 
 // =====================================================

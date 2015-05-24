@@ -87,32 +87,32 @@ private:
     typedef vector<StoredResource>	Resources;
 	typedef vector<Product>			Products;
 
-	UpgradeManager upgradeManager;
+	UpgradeManager m_upgradeManager;
 
-    Resources resources;
-	Units units;
-	UnitMap unitMap;
-	Products products;
+    Resources m_resources;
+	Units m_units;
+	UnitMap m_unitMap;
+	Products m_products;
 	UnitTypeCountMap  m_unitCountMap;  // count of each 'operative' UnitType in factionType.
 
-	ControlType control;
+	ControlType m_control;
 
-	Texture2D *texture;
+	Texture2D *m_texture;
 	Texture2D *m_logoTex;
-	const FactionType *factionType;
+	const FactionType *m_factionType;
 	UnitCostModifiers m_costModifiers;
 	StoreModifiers    m_storeModifiers;
 
-	int teamIndex;
-	int startLocationIndex;
-	int colourIndex;
+	int m_teamIndex;
+	int m_startLocationIndex;
+	int m_colourIndex;
 
-	bool thisFaction;
-	bool defeated;
-	int subfaction;			// the current subfaction index starting at zero
-	time_t lastAttackNotice;
-	time_t lastEnemyNotice;
-	Vec3f lastEventLoc;
+	bool m_thisFaction;
+	bool m_defeated;
+	int m_subfaction;			// the current subfaction index starting at zero
+	time_t m_lastAttackNotice;
+	time_t m_lastEnemyNotice;
+	Vec3f m_lastEventLoc;
 
 	static ResourceTypes neededResources;
 
@@ -129,49 +129,49 @@ public:
 
 	//get
 	const StoredResource *getResource(const ResourceType *rt) const;
-	const StoredResource *getResource(int i) const  {assert(i < resources.size()); return &resources[i];}
+	const StoredResource *getResource(int i) const  {assert(i < resources.size()); return &m_resources[i];}
 	int getStoreAmount(const ResourceType *rt) const;
 
 	int getCountOfUnitType(const UnitType *ut) const    { return m_unitCountMap.find(ut)->second; }
 
-	const FactionType *getType() const					{return factionType;}
+	const FactionType *getType() const					{return m_factionType;}
 	int getIndex() const								{return m_id;}
-	int getTeam() const									{return teamIndex;}
-	bool isDefeated() const								{return defeated;}
-	bool getCpuControl() const							{return control >= ControlType::CPU_EASY;}
-	bool getCpuUltraControl() const						{return control == ControlType::CPU_ULTRA;}
-	bool getCpuEasyControl() const						{return control == ControlType::CPU_EASY;}
-	bool getCpuMegaControl() const						{return control == ControlType::CPU_MEGA;}
-	ControlType getControlType() const					{return control;}
-	Unit *getUnit(int i) const							{assert(units.size() == unitMap.size()); assert(i < units.size()); return units[i];}
-	int getUnitCount() const							{return units.size();}
-	const Units &getUnits() const						{return units;}
-	const UpgradeManager *getUpgradeManager() const		{return &upgradeManager;}
-	const Texture2D *getTexture() const					{return texture;}
+	int getTeam() const									{return m_teamIndex;}
+	bool isDefeated() const								{return m_defeated;}
+	bool getCpuControl() const							{return m_control >= ControlType::CPU_EASY;}
+	bool getCpuUltraControl() const						{return m_control == ControlType::CPU_ULTRA;}
+	bool getCpuEasyControl() const						{return m_control == ControlType::CPU_EASY;}
+	bool getCpuMegaControl() const						{return m_control == ControlType::CPU_MEGA;}
+	ControlType getControlType() const					{return m_control;}
+	Unit *getUnit(int i) const							{assert(m_units.size() == m_unitMap.size()); assert(i < m_units.size()); return m_units[i];}
+	int getUnitCount() const							{return m_units.size();}
+	const Units &getUnits() const						{return m_units;}
+	const UpgradeManager *getUpgradeManager() const		{return &m_upgradeManager;}
+	const Texture2D *getTexture() const					{return m_texture;}
 	const Texture2D *getLogoTex() const					{return m_logoTex;}
-	int getStartLocationIndex() const					{return startLocationIndex;}
-	int getColourIndex() const							{return colourIndex;}
-	Colour getColour() const							{return factionColours[colourIndex];}
+	int getStartLocationIndex() const					{return m_startLocationIndex;}
+	int getColourIndex() const							{return m_colourIndex;}
+	Colour getColour() const							{return factionColours[m_colourIndex];}
 	Vec3f  getColourV3f() const;
-	int getSubfaction() const							{return subfaction;}
-	Vec3f getLastEventLoc() const						{return lastEventLoc;}
+	int getSubfaction() const							{return m_subfaction;}
+	Vec3f getLastEventLoc() const						{return m_lastEventLoc;}
 	Modifier getCostModifier(const ProducibleType *pt, const ResourceType *rt) const;
 	Modifier getStoreModifier(const UnitType *ut, const ResourceType *rt) const;
 	
 	///@todo Remove this!
 	static const ResourceTypes &getNeededResources() 	{return neededResources;}
 	
-	bool isThisFaction() const							{return thisFaction;}
+	bool isThisFaction() const							{return m_thisFaction;}
 
 	// set
-	void setDefeated()	{ defeated = true; }
+	void setDefeated()	{ m_defeated = true; }
 
 	// upgrades
 	void startUpgrade(const UpgradeType *ut);
 	void cancelUpgrade(const UpgradeType *ut);
 	void finishUpgrade(const UpgradeType *ut);
 
-	void applyUpgradeBoosts(Unit *unit) { upgradeManager.addPointBoosts(unit); }
+	void applyUpgradeBoosts(Unit *unit) { m_upgradeManager.addPointBoosts(unit); }
 
 	// cost application
 	bool applyCosts(const ProducibleType *p);
@@ -202,18 +202,18 @@ public:
 	// subfaction checks
 	bool isAvailable(const CommandType *ct) const;
 	bool isAvailable(const CommandType *ct, const ProducibleType *pt) const;
-	bool isAvailable(const RequirableType *rt) const	{return rt->isAvailableInSubfaction(subfaction);}
+	bool isAvailable(const RequirableType *rt) const	{return rt->isAvailableInSubfaction(m_subfaction);}
 
 	// diplomacy
-	bool isAlly(const Faction *faction)	const			{return teamIndex == faction->getTeam();}
+	bool isAlly(const Faction *faction)	const			{return m_teamIndex == faction->getTeam();}
 	bool hasBuilding() const;
 	bool canSee(const Unit *unit) const;
 
 	// other
 	Unit *findUnit(int id) {
-		assert(units.size() == unitMap.size());
-		UnitMap::iterator it = unitMap.find(id);
-		return it == unitMap.end() ? NULL : it->second;
+		assert( m_units.size() == m_unitMap.size() );
+		UnitMap::iterator it = m_unitMap.find(id);
+		return it == m_unitMap.end() ? NULL : it->second;
 	}
 
 	void add(Unit *unit);
@@ -232,7 +232,7 @@ public:
 	void removeStore(const UnitType *unitType);
 	void reEvaluateStore();
 
-	void setLastEventLoc(Vec3f lastEventLoc)	{this->lastEventLoc = lastEventLoc;}
+	void setLastEventLoc(Vec3f lastEventLoc)	{m_lastEventLoc = lastEventLoc;}
 	void attackNotice(const Unit *u);
 
 	void advanceSubfaction(int subfaction);
@@ -244,7 +244,7 @@ public:
 	void capResource(const ResourceType *rt);
 
 	// Generated 'products' (non unit producibles)
-	void addProduct(const GeneratedType *gt) { products.push_back(Product(gt)); }
+	void addProduct(const GeneratedType *gt) { m_products.push_back(Product(gt)); }
 
 private:
 	void limitResourcesToStore();

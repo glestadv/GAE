@@ -39,9 +39,9 @@ class Upgrade {
 
 private:
 	int m_id;
-	UpgradeState state;
-	int factionIndex;
-	const UpgradeType *type;
+	UpgradeState m_state;
+	int m_factionIndex;
+	const UpgradeType *m_type;
 
 public:
 	struct CreateParams {
@@ -87,13 +87,13 @@ private:
 class UpgradeManager {
 private:
 	typedef vector<Upgrade*> Upgrades;
-	Upgrades upgrades;
+	Upgrades m_upgrades;
 
 public:
 	~UpgradeManager();
 
-	int getUpgradeCount() const		{return upgrades.size();}
-	const Upgrade &getUpgrade(int i) const	{return *upgrades[i];}
+	int getUpgradeCount() const		{return m_upgrades.size();}
+	const Upgrade &getUpgrade(int i) const	{return *m_upgrades[i];}
 
 	void startUpgrade(const UpgradeType *upgradeType, int factionIndex);
 	void cancelUpgrade(const UpgradeType *upgradeType);

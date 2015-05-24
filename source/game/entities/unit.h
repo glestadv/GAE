@@ -141,17 +141,17 @@ public:
 	//typedef list<UnitId> Pets;
 
 private:
-	const UnitType *type;			/**< the UnitType of this unit */
+	const UnitType *m_type;			/**< the UnitType of this unit */
 
 	// basic stats
-	int id;					/**< unique identifier  */
-	int hp;					/**< current hit points */
-	int ep;					/**< current energy points */
-	int loadCount;			/**< current 'load' (resources carried) */
-	int progress2;			/**< 'secondary' skill progress counter (progress for Production) / or number of frames dead */
-	int kills;				/**< number of kills */
+	int m_id;					/**< unique identifier  */
+	int m_hp;					/**< current hit points */
+	int m_ep;					/**< current energy points */
+	int m_loadCount;			/**< current 'load' (resources carried) */
+	int m_progress2;			/**< 'secondary' skill progress counter (progress for Production) / or number of frames dead */
+	int m_kills;				/**< number of kills */
 
-	const ResourceType *loadType;	/**< the type if resource being carried */
+	const ResourceType *m_loadType;	/**< the type if resource being carried */
 
 	// housed unit bits
 	UnitIdList	m_carriedUnits;
@@ -160,36 +160,36 @@ private:
 	UnitId		m_carrier;
 
 	// engine info	
-	int lastAnimReset;			/**< the frame the current animation cycle was started */
-	int nextAnimReset;			/**< the frame the next animation cycle will begin */
-	int lastCommandUpdate;		/**< the frame this unit last updated its command */
-	int nextCommandUpdate;		/**< the frame next command update will occur */
-	int systemStartFrame;		/**< the frame the unit will start an attack or spell system */
-	int soundStartFrame;		/**< the frame the sound for the current skill should be started */
+	int m_lastAnimReset;			/**< the frame the current animation cycle was started */
+	int m_nextAnimReset;			/**< the frame the next animation cycle will begin */
+	int m_lastCommandUpdate;		/**< the frame this unit last updated its command */
+	int m_nextCommandUpdate;		/**< the frame next command update will occur */
+	int m_systemStartFrame;		/**< the frame the unit will start an attack or spell system */
+	int m_soundStartFrame;		/**< the frame the sound for the current skill should be started */
 
 	// target info
-	UnitId targetRef; 
-	Field targetField;				/**< Field target travels in @todo replace with Zone ? */
-	bool faceTarget;				/**< If true and target is set, we continue to face target. */
-	bool useNearestOccupiedCell;	/**< If true, targetPos is set to target->getNearestOccupiedCell() */
+	UnitId m_targetRef; 
+	Field m_targetField;				/**< Field target travels in @todo replace with Zone ? */
+	bool m_faceTarget;				/**< If true and target is set, we continue to face target. */
+	bool m_useNearestOccupiedCell;	/**< If true, targetPos is set to target->getNearestOccupiedCell() */
 
 	// position info
-	Vec2i pos;						/**< Current position */
-	Vec2i lastPos;					/**< The last position before current */
-	Vec2i nextPos;					/**< Position unit is moving into next. Note: this will almost always == pos */
-	Vec2i targetPos;				/**< Position of the target, or the cell of the target we care about. */
-	Vec3f targetVec;				/**< 3D position of target (centre) */
-	Vec2i meetingPos;				/**< Cell position of metting point */
+	Vec2i m_pos;						/**< Current position */
+	Vec2i m_lastPos;					/**< The last position before current */
+	Vec2i m_nextPos;					/**< Position unit is moving into next. Note: this will almost always == pos */
+	Vec2i m_targetPos;				/**< Position of the target, or the cell of the target we care about. */
+	Vec3f m_targetVec;				/**< 3D position of target (centre) */
+	Vec2i m_meetingPos;				/**< Cell position of metting point */
 
 	// rotation info
-	float lastRotation;				/**< facing last frame, in degrees */
-	float targetRotation;			/**< desired facing, in degrees*/
-	float rotation;					/**< current facing, in degrees */
+	float m_lastRotation;				/**< facing last frame, in degrees */
+	float m_targetRotation;			/**< desired facing, in degrees*/
+	float m_rotation;					/**< current facing, in degrees */
 	CardinalDir m_facing;			/**< facing for buildings */
 
-	const Level *level;				/**< current Level */
+	const Level *m_level;				/**< current Level */
 
-	const SkillType *currSkill;		/**< the SkillType currently being executed */
+	const SkillType *m_currSkill;		/**< the SkillType currently being executed */
 
 	// some flags
 	bool m_autoCmdEnable[AutoCmdFlag::COUNT];
@@ -202,34 +202,34 @@ private:
 	float	m_cloakAlpha;
 
 	// this should go somewhere else
-	float highlight;				/**< alpha for selection circle effects */
+	float m_highlight;				/**< alpha for selection circle effects */
 
-	Effects effects;				/**< Effects (spells, etc.) currently effecting unit. */
-	Effects effectsCreated;			/**< All effects created by this unit. */
-	EnhancementType totalUpgrade;	/**< All stat changes from upgrades, level ups and effects */
+	Effects m_effects;				/**< Effects (spells, etc.) currently effecting unit. */
+	Effects m_effectsCreated;			/**< All effects created by this unit. */
+	EnhancementType m_totalUpgrade;	/**< All stat changes from upgrades, level ups and effects */
 
 	// is this really needed here? maybe keep faction (but change to an index), ditch map
-	Faction *faction;
-	Map *map;
+	Faction *m_faction;
+	Map *m_map;
 
 	// paths
-	UnitPath unitPath;
-	WaypointPath waypointPath;
+	UnitPath m_unitPath;
+	WaypointPath m_waypointPath;
 
 	// command queue
-	Commands commands;
+	Commands m_commands;
 
 	// eye candy particle systems
-	ParticleSystem *fire;
-	ParticleSystem *smoke;
-	UnitParticleSystems skillParticleSystems;
-	UnitParticleSystems effectParticleSystems;
+	ParticleSystem *m_fire;
+	ParticleSystem *m_smoke;
+	UnitParticleSystems m_skillParticleSystems;
+	UnitParticleSystems m_effectParticleSystems;
 
 	// scripting stuff
-	int commandCallback;		// for script 'command callbacks'
-	int hp_below_trigger;		// if non-zero, call the Trigger manager when HP falls below this
-	int hp_above_trigger;		// if non-zero, call the Trigger manager when HP rises above this
-	bool attacked_trigger;
+	int m_commandCallback;		// for script 'command callbacks'
+	int m_hpBelowTrigger;		// if non-zero, call the Trigger manager when HP falls below this
+	int m_hpAboveTrigger;		// if non-zero, call the Trigger manager when HP rises above this
+	bool m_attackedTrigger;
 
 public:
 	MEMORY_CHECK_DECLARATIONS(Unit)
@@ -277,7 +277,7 @@ private:
 
 	virtual ~Unit();
 
-	void setId(int v) { id = v; }
+	void setId(int v) { m_id = v; }
 
 	void checkEffectParticles();
 	void checkEffectCloak();
@@ -289,64 +289,64 @@ public:
 	void save(XmlNode *node) const;
 
 	//queries
-	int getId() const							{return id;}
-	Field getCurrField() const					{return type->getField();}
-	Zone getCurrZone() const					{return type->getZone();}
-	int getLoadCount() const					{return loadCount;}
-	int getSize() const							{return type->getSize();}
+	int getId() const							{return m_id;}
+	Field getCurrField() const					{return m_type->getField();}
+	Zone getCurrZone() const					{return m_type->getZone();}
+	int getLoadCount() const					{return m_loadCount;}
+	int getSize() const							{return m_type->getSize();}
 	float getProgress() const;
 	float getAnimProgress() const;
-	float getHightlight() const					{return highlight;}
-	int getProgress2() const					{return progress2;}
+	float getHightlight() const					{return m_highlight;}
+	int getProgress2() const					{return m_progress2;}
 
-	int getNextCommandUpdate() const			{ return nextCommandUpdate; }
-	int getLastCommandUpdate() const			{ return lastCommandUpdate; }
-	int getNextAnimReset() const				{ return nextAnimReset; }
-	int getSystemStartFrame() const				{ return systemStartFrame; }
-	int getSoundStartFrame() const				{ return soundStartFrame; }
+	int getNextCommandUpdate() const			{ return m_nextCommandUpdate; }
+	int getLastCommandUpdate() const			{ return m_lastCommandUpdate; }
+	int getNextAnimReset() const				{ return m_nextAnimReset; }
+	int getSystemStartFrame() const				{ return m_systemStartFrame; }
+	int getSoundStartFrame() const				{ return m_soundStartFrame; }
 
-	int getFactionIndex() const					{return faction->getIndex();}
-	int getTeam() const							{return faction->getTeam();}
-	int getHp() const							{return hp;}
-	int getEp() const							{return ep;}
+	int getFactionIndex() const					{return m_faction->getIndex();}
+	int getTeam() const							{return m_faction->getTeam();}
+	int getHp() const							{return m_hp;}
+	int getEp() const							{return m_ep;}
 	int getProductionPercent() const;
-	float getHpRatio() const					{return clamp(float(hp) / getMaxHp(), 0.f, 1.f);}
-	fixed getHpRatioFixed() const				{ return fixed(hp) / getMaxHp(); }
-	float getEpRatio() const					{return !type->getMaxEp() ? 0.0f : clamp(float(ep)/getMaxEp(), 0.f, 1.f);}
-	bool getToBeUndertaken() const				{return progress2 > GameConstants::maxDeadCount;}
-	UnitId getTarget() const					{return targetRef;}
-	Vec2i getNextPos() const					{return nextPos;}
-	Vec2i getTargetPos() const					{return targetPos;}
-	Vec3f getTargetVec() const					{return targetVec;}
-	Field getTargetField() const				{return targetField;}
-	Vec2i getMeetingPos() const					{return meetingPos;}
-	Faction *getFaction() const					{return faction;}
-	const ResourceType *getLoadType() const		{return loadType;}
-	const UnitType *getType() const				{return type;}
-	const SkillType *getCurrSkill() const		{return currSkill;}
-	const EnhancementType *getTotalUpgrade() const	{return &totalUpgrade;}
-	float getRotation() const					{return rotation;}
+	float getHpRatio() const					{return clamp(float(m_hp) / getMaxHp(), 0.f, 1.f);}
+	fixed getHpRatioFixed() const				{ return fixed(m_hp) / getMaxHp(); }
+	float getEpRatio() const					{return !m_type->getMaxEp() ? 0.0f : clamp(float(m_ep)/getMaxEp(), 0.f, 1.f);}
+	bool getToBeUndertaken() const				{return m_progress2 > GameConstants::maxDeadCount;}
+	UnitId getTarget() const					{return m_targetRef;}
+	Vec2i getNextPos() const					{return m_nextPos;}
+	Vec2i getTargetPos() const					{return m_targetPos;}
+	Vec3f getTargetVec() const					{return m_targetVec;}
+	Field getTargetField() const				{return m_targetField;}
+	Vec2i getMeetingPos() const					{return m_meetingPos;}
+	Faction *getFaction() const					{return m_faction;}
+	const ResourceType *getLoadType() const		{return m_loadType;}
+	const UnitType *getType() const				{return m_type;}
+	const SkillType *getCurrSkill() const		{return m_currSkill;}
+	const EnhancementType *getTotalUpgrade() const	{return &m_totalUpgrade;}
+	float getRotation() const					{return m_rotation;}
 	Vec2f getVerticalRotation() const			{return Vec2f(0.f);}
-	ParticleSystem *getFire() const				{return fire;}
-	int getKills() const						{return kills;}
-	const Level *getLevel() const				{return level;}
+	ParticleSystem *getFire() const				{return m_fire;}
+	int getKills() const						{return m_kills;}
+	const Level *getLevel() const				{return m_level;}
 	const Level *getNextLevel() const;
 	string getFullName() const;
-	const UnitPath *getPath() const				{return &unitPath;}
-	UnitPath *getPath()							{return &unitPath;}
-	WaypointPath *getWaypointPath()				{return &waypointPath;}
-	const WaypointPath *getWaypointPath() const {return &waypointPath;}
+	const UnitPath *getPath() const				{return &m_unitPath;}
+	UnitPath *getPath()							{return &m_unitPath;}
+	WaypointPath *getWaypointPath()				{return &m_waypointPath;}
+	const WaypointPath *getWaypointPath() const {return &m_waypointPath;}
 	int getBaseSpeed(const SkillType *st) const {return st->getBaseSpeed();}
 	int getSpeed(const SkillType *st) const;
-	int getBaseSpeed() const					{return getBaseSpeed(currSkill);}
-	int getSpeed() const						{return getSpeed(currSkill);}
-	const Emanations &getEmanations() const		{return type->getEmanations();}
-	const Commands &getCommands() const			{return commands;}
+	int getBaseSpeed() const					{return getBaseSpeed(m_currSkill);}
+	int getSpeed() const						{return getSpeed(m_currSkill);}
+	const Emanations &getEmanations() const		{return m_type->getEmanations();}
+	const Commands &getCommands() const			{return m_commands;}
 	const RepairCommandType *getRepairCommandType(const Unit *u) const;
-	int getDeadCount() const					{return progress2;}
+	int getDeadCount() const					{return m_progress2;}
 	void setModelFacing(CardinalDir value);
 	CardinalDir getModelFacing() const			{ return m_facing; }
-	int getCloakGroup() const                   { return type->getCloakType()->getCloakGroup(); }
+	int getCloakGroup() const                   { return m_type->getCloakType()->getCloakGroup(); }
 
 	//-- for carry units
 	const UnitIdList& getCarriedUnits() const	{return m_carriedUnits;}
@@ -364,12 +364,12 @@ public:
 
 	///@todo move to a helper of ScriptManager, connect signals...
 	void setCommandCallback();
-	void clearCommandCallback()					{ commandCallback = 0; }
-	const int getCommandCallback() const	{ return commandCallback; }
-	void setHPBelowTrigger(int i)				{ hp_below_trigger = i; }
-	void setHPAboveTrigger(int i)				{ hp_above_trigger = i; }
-	void setAttackedTrigger(bool val)			{ attacked_trigger = val; }
-	bool getAttackedTrigger() const				{ return attacked_trigger; }
+	void clearCommandCallback()					{ m_commandCallback = 0; }
+	const int getCommandCallback() const	{ return m_commandCallback; }
+	void setHPBelowTrigger(int i)				{ m_hpBelowTrigger = i; }
+	void setHPAboveTrigger(int i)				{ m_hpAboveTrigger = i; }
+	void setAttackedTrigger(bool val)			{ m_attackedTrigger = val; }
+	bool getAttackedTrigger() const				{ return m_attackedTrigger; }
 
 	/**
 	 * Returns the total attack strength (base damage) for this unit using the
@@ -407,10 +407,10 @@ public:
 	}
 
 	// pos
-	Vec2i getPos() const				{return pos;}//carried ? carrier->getPos() : pos;}
-	Vec2i getLastPos() const			{return lastPos;}
-	Vec2i getCenteredPos() const		{return Vec2i(type->getHalfSize().intp()) + getPos();}
-	fixedVec2 getFixedCenteredPos() const	{ return fixedVec2(pos.x + type->getHalfSize(), pos.y + type->getHalfSize()); }
+	Vec2i getPos() const				{return m_pos;}//carried ? carrier->getPos() : pos;}
+	Vec2i getLastPos() const			{return m_lastPos;}
+	Vec2i getCenteredPos() const		{return Vec2i(m_type->getHalfSize().intp()) + getPos();}
+	fixedVec2 getFixedCenteredPos() const	{ return fixedVec2(m_pos.x + m_type->getHalfSize(), m_pos.y + m_type->getHalfSize()); }
 	Vec2i getNearestOccupiedCell(const Vec2i &from) const;
 
 	// alpha (for cloaking or putrefacting)
@@ -418,43 +418,43 @@ public:
 	float getRenderAlpha() const;
 
 	// is
-	bool isIdle() const					{return currSkill->getClass() == SkillClass::STOP;}	
-	bool isMoving() const				{return currSkill->getClass() == SkillClass::MOVE;}
-	bool isMobile ()					{ return type->isMobile(); }
+	bool isIdle() const					{return m_currSkill->getClass() == SkillClass::STOP;}	
+	bool isMoving() const				{return m_currSkill->getClass() == SkillClass::MOVE;}
+	bool isMobile ()					{ return m_type->isMobile(); }
 	bool isCarried() const				{return m_carrier != -1;}
-	bool isHighlighted() const			{return highlight > 0.f;}
+	bool isHighlighted() const			{return m_highlight > 0.f;}
 	//bool isPutrefacting() const			{return deadCount;}
-	bool isAlly(const Unit *unit) const	{return faction->isAlly(unit->getFaction());}
+	bool isAlly(const Unit *unit) const	{return m_faction->isAlly(unit->getFaction());}
 	bool isInteresting(InterestingUnitType iut) const;
 	bool isAutoCmdEnabled(AutoCmdFlag f) const	{return m_autoCmdEnable[f];}
 	bool isCloaked() const					{return m_cloaked;}
 	bool renderCloaked() const			{return m_cloaked || m_cloaking || m_deCloaking;}
-	bool isOfClass(UnitClass uc) const { return type->isOfClass(uc); }
+	bool isOfClass(UnitClass uc) const { return m_type->isOfClass(uc); }
 	bool isTargetUnitVisible(int teamIndex) const;
 	bool isActive() const;
 	bool isBuilding() const;
-	bool isDead() const					{return hp <= 0;}
-	bool isAlive() const				{return hp > 0;}
-	bool isDamaged() const				{return hp < getMaxHp();}
+	bool isDead() const					{return m_hp <= 0;}
+	bool isAlive() const				{return m_hp > 0;}
+	bool isDamaged() const				{return m_hp < getMaxHp();}
 	bool isOperative() const			{return isAlive() && isBuilt();}
 	bool isBeingBuilt() const			{
-		return currSkill->getClass() == SkillClass::BE_BUILT
-			|| currSkill->getClass() == SkillClass::BUILD_SELF;
+		return m_currSkill->getClass() == SkillClass::BE_BUILT
+			|| m_currSkill->getClass() == SkillClass::BUILD_SELF;
 	}
 	bool isBuilt() const				{return !isBeingBuilt();}
 
 	// set
 	void setCurrSkill(const SkillType *currSkill);
 	void setCurrSkill(SkillClass sc)					{setCurrSkill(getType()->getFirstStOfClass(sc));}
-	void setLoadCount(int loadCount)					{this->loadCount = loadCount;}
-	void setLoadType(const ResourceType *loadType)		{this->loadType = loadType;}
-	void setProgress2(int progress2)					{this->progress2 = progress2;}
+	void setLoadCount(int loadCount)					{m_loadCount = loadCount;}
+	void setLoadType(const ResourceType *loadType)		{m_loadType = loadType;}
+	void setProgress2(int progress2)					{m_progress2 = progress2;}
 	void setPos(const Vec2i &pos);
-	void setNextPos(const Vec2i &nextPos)				{this->nextPos = nextPos; targetRef = -1;}
-	void setTargetPos(const Vec2i &targetPos)			{this->targetPos = targetPos; targetRef = -1;}
+	void setNextPos(const Vec2i &nextPos)				{m_nextPos = nextPos; m_targetRef = -1;}
+	void setTargetPos(const Vec2i &targetPos)			{m_targetPos = targetPos; m_targetRef = -1;}
 	void setTarget(const Unit *unit, bool faceTarget = true, bool useNearestOccupiedCell = true);
-	void setTargetVec(const Vec3f &targetVec)			{this->targetVec = targetVec;}
-	void setMeetingPos(const Vec2i &meetingPos)			{this->meetingPos = meetingPos;}
+	void setTargetVec(const Vec3f &targetVec)			{m_targetVec = targetVec;}
+	void setMeetingPos(const Vec2i &meetingPos)			{m_meetingPos = meetingPos;}
 	void setAutoCmdEnable(AutoCmdFlag f, bool v);
 
 	//render related
@@ -462,17 +462,17 @@ public:
 	//const Model *getCurrentModel() const				{return currSkill->getAnimation();}
 
 	Vec3f getCurrVector() const							{
-		return getCurrVectorFlat() + Vec3f(0.f, type->getHalfHeight().toFloat(), 0.f);
+		return getCurrVectorFlat() + Vec3f(0.f, m_type->getHalfHeight().toFloat(), 0.f);
 	}
 	//Vec3f getCurrVectorFlat() const;
 	// this is a heavy use function so it's inlined even though it isn't exactly small
 	Vec3f getCurrVectorFlat() const {
 		Vec2i pos = getPos();
 		Vec3f v(float(pos.x),  computeHeight(pos), float(pos.y));
-		if (currSkill->getClass() == SkillClass::MOVE) {
-			v = Vec3f(float(lastPos.x), computeHeight(lastPos), float(lastPos.y)).lerp(getProgress(), v);
+		if (m_currSkill->getClass() == SkillClass::MOVE) {
+			v = Vec3f(float(m_lastPos.x), computeHeight(m_lastPos), float(m_lastPos.y)).lerp(getProgress(), v);
 		}
-		const float &halfSize = type->getHalfSize().toFloat();
+		const float &halfSize = m_type->getHalfSize().toFloat();
 		v.x += halfSize;
 		v.z += halfSize;
 		return v;
@@ -483,7 +483,7 @@ public:
 
 		// let dead units start sinking before they go away
 		int framesUntilDead = GameConstants::maxDeadCount - getDeadCount();
-		if(framesUntilDead <= 200 && !type->isOfClass(UnitClass::BUILDING)) {
+		if(framesUntilDead <= 200 && !m_type->isOfClass(UnitClass::BUILDING)) {
 			float baseline = logf(20.125f) / 5.f;
 			float adjust = logf((float)framesUntilDead / 10.f + 0.125f) / 5.f;
 			currVec.y += adjust - baseline;
@@ -494,12 +494,12 @@ public:
 
 	//command related
 	const CommandType *getFirstAvailableCt(CmdClass commandClass) const;
-	bool anyCommand() const								{return !commands.empty();}
+	bool anyCommand() const								{return !m_commands.empty();}
 
 	/** return current command, assert that there is always one command */
 	Command *getCurrCommand() const {
-		assert(!commands.empty());
-		return commands.front();
+		assert(!m_commands.empty());
+		return m_commands.front();
 	}
 	unsigned int getCommandCount() const;
 	CmdResult giveCommand(Command *command);		//give a command
@@ -519,14 +519,14 @@ public:
 	const CommandType *computeCommandType(const Vec2i &pos, const Unit *targetUnit= nullptr) const;
 
 	string getShortDesc() const;
-	int getQueuedOrderCount() const { return (commands.size() > 1 ? commands.size() - 1 : 0); }
+	int getQueuedOrderCount() const { return (m_commands.size() > 1 ? m_commands.size() - 1 : 0); }
 	string getLongDesc() const;
 	
 	bool computeEp();
 	bool repair(int amount = 0, fixed multiplier = 1);
 	bool decHp(int i);
 	bool decEp(int i);
-	int update2()										{return ++progress2;}
+	int update2()										{return ++m_progress2;}
 	TravelState travel(const Vec2i &pos, const MoveSkillType *moveSkill);
 	void stop() {setCurrSkill(SkillClass::STOP); }
 	void clearPath();
@@ -547,11 +547,11 @@ public:
 	void updateMoveSkillCycle();
 	void updateAnimDead();
 	void updateAnimCycle(int animOffset, int soundOffset = -1, int attackOffset = -1);
-	void resetAnim(int frame) { nextAnimReset = frame; }
+	void resetAnim(int frame) { m_nextAnimReset = frame; }
 
 	bool update();
 	void updateEmanations();
-	void face(float rot)		{ targetRotation = rot; }
+	void face(float rot)		{ m_targetRotation = rot; }
 	void face(const Vec2i &nextPos);
 
 	Unit *tick();
@@ -561,7 +561,7 @@ public:
 	bool morph(const MorphCommandType *mct, const UnitType *ut, Vec2i offset = Vec2i(0), bool reprocessCommands = true);
 	bool transform(const TransformCommandType *tct, const UnitType *ut, Vec2i pos, CardinalDir facing);
 	CmdResult checkCommand(const Command &command) const;
-	bool checkEnergy(const CommandType *ct) const { return ep >= ct->getEnergyCost(); }
+	bool checkEnergy(const CommandType *ct) const { return m_ep >= ct->getEnergyCost(); }
 	void applyCommand(const Command &command);
 	void startAttackSystems(const AttackSkillType *ast);
 	void startSpellSystems(const CastSpellSkillType *sst);

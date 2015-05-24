@@ -96,8 +96,7 @@ Vec3f getFactionColour(int ndx) {
 }
 
 Vec3f  Faction::getColourV3f() const {
-	Colour &c = factionColours[colourIndex];
-	return Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
+	return getFactionColour(m_colourIndex);
 }
 
 // =====================================================
@@ -108,33 +107,33 @@ Faction::ResourceTypes Faction::neededResources;
 void Faction::init(const FactionType *factionType, ControlType control, string playerName, TechTree *techTree,
 					int factionIndex, int teamIndex, int startLocationIndex, int colourIndex,
 					bool thisFaction, bool giveResources) {
-	this->control = control;
-	this->factionType = factionType;
-	this->m_name = playerName;
-	this->startLocationIndex = startLocationIndex;
-	this->m_id = factionIndex;
-	this->teamIndex = teamIndex;
-	this->colourIndex = colourIndex;
-	this->thisFaction = thisFaction;
-	this->subfaction = 0;
-	this->lastAttackNotice = 0;
-	this->lastEnemyNotice = 0;
-	this->defeated = false;
-	lastEventLoc.x = -1.0f;  // -1 x indicates uninitialized, no last event
+	m_control = control;
+	m_factionType = factionType;
+	m_name = playerName;
+	m_startLocationIndex = startLocationIndex;
+	m_id = factionIndex;
+	m_teamIndex = teamIndex;
+	m_colourIndex = colourIndex;
+	m_thisFaction = thisFaction;
+	m_subfaction = 0;
+	m_lastAttackNotice = 0;
+	m_lastEnemyNotice = 0;
+	m_defeated = false;
+	m_lastEventLoc.x = -1.0f;  // -1 x indicates uninitialized, no last event
 
-	texture = 0;
+	m_texture = 0;
 	m_logoTex = 0;
 
-	for (int i=0; i < factionType->getUnitTypeCount(); ++i) {
-		m_unitCountMap[factionType->getUnitType(i)] = 0;
+	for (int i=0; i < m_factionType->getUnitTypeCount(); ++i) {
+		m_unitCountMap[m_factionType->getUnitType(i)] = 0;
 	}
 
 	if (factionIndex != -1) { // !Glestimals
-		resources.resize(techTree->getResourceTypeCount());
+		m_resources.resize(techTree->getResourceTypeCount());
 		for (int i = 0; i < techTree->getResourceTypeCount(); ++i) {
 			const ResourceType *rt = techTree->getResourceType(i);
 			int resourceAmount= giveResources? factionType->getStartingResourceAmount(rt): 0;
-			resources[i].init(rt, resourceAmount);
+			m_resources[i].init(rt, resourceAmount);
 		}
 		for (int i=0; i < factionType->getUnitTypeCount(); ++i) {
 			const UnitType *ut = factionType->getUnitType(i);
@@ -144,8 +143,8 @@ void Faction::init(const FactionType *factionType, ControlType control, string p
 				m_storeModifiers[ut][rt] = Modifier(0, 1);
 			}
 		}
-		texture = g_renderer.newTexture2D(ResourceScope::GAME);
-		Pixmap2D *pixmap = texture->getPixmap();
+		m_texture = g_renderer.newTexture2D(ResourceScope::GAME);
+		Pixmap2D *pixmap = m_texture->getPixmap();
 		pixmap->init(1, 1, 3);
 		pixmap->setPixel(0, 0, factionColours[colourIndex].ptr());
 
@@ -160,9 +159,9 @@ void Faction::buildLogoPixmap() {
 	Pixmap2D *pixmap = m_logoTex->getPixmap();
 	pixmap->init(256, 256, 4);
 
-	const Pixmap2D *teamPixmap = factionType->getLogoTeamColour();
+	const Pixmap2D *teamPixmap = m_factionType->getLogoTeamColour();
 	if (teamPixmap) { // team-colour
-		Vec3f baseColour = Vec3f(factionColours[colourIndex]) / 255.f;
+		Vec3f baseColour = Vec3f(factionColours[m_colourIndex]) / 255.f;
 		for (int y = 0; y < 256; ++y) {
 			for (int x = 0; x < 256; ++x) {
 				Vec4f pixel = teamPixmap->getPixel4f(x, y);
@@ -172,7 +171,7 @@ void Faction::buildLogoPixmap() {
 			}
 		}
 	}
-	const Pixmap2D *rgbaPixmap = factionType->getLogoRgba();
+	const Pixmap2D *rgbaPixmap = m_factionType->getLogoRgba();
 	if (rgbaPixmap) { 
 		if (!teamPixmap) { // just copy
 			for (int y = 0; y < 256; ++y) {
@@ -201,24 +200,24 @@ void Faction::save(XmlNode *node) const {
 
 	node->addChild("id", m_id);
 	node->addChild("name", m_name);
-	node->addChild("teamIndex", teamIndex);
-	node->addChild("startLocationIndex", startLocationIndex);
-	node->addChild("colourIndex", colourIndex);
-	node->addChild("thisFaction", thisFaction);
-	node->addChild("subfaction", subfaction);
+	node->addChild("teamIndex", m_teamIndex);
+	node->addChild("startLocationIndex", m_startLocationIndex);
+	node->addChild("colourIndex", m_colourIndex);
+	node->addChild("thisFaction", m_thisFaction);
+	node->addChild("subfaction", m_subfaction);
 //	node->addChild("lastEventLoc", lastEventLoc);
-	upgradeManager.save(node->addChild("upgrades"));
+	m_upgradeManager.save(node->addChild("upgrades"));
 
 	n = node->addChild("resources");
-	for (int i = 0; i < resources.size(); ++i) {
+	for (int i = 0; i < m_resources.size(); ++i) {
 		XmlNode *resourceNode = n->addChild("resource");
-		resourceNode->addChild("type", resources[i].getType()->getName());
-		resourceNode->addChild("amount", resources[i].getAmount());
-		resourceNode->addChild("storage", resources[i].getStorage());
+		resourceNode->addChild("type", m_resources[i].getType()->getName());
+		resourceNode->addChild("amount", m_resources[i].getAmount());
+		resourceNode->addChild("storage", m_resources[i].getStorage());
 	}
 
 	n = node->addChild("units");
-	for (Units::const_iterator i = units.begin(); i != units.end(); ++i) {
+	for (Units::const_iterator i = m_units.begin(); i != m_units.end(); ++i) {
 		(*i)->save(n->addChild("unit"));
 	}
 }
@@ -227,45 +226,45 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 	XmlNode *n;
 	Map *map = world->getMap();
 
-	this->factionType = ft;
-	this->control = control;
-	this->lastAttackNotice = 0;
-	this->lastEnemyNotice = 0;
+	m_factionType = ft;
+	m_control = control;
+	m_lastAttackNotice = 0;
+	m_lastEnemyNotice = 0;
 
 	m_id = node->getChildIntValue("id");
 	m_name = node->getChildStringValue("name");
-	teamIndex = node->getChildIntValue("teamIndex");
-	startLocationIndex = node->getChildIntValue("startLocationIndex");
-	thisFaction = node->getChildBoolValue("thisFaction");
-	subfaction = node->getChildIntValue("subfaction");
+	m_teamIndex = node->getChildIntValue("teamIndex");
+	m_startLocationIndex = node->getChildIntValue("startLocationIndex");
+	m_thisFaction = node->getChildBoolValue("thisFaction");
+	m_subfaction = node->getChildIntValue("subfaction");
 	time_t lastAttackNotice = 0;
 	time_t lastEnemyNotice = 0;
 //	lastEventLoc = node->getChildVec3fValue("lastEventLoc");
 
-	upgradeManager.load(node->getChild("upgrades"), this);
+	m_upgradeManager.load(node->getChild("upgrades"), this);
 
 	n = node->getChild("resources");
-	resources.resize(n->getChildCount());
+	m_resources.resize(n->getChildCount());
 	for (int i = 0; i < n->getChildCount(); ++i) {
 		XmlNode *resourceNode = n->getChild("resource", i);
 		const ResourceType *rt = tt->getResourceType(resourceNode->getChildStringValue("type"));
-		resources[i].init(rt, resourceNode->getChildIntValue("amount"));
-		resources[i].setStorage(resourceNode->getChildIntValue("storage"));
+		m_resources[i].init(rt, resourceNode->getChildIntValue("amount"));
+		m_resources[i].setStorage(resourceNode->getChildIntValue("storage"));
 	}
 
 	n = node->getChild("units");
-	units.reserve(n->getChildCount());
+	m_units.reserve(n->getChildCount());
 	assert(units.empty() && unitMap.empty());
 	for (int i = 0; i < n->getChildCount(); ++i) {
 		g_world.newUnit(n->getChild("unit", i), this, map, tt);
 	}
-	subfaction = node->getChildIntValue("subfaction"); // reset in case unit construction changed it
-	colourIndex = node->getChildIntValue("colourIndex");
+	m_subfaction = node->getChildIntValue("subfaction"); // reset in case unit construction changed it
+	m_colourIndex = node->getChildIntValue("colourIndex");
 
-	texture = g_renderer.newTexture2D(ResourceScope::GAME);
-	Pixmap2D *pixmap = texture->getPixmap();
+	m_texture = g_renderer.newTexture2D(ResourceScope::GAME);
+	Pixmap2D *pixmap = m_texture->getPixmap();
 	pixmap->init(1, 1, 3);
-	pixmap->setPixel(0, 0, factionColours[colourIndex].ptr());
+	pixmap->setPixel(0, 0, factionColours[m_colourIndex].ptr());
 
 	assert(units.size() == unitMap.size());
 }
@@ -273,9 +272,9 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 // ================== get ==================
 
 const StoredResource *Faction::getResource(const ResourceType *rt) const {
-	for (int i = 0; i < resources.size(); ++i) {
-		if (rt == resources[i].getType()) {
-			return &resources[i];
+	for (int i = 0; i < m_resources.size(); ++i) {
+		if (rt == m_resources[i].getType()) {
+			return &m_resources[i];
 		}
 	}
 	assert(false);
@@ -283,9 +282,9 @@ const StoredResource *Faction::getResource(const ResourceType *rt) const {
 }
 
 int Faction::getStoreAmount(const ResourceType *rt) const {
-	for (int i = 0; i < resources.size(); ++i) {
-		if (rt == resources[i].getType()) {
-			return resources[i].getStorage();
+	for (int i = 0; i < m_resources.size(); ++i) {
+		if (rt == m_resources[i].getType()) {
+			return m_resources[i].getStorage();
 		}
 	}
 	assert(false);
@@ -295,15 +294,15 @@ int Faction::getStoreAmount(const ResourceType *rt) const {
 // ==================== upgrade manager ====================
 
 void Faction::startUpgrade(const UpgradeType *ut) {
-	upgradeManager.startUpgrade(ut, m_id);
+	m_upgradeManager.startUpgrade(ut, m_id);
 }
 
 void Faction::cancelUpgrade(const UpgradeType *ut) {
-	upgradeManager.cancelUpgrade(ut);
+	m_upgradeManager.cancelUpgrade(ut);
 }
 
 void Faction::finishUpgrade(const UpgradeType *ut) {
-	upgradeManager.finishUpgrade(ut);
+	m_upgradeManager.finishUpgrade(ut);
 
 	for (int i = 0; i < getUnitCount(); ++i) {
 		getUnit(i)->applyUpgrade(ut);
@@ -311,8 +310,8 @@ void Faction::finishUpgrade(const UpgradeType *ut) {
 
 	// update unit cost & store modifiers
 	const TechTree *tt = g_world.getTechTree();
-	for (int i=0; i < factionType->getUnitTypeCount(); ++i) {
-		const UnitType *unitType = factionType->getUnitType(i);
+	for (int i=0; i < m_factionType->getUnitTypeCount(); ++i) {
+		const UnitType *unitType = m_factionType->getUnitType(i);
 		for (int j=0; j < tt->getResourceTypeCount(); ++j) {
 			const ResourceType *resType = tt->getResourceType(j);
 			Modifier mod = ut->getCostModifier(unitType, resType);
@@ -363,12 +362,12 @@ bool Faction::reqsOk(const RequirableType *rt) const {
 	}
 	// required upgrades
 	for (int i = 0; i < rt->getUpgradeReqCount(); ++i) {
-		if (!upgradeManager.isUpgraded(rt->getUpgradeReq(i))) {
+		if (!m_upgradeManager.isUpgraded(rt->getUpgradeReq(i))) {
 			return false;
 		}
 	}
 	// available in subfaction ?
-	return rt->isAvailableInSubfaction(subfaction);
+	return rt->isAvailableInSubfaction(m_subfaction);
 }
 
 /** Checks if all required units and upgrades are present for a CommandType
@@ -402,7 +401,7 @@ bool Faction::reqsOk(const CommandType *ct, const ProducibleType *pt) const {
 	if (ct->getClass() == CmdClass::UPGRADE && pt) {
 		const UpgradeCommandType *uct = static_cast<const UpgradeCommandType*>(ct);
 		const UpgradeType *ut = static_cast<const UpgradeType*>(pt);
-		if (upgradeManager.isUpgradingOrUpgraded(ut)) {
+		if (m_upgradeManager.isUpgradingOrUpgraded(ut)) {
 			return false;
 		}
 	}
@@ -421,13 +420,13 @@ bool Faction::isAvailable(const CommandType *ct) const {
 
 /** Checks sub-faction availability of a command and a producible @return true if available */
 bool Faction::isAvailable(const CommandType *ct, const ProducibleType *pt) const {
-	if (!ct->isAvailableInSubfaction(subfaction)) {
+	if (!ct->isAvailableInSubfaction(m_subfaction)) {
 		return false;
 	}
 	// If this command is producing or building anything, we need to make sure
 	// that producable is also available.
 	if (pt) {
-		if (pt->isAvailableInSubfaction(subfaction)) {
+		if (pt->isAvailableInSubfaction(m_subfaction)) {
 			return true;
 		} else {
 			return false;
@@ -470,7 +469,7 @@ void Faction::reportReqs(const RequirableType *rt, CommandCheckResult &out_resul
 				continue;
 			}
 		}
-		bool ok = upgradeManager.isUpgraded(ut);
+		bool ok = m_upgradeManager.isUpgraded(ut);
 		out_result.m_upgradeReqResults.push_back(UpgradeReqResult(ut, ok));
 	}
 }
@@ -483,8 +482,8 @@ void Faction::reportReqsAndCosts(const CommandType *ct, const ProducibleType *pt
 	if (pt) {
 		if (pt->getClass() == ProducibleClass::UPGRADE) {
 			const UpgradeType *ut = static_cast<const UpgradeType*>(pt);
-			out_result.m_upgradedAlready = upgradeManager.isUpgraded(ut);
-			out_result.m_upgradingAlready = upgradeManager.isUpgrading(ut);
+			out_result.m_upgradedAlready = m_upgradeManager.isUpgraded(ut);
+			out_result.m_upgradingAlready = m_upgradeManager.isUpgrading(ut);
 		} else {
 			out_result.m_upgradedAlready = false;
 			out_result.m_upgradingAlready = false;
@@ -678,7 +677,7 @@ void Faction::applyCostsOnInterval(const ResourceType *rt) {
 						World::getCurrWorld()->doKill(unit, unit);
 					} else {
 						StaticSound *sound = unit->getType()->getFirstStOfClass(SkillClass::DIE)->getSound();
-						if (sound != NULL && thisFaction) {
+						if (sound != NULL && m_thisFaction) {
 							SoundRenderer::getInstance().playFx(sound);
 						}
 					}
@@ -760,14 +759,14 @@ bool Faction::canSee(const Unit *unit) const {
 	Vec2i tPos = Map::toTileCoords(unit->getCenteredPos());
 	if (unit->isCloaked()) {
 		int cloakGroup = unit->getType()->getCloakType()->getCloakGroup();
-		if (!g_cartographer.canDetect(teamIndex, cloakGroup, tPos)) {
+		if (!g_cartographer.canDetect(m_teamIndex, cloakGroup, tPos)) {
 			return false;
 		}
 	}
-	if (map.getTile(tPos)->isVisible(teamIndex)) {
+	if (map.getTile(tPos)->isVisible(m_teamIndex)) {
 		return true;
 	}
-	if (unit->isTargetUnitVisible(teamIndex)) {
+	if (unit->isTargetUnitVisible(m_teamIndex)) {
 		return true;
 	}
 	return false;
@@ -776,8 +775,8 @@ bool Faction::canSee(const Unit *unit) const {
 // ================== misc ==================
 
 void Faction::incResourceAmount(const ResourceType *rt, int amount) {
-	for (int i = 0; i < resources.size(); ++i) {
-		StoredResource *r = &resources[i];
+	for (int i = 0; i < m_resources.size(); ++i) {
+		StoredResource *r = &m_resources[i];
 		if (r->getType() == rt) {
 			r->setAmount(r->getAmount() + amount);
 			if (r->getType()->getClass() != ResourceClass::STATIC && r->getType()->getClass() != ResourceClass::CONSUMABLE) {
@@ -795,8 +794,8 @@ void Faction::setResourceBalance(const ResourceType *rt, int balance) {
 	if (!ScriptManager::getPlayerModifiers(m_id)->getConsumeEnabled()) {
 		return;
 	}
-	for (int i = 0; i < resources.size(); ++i) {
-		StoredResource *r = &resources[i];
+	for (int i = 0; i < m_resources.size(); ++i) {
+		StoredResource *r = &m_resources[i];
 		if (r->getType() == rt) {
 			r->setBalance(balance);
 			return;
@@ -807,16 +806,16 @@ void Faction::setResourceBalance(const ResourceType *rt, int balance) {
 
 void Faction::add(Unit *unit) {
 //	LOG_NETWORK( "Faction: " + intToStr(id) + " unit added Id: " + intToStr(unit->getId()) );
-	units.push_back(unit);
-	unitMap[unit->getId()] = unit;
+	m_units.push_back(unit);
+	m_unitMap[unit->getId()] = unit;
 }
 
 void Faction::remove(Unit *unit) {
-	Units::iterator it = std::find(units.begin(), units.end(), unit);
-	assert(it != units.end());
-	units.erase(it);
-	unitMap.erase(unit->getId());
-	assert(units.size() == unitMap.size());
+	Units::iterator it = std::find(m_units.begin(), m_units.end(), unit);
+	assert(it != m_units.end());
+	m_units.erase(it);
+	m_unitMap.erase(unit->getId());
+	assert(m_units.size() == m_unitMap.size());
 }
 
 void Faction::reEvaluateStore() {
@@ -829,7 +828,7 @@ void Faction::reEvaluateStore() {
 			storeMap[rt] = 0;
 		}
 	}
-	foreach_const (Units, it, units) {
+	foreach_const (Units, it, m_units) {
 		// don't want the resources of dead units to be included
 		if (!(*it)->isDead()) {
 			const UnitType *ut = (*it)->getType();
@@ -839,9 +838,9 @@ void Faction::reEvaluateStore() {
 			}
 		}
 	}
-	for (int j = 0; j < resources.size(); ++j) {
-		if (resources[j].getType()->getClass() != ResourceClass::STATIC && !resources[j].getType()->isInfiniteStore()) {
-			resources[j].setStorage(storeMap[resources[j].getType()]);
+	for (int j = 0; j < m_resources.size(); ++j) {
+		if (m_resources[j].getType()->getClass() != ResourceClass::STATIC && !m_resources[j].getType()->isInfiniteStore()) {
+			m_resources[j].setStorage(storeMap[m_resources[j].getType()]);
 		}
 	}
 }
@@ -849,9 +848,9 @@ void Faction::reEvaluateStore() {
 // script interface
 //TODO: save for reEval...
 void Faction::addStore(const ResourceType *rt, int amount) {
-	for (int j = 0; j < resources.size(); ++j) {
-		if (resources[j].getType() == rt) {
-			resources[j].setStorage(resources[j].getStorage() + amount);
+	for (int j = 0; j < m_resources.size(); ++j) {
+		if (m_resources[j].getType() == rt) {
+			m_resources[j].setStorage(m_resources[j].getStorage() + amount);
 		}
 	}
 }
@@ -859,9 +858,9 @@ void Faction::addStore(const ResourceType *rt, int amount) {
 void Faction::addStore(const UnitType *unitType) {
 	for (int i = 0; i < unitType->getStoredResourceCount(); ++i) {
 		ResourceAmount r = unitType->getStoredResource(i, this);
-		for (int j = 0; j < resources.size(); ++j) {
-			if (resources[j].getType() == r.getType()) {
-				resources[j].setStorage(resources[j].getStorage() + r.getAmount());
+		for (int j = 0; j < m_resources.size(); ++j) {
+			if (m_resources[j].getType() == r.getType()) {
+				m_resources[j].setStorage(m_resources[j].getStorage() + r.getAmount());
 			}
 		}
 	}
@@ -874,8 +873,8 @@ void Faction::removeStore(const UnitType *unitType) {
 
 void Faction::capResource(const ResourceType *rt) {
 	RUNTIME_CHECK(rt->getClass() == ResourceClass::CONSUMABLE);
-	for (int i = 0; i < resources.size(); ++i) {
-		StoredResource *r = &resources[i];
+	for (int i = 0; i < m_resources.size(); ++i) {
+		StoredResource *r = &m_resources[i];
 		if (r->getType() == rt) {
 			if (r->getAmount() > getStoreAmount(rt)) {
 				r->setAmount(getStoreAmount(rt));
@@ -887,8 +886,8 @@ void Faction::capResource(const ResourceType *rt) {
 }
 
 void Faction::limitResourcesToStore() {
-	for (int i = 0; i < resources.size(); ++i) {
-		StoredResource *r = &resources[i];
+	for (int i = 0; i < m_resources.size(); ++i) {
+		StoredResource *r = &m_resources[i];
 		if (r->getType()->getClass() != ResourceClass::STATIC && !r->getType()->isInfiniteStore() && r->getAmount() > r->getStorage()) {
 			r->setAmount(r->getStorage());
 		}
@@ -896,9 +895,9 @@ void Faction::limitResourcesToStore() {
 }
 
 void Faction::resetResourceAmount(const ResourceType *rt) {
-	for (int i = 0; i < resources.size(); ++i) {
-		if (resources[i].getType() == rt) {
-			resources[i].setAmount(0);
+	for (int i = 0; i < m_resources.size(); ++i) {
+		if (m_resources[i].getType() == rt) {
+			m_resources[i].setAmount(0);
 			return;
 		}
 	}
@@ -910,15 +909,15 @@ void Faction::resetResourceAmount(const ResourceType *rt) {
  * and adds a visual indication on the minimap, if it wont overlap with an existing one.
  */
 void Faction::attackNotice(const Unit *u) {
-	if (factionType->getAttackNotice()) {
+	if (m_factionType->getAttackNotice()) {
 		time_t curTime;
 		time(&curTime);
 
-		if (curTime >= lastAttackNotice + factionType->getAttackNoticeDelay()) {
-			lastAttackNotice = curTime;
+		if (curTime >= m_lastAttackNotice + m_factionType->getAttackNoticeDelay()) {
+			m_lastAttackNotice = curTime;
 			RUNTIME_CHECK(!u->isCarried());
-			lastEventLoc = u->getCurrVector();
-			StaticSound *sound = factionType->getAttackNotice()->getRandSound();
+			m_lastEventLoc = u->getCurrVector();
+			StaticSound *sound = m_factionType->getAttackNotice()->getRandSound();
 			if (sound) {
 				g_soundRenderer.playFx(sound);
 			}
@@ -928,14 +927,14 @@ void Faction::attackNotice(const Unit *u) {
 }
 
 void Faction::advanceSubfaction(int subfaction) {
-	this->subfaction = subfaction;
+	m_subfaction = subfaction;
 	//FIXME: We should probably play a sound, display a banner-type notice or
 	//something.
 }
 
 void Faction::checkAdvanceSubfaction(const ProducibleType *pt, bool finished) {
 	int advance = pt->getAdvancesToSubfaction();
-	if (advance != -1 && subfaction != advance) {
+	if (advance != -1 && m_subfaction != advance) {
 		bool immediate = pt->isAdvanceImmediately();
 		if ((immediate && !finished) || (!immediate && finished)) {
 			advanceSubfaction(advance);

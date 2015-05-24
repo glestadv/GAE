@@ -33,37 +33,37 @@ namespace Glest { namespace Entities {
 // =====================================================
 
 MapObject::MapObject(CreateParams params)//MapObjectType *objType, const Vec3f &p)
-		: id(-1)
-		, objectType(params.objectType)
-		, resource(0) {
+		: m_id(-1)
+		, m_objectType(params.objectType)
+		, m_resource(nullptr) {
 	//int seed = int(Chrono::getCurMicros());
 	Random random(params.seed);
 	const float max_offset = 0.2f;
-	tilePos = params.tilePos;
-	pos = params.pos + Vec3f(random.randRange(-max_offset, max_offset), 0.0f, random.randRange(-max_offset, max_offset));
-	rotation = random.randRange(0.f, 360.f);
-	if (objectType != NULL) {
-		variation = random.randRange(0, objectType->getModelCount() - 1);
+	m_tilePos = params.tilePos;
+	m_pos = params.pos + Vec3f(random.randRange(-max_offset, max_offset), 0.0f, random.randRange(-max_offset, max_offset));
+	m_rotation = random.randRange(0.f, 360.f);
+	if (m_objectType != NULL) {
+		m_variation = random.randRange(0, m_objectType->getModelCount() - 1);
 	}
 }
 
-MapObject::~MapObject(){
-	delete resource;
+MapObject::~MapObject() {
+	delete m_resource;
 }
 
-const Model *MapObject::getModel() const{
-	return objectType==NULL? resource->getType()->getModel(): objectType->getModel(variation);
+const Model *MapObject::getModel() const {
+	return m_objectType == nullptr ? m_resource->getType()->getModel() : m_objectType->getModel(m_variation);
 }
 
 bool MapObject::getWalkable() const{
-	return objectType==NULL? false: objectType->getWalkable();
+	return m_objectType == nullptr ? false : m_objectType->getWalkable();
 }
 
-void MapObject::setResource(const ResourceType *resourceType, const Vec2i &pos){
-    assert(!resource);
-	resource= new MapResource();
-	resource->init(resourceType, pos);
-	resource->Depleted.connect(&g_userInterface, &Gui::UserInterface::onResourceDepleted);
+void MapObject::setResource(const ResourceType *resourceType, const Vec2i &pos) {
+    assert( !resource );
+	m_resource = new MapResource();
+	m_resource->init(resourceType, pos);
+	m_resource->Depleted.connect(&g_userInterface, &Gui::UserInterface::onResourceDepleted);
 }
 
 }}//end namespace
