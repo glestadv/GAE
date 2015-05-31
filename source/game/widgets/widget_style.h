@@ -15,6 +15,7 @@
 #include "font.h"
 
 #include "math_util.h"
+#include "game_constants.h"
 
 using namespace Shared::Math;
 using Shared::Graphics::Font;

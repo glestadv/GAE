@@ -4,9 +4,9 @@
 //	Copyright (C) 2001-2008 Martiño Figueroa
 //                2010      James McCulloch
 //
-//	You can redistribute this code and/or modify it under 
-//	the terms of the GNU General Public License as published 
-//	by the Free Software Foundation; either version 2 of the 
+//	You can redistribute this code and/or modify it under
+//	the terms of the GNU General Public License as published
+//	by the Free Software Foundation; either version 2 of the
 //	License, or (at your option) any later version
 // ==============================================================
 
@@ -18,6 +18,7 @@
 
 #include "texture.h"
 #include "vec.h"
+#include "util.h"
 
 using std::vector;
 using std::set;
@@ -62,7 +63,7 @@ public:
 	void setCoord(const Vec2f &coord)		{this->coord= coord;}
 	void setTexId(int id)                   {this->texId = id;}
 	void setPixmap(const Pixmap2D *pixmap)	{this->pixmap= pixmap;}
-};	
+};
 
 // =====================================================
 // 	class SurfaceAtlas
@@ -107,7 +108,7 @@ class SurfaceAtlas2 : public SurfaceAtlas {
 private:
 	//const Texture2D *m_texture;
 	vector<const Texture2D*> m_textures;
-	::uint32 *m_infosByPos;
+	uint32 *m_infosByPos;
 
 public:
 	SurfaceAtlas2(Vec2i size);
@@ -115,7 +116,7 @@ public:
 
 	void buildTexture();
 	int addSurface(Vec2i pos, SurfaceInfo *si);
-	
+
 	Vec2f getTexCoords(const Pixmap2D *pm) {
 		foreach (SurfaceInfos, it, surfaceInfos) {
 			if (it->getPixmap() == pm) {

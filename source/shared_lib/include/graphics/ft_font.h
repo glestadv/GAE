@@ -15,10 +15,10 @@
 #include "gl_wrap.h"
 
 #include <ft2build.h>
-#include <freetype/freetype.h>
-#include <freetype/ftglyph.h>
-#include <freetype/ftoutln.h>
-#include <freetype/fttrigon.h>
+#include <freetype.h>
+#include <ftglyph.h>
+#include <ftoutln.h>
+#include <fttrigon.h>
 
 #include <string>
 #include <vector>
@@ -37,7 +37,7 @@ struct font_data {
 	GLuint list_base;	///< Holds the first display list id
 	bool initialised;
 
-	font_data() : textures(0), initialised(false) {}
+	font_data() : h(0.f), textures(0), list_base(0U), initialised(false) {}
 
 	// The init function will create a font of of the height h from the file fname.
 	void init(const char * fname, unsigned int h, FontMetrics &metrics);

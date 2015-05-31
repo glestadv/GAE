@@ -15,6 +15,7 @@
 #include "vec.h"
 #include "math_util.h"
 #include "config.h"
+#include "game_util.h"
 
 #include <limits>
 

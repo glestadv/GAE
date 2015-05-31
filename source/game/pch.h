@@ -12,6 +12,8 @@
 #ifndef _GAME_PCH_H_
 #define _GAME_PCH_H_
 
+#include <cassert>
+
 #include "lang_features.h"
 #include "projectConfig.h"
 
