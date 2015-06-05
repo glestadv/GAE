@@ -23,6 +23,7 @@
 #include "timer.h"
 #include "texture.h"
 #include "prototypes_enums.h"
+#include "game_constants.h"
 
 using std::deque;
 using std::string;
@@ -159,7 +160,7 @@ struct AiLogFlags {
 };
 
 // =====================================================
-//  class AiLogFile 
+//  class AiLogFile
 // =====================================================
 
 class AiLogFile : public LogFile {
@@ -174,7 +175,7 @@ public:
 	// get
 	bool isEnabled(int faction) const {
 		ASSERT_RANGE(faction, GameConstants::maxPlayers);
-		return m_flags[faction].m_enabled; 
+		return m_flags[faction].m_enabled;
 	}
 
 	int getLevel(int faction) const {
@@ -185,16 +186,16 @@ public:
 	bool isEnabled(int faction, AiComponent component) const {
 		ASSERT_RANGE(faction, GameConstants::maxPlayers);
 		ASSERT_RANGE(component, AiComponent::COUNT);
-		return m_flags[faction].m_enabled && m_flags[faction].m_components[component]; 
+		return m_flags[faction].m_enabled && m_flags[faction].m_components[component];
 	}
 
 	// set
 	void setEnabled(int faction, bool val) {
 		ASSERT_RANGE(faction, GameConstants::maxPlayers);
-		m_flags[faction].m_enabled = val; 
+		m_flags[faction].m_enabled = val;
 	}
 
-	void setLevel(int faction, int level) { 
+	void setLevel(int faction, int level) {
 		ASSERT_RANGE(faction, GameConstants::maxPlayers);
 		m_flags[faction].m_level = level;
 	}
@@ -289,11 +290,11 @@ public:
 	}
 	void logError(const string &dir, const string &msg) {
 		m_errorLog->add(dir + ": " + msg);
-	}	
+	}
 	void logError(const string &msg) {
 		m_errorLog->add(msg);
 	}
-	
+
 	// funnel to Network log
 	void logNetworkEvent(const string &msg) {
 		m_networkLog->addNetworkMsg(msg);

@@ -18,6 +18,7 @@
 #include "keymap.h"
 #include "util.h"
 #include "FSFactory.hpp"
+#include "game_constants.h"
 
 #include "leak_dumper.h"
 
@@ -32,7 +33,7 @@ using namespace Shared::PhysFS;
 using Shared::Util::toLower;
 
 static const char *modNames[4] = {"Shift", "Ctrl", "Alt", "Meta"};
-	
+
 // =====================================================
 // 	class HotKey
 // =====================================================

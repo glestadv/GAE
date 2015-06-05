@@ -44,40 +44,6 @@ namespace Shared { namespace Xml {
 
 #define ASSERT_RANGE(var, size)	assert(var >= 0 && var < size)
 
-#define WRAPPED_ENUM(Name,...)							\
-	struct Name {										\
-		enum Enum { INVALID = -1, __VA_ARGS__, COUNT };	\
-		Name() : value(INVALID) {}						\
-		Name(Enum val) : value(val) {}					\
-		explicit Name(int i) {							\
-			if (i >= 0 && i < COUNT) value = Enum(i);	\
-			else value = INVALID;						\
-		}												\
-		operator Enum() const { return value; }			\
-		void operator++() {								\
-			if (value < COUNT) {						\
-				value = Enum(value + 1);				\
-			}											\
-		}												\
-		void operator--() {								\
-			if (value > 0) {							\
-				value = Enum(value - 1);				\
-			}											\
-		}												\
-	private:											\
-		Enum value;										\
-	};
-
-#define STRINGY_ENUM(Name,...)							\
-	WRAPPED_ENUM(Name,__VA_ARGS__)						\
-	STRINGY_ENUM_NAMES(Name, Name::COUNT, __VA_ARGS__);
-
-#ifdef GAME_CONSTANTS_DEF
-#	define STRINGY_ENUM_NAMES(name, count, ...) EnumNames<name> name##Names(#__VA_ARGS__, count, true)
-#else
-#	define STRINGY_ENUM_NAMES(name, count, ...)	extern EnumNames<name> name##Names
-#endif
-
 template<typename E>
 E enum_cast(unsigned i) {
 	return i < E::COUNT ? static_cast<typename E::Enum>(i) : E::INVALID;
@@ -99,7 +65,6 @@ bool find(C &c, const T &val, typename C::iterator &out) {
 	out = std::find(c.begin(), c.end(), val);
 	return out != c.end();
 }
-
 
 // =====================================================
 //	class EnumNames
@@ -137,15 +102,49 @@ private:
 template<typename E>
 class EnumNames : public EnumNamesBase {
 public:
-	EnumNames(const char *valueList, size_t count, bool lazy, const char *enumName = NULL) 
+	EnumNames(const char *valueList, size_t count, bool lazy, const char *enumName = NULL)
 		: EnumNamesBase(valueList, count, lazy, enumName) {}
 	~EnumNames() {}
 
-	const char* operator[](int i) const {return get(i, E::COUNT);} 
+	const char* operator[](int i) const {return get(i, E::COUNT);}
 	const char* operator[](E e) const {return get(e, E::COUNT);} // passing E::COUNT here will inline the value in EnumNamesBase::get()
 	E match(const char *value) const {return enum_cast<E>(_match(value));} // this will inline a function call to the fairly large _match() function
 	E match(const string &val) const { return match(val.c_str()); }
 };
+
+#define WRAPPED_ENUM(Name,...)							\
+	struct Name {										\
+		enum Enum { INVALID = -1, __VA_ARGS__, COUNT };	\
+		Name() : value(INVALID) {}						\
+		Name(Enum val) : value(val) {}					\
+		explicit Name(int i) {							\
+			if (i >= 0 && i < COUNT) value = Enum(i);	\
+			else value = INVALID;						\
+		}												\
+		operator Enum() const { return value; }			\
+		void operator++() {								\
+			if (value < COUNT) {						\
+				value = Enum(value + 1);				\
+			}											\
+		}												\
+		void operator--() {								\
+			if (value > 0) {							\
+				value = Enum(value - 1);				\
+			}											\
+		}												\
+	private:											\
+		Enum value;										\
+	};
+
+#define STRINGY_ENUM(Name,...)							\
+	WRAPPED_ENUM(Name,__VA_ARGS__)						\
+	STRINGY_ENUM_NAMES(Name, Name::COUNT, __VA_ARGS__);
+
+#ifdef GAME_CONSTANTS_DEF
+#	define STRINGY_ENUM_NAMES(name, count, ...) EnumNames<name> name##Names(#__VA_ARGS__, count, true)
+#else
+#	define STRINGY_ENUM_NAMES(name, count, ...)	extern EnumNames<name> name##Names
+#endif
 
 //
 // A run-time assert, that can be changed to assert() one day...
@@ -161,7 +160,7 @@ public:
 		g_logger.logError(ss.str());                                        \
 		assert(false);                                                      \
 		throw runtime_error(ss.str());	                                    \
-	}	
+	}
 
 // and another one, with a custom error message
 #define RUNTIME_CHECK_MSG(x, msg)                                           \
@@ -172,7 +171,7 @@ public:
 		g_logger.logError(ss.str());                                        \
 		assert(false);                                                      \
 		throw runtime_error(ss.str());	                                    \
-	}	
+	}
 
 
 //
@@ -187,7 +186,7 @@ public:
 		static void  operator delete[](void *ptr);	\
 		static size_t getAllocatedMemSize();		\
 		static size_t getAllocCount();				\
-		static size_t getDeAllocCount();			
+		static size_t getDeAllocCount();
 
 	typedef map<void*, size_t> AllocationMap;
 
@@ -234,7 +233,7 @@ public:
 			s_allocTotal -= it->second;								\
 			s_allocMap.erase(it);									\
 			::operator delete[](ptr);								\
-		}															
+		}
 #else // !_GAE_DEBUG_EDITION_ || _GAE_LEAK_DUMP_
 #	define MEMORY_CHECK_DECLARATIONS(Class)
 #	define MEMORY_CHECK_IMPLEMENTATION(Class)
@@ -283,7 +282,7 @@ extern MediaErrorLog mediaErrorLog;
 // Util finctions
 //
 
-/// check existence of a file 
+/// check existence of a file
 ///@todo move into Shared::PhysFS?
 bool fileExists(const string &path);
 ///@todo move into Shared::PhysFS?
@@ -364,9 +363,11 @@ inline float saturate(float value) {
 	return clamp(value, 0.f, 1.f);
 }
 
+#if _MSC_VER <= 1700 // MSVC v11.0 (2012)
 inline int round(float f){
      return int(roundf(f));
 }
+#endif
 
 
 inline float remap(float in, const float oldMin, const float oldMax, const float newMin, const float newMax) {

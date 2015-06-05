@@ -183,7 +183,7 @@ void MenuBackground::update(){
 	}
 
 	// animation
-	anim += (0.6f / WORLD_FPS) / 5 + random.randRange(0.f, (0.6f / WORLD_FPS) / 5.f);
+	anim += 0.012;//(0.6f / WORLD_FPS) / 5 + random.randRange(0.f, (0.6f / WORLD_FPS) / 5.f);
 	if (anim > 1.f) {
 		anim = 0.f;
 	}
