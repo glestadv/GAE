@@ -518,7 +518,7 @@ void UnitType::doChecksum(  Checksum &checksum ) const {
 	checksum.add( m_halfSize );
 	checksum.add( m_halfHeight );
 
-	//NETWORK_LOG( "Checksum for UnitType: " << getName( ) << " = " << intToHex(checksum.getSum( )) )
+	NETWORK_LOG( "Checksum for UnitType: " << getName( ) << " = " << intToHex(checksum.getSum( )) )
 }
 
 // ==================== get ====================
