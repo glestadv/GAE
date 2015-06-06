@@ -160,13 +160,13 @@ bool UnitStats::load( const XmlNode *baseNode, const string &dir, const TechTree
 		loadOk = false;
 	}
 	//m_sight
-	try { m_sight = baseNode->getChildIntValue( "m_sight" ); }
+	try { m_sight = baseNode->getChildIntValue( "sight" ); }
 	catch (runtime_error e) {
 		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 	//m_armor
-	try { m_armor = baseNode->getChildIntValue( "m_armor" ); }
+	try { m_armor = baseNode->getChildIntValue( "armor" ); }
 	catch (runtime_error e) {
 		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;

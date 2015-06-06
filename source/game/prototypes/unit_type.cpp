@@ -154,7 +154,7 @@ bool UnitType::load( const string &dir, const TechTree *techTree, const FactionT
 		loadOk = false;
 	}
 	// size
-	try { m_size = parametersNode->getChildIntValue( " size" ); }
+	try { m_size = parametersNode->getChildIntValue( "size" ); }
 	catch (runtime_error e) {
 		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;

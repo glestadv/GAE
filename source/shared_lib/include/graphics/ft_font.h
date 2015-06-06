@@ -15,10 +15,17 @@
 #include "gl_wrap.h"
 
 #include <ft2build.h>
-#include <freetype.h>
-#include <ftglyph.h>
-#include <ftoutln.h>
-#include <fttrigon.h>
+#ifdef WIN32
+#	include <freetype/freetype.h>
+#	include <freetype/ftglyph.h>
+#	include <freetype/ftoutln.h>
+#	include <freetype/fttrigon.h>
+#else
+#	include <freetype.h>
+#	include <ftglyph.h>
+#	include <ftoutln.h>
+#	include <fttrigon.h>
+#endif
 
 #include <string>
 #include <vector>
