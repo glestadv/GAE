@@ -11,7 +11,7 @@
 
 #include "pch.h"
 #include "pos_iterator.h"
-
+#include "logger.h"
 #include <algorithm>
 
 #include "leak_dumper.h"
@@ -39,6 +39,9 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 			p->off = off;
 			p->fdist = sqrtf(float(step * step + off * off));
 			p->dist = int(p->fdist);
+
+			SYNC_LOG( "Built PosData for step: " << step << ", off: " << off << ", with fdist: " << p->fdist );
+
 			++p;
 		}
 	}
@@ -48,6 +51,10 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 
 	// Sort data by distance
 	std::sort(data, &data[dataSize]);
+
+    for (int i=0; i < dataSize; ++i) {
+        SYNC_LOG( "Sorted PosData, step: " << data[i].step << ", off: " << data[i].off << ", fdist: " << data[i].fdist );
+    }
 
 	// Calculate radius index
 	unsigned int nextRadius = 0;

@@ -680,7 +680,7 @@ void BuildSelfSkillType::load( const XmlNode *sn, const string &dir, const TechT
 ModelFactory::ModelFactory( ) { }
 
 Model* ModelFactory::newInstance( const string &path, int size, int height ) {
-	assert( models.find( path ) == models.end( ) );
+	assert( m_models.find( path ) == m_models.end( ) );
 	Model *model = g_renderer.newModel( ResourceScope::GAME );
 	model->load( path, size, height );
 	while (mediaErrorLog.hasError( )) {
@@ -707,7 +707,7 @@ Model* ModelFactory::getModel( const string &path, int size, int height ) {
 void AttackSkillTypes::init( ) {
 	m_maxRange = 0;
 
-	assert( types.size( ) == associatedPrefs.size( ) );
+	assert( m_types.size( ) == m_associatedPrefs.size( ) );
 	for (int i = 0; i < m_types.size( ); ++i) {
 		if (m_types[i]->getMaxRange( ) > m_maxRange) {
 			m_maxRange = m_types[i]->getMaxRange( );

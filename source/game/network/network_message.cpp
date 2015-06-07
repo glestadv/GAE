@@ -482,7 +482,7 @@ KeyFrame::KeyFrame(const KeyFrame &that) {
 
 void KeyFrame::buildPacket() {
 	if (m_packetData) {
-		delete m_packetData;
+		delete[] (uint8*)m_packetData;
 		m_packetData = 0;
 		m_packetSize = 0;
 	}

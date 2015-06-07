@@ -129,7 +129,7 @@ public:
 
 	//get
 	const StoredResource *getResource(const ResourceType *rt) const;
-	const StoredResource *getResource(int i) const  {assert(i < resources.size()); return &m_resources[i];}
+	const StoredResource *getResource(int i) const  {assert(i < m_resources.size()); return &m_resources[i];}
 	int getStoreAmount(const ResourceType *rt) const;
 
 	int getCountOfUnitType(const UnitType *ut) const    { return m_unitCountMap.find(ut)->second; }

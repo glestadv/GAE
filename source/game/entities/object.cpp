@@ -60,7 +60,7 @@ bool MapObject::getWalkable() const{
 }
 
 void MapObject::setResource(const ResourceType *resourceType, const Vec2i &pos) {
-    assert( !resource );
+    assert( !m_resource );
 	m_resource = new MapResource();
 	m_resource->init(resourceType, pos);
 	m_resource->Depleted.connect(&g_userInterface, &Gui::UserInterface::onResourceDepleted);

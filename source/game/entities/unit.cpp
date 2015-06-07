@@ -1190,7 +1190,7 @@ void checkTargets(const Unit *dead) {
  * only be called when a unit's HPs are zero or less.
  */
 void Unit::kill() {
-	assert(hp <= 0);
+	assert(m_hp <= 0);
 	ULC_UNIT_LOG( this, "killed." );
 
 	m_hp = 0;
@@ -1954,7 +1954,7 @@ bool Unit::decEp(int i) {
 bool Unit::decHp(int i) {
 	assert(i >= 0);
 	// we shouldn't ever go negative
-	assert(hp > 0 || i == 0);
+	assert(m_hp > 0 || i == 0);
 	m_hp -= i;
 	if (m_hpBelowTrigger && m_hp < m_hpBelowTrigger) {
 		m_hpBelowTrigger = 0;

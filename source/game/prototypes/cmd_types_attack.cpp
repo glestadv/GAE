@@ -46,7 +46,7 @@ bool AttackCommandTypeBase::load( const XmlNode *n, const string &dir, const Tec
 	const XmlNode *attackSkillNode = n->getChild( "attack-skill", 0, false );
 	bool loadOk = true;
 	//single attack skill
-	if(attackSkillNode) {
+	if (attackSkillNode) {
 		try {
 			skillName = attackSkillNode->getAttribute( "value" )->getRestrictedValue( );
 			ast = static_cast<const AttackSkillType*>( unitType->getSkillType( skillName, SkillClass::ATTACK ) );
@@ -66,7 +66,7 @@ bool AttackCommandTypeBase::load( const XmlNode *n, const string &dir, const Tec
 			}
 			int count = attackSkillsNode->getChildCount( );
 
-			for(int i = 0; i < count; ++i) {
+			for (int i = 0; i < count; ++i) {
 				try {
 					AttackSkillPreferences prefs;
 					attackSkillNode = attackSkillsNode->getChild( "attack-skill", i );
@@ -77,8 +77,7 @@ bool AttackCommandTypeBase::load( const XmlNode *n, const string &dir, const Tec
 						prefs.load( flagsNode, dir, tt, ft );
 					}
 					m_attackSkillTypes.push_back( ast, prefs );
-				}
-				catch (runtime_error e) {
+				} catch (runtime_error e) {
 					g_logger.logXmlError( dir, e.what( ) );
 					loadOk = false;
 				}

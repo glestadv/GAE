@@ -572,7 +572,7 @@ public:
 	bool hasPreference( AttackSkillPreference pref ) const { return m_allPrefs.get( pref ); }
 	const AttackSkillType *getPreferredAttack( const Unit *unit, const Unit *target, int rangeToTarget ) const;
 	const AttackSkillType *getSkillForPref( AttackSkillPreference pref, int rangeToTarget ) const {
-		assert( types.size( ) == associatedPrefs.size( ) );
+		assert( m_types.size( ) == m_associatedPrefs.size( ) );
 		for (int i = 0; i < m_types.size( ); ++i) {
 			if (m_associatedPrefs[i].get( pref ) && m_types[i]->getMaxRange( ) >= rangeToTarget) {
 				return m_types[i];

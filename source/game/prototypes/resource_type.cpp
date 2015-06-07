@@ -162,7 +162,7 @@ void ResourceType::doChecksum( Checksum &checksum ) const {
 		if (m_resourceClass == ResourceClass::TILESET) {
 			checksum.add<int>( m_tilesetObject );
 		} else {
-			assert(resourceClass == ResourceClass::TECHTREE);
+			assert(m_resourceClass == ResourceClass::TECHTREE);
 			checksum.add<int>( m_resourceNumber );
 		}
 		checksum.add<int>( m_defResPerPatch );

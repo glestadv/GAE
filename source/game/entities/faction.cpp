@@ -254,7 +254,7 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 
 	n = node->getChild("units");
 	m_units.reserve(n->getChildCount());
-	assert(units.empty() && unitMap.empty());
+	assert(m_units.empty() && m_unitMap.empty());
 	for (int i = 0; i < n->getChildCount(); ++i) {
 		g_world.newUnit(n->getChild("unit", i), this, map, tt);
 	}
@@ -266,7 +266,7 @@ void Faction::load(const XmlNode *node, World *world, const FactionType *ft, Con
 	pixmap->init(1, 1, 3);
 	pixmap->setPixel(0, 0, factionColours[m_colourIndex].ptr());
 
-	assert(units.size() == unitMap.size());
+	assert(m_units.size() == m_unitMap.size());
 }
 
 // ================== get ==================
