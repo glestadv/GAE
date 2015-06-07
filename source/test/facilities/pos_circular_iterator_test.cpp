@@ -75,9 +75,9 @@ void PosCircularIteratorTest::testBoundaryCases() {
     cout << "\n";
     cout << "Case: Top-right.\n";
     //pcio.~PosCircularIteratorOrdered();
-    pcio.init(bounds, Vec2i(128,0), factory->getInsideOutIterator(1, 64));
+	PosCircularIteratorOrdered pcio2(bounds, Vec2i(128,0), factory->getInsideOutIterator(1, 64));
     i = 0;
-    while (pcio.getNext(p)) {
+    while (pcio2.getNext(p)) {
         //cout << p << ", ";
         if (i % 16 == 15) cout << ".";
         CPPUNIT_ASSERT(bounds.isInside(p));
@@ -86,9 +86,9 @@ void PosCircularIteratorTest::testBoundaryCases() {
     }
     cout << "\n";
     cout << "Case: Bottom-right.\n";
-    pcio.init(bounds, Vec2i(128,128), factory->getInsideOutIterator(1, 64));
+    PosCircularIteratorOrdered pcio3(bounds, Vec2i(128,128), factory->getInsideOutIterator(1, 64));
     i = 0;
-    while (pcio.getNext(p)) {
+    while (pcio3.getNext(p)) {
         //cout << p << ", ";
         if (i % 16 == 15) cout << ".";
         CPPUNIT_ASSERT(bounds.isInside(p));
@@ -97,9 +97,9 @@ void PosCircularIteratorTest::testBoundaryCases() {
     }
     cout << "\n";
     cout << "Case: Bottom-left.\n";
-    pcio.init(bounds, Vec2i(0,128), factory->getInsideOutIterator(1, 64));
+    PosCircularIteratorOrdered pcio4(bounds, Vec2i(0,128), factory->getInsideOutIterator(1, 64));
     i = 0;
-    while (pcio.getNext(p)) {
+    while (pcio4.getNext(p)) {
         //cout << p << ", ";
         if (i % 16 == 15) cout << ".";
         CPPUNIT_ASSERT(bounds.isInside(p));
@@ -184,7 +184,7 @@ void PosCircularIteratorTest::testRangeZeroToOne() {
     printMap(width, height, seen);
     printList(_list);
 
-    Vec2i knownPositions[3 * 3] {
+    Vec2i knownPositions[3 * 3] = {
         Vec2i(cx - 1, cy - 1), Vec2i(cx - 1, cy + 0), Vec2i(cx - 1, cy + 1),
         Vec2i(cx + 0, cy - 1), Vec2i(cx + 0, cy + 0), Vec2i(cx + 0, cy + 1),
         Vec2i(cx + 1, cy - 1), Vec2i(cx + 1, cy + 0), Vec2i(cx + 1, cy + 1)
@@ -216,7 +216,7 @@ void PosCircularIteratorTest::testRangeZeroToTwo() {
     printMap(width, height, seen);
     printList(_list);
 
-    Vec2i knownPositions[5 * 5] {
+    Vec2i knownPositions[5 * 5] = {
         Vec2i(cx - 2, cy - 2), Vec2i(cx - 2, cy - 1), Vec2i(cx - 2, cy + 0), Vec2i(cx - 2, cy + 1), Vec2i(cx - 2, cy + 2),
         Vec2i(cx - 1, cy - 2), Vec2i(cx - 1, cy - 1), Vec2i(cx - 1, cy + 0), Vec2i(cx - 1, cy + 1), Vec2i(cx - 1, cy + 2),
         Vec2i(cx + 0, cy - 2), Vec2i(cx + 0, cy - 1), Vec2i(cx + 0, cy + 0), Vec2i(cx + 0, cy + 1), Vec2i(cx + 0, cy + 2),
@@ -250,7 +250,7 @@ void PosCircularIteratorTest::testRangeOneToTwo() {
     printMap(width, height, seen);
     printList(_list);
 
-    Vec2i knownPositions[5 * 5 - 1] {
+    Vec2i knownPositions[5 * 5 - 1] = {
         Vec2i(cx - 2, cy - 2), Vec2i(cx - 2, cy - 1), Vec2i(cx - 2, cy + 0), Vec2i(cx - 2, cy + 1), Vec2i(cx - 2, cy + 2),
         Vec2i(cx - 1, cy - 2), Vec2i(cx - 1, cy - 1), Vec2i(cx - 1, cy + 0), Vec2i(cx - 1, cy + 1), Vec2i(cx - 1, cy + 2),
         Vec2i(cx + 0, cy - 2), Vec2i(cx + 0, cy - 1),                        Vec2i(cx + 0, cy + 1), Vec2i(cx + 0, cy + 2),
@@ -308,10 +308,10 @@ void PosCircularIteratorTest::testNoDuplicates() {
     }
     cout << "Testing range [1,64] : Ok." << endl;
 
-    pcio.init(Rect2i(Vec2i(0,0), Vec2i(128,128)), Vec2i(31,64), factory->getInsideOutIterator(0, 16));
+    PosCircularIteratorOrdered pcio2(Rect2i(Vec2i(0,0), Vec2i(128,128)), Vec2i(31,64), factory->getInsideOutIterator(0, 16));
     seen.clear();
     _list.clear();
-    while (pcio.getNext(p)) {
+    while (pcio2.getNext(p)) {
         if (seen.find(p) != seen.end()) {
             cout << "Testing range [0,16] : Duplicate pos: " << p << endl;
         }

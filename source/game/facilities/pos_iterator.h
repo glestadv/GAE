@@ -229,21 +229,11 @@ class PosCircularIteratorOrdered {
 private:
 	Rect2i m_bounds;
 	Vec2i m_center;
-	PosCircularIterator *m_i = nullptr;
+	PosCircularIterator *m_i;
 
 public:
-    void init(const Rect2i &bounds, const Vec2i &center, PosCircularIterator *i) {
-        if (m_i) {
-            delete m_i;
-        }
-        m_bounds = bounds;
-        m_center = center;
-        m_i = i;
-    }
-
-public:
-	PosCircularIteratorOrdered(const Rect2i &bounds, const Vec2i &center, PosCircularIterator *i) {
-        init(bounds, center, i);
+	PosCircularIteratorOrdered(const Rect2i &bounds, const Vec2i &center, PosCircularIterator *i)
+			: m_bounds(bounds), m_center(center), m_i(i) {
     }
 
 	~PosCircularIteratorOrdered() {
