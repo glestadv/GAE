@@ -17,10 +17,11 @@
 #include "fixed_point_test.h"
 
 #include "reverse_rect_iter_test.h"
+#include "pos_circular_iterator_test.h"
 #include "rect_iter_test.h"
 //#include "node_pool_test.h"
 #include "influence_map_test.h"
-#include "circular_buffer_test.h"
+//#include "circular_buffer_test.h"
 //#include "checksum_test.h"
 #include "heap_test.h"
 #include "line_test.h"
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
 	tester.addTest(ReverseRectIteratorTest::suite());
 	//tester.addTest(NodePoolTest::suite());
 	tester.addTest(InfluenceMapTest::suite());
-	tester.addTest(CircularBufferTest::suite());
+	tester.addTest(PosCircularIteratorTest::suite());
 	tester.addTest(FixedPointTest::suite());
 //	tester.addTest(ChecksumTest::suite());
 	tester.addTest(MinHeapTest::suite());

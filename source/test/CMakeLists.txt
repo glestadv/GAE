@@ -21,16 +21,19 @@ set(test_srcs
 	search/influence_map_test.cpp
 	search/line_test.cpp
 	main.cpp
-	datastructs/circular_buffer_test.cpp
+#	datastructs/circular_buffer_test.cpp
 	datastructs/fixed_point_test.cpp
 	datastructs/heap_test.cpp
 	facilities/reverse_rect_iter_test.cpp
+	facilities/pos_circular_iterator_test.cpp
 	search/influence_map_test.h
 	search/line_test.h
-	datastructs/circular_buffer_test.h
+#	datastructs/circular_buffer_test.h
 	datastructs/fixed_point_test.h
 	datastructs/heap_test.h
 	facilities/reverse_rect_iter_test.h
+	facilities/pos_circular_iterator_test.h
+	../game/facilities/pos_iterator.cpp
 )
 
 if(CMAKE_CXX_FLAGS MATCHES -fno-rtti)
