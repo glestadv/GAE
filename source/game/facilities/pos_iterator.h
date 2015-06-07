@@ -35,9 +35,7 @@ struct PosData {
 		return (step == 0) ? 0 : (off > 0 && off < step) ? 7 : 3;
 	}
 
-	bool operator< (const PosData &o) const {
-        return fdist < o.fdist;
-    }
+	bool operator< (const PosData &o) const;
 };
 
 /**

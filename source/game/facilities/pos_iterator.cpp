@@ -18,6 +18,20 @@
 
 namespace Glest { namespace Util {
 
+bool PosData::operator<( const PosData &o ) const {
+    if (dist == o.dist) {
+        if (step + off == o.step + o.off) {
+            if (step == o.step) {
+                return off < o.off;
+            }
+            return step < o.step;
+        }
+        return step + off < o.step + o.off;
+    }
+    return dist < o.dist;
+}
+
+
 PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 		maxRadius(maxRadius),
 		// I promise this calculation is correct and I'm sorry that it looks ugly :)
