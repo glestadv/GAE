@@ -25,288 +25,288 @@ using namespace Graphics;
 // 	class EffectType
 // =====================================================
 
-EffectType::EffectType() : lightColour(0.0f) {
-	bias = EffectBias::NEUTRAL;
-	stacking = EffectStacking::STACK;
+EffectType::EffectType( ) : m_lightColour( 0.0f ) {
+	m_bias = EffectBias::NEUTRAL;
+	m_stacking = EffectStacking::STACK;
 
-	duration = 0;
-	chance = 100;
-	light = false;
-	sound = NULL;
-	soundStartTime = 0.0f;
-	loopSound = false;
-	damageType = NULL;
-	factionType = 0;
-	display = true;
+	m_duration = 0;
+	m_chance = 100;
+	m_light = false;
+	m_sound = nullptr;
+	m_soundStartTime = 0.0f;
+	m_loopSound = false;
+	m_damageType = nullptr;
+	m_factionType = nullptr;
+	m_display = true;
 }
 
-bool EffectType::load(const XmlNode *en, const string &dir, const TechTree *tt, const FactionType *ft) {
-	factionType = ft;
+bool EffectType::load( const XmlNode *en, const string &dir, const TechTree *tt, const FactionType *ft ) {
+	m_factionType = ft;
 	string tmp;
 	const XmlAttribute *attr;
 	bool loadOk = true;
 	
 	try { // name
-		m_name = en->getAttribute("name")->getRestrictedValue(); 
+		m_name = en->getAttribute( "name" )->getRestrictedValue( ); 
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	// bigtime hack (REFACTOR: Move to EffectTypeFactory)
-	m_id = const_cast<TechTree*>(tt)->addEffectType(this);
+	m_id = const_cast<TechTree*>( tt )->addEffectType( this );
 
 	try { // bias
-		tmp = en->getAttribute("bias")->getRestrictedValue();
-		bias = EffectBiasNames.match(tmp.c_str());
-		if (bias == EffectBias::INVALID) {
+		tmp = en->getAttribute( "bias" )->getRestrictedValue( );
+		m_bias = EffectBiasNames.match( tmp.c_str( ) );
+		if (m_bias == EffectBias::INVALID) {
 			if (tmp == "benificial") { // support old typo/spelling error
-				bias = EffectBias::BENEFICIAL;
+				m_bias = EffectBias::BENEFICIAL;
 			} else {
-				throw runtime_error("Not a valid value for bias: " + tmp + ": " + dir);
+				throw runtime_error( "Not a valid value for bias: " + tmp + ": " + dir );
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // stacking
-		tmp = en->getAttribute("stacking")->getRestrictedValue();
-		stacking = EffectStackingNames.match(tmp.c_str());
-		if (stacking == EffectStacking::INVALID) {
-			throw runtime_error("Not a valid value for stacking: " + tmp + ": " + dir);
+		tmp = en->getAttribute( "stacking" )->getRestrictedValue( );
+		m_stacking = EffectStackingNames.match( tmp.c_str( ) );
+		if (m_stacking == EffectStacking::INVALID) {
+			throw runtime_error( "Not a valid value for stacking: " + tmp + ": " + dir );
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // target (default all)
-		attr = en->getAttribute("target", false);
-		if(attr) {
-			tmp = attr->getRestrictedValue();
+		attr = en->getAttribute( "target", false );
+		if (attr) {
+			tmp = attr->getRestrictedValue( );
 			if (tmp == "ally") {
-				flags.set(EffectTypeFlag::ALLY, true);
+				m_flags.set( EffectTypeFlag::ALLY, true );
 			} else if (tmp == "foe") {
-				flags.set(EffectTypeFlag::FOE, true);
+				m_flags.set( EffectTypeFlag::FOE, true );
 			} else if (tmp == "pet") {
-				flags.set(EffectTypeFlag::ALLY, true);
-				flags.set(EffectTypeFlag::PETS_ONLY, true);
+				m_flags.set( EffectTypeFlag::ALLY, true );
+				m_flags.set( EffectTypeFlag::PETS_ONLY, true );
 			} else if (tmp == "all") {
-				flags.set(EffectTypeFlag::ALLY, true);
-				flags.set(EffectTypeFlag::FOE, true);
+				m_flags.set( EffectTypeFlag::ALLY, true );
+				m_flags.set( EffectTypeFlag::FOE, true );
 			} else {
-				throw runtime_error("Not a valid value for effect target: '" + tmp + "' : " + dir);
+				throw runtime_error( "Not a valid value for effect target: '" + tmp + "' : " + dir );
 			}
 		} else { // default value
-			flags.set(EffectTypeFlag::ALLY, true);
-			flags.set(EffectTypeFlag::FOE, true);
+			m_flags.set( EffectTypeFlag::ALLY, true );
+			m_flags.set( EffectTypeFlag::FOE, true );
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // chance (default 100%)
-		attr = en->getAttribute("chance", false);
+		attr = en->getAttribute( "chance", false );
 		if (attr) {
-			chance = attr->getFixedValue();
+			m_chance = attr->getFixedValue( );
 		} else {
-			chance = 100;
+			m_chance = 100;
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // duration
-		duration = en->getAttribute("duration")->getIntValue();
+		m_duration = en->getAttribute( "duration" )->getIntValue( );
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
-	try { // damageType (default NULL)
-		attr = en->getAttribute("damage-type", false);
-		if(attr) {
-			damageType = tt->getAttackType(attr->getRestrictedValue());
+	try { // damageType (default nullptr)
+		attr = en->getAttribute( "damage-type", false );
+		if (attr) {
+			m_damageType = tt->getAttackType( attr->getRestrictedValue( ) );
 		}
 	}
 	catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // display (default true)
-		attr = en->getAttribute("display", false);
-		if(attr) {
-			display = attr->getBoolValue();
+		attr = en->getAttribute( "display", false );
+		if (attr) {
+			m_display = attr->getBoolValue( );
 		} else {
-			display = true;
+			m_display = true;
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
-	try { // image (default NULL)
-		attr = en->getAttribute("image", false);
-		if(attr && !(attr->getRestrictedValue() == "")) {
-			image = g_renderer.getTexture2D(ResourceScope::GAME, dir + "/" + attr->getRestrictedValue());
+	try { // image (default nullptr)
+		attr = en->getAttribute( "image", false );
+		if (attr && !(attr->getRestrictedValue( ) == "")) {
+			m_image = g_renderer.getTexture2D( ResourceScope::GAME, dir + "/" + attr->getRestrictedValue( ) );
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
-	const XmlNode *affectNode = en->getChild("affect", 0, false);
+	const XmlNode *affectNode = en->getChild( "affect", 0, false );
 	if (affectNode) {
-		affectTag = affectNode->getRestrictedValue();
+		m_affectTag = affectNode->getRestrictedValue( );
 	} else {
-		affectTag = "";
+		m_affectTag = "";
 	}
 
 	// flags
-	const XmlNode *flagsNode = en->getChild("flags", 0, false);
+	const XmlNode *flagsNode = en->getChild( "flags", 0, false );
 	if (flagsNode) {
-		flags.load(flagsNode, dir, tt, ft);
+		m_flags.load( flagsNode, dir, tt, ft );
 	}
 
-	EnhancementType::load(en, dir, tt, ft);
+	EnhancementType::load( en, dir, tt, ft );
 
 	try { // light & lightColour
-		const XmlNode *lightNode = en->getChild("light", 0, false);
-		if(lightNode) {
-			light = lightNode->getAttribute("enabled")->getBoolValue();
+		const XmlNode *lightNode = en->getChild( "light", 0, false );
+		if (lightNode) {
+			m_light = lightNode->getAttribute( "enabled" )->getBoolValue( );
 
-			if (light) {
-				lightColour.x = lightNode->getAttribute("red")->getFloatValue(0.f, 1.f);
-				lightColour.y = lightNode->getAttribute("green")->getFloatValue(0.f, 1.f);
-				lightColour.z = lightNode->getAttribute("blue")->getFloatValue(0.f, 1.f);
+			if (m_light) {
+				m_lightColour.x = lightNode->getAttribute( "red"   )->getFloatValue( 0.f, 1.f );
+				m_lightColour.y = lightNode->getAttribute( "green" )->getFloatValue( 0.f, 1.f );
+				m_lightColour.z = lightNode->getAttribute( "blue"  )->getFloatValue( 0.f, 1.f );
 			}
 		} else {
-			light = false;
+			m_light = false;
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // particle systems
-		const XmlNode *particlesNode = en->getOptionalChild("particle-systems");
+		const XmlNode *particlesNode = en->getOptionalChild( "particle-systems" );
 		if (particlesNode) {
-			for (int i=0; i < particlesNode->getChildCount(); ++i) {
-				const XmlNode *particleFileNode = particlesNode->getChild("particle-file", i);
-				string path = particleFileNode->getAttribute("path")->getRestrictedValue();
-				UnitParticleSystemType *unitParticleSystemType = new UnitParticleSystemType();
-				unitParticleSystemType->load(dir,  dir + "/" + path);
-				particleSystems.push_back(unitParticleSystemType);
+			for (int i=0; i < particlesNode->getChildCount( ); ++i) {
+				const XmlNode *particleFileNode = particlesNode->getChild( "particle-file", i );
+				string path = particleFileNode->getAttribute( "path" )->getRestrictedValue( );
+				UnitParticleSystemType *unitParticleSystemType = new UnitParticleSystemType( );
+				unitParticleSystemType->load( dir,  dir + "/" + path );
+				m_particleSystems.push_back( unitParticleSystemType );
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // sound
-		const XmlNode *soundNode = en->getChild("sound", 0, false);
-		if(soundNode && soundNode->getAttribute("enabled")->getBoolValue()) {
-			soundStartTime = soundNode->getAttribute("start-time")->getFloatValue();
-			loopSound = soundNode->getAttribute("loop")->getBoolValue();
-			string path = soundNode->getAttribute("path")->getRestrictedValue();
-			sound = new StaticSound();
-			sound->load(dir + "/" + path);
+		const XmlNode *soundNode = en->getChild( "sound", 0, false );
+		if (soundNode && soundNode->getAttribute( "enabled" )->getBoolValue( )) {
+			m_soundStartTime = soundNode->getAttribute( "start-time" )->getFloatValue( );
+			m_loopSound = soundNode->getAttribute( "loop" )->getBoolValue( );
+			string path = soundNode->getAttribute( "path" )->getRestrictedValue( );
+			m_sound = new StaticSound( );
+			m_sound->load( dir + "/" + path );
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
 
 	try { // recourse
-		const XmlNode *recourseEffectsNode = en->getChild("recourse-effects", 0, false);
-		if(recourseEffectsNode) {
-			recourse.resize(recourseEffectsNode->getChildCount());
-			for(int i = 0; i < recourseEffectsNode->getChildCount(); ++i) {
-				const XmlNode *recourseEffectNode = recourseEffectsNode->getChild("effect", i);
-				EffectType *effectType = new EffectType();
-				effectType->load(recourseEffectNode, dir, tt, ft);
-				recourse[i] = effectType;
+		const XmlNode *recourseEffectsNode = en->getChild( "recourse-effects", 0, false );
+		if (recourseEffectsNode) {
+			m_recourse.resize( recourseEffectsNode->getChildCount( ) );
+			for(int i = 0; i < recourseEffectsNode->getChildCount( ); ++i) {
+				const XmlNode *recourseEffectNode = recourseEffectsNode->getChild( "effect", i );
+				EffectType *effectType = new EffectType( );
+				effectType->load( recourseEffectNode, dir, tt, ft );
+				m_recourse[i] = effectType;
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		loadOk = false;
 	}
-	if(hpRegeneration >= 0 && damageType) {
-		damageType = NULL;
+	if (m_hpRegeneration >= 0 && m_damageType) {
+		m_damageType = nullptr;
 	}
 	return loadOk;
 }
 
-void EffectType::doChecksum(Checksum &checksum) const {
-	NameIdPair::doChecksum(checksum);
-	EnhancementType::doChecksum(checksum);
+void EffectType::doChecksum( Checksum &checksum ) const {
+	NameIdPair::doChecksum( checksum );
+	EnhancementType::doChecksum( checksum );
 
-	checksum.add(bias);
-	checksum.add(stacking);
+	checksum.add( m_bias );
+	checksum.add( m_stacking );
 
-	checksum.add(duration);
-	checksum.add(chance);
-	checksum.add(light);
-	checksum.add(lightColour);
+	checksum.add( m_duration );
+	checksum.add( m_chance );
+	checksum.add( m_light );
+	checksum.add( m_lightColour );
 
-	checksum.add(soundStartTime);
-	checksum.add(loopSound);
+	checksum.add( m_soundStartTime );
+	checksum.add( m_loopSound );
 	
-	foreach_const (EffectTypes, it, recourse) {
-		(*it)->doChecksum(checksum);
+	foreach_const (EffectTypes, it, m_recourse) {
+		(*it)->doChecksum( checksum );
 	}
 	foreach_enum (EffectTypeFlag, f) {
-		checksum.add(flags.get(f));
+		checksum.add( m_flags.get( f ) );
 	}
-	if (damageType) {
-		checksum.add(damageType->getName());
+	if (m_damageType) {
+		checksum.add( m_damageType->getName( ) );
 	}
-	checksum.add(display);
+	checksum.add( m_display );
 }
 
-void EffectType::getDesc(string &str) const {
-	if (!display) {
+void EffectType::getDesc( string &str ) const {
+	if (!m_display) {
 		return;
 	}
 
-	str += g_lang.getFactionString(getFactionType()->getName(), getName());
+	str += g_lang.getFactionString( getFactionType( )->getName( ), getName( ) );
 
 	// effected units
-	if (isEffectsPetsOnly() || isEffectsFoe() || isEffectsAlly()) {
-		str += "\n   " + g_lang.get("Affects") + ": ";
-		if (isEffectsPetsOnly()) {
-			str += g_lang.get("PetsOnly");
-		} else if (isEffectsAlly()) {
-			str += g_lang.get("AllyOnly");
+	if (isEffectsPetsOnly( ) || isEffectsFoe( ) || isEffectsAlly( )) {
+		str += "\n   " + g_lang.get( "Affects" ) + ": ";
+		if (isEffectsPetsOnly( )) {
+			str += g_lang.get( "PetsOnly" );
+		} else if (isEffectsAlly( )) {
+			str += g_lang.get( "AllyOnly" );
 		} else {
-			assert(isEffectsFoe());
-			str += g_lang.get("FoeOnly");
+			assert(isEffectsFoe( ));
+			str += g_lang.get( "FoeOnly" );
 		}
 	}
 
-	if (chance != 100) {
-		str += "\n   " + g_lang.get("Chance") + ": " + intToStr(chance.intp()) + "%";
+	if (m_chance != 100) {
+		str += "\n   " + g_lang.get( "Chance" ) + ": " + intToStr( m_chance.intp( ) ) + "%";
 	}
 
-	str += "\n   " + g_lang.get("Duration") + ": ";
-	if (isPermanent()) {
-		str += g_lang.get("Permenant");
+	str += "\n   " + g_lang.get( "Duration" ) + ": ";
+	if (isPermanent( )) {
+		str += g_lang.get( "Permenant" );
 	} else {
-		str += intToStr(duration);
+		str += intToStr( m_duration );
 	}
 
-	if (damageType) {
-		str += "\n   " + g_lang.get("DamageType") + ": " + g_lang.getTechString(damageType->getName());
+	if (m_damageType) {
+		str += "\n   " + g_lang.get( "DamageType" ) + ": " + g_lang.getTechString( m_damageType->getName( ) );
 	}
 
-	EnhancementType::getDesc(str, "\n   ");
+	EnhancementType::getDesc( str, "\n   " );
 	str += "\n";
 }
 
@@ -314,38 +314,38 @@ void EffectType::getDesc(string &str) const {
 //  class EmanationType
 // =====================================================
 
-bool EmanationType::load(const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft) {
-	EffectType::load(n, dir, tt, ft);
+bool EmanationType::load( const XmlNode *n, const string &dir, const TechTree *tt, const FactionType *ft ) {
+	EffectType::load( n, dir, tt, ft );
 
 	// radius
-	try { radius = n->getAttribute("radius")->getIntValue(); }
+	try { m_radius = n->getAttribute( "radius" )->getIntValue( ); }
 	catch (runtime_error e) {
-		g_logger.logError ( dir, e.what () );
+		g_logger.logError( dir, e.what( ) );
 		return false;
 	}
 
 	try { // source-particle systems
-		const XmlNode *particlesNode = n->getOptionalChild("source-particle-systems");
+		const XmlNode *particlesNode = n->getOptionalChild( "source-particle-systems" );
 		if (particlesNode) {
-			for (int i=0; i < particlesNode->getChildCount(); ++i) {
-				const XmlNode *particleFileNode = particlesNode->getChild("particle-file", i);
-				string path = particleFileNode->getAttribute("path")->getRestrictedValue();
-				UnitParticleSystemType *unitParticleSystemType = new UnitParticleSystemType();
-				unitParticleSystemType->load(dir,  dir + "/" + path);
-				sourceParticleSystems.push_back(unitParticleSystemType);
+			for (int i=0; i < particlesNode->getChildCount( ); ++i) {
+				const XmlNode *particleFileNode = particlesNode->getChild( "particle-file", i );
+				string path = particleFileNode->getAttribute( "path" )->getRestrictedValue( );
+				UnitParticleSystemType *unitParticleSystemType = new UnitParticleSystemType( );
+				unitParticleSystemType->load( dir,  dir + "/" + path );
+				m_sourceParticleSystems.push_back( unitParticleSystemType );
 			}
 		}
 	} catch (runtime_error e) {
-		g_logger.logXmlError(dir, e.what ());
+		g_logger.logXmlError( dir, e.what( ) );
 		return false;
 	}
 
 	return true;
 }
 
-void EmanationType::doChecksum(Checksum &checksum) const {
-	EffectType::doChecksum(checksum);
-	checksum.add(radius);
+void EmanationType::doChecksum( Checksum &checksum ) const {
+	EffectType::doChecksum( checksum );
+	checksum.add( m_radius );
 }
 
 }}//end namespace

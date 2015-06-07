@@ -37,36 +37,36 @@ MEMORY_CHECK_IMPLEMENTATION(Effect)
 
 Effect::Effect(CreateParams params) 
 		: m_id(-1) {
-	this->type = params.type;
-	this->source = params.source ? params.source->getId() : -1;
-	this->root = params.root;
-	this->strength = params.strength;
-	this->duration = type->getDuration();
-	this->recourse = params.root != NULL;
-	if (type->getHpRegeneration() < 0 && type->getDamageType()) {
-		fixed fregen = type->getHpRegeneration() 
-			* params.tt->getDamageMultiplier(type->getDamageType(), params.recipient->getType()->getArmourType());
-		this->actualHpRegen = fregen.intp();
+	m_type = params.type;
+	m_source = params.source ? params.source->getId() : -1;
+	m_root = params.root;
+	m_strength = params.strength;
+	m_duration = m_type->getDuration();
+	m_recourse = params.root != nullptr;
+	if (m_type->getHpRegeneration() < 0 && m_type->getDamageType()) {
+		fixed fregen = m_type->getHpRegeneration() 
+			* params.tt->getDamageMultiplier(m_type->getDamageType(), params.recipient->getType()->getArmourType());
+		m_actualHpRegen = fregen.intp();
 	} else {
-		this->actualHpRegen = type->getHpRegeneration();
+		m_actualHpRegen = m_type->getHpRegeneration();
 	}
 }
 
 Effect::Effect(const XmlNode *node) {
 	m_id = node->getChildIntValue("id");
-	source = node->getOptionalIntValue("source", -1);
+	m_source = node->getOptionalIntValue("source", -1);
 	const TechTree *tt = World::getCurrWorld()->getTechTree();
-	root = NULL;
-	type = tt->getEffectType(node->getChildStringValue("type"));
-	strength = node->getChildFixedValue("strength");
-	duration = node->getChildIntValue("duration");
-	recourse = node->getChildBoolValue("recourse");
-	actualHpRegen = node->getChildIntValue("actualHpRegen");
+	m_root = nullptr;
+	m_type = tt->getEffectType(node->getChildStringValue("type"));
+	m_strength = node->getChildFixedValue("strength");
+	m_duration = node->getChildIntValue("duration");
+	m_recourse = node->getChildBoolValue("recourse");
+	m_actualHpRegen = node->getChildIntValue("actualHpRegen");
 }
 
 Effect::~Effect() {
 	if (World::isConstructed()) {
-		if (Unit *unit = g_world.getUnit(source)) {
+		if (Unit *unit = g_world.getUnit(m_source)) {
 			unit->effectExpired(this);
 		}
 	}
@@ -74,13 +74,13 @@ Effect::~Effect() {
 
 void Effect::save(XmlNode *node) const {
 	node->addChild("id", m_id);
-	node->addChild("source", source);
+	node->addChild("source", m_source);
 	//FIXME: how should I save the root?
-	node->addChild("type", type->getName());
-	node->addChild("strength", strength);
-	node->addChild("duration", duration);
-	node->addChild("recourse", recourse);
-	node->addChild("actualHpRegen", actualHpRegen);
+	node->addChild("type", m_type->getName());
+	node->addChild("strength", m_strength);
+	node->addChild("duration", m_duration);
+	node->addChild("recourse", m_recourse);
+	node->addChild("actualHpRegen", m_actualHpRegen);
 }
 
 // =====================================================
@@ -91,7 +91,7 @@ void Effect::save(XmlNode *node) const {
 // ============================ Constructor & destructor =============================
 
 Effects::Effects() {
-	dirty = true;
+	m_dirty = true;
 }
 
 Effects::Effects(const XmlNode *node) {
@@ -99,7 +99,7 @@ Effects::Effects(const XmlNode *node) {
 	for(int i = 0; i < node->getChildCount(); ++i) {
 		push_back(g_world.newEffect(node->getChild("effect", i)));
 	}
-	dirty = true;
+	m_dirty = true;
 }
 
 Effects::~Effects() {
@@ -118,7 +118,7 @@ bool Effects::add(Effect *e){
 	EffectStacking es = e->getType()->getStacking();
 	if (es == EffectStacking::STACK) {
 		push_back(e);
-		dirty = true;
+		m_dirty = true;
 		return true;
 	}
 
@@ -131,14 +131,14 @@ bool Effects::add(Effect *e){
 						(*i)->setStrength(e->getStrength());
 					}
 					g_world.deleteEffect(e);
-					dirty = true;
+					m_dirty = true;
 					return false;
 
 				case EffectStacking::OVERWRITE:
 					g_world.deleteEffect(*i);
 					erase(i);
 					push_back(e);
-					dirty = true;
+					m_dirty = true;
 					return true;
 
 				case EffectStacking::REJECT:
@@ -152,7 +152,7 @@ bool Effects::add(Effect *e){
 	}
 	// previous effect wasn't found, add it as new
 	push_back(e);
-	dirty = true;
+	m_dirty = true;
 	return true;
 }
 
@@ -160,7 +160,7 @@ void Effects::remove(Effect *e) {
 	for (iterator i = begin(); i != end(); ++i) {
 		if(*i == e) {
 			list<Effect*>::remove(e);
-			dirty = true;
+			m_dirty = true;
 			return;
 		}
 	}
@@ -181,7 +181,7 @@ void Effects::tick() {
 		if(e->tick()) {
 			g_world.deleteEffect(e);
 			i = erase(i);
-			dirty = true;
+			m_dirty = true;
 		} else {
 			++i;
 		}
@@ -247,12 +247,12 @@ Unit *Effects::getKiller() const {
 		//If more than two other units hit this unit with a DOT and it died,
 		//credit goes to the one 1st in the list.
 
-		if ((*i)->getType()->getHpRegeneration() < 0 && source != NULL && source->isAlive()) {
+		if ((*i)->getType()->getHpRegeneration() < 0 && source != nullptr && source->isAlive()) {
 			return source;
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 void Effects::save(XmlNode *node) const {

@@ -54,8 +54,8 @@ void GameParticleSystem::doVisibiltyChecks(ParticleUse use) {
 
 void GameParticleSystem::checkVisibilty(ParticleUse use, bool log) {
 	int64 now = Chrono::getCurMillis();
-	if (state != sPause && now - lastVisCheck > test_interval) {
-		lastVisCheck = now;
+	if (state != sPause && now - m_lastVisCheck > test_interval) {
+		m_lastVisCheck = now;
 		doVisibiltyChecks(use);
 	}
 }
@@ -188,14 +188,14 @@ void SmokeParticleSystem::updateParticle(Particle *p) {
 
 DirectedParticleSystem::DirectedParticleSystem(ParticleUse use, bool visible, const ParticleSystemBase &protoType, int particleCount)
 		: GameParticleSystem(use, visible, protoType, particleCount) 
-		, direction(1.0f, 0.0f, 0.0f) {
-	fog = g_world.getTileset()->getFog();
+		, m_direction(1.0f, 0.0f, 0.0f) {
+	m_fog = g_world.getTileset()->getFog();
 }
 
 void DirectedParticleSystem::render(ParticleRenderer *pr, ModelRenderer *mr) {
 	if (active) {
 		if (model) {
-			pr->renderSingleModel(this, mr, fog);
+			pr->renderSingleModel(this, mr, m_fog);
 		}
 		switch (primitiveType) {
 			case PrimitiveType::QUAD:
@@ -337,8 +337,8 @@ void Projectile::update() {
 		}
 	}
 
-	direction = pos - lastPos;
-	direction.normalize();
+	m_direction = pos - lastPos;
+	m_direction.normalize();
 
 	if (g_world.getFrameCount() == endFrame) {
 		state = sFade;
@@ -408,7 +408,7 @@ void Projectile::setPath(Vec3f startPos, Vec3f endPos, int frames) {
 	yVector = Vec3f(0.0f, 1.0f, 0.0f);
 	xVector = zVector.cross(yVector);
 
-	direction = zVector;
+	m_direction = zVector;
 
 	// set members
 	this->startPos = startPos;

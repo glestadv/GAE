@@ -110,52 +110,52 @@ MEMORY_CHECK_IMPLEMENTATION(Unit)
 
 /** Construct Unit object */
 Unit::Unit(CreateParams params)
-		: id(-1)
-		, hp(1)
-		, ep(0)
-		, loadCount(0)
-		, lastAnimReset(0)
-		, nextAnimReset(-1)
-		, lastCommandUpdate(0)
-		, nextCommandUpdate(-1)
-		, systemStartFrame(-1)
-		, soundStartFrame(-1)
-		, progress2(0)
-		, kills(0)
+		: m_id(-1)
+		, m_hp(1)
+		, m_ep(0)
+		, m_loadCount(0)
+		, m_lastAnimReset(0)
+		, m_nextAnimReset(-1)
+		, m_lastCommandUpdate(0)
+		, m_nextCommandUpdate(-1)
+		, m_systemStartFrame(-1)
+		, m_soundStartFrame(-1)
+		, m_progress2(0)
+		, m_kills(0)
 		, m_carrier(-1)
-		, highlight(0.f)
-		, targetRef(-1)
-		, targetField(Field::LAND)
-		, faceTarget(true)
-		, useNearestOccupiedCell(true)
-		, level(0)
-		, pos(params.pos)
-		, lastPos(params.pos)
-		, nextPos(params.pos)
-		, targetPos(0)
-		, targetVec(0.0f)
-		, meetingPos(0)
-		, lastRotation(0.f)
-		, targetRotation(0.f)
-		, rotation(0.f)
+		, m_highlight(0.f)
+		, m_targetRef(-1)
+		, m_targetField(Field::LAND)
+		, m_faceTarget(true)
+		, m_useNearestOccupiedCell(true)
+		, m_level(nullptr)
+		, m_pos(params.pos)
+		, m_lastPos(params.pos)
+		, m_nextPos(params.pos)
+		, m_targetPos(0)
+		, m_targetVec(0.0f)
+		, m_meetingPos(0)
+		, m_lastRotation(0.f)
+		, m_targetRotation(0.f)
+		, m_rotation(0.f)
 		, m_facing(params.face)
-		, type(params.type)
-		, loadType(0)
-		, currSkill(0)
+		, m_type(params.type)
+		, m_loadType(nullptr)
+		, m_currSkill(nullptr)
 		, m_cloaked(false)
 		, m_cloaking(false)
 		, m_deCloaking(false)
 		, m_cloakAlpha(1.f)
-		, fire(0)
-		, smoke(0)
-		, faction(params.faction)
-		, map(params.map)
-		, commandCallback(0)
-		, hp_below_trigger(0)
-		, hp_above_trigger(0)
-		, attacked_trigger(false) {
-	Random random(id);
-	currSkill = getType()->getFirstStOfClass(SkillClass::STOP);	//starting skill
+		, m_fire(nullptr)
+		, m_smoke(nullptr)
+		, m_faction(params.faction)
+		, m_map(params.map)
+		, m_commandCallback(0)
+		, m_hpBelowTrigger(0)
+		, m_hpAboveTrigger(0)
+		, m_attackedTrigger(false) {
+	Random random(m_id);
+	m_currSkill = getType()->getFirstStOfClass(SkillClass::STOP);	//starting skill
 	foreach_enum (AutoCmdFlag, f) {
 		m_autoCmdEnable[f] = true;
 	}
@@ -163,64 +163,64 @@ Unit::Unit(CreateParams params)
 	ULC_UNIT_LOG( this, " constructed at pos" << pos );
 
 	computeTotalUpgrade();
-	hp = type->getMaxHp() / 20;
+	m_hp = m_type->getMaxHp() / 20;
 
 	setModelFacing(m_facing);
 }
 
-Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld)
-		: targetRef(params.node->getOptionalIntValue("targetRef", -1))
-		, effects(params.node->getChild("effects"))
-		, effectsCreated(params.node->getChild("effectsCreated")) {
+Unit::Unit(LoadParams params) //const XmlNode *node, Faction *m_faction, Map *m_map, const TechTree *tt, bool putInWorld)
+		: m_targetRef(params.node->getOptionalIntValue("targetRef", -1))
+		, m_effects(params.node->getChild("effects"))
+		, m_effectsCreated(params.node->getChild("effectsCreated")) {
 	const XmlNode *node = params.node;
-	this->faction = params.faction;
-	this->map = params.map;
+	m_faction = params.faction;
+	m_map = params.map;
 
-	id = node->getChildIntValue("id");
+	m_id = node->getChildIntValue("id");
 
 	string s;
 	//hp loaded after recalculateStats()
-	ep = node->getChildIntValue("ep");
-	loadCount = node->getChildIntValue("loadCount");
-	kills = node->getChildIntValue("kills");
-	type = faction->getType()->getUnitType(node->getChildStringValue("type"));
+	m_ep = node->getChildIntValue("ep");
+	m_loadCount = node->getChildIntValue("loadCount");
+	m_kills = node->getChildIntValue("kills");
+	m_type = m_faction->getType()->getUnitType(node->getChildStringValue("m_type"));
 
 	s = node->getChildStringValue("loadType");
-	loadType = s == "null_value" ? NULL : g_world.getTechTree()->getResourceType(s);
+	m_loadType = s == "null_value" ? nullptr : g_world.getTechTree()->getResourceType(s);
 
-	lastRotation = node->getChildFloatValue("lastRotation");
-	targetRotation = node->getChildFloatValue("targetRotation");
-	rotation = node->getChildFloatValue("rotation");
+	m_lastRotation = node->getChildFloatValue("lastRotation");
+	m_targetRotation = node->getChildFloatValue("targetRotation");
+	m_rotation = node->getChildFloatValue("rotation");
 	m_facing = enum_cast<CardinalDir>(node->getChildIntValue("facing"));
 
-	progress2 = node->getChildIntValue("progress2");
-	targetField = (Field)node->getChildIntValue("targetField");
+	m_progress2 = node->getChildIntValue("progress2");
+	m_targetField = (Field)node->getChildIntValue("targetField");
 
-	pos = node->getChildVec2iValue("pos");
-	lastPos = node->getChildVec2iValue("lastPos");
-	nextPos = node->getChildVec2iValue("nextPos");
-	targetPos = node->getChildVec2iValue("targetPos");
-	targetVec = node->getChildVec3fValue("targetVec");
-	// meetingPos loaded after map->putUnitCells()
-	faceTarget = node->getChildBoolValue("faceTarget");
-	useNearestOccupiedCell = node->getChildBoolValue("useNearestOccupiedCell");
-	s = node->getChildStringValue("currSkill");
-	currSkill = s == "null_value" ? NULL : type->getSkillType(s);
+	m_pos = node->getChildVec2iValue("pos");
+	m_lastPos = node->getChildVec2iValue("m_lastPos");
+	m_nextPos = node->getChildVec2iValue("nextPos");
+	m_targetPos = node->getChildVec2iValue("targetPos");
+	m_targetVec = node->getChildVec3fValue("targetVec");
+	// meetingPos loaded after m_map->putUnitCells()
+	m_faceTarget = node->getChildBoolValue("faceTarget");
+	m_useNearestOccupiedCell = node->getChildBoolValue("useNearestOccupiedCell");
+	s = node->getChildStringValue("m_currSkill");
+	m_currSkill = s == "null_value" ? nullptr : m_type->getSkillType(s);
 
-	nextCommandUpdate = node->getChildIntValue("nextCommandUpdate");
-	lastCommandUpdate = node->getChildIntValue("lastCommandUpdate");
-	nextAnimReset = node->getChildIntValue("nextAnimReset");
-	lastAnimReset = node->getChildIntValue("lastAnimReset");
+	m_nextCommandUpdate = node->getChildIntValue("m_nextCommandUpdate");
+	m_lastCommandUpdate = node->getChildIntValue("m_lastCommandUpdate");
+	m_nextAnimReset = node->getChildIntValue("nextAnimReset");
+	m_lastAnimReset = node->getChildIntValue("lastAnimReset");
 
-	highlight = node->getChildFloatValue("highlight");
+	m_highlight = node->getChildFloatValue("highlight");
 
 	m_cloaked = node->getChildBoolValue("cloaked");
 	m_cloaking = node->getChildBoolValue("cloaking");
 	m_deCloaking = node->getChildBoolValue("de-cloaking");
 	m_cloakAlpha = node->getChildFloatValue("cloak-alpha");
 
-	if (m_cloaked && !type->getCloakType()) {
-		throw runtime_error("Unit marked as cloak has no cloak type!");
+	if (m_cloaked && !m_type->getCloakType()) {
+		throw runtime_error("Unit marked as cloak has no cloak m_type!");
 	}
 	if (m_cloaking && !m_cloaked) {
 		throw runtime_error("Unit marked as cloaking is not cloaked!");
@@ -233,23 +233,23 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	m_autoCmdEnable[AutoCmdFlag::ATTACK] = node->getChildBoolValue("auto-attack");
 	m_autoCmdEnable[AutoCmdFlag::FLEE] = node->getChildBoolValue("auto-flee");
 
-	if (type->hasMeetingPoint()) {
-		meetingPos = node->getChildVec2iValue("meeting-point");
+	if (m_type->hasMeetingPoint()) {
+		m_meetingPos = node->getChildVec2iValue("meeting-point");
 	}
 
-	XmlNode *n = node->getChild("commands");
+	XmlNode *n = node->getChild("m_commands");
 	for(int i = 0; i < n->getChildCount(); ++i) {
-		commands.push_back(g_world.newCommand(n->getChild("command", i), type, faction->getType()));
+		m_commands.push_back(g_world.newCommand(n->getChild("command", i), m_type, m_faction->getType()));
 	}
 
-	unitPath.read(node->getChild("unitPath"));
-	waypointPath.read(node->getChild("waypointPath"));
+	m_unitPath.read(node->getChild("unitPath"));
+	m_waypointPath.read(node->getChild("waypointPath"));
 
-	totalUpgrade.reset();
+	m_totalUpgrade.reset();
 	computeTotalUpgrade();
 
-	hp = node->getChildIntValue("hp");
-	fire = smoke = 0;
+	m_hp = node->getChildIntValue("hp");
+	m_fire = m_smoke = nullptr;
 
 	n = node->getChild("units-carried");
 	for(int i = 0; i < n->getChildCount(); ++i) {
@@ -266,18 +266,18 @@ Unit::Unit(LoadParams params) //const XmlNode *node, Faction *faction, Map *map,
 	}
 	m_carrier = node->getChildIntValue("unit-carrier");
 	
-	faction->add(this);
-	if (hp) {
+	m_faction->add(this);
+	if (m_hp) {
 		if (m_carrier == -1) {
-			map->putUnitCells(this, pos);
-			meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
+			m_map->putUnitCells(this, m_pos);
+			m_meetingPos = node->getChildVec2iValue("meetingPos"); // putUnitCells sets this, so we reset it here
 		}
 		ULC_UNIT_LOG( this, " constructed at pos" << pos );
 	} else {
 		ULC_UNIT_LOG( this, " constructed dead." );
 	}
-	if (type->hasSkillClass(SkillClass::BE_BUILT) && !type->hasSkillClass(SkillClass::MOVE)) {
-		map->flatternTerrain(this);
+	if (m_type->hasSkillClass(SkillClass::BE_BUILT) && !m_type->hasSkillClass(SkillClass::MOVE)) {
+		m_map->flatternTerrain(this);
 		// was previously in World::initUnits but seems to work fine here
 		g_cartographer.updateMapMetrics(getPos(), getSize());
 	}
@@ -296,34 +296,34 @@ Unit::~Unit() {
 
 void Unit::save(XmlNode *node) const {
 	XmlNode *n;
-	node->addChild("id", id);
-	node->addChild("hp", hp);
-	node->addChild("ep", ep);
-	node->addChild("loadCount", loadCount);
-	node->addChild("nextCommandUpdate", nextCommandUpdate);
-	node->addChild("lastCommandUpdate", lastCommandUpdate);
-	node->addChild("nextAnimReset", nextAnimReset);
-	node->addChild("lastAnimReset", lastAnimReset);
-	node->addChild("highlight", highlight);
-	node->addChild("progress2", progress2);
-	node->addChild("kills", kills);
-	node->addChild("targetRef", targetRef);
-	node->addChild("targetField", targetField);
-	node->addChild("pos", pos);
-	node->addChild("lastPos", lastPos);
-	node->addChild("nextPos", nextPos);
-	node->addChild("targetPos", targetPos);
-	node->addChild("targetVec", targetVec);
-	node->addChild("meetingPos", meetingPos);
-	node->addChild("faceTarget", faceTarget);
-	node->addChild("useNearestOccupiedCell", useNearestOccupiedCell);
-	node->addChild("lastRotation", lastRotation);
-	node->addChild("targetRotation", targetRotation);
-	node->addChild("rotation", rotation);
+	node->addChild("id", m_id);
+	node->addChild("hp", m_hp);
+	node->addChild("ep", m_ep);
+	node->addChild("loadCount", m_loadCount);
+	node->addChild("m_nextCommandUpdate", m_nextCommandUpdate);
+	node->addChild("m_lastCommandUpdate", m_lastCommandUpdate);
+	node->addChild("nextAnimReset", m_nextAnimReset);
+	node->addChild("lastAnimReset", m_lastAnimReset);
+	node->addChild("highlight", m_highlight);
+	node->addChild("progress2", m_progress2);
+	node->addChild("kills", m_kills);
+	node->addChild("targetRef", m_targetRef);
+	node->addChild("targetField", m_targetField);
+	node->addChild("pos", m_pos);
+	node->addChild("m_lastPos", m_lastPos);
+	node->addChild("nextPos", m_nextPos);
+	node->addChild("targetPos", m_targetPos);
+	node->addChild("targetVec", m_targetVec);
+	node->addChild("meetingPos", m_meetingPos);
+	node->addChild("faceTarget", m_faceTarget);
+	node->addChild("useNearestOccupiedCell", m_useNearestOccupiedCell);
+	node->addChild("lastRotation", m_lastRotation);
+	node->addChild("targetRotation", m_targetRotation);
+	node->addChild("rotation", m_rotation);
 	node->addChild("facing", int(m_facing));
-	node->addChild("type", type->getName());
-	node->addChild("loadType", loadType ? loadType->getName() : "null_value");
-	node->addChild("currSkill", currSkill ? currSkill->getName() : "null_value");
+	node->addChild("m_type", m_type->getName());
+	node->addChild("loadType", m_loadType ? m_loadType->getName() : "null_value");
+	node->addChild("m_currSkill", m_currSkill ? m_currSkill->getName() : "null_value");
 
 	node->addChild("cloaked", m_cloaked);
 	node->addChild("cloaking", m_cloaking);
@@ -334,20 +334,20 @@ void Unit::save(XmlNode *node) const {
 	node->addChild("auto-attack", m_autoCmdEnable[AutoCmdFlag::ATTACK]);
 	node->addChild("auto-flee", m_autoCmdEnable[AutoCmdFlag::FLEE]);
 
-	if (type->hasMeetingPoint()) {
-		node->addChild("meeting-point", meetingPos);
+	if (m_type->hasMeetingPoint()) {
+		node->addChild("meeting-point", m_meetingPos);
 	}
 
-	effects.save(node->addChild("effects"));
-	effectsCreated.save(node->addChild("effectsCreated"));
+	m_effects.save(node->addChild("effects"));
+	m_effectsCreated.save(node->addChild("effectsCreated"));
 
-	node->addChild("fire", fire ? true : false);
+	node->addChild("fire", m_fire ? true : false);
 
-	unitPath.write(node->addChild("unitPath"));
-	waypointPath.write(node->addChild("waypointPath"));
+	m_unitPath.write(node->addChild("unitPath"));
+	m_waypointPath.write(node->addChild("waypointPath"));
 
-	n = node->addChild("commands");
-	for(Commands::const_iterator i = commands.begin(); i != commands.end(); ++i) {
+	n = node->addChild("m_commands");
+	for(Commands::const_iterator i = m_commands.begin(); i != m_commands.end(); ++i) {
 		(*i)->save(n->addChild("command"));
 	}
 	n = node->addChild("units-carried");
@@ -372,18 +372,18 @@ void Unit::save(XmlNode *node) const {
   * @return nearest cell to 'from' that is occuppied
   */
 Vec2i Unit::getNearestOccupiedCell(const Vec2i &from) const {
-	int size = type->getSize();
+	int size = m_type->getSize();
 
 	if(size == 1) {
-		return pos;
+		return m_pos;
 	} else {
 		float nearestDist = 100000.f;
 		Vec2i nearestPos(-1);
 
 		for (int x = 0; x < size; ++x) {
 			for (int y = 0; y < size; ++y) {
-				if (!type->hasCellMap() || type->getCellMapCell(x, y, m_facing)) {
-					Vec2i currPos = pos + Vec2i(x, y);
+				if (!m_type->hasCellMap() || m_type->getCellMapCell(x, y, m_facing)) {
+					Vec2i currPos = m_pos + Vec2i(x, y);
 					float dist = from.dist(currPos);
 					if (dist < nearestDist) {
 						nearestDist = dist;
@@ -402,17 +402,17 @@ Vec2i Unit::getNearestOccupiedCell(const Vec2i &from) const {
   * @return percentage complete, or -1 if not currently producing anything */
 int Unit::getProductionPercent() const {
 	if (anyCommand()) {
-		CmdClass cmdClass = commands.front()->getType()->getClass();
+		CmdClass cmdClass = m_commands.front()->getType()->getClass();
 		if (cmdClass == CmdClass::PRODUCE || cmdClass == CmdClass::MORPH
 		|| cmdClass == CmdClass::GENERATE || cmdClass == CmdClass::UPGRADE) {
-			const ProducibleType *produced = commands.front()->getProdType();
+			const ProducibleType *produced = m_commands.front()->getProdType();
 			if (produced) {
-				return clamp(progress2 * 100 / produced->getProductionTime(), 0, 100);
+				return clamp(m_progress2 * 100 / produced->getProductionTime(), 0, 100);
 			}
 		}
 		///@todo CommandRefactoring - hailstone 12Dec2010
 		/*
-		ProducerBaseCommandType *ct = commands.front()->getType();
+		ProducerBaseCommandType *ct = m_commands.front()->getType();
 		if (ct->getProducedCount()) {
 			// prod count can be > 1, need command & progress2 (just pass 'this'?) -silnarm 12-Jun-2011
 			ct->getProductionPercent(progress2);
@@ -422,14 +422,14 @@ int Unit::getProductionPercent() const {
 	return -1;
 }
 
-/** query next available level @return next level, or NULL */
+/** query next available m_level @return next m_level, or nullptr */
 const Level *Unit::getNextLevel() const{
-	if (!level && type->getLevelCount()) {
-		return type->getLevel(0);
+	if (!m_level && m_type->getLevelCount()) {
+		return m_type->getLevel(0);
 	} else {
-		for(int i=1; i < type->getLevelCount(); ++i) {
-			if (type->getLevel(i - 1) == level) {
-				return type->getLevel(i);
+		for(int i=1; i < m_type->getLevelCount(); ++i) {
+			if (m_type->getLevel(i - 1) == m_level) {
+				return m_type->getLevel(i);
 			}
 		}
 	}
@@ -439,20 +439,20 @@ const Level *Unit::getNextLevel() const{
 /** retrieve name description, levelName + unitTypeName */
 string Unit::getFullName() const{
 	string str;
-	if (level) {
+	if (m_level) {
 		string lvl;
-		if (g_lang.lookUp(level->getName(), getFaction()->getType()->getName(), lvl)) {
+		if (g_lang.lookUp(m_level->getName(), getFaction()->getType()->getName(), lvl)) {
 			str += lvl;
 		} else {
-			str += formatString(level->getName());
+			str += formatString(m_level->getName());
 		}
 		str.push_back(' ');
 	}
 	string name;
-	if (g_lang.lookUp(type->getName(), getFaction()->getType()->getName(), name)) {
+	if (g_lang.lookUp(m_type->getName(), getFaction()->getType()->getName(), name)) {
 		str += name;
 	} else {
-		str += formatString(type->getName());
+		str += formatString(m_type->getName());
 	}
 	return str;
 }
@@ -478,15 +478,15 @@ float Unit::getRenderAlpha() const {
 // ====================================== is ======================================
 
 /** query unit interestingness
-  * @param iut the type of interestingness you're interested in
+  * @param iut the m_type of interestingness you're interested in
   * @return true if this unit is interesting in the way you're interested in
   */
 bool Unit::isInteresting(InterestingUnitType iut) const{
 	switch (iut) {
 		case InterestingUnitType::IDLE_HARVESTER:
-			if (type->hasCommandClass(CmdClass::HARVEST)) {
-				if (!commands.empty()) {
-					const CommandType *ct = commands.front()->getType();
+			if (m_type->hasCommandClass(CmdClass::HARVEST)) {
+				if (!m_commands.empty()) {
+					const CommandType *ct = m_commands.front()->getType();
 					if (ct) {
 						return ct->getClass() == CmdClass::STOP;
 					}
@@ -496,13 +496,13 @@ bool Unit::isInteresting(InterestingUnitType iut) const{
 
 		case InterestingUnitType::BUILT_BUILDING:
 			return isBuilt() &&
-				(type->hasSkillClass(SkillClass::BE_BUILT) || type->hasSkillClass(SkillClass::BUILD_SELF));
+				(m_type->hasSkillClass(SkillClass::BE_BUILT) || m_type->hasSkillClass(SkillClass::BUILD_SELF));
 		case InterestingUnitType::PRODUCER:
-			return type->hasSkillClass(SkillClass::PRODUCE);
+			return m_type->hasSkillClass(SkillClass::PRODUCE);
 		case InterestingUnitType::DAMAGED:
 			return isDamaged();
 		case InterestingUnitType::STORE:
-			return type->getStoredResourceCount() > 0;
+			return m_type->getStoredResourceCount() > 0;
 		default:
 			return false;
 	}
@@ -522,17 +522,17 @@ bool Unit::isBuilding() const {
 		&& isAlive() && !getType()->getProperty(Property::WALL));
 }
 
-/** find a repair command type that can repair a unit with
+/** find a repair command m_type that can repair a unit with
   * @param u the unit in need of repairing
-  * @return a RepairCommandType that can repair u, or NULL
+  * @return a RepairCommandType that can repair u, or nullptr
   */
 const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
-	for (int i = 0; i < type->getCommandTypeCount<RepairCommandType>(); i++) {
-		const RepairCommandType *rct = type->getCommandType<RepairCommandType>(i);
+	for (int i = 0; i < m_type->getCommandTypeCount<RepairCommandType>(); i++) {
+		const RepairCommandType *rct = m_type->getCommandType<RepairCommandType>(i);
 		const RepairSkillType *rst = rct->getRepairSkillType();
 		if ((!rst->isSelfOnly() || this == u)
 		&& (rst->isSelfAllowed() || this != u)
-		&& (rct->canRepair(u->type))) {
+		&& (rct->canRepair(u->m_type))) {
 			return rct;
 		}
 	}
@@ -540,16 +540,16 @@ const RepairCommandType * Unit::getRepairCommandType(const Unit *u) const {
 }
 
 float Unit::getProgress() const {
-	return float(g_world.getFrameCount() - lastCommandUpdate)
-			/	float(nextCommandUpdate - lastCommandUpdate);
+	return float(g_world.getFrameCount() - m_lastCommandUpdate)
+			/	float(m_nextCommandUpdate - m_lastCommandUpdate);
 }
 
 float Unit::getAnimProgress() const {
-	if (isBeingBuilt() && currSkill->isStretchyAnim()) {
+	if (isBeingBuilt() && m_currSkill->isStretchyAnim()) {
 		return float(getProgress2()) / float(getMaxHp());
 	}
-	return float(g_world.getFrameCount() - lastAnimReset)
-			/	float(nextAnimReset - lastAnimReset);
+	return float(g_world.getFrameCount() - m_lastAnimReset)
+			/	float(m_nextAnimReset - m_lastAnimReset);
 }
 
 void Unit::startSkillParticleSystems() {
@@ -557,20 +557,20 @@ void Unit::startSkillParticleSystems() {
 	Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
 	bool visible = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
 	
-	for (unsigned i = 0; i < currSkill->getEyeCandySystemCount(); ++i) {
-		const UnitParticleSystemType *upsType = currSkill->getEyeCandySystem(i);
+	for (unsigned i = 0; i < m_currSkill->getEyeCandySystemCount(); ++i) {
+		const UnitParticleSystemType *upsType = m_currSkill->getEyeCandySystem(i);
 		bool start = true;
-		foreach (UnitParticleSystems, it, skillParticleSystems) {
+		foreach (UnitParticleSystems, it, m_skillParticleSystems) {
 			if ((*it)->getType() == upsType) {
 				start = false;
 			}
 		}
 		if (start) {
-			UnitParticleSystem *ups = currSkill->getEyeCandySystem(i)->createUnitParticleSystem(visible);
+			UnitParticleSystem *ups = m_currSkill->getEyeCandySystem(i)->createUnitParticleSystem(visible);
 			ups->setPos(getCurrVector());
 			ups->setRotation(getRotation());
-			skillParticleSystems.push_back(ups);
-			Colour c = faction->getColour();
+			m_skillParticleSystems.push_back(ups);
+			Colour c = m_faction->getColour();
 			Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
 			ups->setTeamColour(colour);
 			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
@@ -581,24 +581,24 @@ void Unit::startSkillParticleSystems() {
 // ====================================== set ======================================
 
 void Unit::setCommandCallback() {
-	commandCallback = commands.front()->getId();
+	m_commandCallback = m_commands.front()->getId();
 }
 
 /** sets the current skill */
 void Unit::setCurrSkill(const SkillType *newSkill) {
 	assert(newSkill);
-	//COMMAND_LOG(g_world.getFrameCount() << "::Unit:" << id << " skill set => " << SkillClassNames[currSkill->getClass()] );
-	if (newSkill == currSkill) {
+	//COMMAND_LOG(g_world.getFrameCount() << "::Unit:" << id << " skill set => " << SkillClassNames[m_currSkill->getClass()] );
+	if (newSkill == m_currSkill) {
 		return;
 	}
-	if (newSkill != currSkill) {
-		while(!skillParticleSystems.empty()){
-			skillParticleSystems.back()->fade();
-			skillParticleSystems.pop_back();
+	if (newSkill != m_currSkill) {
+		while(!m_skillParticleSystems.empty()){
+			m_skillParticleSystems.back()->fade();
+			m_skillParticleSystems.pop_back();
 		}
 	}
-	progress2 = 0;
-	currSkill = newSkill;
+	m_progress2 = 0;
+	m_currSkill = newSkill;
 
 	if (!isCarried()) {
 		startSkillParticleSystems();
@@ -608,38 +608,38 @@ void Unit::setCurrSkill(const SkillType *newSkill) {
 /** sets unit's target */
 void Unit::setTarget(const Unit *unit, bool faceTarget, bool useNearestOccupiedCell) {
 	if(!unit) {
-		targetRef = -1;
+		m_targetRef = -1;
 		return;
 	}
-	targetRef = unit->getId();
-	this->faceTarget = faceTarget;
-	this->useNearestOccupiedCell = useNearestOccupiedCell;
+	m_targetRef = unit->getId();
+	m_faceTarget = faceTarget;
+	m_useNearestOccupiedCell = useNearestOccupiedCell;
 	updateTarget(unit);
 }
 
 /** sets unit's position @param pos position to set
-  * @warning sets Unit data members only, does not place/move on map */
+  * @warning sets Unit data members only, does not place/move on m_map */
 void Unit::setPos(const Vec2i &pos){
-	this->lastPos = this->pos;
-	this->pos = pos;
-	this->meetingPos = pos - Vec2i(1);
+	m_lastPos = m_pos;
+	m_pos = pos;
+	m_meetingPos = pos - Vec2i(1);
 
 	// make sure it's not invalid if they build at 0,0
-	if(pos.x == 0 && pos.y == 0) {
-		this->meetingPos = pos + Vec2i(type->getSize());
+	if (pos.x == 0 && pos.y == 0) {
+		m_meetingPos = pos + Vec2i(m_type->getSize());
 	}
 }
 
 /** sets targetRotation */
 void Unit::face(const Vec2i &nextPos) {
-	Vec2i relPos = nextPos - pos;
+	Vec2i relPos = nextPos - m_pos;
 	Vec2f relPosf = Vec2f((float)relPos.x, (float)relPos.y);
-	targetRotation = radToDeg(atan2f(relPosf.x, relPosf.y));
+	m_targetRotation = radToDeg(atan2f(relPosf.x, relPosf.y));
 }
 
 void Unit::setModelFacing(CardinalDir value) {
 	m_facing = value;
-	lastRotation = targetRotation = rotation = value * 90.f;
+	m_lastRotation = m_targetRotation = m_rotation = float(value) * 90.f;
 }
 
 Projectile* Unit::launchProjectile(ProjectileType *projType, const Vec3f &endPos) {
@@ -654,7 +654,7 @@ Projectile* Unit::launchProjectile(ProjectileType *projType, const Vec3f &endPos
 		assert(lct->areProjectilesAllowed());
 		Vec2f offsets = lct->getProjectileOffset();
 		startPos.y += offsets.y;
-		Random random(id);
+		Random random(m_id);
 		float rad = degToRad(float(random.randRange(0, 359)));
 		startPos.x += cosf(rad) * offsets.x;
 		startPos.z += sinf(rad) * offsets.x;
@@ -662,8 +662,8 @@ Projectile* Unit::launchProjectile(ProjectileType *projType, const Vec3f &endPos
 		startPos = getCurrVector();
 	}
 	//make particle system
-	const Tile *sc = map->getTile(Map::toTileCoords(effectivePos));
-	const Tile *tsc = map->getTile(Map::toTileCoords(getTargetPos()));
+	const Tile *sc = m_map->getTile(Map::toTileCoords(effectivePos));
+	const Tile *tsc = m_map->getTile(Map::toTileCoords(getTargetPos()));
 	bool visible = sc->isVisible(g_world.getThisTeamIndex()) || tsc->isVisible(g_world.getThisTeamIndex());
 	visible = visible && g_renderer.getCuller().isInside(effectivePos);
 
@@ -678,7 +678,7 @@ Projectile* Unit::launchProjectile(ProjectileType *projType, const Vec3f &endPos
 			break;
 
 		case ProjectileStart::SKY: {
-				Random random(id);
+				Random random(m_id);
 				float skyAltitude = 30.f;
 				startPos = endPos;
 				startPos.x += random.randRange(-skyAltitude / 8.f, skyAltitude / 8.f);
@@ -690,22 +690,22 @@ Projectile* Unit::launchProjectile(ProjectileType *projType, const Vec3f &endPos
 
 	g_simInterface.doUpdateProjectile(this, projectile, startPos, endPos);
 
-	if(projType->isTracking() && targetRef != -1) {
-		Unit *target = g_world.getUnit(targetRef);
+	if(projType->isTracking() && m_targetRef != -1) {
+		Unit *target = g_world.getUnit(m_targetRef);
 		projectile->setTarget(target);
 	}
-	projectile->setTeamColour(faction->getColourV3f());
+	projectile->setTeamColour(m_faction->getColourV3f());
 	g_renderer.manageParticleSystem(projectile, ResourceScope::GAME);
 	return projectile;
 }
 
 Splash* Unit::createSplash(SplashType *splashType, const Vec3f &pos) {
-	const Tile *tile = map->getTile(Map::toTileCoords(getTargetPos()));		
+	const Tile *tile = m_map->getTile(Map::toTileCoords(getTargetPos()));		
 	bool visible = tile->isVisible(g_world.getThisTeamIndex())
 				&& g_renderer.getCuller().isInside(getTargetPos());
 	Splash *splash = splashType->createSplashParticleSystem(visible);
 	splash->setPos(pos);
-	splash->setTeamColour(faction->getColourV3f());
+	splash->setTeamColour(m_faction->getColourV3f());
 	g_renderer.manageParticleSystem(splash, ResourceScope::GAME);
 	return splash;
 }
@@ -720,13 +720,13 @@ void Unit::startSpellSystems(const CastSpellSkillType *sst) {
 	// projectile
 	if (sst->getProjParticleType()) {
 		projectile = launchProjectile(sst->getProjParticleType(), endPos);
-		projectile->setCallback(new SpellDeliverer(this, targetRef));
+		projectile->setCallback(new SpellDeliverer(this, m_targetRef));
 	} else {
 		Unit *target = nullptr;
 		if (affect == SpellAffect::SELF) {
 			target = this;
 		} else if (affect == SpellAffect::TARGET) {
-			target = g_world.getUnit(targetRef);
+			target = g_world.getUnit(m_targetRef);
 		}
 		if (sst->getSplashRadius()) {
 			g_world.applyEffects(this, sst->getEffectTypes(), target->getCenteredPos(), 
@@ -753,8 +753,8 @@ void Unit::startAttackSystems(const AttackSkillType *ast) {
 	// projectile
 	if (ast->getProjParticleType()) {
 		projectile = launchProjectile(ast->getProjParticleType(), endPos);
-		if (ast->getProjParticleType()->isTracking() && targetRef != -1) {
-			projectile->setCallback(new ParticleDamager(this, g_world.getUnit(targetRef)));
+		if (ast->getProjParticleType()->isTracking() && m_targetRef != -1) {
+			projectile->setCallback(new ParticleDamager(this, g_world.getUnit(m_targetRef)));
 		} else {
 			projectile->setCallback(new ParticleDamager(this, nullptr));
 		}
@@ -772,7 +772,7 @@ void Unit::startAttackSystems(const AttackSkillType *ast) {
 #ifdef EARTHQUAKE_CODE
 	const EarthquakeType *et = ast->getEarthquakeType();
 	if (et) {
-		et->spawn(*map, this, this->getTargetPos(), 1.f);
+		et->spawn(*m_map, this, this->getTargetPos(), 1.f);
 		if (et->getSound()) {
 			// play rather visible or not
 			g_soundRenderer.playFx(et->getSound(), getTargetVec(), g_gameState.getGameCamera()->getPos());
@@ -791,8 +791,8 @@ void Unit::clearPath() {
 	} else {
 		CMD_LOG( "path cleared." );
 	}
-	unitPath.clear();
-	waypointPath.clear();
+	m_unitPath.clear();
+	m_waypointPath.clear();
 }
 
 // =============================== Render related ==================================
@@ -800,14 +800,14 @@ void Unit::clearPath() {
 Vec3f Unit::getCurrVectorFlat() const {
 	Vec3f v(static_cast<float>(pos.x),  computeHeight(pos), static_cast<float>(pos.y));
 
-	if (currSkill->getClass() == SkillClass::MOVE) {
-		Vec3f last(static_cast<float>(lastPos.x),
-				computeHeight(lastPos),
-				static_cast<float>(lastPos.y));
+	if (m_currSkill->getClass() == SkillClass::MOVE) {
+		Vec3f last(static_cast<float>(m_lastPos.x),
+				computeHeight(m_lastPos),
+				static_cast<float>(m_lastPos.y));
 		v = v.lerp(progress, last);
 	}
 
-	float halfSize = type->getSize() / 2.f;
+	float halfSize = m_type->getSize() / 2.f;
 	v.x += halfSize;
 	v.z += halfSize;
 
@@ -816,35 +816,35 @@ Vec3f Unit::getCurrVectorFlat() const {
 */
 // =================== Command list related ===================
 
-/** query first available (and currently executable) command type of a class
+/** query first available (and currently executable) command m_type of a class
   * @param commandClass CmdClass of interest
-  * @return the first executable CommandType matching commandClass, or NULL
+  * @return the first executable CommandType matching commandClass, or nullptr
   */
 const CommandType *Unit::getFirstAvailableCt(CmdClass commandClass) const {
 	typedef vector<CommandType*> CommandTypes;
-	const  CommandTypes &cmdTypes = type->getCommandTypes(commandClass);
+	const  CommandTypes &cmdTypes = m_type->getCommandTypes(commandClass);
 	foreach_const (CommandTypes, it, cmdTypes) {
-		if (faction->reqsOk(*it)) {
+		if (m_faction->reqsOk(*it)) {
 			return *it;
 		}
 	}
 	return 0;
 	/*
-	for(int i = 0; i < type->getCommandTypeCount(); ++i) {
-		const CommandType *ct = type->getCommandType(i);
-		if(ct && ct->getClass() == commandClass && faction->reqsOk(ct)) {
+	for(int i = 0; i < m_type->getCommandTypeCount(); ++i) {
+		const CommandType *ct = m_type->getCommandType(i);
+		if(ct && ct->getClass() == commandClass && m_faction->reqsOk(ct)) {
 			return ct;
 		}
 	}
-	return NULL;
+	return nullptr;
 	*/
 }
 
-/**get Number of commands
- * @return the number of commands on this unit's queue
+/**get Number of m_commands
+ * @return the number of m_commands on this unit's queue
  */
 unsigned int Unit::getCommandCount() const{
-	return commands.size();
+	return m_commands.size();
 }
 
 void Unit::setAutoCmdEnable(AutoCmdFlag f, bool v) {
@@ -863,11 +863,11 @@ CmdResult Unit::giveCommand(Command *command) {
 	CMD_UNIT_LOG( this, "giveCommand() " << *command );
 
 	if (ct->getClass() == CmdClass::SET_MEETING_POINT) {
-		if (command->isQueue() && !commands.empty()) {
-			commands.push_back(command);
+		if (command->isQueue() && !m_commands.empty()) {
+			m_commands.push_back(command);
 			NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Set-meeting-point OK, command queued." );
 		} else {
-			meetingPos = command->getPos();
+			m_meetingPos = command->getPos();
 			g_world.deleteCommand(command);
 			NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Set-meeting-point OK, command executed." );
 		}
@@ -877,7 +877,7 @@ CmdResult Unit::giveCommand(Command *command) {
 
 	if (ct->isQueuable() || command->isQueue()) { // user wants this queued...
 		// cancel current command if it is not queuable or marked to be queued
-		if (!commands.empty() && !commands.front()->getType()->isQueuable() && !command->isQueue()) {
+		if (!m_commands.empty() && !m_commands.front()->getType()->isQueuable() && !command->isQueue()) {
 			CMD_LOG( "incoming command wants queue, but current is not queable. Cancel current command" );
 			cancelCurrCommand();
 			clearPath();
@@ -886,19 +886,19 @@ CmdResult Unit::giveCommand(Command *command) {
 		// empty command queue
 		CMD_LOG( "incoming command is not marked to queue, Clear command queue" );
 
-		// HACK... The AI likes to re-issue the same commands, which stresses the pathfinder 
+		// HACK... The AI likes to re-issue the same m_commands, which stresses the pathfinder 
 		// on big maps. If current and incoming are both attack and have same pos, then do
 		// not clear path... (route cache will still be good).
-		if (! (!commands.empty() && command->getType()->getClass() == CmdClass::ATTACK
-		&& commands.front()->getType()->getClass() == CmdClass::ATTACK
-		&& command->getPos() == commands.front()->getPos()) ) {
+		if (! (!m_commands.empty() && command->getType()->getClass() == CmdClass::ATTACK
+		&& m_commands.front()->getType()->getClass() == CmdClass::ATTACK
+		&& command->getPos() == m_commands.front()->getPos()) ) {
 			clearPath();
 		}
 		clearCommands();
 
-		// for patrol commands, remember where we started from
+		// for patrol m_commands, remember where we started from
 		if (ct->getClass() == CmdClass::PATROL) {
-			command->setPos2(pos);
+			command->setPos2(m_pos);
 		}
 	}
 
@@ -911,10 +911,10 @@ CmdResult Unit::giveCommand(Command *command) {
 	if (result == CmdResult::SUCCESS && energyRes) {
 		applyCommand(*command);
 		
-		// start the command type
+		// start the command m_type
 		ct->start(this, command);
 		
-		commands.push_back(command);
+		m_commands.push_back(command);
 
 		NETWORK_LOG( "Unit::giveCommand(): Unit: " << getId() << " giveCommand() Cmd: " << ct->getId() 
 			<< " (" << ct->getName() << ")" << (autoCommand ? "[Auto] " : " ") <<  "Ok." );
@@ -952,9 +952,9 @@ void Unit::loadUnitInit(Command *command) {
 		CMD_LOG( "adding unit to load list " << *command->getUnit() )
 		///@bug causes crash at Unit::tick when more than one unit attempts to load at the same time
 		/// while doing multiple loads increases the queue count but it decreases afterwards.
-		/// Furious clicking to make queued commands causes a crash in AnnotatedMap::annotateLocal.
+		/// Furious clicking to make queued m_commands causes a crash in AnnotatedMap::annotateLocal.
 		/// - hailstone 2Feb2011
-		/*if (!commands.empty() && commands.front()->getType()->getClass() == CmdClass::LOAD) {
+		/*if (!m_commands.empty() && m_commands.front()->getType()->getClass() == CmdClass::LOAD) {
 			CMD_LOG( "deleting load command, already loading.")
 			g_world.deleteCommand(command);
 			command = 0;
@@ -968,7 +968,7 @@ void Unit::unloadUnitInit(Command *command) {
 			assert(std::find(m_carriedUnits.begin(), m_carriedUnits.end(), command->getUnitRef()) != m_carriedUnits.end());
 			m_unitsToUnload.push_back(command->getUnitRef());
 			CMD_LOG( "adding unit to unload list " << *command->getUnit() )
-			if (!commands.empty() && commands.front()->getType()->getClass() == CmdClass::UNLOAD) {
+			if (!m_commands.empty() && m_commands.front()->getType()->getClass() == CmdClass::UNLOAD) {
 				CMD_LOG( "deleting unload command, already unloading.")
 				g_world.deleteCommand(command);
 				command = 0;
@@ -980,29 +980,29 @@ void Unit::unloadUnitInit(Command *command) {
 	}
 }
 
-/** removes current command (and any queued Set meeting point commands)
+/** removes current command (and any queued Set meeting point m_commands)
   * @return the command now at the head of the queue (the new current command) */
 Command *Unit::popCommand() {
 	// pop front
-	CMD_LOG( "popping current " << commands.front()->getType()->getName() << " command." );
+	CMD_LOG( "popping current " << m_commands.front()->getType()->getName() << " command." );
 
-	g_world.deleteCommand(commands.front());
-	commands.erase(commands.begin());
+	g_world.deleteCommand(m_commands.front());
+	m_commands.erase(m_commands.begin());
 	clearPath();
 
-	Command *command = commands.empty() ? NULL : commands.front();
+	Command *command = m_commands.empty() ? nullptr : m_commands.front();
 
-	// we don't let hacky set meeting point commands actually get anywhere
+	// we don't let hacky set meeting point m_commands actually get anywhere
 	while(command && command->getType()->getClass() == CmdClass::SET_MEETING_POINT) {
 		setMeetingPos(command->getPos());
 		g_world.deleteCommand(command);
-		commands.erase(commands.begin());
-		command = commands.empty() ? NULL : commands.front();
+		m_commands.erase(m_commands.begin());
+		command = m_commands.empty() ? nullptr : m_commands.front();
 	}
 	if (command) {
 		CMD_LOG( "new current is " << command->getType()->getName() << " command." );
 	} else {
-		CMD_LOG( "now has no commands." );
+		CMD_LOG( "now has no m_commands." );
 	}
 	StateChanged(this);
 	return command;
@@ -1012,11 +1012,11 @@ Command *Unit::popCommand() {
   */
 CmdResult Unit::finishCommand() {
 	//is empty?
-	if(commands.empty()) {
+	if(m_commands.empty()) {
 		CMD_UNIT_LOG( this, "finishCommand() no command to finish!" );
 		return CmdResult::FAIL_UNDEFINED;
 	}
-	CMD_UNIT_LOG( this, commands.front()->getType()->getName() << " command finished." );
+	CMD_UNIT_LOG( this, m_commands.front()->getType()->getName() << " command finished." );
 
 	Command *command = popCommand();
 
@@ -1024,10 +1024,10 @@ CmdResult Unit::finishCommand() {
 		command->getType()->finish(this, *command);
 	}
 
-	if (commands.empty()) {
-		CMD_LOG( "now has no commands." );
+	if (m_commands.empty()) {
+		CMD_LOG( "now has no m_commands." );
 	} else {
-		CMD_LOG( commands.front()->getType()->getName() << " command next on queue." );
+		CMD_LOG( m_commands.front()->getType()->getName() << " command next on queue." );
 	}
 
 	return CmdResult::SUCCESS;
@@ -1035,28 +1035,28 @@ CmdResult Unit::finishCommand() {
 
 /** cancel command on back of queue */
 CmdResult Unit::cancelCommand() {
-	unsigned int n = commands.size();
+	unsigned int n = m_commands.size();
 	if (n == 0) { // is empty?
-		CMD_UNIT_LOG( this, "cancelCommand() No commands to cancel!");
+		CMD_UNIT_LOG( this, "cancelCommand() No m_commands to cancel!");
 		return CmdResult::FAIL_UNDEFINED;
 	} else if (n == 1) { // back is front (single command)
 		CMD_UNIT_LOG( this, "cancelCommand() Only one command, cancelling current.");
 		return cancelCurrCommand();
 	} else {
 		// undo command
-		const CommandType *ct = commands.back()->getType();
-		undoCommand(*commands.back());
+		const CommandType *ct = m_commands.back()->getType();
+		undoCommand(*m_commands.back());
 
 		// delete and pop command
-		g_world.deleteCommand(commands.back());
-		commands.pop_back();
+		g_world.deleteCommand(m_commands.back());
+		m_commands.pop_back();
 
 		StateChanged(this);
 
 		//clear routes
 		clearPath();
 		
-		//if (commands.empty()) {
+		//if (m_commands.empty()) {
 		//	CMD_UNIT_LOG( this, "current " << ct->getName() << " command cancelled.");
 		//} else {
 			CMD_UNIT_LOG( this, "a queued " << ct->getName() << " command cancelled.");
@@ -1067,18 +1067,18 @@ CmdResult Unit::cancelCommand() {
 
 /** cancel current command */
 CmdResult Unit::cancelCurrCommand() {
-	if (commands.empty()) { // is empty?
-		CMD_UNIT_LOG( this, "cancelCurrCommand() No commands to cancel!");
+	if (m_commands.empty()) { // is empty?
+		CMD_UNIT_LOG( this, "cancelCurrCommand() No m_commands to cancel!");
 		return CmdResult::FAIL_UNDEFINED;
 	}
 	// undo command
-	undoCommand(*commands.front());
-	systemStartFrame = -1;
+	undoCommand(*m_commands.front());
+	m_systemStartFrame = -1;
 
 	Command *command = popCommand();
 
 	if (!command) {
-		CMD_UNIT_LOG( this, "now has no commands." );
+		CMD_UNIT_LOG( this, "now has no m_commands." );
 	} else {
 		CMD_UNIT_LOG( this, command->getType()->getName() << " command next on queue." );
 	}
@@ -1087,34 +1087,34 @@ CmdResult Unit::cancelCurrCommand() {
 
 void Unit::removeCommands() {
 	if (!g_program.isTerminating() && World::isConstructed()) {
-		CMD_UNIT_LOG( this, "clearing all commands." );
+		CMD_UNIT_LOG( this, "clearing all m_commands." );
 	}
 	cancelCurrCommand(); // undo current and clean-up 'system start' (in case casting/attacking)
-	while (!commands.empty()) {
+	while (!m_commands.empty()) {
 
 		///todo: should we undo() these ??
 		//  -silnarm 2-Oct-2011
 
-		g_world.deleteCommand(commands.back());
-		commands.pop_back();
+		g_world.deleteCommand(m_commands.back());
+		m_commands.pop_back();
 	}
 }
 
 // =================== route stack ===================
 
-/** Creates a unit, places it on the map and applies static costs for starting units
+/** Creates a unit, places it on the m_map and applies static costs for starting units
   * @param startingUnit true if this is a starting unit.
   */
 void Unit::create(bool startingUnit) {
 	ULC_UNIT_LOG( this, "created." );
-	faction->add(this);
-	lastPos = Vec2i(-1);
-	map->putUnitCells(this, pos);
+	m_faction->add(this);
+	m_lastPos = Vec2i(-1);
+	m_map->putUnitCells(this, m_pos);
 	if (startingUnit) {
-		faction->applyStaticCosts(type);
+		m_faction->applyStaticCosts(m_type);
 	}
-	nextCommandUpdate = -1;
-	setCurrSkill(type->getStartSkill());
+	m_nextCommandUpdate = -1;
+	setCurrSkill(m_type->getStartSkill());
 	startSkillParticleSystems();
 }
 
@@ -1124,27 +1124,27 @@ void Unit::born(bool reborn) {
 	if (reborn && (!isAlive() || !isBuilt())) {
 		return;
 	}
-	if (type->getCloakClass() == CloakClass::PERMANENT && faction->reqsOk(type->getCloakType())) {
+	if (m_type->getCloakClass() == CloakClass::PERMANENT && m_faction->reqsOk(m_type->getCloakType())) {
 		cloak();
 	}
-	if (type->isDetector()) {
+	if (m_type->isDetector()) {
 		g_world.getCartographer()->detectorActivated(this);
 	}
 	ULC_UNIT_LOG( this, "born." );
-	faction->applyStaticProduction(type);
+	m_faction->applyStaticProduction(m_type);
 	computeTotalUpgrade();
 	recalculateStats();
 
 	if (!reborn) {
-		faction->addStore(type);
+		m_faction->addStore(m_type);
 		setCurrSkill(SkillClass::STOP);
-		hp = type->getMaxHp();
-		faction->checkAdvanceSubfaction(type, true);
+		m_hp = m_type->getMaxHp();
+		m_faction->checkAdvanceSubfaction(m_type, true);
 		g_world.getCartographer()->applyUnitVisibility(this);
 		g_simInterface.doUnitBorn(this);
-		faction->applyUpgradeBoosts(this);
-		if (faction->isThisFaction() && !g_config.getGsAutoRepairEnabled()
-		&& type->getFirstCtOfClass(CmdClass::REPAIR)) {
+		m_faction->applyUpgradeBoosts(this);
+		if (m_faction->isThisFaction() && !g_config.getGsAutoRepairEnabled()
+		&& m_type->getFirstCtOfClass(CmdClass::REPAIR)) {
 			// NOTE: this might be better in Commander::trySetAutoCommandEnabled, this is the only
 			//	pushCommand call not in commander.cpp - hailstone 22DEC2011
 			if (!g_simInterface.isNetworkInterface()) {
@@ -1158,8 +1158,8 @@ void Unit::born(bool reborn) {
 			startSkillParticleSystems();
 		}
 		
-		if (type->getEmanations().size() > 0) {
-			foreach_const (Emanations, i, type->getEmanations()) {
+		if (m_type->getEmanations().size() > 0) {
+			foreach_const (Emanations, i, m_type->getEmanations()) {
 				UnitParticleSystemTypes types = (*i)->getSourceParticleTypes();
 				if (!types.empty()) {
 					startParticleSystems(types);
@@ -1168,7 +1168,7 @@ void Unit::born(bool reborn) {
 		}
 	}
 	StateChanged(this);
-	faction->onUnitActivated(type);
+	m_faction->onUnitActivated(m_type);
 }
 
 void checkTargets(const Unit *dead) {
@@ -1178,7 +1178,7 @@ void checkTargets(const Unit *dead) {
 		if (*it && (*it)->isProjectile()) {
 			Projectile* pps = static_cast<Projectile*>(*it);
 			if (pps->getTarget() == dead) {
-				pps->setTarget(NULL);
+				pps->setTarget(nullptr);
 			}
 		}
 	}
@@ -1186,14 +1186,14 @@ void checkTargets(const Unit *dead) {
 
 
 /**
- * Do everything that should happen when a unit dies, except remove them from the faction.  Should
+ * Do everything that should happen when a unit dies, except remove them from the m_faction.  Should
  * only be called when a unit's HPs are zero or less.
  */
 void Unit::kill() {
 	assert(hp <= 0);
 	ULC_UNIT_LOG( this, "killed." );
 
-	hp = 0;
+	m_hp = 0;
 	World &world = g_world;
 
 	// clear queue of units still to load
@@ -1224,20 +1224,20 @@ void Unit::kill() {
 	}
 
 	// put out the fire
-	if (fire) {
-		fire->fade();
-		fire = nullptr;
-		smoke->fade();
-		smoke = nullptr;
+	if (m_fire) {
+		m_fire->fade();
+		m_fire = nullptr;
+		m_smoke->fade();
+		m_smoke = nullptr;
 	}
 
 	//REFACTOR Use signal, send this code to Faction::onUnitDied();
 	if (isBeingBuilt()) { // no longer needs static resources
-		faction->deApplyStaticConsumption(type);
+		m_faction->deApplyStaticConsumption(m_type);
 	} else {
-		faction->deApplyStaticCosts(type);
-		faction->removeStore(type);
-		faction->onUnitDeActivated(type);
+		m_faction->deApplyStaticCosts(m_type);
+		m_faction->removeStore(m_type);
+		m_faction->onUnitDeActivated(m_type);
 	}
 
 	// signal everyone connected to our Died event
@@ -1245,16 +1245,16 @@ void Unit::kill() {
 
 	clearCommands();
 	setCurrSkill(SkillClass::DIE);
-	progress2 = Random(id).randRange(-256, 256); // random decay time
+	m_progress2 = Random(m_id).randRange(-256, 256); // random decay time
 
 	//REFACTOR use signal, send this to World/Cartographer/SimInterface
 	world.getCartographer()->removeUnitVisibility(this);
 	if (!isCarried()) { // if not in transport, clear cells
-		map->clearUnitCells(this, pos);
+		m_map->clearUnitCells(this, m_pos);
 	}
 	g_simInterface.doUpdateAnimOnDeath(this);
 	checkTargets(this); // hack... 'tracking' particle systems might reference this [REFACTOR use UnitId in tracking system]
-	if (type->isDetector()) {
+	if (m_type->isDetector()) {
 		world.getCartographer()->detectorDeactivated(this);
 	}
 	g_simInterface.doUnitDeath(this);
@@ -1268,26 +1268,26 @@ void Unit::housedUnitDied(Unit *unit) {
 }
 
 void Unit::undertake() {
-	faction->remove(this);
-	if (!skillParticleSystems.empty()) {
-		foreach (UnitParticleSystems, it, skillParticleSystems) {
+	m_faction->remove(this);
+	if (!m_skillParticleSystems.empty()) {
+		foreach (UnitParticleSystems, it, m_skillParticleSystems) {
 			(*it)->fade();
 		}
-		skillParticleSystems.clear();
+		m_skillParticleSystems.clear();
 	}
 }
 
 void Unit::resetHighlight() {
-	highlight= 1.f;
+	m_highlight= 1.f;
 }
 
 void Unit::cloak() {
-	RUNTIME_CHECK(type->getCloakClass() != CloakClass::INVALID);
+	RUNTIME_CHECK(m_type->getCloakClass() != CloakClass::INVALID);
 	if (m_cloaked) {
 		return;
 	}
-	if (type->getCloakClass() == CloakClass::ENERGY) { // apply ep cost on start
-		int cost = type->getCloakType()->getEnergyCost();
+	if (m_type->getCloakClass() == CloakClass::ENERGY) { // apply ep cost on start
+		int cost = m_type->getCloakType()->getEnergyCost();
 		if (!decEp(cost)) {
 			return;
 		}
@@ -1300,9 +1300,9 @@ void Unit::cloak() {
 		}
 		m_cloaking = true;
 		// sound ?
-		if (type->getCloakType()->getCloakSound() && g_world.getFrameCount() > 0 
+		if (m_type->getCloakType()->getCloakSound() && g_world.getFrameCount() > 0 
 		&& g_renderer.getCuller().isInside(getCenteredPos())) {
-			g_soundRenderer.playFx(type->getCloakType()->getCloakSound());
+			g_soundRenderer.playFx(m_type->getCloakType()->getCloakSound());
 		}
 	}
 }
@@ -1314,13 +1314,13 @@ void Unit::deCloak() {
 			m_cloaking = false;
 		}
 		m_deCloaking = true;
-		if (type->getCloakType()->getDeCloakSound() && g_renderer.getCuller().isInside(getCenteredPos())) {
-			g_soundRenderer.playFx(type->getCloakType()->getDeCloakSound());
+		if (m_type->getCloakType()->getDeCloakSound() && g_renderer.getCuller().isInside(getCenteredPos())) {
+			g_soundRenderer.playFx(m_type->getCloakType()->getDeCloakSound());
 		}
 	}
 }
 
-/** Move a unit to a position on the map using the RoutePlanner
+/** Move a unit to a position on the m_map using the RoutePlanner
   * @param pos destination position
   * @param moveSkill the MoveSkillType to apply for the move
   * @return true when completed (maxed out BLOCKED, IMPOSSIBLE or ARRIVED)
@@ -1370,7 +1370,7 @@ TravelState Unit::travel(const Vec2i &pos, const MoveSkillType *moveSkill) {
 
 /** Deduce a command based on a location and/or unit clicked
   * @param pos position clicked (or position of targetUnit)
-  * @param targetUnit unit clicked or NULL
+  * @param targetUnit unit clicked or nullptr
   * @return the CommandType to execute
   */
 const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *targetUnit) const{
@@ -1378,18 +1378,18 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 	
 	if (targetUnit) {
 		if (!isAlly(targetUnit)) { // Enemy! Attack!!
-			commandType = type->getAttackCommand(targetUnit->getCurrZone());
+			commandType = m_type->getAttackCommand(targetUnit->getCurrZone());
 			return commandType; // do not give suicidal move command if can't attack target
 			// should give attack command to location ?
 
 		} else if (targetUnit->getFactionIndex() == getFactionIndex()) { // Our-unit, try Load/Repair
 			const UnitType *tType = targetUnit->getType();
-			if (tType->isOfClass(UnitClass::CARRIER) && tType->getCommandType<LoadCommandType>(0)->canCarry(type) && targetUnit->isBuilt()) {
+			if (tType->isOfClass(UnitClass::CARRIER) && tType->getCommandType<LoadCommandType>(0)->canCarry(m_type) && targetUnit->isBuilt()) {
 				// move to be loaded
-				commandType = type->getFirstCtOfClass(CmdClass::BE_LOADED);
-			} else if (getType()->isOfClass(UnitClass::CARRIER)	&& type->getCommandType<LoadCommandType>(0)->canCarry(tType)) { 
+				commandType = m_type->getFirstCtOfClass(CmdClass::BE_LOADED);
+			} else if (getType()->isOfClass(UnitClass::CARRIER)	&& m_type->getCommandType<LoadCommandType>(0)->canCarry(tType)) { 
 				// load
-				commandType = type->getFirstCtOfClass(CmdClass::LOAD);
+				commandType = m_type->getFirstCtOfClass(CmdClass::LOAD);
 			} else { 
 				// repair
 				commandType = getRepairCommandType(targetUnit);
@@ -1401,35 +1401,35 @@ const CommandType *Unit::computeCommandType(const Vec2i &pos, const Unit *target
 
 	} else { // No target unit
 		// check harvest command
-		Tile *tile = map->getTile(Map::toTileCoords(pos));
+		Tile *tile = m_map->getTile(Map::toTileCoords(pos));
 		MapResource *resource = tile->getResource();
 		if (resource) {
-			commandType = type->getHarvestCommand(resource->getType());
+			commandType = m_type->getHarvestCommand(resource->getType());
 		}
 	}
 
 	// default command is move command
 	if (!commandType) {
-		commandType = type->getFirstCtOfClass(CmdClass::MOVE);
+		commandType = m_type->getFirstCtOfClass(CmdClass::MOVE);
 	}
 
-	if (!commandType && type->hasMeetingPoint()) {
-		commandType = type->getFirstCtOfClass(CmdClass::SET_MEETING_POINT);
+	if (!commandType && m_type->hasMeetingPoint()) {
+		commandType = m_type->getFirstCtOfClass(CmdClass::SET_MEETING_POINT);
 	}
 
 	return commandType;
 }
 
 const Model* Unit::getCurrentModel() const {
-	if (type->getField() == Field::AIR){
+	if (m_type->getField() == Field::AIR){
 		return getCurrSkill()->getAnimation();
 	}
 	if (getCurrSkill()->getClass() == SkillClass::MOVE) {
-		SurfaceType from_st = map->getCell(getLastPos())->getType();
-		SurfaceType to_st = map->getCell(getNextPos())->getType();
+		SurfaceType from_st = m_map->getCell(getLastPos())->getType();
+		SurfaceType to_st = m_map->getCell(getNextPos())->getType();
 		return getCurrSkill()->getAnimation(from_st, to_st);
 	} else {
-		SurfaceType st = map->getCell(getPos())->getType();
+		SurfaceType st = m_map->getCell(getPos())->getType();
 		return getCurrSkill()->getAnimation(st);
 	}
 }
@@ -1490,7 +1490,7 @@ void Unit::doUpdateCommand() {
 		getCurrCommand()->getType()->update(this);
 		g_simInterface.setProcessingCommandClass();
 	}
-	// if no commands, add stop (or guard for pets) command
+	// if no m_commands, add stop (or guard for pets) command
 	if (!anyCommand() && isOperative()) {
 		const UnitType *ut = getType();
 		setCurrSkill(SkillClass::STOP);
@@ -1518,13 +1518,13 @@ void Unit::doUpdateCommand() {
 
 /** called to update animation cycle on a dead unit */
 void Unit::updateAnimDead() {
-	assert(currSkill->getClass() == SkillClass::DIE);
+	assert(m_currSkill->getClass() == SkillClass::DIE);
 
 	// when dead and have already played one complete anim cycle, set startFrame to last frame, endFrame 
 	// to this frame to keep the cycle at the 'end' so getAnimProgress() always returns 1.f
 	const int &frame = g_world.getFrameCount();
-	this->lastAnimReset = frame - 1;
-	this->nextAnimReset = frame;
+	m_lastAnimReset = frame - 1;
+	m_nextAnimReset = frame;
 }
 
 /** called at the end of an animation cycle, or on anim reset, sets next cycle end frame,
@@ -1534,26 +1534,26 @@ void Unit::updateAnimDead() {
   * @param attackOffset the number of frames from now to start attack systems (or -1 if no attack)*/
 void Unit::updateAnimCycle(int frameOffset, int soundOffset, int attackOffset) {
 	if (frameOffset == -1) { // hacky handle move skill
-		assert(currSkill->getClass() == SkillClass::MOVE);
+		assert(m_currSkill->getClass() == SkillClass::MOVE);
 		static const float speedModifier = 1.f / GameConstants::speedDivider / float(WORLD_FPS); // 0.00025
-		float animSpeed = currSkill->getAnimSpeed() * speedModifier;
+		float animSpeed = m_currSkill->getAnimSpeed() * speedModifier;
 		//if moving to a higher cell move slower else move faster
-		float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();
+		float heightDiff = m_map->getCell(m_lastPos)->getHeight() - m_map->getCell(m_pos)->getHeight();
 		float heightFactor = clamp(1.f + heightDiff / 5.f, 0.2f, 5.f);
 		animSpeed *= heightFactor;
 
 		// calculate anim cycle length
 		frameOffset = int(1.0000001f / animSpeed);
 
-		if (currSkill->hasSounds()) {
-			soundOffset = int(currSkill->getSoundStartTime() / animSpeed);
+		if (m_currSkill->hasSounds()) {
+			soundOffset = int(m_currSkill->getSoundStartTime() / animSpeed);
 			if (soundOffset < 1) ++soundOffset;
 			assert(soundOffset > 0);
 		}
 	}
 	// modify offsets for attack skills
-	if (currSkill->getClass() == SkillClass::ATTACK) {
-		fixed ratio = currSkill->getBaseSpeed() / fixed(getSpeed());
+	if (m_currSkill->getClass() == SkillClass::ATTACK) {
+		fixed ratio = m_currSkill->getBaseSpeed() / fixed(getSpeed());
 		frameOffset = (frameOffset * ratio).round();
 		if (soundOffset > 0) {
 			soundOffset = (soundOffset * ratio).round();
@@ -1565,17 +1565,17 @@ void Unit::updateAnimCycle(int frameOffset, int soundOffset, int attackOffset) {
 
 	const int &frame = g_world.getFrameCount();
 	assert(frameOffset > 0);
-	this->lastAnimReset = frame;
-	this->nextAnimReset = frame + frameOffset;
+	m_lastAnimReset = frame;
+	m_nextAnimReset = frame + frameOffset;
 	if (soundOffset > 0) {
-		this->soundStartFrame = frame + soundOffset;
+		m_soundStartFrame = frame + soundOffset;
 	} else {
-		this->soundStartFrame = -1;
+		m_soundStartFrame = -1;
 	}
 	if (attackOffset > 0) {
-		this->systemStartFrame = frame + attackOffset;
+		m_systemStartFrame = frame + attackOffset;
 	} else {
-		this->systemStartFrame = -1;
+		m_systemStartFrame = -1;
 	}
 
 }
@@ -1584,38 +1584,38 @@ void Unit::updateAnimCycle(int frameOffset, int soundOffset, int attackOffset) {
   * @param frameOffset the number of frames the next skill cycle will take */
 void Unit::updateSkillCycle(int frameOffset) {
 	// assert server doesn't use this for move...
-	assert(currSkill->getClass() != SkillClass::MOVE || g_simInterface.asClientInterface());
+	assert(m_currSkill->getClass() != SkillClass::MOVE || g_simInterface.asClientInterface());
 
 	// modify offset for upgrades/effects/etc
-	if (currSkill->getClass() != SkillClass::MOVE) {
+	if (m_currSkill->getClass() != SkillClass::MOVE) {
 		fixed ratio = getBaseSpeed() / fixed(getSpeed());
 		frameOffset = (frameOffset * ratio).round();
 	}
 	// else move skill, server has already modified speed for us
-	lastCommandUpdate = g_world.getFrameCount();
-	nextCommandUpdate = g_world.getFrameCount() + clamp(frameOffset, 1, 4095);
+	m_lastCommandUpdate = g_world.getFrameCount();
+	m_nextCommandUpdate = g_world.getFrameCount() + clamp(frameOffset, 1, 4095);
 
 }
 
 /** called by the server only, updates a skill cycle for the move skill */
 void Unit::updateMoveSkillCycle() {
 	assert(!g_simInterface.asClientInterface());
-	assert(currSkill->getClass() == SkillClass::MOVE);
+	assert(m_currSkill->getClass() == SkillClass::MOVE);
 	static const float speedModifier = 1.f / GameConstants::speedDivider / float(WORLD_FPS);
 
 	float progressSpeed = getSpeed() * speedModifier;
-	if (pos.x != nextPos.x && pos.y != nextPos.y) { // if moving in diagonal move slower
+	if (m_pos.x != m_nextPos.x && m_pos.y != m_nextPos.y) { // if moving in diagonal move slower
 		progressSpeed *= 0.71f;
 	}
 	// if moving to a higher cell move slower else move faster
-	float heightDiff = map->getCell(lastPos)->getHeight() - map->getCell(pos)->getHeight();
+	float heightDiff = m_map->getCell(m_lastPos)->getHeight() - m_map->getCell(m_pos)->getHeight();
 	float heightFactor = clamp(1.f + heightDiff / 5.f, 0.2f, 5.f);
 	progressSpeed *= heightFactor;
 
-	// reset lastCommandUpdate and calculate next skill cycle length
-	lastCommandUpdate = g_world.getFrameCount();
+	// reset m_lastCommandUpdate and calculate next skill cycle length
+	m_lastCommandUpdate = g_world.getFrameCount();
 	int frameOffset = clamp(int(1.0000001f / progressSpeed) + 1, 1, 4095);
-	nextCommandUpdate = g_world.getFrameCount() + frameOffset; 
+	m_nextCommandUpdate = g_world.getFrameCount() + frameOffset; 
 }
 
 /** wrapper for World::updateUnits */
@@ -1630,7 +1630,7 @@ void Unit::doUpdate() {
 				}
 			} else {
 				if (getType()->getCloakClass() == CloakClass::PERMANENT
-				&& !getCurrSkill()->causesDeCloak() && faction->reqsOk(type->getCloakType())) {
+				&& !getCurrSkill()->causesDeCloak() && m_faction->reqsOk(m_type->getCloakType())) {
 					cloak();
 				}
 			}
@@ -1677,21 +1677,21 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 	const int &frame = g_world.getFrameCount();
 
 	// start skill sound ?
-	if (currSkill->getSound() && frame == getSoundStartFrame()) {
+	if (m_currSkill->getSound() && frame == getSoundStartFrame()) {
 		Unit *carrier = (m_carrier != -1 ? g_world.getUnit(m_carrier) : 0);
 		Vec2i cellPos = carrier ? carrier->getCenteredPos() : getCenteredPos();
 		Vec3f vec = carrier ? carrier->getCurrVector() : getCurrVector();
-		if (map->getTile(Map::toTileCoords(cellPos))->isVisible(g_world.getThisTeamIndex())) {
-			g_soundRenderer.playFx(currSkill->getSound(), vec, g_gameState.getGameCamera()->getPos());
+		if (m_map->getTile(Map::toTileCoords(cellPos))->isVisible(g_world.getThisTeamIndex())) {
+			g_soundRenderer.playFx(m_currSkill->getSound(), vec, g_gameState.getGameCamera()->getPos());
 		}
 	}
 
 	// start attack/spell systems ?
 	if (frame == getSystemStartFrame()) {
-		if (currSkill->getClass() == SkillClass::ATTACK) {
-			startAttackSystems(static_cast<const AttackSkillType*>(currSkill));
-		} else if (currSkill->getClass() == SkillClass::CAST_SPELL) {
-			startSpellSystems(static_cast<const CastSpellSkillType*>(currSkill));
+		if (m_currSkill->getClass() == SkillClass::ATTACK) {
+			startAttackSystems(static_cast<const AttackSkillType*>(m_currSkill));
+		} else if (m_currSkill->getClass() == SkillClass::CAST_SPELL) {
+			startSpellSystems(static_cast<const CastSpellSkillType*>(m_currSkill));
 		} else {
 			assert(false);
 		}
@@ -1704,13 +1704,13 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 	}
 
 	// update emanations every 8 frames
-	if (this->getEmanations().size() && !((frame + id) % 8) && isOperative()) {
+	if (this->getEmanations().size() && !((frame + m_id) % 8) && isOperative()) {
 		updateEmanations();
 	}
 
 	// fade highlight
-	if (highlight > 0.f) {
-		highlight -= 1.f / (GameConstants::highlightTime * WORLD_FPS);
+	if (m_highlight > 0.f) {
+		m_highlight -= 1.f / (GameConstants::highlightTime * WORLD_FPS);
 	}
 
 	// update cloak alpha
@@ -1732,18 +1732,18 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 	updateTarget();
 	
 	// rotation
-	bool moved = currSkill->getClass() == SkillClass::MOVE;
+	bool moved = m_currSkill->getClass() == SkillClass::MOVE;
 	bool rotated = false;
-	if (currSkill->getClass() != SkillClass::STOP) {
+	if (m_currSkill->getClass() != SkillClass::STOP) {
 		const float rotFactor = 2.f;
 		if (getProgress() < 1.f / rotFactor) {
-			if (type->getFirstStOfClass(SkillClass::MOVE) || type->getFirstStOfClass(SkillClass::MORPH)) {
+			if (m_type->getFirstStOfClass(SkillClass::MOVE) || m_type->getFirstStOfClass(SkillClass::MORPH)) {
 				rotated = true;
-				if (abs(lastRotation - targetRotation) < 180) {
-					rotation = lastRotation + (targetRotation - lastRotation) * getProgress() * rotFactor;
+				if (abs(m_lastRotation - m_targetRotation) < 180) {
+					m_rotation = m_lastRotation + (m_targetRotation - m_lastRotation) * getProgress() * rotFactor;
 				} else {
-					float rotationTerm = targetRotation > lastRotation ? -360.f : + 360.f;
-					rotation = lastRotation + (targetRotation - lastRotation + rotationTerm)
+					float rotationTerm = m_targetRotation > m_lastRotation ? -360.f : + 360.f;
+					m_rotation = m_lastRotation + (m_targetRotation - m_lastRotation + rotationTerm)
 						* getProgress() * rotFactor;
 				}
 			}
@@ -1752,29 +1752,29 @@ bool Unit::update() { ///@todo should this be renamed to hasFinishedCycle()?
 
 	if (!isCarried()) {
 		// update particle system location/orientation
-		if (fire && moved) {
-			fire->setPos(getCurrVector());
-			smoke->setPos(getCurrVector());
+		if (m_fire && moved) {
+			m_fire->setPos(getCurrVector());
+			m_smoke->setPos(getCurrVector());
 		}
 		if (moved || rotated) {
-			foreach (UnitParticleSystems, it, skillParticleSystems) {
+			foreach (UnitParticleSystems, it, m_skillParticleSystems) {
 				if (moved) (*it)->setPos(getCurrVector());
 				if (rotated) (*it)->setRotation(getRotation());
 			}
-			foreach (UnitParticleSystems, it, effectParticleSystems) {
+			foreach (UnitParticleSystems, it, m_effectParticleSystems) {
 				if (moved) (*it)->setPos(getCurrVector());
 				if (rotated) (*it)->setRotation(getRotation());
 			}
 		}
 	}
 	// check for cycle completion
-	// '>=' because nextCommandUpdate can be < frameCount if unit is dead
+	// '>=' because m_nextCommandUpdate can be < frameCount if unit is dead
 	if (frame >= getNextCommandUpdate()) {
-		lastRotation = targetRotation;
-		if (currSkill->getClass() != SkillClass::DIE) {
+		m_lastRotation = m_targetRotation;
+		if (m_currSkill->getClass() != SkillClass::DIE) {
 			return true;
 		} else {
-			++progress2;
+			++m_progress2;
 		}
 	}
 	return false;
@@ -1786,8 +1786,8 @@ void Unit::updateEmanations() {
 	static EffectTypes singleEmanation(1);
 	foreach_const (Emanations, i, getEmanations()) {
 		singleEmanation[0] = *i;
-		g_world.applyEffects(this, singleEmanation, pos, Field::LAND, (*i)->getRadius());
-		g_world.applyEffects(this, singleEmanation, pos, Field::AIR, (*i)->getRadius());
+		g_world.applyEffects(this, singleEmanation, m_pos, Field::LAND, (*i)->getRadius());
+		g_world.applyEffects(this, singleEmanation, m_pos, Field::AIR, (*i)->getRadius());
 	}
 }
 
@@ -1798,7 +1798,7 @@ void Unit::updateEmanations() {
  * @returns true if the unit dies
  */
 bool Unit::doRegen(int hpRegeneration, int epRegeneration) {
-	if (hp < 1) {
+	if (m_hp < 1) {
 		// dead people don't regenerate
 		return true;
 	}
@@ -1813,18 +1813,18 @@ bool Unit::doRegen(int hpRegeneration, int epRegeneration) {
 	}
 
 	//ep regen/degen
-	ep += epRegeneration;
-	if (ep > getMaxEp()) {
-		ep = getMaxEp();
-	} else if(ep < 0) {
-		ep = 0;
+	m_ep += epRegeneration;
+	if (m_ep > getMaxEp()) {
+		m_ep = getMaxEp();
+	} else if(m_ep < 0) {
+		m_ep = 0;
 	}
 	return false;
 }
 
 void Unit::checkEffectCloak() {
 	if (m_cloaked) {
-		foreach (Effects, ei, effects) {
+		foreach (Effects, ei, m_effects) {
 			if ((*ei)->getType()->isCauseCloak() && (*ei)->getType()->isEffectsAlly()) {
 				return;
 			}
@@ -1835,37 +1835,37 @@ void Unit::checkEffectCloak() {
 
 /**
  * Update the unit by one tick.
- * @returns if the unit died during this call, the killer is returned, NULL otherwise.
+ * @returns if the unit died during this call, the killer is returned, nullptr otherwise.
  */
 Unit* Unit::tick() {
-	Unit *killer = NULL;
+	Unit *killer = nullptr;
 	
 	// tick command types
-	for (Commands::iterator i = commands.begin(); i != commands.end(); ++i) {
+	for (Commands::iterator i = m_commands.begin(); i != m_commands.end(); ++i) {
 		(*i)->getType()->tick(this, (**i));
 	}
 	if (isAlive()) {
 		if (doRegen(getHpRegeneration(), getEpRegeneration())) {
-			if (!(killer = effects.getKiller())) {
+			if (!(killer = m_effects.getKiller())) {
 				// if no killer, then this had to have been natural degeneration
 				killer = this;
 			}
 		}
 
 		// apply cloak cost
-		if (m_cloaked && type->getCloakClass() == CloakClass::ENERGY) {
-			int cost = type->getCloakType()->getEnergyCost();
+		if (m_cloaked && m_type->getCloakClass() == CloakClass::ENERGY) {
+			int cost = m_type->getCloakType()->getEnergyCost();
 			if (!decEp(cost)) {
 				deCloak();
 			}
 		}
 	}
 
-	effects.tick();
-	if (effects.isDirty()) {
+	m_effects.tick();
+	if (m_effects.isDirty()) {
 		recalculateStats();
 		checkEffectParticles();
-		if (type->getCloakClass() == CloakClass::EFFECT) {
+		if (m_type->getCloakClass() == CloakClass::EFFECT) {
 			checkEffectCloak();
 		}
 	}
@@ -1879,13 +1879,13 @@ Unit* Unit::tick() {
 bool Unit::computeEp() {
 
 	// if not enough ep
-	int cost = currSkill->getEpCost();
+	int cost = m_currSkill->getEpCost();
 	if (cost == 0) {
 		return false;
 	}
 	if (decEp(cost)) {
-		if (ep > getMaxEp()) {
-			ep = getMaxEp();
+		if (m_ep > getMaxEp()) {
+			m_ep = getMaxEp();
 		}
 		return false;
 	}
@@ -1904,34 +1904,34 @@ bool Unit::repair(int amount, fixed multiplier) {
 
 	//if not specified, use default value
 	if (!amount) {
-		amount = getType()->getMaxHp() / type->getProductionTime() + 1;
+		amount = getType()->getMaxHp() / m_type->getProductionTime() + 1;
 	}
 	amount = (amount * multiplier).intp();
 
 	//increase hp
-	hp += amount;
-	if (hp_above_trigger && hp > hp_above_trigger) {
-		hp_above_trigger = 0;
+	m_hp += amount;
+	if (m_hpAboveTrigger && m_hp > m_hpAboveTrigger) {
+		m_hpAboveTrigger = 0;
 		ScriptManager::onHPAboveTrigger(this);
 	}
-	if (hp > getMaxHp()) {
-		hp = getMaxHp();
+	if (m_hp > getMaxHp()) {
+		m_hp = getMaxHp();
 		if (!isBuilt()) {
-			faction->checkAdvanceSubfaction(type, true);
+			m_faction->checkAdvanceSubfaction(m_type, true);
 			born();
 		}
 		return true;
 	}
 	if (!isBuilt() && getCurrSkill()->isStretchyAnim()) {
-		if (hp > getProgress2()) {
-			setProgress2(hp);
+		if (m_hp > getProgress2()) {
+			setProgress2(m_hp);
 		}
 	}
 	//stop fire
-	if (hp > type->getMaxHp() / 2 && fire != NULL) {
-		fire->fade();
-		smoke->fade();
-		fire = smoke = 0;
+	if (m_hp > m_type->getMaxHp() / 2 && m_fire != nullptr) {
+		m_fire->fade();
+		m_smoke->fade();
+		m_fire = m_smoke = 0;
 	}
 	return false;
 }
@@ -1939,8 +1939,8 @@ bool Unit::repair(int amount, fixed multiplier) {
 /** Decrements EP by the specified amount
   * @return true if there was sufficient ep, false otherwise */
 bool Unit::decEp(int i) {
-	if (ep >= i) {
-		ep -= i;
+	if (m_ep >= i) {
+		m_ep -= i;
 		return true;
 	} else {
 		return false;
@@ -1955,31 +1955,31 @@ bool Unit::decHp(int i) {
 	assert(i >= 0);
 	// we shouldn't ever go negative
 	assert(hp > 0 || i == 0);
-	hp -= i;
-	if (hp_below_trigger && hp < hp_below_trigger) {
-		hp_below_trigger = 0;
+	m_hp -= i;
+	if (m_hpBelowTrigger && m_hp < m_hpBelowTrigger) {
+		m_hpBelowTrigger = 0;
 		ScriptManager::onHPBelowTrigger(this);
 	}
 
 	// fire
-	if (type->getProperty(Property::BURNABLE) && hp < type->getMaxHp() / 2
-	&& fire == 0 && m_carrier == -1) {
+	if (m_type->getProperty(Property::BURNABLE) && m_hp < m_type->getMaxHp() / 2
+	&& m_fire == 0 && m_carrier == -1) {
 		Vec2i cPos = getCenteredPos();
 		Tile *tile = g_map.getTile(Map::toTileCoords(cPos));
 		bool vis = tile->isVisible(g_world.getThisTeamIndex()) && g_renderer.getCuller().isInside(cPos);
-		fire = new FireParticleSystem(this, vis, 1000);
-		g_renderer.manageParticleSystem(fire, ResourceScope::GAME);
-		smoke = new SmokeParticleSystem(this, vis, 400);
-		g_renderer.manageParticleSystem(smoke, ResourceScope::GAME);
+		m_fire = new FireParticleSystem(this, vis, 1000);
+		g_renderer.manageParticleSystem(m_fire, ResourceScope::GAME);
+		m_smoke = new SmokeParticleSystem(this, vis, 400);
+		g_renderer.manageParticleSystem(m_smoke, ResourceScope::GAME);
 	}
 
 	// stop fire on death
-	if (hp <= 0) {
-		hp = 0;
-		if (fire) {
-			fire->fade();
-			smoke->fade();
-			fire = smoke = 0;
+	if (m_hp <= 0) {
+		m_hp = 0;
+		if (m_fire) {
+			m_fire->fade();
+			m_smoke->fade();
+			m_fire = m_smoke = 0;
 		}
 		return true;
 	}
@@ -1988,23 +1988,23 @@ bool Unit::decHp(int i) {
 
 string Unit::getShortDesc() const {
 	stringstream ss;
-	ss << g_lang.get("Hp") << ": " << hp << "/" << getMaxHp();
+	ss << g_lang.get("Hp") << ": " << m_hp << "/" << getMaxHp();
 	if (getHpRegeneration()) {
 		ss << " (" << g_lang.get("Regeneration") << ": " << getHpRegeneration() << ")";
 	}
 	if (getMaxEp()) {
-		ss << endl << g_lang.get("Ep") << ": " << ep << "/" << getMaxEp();
+		ss << endl << g_lang.get("Ep") << ": " << m_ep << "/" << getMaxEp();
 		if (getEpRegeneration()) {
 			ss << " (" << g_lang.get("Regeneration") << ": " << getEpRegeneration() << ")";
 		}
 	}
-	if (!commands.empty()) { // Show current command being executed
-		string factionName = faction->getType()->getName();
-		string commandName = commands.front()->getType()->getName();
+	if (!m_commands.empty()) { // Show current command being executed
+		string factionName = m_faction->getType()->getName();
+		string commandName = m_commands.front()->getType()->getName();
 		string nameString = g_lang.getFactionString(factionName, commandName);
 		if (nameString == commandName) {
 			nameString = formatString(commandName);
-			string classString = formatString(CmdClassNames[commands.front()->getType()->getClass()]);
+			string classString = formatString(CmdClassNames[m_commands.front()->getType()->getClass()]);
 			if (nameString == classString) {
 				nameString = g_lang.get(classString);
 			}
@@ -2020,30 +2020,30 @@ string Unit::getLongDesc() const {
 	string shortDesc = getShortDesc();
 	stringstream ss;
 
-	const string factionName = type->getFactionType()->getName();
-	int armorBonus = getArmor() - type->getArmor();
-	int sightBonus = getSight() - type->getSight();
+	const string factionName = m_type->getFactionType()->getName();
+	int armorBonus = getArmor() - m_type->getArmor();
+	int sightBonus = getSight() - m_type->getSight();
 
 	// armor
-	ss << endl << lang.get("Armor") << ": " << type->getArmor();
+	ss << endl << lang.get("Armor") << ": " << m_type->getArmor();
 	if (armorBonus) {
 		ss << (armorBonus > 0 ? " +" : " ") << armorBonus;
 	}
-	string armourName = lang.getTechString(type->getArmourType()->getName());
-	if (armourName == type->getArmourType()->getName()) {
+	string armourName = lang.getTechString(m_type->getArmourType()->getName());
+	if (armourName == m_type->getArmourType()->getName()) {
 		armourName = formatString(armourName);
 	}
 	ss << " (" << armourName << ")";
 
 	// sight
-	ss << endl << lang.get("Sight") << ": " << type->getSight();
+	ss << endl << lang.get("Sight") << ": " << m_type->getSight();
 	if (sightBonus) {
 		ss << (sightBonus > 0 ? " +" : " ") << sightBonus;
 	}
 	// cloaked ?
 	if (isCloaked()) {
 		string gRes, res;
-		string group = world.getCloakGroupName(type->getCloakType()->getCloakGroup());
+		string group = world.getCloakGroupName(m_type->getCloakType()->getCloakGroup());
 		if (!lang.lookUp(group, factionName, gRes)) {
 			gRes = formatString(group);
 		}
@@ -2051,9 +2051,9 @@ string Unit::getLongDesc() const {
 		ss << endl << res;
 	}
 	// detector ?
-	if (type->isDetector()) {
+	if (m_type->isDetector()) {
 		string gRes, res;
-		const DetectorType *dt = type->getDetectorType();
+		const DetectorType *dt = m_type->getDetectorType();
 		if (dt->getGroupCount() == 1) {
 			int id = dt->getGroup(0);
 			string group = world.getCloakGroupName(id);
@@ -2077,8 +2077,8 @@ string Unit::getLongDesc() const {
 
 	// kills
 	const Level *nextLevel = getNextLevel();
-	if (kills > 0 || nextLevel) {
-		ss << endl << lang.get("Kills") << ": " << kills;
+	if (m_kills > 0 || nextLevel) {
+		ss << endl << lang.get("Kills") << ": " << m_kills;
 		if (nextLevel) {
 			string levelName = lang.getFactionString(getFaction()->getType()->getName(), nextLevel->getName());
 			if (levelName == nextLevel->getName()) {
@@ -2089,16 +2089,16 @@ string Unit::getLongDesc() const {
 	}
 
 	// resource load
-	if (loadCount) {
-		string resName = lang.getTechString(loadType->getName());
-		if (resName == loadType->getName()) {
+	if (m_loadCount) {
+		string resName = lang.getTechString(m_loadType->getName());
+		if (resName == m_loadType->getName()) {
 			resName = formatString(resName);
 		}
-		ss << endl << lang.get("Load") << ": " << loadCount << "  " << resName;
+		ss << endl << lang.get("Load") << ": " << m_loadCount << "  " << resName;
 	}
 
 	// consumable production
-	for (int i = 0; i < type->getCostCount(); ++i) {
+	for (int i = 0; i < m_type->getCostCount(); ++i) {
 		const ResourceAmount r = getType()->getCost(i, getFaction());
 		if (r.getType()->getClass() == ResourceClass::CONSUMABLE) {
 			string resName = lang.getTechString(r.getType()->getName());
@@ -2110,9 +2110,9 @@ string Unit::getLongDesc() const {
 		}
 	}
 	// can store
-	if (type->getStoredResourceCount() > 0) {
-		for (int i = 0; i < type->getStoredResourceCount(); ++i) {
-			ResourceAmount r = type->getStoredResource(i, getFaction());
+	if (m_type->getStoredResourceCount() > 0) {
+		for (int i = 0; i < m_type->getStoredResourceCount(); ++i) {
+			ResourceAmount r = m_type->getStoredResource(i, getFaction());
 			string resName = lang.getTechString(r.getType()->getName());
 			if (resName == r.getType()->getName()) {
 				resName = formatString(resName);
@@ -2122,31 +2122,31 @@ string Unit::getLongDesc() const {
 		}
 	}
 	// effects
-	effects.streamDesc(ss);
+	m_effects.streamDesc(ss);
 
 	return (shortDesc + ss.str());
 }
 
 /** Apply effects of an UpgradeType
-  * @param upgradeType the type describing the Upgrade to apply*/
+  * @param upgradeType the m_type describing the Upgrade to apply*/
 void Unit::applyUpgrade(const UpgradeType *upgradeType) {
-	const EnhancementType *et = upgradeType->getEnhancement(type);
+	const EnhancementType *et = upgradeType->getEnhancement(m_type);
 	if (et) {
-		totalUpgrade.sum(et);
+		m_totalUpgrade.sum(et);
 		recalculateStats();
 		doRegen(et->getHpBoost(), et->getEpBoost());
 	}
 }
 
-/** recompute stats, re-evaluate upgrades & level and recalculate totalUpgrade */
+/** recompute stats, re-evaluate upgrades & m_level and recalculate totalUpgrade */
 void Unit::computeTotalUpgrade() {
-	faction->getUpgradeManager()->computeTotalUpgrade(this, &totalUpgrade);
-	level = NULL;
-	for (int i = 0; i < type->getLevelCount(); ++i) {
-		const Level *level = type->getLevel(i);
-		if (kills >= level->getKills()) {
-			totalUpgrade.sum(level);
-			this->level = level;
+	m_faction->getUpgradeManager()->computeTotalUpgrade(this, &m_totalUpgrade);
+	m_level = nullptr;
+	for (int i = 0; i < m_type->getLevelCount(); ++i) {
+		const Level *m_level = m_type->getLevel(i);
+		if (m_kills >= m_level->getKills()) {
+			m_totalUpgrade.sum(m_level);
+			this->m_level = m_level;
 		} else {
 			break;
 		}
@@ -2161,47 +2161,47 @@ void Unit::computeTotalUpgrade() {
  */
 void Unit::recalculateStats() {
 	int oldMaxHp = getMaxHp();
-	int oldHp = hp;
+	int oldHp = m_hp;
 	int oldSight = getSight();
 
 	EnhancementType::reset();
-	UnitStats::setValues(*type);
+	UnitStats::setValues(*m_type);
 
 	// add up all multipliers first and then apply (multiply) once.
 	// See EnhancementType::addMultipliers() for the 'adding' strategy
-	EnhancementType::addMultipliers(totalUpgrade);
-	for (Effects::const_iterator i = effects.begin(); i != effects.end(); ++i) {
+	EnhancementType::addMultipliers(m_totalUpgrade);
+	for (Effects::const_iterator i = m_effects.begin(); i != m_effects.end(); ++i) {
 		EnhancementType::addMultipliers(*(*i)->getType(), (*i)->getStrength());
 	}
 	EnhancementType::clampMultipliers();
 	UnitStats::applyMultipliers(*this);
-	UnitStats::addStatic(totalUpgrade);
-	for (Effects::const_iterator i = effects.begin(); i != effects.end(); ++i) {
+	UnitStats::addStatic(m_totalUpgrade);
+	for (Effects::const_iterator i = m_effects.begin(); i != m_effects.end(); ++i) {
 		UnitStats::addStatic(*(*i)->getType(), (*i)->getStrength());
 
-		// take care of effect damage type
-		hpRegeneration += (*i)->getActualHpRegen() - (*i)->getType()->getHpRegeneration();
+		// take care of effect damage m_type
+		m_hpRegeneration += (*i)->getActualHpRegen() - (*i)->getType()->getHpRegeneration();
 	}
 
-	effects.clearDirty();
+	m_effects.clearDirty();
 
 	// correct negatives
 	sanitiseUnitStats();
 
 	// adjust hp (if maxHp was modified)
 	if (getMaxHp() > oldMaxHp) {
-		hp += getMaxHp() - oldMaxHp;
-	} else if (hp > getMaxHp()) {
-		hp = getMaxHp();
+		m_hp += getMaxHp() - oldMaxHp;
+	} else if (m_hp > getMaxHp()) {
+		m_hp = getMaxHp();
 	}
 
-	if (oldSight != getSight() && type->getDetectorType()) {
+	if (oldSight != getSight() && m_type->getDetectorType()) {
 		g_cartographer.detectorSightModified(this, oldSight);
 	}
 	
 	// If this guy is dead, make sure they stay dead
 	if (oldHp < 1) {
-		hp = 0;
+		m_hp = 0;
 	}
 }
 
@@ -2215,7 +2215,7 @@ bool Unit::add(Effect *e) {
 	//	return false;
 	//}
 	if (!e->getType()->getAffectTag().empty()) {
-		if (!type->hasTag(e->getType()->getAffectTag())) {
+		if (!m_type->hasTag(e->getType()->getAffectTag())) {
 			g_world.getEffectFactory().deleteInstance(e);
 			return false;
 		}
@@ -2232,19 +2232,19 @@ bool Unit::add(Effect *e) {
 			return false;
 		}
 	}
-	if (type->getCloakClass() == CloakClass::EFFECT && e->getType()->isCauseCloak() 
-	&& e->getType()->isEffectsAlly() && faction->reqsOk(type->getCloakType())) {
+	if (m_type->getCloakClass() == CloakClass::EFFECT && e->getType()->isCauseCloak() 
+	&& e->getType()->isEffectsAlly() && m_faction->reqsOk(m_type->getCloakType())) {
 		cloak();
 	}
 
 	const UnitParticleSystemTypes &particleTypes = e->getType()->getParticleTypes();
 
 	bool startParticles = true;
-	if (effects.add(e)) {
+	if (m_effects.add(e)) {
 		if (isCarried()) {
 			startParticles = false;
 		} else {
-			foreach (Effects, it, effects) {
+			foreach (Effects, it, m_effects) {
 				if (e != *it && e->getType() == (*it)->getType()) {
 					startParticles = false;
 					break;
@@ -2259,7 +2259,7 @@ bool Unit::add(Effect *e) {
 		startParticleSystems(particleTypes);
 	}
 
-	if (effects.isDirty()) {
+	if (m_effects.isDirty()) {
 		recalculateStats();
 	}
 
@@ -2273,7 +2273,7 @@ void Unit::startParticleSystems(const UnitParticleSystemTypes &types) {
 
 	foreach_const (UnitParticleSystemTypes, it, types) {
 		bool startNew = true;
-		foreach_const (UnitParticleSystems, upsIt, effectParticleSystems) {
+		foreach_const (UnitParticleSystems, upsIt, m_effectParticleSystems) {
 			if ((*upsIt)->getType() == (*it)) {
 				startNew = false;
 				break;
@@ -2284,8 +2284,8 @@ void Unit::startParticleSystems(const UnitParticleSystemTypes &types) {
 			ups->setPos(getCurrVector());
 			ups->setRotation(getRotation());
 			//ups->setFactionColor(getFaction()->getTexture()->getPixmap()->getPixel3f(0,0));
-			effectParticleSystems.push_back(ups);
-			Colour c = faction->getColour();
+			m_effectParticleSystems.push_back(ups);
+			Colour c = m_faction->getColour();
 			Vec3f colour = Vec3f(c.r / 255.f, c.g / 255.f, c.b / 255.f);
 			ups->setTeamColour(colour);
 			g_renderer.manageParticleSystem(ups, ResourceScope::GAME);
@@ -2298,16 +2298,16 @@ void Unit::startParticleSystems(const UnitParticleSystemTypes &types) {
  * originator has died.  The caller is expected to clean up the Effect object.
  */
 void Unit::remove(Effect *e) {
-	effects.remove(e);
+	m_effects.remove(e);
 
-	if (effects.isDirty()) {
+	if (m_effects.isDirty()) {
 		recalculateStats();
 	}
 }
 
 void Unit::checkEffectParticles() {
 	set<const EffectType*> seenEffects;
-	foreach (Effects, it, effects) {
+	foreach (Effects, it, m_effects) {
 		seenEffects.insert((*it)->getType());
 	}
 	set<const UnitParticleSystemType*> seenSystems;
@@ -2317,11 +2317,11 @@ void Unit::checkEffectParticles() {
 			seenSystems.insert(*it2);
 		}
 	}
-	UnitParticleSystems::iterator psIt = effectParticleSystems.begin();
-	while (psIt != effectParticleSystems.end()) {
+	UnitParticleSystems::iterator psIt = m_effectParticleSystems.begin();
+	while (psIt != m_effectParticleSystems.end()) {
 		if (seenSystems.find((*psIt)->getType()) == seenSystems.end()) {
 			(*psIt)->fade();
-			psIt = effectParticleSystems.erase(psIt);
+			psIt = m_effectParticleSystems.erase(psIt);
 		} else {
 			++psIt;
 		}
@@ -2334,22 +2334,22 @@ void Unit::checkEffectParticles() {
  */
 void Unit::effectExpired(Effect *e) {
 	e->clearSource();
-	effectsCreated.remove(e);
-	effects.clearRootRef(e);
+	m_effectsCreated.remove(e);
+	m_effects.clearRootRef(e);
 
-	if (effects.isDirty()) {
+	if (m_effects.isDirty()) {
 		recalculateStats();
 	}
 }
 
-/** Another one bites the dust. Increment 'kills' & check level */
+/** Another one bites the dust. Increment 'kills' & check m_level */
 void Unit::incKills() {
-	++kills;
+	++m_kills;
 
 	const Level *nextLevel = getNextLevel();
-	if (nextLevel != NULL && kills >= nextLevel->getKills()) {
-		level = nextLevel;
-		totalUpgrade.sum(level);
+	if (nextLevel != nullptr && m_kills >= nextLevel->getKills()) {
+		m_level = nextLevel;
+		m_totalUpgrade.sum(m_level);
 		recalculateStats();
 	}
 }
@@ -2357,24 +2357,24 @@ void Unit::incKills() {
 /** Perform a morph @param mct the CommandType describing the morph @return true if successful */
 bool Unit::morph(const MorphCommandType *mct, const UnitType *ut, Vec2i offset, bool reprocessCommands) {
 	Field newField = ut->getField();
-	CloakClass oldCloakClass = type->getCloakClass();
-	if (map->areFreeCellsOrHasUnit(pos + offset, ut->getSize(), newField, this)) {
-		const UnitType *oldType = type;
-		map->clearUnitCells(this, pos);
-		faction->deApplyStaticCosts(type);
-		type = ut;
-		pos += offset;
+	CloakClass oldCloakClass = m_type->getCloakClass();
+	if (m_map->areFreeCellsOrHasUnit(m_pos + offset, ut->getSize(), newField, this)) {
+		const UnitType *oldType = m_type;
+		m_map->clearUnitCells(this, m_pos);
+		m_faction->deApplyStaticCosts(m_type);
+		m_type = ut;
+		m_pos += offset;
 		computeTotalUpgrade();
-		map->putUnitCells(this, pos);
-		faction->giveRefund(ut, mct->getRefund());
-		faction->applyStaticProduction(ut);
+		m_map->putUnitCells(this, m_pos);
+		m_faction->giveRefund(ut, mct->getRefund());
+		m_faction->applyStaticProduction(ut);
 
 		// make sure the new UnitType has a CloakType before attempting to use it
-		if (type->getCloakType()) {
+		if (m_type->getCloakType()) {
 			if (m_cloaked && oldCloakClass != ut->getCloakClass()) {
 				deCloak();
 			}
-			if (ut->getCloakClass() == CloakClass::PERMANENT && faction->reqsOk(type->getCloakType())) {
+			if (ut->getCloakClass() == CloakClass::PERMANENT && m_faction->reqsOk(m_type->getCloakType())) {
 				cloak();
 			}
 		} else {
@@ -2382,25 +2382,25 @@ bool Unit::morph(const MorphCommandType *mct, const UnitType *ut, Vec2i offset, 
 		}
 
 		if (reprocessCommands) {
-			// reprocess commands
+			// reprocess m_commands
 			Commands newCommands;
 			Commands::const_iterator i;
 
 			// add current command, which should be the morph command
-			assert(commands.size() > 0 
-				&& (commands.front()->getType()->getClass() == CmdClass::MORPH
-				|| commands.front()->getType()->getClass() == CmdClass::TRANSFORM));
-			newCommands.push_back(commands.front());
-			i = commands.begin();
+			assert(m_commands.size() > 0 
+				&& (m_commands.front()->getType()->getClass() == CmdClass::MORPH
+				|| m_commands.front()->getType()->getClass() == CmdClass::TRANSFORM));
+			newCommands.push_back(m_commands.front());
+			i = m_commands.begin();
 			++i;
 
 			// add (any) remaining if possible
-			for (; i != commands.end(); ++i) {
-				// first see if the new unit type has a command by the same name
-				const CommandType *newCmdType = type->getCommandType((*i)->getType()->getName());
+			for (; i != m_commands.end(); ++i) {
+				// first see if the new unit m_type has a command by the same name
+				const CommandType *newCmdType = m_type->getCommandType((*i)->getType()->getName());
 				// if not, lets see if we can find any command of the same class
 				if (!newCmdType) {
-					newCmdType = type->getFirstCtOfClass((*i)->getType()->getClass());
+					newCmdType = m_type->getFirstCtOfClass((*i)->getType()->getClass());
 				}
 				// if still not found, we drop the comand, otherwise, we add it to the new list
 				if (newCmdType) {
@@ -2408,10 +2408,10 @@ bool Unit::morph(const MorphCommandType *mct, const UnitType *ut, Vec2i offset, 
 					newCommands.push_back(*i);
 				}
 			}
-			commands = newCommands;
+			m_commands = newCommands;
 		}
 		StateChanged(this);
-		faction->onUnitMorphed(type, oldType);
+		m_faction->onUnitMorphed(m_type, oldType);
 		return true;
 	} else {
 		return false;
@@ -2420,25 +2420,25 @@ bool Unit::morph(const MorphCommandType *mct, const UnitType *ut, Vec2i offset, 
 
 bool Unit::transform(const TransformCommandType *tct, const UnitType *ut, Vec2i pos, CardinalDir facing) {
 	RUNTIME_CHECK(ut->getFirstCtOfClass(CmdClass::BUILD_SELF) != 0);
-	Vec2i offset = pos - this->pos;
+	Vec2i offset = pos - m_pos;
 	m_facing = facing; // needs to be set for putUnitCells() [happens in morph()]
-	const UnitType *oldType = type;
+	const UnitType *oldType = m_type;
 	int oldHp = getHp();
 	if (morph(tct, ut, offset, false)) {
-		rotation = facing * 90.f;
+		m_rotation = float(m_facing) * 90.f;
 		HpPolicy policy = tct->getHpPolicy();
 		if (policy == HpPolicy::SET_TO_ONE) {
-			hp = 1;
+			m_hp = 1;
 		} else if (policy == HpPolicy::RESET) {
-			hp = type->getMaxHp() / 20;
+			m_hp = m_type->getMaxHp() / 20;
 		} else {
 			if (oldHp < getMaxHp()) {
-				hp = oldHp;
+				m_hp = oldHp;
 			} else {
-				hp = getMaxHp();
+				m_hp = getMaxHp();
 			}
 		}
-		commands.clear();
+		m_commands.clear();
 		g_simInterface.getCommander()->trySimpleCommand(this, CmdClass::BUILD_SELF);
 		setCurrSkill(SkillClass::BUILD_SELF);
 		return true;
@@ -2453,8 +2453,8 @@ bool Unit::transform(const TransformCommandType *tct, const UnitType *ut, Vec2i 
   * @return the height this unit 'stands' at
   */
 float Unit::computeHeight(const Vec2i &pos) const {
-	const Cell *const &cell = map->getCell(pos);
-	switch (type->getField()) {
+	const Cell *const &cell = m_map->getCell(pos);
+	switch (m_type->getField()) {
 		case Field::LAND:
 			return cell->getHeight();
 		case Field::AIR:
@@ -2466,7 +2466,7 @@ float Unit::computeHeight(const Vec2i &pos) const {
 			// else on water, fall through
 		case Field::ANY_WATER:
 		case Field::DEEP_WATER:
-			return map->getWaterLevel();
+			return m_map->getWaterLevel();
 		default:
 			throw runtime_error("Unhandled Field in Unit::computeHeight()");
 	}
@@ -2476,20 +2476,20 @@ float Unit::computeHeight(const Vec2i &pos) const {
   * @param target the unit we are tracking */
 void Unit::updateTarget(const Unit *target) {
 	if (!target) {
-		target = g_world.getUnit(targetRef);
+		target = g_world.getUnit(m_targetRef);
 	}
 
 	if (target) {
 		if (target->isCarried()) {
 			target = g_world.getUnit(target->getCarrier());
 		}
-		targetPos = useNearestOccupiedCell
-				? target->getNearestOccupiedCell(pos)
-				: targetPos = target->getCenteredPos();
-		targetField = target->getCurrField();
-		targetVec = target->getCurrVector();
+		m_targetPos = m_useNearestOccupiedCell
+				? target->getNearestOccupiedCell(m_pos)
+				: m_targetPos = target->getCenteredPos();
+		m_targetField = target->getCurrField();
+		m_targetVec = target->getCurrVector();
 
-		if (faceTarget) {
+		if (m_faceTarget) {
 			face(target->getCenteredPos());
 		}
 	}
@@ -2498,10 +2498,10 @@ void Unit::updateTarget(const Unit *target) {
 /** clear command queue */
 void Unit::clearCommands() {
 	cancelCurrCommand();
-	while (!commands.empty()) {
-		undoCommand(*commands.back());
-		g_world.deleteCommand(commands.back());
-		commands.pop_back();
+	while (!m_commands.empty()) {
+		undoCommand(*m_commands.back());
+		g_world.deleteCommand(m_commands.back());
+		m_commands.pop_back();
 	}
 }												
 
@@ -2516,24 +2516,24 @@ CmdResult Unit::checkCommand(const Command &command) const {
 		return CmdResult::SUCCESS;
 	}
 
-	//if not operative or has not command type => fail
+	//if not operative or has not command m_type => fail
 	if (!isOperative() || command.getUnit() == this || !getType()->hasCommandType(ct)) {
 		return CmdResult::FAIL_UNDEFINED;
 	}
 
 	//if pos is not inside the world
-	if (command.getPos() != Command::invalidPos && !map->isInside(command.getPos())) {
+	if (command.getPos() != Command::invalidPos && !m_map->isInside(command.getPos())) {
 		return CmdResult::FAIL_UNDEFINED;
 	}
 
 	//check produced
 	const ProducibleType *produced = command.getProdType();
 	if (produced) {
-		if (!faction->reqsOk(produced)) {
+		if (!m_faction->reqsOk(produced)) {
 			return CmdResult::FAIL_REQUIREMENTS;
 		}
 		if (!command.getFlags().get(CmdProps::DONT_RESERVE_RESOURCES)
-		&& !faction->checkCosts(produced)) {
+		&& !m_faction->checkCosts(produced)) {
 			return CmdResult::FAIL_RESOURCES;
 		}
 	}
@@ -2552,9 +2552,9 @@ CmdResult Unit::checkCommand(const Command &command) const {
   * @param command the command to apply costs for
   */
 void Unit::applyCommand(const Command &command) {
-	command.getType()->apply(faction, command);
+	command.getType()->apply(m_faction, command);
 	if (command.getType()->getEnergyCost()) {
-		ep -= command.getType()->getEnergyCost();
+		m_ep -= command.getType()->getEnergyCost();
 	}
 }
 
@@ -2567,7 +2567,7 @@ CmdResult Unit::undoCommand(const Command &command) {
 	return CmdResult::SUCCESS;
 }
 
-/** query the speed at which a skill type is executed
+/** query the speed at which a skill m_type is executed
   * @param st the SkillType
   * @return the speed value this unit would execute st at
   */
@@ -2580,8 +2580,8 @@ int Unit::getSpeed(const SkillType *st) const {
 //  class UnitFactory
 // =====================================================
 
-Unit* UnitFactory::newUnit(const XmlNode *node, Faction *faction, Map *map, const TechTree *tt, bool putInWorld) {
-	Unit::LoadParams params(node, faction, map, tt, putInWorld);
+Unit* UnitFactory::newUnit(const XmlNode *node, Faction *m_faction, Map *m_map, const TechTree *tt, bool putInWorld) {
+	Unit::LoadParams params(node, m_faction, m_map, tt, putInWorld);
 	Unit *unit = EntityFactory<Unit>::newInstance(params);
 	if (unit->isAlive()) {
 		unit->Died.connect(this, &UnitFactory::onUnitDied);
@@ -2591,8 +2591,8 @@ Unit* UnitFactory::newUnit(const XmlNode *node, Faction *faction, Map *map, cons
 	return unit;
 }
 
-Unit* UnitFactory::newUnit(const Vec2i &pos, const UnitType *type, Faction *faction, Map *map, CardinalDir face, Unit* master) {
-	Unit::CreateParams params(pos, type, faction, map, face, master);
+Unit* UnitFactory::newUnit(const Vec2i &pos, const UnitType *m_type, Faction *m_faction, Map *m_map, CardinalDir face, Unit* master) {
+	Unit::CreateParams params(pos, m_type, m_faction, m_map, face, master);
 	Unit *unit = EntityFactory<Unit>::newInstance(params);
 	unit->Died.connect(this, &UnitFactory::onUnitDied);
 	return unit;

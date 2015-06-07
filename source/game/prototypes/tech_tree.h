@@ -32,7 +32,7 @@ class EffectType;
 ///	A set of factions and resources
 // =====================================================
 
-class TechTree{
+class TechTree {
 private:
 	typedef vector<ResourceType> ResourceTypes;
 	typedef vector<FactionType> FactionTypes;
@@ -46,21 +46,21 @@ private:
 	typedef map<string, EffectType*> EffectTypeMap;
 
 private:
-	string name;
-    string desc;
-    ResourceTypes resourceTypes;
-    FactionTypes factionTypes;
-	ArmorTypes armorTypes;
-	AttackTypes attackTypes;
-	EffectTypes effectTypes;
+	string m_name;
+	string m_desc;
+	ResourceTypes m_resourceTypes;
+	FactionTypes m_factionTypes;
+	ArmorTypes m_armorTypes;
+	AttackTypes m_attackTypes;
+	EffectTypes m_effectTypes;
 
-    ResourceTypeMap resourceTypeMap;
-    FactionTypeMap factionTypeMap;
-	ArmorTypeMap armorTypeMap;
-	AttackTypeMap attackTypeMap;
-	EffectTypeMap effectTypeMap;
+	ResourceTypeMap m_resourceTypeMap;
+	FactionTypeMap m_factionTypeMap;
+	ArmorTypeMap m_armorTypeMap;
+	AttackTypeMap m_attackTypeMap;
+	EffectTypeMap m_effectTypeMap;
 
-	DamageMultiplierTable damageMultiplierTable;
+	DamageMultiplierTable m_damageMultiplierTable;
 
 public:
 	bool preload(const string &dir, const set<string> &factionNames);
@@ -73,26 +73,26 @@ public:
 
 	~TechTree();
 
-	string getName() const			{ return name; }
+	string getName() const			{ return m_name; }
 
 	// get count
-	int getResourceTypeCount() const							{return resourceTypes.size();}
-	int getFactionTypeCount() const								{return factionTypes.size();}
-	int getArmorTypeCount() const								{return armorTypes.size();}
-	int getAttackTypeCount() const								{return attackTypes.size();}
-	int getEffectTypeCount() const								{return effectTypes.size();}
+	int getResourceTypeCount() const  { return m_resourceTypes.size(); }
+	int getFactionTypeCount() const   { return m_factionTypes.size();  }
+	int getArmorTypeCount() const     { return m_armorTypes.size();    }
+	int getAttackTypeCount() const    { return m_attackTypes.size();   }
+	int getEffectTypeCount() const    { return m_effectTypes.size();   }
 
 	// get by index
-	const ResourceType *getResourceType(int i) const			{return &resourceTypes[i];}
-	const FactionType *getFactionType(int i) const				{return &factionTypes[i];}
-	const ArmourType *getArmourType(int i) const					{return &armorTypes[i];}
-	const AttackType *getAttackType(int i) const				{return &attackTypes[i];}
-	const EffectType *getEffectType(int i) const				{return effectTypes[i];}
+	const ResourceType *getResourceType(int i) const   { return &m_resourceTypes[i]; }
+	const FactionType *getFactionType(int i) const     { return &m_factionTypes[i];  }
+	const ArmourType *getArmourType(int i) const       { return &m_armorTypes[i];    }
+	const AttackType *getAttackType(int i) const       { return &m_attackTypes[i];   }
+	const EffectType *getEffectType(int i) const       { return m_effectTypes[i];    }
 
 	// get by name
 	const ResourceType *getResourceType(const string &name) const {
-		ResourceTypeMap::const_iterator i = resourceTypeMap.find(name);
-		if(i != resourceTypeMap.end()) {
+		ResourceTypeMap::const_iterator i = m_resourceTypeMap.find(name);
+		if(i != m_resourceTypeMap.end()) {
 			return i->second;
 		} else {
 		   throw runtime_error("Resource Type not found: " + name);
@@ -100,16 +100,16 @@ public:
 	}
 
 	const FactionType *getFactionType(const string &name) const {
-		FactionTypeMap::const_iterator i = factionTypeMap.find(name);
-		if(i != factionTypeMap.end()) {
+		FactionTypeMap::const_iterator i = m_factionTypeMap.find(name);
+		if(i != m_factionTypeMap.end()) {
 			return i->second;
 		} else {
 		   throw runtime_error("Faction Type not found: " + name);
 		}
 	}
 	const ArmourType *getArmourType(const string &name) const {
-		ArmorTypeMap::const_iterator i = armorTypeMap.find(name);
-		if(i != armorTypeMap.end()) {
+		ArmorTypeMap::const_iterator i = m_armorTypeMap.find(name);
+		if(i != m_armorTypeMap.end()) {
 			return i->second;
 		} else {
 		   throw runtime_error("Armor Type not found: " + name);
@@ -117,8 +117,8 @@ public:
 	}
 
 	const AttackType *getAttackType(const string &name) const {
-		AttackTypeMap::const_iterator i = attackTypeMap.find(name);
-		if(i != attackTypeMap.end()) {
+		AttackTypeMap::const_iterator i = m_attackTypeMap.find(name);
+		if(i != m_attackTypeMap.end()) {
 			return i->second;
 		} else {
 		   throw runtime_error("Attack Type not found: " + name);
@@ -126,8 +126,8 @@ public:
 	}
 
 	const EffectType *getEffectType(const string &name) const {
-		EffectTypeMap::const_iterator i = effectTypeMap.find(name);
-		if(i != effectTypeMap.end()) {
+		EffectTypeMap::const_iterator i = m_effectTypeMap.find(name);
+		if(i != m_effectTypeMap.end()) {
 			return i->second;
 		} else {
 		   throw runtime_error("Effect Type not found: " + name);
@@ -137,9 +137,9 @@ public:
 	// other getters
     const ResourceType *getTechResourceType(int i) const;
     const ResourceType *getFirstTechResourceType() const;
-    const string &getDesc() const								{return desc;}
+    const string &getDesc() const								{return m_desc;}
 	fixed getDamageMultiplier(const AttackType *att, const ArmourType *art) const {
-		return damageMultiplierTable.getDamageMultiplier(att, art);
+		return m_damageMultiplierTable.getDamageMultiplier(att, art);
 	}
 
 	// misc

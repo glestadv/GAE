@@ -39,7 +39,7 @@ struct UpgradeEffect {
 	ResModifierMap   m_costModifiers;
 	ResModifierMap   m_storeModifiers;
 
-	const EnhancementType* getEnhancement() const { return &m_enhancement; }
+	const EnhancementType* getEnhancement( ) const { return &m_enhancement; }
 
 };
 
@@ -62,31 +62,31 @@ private:
 	AffectedUnits      m_unitsAffected;
 
 private:
-	bool loadNewStyle(const XmlNode *node, const string &dir, const TechTree *techTree, const FactionType *factionType);
-	bool loadOldStyle(const XmlNode *node, const string &dir, const TechTree *techTree, const FactionType *factionType);
-	void loadResourceModifier(const XmlNode *node, ResModifierMap &map, const TechTree *techTree);
+	bool loadNewStyle( const XmlNode *node, const string &dir, const TechTree *techTree, const FactionType *factionType );
+	bool loadOldStyle( const XmlNode *node, const string &dir, const TechTree *techTree, const FactionType *factionType );
+	void loadResourceModifier( const XmlNode *node, ResModifierMap &map, const TechTree *techTree );
 
 public:
-	static ProducibleClass typeClass() { return ProducibleClass::UPGRADE; }
+	static ProducibleClass typeClass( ) { return ProducibleClass::UPGRADE; }
 
 public:
-	UpgradeType();
-	void preLoad(const string &dir)			{ m_name = basename(dir); }
-	virtual bool load(const string &dir, const TechTree *techTree, const FactionType *factionType);
+	UpgradeType( );
+	void preLoad( const string &dir )			{ m_name = basename( dir ); }
+	virtual bool load( const string &dir, const TechTree *techTree, const FactionType *factionType );
 
 	// get
-	ProducibleClass getClass() const override                       { return typeClass(); }
-	const FactionType* getFactionType() const                       { return m_factionType; }
-	const EnhancementType* getEnhancement(const UnitType *ut) const;
-	Modifier getCostModifier(const UnitType *ut, const ResourceType *rt) const;
-	Modifier getStoreModifier(const UnitType *ut, const ResourceType *rt) const;
+	ProducibleClass getClass( ) const override                      { return typeClass( ); }
+	const FactionType* getFactionType( ) const                      { return m_factionType; }
+	const EnhancementType* getEnhancement( const UnitType *ut ) const;
+	Modifier getCostModifier( const UnitType *ut, const ResourceType *rt ) const;
+	Modifier getStoreModifier( const UnitType *ut, const ResourceType *rt ) const;
 
-	bool isAffected(const UnitType *unitType) const {
-		return m_enhancementMap.find(unitType) != m_enhancementMap.end();
+	bool isAffected( const UnitType *unitType  ) const {
+		return m_enhancementMap.find( unitType ) != m_enhancementMap.end( );
 	}
 
-	virtual void doChecksum(Checksum &checksum) const;
-	string getDesc(const Faction *f) const;
+	virtual void doChecksum( Checksum &checksum ) const;
+	string getDesc( const Faction *f ) const;
 };
 
 }} // namespace Glest::ProtoTypes

@@ -37,13 +37,13 @@ class MapObject {
 	friend class EntityFactory<MapObject>;
 
 private:
-	int id;
-	MapObjectType *objectType;
-	MapResource *resource;
-	Vec2i tilePos;
-	Vec3f pos;
-	float rotation;
-	int variation;
+	int m_id;
+	MapObjectType *m_objectType;
+	MapResource *m_resource;
+	Vec2i m_tilePos;
+	Vec3f m_pos;
+	float m_rotation;
+	int m_variation;
 
 
 public:
@@ -60,17 +60,17 @@ private:
 	MapObject(CreateParams params);
 	~MapObject();
 
-	void setId(int v) { id = v; }
+	void setId(int v) { m_id = v; }
 
 public:
-	void setPos(const Vec3f &pos)		{this->pos = pos;}
+	void setPos(const Vec3f &pos)		{m_pos = pos;}
 
-	int getId() const 					{return id;}
-	const MapObjectType *getType() const{return objectType;}
-	MapResource *getResource() const	{return resource;}
-	Vec2i getTilePos() const            { return tilePos; }
-	Vec3f getPos() const				{return pos;}
-	float getRotation()	const			{return rotation;}
+	int getId() const 					{return m_id;}
+	const MapObjectType *getType() const{return m_objectType;}
+	MapResource *getResource() const	{return m_resource;}
+	Vec2i getTilePos() const            { return m_tilePos; }
+	Vec3f getPos() const				{return m_pos;}
+	float getRotation()	const			{return m_rotation;}
 	const Model *getModel() const;
 	bool getWalkable() const;
 

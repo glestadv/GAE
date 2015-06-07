@@ -27,7 +27,7 @@
 using std::range_error;
 using namespace Shared::Util;
 
-namespace Shared{ namespace Graphics{
+namespace Shared { namespace Graphics {
 
 // =====================================================
 //	class Particle

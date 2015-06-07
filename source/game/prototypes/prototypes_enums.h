@@ -78,7 +78,7 @@ STRINGY_ENUM( CmdClass,
 	NULL_COMMAND
 );
 
-inline bool isProductionCmdClass(CmdClass cc) {
+inline bool isProductionCmdClass( CmdClass cc ) {
 	return cc >= CmdClass::BUILD && cc <= CmdClass::TRANSFORM;
 }
 

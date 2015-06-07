@@ -34,25 +34,25 @@ private:
 	int	m_id;
 
 	/** This effect's proto-type. */
-	const EffectType *type;
+	const EffectType *m_type;
 
 	/** Unit that caused this effect, or -1 if this is a recourse effect. */
-	UnitId source;
+	UnitId m_source;
 
 	/** If this is a recourse effect, the primary effect that this is a recourse of, NULL otherwise. */
-	Effect *root;
+	Effect *m_root;
 
 	/** A modifier that adjusts how powerful this effect, based upon the type, should be. Each value of 
 	  * this effect will be multiplied by strength before being applied to the Unit or any other modifiers. */
-	fixed strength;
+	fixed m_strength;
 
 	/** The effect's duration in game ticks (1 game tick == 40 world frames) */
 	///@todo this is inaccurate, convert to frames
-	int duration;
+	int m_duration;
 
-	bool recourse;
+	bool m_recourse;
 
-	int actualHpRegen;
+	int m_actualHpRegen;
 
 public:
 	struct CreateParams {
@@ -83,22 +83,22 @@ private:
 
 public:
 	int getId() const				{return m_id;}
-	UnitId getSource() const		{return source;}
-	Effect *getRoot()				{return root;}
-	const EffectType *getType() const {return type;}
-	fixed getStrength() const		{return strength;}
-	int getDuration() const			{return duration;}
-	bool isRecourse() const			{return recourse;}
-	int getActualHpRegen() const	{return actualHpRegen;}
+	UnitId getSource() const		{return m_source;}
+	Effect *getRoot()				{return m_root;}
+	const EffectType *getType() const {return m_type;}
+	fixed getStrength() const		{return m_strength;}
+	int getDuration() const			{return m_duration;}
+	bool isRecourse() const			{return m_recourse;}
+	int getActualHpRegen() const	{return m_actualHpRegen;}
 
-	void clearSource()				{source = -1;}
-	void clearRoot()				{root = 0;}
-	void setDuration(int duration)	{this->duration = duration;}
-	void setStrength(fixed strength){this->strength = strength;}
+	void clearSource()				{m_source = -1;}
+	void clearRoot()				{m_root = 0;}
+	void setDuration(int duration)	{m_duration = duration;}
+	void setStrength(fixed strength){m_strength = strength;}
 
 	/** Causes the effect to age one tick and returns true when the effect has
 	  * expired (and should be removed from the Unit). */
-	bool tick() { return type->isPermanent() ? false : --duration <= 0; }
+	bool tick() { return m_type->isPermanent() ? false : --m_duration <= 0; }
 
 	void save(XmlNode *node) const;
 
@@ -130,7 +130,7 @@ typedef EntityFactory<Effect> EffectFactory;
   * killed them, when they die during a tick (i.e., from an effect).</li>  */
 class Effects : public list<Effect*> {
 private:
-	bool dirty;
+	bool m_dirty;
 
 public:
 	Effects();
@@ -142,10 +142,10 @@ public:
 
 	/** Returns true if the effects contained have changed in a way that will
 	  * effect stat calculations. */
-	bool isDirty() const	{return dirty;}
+	bool isDirty() const	{return m_dirty;}
 
 	/** Clears the dirty flag. */
-	void clearDirty()		{dirty = false;}
+	void clearDirty()		{m_dirty = false;}
 
 	/** Add an effect, applying stacking rules based upon current effects.
 	  * @return true if effect was added, false if it was deleted (after extending

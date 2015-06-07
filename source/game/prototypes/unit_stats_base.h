@@ -37,27 +37,27 @@ class UpgradeType;
 /** Fields of travel, and indirectly zone of occupance */
 class Fields : public XmlBasedFlags<Field, Field::COUNT> {
 public:
-	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Field, Field::COUNT>::load(node, dir, tt, ft, "field", FieldNames);
+	void load( const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft ) {
+		XmlBasedFlags<Field, Field::COUNT>::load( node, dir, tt, ft, "field", FieldNames );
 	}
 };
 
 ///@todo remove the need for this hacky crap
-inline Field dominantField(const Fields &fields) {
+inline Field dominantField( const Fields &fields ) {
 	Field f = Field::INVALID;
-	if (fields.get(Field::LAND)) f = Field::LAND;
-	else if (fields.get(Field::AIR)) f = Field::AIR;
-	if (fields.get(Field::AMPHIBIOUS)) f = Field::AMPHIBIOUS;
-	else if (fields.get(Field::ANY_WATER)) f = Field::ANY_WATER;
-	else if (fields.get(Field::DEEP_WATER)) f = Field::DEEP_WATER;
+	if (fields.get( Field::LAND )) f = Field::LAND;
+	else if (fields.get( Field::AIR )) f = Field::AIR;
+	if (fields.get( Field::AMPHIBIOUS )) f = Field::AMPHIBIOUS;
+	else if (fields.get( Field::ANY_WATER )) f = Field::ANY_WATER;
+	else if (fields.get( Field::DEEP_WATER )) f = Field::DEEP_WATER;
 	return f;
 }
 
 /** Zones of attack (air, surface, etc.) */
 class Zones : public XmlBasedFlags<Zone, Zone::COUNT> {
 public:
-	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Zone, Zone::COUNT>::load(node, dir, tt, ft, "field", ZoneNames);
+	void load( const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft ) {
+		XmlBasedFlags<Zone, Zone::COUNT>::load( node, dir, tt, ft, "field", ZoneNames );
 	}
 };
 
@@ -66,13 +66,13 @@ public:
 // ==============================================================
 
 /** Properties that can be applied to a unit. */
-class UnitProperties : public XmlBasedFlags<Property, Property::COUNT>{
+class UnitProperties : public XmlBasedFlags<Property, Property::COUNT> {
 private:
 	//static const char *names[pCount];
 
 public:
-	void load(const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft) {
-		XmlBasedFlags<Property, Property::COUNT>::load(node, dir, tt, ft, "property", PropertyNames);
+	void load( const XmlNode *node, const string &dir, const TechTree *tt, const FactionType *ft ) {
+		XmlBasedFlags<Property, Property::COUNT>::load( node, dir, tt, ft, "property", PropertyNames );
 	}
 };
 
@@ -86,97 +86,96 @@ class UnitStats {
 	friend class UpgradeType; // hack, needed to support old style Upgrades in a new style world :(
 
 protected:
-	int maxHp;
-	int hpRegeneration;
-    int maxEp;
-	int epRegeneration;
-    int sight;
-	int armor;
+	int m_maxHp;
+	int m_hpRegeneration;
+    int m_maxEp;
+	int m_epRegeneration;
+    int m_sight;
+	int m_armor;
 
 	// skill mods
-	int attackStrength;
-	fixed effectStrength;
-	fixed attackPctStolen;
-	int attackRange;
-	int moveSpeed;
-	int attackSpeed;
-	int prodSpeed;
-	int repairSpeed;
-	int harvestSpeed;
+	int m_attackStrength;
+	fixed m_effectStrength;
+	fixed m_attackPctStolen;
+	int m_attackRange;
+	int m_moveSpeed;
+	int m_attackSpeed;
+	int m_prodSpeed;
+	int m_repairSpeed;
+	int m_harvestSpeed;
 
-	void setMaxHp(int v)				{maxHp = v;}
-	void setHpRegeneration(int v) 		{hpRegeneration = v;}
-	void setMaxEp(int v) 				{maxEp = v;}
-	void setEpRegeneration(int v) 		{epRegeneration = v;}
-	void setSight(int v) 				{sight = v;}
-	void setArmor(int v) 				{armor = v;}
+	void setMaxHp( int v )             { m_maxHp = v;           }
+	void setHpRegeneration( int v )    { m_hpRegeneration = v;  }
+	void setMaxEp( int v )             { m_maxEp = v;           }
+	void setEpRegeneration( int v )    { m_epRegeneration = v;  }
+	void setSight( int v )             { m_sight = v;           }
+	void setArmor( int v )             { m_armor = v;           }
 
-	void setAttackStrength(int v) 		{attackStrength = v;}
-	void setEffectStrength(fixed v) 	{effectStrength = v;}
-	void setAttackPctStolen(fixed v)	{attackPctStolen = v;}
-	void setAttackRange(int v) 			{attackRange = v;}
-	void setMoveSpeed(int v)			{moveSpeed = v;}
-	void setAttackSpeed(int v) 			{attackSpeed = v;}
-	void setProdSpeed(int v) 			{prodSpeed = v;}
-	void setRepairSpeed(int v)			{repairSpeed = v;}
-	void setHarvestSpeed(int v)			{harvestSpeed = v;}
-
+	void setAttackStrength( int v )    { m_attackStrength = v;  }
+	void setEffectStrength( fixed v )  { m_effectStrength = v;  }
+	void setAttackPctStolen( fixed v ) { m_attackPctStolen = v; }
+	void setAttackRange( int v )       { m_attackRange = v;     }
+	void setMoveSpeed( int v )         { m_moveSpeed = v;       }
+	void setAttackSpeed( int v )       { m_attackSpeed = v;     }
+	void setProdSpeed( int v )         { m_prodSpeed = v;       }
+	void setRepairSpeed( int v )       { m_repairSpeed = v;     }
+	void setHarvestSpeed( int v )      { m_harvestSpeed = v;    }
 
 public:
-	UnitStats()          { memset(this, 0, sizeof(*this)); }
-	virtual ~UnitStats() {}
+	UnitStats( )          { memset( this, 0, sizeof( *this ) ); }
+	virtual ~UnitStats( ) { }
 
-	virtual void doChecksum(Checksum &checksum) const;
+	virtual void doChecksum( Checksum &checksum ) const;
 
 	// ==================== get ====================
 
-	int getMaxHp() const					{return maxHp;}
-	int getHpRegeneration() const			{return hpRegeneration;}
-	int getMaxEp() const					{return maxEp;}
-	int getEpRegeneration() const			{return epRegeneration;}
-	int getSight() const					{return sight;}
-	int getArmor() const					{return armor;}
+	int getMaxHp( ) const                   { return m_maxHp;           }
+	int getHpRegeneration( ) const          { return m_hpRegeneration;  }
+	int getMaxEp( ) const                   { return m_maxEp;           }
+	int getEpRegeneration( ) const          { return m_epRegeneration;  }
+	int getSight( ) const                   { return m_sight;           }
+	int getArmor( ) const                   { return m_armor;           }
 
-	int getAttackStrength() const			{return attackStrength;}
-	fixed getEffectStrength() const			{return effectStrength;}
-	fixed getAttackPctStolen() const		{return attackPctStolen;}
-	int getAttackRange() const				{return attackRange;}
-	int getMoveSpeed() const				{return moveSpeed;}
-	int getAttackSpeed() const				{return attackSpeed;}
-	int getProdSpeed() const				{return prodSpeed;}
-	int getRepairSpeed() const				{return repairSpeed;}
-	int getHarvestSpeed() const				{return harvestSpeed;}
+	int getAttackStrength( ) const          { return m_attackStrength;  }
+	fixed getEffectStrength( ) const        { return m_effectStrength;  }
+	fixed getAttackPctStolen( ) const       { return m_attackPctStolen; }
+	int getAttackRange( ) const             { return m_attackRange;     }
+	int getMoveSpeed( ) const               { return m_moveSpeed;       }
+	int getAttackSpeed( ) const             { return m_attackSpeed;     }
+	int getProdSpeed( ) const               { return m_prodSpeed;       }
+	int getRepairSpeed( ) const             { return m_repairSpeed;     }
+	int getHarvestSpeed( ) const            { return m_harvestSpeed;    }
 
 	// ==================== misc ====================
 
 	/** Resets the values of all fields to zero or other base value. */
-	virtual void reset();
+	virtual void reset( );
 
 	/** Initialize the object from an XmlNode object. It is important to note
-	  * that all xxxSpeed and attackRange variables are not initialized by this
+	  * that all xxxSpeed and m_attackRange variables are not initialized by this
 	  * function. This is essentially the portions of the load method of the
 	  * legacy UnitType class that appeared under the <properties> node and that
-	  * is exactly what XmlNode object the UnitType load() method supplies to
+	  * is exactly what XmlNode object the UnitType load( ) method supplies to
 	  * this method. */
-	bool load(const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	bool load( const XmlNode *parametersNode, const string &dir, const TechTree *tt, const FactionType *ft );
 
-	virtual void save(XmlNode *node) const;
+	virtual void save( XmlNode *node ) const;
 
 	/** Equivilant to an assignment operator; initializes values based on supplied object. */
-	void setValues(const UnitStats &us);
+	void setValues( const UnitStats &us );
 
 	/** Apply all the multipliers in the supplied EnhancementType to the
 	  * applicable static value (i.e., addition/subtraction values) in this
 	  * object. */
-	void applyMultipliers(const EnhancementType &e);
+	void applyMultipliers( const EnhancementType &e );
 
 	/** Add all static values (i.e., addition/subtraction values) in to this
 	  * object, using the supplied multiplier strength before adding. I.e., stat =
 	  * e.stat * strength. */
-	void addStatic(const EnhancementType &e, fixed strength = 1);
+	void addStatic( const EnhancementType &e, fixed strength = 1 );
 
 	/** re-adjust values for unit entities, enforcing minimum sensible values */
-	void sanitiseUnitStats();
+	void sanitiseUnitStats( );
 };
 
 // ===============================
@@ -189,49 +188,49 @@ public:
   * EffectType. */
 class EnhancementType : public UnitStats {
 protected:
-	fixed maxHpMult;
-	fixed hpRegenerationMult;
-	fixed maxEpMult;
-	fixed epRegenerationMult;
-	fixed sightMult;
-	fixed armorMult;
+	fixed m_maxHpMult;
+	fixed m_hpRegenerationMult;
+	fixed m_maxEpMult;
+	fixed m_epRegenerationMult;
+	fixed m_sightMult;
+	fixed m_armorMult;
 
-	fixed attackStrengthMult;
-	fixed effectStrengthMult;
-	fixed attackPctStolenMult;
-	fixed attackRangeMult;
+	fixed m_attackStrengthMult;
+	fixed m_effectStrengthMult;
+	fixed m_attackPctStolenMult;
+	fixed m_attackRangeMult;
 
-	fixed moveSpeedMult;
-	fixed attackSpeedMult;
-	fixed prodSpeedMult;
-	fixed repairSpeedMult;
-	fixed harvestSpeedMult;
+	fixed m_moveSpeedMult;
+	fixed m_attackSpeedMult;
+	fixed m_prodSpeedMult;
+	fixed m_repairSpeedMult;
+	fixed m_harvestSpeedMult;
 
-	int hpBoost;
-	int epBoost;
+	int m_hpBoost;
+	int m_epBoost;
 
 public:
-	EnhancementType() {
-		reset();
+	EnhancementType( ) {
+		reset( );
 	}
 
-	fixed getMaxHpMult() const			{return maxHpMult;}
-	fixed getHpRegenerationMult() const	{return hpRegenerationMult;}
-	int   getHpBoost() const			{return hpBoost;}
-	fixed getMaxEpMult() const			{return maxEpMult;}
-	fixed getEpRegenerationMult() const	{return epRegenerationMult;}
-	int   getEpBoost() const			{return epBoost;}
-	fixed getSightMult() const			{return sightMult;}
-	fixed getArmorMult() const			{return armorMult;}
-	fixed getAttackStrengthMult() const	{return attackStrengthMult;}
-	fixed getEffectStrengthMult() const	{return effectStrengthMult;}
-	fixed getAttackPctStolenMult() const{return attackPctStolenMult;}
-	fixed getAttackRangeMult() const	{return attackRangeMult;}
-	fixed getMoveSpeedMult() const		{return moveSpeedMult;}
-	fixed getAttackSpeedMult() const	{return attackSpeedMult;}
-	fixed getProdSpeedMult() const		{return prodSpeedMult;}
-	fixed getRepairSpeedMult() const	{return repairSpeedMult;}
-	fixed getHarvestSpeedMult() const	{return harvestSpeedMult;}
+	fixed getMaxHpMult( ) const             { return m_maxHpMult;           }
+	fixed getHpRegenerationMult( ) const    { return m_hpRegenerationMult;  }
+	int   getHpBoost( ) const               { return m_hpBoost;             }
+	fixed getMaxEpMult( ) const             { return m_maxEpMult;           }
+	fixed getEpRegenerationMult( ) const    { return m_epRegenerationMult;  }
+	int   getEpBoost( ) const               { return m_epBoost;             }
+	fixed getSightMult( ) const             { return m_sightMult;           }
+	fixed getArmorMult( ) const             { return m_armorMult;           }
+	fixed getAttackStrengthMult( ) const    { return m_attackStrengthMult;  }
+	fixed getEffectStrengthMult( ) const    { return m_effectStrengthMult;  }
+	fixed getAttackPctStolenMult( ) const   { return m_attackPctStolenMult; }
+	fixed getAttackRangeMult( ) const       { return m_attackRangeMult;     }
+	fixed getMoveSpeedMult( ) const         { return m_moveSpeedMult;       }
+	fixed getAttackSpeedMult( ) const       { return m_attackSpeedMult;     }
+	fixed getProdSpeedMult( ) const         { return m_prodSpeedMult;       }
+	fixed getRepairSpeedMult( ) const       { return m_repairSpeedMult;     }
+	fixed getHarvestSpeedMult( ) const      { return m_harvestSpeedMult;    }
 
 	/**
 	 * Adds multipliers, normalizing and adjusting for strength. The formula
@@ -240,30 +239,30 @@ public:
 	 * multiplier for each field to be adjusted by the deviation from the value
 	 * 1.0f of each multiplier in the supplied object e.
 	 */
-	void addMultipliers(const EnhancementType &e, fixed strength = 1);
+	void addMultipliers( const EnhancementType &e, fixed strength = 1 );
 
-	void clampMultipliers();
+	void clampMultipliers( );
 
 	/**
 	 * Resets all multipliers to 1.0f and all base class members to their
 	 * appropriate default values (0, NULL, etc.).
 	 */
-	virtual void reset();
+	virtual void reset( );
 
 	/**
 	 * Returns a string description of this object, only supplying information
 	 * on fields which cause a modification.
 	 */
-	virtual void getDesc(string &str, const char *prefix) const;
+	virtual void getDesc( string &str, const char *prefix ) const;
 
 	/**
 	 * Initializes this object from the specified XmlNode object.
 	 */
-	virtual bool load(const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft);
+	virtual bool load( const XmlNode *baseNode, const string &dir, const TechTree *tt, const FactionType *ft );
 
-	virtual void doChecksum(Checksum &checksum) const;
+	virtual void doChecksum( Checksum &checksum ) const;
 
-	virtual void save(XmlNode *node) const;
+	virtual void save( XmlNode *node ) const;
 
 	/**
 	 * Appends a uniform description of the supplied value, if non-zero.
@@ -272,26 +271,26 @@ public:
 	 * function to keep redundant clutter out of other functions which provide
 	 * descriptions.
 	 */
-	static void describeModifier(string &str, int value) {
+	static void describeModifier( string &str, int value ) {
 		if (value != 0) {
 			if (value > 0) {
 				str += "+";
 			}
-			str += intToStr(value);
+			str += intToStr( value );
 		}
 	}
 
-	void sum(const EnhancementType *enh) {
-		addStatic(*enh);
-		addMultipliers(*enh);
+	void sum( const EnhancementType *enh ) {
+		addStatic( *enh );
+		addMultipliers( *enh );
 	}
 
 private:
 	/** Initialize value from <static-modifiers> node */
-	void initStaticModifier(const XmlNode *node, const string &dir);
+	void initStaticModifier( const XmlNode *node, const string &dir );
 
 	/** Initialize value from <multipliers> node */
-	void initMultiplier(const XmlNode *node, const string &dir);
+	void initMultiplier( const XmlNode *node, const string &dir );
 };
 
 
