@@ -21,6 +21,7 @@ namespace Glest { namespace Util {
 PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 		maxRadius(maxRadius),
 		// I promise this calculation is correct and I'm sorry that it looks ugly :)
+		// I absolutely do not believe you :P
 		dataSize(((maxRadius + 1) / 2) * ((maxRadius & 0xfffffffe) + 1)),
 		data(NULL),
 		dataEnd(NULL),
@@ -29,7 +30,7 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 	data = new PosData[dataSize];
 	dataEnd = data + dataSize;
 	radiusIndex = new const PosData*[maxRadius + 1];
-	
+
 	// Calculate distance data
 	PosData *p = data;
 	for(unsigned int step = 0; step < maxRadius; ++step) {
@@ -44,7 +45,7 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 	assert(p - data == dataSize);
 	assert(p == dataEnd);
 	assert(dataEnd == &data[dataSize]);
-	
+
 	// Sort data by distance
 	std::sort(data, &data[dataSize]);
 
@@ -59,7 +60,7 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 	assert(radiusIndex[0] = data);		// zero radius should be 1st data element
 	// the last entry in radiusIndex should point one item beyond data, but should never be
 	// dereferenced, like the end() of an stl collection
-	radiusIndex[maxRadius] = dataEnd;	
+	radiusIndex[maxRadius] = dataEnd;
 }
 
 PosCircularIteratorFactory::~PosCircularIteratorFactory() {
@@ -79,13 +80,12 @@ PosCircularIterator *PosCircularIteratorFactory::getIterator(bool reversed, unsi
 	}
 	const PosData *first = getFirstOfDistance(minDistance);
 	const PosData *last = getLastOfDistance(maxDistance);
-	return reversed 
+	return reversed
 			? new PosCircularIterator(last + 1, first, last, 0)
 			: new PosCircularIterator(first - 1, first, last, 3);
 }
 
-
-Vec2i PerimeterIterator::next() { 
+Vec2i PerimeterIterator::next() {
 	Vec2i n(cx, cy);
 	switch (state) {
 		case 0: // top edge, left->right
