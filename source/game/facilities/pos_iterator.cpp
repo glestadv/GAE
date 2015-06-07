@@ -34,8 +34,9 @@ bool PosData::operator<( const PosData &o ) const {
 
 PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 		maxRadius(maxRadius),
-		// I promise this calculation is correct and I'm sorry that it looks ugly :)
-		// I absolutely do not believe you :P
+		// I [dansan] promise this calculation is correct and I'm sorry that it looks ugly :)
+		// I [silnarm] absolutely do not believe you :P
+		// I [silnarm] expect to maybe see some trig here, not a mask!
 		dataSize(((maxRadius + 1) / 2) * ((maxRadius & 0xfffffffe) + 1)),
 		data(NULL),
 		dataEnd(NULL),
@@ -54,7 +55,7 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 			p->fdist = sqrtf(float(step * step + off * off));
 			p->dist = int(p->fdist);
 
-			SYNC_LOG( "Built PosData for step: " << step << ", off: " << off << ", with fdist: " << p->fdist );
+			//SYNC_LOG( "Built PosData for step: " << step << ", off: " << off << ", with fdist: " << p->fdist );
 
 			++p;
 		}
@@ -66,9 +67,9 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 	// Sort data by distance
 	std::sort(data, &data[dataSize]);
 
-    for (int i=0; i < dataSize; ++i) {
-        SYNC_LOG( "Sorted PosData, step: " << data[i].step << ", off: " << data[i].off << ", fdist: " << data[i].fdist );
-    }
+//    for (int i=0; i < dataSize; ++i) {
+//        SYNC_LOG( "Sorted PosData, step: " << data[i].step << ", off: " << data[i].off << ", fdist: " << data[i].fdist );
+//    }
 
 	// Calculate radius index
 	unsigned int nextRadius = 0;
@@ -78,7 +79,7 @@ PosCircularIteratorFactory::PosCircularIteratorFactory(unsigned int maxRadius) :
 		}
 	}
 	assert(nextRadius == maxRadius);	// Make sure we are sane (data came out ok)
-	assert(radiusIndex[0] = data);		// zero radius should be 1st data element
+	assert(radiusIndex[0] == data);		// zero radius should be 1st data element
 	// the last entry in radiusIndex should point one item beyond data, but should never be
 	// dereferenced, like the end() of an stl collection
 	radiusIndex[maxRadius] = dataEnd;
