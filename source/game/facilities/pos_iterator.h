@@ -32,7 +32,7 @@ struct PosData {
 	fixed dist;
 
 	unsigned int getMaxCycle() const {
-		return (off > 0 && off < step) ? 7 : 3;
+		return (step == 0) ? 0 : (off > 0 && off < step) ? 7 : 3;
 	}
 
 	bool operator< (const PosData &o) const {
