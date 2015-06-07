@@ -32,10 +32,12 @@ struct PosData {
 	fixed dist;
 
 	unsigned int getMaxCycle() const {
-		return off > 0 && off < step ? 7 : 3;
+		return (off > 0 && off < step) ? 7 : 3;
 	}
 
-	bool operator< (const PosData &o) const {return fdist < o.fdist;}
+	bool operator< (const PosData &o) const {
+        return fdist < o.fdist;
+    }
 };
 
 /**
@@ -52,27 +54,49 @@ protected:
 
 	PosCircularIterator(const PosData *next, const PosData *first, const PosData *last, unsigned int cycle)
 			: next(next), first(first), last(last), cycle(cycle) {
-	}
+//        cout << "PosCircularIterator::PosCircularIterator() : next = ( step: " << next->step << " off: " << next->off << ", dist: " << next->fdist << " )"
+//            << " cycle: " << cycle << endl;
+    }
+
+public:
+    ~PosCircularIterator() {
+    }
 
 public:
 	Vec2i getPosForCycle() {
 		int step = next->step;
 		int off = next->off;
 
-		step = cycle & 2 ? -step : step;
-		off = cycle & 4 ? -off : off;
-		return cycle & 1 ? Vec2i(step, off) : Vec2i(off, step);
+        //cout << "PosCircularIterator::getPosForCycle(): ";
+        cout << "step: " << step << ", off: " << off << ", cycle = " << cycle << "." /*<< endl*/;
+
+        if (step == off && cycle == 1) {
+            step = -step;
+            off = -off;
+        } else {
+            step = (cycle & 2)? -step : step;
+            off = (cycle & 4)? -off : off;
+        }
+		Vec2i res = (cycle & 1) ? Vec2i(step, off) : Vec2i(off, step);
+
+		cout << "\tRes = " << res << endl;
+
+		return res;
 	}
 
 	bool getNext(Vec2i &result) {
 		assert(next <= last);
-		if(next < first || cycle == next->getMaxCycle()) {
+
+		if (next < first || cycle == next->getMaxCycle()) {
 			if(next++ == last) {
+                //cout << "PosCircularIterator::getNext(): next == last, finished." << endl;
 				return false;
 			}
 			cycle = 0;
+			//cout << "PosCircularIterator::getNext(): next < last, cycle = 0." << endl;
 		} else {
 			++cycle;
+			//cout << "PosCircularIterator::getNext(): next >= first && cycle != next->getMaxCycle, cycle = " << cycle << "." << endl;
 		}
 		result = getPosForCycle();
 		return true;
@@ -80,7 +104,7 @@ public:
 
 	bool getPrev(Vec2i &result) {
 		assert(next >= first);
-		if(!cycle) {
+		if (!cycle) {
 			if(next-- == first) {
 				return false;
 			}
@@ -94,7 +118,7 @@ public:
 
 	bool getNext(Vec2i &result, fixed &dist) {
 		assert(next <= last);
-		if(next < first || cycle == next->getMaxCycle()) {
+		if (next < first || cycle == next->getMaxCycle()) {
 			if(next++ == last) {
 				return false;
 			}
@@ -109,7 +133,7 @@ public:
 
 	bool getPrev(Vec2i &result, fixed &dist) {
 		assert(next >= first);
-		if(!cycle) {
+		if (!cycle) {
 			if(next-- == first) {
 				return false;
 			}
@@ -148,7 +172,7 @@ public:
 	PosCircularIterator *getOutsideInIterator(unsigned int minDistance, unsigned int maxDistance) const {
 		return getIterator(true, maxDistance, minDistance);
 	}
-	
+
 private:
 	PosCircularIterator *getIterator(bool reversed, unsigned int maxDistance, unsigned int minDistance) const;
 
@@ -203,23 +227,37 @@ private:
  */
 class PosCircularIteratorOrdered {
 private:
-	Rect2i bounds;
-	Vec2i center;
-	PosCircularIterator *i;
+	Rect2i m_bounds;
+	Vec2i m_center;
+	PosCircularIterator *m_i = nullptr;
 
 public:
-	PosCircularIteratorOrdered(const Rect2i &bounds, const Vec2i &center, PosCircularIterator *i)
-			: bounds(bounds), center(center), i(i)	{} 
-	~PosCircularIteratorOrdered()				{ delete i; }
+    void init(const Rect2i &bounds, const Vec2i &center, PosCircularIterator *i) {
+        if (m_i) {
+            delete m_i;
+        }
+        m_bounds = bounds;
+        m_center = center;
+        m_i = i;
+    }
+
+public:
+	PosCircularIteratorOrdered(const Rect2i &bounds, const Vec2i &center, PosCircularIterator *i) {
+        init(bounds, center, i);
+    }
+
+	~PosCircularIteratorOrdered() {
+        delete m_i;
+    }
 
 	bool getNext(Vec2i &result) {
 		Vec2i offset;
 		do {
-			if(!i->getNext(offset)) {
+			if(!m_i->getNext(offset)) {
 				return false;
 			}
-			result = center + offset;
-		} while(!bounds.isInside(result));
+			result = m_center + offset;
+		} while(!m_bounds.isInside(result));
 
 		return true;
 	}
@@ -227,11 +265,11 @@ public:
 	bool getPrev(Vec2i &result) {
 		Vec2i offset;
 		do {
-			if(!i->getPrev(offset)) {
+			if(!m_i->getPrev(offset)) {
 				return false;
 			}
-			result = center + offset;
-		} while(!bounds.isInside(result));
+			result = m_center + offset;
+		} while(!m_bounds.isInside(result));
 
 		return true;
 	}
@@ -239,11 +277,11 @@ public:
 	bool getNext(Vec2i &result, fixed &dist) {
 		Vec2i offset;
 		do {
-			if(!i->getNext(offset, dist)) {
+			if(!m_i->getNext(offset, dist)) {
 				return false;
 			}
-			result = center + offset;
-		} while(!bounds.isInside(result));
+			result = m_center + offset;
+		} while(!m_bounds.isInside(result));
 
 		return true;
 	}
@@ -251,11 +289,11 @@ public:
 	bool getPrev(Vec2i &result, fixed &dist) {
 		Vec2i offset;
 		do {
-			if(!i->getPrev(offset, dist)) {
+			if(!m_i->getPrev(offset, dist)) {
 				return false;
 			}
-			result = center + offset;
-		} while(!bounds.isInside(result));
+			result = m_center + offset;
+		} while(!m_bounds.isInside(result));
 
 		return true;
 	}
@@ -281,7 +319,7 @@ public:
 	}
 
 
-	bool getNext(Vec2i &result, fixed &dist) {	
+	bool getNext(Vec2i &result, fixed &dist) {
 		//iterate while dont find a cell that is inside the world
 		//and at less or equal distance that the radius
 		do {
@@ -296,11 +334,11 @@ public:
 			result = pos;
 			dist = fixedDist(pos, center);
 		} while (dist.intp() >= (radius + 1) || !bounds.isInside(pos));
-	
+
 		return true;
 	}
 
-	bool getNext(Vec2i &result, float &dist) {	
+	bool getNext(Vec2i &result, float &dist) {
 		//iterate while dont find a cell that is inside the world
 		//and at less or equal distance that the radius
 		do {
@@ -315,7 +353,7 @@ public:
 			result = pos;
 			dist = pos.dist(center);
 		} while (dist >= (radius + 1.f) || !bounds.isInside(pos));
-	
+
 		return true;
 	}
 
@@ -344,7 +382,7 @@ public:
 	}
 };
 
-/** An iterator over a rectangular region that starts at the 'top-left' and proceeds left 
+/** An iterator over a rectangular region that starts at the 'top-left' and proceeds left
   * to right, top to bottom. */
 class RectIterator : public RectIteratorBase {
 private:
@@ -365,8 +403,8 @@ public:
 
 	bool  more() const { return cy <= sy; }
 
-	Vec2i next() { 
-		Vec2i n(cx, cy); 
+	Vec2i next() {
+		Vec2i n(cx, cy);
 		if (cx == ex) {
 			cx = wx; ++cy;
 		} else {
@@ -376,23 +414,23 @@ public:
 	}
 };
 
-/** An iterator over a rectangular region that starts at the 'bottom-right' and proceeds right 
+/** An iterator over a rectangular region that starts at the 'bottom-right' and proceeds right
   * to left, bottom to top. */
 class ReverseRectIterator : public RectIteratorBase {
 private:
 	int cx, cy;
 
 public:
-	ReverseRectIterator(const Vec2i &p1, const Vec2i &p2) 
+	ReverseRectIterator(const Vec2i &p1, const Vec2i &p2)
 			: RectIteratorBase(p1, p2) {
 		cx = ex;
 		cy = sy;
 	}
 
 	bool  more() const { return cy >= ny; }
-	
-	Vec2i next() { 
-		Vec2i n(cx,cy); 
+
+	Vec2i next() {
+		Vec2i n(cx,cy);
 		if (cx == wx) {
 			cx = ex; cy--;
 		} else {
