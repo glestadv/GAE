@@ -64,6 +64,7 @@ void ServerInterface::bindPort() {
 		LOG_NETWORK(e.what());
 		throw e;
 	}
+    NETWORK_LOG( "Port " << g_config.getNetServerPort() << " bound." );
 	m_portBound = true;
 }
 
@@ -148,7 +149,7 @@ int ServerInterface::getSlotIndexBySession(NetworkSession *session) {
 	for(int i = 0; i < GameConstants::maxPlayers; ++i) {
 		if(slots[i] && slots[i]->getSession() == session) {
 			return i;
-		} 
+		}
 	}
 	return -1;
 }
@@ -392,7 +393,7 @@ void ServerInterface::updateKeyframe(int frameCount) {
 	keyFrame.setFrameCount(frameCount);
 	keyFrame.buildPacket();
 	broadcastMessage(&keyFrame);
-	
+
 	keyFrame.reset();
 }
 
@@ -454,6 +455,7 @@ void ServerInterface::quitGame(QuitSource source) {
 // network events
 void ServerInterface::onConnect(NetworkSession *session) {
 	if (game) {
+        NETWORK_LOG( "Connection refused, currently in game." );
 		session->disconnect(DisconnectReason::IN_GAME);
 		return;
 	}
@@ -466,6 +468,7 @@ void ServerInterface::onConnect(NetworkSession *session) {
 		//	g_config.getNetPlayerName(), m_connection.getHostName(), index);
 		//slots[index]->send(&networkMessageIntro);
 	} else {
+        NETWORK_LOG( "Connection refused, no free slots." );
 		session->disconnect(DisconnectReason::NO_FREE_SLOTS);
 		///@todo add spectator handling code here
 	}
@@ -516,7 +519,7 @@ void ServerInterface::doLaunchBroadcast() {
 	gameSettings.setTilesetSeed(int(Chrono::getCurMillis()));
 	gameSettings.setWorldSeed(-int(Chrono::getCurMillis()));
 	LaunchMessage networkMessageLaunch(&gameSettings);
-	
+
 	broadcastMessage(&networkMessageLaunch);
 	m_connection.flush();
 }

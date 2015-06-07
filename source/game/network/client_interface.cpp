@@ -45,8 +45,8 @@ namespace Glest { namespace Net {
 
 ClientInterface::ClientInterface(Program &prog)
 		: NetworkInterface(prog)
-		, m_connection(NULL)
-		, m_host(NULL)
+		, m_connection(nullptr)
+		, m_host(nullptr)
 		, launchGame(false)
 		, introDone(false)
 		, playerIndex(-1) {
@@ -57,7 +57,7 @@ ClientInterface::~ClientInterface() {
 		quitGame(QuitSource::LOCAL);
 	}
 	delete m_host;
-	m_host = NULL;
+	m_host = nullptr;
 }
 
 void ClientInterface::connect(const Ip &ip, int port) {
@@ -75,8 +75,8 @@ void ClientInterface::reset() {
 	NETWORK_LOG( "ClientInterface::reset()" );
 	//m_host->disconnect(DisconnectReason::DEFAULT);
 	delete m_host;
-	m_host = NULL;
-	m_connection = NULL;
+	m_host = nullptr;
+	m_connection = nullptr;
 	introDone = false;
 }
 
@@ -236,7 +236,7 @@ void ClientInterface::quitGame(QuitSource source) {
 		*/
 		m_connection->disconnectNow(DisconnectReason::DEFAULT);
 		m_host->flush();
-		m_connection = NULL;
+		m_connection = nullptr;
 		introDone = false;
 		NETWORK_LOG( "ClientInterface::quitGame(): Sent quit message." );
 	}
@@ -260,7 +260,7 @@ void ClientInterface::onConnect(NetworkSession *session) {
 
 void ClientInterface::onDisconnect(NetworkSession *session, DisconnectReason reason) {
 	quitGame(QuitSource::SERVER);
-	m_connection = NULL;
+	m_connection = nullptr;
 	introDone = false;
 }
 
@@ -342,12 +342,12 @@ void ClientInterface::updateMove(Unit *unit) {
 	try {
 		MoveSkillUpdate updt = keyFrame.getMoveUpdate();
 		if (unit->getId() != updt.unitId) {
-			NETWORK_LOG( "ClientInterface::updateMove(): Ids don't match. UnitIdLocal: " << unit->getId() 
+			NETWORK_LOG( "ClientInterface::updateMove(): Ids don't match. UnitIdLocal: " << unit->getId()
 				<< " UnitIdRemote: " << updt.unitId );
 			throw GameSyncError("Bad move update"); // msgBox and then graceful exit to Menu please...
 		}
 		if (updt.offsetX < -1 || updt.offsetX > 1 || updt.offsetY < - 1 || updt.offsetY > 1 || (!updt.offsetX && !updt.offsetY)) {
-			NETWORK_LOG( "ClientInterface::updateMove(): UnitId: " << unit->getId() 
+			NETWORK_LOG( "ClientInterface::updateMove(): UnitId: " << unit->getId()
 				<< " Bad server update, pos offset out of range: " << updt.posOffset() );
 			throw GameSyncError("Bad move update"); // msgBox and then graceful exit to Menu please...
 		}
@@ -363,12 +363,12 @@ void ClientInterface::updateProjectilePath(Unit *unit, Projectile *pps, const Ve
 	try {
 		ProjectileUpdate updt = keyFrame.getProjUpdate();
 		if (unit->getId() != updt.unitId) {
-			NETWORK_LOG( "ClientInterface::updateProjectilePath(): Ids don't match. UnitIdLocal: " << unit->getId() 
+			NETWORK_LOG( "ClientInterface::updateProjectilePath(): Ids don't match. UnitIdLocal: " << unit->getId()
 				<< " UnitIdRemote: " << updt.unitId );
 			throw GameSyncError("Bad projectile update"); // msgBox and then graceful exit to Menu please...
 		}
 		if (updt.end_offset == 0) {
-			NETWORK_LOG( "ClientInterface::updateProjectilePath(): ProjectileId: " << pps->getId() 
+			NETWORK_LOG( "ClientInterface::updateProjectilePath(): ProjectileId: " << pps->getId()
 				<< " Bad server update, end frame offset is 0. " );
 			throw GameSyncError("Bad projectile update");
 		}

@@ -33,22 +33,22 @@ using namespace Shared::Graphics;
 using namespace Shared::Util;
 
 namespace Glest { namespace ProtoTypes {
-	
+
 // ===============================
 // 	class Level
 // ===============================
 
 bool Level::load(const XmlNode *levelNode, const string &dir, const TechTree *tt, const FactionType *ft) {
 	bool loadOk = true;
-	try { 
+	try {
 		m_name = levelNode->getAttribute("name")->getRestrictedValue();
 	} catch (runtime_error e) {
 		g_logger.logXmlError(dir, e.what());
 		loadOk = false;
 	}
 
-	try { 
-		kills = levelNode->getAttribute("kills")->getIntValue(); 
+	try {
+		kills = levelNode->getAttribute("kills")->getIntValue();
 		const XmlAttribute *defaultsAtt = levelNode->getAttribute("defaults", 0);
 		if (defaultsAtt && !defaultsAtt->getBoolValue()) {
 			maxHpMult = 1;
@@ -420,7 +420,7 @@ bool UnitType::load(const string &dir, const TechTree *techTree, const FactionTy
 		loadOk = false;
 	}
 
-	try { 
+	try {
 		const XmlNode *tagsNode = parametersNode->getChild("tags", 0, false);
 		if (tagsNode) {
 			for (int i = 0; i < tagsNode->getChildCount(); ++i) {
@@ -478,7 +478,7 @@ bool UnitType::load(const string &dir, const TechTree *techTree, const FactionTy
 			}
 		}
 	}
-	return loadOk;   
+	return loadOk;
 }
 
 void UnitType::addBeLoadedCommand() {
@@ -515,7 +515,7 @@ void UnitType::doChecksum(Checksum &checksum) const {
 	checksum.add(halfSize);
 	checksum.add(halfHeight);
 
-	//NETWORK_LOG( "Checksum for UnitType: " << getName() << " = " << intToHex(checksum.getSum()) )
+	NETWORK_LOG( "Checksum for UnitType: " << getName() << " = " << intToHex(checksum.getSum()) )
 }
 
 // ==================== get ====================
@@ -620,10 +620,10 @@ bool UnitType::hasSkillType(const SkillType *st) const {
 bool UnitType::isOfClass(UnitClass uc) const{
 	switch (uc) {
 		case UnitClass::WARRIOR:
-			return hasSkillClass(SkillClass::ATTACK) 
+			return hasSkillClass(SkillClass::ATTACK)
 				&& !hasSkillClass(SkillClass::HARVEST);
 		case UnitClass::WORKER:
-			return hasSkillClass(SkillClass::BUILD) 
+			return hasSkillClass(SkillClass::BUILD)
 				|| hasSkillClass(SkillClass::REPAIR)
 				|| hasSkillClass(SkillClass::HARVEST);
 		case UnitClass::BUILDING:

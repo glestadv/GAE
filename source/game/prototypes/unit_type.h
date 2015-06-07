@@ -50,6 +50,7 @@ public:
 	virtual void doChecksum(Checksum &checksum) const {
 		NameIdPair::doChecksum(checksum);
 		EnhancementType::doChecksum(checksum);
+		checksum.add(kills);
 	}
 	int getKills() const			{return kills;}
 };
@@ -173,7 +174,7 @@ public:
 	int getSkillTypeCount() const						{return skillTypes.size();}
 	const SkillType *getSkillType(int i) const			{return skillTypes[i];}
 	const MoveSkillType *getFirstMoveSkill() const			{
-		return skillTypesByClass[SkillClass::MOVE].empty() ? 0 
+		return skillTypesByClass[SkillClass::MOVE].empty() ? 0
 			: static_cast<const MoveSkillType *>(skillTypesByClass[SkillClass::MOVE].front());
 	}
 
@@ -181,7 +182,7 @@ public:
 	const CommandType *getCommandType(int i) const		{return commandTypes[i];}
 
 	const CommandType *getCommandType(const string &name) const;
-	
+
 	template <typename ConcreteType>
 	int getCommandTypeCount() const {
 		return commandTypesByClass[ConcreteType::typeClass()].size();
