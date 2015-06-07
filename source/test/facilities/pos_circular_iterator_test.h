@@ -21,10 +21,14 @@ public:
 	void setUp();
 	void tearDown();
 
-    void testBoundaryCases();
-    void testRangeOne();
-    void testRangeTwo();
-	void testNoDuplicates();
+    void testRangeZeroToOne();
+    void testRangeZeroToTwo();
+    void testRangeOneToTwo();
+
+    void testOrdering();
+
+	void testBoundaryCases();
+    void testNoDuplicates();
 };
 
 }

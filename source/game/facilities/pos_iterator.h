@@ -68,7 +68,7 @@ public:
 		int off = next->off;
 
         //cout << "PosCircularIterator::getPosForCycle(): ";
-        cout << "step: " << step << ", off: " << off << ", cycle = " << cycle << "." /*<< endl*/;
+        //cout << "step: " << step << ", off: " << off << ", cycle = " << cycle << "." /*<< endl*/;
 
         if (step == off && cycle == 1) {
             step = -step;
@@ -79,7 +79,7 @@ public:
         }
 		Vec2i res = (cycle & 1) ? Vec2i(step, off) : Vec2i(off, step);
 
-		cout << "\tRes = " << res << endl;
+		//cout << "\tRes = " << res << endl;
 
 		return res;
 	}

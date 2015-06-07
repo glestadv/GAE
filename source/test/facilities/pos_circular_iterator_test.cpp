@@ -15,12 +15,14 @@
 
 #include "leak_dumper.h"
 
+#include <iomanip>
+
 using Shared::Math::Vec2i;
 using Shared::Math::Rect2i;
 
 using Glest::Util::PosCircularIteratorOrdered;
 using Glest::Util::PosCircularIteratorFactory;
-
+using Shared::Math::fixed;
 
 namespace Test {
 
@@ -37,7 +39,9 @@ CppUnit::Test *PosCircularIteratorTest::suite() {
 	CppUnit::TestSuite *suiteOfTests = new CppUnit::TestSuite("ReverseRectIteratorTest");
 	ADD_TEST(PosCircularIteratorTest, testRangeZeroToOne);
 	ADD_TEST(PosCircularIteratorTest, testRangeZeroToTwo);
-	//ADD_TEST(PosCircularIteratorTest, testBoundaryCases);
+	ADD_TEST(PosCircularIteratorTest, testRangeOneToTwo);
+	ADD_TEST(PosCircularIteratorTest, testOrdering);
+	ADD_TEST(PosCircularIteratorTest, testBoundaryCases);
 	ADD_TEST(PosCircularIteratorTest, testNoDuplicates);
 	return suiteOfTests;
 }
@@ -105,10 +109,13 @@ void PosCircularIteratorTest::testBoundaryCases() {
     cout << "\n";
 }
 
-void printGridLines(int width) {
+void printGridLines(int map_width, int grid_width = 1) {
     cout << "+";
-    for (int i=0; i < width; ++i) {
-        cout << "-+";
+    for (int i=0; i < map_width; ++i) {
+        for (int j=0; j < grid_width; ++j) {
+            cout << "-";
+        }
+        cout << "+";
     }
     cout << "\n";
 }
@@ -130,6 +137,24 @@ void printMap(int width, int height, std::set<Vec2i> &seen) {
     printGridLines(width);
 }
 
+void printMap(int width, int height, std::map<Vec2i, int> &things) {
+    for (int y=0; y < height; ++y) {
+        printGridLines(width, 2);
+        cout << "|";
+        for (int x=0; x < width; ++x) {
+            std::map<Vec2i, int>::iterator it = things.find(Vec2i(x, y));
+            if (it != things.end()) {
+                cout << std::setw(2) << std::setfill('0') << it->second;
+            } else {
+                cout << "  ";
+            }
+            cout << "|";
+        }
+        cout << "\n";
+    }
+    printGridLines(width, 2);
+}
+
 void printList(const std::vector<Vec2i> &_list) {
     for (std::vector<Vec2i>::const_iterator it = _list.cbegin(); it != _list.cend(); ++it) {
         cout << *it;
@@ -139,14 +164,14 @@ void printList(const std::vector<Vec2i> &_list) {
 }
 
 void PosCircularIteratorTest::testRangeZeroToOne() {
-    const int width = 16;
-    const int height = 16;
+    const int width = 9;
+    const int height = 9;
     const int cx = width / 2;
     const int cy = height / 2;
     PosCircularIteratorOrdered pcio(Rect2i(Vec2i(0, 0), Vec2i(width, height)), Vec2i(cx, cy), factory->getInsideOutIterator(0, 1));
     Vec2i p;
 
-    cout << "\nTesting PosCircularIterorOrdered - range 1...\n";
+    cout << "\nTesting PosCircularIterorOrdered - range [0,1]...\n";
     CPPUNIT_ASSERT(pcio.getNext(p));
     CPPUNIT_ASSERT(p == Vec2i(cx, cy));
     std::set<Vec2i> seen;
@@ -171,14 +196,14 @@ void PosCircularIteratorTest::testRangeZeroToOne() {
 }
 
 void PosCircularIteratorTest::testRangeZeroToTwo() {
-    const int width = 16;
-    const int height = 16;
+    const int width = 9;
+    const int height = 9;
     const int cx = width / 2;
     const int cy = height / 2;
     PosCircularIteratorOrdered pcio(Rect2i(Vec2i(0, 0), Vec2i(width, height)), Vec2i(cx, cy), factory->getInsideOutIterator(0, 2));
     Vec2i p;
 
-    cout << "\nTesting PosCircularIterorOrdered - range 2...\n";
+    cout << "\nTesting PosCircularIterorOrdered - range [0,2]...\n";
     CPPUNIT_ASSERT(pcio.getNext(p));
     CPPUNIT_ASSERT(p == Vec2i(cx, cy));
     std::set<Vec2i> seen;
@@ -204,21 +229,97 @@ void PosCircularIteratorTest::testRangeZeroToTwo() {
 }
 
 
-void PosCircularIteratorTest::testNoDuplicates() {
-	PosCircularIteratorOrdered pcio(Rect2i(Vec2i(0,0), Vec2i(128,128)), Vec2i(31,64), factory->getInsideOutIterator(1, 64));
+void PosCircularIteratorTest::testRangeOneToTwo() {
+    const int width = 9;
+    const int height = 9;
+    const int cx = width / 2;
+    const int cy = height / 2;
+    PosCircularIteratorOrdered pcio(Rect2i(Vec2i(0, 0), Vec2i(width, height)), Vec2i(cx, cy), factory->getInsideOutIterator(1, 2));
+    Vec2i p;
 
+    cout << "\nTesting PosCircularIterorOrdered - range [1,2]...\n";
+    CPPUNIT_ASSERT(pcio.getNext(p));
+    //CPPUNIT_ASSERT(p == Vec2i(cx, cy));
+    std::set<Vec2i> seen;
+    std::vector<Vec2i> _list;
+    do {
+        seen.insert(p);
+        _list.push_back(p);
+    } while (pcio.getNext(p));
+
+    printMap(width, height, seen);
+    printList(_list);
+
+    Vec2i knownPositions[5 * 5 - 1] {
+        Vec2i(cx - 2, cy - 2), Vec2i(cx - 2, cy - 1), Vec2i(cx - 2, cy + 0), Vec2i(cx - 2, cy + 1), Vec2i(cx - 2, cy + 2),
+        Vec2i(cx - 1, cy - 2), Vec2i(cx - 1, cy - 1), Vec2i(cx - 1, cy + 0), Vec2i(cx - 1, cy + 1), Vec2i(cx - 1, cy + 2),
+        Vec2i(cx + 0, cy - 2), Vec2i(cx + 0, cy - 1),                        Vec2i(cx + 0, cy + 1), Vec2i(cx + 0, cy + 2),
+        Vec2i(cx + 1, cy - 2), Vec2i(cx + 1, cy - 1), Vec2i(cx + 1, cy + 0), Vec2i(cx + 1, cy + 1), Vec2i(cx + 1, cy + 2),
+        Vec2i(cx + 2, cy - 2), Vec2i(cx + 2, cy - 1), Vec2i(cx + 2, cy + 0), Vec2i(cx + 2, cy + 1), Vec2i(cx + 2, cy + 2)
+    };
+    for (int i=0; i < 24; ++i) {
+        CPPUNIT_ASSERT(seen.find(knownPositions[i]) != seen.end());
+    }
+}
+
+void PosCircularIteratorTest::testOrdering() {
+   const int width = 9;
+    const int height = 9;
+    const int cx = width / 2;
+    const int cy = height / 2;
+    PosCircularIteratorOrdered pcio(Rect2i(Vec2i(0, 0), Vec2i(width, height)), Vec2i(cx, cy), factory->getInsideOutIterator(1, 2));
+    Vec2i p;
+    fixed d;
+
+    cout << "\nTesting PosCircularIterorOrdered - distance ordering...\n";
+    CPPUNIT_ASSERT(pcio.getNext(p, d));
+    std::map<Vec2i, fixed> distMap;
+    std::map<Vec2i, int> orderMap;
+    std::vector<Vec2i> _list;
+    do {
+        distMap.insert(std::make_pair(p, d));
+        orderMap.insert(std::make_pair(p, _list.size()));
+        _list.push_back(p);
+    } while (pcio.getNext(p));
+
+    printMap(width, height, orderMap);
+    printList(_list);
+
+    d = 0;
+    for (std::vector<Vec2i>::iterator it = _list.begin(); it != _list.end(); ++it) {
+        CPPUNIT_ASSERT(distMap[*it] >= d);
+        d = distMap[*it];
+    }
+}
+
+void PosCircularIteratorTest::testNoDuplicates() {
     cout << "\nTesting PosCircularIterorOrdered - no duplicate positions...\n";
+	PosCircularIteratorOrdered pcio(Rect2i(Vec2i(0,0), Vec2i(128,128)), Vec2i(31,64), factory->getInsideOutIterator(1, 64));
     Vec2i p;
     std::set<Vec2i> seen;
-    for (int i=0; i < 32; ++i) {
-        if (pcio.getNext(p)) {
-            seen.insert(p);
-            cout << p << ", ";
-            CPPUNIT_ASSERT(seen.find(p) == seen.end());
-            if (i % 8 == 7) cout << "\n";
+    std::vector<Vec2i> _list;
+    while (pcio.getNext(p)) {
+        if (seen.find(p) != seen.end()) {
+            cout << "Testing range [1,64] : Duplicate pos: " << p << endl;
         }
+        CPPUNIT_ASSERT(seen.find(p) == seen.end());
+        seen.insert(p);
+        _list.push_back(p);
     }
-    cout << "\n\n";
+    cout << "Testing range [1,64] : Ok." << endl;
+
+    pcio.init(Rect2i(Vec2i(0,0), Vec2i(128,128)), Vec2i(31,64), factory->getInsideOutIterator(0, 16));
+    seen.clear();
+    _list.clear();
+    while (pcio.getNext(p)) {
+        if (seen.find(p) != seen.end()) {
+            cout << "Testing range [0,16] : Duplicate pos: " << p << endl;
+        }
+        CPPUNIT_ASSERT(seen.find(p) == seen.end());
+        seen.insert(p);
+        _list.push_back(p);
+    }
+    cout << "Testing range [0,16] : Ok." << endl;
 
 }
 
