@@ -558,7 +558,7 @@ int32 KeyFrame::getNextChecksum() {
 		);
 		throw GameSyncError("Insufficient checksums in keyFrame.");
 	}
-	SYNC_LOG( "Check:: checksums[" << (checksumCounter) << "] == " << intToHex(checksums[checksumCounter]) );
+	//SYNC_LOG( "Check:: checksums[" << (checksumCounter) << "] == " << intToHex(checksums[checksumCounter]) );
 	return checksums[checksumCounter++];
 }
 
@@ -567,7 +567,7 @@ void KeyFrame::addChecksum(int32 cs) {
 		throw runtime_error("Error: insufficient room for checksums in keyframe, increase KeyFrame::max_checksums.");
 	}
 	checksums[checksumCount++] = cs;
-	SYNC_LOG( "Check:: checksums[" << (checksumCount - 1) << "] == " << intToHex(checksums[checksumCount - 1]) );
+	//SYNC_LOG( "Check:: checksums[" << (checksumCount - 1) << "] == " << intToHex(checksums[checksumCount - 1]) );
 }
 
 #endif

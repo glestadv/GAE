@@ -30,7 +30,7 @@ using std::string;
 using std::stringstream;
 
 // master switch, 'world' logging
-#define LOG_WORLD_EVENTS 0
+#define LOG_WORLD_EVENTS 1
 
 // master switch, widget logging
 #define LOG_WIDGET_EVENTS 0
@@ -375,22 +375,22 @@ public:
 	stringstream _ss;									\
 	_ss << "Frame "	<< g_world.getFrameCount() <<		\
 		", Unit " << u->getId() << ": " << x;			\
-	g_logger.addWorldLogMsg(_ss.str());					\
+	g_logger.logWorldEvent(_ss.str());					\
 }
 
 #define _PATH_LOG(u) {									\
 	stringstream _ss;									\
 	_ss << "\tLow-Level Path: " << *u->getPath();		\
-	g_logger.addWorldLogMsg(_ss.str());					\
+	g_logger.logWorldEvent(_ss.str());					\
 	if (!u->getWaypointPath()->empty()) {				\
 		stringstream _ss; _ss << "\tWaypoint Path: "	\
 			<< *u->getWaypointPath();					\
-		g_logger.addWorldLogMsg(_ss.str());				\
+		g_logger.logWorldEvent(_ss.str());				\
 	}													\
 }
 
 // Log pathfinding results
-#define LOG_PATHFINDER 0
+#define LOG_PATHFINDER 1
 
 #if LOG_WORLD_EVENTS && LOG_PATHFINDER
 #	define PF_LOG(x) _LOG(x)

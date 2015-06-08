@@ -352,6 +352,7 @@ void ClientInterface::updateMove(Unit *unit) {
 			throw GameSyncError("Bad move update"); // msgBox and then graceful exit to Menu please...
 		}
 		unit->setNextPos(unit->getPos() + Vec2i(updt.offsetX, updt.offsetY));
+		unit->face( unit->getNextPos( ) );
 		unit->updateSkillCycle(updt.end_offset);
 		//NETWORK_LOG( "ClientInterface::updateMove(): UnitId: " << unit->getId() << " NextPos: " << unit->getNextPos() );
 	} catch (GameSyncError &e) {
