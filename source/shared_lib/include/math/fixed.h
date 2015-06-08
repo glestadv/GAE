@@ -103,11 +103,26 @@ private:
 	static const int64 MAX_RAW = (MAX_INTEGER << F_BITS) | (SCALE_FACTOR - 1);
 	static const int64 MIN_RAW = ~MAX_RAW;
 
+	static const int32 _sqrt2_raw = (1 << FULL_SHIFT) + 1664;
+	static fixed *_sqrt2;
+
 public:
 	static int32 scale_factor() { return SCALE_FACTOR; }
 	static int32 max_frac()	{ return SCALE_FACTOR - 1;	}
 	static int64 max_int()	{ return MAX_INTEGER;		}
 	static int64 min_int()	{ return ~MAX_INTEGER;		}
+
+	static fixed sqrt2() {
+		if (!_sqrt2) {
+			_sqrt2 = new fixed();
+			_sqrt2->raw() = _sqrt2_raw;
+		}
+		return *_sqrt2;
+	}
+
+	static fixed one() {
+		return fixed(1);
+	}
 
 	static fixed max_value() { 
 		fixed max_fixed;
@@ -128,6 +143,7 @@ public:
 	fixed()	{ assert(F_BITS % 2 == 0); }
 	fixed(const fixed &that) : datum(that.datum) { assert(F_BITS % 2 == 0); }
 	fixed(const int val)	{ assert(F_BITS % 2 == 0); *this = val; }
+	fixed(const int intp, const int fracp) : datum(intp << FULL_SHIFT + fracp) {}
 
 	int		intp() const	{ return whole_part;	}
 	int		frac() const	{ return frac_part;		}

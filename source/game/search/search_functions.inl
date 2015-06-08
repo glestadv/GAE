@@ -26,7 +26,7 @@ public:
 	/** The goal function  @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if pos is target, else false	*/
-	bool operator()(const Vec2i &pos, const float costSoFar) const { 
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const { 
 		return pos == target; 
 	}
 };
@@ -35,16 +35,16 @@ public:
 class RangeGoal {
 private:
 	Vec2i target; /**< search target	   */
-	float range; /**< range to get within */
+	fixed range; /**< range to get within */
 
 public:
-	RangeGoal(const Vec2i &target, float range) : target(target), range(range) {}
+	RangeGoal(const Vec2i &target, fixed range) : target(target), range(range) {}
 	
 	/** The goal function @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if pos is within range of target, else false	*/
 	bool operator()(const Vec2i &pos, const float costSoFar) const { 
-		return pos.dist(target) <= range; 
+		return fixedDist(pos, target) <= range; 
 	}
 };
 #if 0
@@ -108,7 +108,7 @@ public:
 	/** The goal function  @param pos the position to ignore
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return false */
-	bool operator()(const Vec2i &pos, const float costSoFar) const { 
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const { 
 		return false; 
 	}
 };
@@ -162,14 +162,14 @@ public:
 /** A uniform cost function */
 class UniformCost {
 private:
-	float cost;		/**< The uniform cost to return */
+	fixed cost;		/**< The uniform cost to return */
 
 public:
-	UniformCost(float cost) : cost(cost) {}
+	UniformCost(fixed cost) : cost(cost) {}
 
 	/** The cost function @param p1 position 1 @param p2 position 2 ('adjacent' p1)
 	  * @return cost */
-	float operator()(const Vec2i &p1, const Vec2i &p2) const { return cost; }
+	fixed operator()(const Vec2i &p1, const Vec2i &p2) const { return cost; }
 };
 
 /** distance cost, no obstacle checks */
@@ -178,12 +178,12 @@ public:
 	DistanceCost() {}
 	/** The cost function @param p1 position 1 @param p2 position 2 ('adjacent' p1)
 	  * @return 1.0 if p1 and p2 are 'in line', else SQRT2 */
-	float operator()(const Vec2i &p1, const Vec2i &p2) const {
+	fixed operator()(const Vec2i &p1, const Vec2i &p2) const {
 		assert(p1.dist(p2) < 1.5);
 		if (p1.x != p2.x && p1.y != p2.y) {
-			return SQRT2;
+			return fixed::sqrt2();
 		}
-		return 1.0f;
+		return fixed::one();
 	}
 };
 
@@ -195,12 +195,12 @@ public:
 	Vec2i target;	
 	/** The heuristic function. @param pos the position to calculate the heuristic for
 	  * @return an estimate of the cost to target */
-	float operator()(const Vec2i &pos) const {
-		float dx = (float)abs(pos.x - target.x), 
-			  dy = (float)abs(pos.y - target.y);
-		float diag = dx < dy ? dx : dy;
-		float straight = dx + dy - 2 * diag;
-		return 1.4 * diag + straight;
+	fixed operator()(const Vec2i &pos) const {
+		fixed dx = abs(pos.x - target.x), 
+			  dy = abs(pos.y - target.y);
+		fixed diag = dx < dy ? dx : dy;
+		fixed straight = dx + dy - 2 * diag;
+		return fixed::sqrt2() * diag + straight;
 	}
 };
 
@@ -209,5 +209,5 @@ class ZeroHeuristic {
 public:
 	ZeroHeuristic(){}
 	/** The 'no heuristic' function. @param pos the position to ignore @return 0.f */
-	float operator()(const Vec2i &pos) const { return 0.0f; }
+	fixed operator()(const Vec2i &pos) const { return 0; }
 };

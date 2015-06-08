@@ -82,15 +82,15 @@ struct NodeMapCell {
 	/** 'next' node in open list, valid only if this node is open */
 	PackedPos nextOpen;
 	/** heuristic from this cell, valid only if node visited */
-	float heuristic;
+	fixed heuristic;
 	/** cost to this cell, valid only if node visited */
-	float distToHere;
+	fixed distToHere;
 
 	/** Construct NodeMapCell */
 	NodeMapCell()		{ memset( this, 0, sizeof(*this) ); }
 
 	/** the estimate function, costToHere + heuristic */
-	float estimate()	{ return heuristic + distToHere; }
+	fixed estimate()	{ return heuristic + distToHere; }
 };
 
 #pragma pack(pop)
@@ -129,18 +129,18 @@ public:
 	/** is the node at pos closed */
 	bool isClosed(const Vec2i &pos)	{ return nodeMap[pos].mark == searchCounter + 1;	}
 
-	bool setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d);
-	void updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost);
+	bool setOpen(const Vec2i &pos, const Vec2i &prev, fixed h, fixed d);
+	void updateOpen(const Vec2i &pos, const Vec2i &prev, const fixed cost);
 	Vec2i getBestCandidate();
 	/** get the best heuristic node seen this search */
 	Vec2i getBestSeen()		{ return bestH.valid() ? Vec2i(bestH) : Vec2i(-1); }
 
 	/** get the heuristic of the node at pos [known to be visited] */
-	float getHeuristicAt(const Vec2i &pos)	{ return nodeMap[pos].heuristic;	}
+	fixed getHeuristicAt(const Vec2i &pos)	{ return nodeMap[pos].heuristic;	}
 	/** get the cost to the node at pos [known to be visited] */
-	float getCostTo(const Vec2i &pos)		{ return nodeMap[pos].distToHere;	}
+	fixed getCostTo(const Vec2i &pos)		{ return nodeMap[pos].distToHere;	}
 	/** get the estimate for the node at pos [known to be visited] */
-	float getEstimateFor(const Vec2i &pos)	{ return nodeMap[pos].estimate();	}
+	fixed getEstimateFor(const Vec2i &pos)	{ return nodeMap[pos].estimate();	}
 	/** get the best path to the node at pos [known to be visited] */
 	Vec2i getBestTo(const Vec2i &pos)		{ 
 		return nodeMap[pos].prevNode.valid() ? Vec2i(nodeMap[pos].prevNode) : Vec2i(-1);

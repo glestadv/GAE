@@ -323,7 +323,7 @@ void incrementMap(TypeMap<int> *iMap, Vec2i pos, int radius) {
 	for (int y = pos.y - radius; y <= pos.y + radius; ++y) {
 		for (int x = pos.x - radius; x <= pos.x + radius; ++x) {
 			Vec2i tpos(x, y);
-			if (tpos.dist(pos) <= radius) {
+			if (fixedDist(tpos, pos) <= radius) {
 				iMap->setInfluence(tpos, iMap->getInfluence(tpos) + 1);
 			}
 		}
@@ -334,7 +334,7 @@ void deccrementMap(TypeMap<int> *iMap, Vec2i pos, int radius) {
 	for (int y = pos.y - radius; y <= pos.y + radius; ++y) {
 		for (int x = pos.x - radius; x <= pos.x + radius; ++x) {
 			Vec2i tpos(x, y);
-			if (tpos.dist(pos) <= radius) {
+			if (fixedDist(tpos, pos) <= radius) {
 				iMap->setInfluence(tpos, iMap->getInfluence(tpos) - 1);
 			}
 		}
@@ -411,17 +411,17 @@ void Cartographer::tick() {
 /** SearchEngine<>::aStar<>() goal function, used to build distance maps. */
 class DistanceBuilderGoal {
 private:
-	TypeMap<float> *iMap; /**< inluence map to write distance data into.	  */
-	float maxRange;
+	TypeMap<fixed> *iMap; /**< inluence map to write distance data into.	  */
+	fixed maxRange;
 
 public:
-	DistanceBuilderGoal(TypeMap<float> *iMap, float maxRange = numeric_limits<float>::infinity())
+	DistanceBuilderGoal(TypeMap<fixed> *iMap, fixed maxRange = fixed::max_value())
 			: iMap(iMap), maxRange(maxRange) {}
 	
 	/** The goal function, writes costSoFar into the influence map.
 	  * @param pos position to test @param costSoFar the cost of the shortest path to pos
 	  * @return true if maxRange is exceeded. */
-	bool operator()(const Vec2i &pos, const float costSoFar) const {
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const {
 		if (costSoFar > maxRange) {
 			return true;
 		}
@@ -430,9 +430,9 @@ public:
 	}
 };
 
-void Cartographer::adjustGlestimalMap(Field f, TypeMap<float> &iMap, const Vec2i &pos, float range) {
+void Cartographer::adjustGlestimalMap(Field f, TypeMap<fixed> &iMap, const Vec2i &pos, fixed range) {
 	// Set pos open, write distance data to iMap from pos to 'range' in field f
-	nmSearchEngine->setStart(pos, 0.f);
+	nmSearchEngine->setStart(pos, 0);
 	MoveCost cost(f, 1, masterMap);
 	DistanceBuilderGoal goal(&iMap, range);
 	ZeroHeuristic zero;
@@ -444,7 +444,7 @@ void Cartographer::adjustGlestimalMap(Field f, TypeMap<float> &iMap, const Vec2i
   * least 15 cells distant from each other. */
 void Cartographer::buildGlestimalMap(Field f, V2iList &positions) {
 	Rectangle rect(0, 0, cellMap->getW() - 2, cellMap->getH() - 2);
-	TypeMap<float> iMap(rect, 0.f);
+	TypeMap<fixed> iMap(rect, fixed(0));
 
 	// 1. Setup search. Reset NodeMap and set positions of all Techtree resources open
 	nmSearchEngine->reset();
@@ -453,10 +453,10 @@ void Cartographer::buildGlestimalMap(Field f, V2iList &positions) {
 			foreach (V2iList, tPos, it->second) {
 				Vec2i cPos = *tPos * 2;
 				//FIXME: assumes Map::cellScale == 2, use a Util::RectIterator
-				nmSearchEngine->setOpen(cPos, 0.f);
-				nmSearchEngine->setOpen(cPos + OrdinalOffsets[OrdinalDir::EAST], 0.f);
-				nmSearchEngine->setOpen(cPos + OrdinalOffsets[OrdinalDir::SOUTH], 0.f);
-				nmSearchEngine->setOpen(cPos + OrdinalOffsets[OrdinalDir::SOUTH_EAST], 0.f);
+				nmSearchEngine->setOpen(cPos, 0);
+				nmSearchEngine->setOpen(cPos + OrdinalOffsets[OrdinalDir::EAST], 0);
+				nmSearchEngine->setOpen(cPos + OrdinalOffsets[OrdinalDir::SOUTH], 0);
+				nmSearchEngine->setOpen(cPos + OrdinalOffsets[OrdinalDir::SOUTH_EAST], 0);
 			}
 		}
 	}
@@ -467,15 +467,15 @@ void Cartographer::buildGlestimalMap(Field f, V2iList &positions) {
 	nmSearchEngine->aStar(goal, cost, zero);
 
 	// 3. Find spawn points
-	float big;
+	fixed big;
 	do {
 		// 3a. scan iMap, find largest value
-		big = 0.f;
+		big = 0;
 		Vec2i bigPos(-1);
 		Util::RectIterator iter(cellMap->getBounds());
 		while (iter.more()) {
 			Vec2i pos = iter.next();
-			float inf = iMap.getInfluence(pos);
+			fixed inf = iMap.getInfluence(pos);
 			if (inf > big) {
 				big = inf;
 				bigPos = pos;
@@ -484,11 +484,11 @@ void Cartographer::buildGlestimalMap(Field f, V2iList &positions) {
 		// 3b. add cell with largest value to positioins, and adjust the influence map
 		if (bigPos != Vec2i(-1)) {
 			positions.push_back(bigPos);
-			adjustGlestimalMap(f, iMap, bigPos, 15.f);
+			adjustGlestimalMap(f, iMap, bigPos, 15);
 		}
 	// while the best pos we found is at least 25 cells from a tech resource 
 	// and at least 15 cells from another spawn point (travelling in Field f)
-	} while (big > 25.f);
+	} while (big > 25);
 }
 
 /** Initialise annotated maps for each team, call after initial units visibility is applied */
@@ -571,7 +571,7 @@ public:
 			: m_resourceType(resourceType), m_cellMap(cellMap) {}
 
 	/** The goal function */
-	bool operator()(const Vec2i &pos, const float costSoFar) const {
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const {
 		Tile *tile = m_cellMap->getTile(Map::toTileCoords(pos));
 		if (tile->getResource() && tile->getResource()->getType() == m_resourceType) {
 			return true;
@@ -614,7 +614,7 @@ void Surveyor::findResourceLocations() {
 		ResourceFinderGoal goal(*it, cellMap);
 		DistanceCost cost;
 		ZeroHeuristic h;
-		engine->setStart(m_basePos, 0.f);
+		engine->setStart(m_basePos, 0);
 		AStarResult res = engine->aStar(goal, cost, h);
 
 		if (res == AStarResult::COMPLETE) {
@@ -676,20 +676,20 @@ void Surveyor::buildBaseMap() {
 	}
 }
 
-typedef std::pair<float,float> FloatPair;
-typedef TypeMap<FloatPair> DistancePairMap;
+typedef std::pair<fixed,fixed> FixedPair;
+typedef TypeMap<FixedPair> DistancePairMap;
 
 /** Goal function for proximity (friendly/enemy) search */
 class ProximtyCalculatorGoal {
 private:
-	float				 m_range;	/**< max range to look */
+	fixed				 m_range;	/**< max range to look */
 	DistancePairMap		*m_iMap;		/**< inluence map to write results into */
 	const PatchMap<2>	*m_nogoMap;
 	const vector<Vec2i>	&m_enemyLocs;
 
 public:
 	/** Construct goal function object */
-	ProximtyCalculatorGoal(float range, DistancePairMap *iMap, PatchMap<2> *ngMap, const vector<Vec2i> &enemyLocs)
+	ProximtyCalculatorGoal(fixed range, DistancePairMap *iMap, PatchMap<2> *ngMap, const vector<Vec2i> &enemyLocs)
 		: m_range(range), m_iMap(iMap), m_nogoMap(ngMap), m_enemyLocs(enemyLocs) {}
 
 	/** The goal function 
@@ -697,20 +697,20 @@ public:
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true when range is exceeded.
 	  */
-	bool operator()(const Vec2i &pos, const float costSoFar) const { 
-		const float inf = numeric_limits<float>::infinity();
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const { 
+		const fixed fmax = fixed::max_value();
 		if (costSoFar > m_range) {
 			return true;
 		}
 		if (m_nogoMap->getInfluence(pos)) {
-			m_iMap->setInfluence(pos, std::make_pair(inf,inf));
+			m_iMap->setInfluence(pos, std::make_pair(fmax, fmax));
 			return false;
 		}
 
-		float baseProximity = costSoFar;
-		float enemyProximity = m_enemyLocs.empty() ? 0.f : numeric_limits<float>::infinity();
+		fixed baseProximity = costSoFar;
+		fixed enemyProximity = m_enemyLocs.empty() ? 0 : fixed::max_value();
 		foreach_const (vector<Vec2i>, it, m_enemyLocs) {
-			float dist = pos.dist(*it);
+			fixed dist = fixedDist( pos, *it );
 			if (dist < enemyProximity) {
 				enemyProximity = dist;
 			}
@@ -722,7 +722,7 @@ public:
 
 Vec2i Surveyor::findLocationForBuilding(const UnitType *buildingType, LocationType locType) {
 	// refs
-	const float inf = numeric_limits<float>::infinity();
+	const fixed fmax = fixed::max_value();
 	int size = buildingType->getSize();
 	SearchEngine<NodeMap> *engine = m_cartographer->getSearchEngine();
 	Map *cellMap = m_cartographer->getCellMap();
@@ -732,15 +732,15 @@ Vec2i Surveyor::findLocationForBuilding(const UnitType *buildingType, LocationTy
 
 	// create and fill-in influence map
 	Rectangle rect(0, 0, m_w, m_h);
-	DistancePairMap iMap(rect, std::make_pair(inf, inf));
-	iMap.clearMap(std::make_pair(inf, inf));
-	ProximtyCalculatorGoal goal(20.f, &iMap, m_baseMap, m_enemyLocs);
+	DistancePairMap iMap(rect, std::make_pair(fmax, fmax));
+	iMap.clearMap(std::make_pair(fmax, fmax));
+	ProximtyCalculatorGoal goal(fixed(20), &iMap, m_baseMap, m_enemyLocs);
 	DistanceCost cost;
 	ZeroHeuristic h;
-	engine->setStart(m_basePos, 0.f);
+	engine->setStart(m_basePos, 0);
 	engine->aStar(goal, cost, h);
 	
-	typedef pair<Vec2i, FloatPair> CandidatePosition;
+	typedef pair<Vec2i, FixedPair> CandidatePosition;
 	vector<CandidatePosition> candidatePositions;
 
 	// extract candidate positions
@@ -749,12 +749,12 @@ Vec2i Surveyor::findLocationForBuilding(const UnitType *buildingType, LocationTy
 		Vec2i pos = iter.next();
 		RectIterator iter2(pos, pos + Vec2i(size - 1));
 		bool tryPos = true;
-		float avgBaseDist = 0.f;
-		float avgEnemyDist = 0.f;
+		fixed avgBaseDist = 0;
+		fixed avgEnemyDist = 0;
 		while (iter2.more()) {
 			Vec2i pos2 = iter2.next();
-			FloatPair dists = iMap.getInfluence(pos2);
-			if (dists.first == inf) {
+			FixedPair dists = iMap.getInfluence(pos2);
+			if (dists.first == fmax) {
 				tryPos = false;
 				break;
 			} else {

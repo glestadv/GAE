@@ -182,6 +182,11 @@ void FixedPointTest::testNeg() {
 }
 
 void FixedPointTest::testSqRt() {
+	fixed rt2 = numbers[2].sqRt();
+	cout << "\nsqrt2 = "<< rt2;
+
+	cout << "\nfixed::sqrt2() = " << fixed::sqrt2();
+
 	fixed rt4 = numbers[4].sqRt();
 	cout << "\nsqrt(4) == " << rt4;
 

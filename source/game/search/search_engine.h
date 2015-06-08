@@ -180,7 +180,7 @@ public:
 	  * @param h heuristc, estimate to goal from pos
 	  * @param d distance or cost to node (optional, defaults to 0)
 	  */
-	void setOpen(DomainKey pos, float h, float d = 0.f) { 
+	void setOpen(DomainKey pos, fixed h, fixed d = 0) { 
 		nodeStorage->setOpen(pos, invalidKey, h, d); 
 	}
 	
@@ -189,7 +189,7 @@ public:
 	  * @param h heuristc, estimate to goal from pos
 	  * @param d distance or cost to node (optional, defaults to 0)
 	  */
-	void setStart(DomainKey pos, float h, float d = 0.f) {
+	void setStart(DomainKey pos, fixed h, fixed d = 0) {
 		nodeStorage->reset();
 		if ( nodeLimit > 0 ) {
 			nodeStorage->setMaxNodes(nodeLimit);
@@ -213,7 +213,7 @@ public:
 	int getExpandedLastRun() { return expanded; }
 
 	/** Retrieves cost to the node at pos (known to be visited) */
-	float getCostTo(const DomainKey &pos) {
+	fixed getCostTo(const DomainKey &pos) {
 		assert(nodeStorage->isOpen(pos) || nodeStorage->isClosed(pos));
 		return nodeStorage->getCostTo(pos);
 	}
@@ -250,14 +250,14 @@ public:
 				if (nodeStorage->isClosed(nPos)) {
 					continue;
 				}
-				float cost = costFunc(minPos, nPos);
-				if (cost == numeric_limits<float>::infinity()) {
+				fixed cost = costFunc(minPos, nPos);
+				if (cost == fixed::max_value()) {
 					continue;
 				}
 				if (nodeStorage->isOpen(nPos)) {
 					nodeStorage->updateOpen(nPos, minPos, cost);
 				} else {
-					const float &costToMin = nodeStorage->getCostTo(minPos);
+					const fixed &costToMin = nodeStorage->getCostTo(minPos);
 					if (!nodeStorage->setOpen(nPos, minPos, heuristic(nPos), costToMin + cost)) {
 						goalPos = nodeStorage->getBestSeen();
 						return AStarResult::NODE_LIMIT;

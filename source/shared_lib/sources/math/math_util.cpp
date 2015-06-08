@@ -18,6 +18,9 @@
 
 namespace Shared { namespace Math {
 
+
+fixed *fixed::_sqrt2 = nullptr;
+
 /// fixed point square root, adapted from code at c.snippets.org
 /// @todo make faster? [test perfomance vs sqrtf(), if horrible, make faster.]
 fixed fixed::sqRt_c() const {

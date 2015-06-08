@@ -65,11 +65,11 @@ struct PosOff {				/**< A bit packed position (Vec2i) and offset (direction) pai
 #pragma pack(push, 2)
 struct AStarNode {					/**< A node structure for A* with NodePool							*/
 	PosOff posOff;				   /**< position of this node, and direction of best path to it		   */
-	float heuristic;			  /**< estimate of distance to goal									  */
-	float distToHere;			 /**< cost from origin to this node									 */
+	fixed heuristic;			  /**< estimate of distance to goal									  */
+	fixed distToHere;			 /**< cost from origin to this node									 */
 	int32 heap_ndx;
 
-	float est()	const { return distToHere + heuristic;}	   /**< estimate, costToHere + heuristic   */
+	fixed est()	const { return distToHere + heuristic;}	   /**< estimate, costToHere + heuristic   */
 	Vec2i pos()		  { return posOff.getPos();		  }	  /**< position of this node			  */
 	Vec2i prev()	  { return posOff.getPrev();	  }  /**< best path to this node is from	 */
 	bool hasPrev()	  { return posOff.hasOffset();	  } /**< has valid previous 'pointer'		*/
@@ -78,7 +78,7 @@ struct AStarNode {					/**< A node structure for A* with NodePool							*/
 	int  getHeapIndex() const  { return heap_ndx; }
 
 	bool operator<(const AStarNode &that) const {
-		const float diff = (distToHere + heuristic) - (that.distToHere + that.heuristic);
+		const fixed diff = (distToHere + heuristic) - (that.distToHere + that.heuristic);
 		if (diff < 0) return true;
 		else if (diff > 0) return false;
 		// tie, prefer closer to goal...
@@ -158,8 +158,8 @@ public:
 	bool isClosed(const Vec2i &pos) { return markerArray.isClosed(pos); }	/**< test if a position is closed */
 	bool isListed(const Vec2i &pos) { return markerArray.isListed(pos); }	/**< @deprecated needed for canPathOut() */
 
-	bool setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d);
-	void updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost);
+	bool setOpen(const Vec2i &pos, const Vec2i &prev, fixed h, fixed d);
+	void updateOpen(const Vec2i &pos, const Vec2i &prev, const fixed cost);
 
 	/** get the best candidate from the open list, and close it.
 	  * @return the lowest estimate node from the open list, or -1,-1 if open list empty */
@@ -174,11 +174,11 @@ public:
 	/** get the best heuristic node seen this search */
 	Vec2i getBestSeen()						{ return leastH->pos(); }
 	/** get the heuristic of the node at pos [known to be visited] */
-	float getHeuristicAt(const Vec2i &pos)	{ return markerArray.get(pos)->heuristic;	}
+	fixed getHeuristicAt(const Vec2i &pos)	{ return markerArray.get(pos)->heuristic;	}
 	/** get the cost to the node at pos [known to be visited] */
-	float getCostTo(const Vec2i &pos)		{ return markerArray.get(pos)->distToHere;	}
+	fixed getCostTo(const Vec2i &pos)		{ return markerArray.get(pos)->distToHere;	}
 	/** get the estimate for the node at pos [known to be visited] */
-	float getEstimateFor(const Vec2i &pos)	{ return markerArray.get(pos)->est();		}
+	fixed getEstimateFor(const Vec2i &pos)	{ return markerArray.get(pos)->est();		}
 	/** get the best path to the node at pos [known to be closed] */
 	Vec2i getBestTo(const Vec2i &pos)		{ 
 		AStarNode *ptr = markerArray.get(pos);

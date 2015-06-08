@@ -178,7 +178,7 @@ bool RoutePlanner::isLegalMove(Unit *unit, const Vec2i &pos2) const {
 	return true;
 }
 
-float RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const Vec2i &dest) {
+fixed RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const Vec2i &dest) {
 	// setup search
 	MoveCost moveCost(field, size, world->getCartographer()->getMasterMap());
 	DiagonalDistance heuristic(dest);
@@ -189,7 +189,7 @@ float RoutePlanner::quickSearch(Field field, int size, const Vec2i &start, const
 	if (r == AStarResult::COMPLETE && nsgSearchEngine->getGoalPos() == dest) {
 		return nsgSearchEngine->getCostTo(dest);
 	}
-	return numeric_limits<float>::infinity();
+	return fixed::max_value();
 }
 
 HAAStarResult RoutePlanner::setupHierarchicalOpenList(Unit *unit, const Vec2i &target) {
@@ -209,8 +209,8 @@ HAAStarResult RoutePlanner::setupHierarchicalOpenList(Unit *unit, const Vec2i &t
 	AnnotatedMap *aMap = world->getCartographer()->getMasterMap();
 	aMap->annotateLocal(unit);
 	for (Transitions::iterator it = transitions.begin(); it != transitions.end(); ++it) {
-		float cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), (*it)->nwPos);
-		if (cost != numeric_limits<float>::infinity()) {
+		fixed cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), (*it)->nwPos);
+		if (cost != fixed::max_value()) {
 			tSearchEngine->setOpen(*it, dd((*it)->nwPos), cost);
 			startTrap = false;
 		}
@@ -220,8 +220,8 @@ HAAStarResult RoutePlanner::setupHierarchicalOpenList(Unit *unit, const Vec2i &t
 		// do again, without annnotations, return TRAPPED if all else goes well
 		bool locked = true;
 		for (Transitions::iterator it = transitions.begin(); it != transitions.end(); ++it) {
-			float cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), (*it)->nwPos);
-			if (cost != numeric_limits<float>::infinity()) {
+			fixed cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), (*it)->nwPos);
+			if (cost != fixed::max_value()) {
 				tSearchEngine->setOpen(*it, dd((*it)->nwPos), cost);
 				locked = false;
 			}
@@ -255,8 +255,8 @@ HAAStarResult RoutePlanner::setupHierarchicalSearch(Unit *unit, const Vec2i &des
 	// attempt quick path from dest to each transition, 
 	// if successful add transition to goal set
 	for (Transitions::iterator it = transitions.begin(); it != transitions.end(); ++it) {
-		float cost = quickSearch(unit->getCurrField(), unit->getSize(), dest, (*it)->nwPos);
-		if (cost != numeric_limits<float>::infinity()) {
+		fixed cost = quickSearch(unit->getCurrField(), unit->getSize(), dest, (*it)->nwPos);
+		if (cost != fixed::max_value()) {
 			goalFunc.goalTransitions().insert(*it);
 			goalTrap = false;
 		}
@@ -301,7 +301,7 @@ private:
 
 public:
 	UnexploredGoal(int teamIndex) : team(teamIndex) {}
-	bool operator()(const Transition *t, const float d) const {
+	bool operator()(const Transition *t, const fixed d) const {
 		Edges::const_iterator it =  t->edges.begin();
 		for ( ; it != t->edges.end(); ++it) {
 			if (!g_map.getTile(Map::toTileCoords((*it)->transition()->nwPos))->isExplored(team)) {
@@ -317,9 +317,9 @@ public:
 	/** returns the 'potential goal' transition closest to target, or null if no potential goals */
 	const Transition* getBestSeen(const Vec2i &currPos, const Vec2i &target) {
 		const Transition *best = 0;
-		float distToBest = numeric_limits<float>::infinity();
+		fixed distToBest = fixed::max_value();
 		foreach (set<const Transition*>, it, potentialGoals) {
-			float myDist = (*it)->nwPos.dist(target) + (*it)->nwPos.dist(currPos);
+			fixed myDist = fixedDist( (*it)->nwPos, target ) + fixedDist( (*it)->nwPos, currPos );
 			if (myDist < distToBest) {
 				best = *it;
 				distToBest = myDist;
@@ -337,7 +337,7 @@ class UnexploredCost {
 
 public:
 	UnexploredCost(Field f, int s, int team) : field(f), size(s), team(team) {}
-	float operator()(const Transition *t, const Transition *t2) const {
+	fixed operator()(const Transition *t, const Transition *t2) const {
 		Edges::const_iterator it =  t->edges.begin();
 		for ( ; it != t->edges.end(); ++it) {
 			if ((*it)->transition() == t2) {
@@ -351,7 +351,7 @@ public:
 		&& g_map.getTile(Map::toTileCoords((*it)->transition()->nwPos))->isExplored(team)) {
 			return (*it)->cost(size);
 		}
-		return numeric_limits<float>::infinity();
+		return fixed::max_value();
 	}
 };
 
@@ -553,10 +553,10 @@ TravelState RoutePlanner::doQuickPathSearch(Unit *unit, const Vec2i &target) {
 	UnitPath &path = *unit->getPath();
 	IF_DEBUG_EDITION( clearOpenClosed(unit->getPos(), target); )
 	aMap->annotateLocal(unit);
-	float cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), target);
+	fixed cost = quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), target);
 	aMap->clearLocalAnnotations(unit);
 	IF_DEBUG_EDITION( collectOpenClosed<NodePool>(nodeStore); )
-	if (cost != numeric_limits<float>::infinity()) {
+	if (cost != fixed::max_value()) {
 		Vec2i pos = nsgSearchEngine->getGoalPos();
 		while (pos.x != -1) {
 			path.push_front(pos);
@@ -790,7 +790,7 @@ TravelState RoutePlanner::findPathToGoal(Unit *unit, PMap1Goal &goal, const Vec2
 	WaypointPath &wpPath = *unit->getWaypointPath();
 
 	// if at goal
-	if (goal(unit->getPos(), 0.f)) {
+	if (goal(unit->getPos(), 0)) {
 		unit->stop();
 		PF_LOG( "ARRIVED, at goal." );
 		PF_PATH_LOG( unit );
@@ -889,8 +889,7 @@ bool RoutePlanner::repairPath(Unit *unit) {
 
 	AnnotatedMap *aMap = world->getCartographer()->getAnnotatedMap(unit);
 	aMap->annotateLocal(unit);
-	if (quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), dest)
-	!= numeric_limits<float>::infinity()) {
+	if (quickSearch(unit->getCurrField(), unit->getSize(), unit->getPos(), dest) != fixed::max_value()) {
 		Vec2i pos = nsgSearchEngine->getGoalPos();
 		while (pos.x != -1) {
 			path.push_front(pos);
@@ -1009,12 +1008,12 @@ Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPo
 
 	//find nearest pos
 	Vec2i nearestPos = unitPos;
-	float nearestDist = unitPos.dist(pos);
+	fixed nearestDist = fixedDist(unitPos, pos);
 	for (int i = -maxFreeSearchRadius; i <= maxFreeSearchRadius; ++i) {
 		for (int j = -maxFreeSearchRadius; j <= maxFreeSearchRadius; ++j) {
 			Vec2i currPos = pos + Vec2i(i, j);
 			if (world->getMap()->areAproxFreeCells(currPos, size, field, teamIndex)) {
-				float dist = currPos.dist(pos);
+				fixed dist = fixedDist(currPos, pos);
 
 				//if nearer from finalPos
 				if (dist < nearestDist) {
@@ -1023,7 +1022,7 @@ Vec2i RoutePlanner::computeNearestFreePos(const Unit *unit, const Vec2i &finalPo
 					nearestDist = dist;
 				//if the distance is the same compare distance to unit
 				} else if (dist == nearestDist) {
-					if (currPos.dist(unitPos) < nearestPos.dist(unitPos)) {
+					if (fixedDist(currPos, unitPos) < fixedDist(nearestPos, unitPos)) {
 						//RUNTIME_CHECK(world->getMap()->isInside(currPos));
 						nearestPos = currPos;
 					}

@@ -62,7 +62,7 @@ void NodePool::setMaxNodes(const int max) {
   * @param h the heuristic for pos
   * @param d the costSoFar for pos
   * @return true if added, false if node limit reached		*/
-bool NodePool::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
+bool NodePool::setOpen(const Vec2i &pos, const Vec2i &prev, fixed h, fixed d) {
 	assert(!isOpen(pos));
 	AStarNode *node = newNode();
 	if (!node) { // NodePool exhausted
@@ -100,7 +100,7 @@ void NodePool::addOpenNode(AStarNode *node) {
   * @param pos the open postion to test
   * @param prev the new path from
   * @param d the distance to here through prev		*/
-void NodePool::updateOpen(const Vec2i &pos, const Vec2i &prev, const float cost) {
+void NodePool::updateOpen(const Vec2i &pos, const Vec2i &prev, const fixed cost) {
 	//assert(isClosed(prev));
 	AStarNode *posNode, *prevNode;
 	posNode = markerArray.get(pos);

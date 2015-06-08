@@ -267,7 +267,7 @@ public:
 		return getSiteMap(key);
 	}
 
-	void adjustGlestimalMap(Field f, TypeMap<float> &iMap, const Vec2i &pos, float range);
+	void adjustGlestimalMap(Field f, TypeMap<fixed> &iMap, const Vec2i &pos, fixed range);
 	void buildGlestimalMap(Field f, V2iList &positions);
 
 	Map*	getCellMap() { return cellMap; }

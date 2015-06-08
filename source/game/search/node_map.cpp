@@ -70,7 +70,7 @@ Vec2i NodeMap::getBestCandidate() {
   * @param d the costSoFar for pos
   * @return true if added, false if node limit reached
   */
-bool NodeMap::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
+bool NodeMap::setOpen(const Vec2i &pos, const Vec2i &prev, fixed h, fixed d) {
 	assert(nodeMap[pos].mark < searchCounter);
 	if ( nodeCount == nodeLimit ) {
 		return false;
@@ -79,7 +79,7 @@ bool NodeMap::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
 	nodeMap[pos].mark = searchCounter;
 	nodeMap[pos].heuristic = h;
 	nodeMap[pos].distToHere = d;
-	float est = h + d;
+	fixed est = h + d;
 	nodeCount ++;
 
 #	if _GAE_DEBUG_EDITION_
@@ -131,13 +131,13 @@ bool NodeMap::setOpen(const Vec2i &pos, const Vec2i &prev, float h, float d) {
   * @param prev the new path from
   * @param d the distance to here through prev
   */
-void NodeMap::updateOpen(const Vec2i &pos, const Vec2i &prev, const float d) {
-	const float dist = nodeMap[prev].distToHere + d;
+void NodeMap::updateOpen(const Vec2i &pos, const Vec2i &prev, const fixed d) {
+	const fixed dist = nodeMap[prev].distToHere + d;
 	if ( dist < nodeMap[pos].distToHere ) {
 		//LOG ( "Updating open node." );
 		nodeMap[pos].distToHere = dist;
 		nodeMap[pos].prevNode = prev;
-		const float est = nodeMap[pos].estimate();
+		const fixed est = nodeMap[pos].estimate();
 
 		if ( pos == openTop ) { // is top of open list anyway
 			//LOG ( "was already top" );

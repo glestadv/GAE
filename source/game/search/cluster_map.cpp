@@ -379,10 +379,10 @@ struct Visitor {
 };
 
 /** compute path length using midpoint line algorithm, @return infinite if path not possible, else cost */
-float ClusterMap::linePathLength(Field f, int size, const Vec2i &start, const Vec2i &dest) {
+fixed ClusterMap::linePathLength(Field f, int size, const Vec2i &start, const Vec2i &dest) {
 	//_PROFILE_FUNCTION();
 	if (start == dest) {
-		return 0.f;
+		return 0;
 	}
 	vector<Vec2i> linePath;
 	Visitor visitor(linePath);
@@ -391,18 +391,18 @@ float ClusterMap::linePathLength(Field f, int size, const Vec2i &start, const Ve
 	MoveCost costFunc(f, size, aMap);
 	vector<Vec2i>::iterator it = linePath.begin();
 	vector<Vec2i>::iterator nIt = it + 1;
-	float cost = 0.f;
-	while (nIt != linePath.end() && cost != numeric_limits<float>::infinity()) {
+	fixed cost = 0;
+	while (nIt != linePath.end() && cost != fixed::max_value()) {
 		cost += costFunc(*it++, *nIt++);
 	}
 	return cost;
 }
 
 /** compute path length using A* (with node limit), @return infinite if path not possible, else cost */
-float ClusterMap::aStarPathLength(Field f, int size, const Vec2i &start, const Vec2i &dest) {
+fixed ClusterMap::aStarPathLength(Field f, int size, const Vec2i &start, const Vec2i &dest) {
 	//_PROFILE_FUNCTION();
 	if (start == dest) {
-		return 0.f;
+		return 0;
 	}
 	SearchEngine<NodePool> *se = carto->getRoutePlanner()->getSearchEngine();
 	MoveCost costFunc(f, size, aMap);
@@ -413,7 +413,7 @@ float ClusterMap::aStarPathLength(Field f, int size, const Vec2i &start, const V
 	AStarResult res = se->aStar(goal, costFunc, dd);
 	Vec2i goalPos = se->getGoalPos();
 	if (res != AStarResult::COMPLETE || goalPos != dest) {
-		return numeric_limits<float>::infinity();
+		return fixed::max_value();
 	}
 	return se->getCostTo(goalPos);
 }
@@ -525,14 +525,14 @@ void ClusterMap::evalCluster(const Vec2i &cluster) {
 				if (t == t2) continue;
 				Vec2i dest = t2->nwPos;
 #				if _USE_LINE_PATH_
-					float cost = linePathLength(f, 1, start, dest);
-					if (cost == numeric_limits<float>::infinity()) {
+					fixed cost = linePathLength(f, 1, start, dest);
+					if (cost == fixed::max_value()) {
 						cost  = aStarPathLength(f, 1, start, dest);
 					}
 #				else
-					float cost  = aStarPathLength(f, 1, start, dest);
+					cost  = aStarPathLength(f, 1, start, dest);
 #				endif
-				if (cost == numeric_limits<float>::infinity()) continue;
+				if (cost == fixed::max_value()) continue;
 				Edge *e = new Edge(t2, f);
 				t->edges.push_back(e);
 				e->addWeight(cost);
@@ -541,13 +541,13 @@ void ClusterMap::evalCluster(const Vec2i &cluster) {
 				while (size <= maxClear) {
 #					if _USE_LINE_PATH_
 						cost = linePathLength(f, 1, start, dest);
-						if (cost == numeric_limits<float>::infinity()) {
+						if (cost == fixed::max_value()) {
 							cost  = aStarPathLength(f, size, start, dest);
 						}
 #					else
-						float cost  = aStarPathLength(f, size, start, dest);
+						cost  = aStarPathLength(f, size, start, dest);
 #					endif
-					if (cost == numeric_limits<float>::infinity()) {
+					if (cost == fixed::max_value()) {
 						break;
 					}
 					e->addWeight(cost);
@@ -599,7 +599,7 @@ bool TransitionNodeStore::assertOpen() {
 			return false;
 		}
 		seen.insert((*it2)->pos);
-		if ((*it1)->est() > (*it2)->est() + 0.0001f) { // stupid inaccurate fp
+		if ((*it1)->est() > (*it2)->est()) {
 			g_logger.logProgramEvent("open list is not ordered correctly.");
 			cout << "Open list corrupt: it1.est() == " << (*it1)->est() 
 				<< " > it2.est() == " << (*it2)->est() << endl;
@@ -630,7 +630,7 @@ Transition* TransitionNodeStore::getBestSeen() {
 	return NULL;
 }
 
-bool TransitionNodeStore::setOpen(const Transition* pos, const Transition* prev, float h, float d) {
+bool TransitionNodeStore::setOpen(const Transition* pos, const Transition* prev, fixed h, fixed d) {
 	assert(open.find(pos) == open.end());
 	assert(closed.find(pos) == closed.end());
 	
@@ -653,7 +653,7 @@ bool TransitionNodeStore::setOpen(const Transition* pos, const Transition* prev,
 	return true;
 }
 
-void TransitionNodeStore::updateOpen(const Transition* pos, const Transition* &prev, const float cost) {
+void TransitionNodeStore::updateOpen(const Transition* pos, const Transition* &prev, const fixed cost) {
 	assert(open.find(pos) != open.end());
 	assert(closed.find(prev) != closed.end());
 

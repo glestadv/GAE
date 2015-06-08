@@ -39,7 +39,7 @@ private:
 	static int numEdges[Field::COUNT];
 
 	const Transition *dest;
-	vector<float> weights;
+	vector<fixed> weights;
 
 	Field f; // for diagnostics... remove this one day
 
@@ -53,9 +53,9 @@ public:
 		--numEdges[f];
 	}
 
-	void addWeight(const float w) { weights.push_back(w); }
+	void addWeight(const fixed w) { weights.push_back(w); }
 	const Transition* transition() const { return dest; }
-	float cost(int size) const { return weights[size-1]; }
+	fixed cost(int size) const { return weights[size-1]; }
 	int maxClear() { return weights.size(); }
 
 	static int NumEdges(Field f) { return numEdges[f]; }
@@ -140,7 +140,7 @@ class TransitionCost {
 
 public:
 	TransitionCost(Field f, int s) : field(f), size(s) {}
-	float operator()(const Transition *t, const Transition *t2) const {
+	fixed operator()(const Transition *t, const Transition *t2) const {
 		Edges::const_iterator it =  t->edges.begin();
 		for ( ; it != t->edges.end(); ++it) {
 			if ((*it)->transition() == t2) {
@@ -153,7 +153,7 @@ public:
 		if ((*it)->maxClear() >= size) {
 			return (*it)->cost(size);
 		}
-		return numeric_limits<float>::infinity();
+		return fixed::max_value();
 	}
 };
 
@@ -165,7 +165,7 @@ private:
 public:
 	TransitionGoal() {}
 	set<const Transition*>& goalTransitions() {return goals;}
-	bool operator()(const Transition *t, const float d) const {
+	bool operator()(const Transition *t, const fixed d) const {
 		return goals.find(t) != goals.end();
 	}
 };
@@ -257,17 +257,17 @@ private:
 
 	void evalCluster(const Vec2i &cluster);
 
-	float linePathLength(Field f, int size, const Vec2i &start, const Vec2i &dest);
-	float aStarPathLength(Field f, int size, const Vec2i &start, const Vec2i &dest);
+	fixed linePathLength(Field f, int size, const Vec2i &start, const Vec2i &dest);
+	fixed aStarPathLength(Field f, int size, const Vec2i &start, const Vec2i &dest);
 
 	void disconnectCluster(const Vec2i &cluster);
 };
 
 struct TransitionAStarNode {
 	const Transition *pos, *prev;
-	float heuristic;			  /**< estimate of distance to goal		*/
-	float distToHere;			 /**< cost from origin to this node	   */
-	float est()	const	{		/**< estimate, costToHere + heuristic */
+	fixed heuristic;			  /**< estimate of distance to goal		*/
+	fixed distToHere;			 /**< cost from origin to this node	   */
+	fixed est()	const	{		/**< estimate, costToHere + heuristic */
 		return distToHere + heuristic;	
 	}
 };
@@ -305,14 +305,14 @@ public:
 	bool isOpen(const Transition* pos)		{ return open.find(pos) != open.end();		}
 	bool isClosed(const Transition* pos)	{ return closed.find(pos) != closed.end();	}
 
-	bool setOpen(const Transition* pos, const Transition* prev, float h, float d);
-	void updateOpen(const Transition* pos, const Transition* &prev, const float cost);
+	bool setOpen(const Transition* pos, const Transition* prev, fixed h, fixed d);
+	void updateOpen(const Transition* pos, const Transition* &prev, const fixed cost);
 	const Transition* getBestCandidate();
 	Transition* getBestSeen();
 
-	float getHeuristicAt(const Transition* &pos)		{ return listed[pos]->heuristic;	}
-	float getCostTo(const Transition* pos)				{ return listed[pos]->distToHere;	}
-	float getEstimateFor(const Transition* pos)			{ return listed[pos]->est();		}
+	fixed getHeuristicAt(const Transition* &pos)		{ return listed[pos]->heuristic;	}
+	fixed getCostTo(const Transition* pos)				{ return listed[pos]->distToHere;	}
+	fixed getEstimateFor(const Transition* pos)			{ return listed[pos]->est();		}
 	const Transition* getBestTo(const Transition* pos)	{ return listed[pos]->prev;			}
 };
 

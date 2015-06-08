@@ -51,7 +51,7 @@ protected:
 public:
 	PMap1Goal(PatchMap<1> *pMap) : pMap(pMap) {}
 
-	bool operator()(const Vec2i &pos, const float) const {
+	bool operator()(const Vec2i &pos, const fixed) const {
 		if (pMap->getInfluence(pos)) {
 			return true;
 		}
@@ -108,22 +108,22 @@ public:
 
 	/** The cost function @param p1 position 1 @param p2 position 2 ('adjacent' p1)
 	  * @return cost of move, possibly infinite */
-	float operator()(const Vec2i &p1, const Vec2i &p2) const {
-		assert(p1.dist(p2) < 1.5 && p1 != p2);
+	fixed operator()(const Vec2i &p1, const Vec2i &p2) const {
+		//assert(p1.dist(p2) < 1.5 && p1 != p2);
 		assert(g_map.isInside(p2));
 		if (!aMap->canOccupy(p2, size, field)) {
-			return numeric_limits<float>::infinity();
+			return fixed::max_value();
 		}
 		if (p1.x != p2.x && p1.y != p2.y) {
 			Vec2i d1, d2;
 			getDiags(p1, p2, size, d1, d2);
 			assert(g_map.isInside(d1) && g_map.isInside(d2));
 			if (!aMap->canOccupy(d1, 1, field) || !aMap->canOccupy(d2, 1, field) ) {
-				return numeric_limits<float>::infinity();
+				return fixed::max_value();
 			}
-			return SQRT2;
+			return fixed::sqrt2();
 		}
-		return 1.0f;
+		return fixed::one();
 		// todo... height
 	}
 };
@@ -177,7 +177,7 @@ private:
 	TravelState findPathToGoal(Unit *unit, PMap1Goal &goal, const Vec2i &targetPos);
 	TravelState customGoalSearch(PMap1Goal &goal, Unit *unit, const Vec2i &target);
 
-	float quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
+	fixed quickSearch(Field field, int Size, const Vec2i &start, const Vec2i &dest);
 	bool refinePath(Unit *unit);
 	void smoothPath(Unit *unit);
 
@@ -218,7 +218,7 @@ private:
 
 public:
 	TransitionHeuristic(const Vec2i &target) : dd(target) {}
-	bool operator()(const Transition *t) const {
+	fixed operator()(const Transition *t) const {
 		return dd(t->nwPos);
 	}
 };
