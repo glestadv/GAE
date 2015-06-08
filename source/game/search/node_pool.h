@@ -67,13 +67,13 @@ struct AStarNode {					/**< A node structure for A* with NodePool							*/
 	PosOff posOff;				   /**< position of this node, and direction of best path to it		   */
 	float heuristic;			  /**< estimate of distance to goal									  */
 	float distToHere;			 /**< cost from origin to this node									 */
+	int32 heap_ndx;
 
 	float est()	const { return distToHere + heuristic;}	   /**< estimate, costToHere + heuristic   */
 	Vec2i pos()		  { return posOff.getPos();		  }	  /**< position of this node			  */
 	Vec2i prev()	  { return posOff.getPrev();	  }  /**< best path to this node is from	 */
 	bool hasPrev()	  { return posOff.hasOffset();	  } /**< has valid previous 'pointer'		*/
 
-	int16 heap_ndx;
 	void setHeapIndex(int ndx) { heap_ndx = ndx;  }
 	int  getHeapIndex() const  { return heap_ndx; }
 
@@ -85,10 +85,16 @@ struct AStarNode {					/**< A node structure for A* with NodePool							*/
 		if (heuristic < that.heuristic) return true;
 		if (heuristic > that.heuristic) return false;
 		// still tied... prefer nodes 'in line' with goal ???
+		// just distinguish them consistently by position
+		if (posOff.y == that.posOff.y) {
+			assert( posOff.x != that.posOff.x );
+			return posOff.x < that.posOff.x;
+		}
+		return posOff.y < that.posOff.y;
 		// just distinguish them somehow...
-		return this < &that;
+		//return this < &that;
 	}
-}; // == 112 bits (14 bytes)
+}; // == 128 bits (16 bytes)
 #pragma pack(pop)
 
 // ========================================================

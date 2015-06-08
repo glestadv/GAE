@@ -681,8 +681,6 @@ TravelState RoutePlanner::findPathToLocation(Unit *unit, const Vec2i &finalPos) 
 	// Hierarchical Search
 	tSearchEngine->reset();
 	HAAStarResult res;
-	// Hierarchical Search
-	tSearchEngine->reset();
 
 	RUNTIME_CHECK(world->getMap()->isInside(target));
 
