@@ -976,15 +976,19 @@ void HarvestCommandType::update( Unit *unit ) const {
 				case TravelState::MOVING:
 					unit->setCurrSkill( getMoveLoadedSkill( unit ) );
 					unit->face( unit->getNextPos( ) );
+					HARVEST_LOG( unit, "Returning to store, moving." );
 					return;
 				case TravelState::BLOCKED:
+					HARVEST_LOG( unit, "Returning to store, blocked." );
 					unit->setCurrSkill( SkillClass::STOP );
 					return;
 				case TravelState::IMPOSSIBLE:
+					HARVEST_LOG( unit, "Returning to store, impossible, cancelling command." );
 					unit->setCurrSkill( SkillClass::STOP );
 					unit->cancelCurrCommand( );
 					return;
 				case TravelState::ARRIVED: 
+					HARVEST_LOG( unit, "Returning to store, arrived." );
 					break;
 			}
 			// update resources
@@ -1004,6 +1008,7 @@ void HarvestCommandType::update( Unit *unit ) const {
 			unit->setLoadCount( 0 );
 			unit->StateChanged( unit );
 		} else { // no store found, give up
+			HARVEST_LOG( unit, "Can't find a store, cancelling command." );
 			unit->finishCommand( );
 		}
 	} else { // if working

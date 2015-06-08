@@ -42,18 +42,18 @@ using std::set;
 #endif
 
 #if defined(LOG_WORLD_EVENTS) && LOG_WORLD_EVENTS
-#	define COMMAND_LOG(f, l, c, x)                      \
+#	define COMMAND_LOG(f, u, l, c, x)                      \
 		if (g_logger.shouldLogCmdEvent(f, c, l)) {      \
 			stringstream ss;                            \
-			ss << "Faction ndx:" << f << " CmdClass::"  \
+			ss << "Faction:" << f << " Unit:" << u << " CmdClass::"  \
 				<< CmdClassNames[c] << ": " << x;   \
 			g_logger.logWorldEvent(ss.str());           \
 		}
-#	define BUILD_LOG(u, x)     COMMAND_LOG(u->getFaction()->getIndex(), 1, CmdClass::BUILD, x)
-#	define REPAIR_LOG(u, x)    COMMAND_LOG(u->getFaction()->getIndex(), 1, CmdClass::REPAIR, x)
-#	define REPAIR_LOG2(u, x)   COMMAND_LOG(u->getFaction()->getIndex(), 2, CmdClass::REPAIR, x)
-#	define HARVEST_LOG(u, x)   COMMAND_LOG(u->getFaction()->getIndex(), 1, CmdClass::HARVEST, x)
-#	define HARVEST_LOG2(u, x)  COMMAND_LOG(u->getFaction()->getIndex(), 2, CmdClass::HARVEST, x)
+#	define BUILD_LOG(u, x)     COMMAND_LOG(u->getFaction()->getIndex(), u->getId(), 1, CmdClass::BUILD, x)
+#	define REPAIR_LOG(u, x)    COMMAND_LOG(u->getFaction()->getIndex(), u->getId(), 1, CmdClass::REPAIR, x)
+#	define REPAIR_LOG2(u, x)   COMMAND_LOG(u->getFaction()->getIndex(), u->getId(), 2, CmdClass::REPAIR, x)
+#	define HARVEST_LOG(u, x)   COMMAND_LOG(u->getFaction()->getIndex(), u->getId(), 1, CmdClass::HARVEST, x)
+#	define HARVEST_LOG2(u, x)  COMMAND_LOG(u->getFaction()->getIndex(), u->getId(), 2, CmdClass::HARVEST, x)
 #else
 #	define BUILD_LOG(u, x)
 #	define REPAIR_LOG(u, x)

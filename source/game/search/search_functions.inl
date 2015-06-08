@@ -43,7 +43,7 @@ public:
 	/** The goal function @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if pos is within range of target, else false	*/
-	bool operator()(const Vec2i &pos, const float costSoFar) const { 
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const { 
 		return fixedDist(pos, target) <= range; 
 	}
 };
@@ -60,7 +60,7 @@ public:
 	/** The goal function  @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if influence at pos on iMap is greater than threashold, else false */
-	bool operator()( const Vec2i &pos, const float costSoFar) const { 
+	bool operator()( const Vec2i &pos, const fixed costSoFar) const { 
 		return iMap->getInfluence(pos) > threshold; 
 	}
 };
@@ -76,7 +76,7 @@ public:
 	/** The goal function @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if pos is free, else false */
-	bool operator()(const Vec2i &pos, const float costSoFar) const { 
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const { 
 		return theMap.isFreeCell(pos, field); 
 	}
 };
@@ -94,7 +94,7 @@ public:
 	/** The goal function  @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos
 	  * @return true if a unit of size can occupy pos in field (according to aMap), else false */
-	bool operator()(const Vec2i &pos, const float costSoFar) const {
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const {
 		return aMap->canOccupy(pos, size, field);
 	}
 };
@@ -117,16 +117,16 @@ public:
 /** Helper goal, used to build distance maps. */
 class DistanceBuilderGoal {
 private:
-	float cutOff; /**< a 'cutoff' distance, search ends after this is reached. */
-	TypeMap<float> *iMap; /**< inluence map to write distance data into.	  */
+	fixed cutOff; /**< a 'cutoff' distance, search ends after this is reached. */
+	TypeMap<fixed> *iMap; /**< inluence map to write distance data into.	  */
 
 public:
-	DistanceBuilderGoal(float cutOff, TypeMap<float> *iMap) : cutOff(cutOff), iMap(iMap) {}
+	DistanceBuilderGoal(fixed cutOff, TypeMap<fixed> *iMap) : cutOff(cutOff), iMap(iMap) {}
 	
 	/** The goal function, writes ( cutOff - costSoFar ) into the influence map.
 	  * @param pos position to test @param costSoFar the cost of the shortest path to pos
 	  * @return true if costSoFar exceeeds cutOff, else false. */
-	bool operator()(const Vec2i &pos, const float costSoFar) const {
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const {
 		if (costSoFar > cutOff) {
 			return true;
 		}
@@ -140,14 +140,14 @@ public:
 /** Helper goal, used to build influence maps. */
 class InfluenceBuilderGoal {
 private:
-	float cutOff;
-	TypeMap<float> *iMap;
+	fixed cutOff;
+	TypeMap<fixed> *iMap;
 
 public:
-	InfluenceBuilderGoal(float cutOff, TypeMap<float> *iMap) : cutOff(cutOff), iMap(iMap) {}
+	InfluenceBuilderGoal(fixed cutOff, TypeMap<fixed> *iMap) : cutOff(cutOff), iMap(iMap) {}
 	/** The goal function, WIP @param pos position to test
 	  * @param costSoFar the cost of the shortest path to pos */
-	bool operator()(const Vec2i &pos, const float costSoFar) const {
+	bool operator()(const Vec2i &pos, const fixed costSoFar) const {
 		if (costSoFar > cutOff) {
 			return true;
 		}

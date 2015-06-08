@@ -193,8 +193,6 @@ public:
 
 class MoveSkillType : public SkillType {
 private:
-	float m_maxInclination;
-	float m_maxDeclination;
 	bool m_visibleOnly;
 
 public:
@@ -204,7 +202,10 @@ public:
 		descSpeed( str, unit, "WalkSpeed" );
 		descEpCost( str, unit );
 	}
-	//virtual void doChecksum( Checksum &checksum ) const;
+	virtual void doChecksum( Checksum &checksum ) const override {
+		SkillType::doChecksum(checksum);
+		checksum.add(m_visibleOnly);
+	}
 	bool getVisibleOnly( ) const { return m_visibleOnly; }
 	virtual fixed getSpeed( const Unit *unit ) const override;
 	virtual SkillClass getClass( ) const override { return typeClass( ); }
@@ -398,7 +399,7 @@ private:
 	bool  m_stretchy;
 
 public:
-	BeBuiltSkillType( ) : SkillType( "Be built" ) { }
+	BeBuiltSkillType( ) : SkillType( "Be built" ), m_stretchy(false) { }
 	virtual void load( const XmlNode *sn, const string &dir, const TechTree *tt, const UnitType *ut ) override;
 	virtual void getDesc( string &str, const Unit *unit ) const override {}
 	virtual bool isStretchyAnim( ) const override { return m_stretchy; }
@@ -505,7 +506,7 @@ private:
 	bool  m_stretchy;
 
 public:
-	BuildSelfSkillType( ) : SkillType("BuildSelf") { }
+	BuildSelfSkillType( ) : SkillType("BuildSelf"), m_stretchy(false) { }
 
 	virtual void load( const XmlNode *sn, const string &dir, const TechTree *tt, const UnitType *ut ) override;
 	virtual void getDesc( string &str, const Unit *unit ) const override {

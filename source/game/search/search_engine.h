@@ -18,10 +18,7 @@
 #include "vec.h"
 #include "game_constants.h"
 
-using std::numeric_limits;
 using Shared::Math::Vec2i;
-
-static const float SQRT2 = 1.41421356f;
 
 /** Home of the templated A* algorithm and some of the bits that plug into it.*/
 namespace Glest { namespace Search {

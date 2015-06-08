@@ -28,11 +28,11 @@ using namespace Glest::Net;
 
 namespace Glest { namespace Util {
 
-#ifdef WIN32
-	string newLine = "\r\n";
-#else
+//#ifdef WIN32
+//	string newLine = "\r\n";
+//#else
 	string newLine = "\n";
-#endif
+//#endif
 
 // =====================================================
 //  class LogFile
@@ -276,7 +276,7 @@ void AiLogFile::add(int f, AiComponent c, int level, const string &msg) {
 // =====================================================
 
 WorldLogFile::WorldLogFile()
-		: LogFile("glestadv-world.log", "World", TimeStampType::MILLIS) {
+		: LogFile("glestadv-world.log", "World", TimeStampType::NONE) {
 	for (int i=0; i < GameConstants::maxPlayers; ++i) {
 		m_factionFlags[i] = true;
 	}
@@ -291,15 +291,15 @@ WorldLogFile::WorldLogFile()
 //	class Logger
 // =====================================================
 
-Logger* Logger::instance = 0;
+Logger* Logger::instance = nullptr;
 
 Logger::Logger()
-		: m_programLog(0)
-		, m_errorLog(0)
-		, m_aiLog(0)
-		, m_networkLog(0)
-		, m_widgetLog(0)
-		, m_worldLog(0) {
+		: m_programLog(nullptr)
+		, m_errorLog(nullptr)
+		, m_aiLog(nullptr)
+		, m_networkLog(nullptr)
+		, m_widgetLog(nullptr)
+		, m_worldLog(nullptr) {
 	
 	// always enabled
 	m_programLog = new ProgramLog();
