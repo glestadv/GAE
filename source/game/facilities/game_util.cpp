@@ -1,3 +1,4 @@
+
 // ==============================================================
 //	This file is part of Glest (www.glest.org)
 //
@@ -31,10 +32,18 @@ const string gaeMailString= CONTACT_STRING;
 
 const string glestVersionString= "v3.2.2";
 
-#if _GAE_DEBUG_EDITION_
-	const string gaeVersionString = string(VERSION_STRING) + "_de" + getGitHash();
+#if _GAE_GIT_HASH_
+#	if _GAE_DEBUG_EDITION_
+		const string gaeVersionString = string(VERSION_STRING) + "_de" + getGitHash();
+#	else
+		const string gaeVersionString = string(VERSION_STRING) + getGitHash();
+#	endif
 #else
-	const string gaeVersionString = string(VERSION_STRING) + getGitHash();
+#	if _GAE_DEBUG_EDITION_
+		const string gaeVersionString = string(VERSION_STRING) + "_de";
+#	else
+		const string gaeVersionString = string(VERSION_STRING);
+#	endif
 #endif
 
 string getCrashDumpFileName(){

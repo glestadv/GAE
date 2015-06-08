@@ -97,6 +97,9 @@ if (WIN32)
 	option(GAE_USE_XAUDIO2 "Include XAudio2 SoundPlayer" OFF)
 endif(WIN32)
 
+# Option: no git hash in version string
+option(GAE_GIT_HASH_IN_VERSION "Include a git hash in the version string" ON)
+
 if(NOT WIN32)
 	try_compile(HAVE_SSE2 ${CMAKE_BINARY_DIR}/test_sse ${CMAKE_SOURCE_DIR}/cmake/tests/sse.cpp COMPILE_DEFINITIONS "-msse2")
 	if(NOT HAVE_SSE2)
