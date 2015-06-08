@@ -185,6 +185,7 @@ private:
 	Faction glestimals;
 
 	Random random;
+	Random random2;
 
 	Cartographer *cartographer;
 	RoutePlanner *routePlanner;

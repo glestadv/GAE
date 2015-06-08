@@ -365,11 +365,11 @@ void ServerInterface::updateProjectilePath(Unit *u, Projectile *pps, const Vec3f
 	SimulationInterface::updateProjectilePath(u, pps, start, end);
 	ProjectileUpdate updt(u, pps);
 	keyFrame.addUpdate(updt);
-	//string logStart = "ServerInterface::updateProjectilePath(): ProjectileId: " + intToStr(pps->getId());
-	//if (pps->getTarget()) {
-	//	logStart += ", TargetId: " + intToStr(pps->getTarget()->getId());
-	//}
-	//NETWORK_LOG( logStart << " startPos: " << start << ", endPos: " << end << ", arrivalOffset: " << updt.end_offset );
+	string logStart = "ServerInterface::updateProjectilePath(): ProjectileId: " + intToStr(pps->getId());
+	if (pps->getTarget()) {
+		logStart += ", TargetId: " + intToStr(pps->getTarget()->getId());
+	}
+	NETWORK_LOG( logStart << " startPos: " << start << ", endPos: " << end << ", arrivalOffset: " << updt.end_offset );
 }
 
 void ServerInterface::process(TextMessage &msg, int requestor) {

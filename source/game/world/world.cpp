@@ -93,6 +93,7 @@ World::World(SimulationInterface *simInterface)
 	singleton = this;
 	alive = false;
 
+	random2.init((int32)Chrono::getCurMillis());
 	setRandomSeed( gs.getWorldSeed() );
 }
 
@@ -621,8 +622,8 @@ void World::moveUnitCells(Unit *unit) {
 		&& g_renderer.getCuller().isInside(newCentrePos)) {
 			for (int i = 0; i < 3; ++i) {
 				waterEffects.addWaterSplash(
-					Vec2f(unit->getLastPos().x + random.randRange(-0.4f, 0.4f),
-						  unit->getLastPos().y + random.randRange(-0.4f, 0.4f))
+					Vec2f(unit->getLastPos().x + random2.randRange(-0.4f, 0.4f),
+						  unit->getLastPos().y + random2.randRange(-0.4f, 0.4f))
 				);
 			}
 			g_soundRenderer.playFx(g_coreData.getWaterSound());
