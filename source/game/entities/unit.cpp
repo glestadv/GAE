@@ -377,14 +377,14 @@ Vec2i Unit::getNearestOccupiedCell(const Vec2i &from) const {
 	if(size == 1) {
 		return m_pos;
 	} else {
-		float nearestDist = 100000.f;
+		fixed nearestDist = fixed::max_value();
 		Vec2i nearestPos(-1);
 
 		for (int x = 0; x < size; ++x) {
 			for (int y = 0; y < size; ++y) {
 				if (!m_type->hasCellMap() || m_type->getCellMapCell(x, y, m_facing)) {
 					Vec2i currPos = m_pos + Vec2i(x, y);
-					float dist = from.dist(currPos);
+					fixed dist = fixedDist(from, currPos);
 					if (dist < nearestDist) {
 						nearestDist = dist;
 						nearestPos = currPos;
