@@ -309,6 +309,7 @@ void ClientInterface::updateKeyframe(int frameCount) {
 			//NETWORK_LOG( "ClientInterface::updateKeyframe(): received keyframe " << (keyFrame.getFrameCount() / GameConstants::networkFramePeriod)
 			//	<< " @ frame " << frameCount );
 			keyFrame.logMoveUpdates();
+			keyFrame.logProjUpdates();
 			if (keyFrame.getFrameCount() != frameCount + GameConstants::networkFramePeriod) {
 				throw GameSyncError("frame count mismatch. Probable garbled message or memory corruption");
 			}
@@ -374,11 +375,11 @@ void ClientInterface::updateProjectilePath(Unit *unit, Projectile *pps, const Ve
 			throw GameSyncError("Bad projectile update");
 		}
 		pps->setPath(start, end, updt.end_offset);
-		//string logStart = "ClientInterface::updateProjectilePath(): ProjectileId: " + intToStr(pps->getId());
-		//if (pps->getTarget()) {
-		//	logStart += ", TargetId: " + intToStr(pps->getTarget()->getId());
-		//}
-		//NETWORK_LOG( logStart << " startPos: " << start << ", endPos: " << end << ", arrivalOffset: " << updt.end_offset );
+		string logStart = "ClientInterface::updateProjectilePath(): ProjectileId: " + intToStr(pps->getId());
+		if (pps->getTarget()) {
+			logStart += ", TargetId: " + intToStr(pps->getTarget()->getId());
+		}
+		NETWORK_LOG( logStart << " startPos: " << start << ", endPos: " << end << ", arrivalOffset: " << updt.end_offset );
 	} catch (GameSyncError &e) {
 		handleSyncError();
 	}

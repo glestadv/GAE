@@ -666,6 +666,19 @@ ProjectileUpdate KeyFrame::getProjUpdate() {
 	return res;
 }
 
+void KeyFrame::logProjUpdates() {
+	int updateCount = m_projectileUpdates.updateCount;
+	byte_ptr readPtr = m_projectileUpdates.readPtr;
+	NETWORK_LOG( "KeyFrame::logProjUpdates(): Update Size: " << m_projectileUpdates.updateSize
+		<< " Frame: " << frame );
+
+	while (updateCount) {
+		ProjectileUpdate res(readPtr);
+		readPtr += sizeof(ProjectileUpdate);
+		--updateCount;
+		NETWORK_LOG(  "\tUnit: " << res.unitId << ", offset: " << res.end_offset << ", Proj Update Count: " << updateCount );
+}
+
 // =====================================================
 //	class SkillCycleTableMessage
 // =====================================================

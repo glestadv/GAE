@@ -422,7 +422,6 @@ public:
 	virtual unsigned int getSize() const	{return m_packetSize;}
 	virtual const void* getData() const		{return m_packetData;}
 	virtual void log() const override;
-	void logMoveUpdates();
 
 	void setFrameCount(int fc) { frame = fc; }
 	int getFrameCount() const { return frame; }
@@ -439,9 +438,12 @@ public:
 	void add(NetworkCommand &nc);
 	void reset();
 	void addUpdate(MoveSkillUpdate updt);
-	void addUpdate(ProjectileUpdate updt);
 	MoveSkillUpdate getMoveUpdate();
+	void logMoveUpdates();
+
+	void addUpdate(ProjectileUpdate updt);
 	ProjectileUpdate getProjUpdate();
+	void logProjUpdates();
 };
 
 // =====================================================
